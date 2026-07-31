@@ -133,7 +133,22 @@ python3 sim/run_corners.py <testbench-slug> --corner-set mos
 # device behavior, or is a corner file being silently ignored?).
 sim/selftest.sh                # no evidence written
 sim/selftest.sh --record       # also mints real records under sim/records/
+sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absent
 ```
+
+### Checks
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs, on every push and
+pull request, the checks that need no PDK: a Python/shell syntax check, the
+harness unit tests on Python 3.10 and 3.13, and `sim/selftest.sh` — whose
+PDK-dependent stages detect the missing PDK and skip themselves on a hosted
+runner. The same set is `npm run check:ci` locally.
+
+The smoke run and the corner-sanity check are deliberately *not* on the PR
+path: they need ngspice and a multi-gigabyte PDK. Run them on a machine that
+has both — `sim/selftest.sh --require-pdk`, or `npm run check:all` — before
+committing an evidence record. The workflow file carries the full inventory of
+which self-checks run in CI and why the rest do not.
 
 Bootstrap testbenches under `sim/tb/` exercise the harness itself (not yet
 the TRNG design, which has no `design/` content as of this bootstrap):

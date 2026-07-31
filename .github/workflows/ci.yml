@@ -1,0 +1,90 @@
+name: CI
+
+# Runs this repository's existing self-checks on every push to main and every
+# pull request. Everything here is headless and dependency-free: the sim
+# harness is stdlib-only Python 3 (see README.md), so there is no install step
+# beyond provisioning the interpreter.
+#
+# ---------------------------------------------------------------------------
+# Self-check inventory
+# ---------------------------------------------------------------------------
+# Every self-check that exists in this repo is either run below or excluded
+# here with a reason:
+#
+#   sim/tests/*.py (unittest, 56 cases)
+#       RUN on every push/PR, on the oldest and newest supported Python.
+#
+#   sim/selftest.sh stage 1 (harness unit tests)
+#       RUN on every push/PR (via sim/selftest.sh itself).
+#
+#   sim/selftest.sh stage 2 (python3 sim/run_corners.py --check-env)
+#       RUN on every push/PR. On a hosted runner it reports ngspice/PDK
+#       MISSING and the script exits 0 -- that skip path is exactly what CI
+#       verifies, so a regression that made the harness hard-fail (or silently
+#       "find" a PDK that isn't there) shows up as a red check.
+#
+#   sim/selftest.sh stage 3 (end-to-end smoke run, sim/tb/smoke-op)
+#   sim/selftest.sh stage 4 (sim/tools/corner_sanity_check.py)
+#       EXCLUDED from the default PR path. Both need ngspice >= 46 and the
+#       gf180mcu PDK, which is a multi-gigabyte volare fetch (~5 GB; see the
+#       install hint printed by `python3 sim/run_corners.py --check-env`).
+#       Downloading a PDK on every PR would cost minutes per run to exercise
+#       the harness -- not the design -- so these stages stay local:
+#
+#           sim/selftest.sh --require-pdk     # fails instead of skipping
+#
+#       That is the command a contributor runs before committing any evidence
+#       record (sim/README.md), and it is what `npm run check:all` invokes.
+#       Provisioning ngspice + the PDK on a scheduled runner so stages 3-4 also
+#       run unattended is tracked separately in #30.
+#
+#   sim/run_corners.py evidence runs (sim/records/)
+#       EXCLUDED. Recording evidence is a deliberate, PDK-bound act performed
+#       by a human or agent with the PDK installed; records are append-only
+#       (sim/README.md) and CI must never mint them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    name: harness (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor and ceiling of the supported range. The harness uses
+        # `from __future__ import annotations` throughout, so 3.10 is the
+        # oldest interpreter it is known to run on.
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Syntax check (Python + shell)
+        run: |
+          python3 -m compileall -q sim
+          bash -n sim/selftest.sh
+
+      - name: Harness unit tests
+        run: python3 -m unittest discover -s sim/tests -t sim/tests
+
+      # sim/selftest.sh re-runs the unit tests as its own stage 1; the few
+      # seconds of overlap buy coverage of the acceptance script itself --
+      # its argument handling, its environment probe, and its PDK-absent skip
+      # path (stages 3-4 self-skip and the script exits 0 on this runner).
+      - name: Harness acceptance test (PDK stages self-skip on a hosted runner)
+        run: sim/selftest.sh
