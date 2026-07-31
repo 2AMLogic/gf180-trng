@@ -1,12 +1,12 @@
 ---
 dr: DR-0002-health-test-parameters-and-failure-behavior
 title: Fix RCT/APT cutoffs as formulas in H at alpha = 2^-40, and latch-and-gate on failure
-status: Proposed
-date: 2026-07-30
-deciders: pending — engineering (Robb) ratifies via #1
+status: Accepted
+date: 2026-07-31
+deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amended at ratification per #29 (A2, A6)
 supersedes: n/a
 superseded_by: n/a
-related: "#6 (origin), #1 (ratification), #8, #9, #11, #12, #13; README §Target specification — Health tests row; DR-0001 (raw tap), DR-0004 (90B path)"
+related: "#6 (origin), #1 (ratification), #29 (ratification amendment package — A2 degeneracy floor, A6 verification), #8, #9, #11, #12, #13; README §Target specification — Health tests row; DR-0001 (raw tap), DR-0004 (90B path), DR-0007 (entropy-source sizing that targets H₀)"
 ---
 
 # DR-0002: Fix RCT/APT cutoffs as formulas in H at α = 2⁻⁴⁰, and latch-and-gate on failure
@@ -14,6 +14,18 @@ related: "#6 (origin), #1 (ratification), #8, #9, #11, #12, #13; README §Target
 ## Status
 
 - 2026-07-30: Proposed
+- 2026-07-31: **Accepted, with two amendments made at ratification** by Robb
+  Walters (engineering); ratification decision recorded on #1, executed by the
+  #29 amendment package. **No parameter, formula, or cutoff changed.** The
+  amendments are additive:
+  - **A2** — the APT degeneracy floor and its revisit trigger are stated
+    explicitly (new "APT degeneracy floor" subsection under Decision, plus a
+    clause in "Revisit if"). The bound was always implied by α and W; it was
+    never written down, and DR-0007's context makes very low measured H a live
+    possibility.
+  - **A6** — the independent verification of the RCT/APT formulas and all ten
+    cutoff-table rows is recorded (new "Independent verification" subsection).
+    A record of a check, not a change.
 
 ## Context
 
@@ -97,6 +109,91 @@ recomputation trigger.
 For an H not in the table, evaluate the formulas. The implementation should
 make both cutoffs **parameters, not hard-coded constants**, so a change in the
 ratified H is an edit to one parameter rather than a redesign.
+
+### APT degeneracy floor: this parameterization has a hard lower bound in H
+
+*(Added at ratification, 2026-07-31 — amendment A2 of #29. The bound follows
+from the α and W already fixed above; nothing here changes a parameter.)*
+
+The cutoff table above extends down to H = 0.1, which invites the reading that
+the formulas simply keep producing looser cutoffs as H falls. **They do not.**
+`C_APT` is bounded above by the window size W, so once the smallest C
+satisfying `Pr(X ≥ C) ≤ α` for `X ~ Bin(W, 2^-H)` exceeds W, **no valid cutoff
+exists and the APT is unsatisfiable** — it can never trip, and the block would
+carry a health test that is structurally incapable of failing.
+
+At the ratified parameters (**α = 2⁻⁴⁰, W = 1024**), by exact binomial
+computation:
+
+| H (bit/sample) | `C_APT` | Status |
+|---|---|---|
+| 0.10 | 1005 | valid |
+| 0.08 | 1012 | valid |
+| 0.06 | 1019 | valid |
+| 0.05 | 1022 | valid |
+| **0.04** | **1024** | **degenerate — cutoff has reached W; the test fires only on a perfectly constant window** |
+| ≤ 0.03 | — | **no C ≤ W satisfies the criterion; the APT is unsatisfiable** |
+
+So this parameterization is only meaningful for **H ≳ 0.05**, and is
+*unusable* at **H ≤ 0.03**. The RCT does not degenerate the same way
+(`C_RCT = 1 + ⌈40/H⌉` simply grows — 1334 at H = 0.03 — costing detection
+latency and counter width, not validity), so a low-H failure shows up first
+and only in the APT.
+
+**Why this matters now, and not only in theory.** DR-0007 records that a single
+ring oscillator at the DR-0003 target rate supports a `Q` some 220–370× below
+the value `H = 0.5` requires; if the entropy source is under-sized against
+DR-0007's sizing law, worst-corner H at 1 Mbps plausibly lands in the
+10⁻³–10⁻² range — **inside the degenerate region**, where the block's entire
+health-test safety story silently evaporates rather than failing loudly.
+
+**The fix at low H is structural, not a parameter edit.** If #12/#13 report a
+worst-corner H below ~0.05, the response is *not* to read a lower row off the
+table. The available structural moves are:
+
+1. **Decimate ahead of the tests** — feed the tests one bit per k raw samples
+   (or one XOR/parity of k raw samples), raising the per-tested-sample H by
+   roughly k× at the cost of k× detection latency. This changes what the tests
+   observe, which touches DR-0001's "tests observe the raw tap, undecimated".
+2. **Change W** — a larger APT window admits a valid cutoff at lower H, at
+   proportionally worse detection latency (the 2×W bound below) and more
+   counter state.
+3. **Change α** — a larger α restores a valid cutoff but re-opens the
+   false-alarm-rate argument in Context, which was the reason α = 2⁻⁴⁰ was
+   chosen against the ≥ 1 Mbps sample rate in the first place.
+4. **Fix the source** — raise H at the entropy source (DR-0007's N), which is
+   the preferred route and the reason DR-0007 states a sizing law rather than
+   a ring count.
+
+Any of 1–3 is a **superseding DR**, not an edit to this one.
+
+### Independent verification of the cutoffs (record of a check, no change)
+
+*(Added at ratification, 2026-07-31 — amendment A6 of #29.)*
+
+The formulas and every numeric cutoff in this record were independently
+reproduced against SP 800-90B §4.4.1/§4.4.2 by exact binomial computation, at
+two separate times: by the #29 spec review, and again while landing this
+amendment. Both reproductions agree exactly with the table above.
+
+- **RCT**: `C = 1 + ⌈−log₂α / H⌉` gives `1 + ⌈40/0.5⌉ = 81` at H₀, and all ten
+  table rows reproduce (401, 201, 135, 101, 81, 68, 59, 51, 46, 41).
+- **APT**: this record's criterion (smallest `C` with `Pr(X ≥ C) ≤ α` for
+  `X ~ Bin(1024, 2^-H)`) is equivalent to 90B's
+  `1 + CRITBINOM(W, 2^-H, 1-α)`. At H₀ = 0.5 it yields `C_APT = 824`, with
+  `Pr(X ≥ 824) = 6.44×10⁻¹³ ≤ α = 2⁻⁴⁰ = 9.09×10⁻¹³` and
+  `Pr(X ≥ 823) = 1.10×10⁻¹² > α` — i.e. 824 is the *smallest* satisfying
+  cutoff, not merely *a* satisfying one. All ten table rows reproduce (1005,
+  961, 915, 869, 824, 780, 739, 699, 661, 625).
+- **W = 1024** is confirmed as the binary-source window (W = 512 is the
+  non-binary case).
+- The **false-alarm-interval arithmetic** in Context (≈12.7 days between
+  spurious RCT alarms and ≈36 years between spurious APT alarms at 1 Mbps) and
+  the **2 × W detection-latency bound** for non-overlapping APT windows both
+  check out as stated.
+
+This subsection exists so the check is on the record and does not have to be
+re-derived by the next reader; it asserts nothing new.
 
 ### Which H to use
 
@@ -246,5 +343,9 @@ just failed, with no record that it did.
   to change `C_RCT` or `C_APT` (per the table above, any change of ±0.1
   bit/sample does), **or** the ratified raw rate in DR-0003 changes by enough
   to alter the α-versus-false-alarm-interval argument, **or** the sample width
-  ceases to be binary (which would change W). Any of these produces a
-  superseding DR; this one is not edited.
+  ceases to be binary (which would change W), **or — the degeneracy trigger
+  added at ratification — any measured or projected worst-corner H falls below
+  ~0.05**, at which point the APT is approaching (and by H ≤ 0.03 has passed)
+  the point where no valid cutoff exists and the structural response in "APT
+  degeneracy floor" above is required. Any of these produces a superseding DR;
+  this one is not edited.

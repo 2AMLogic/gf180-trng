@@ -11,6 +11,16 @@ reading guide over that evidence, not a substitute for it. Nothing here is
 edited after the fact except to add new citations; correcting a number means
 re-running the testbench and citing the new record, per `sim/README.md`.
 
+> **Amended 2026-07-31 (issue #29, ratification amendment A3).** Two pieces of
+> *interpretive guidance* about which PVT corner to size entropy-per-bit margin
+> against were polarity-inverted and are corrected in place, each marked with a
+> dated note quoting what it previously said: in
+> [The "figure that will matter most"](#the-figure-that-will-matter-most--read-carefully)
+> and in [Safe to size against](#safe-to-size-against-issue-7) item 3.
+> **No measured figure in this document changed** — the correction is a reading
+> of the same records, not a re-run, so the append-only rule above is not
+> engaged.
+
 **No entropy-rate or spec-compliance claim is made anywhere in this
 document.** Every number is a simulated device/circuit figure — period,
 jitter, noise density. Turning these into a min-entropy-per-bit estimate is
@@ -230,9 +240,26 @@ computation available by combining both tables above.)
 
 **Both statements are true and matter for different reasons**: size the
 sampler/interface timing against the fast/cold/high-supply corner (shortest
-period), and size any entropy-per-bit margin against the slow/hot/low-supply
-corner (worst physically-scaled relative jitter) — they are not the same
-corner, and #7 should not conflate them.
+period), and size any entropy-per-bit margin against a *different* corner —
+they are not the same corner, and #7 should not conflate them.
+
+> **Corrected 2026-07-31 via #29 (ratification amendment A3).** This paragraph
+> previously named the slow/hot/low-supply corner (`ss/125°C/2.97V`, "worst
+> physically-scaled relative jitter") as the entropy-margin sizing corner. It
+> is not. Relative jitter `σ₁/period` is not the figure that governs
+> min-entropy per *sample*: what governs it is the jitter accumulated over one
+> **sample interval**, normalized to the RO period —
+> `Q = σ_acc(T_samp)²/T₀² = σ₁²·T_samp/T₀³` under √t accumulation. The extra
+> `1/T₀` all but cancels this corner's relative-jitter advantage, because a
+> longer period means fewer accumulation periods per sample. Evaluated at a
+> 1 µs sample interval from the very same records, `ss/125°C/2.97V` gives
+> `Q = 1.79e-05` — among the **highest** (best) in the grid — while the
+> measured **minimum** is `ss/-40°C/3.63V` at `Q = 1.08e-05`. The
+> entropy-binding corner is the **measured minimum-`Q` corner, expected
+> cold / +10 % supply, process letter TBD by #13**; see
+> [`Safe to size against`](#safe-to-size-against-issue-7) item 3 and
+> [`DR-0007`](../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md)
+> §4. **No measured number in the table above changed.**
 
 ## Stage-count trend (candidate A)
 
@@ -450,10 +477,32 @@ For **#7's RO core schematic sizing**, this characterization supports:
 2. **Size timing closure (sampler/interface) against the fast/cold/
    high-supply corner** (`ff/-40°C/3.63V`): shortest period (4.342e-10 s,
    f_osc ~2.30 GHz) of any grid point.
-3. **Size any entropy-per-bit margin against the slow/hot/low-supply
-   corner** (`ss/125°C/2.97V`), not the fast/cold/high-supply corner — this
-   characterization's physically-scaled cross-check shows that is where
-   relative jitter is worst, contrary to the naive raw-sweep reading.
+3. **Size any entropy-per-bit margin against the measured minimum-`Q`
+   corner — expected cold / +10 % supply; process letter TBD by #13.** With
+   the sampler clock source still open (#9), the corner *metric* is not yet
+   settled either: under a **fixed** sample clock the per-sample figure is
+   `Q = σ₁²·T_samp/T₀³` and the measured worst point of this grid is
+   `ss/-40°C/3.63V` (~1.5× worse than `ff/-40°C/3.63V`); under a **sample
+   clock divided from the RO itself** the metric collapses to `σ₁/T₀`, under
+   which those two corners are within 4 % — unresolvable at 4 seeds. Either
+   way the **cold / +10 %-supply** region binds. `fs`/`sf` are uncovered
+   (DR-0006), so no minimum-`Q` claim is made over them.
+
+   > **Corrected 2026-07-31 via #29 (ratification amendment A3).** This item
+   > previously read "Size any entropy-per-bit margin against the
+   > slow/hot/low-supply corner (`ss/125°C/2.97V`) … that is where relative
+   > jitter is worst". That is **polarity-inverted** for entropy purposes and
+   > contradicted DR-0003 §4 / DR-0004, which have the direction right.
+   > `ss/125°C/2.97V` does have the largest scaled `σ₁/period` in the grid,
+   > but it also has the longest period, so it accumulates the fewest RO
+   > periods per sample; its `Q` (1.79e-05 at a 1 µs sample interval) is among
+   > the **highest** measured here, i.e. it is the entropy-***best*** corner,
+   > not the worst. A designer following the old text would have sized entropy
+   > margin at the most favourable corner. **No measured number changed** —
+   > every figure in this document is exactly as recorded; only this
+   > interpretive guidance is corrected. See
+   > [`DR-0007`](../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md)
+   > §4 for the corner statement this now aligns to.
 4. **The candidate-A-vs-B throughput/entropy trade-off is real and
    quantified** (B: ~1.9-2.5x longer period, ~1.1-2.4x higher
    physically-scaled relative jitter) but is a #7 design decision, not
