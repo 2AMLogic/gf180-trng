@@ -1,0 +1,29 @@
+{
+  "name": "trnoise-calibration",
+  "description": "Analytic anchor: measures the PSD actually produced by ngspice trnoise() sources, via two RC branches a decade apart.",
+  "netlist": "tb_trnoise_cal.sp",
+  "analysis_type": "tran-noise",
+  "corners": ["mos"],
+  "default_runs": 4,
+  "params": {
+    "vn_rms": "2.2361e-3",
+    "vn_dt": "1e-11",
+    "vn_flick": "5.4772e-5"
+  },
+  "tstop": "4u",
+  "tstep": "10p",
+  "noise_params": "trnoise(NA=2.2361e-3 NT=1e-11 NALPHA=0 NAMP=0) white branch; trnoise(NA=0 NT=1e-11 NALPHA=1 NAMP=5.4772e-5) 1/f branch; intended S_w = 2*NA^2*NT = 1.0e-16 V^2/Hz (1.0e-8 V/sqrt(Hz))",
+  "analyses": [
+    "tran 10p 4u",
+    "linearize",
+    "let n_all = length(v(o1))",
+    "let n_skip = 100"
+  ],
+  "measure": {
+    "rms_white_src": "sqrt(mean(v(nw)[100,400000]*v(nw)[100,400000]))",
+    "rms_rc_159meg": "sqrt(mean(v(o1)[100,400000]*v(o1)[100,400000]))",
+    "rms_rc_15meg": "sqrt(mean(v(o2)[100,400000]*v(o2)[100,400000]))",
+    "rms_flicker_rc_159meg": "sqrt(mean(v(o3)[100,400000]*v(o3)[100,400000]))",
+    "n_samples": "n_all"
+  }
+}

@@ -224,6 +224,23 @@ def run_one(
     )
 
 
+def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, int]]:
+    """The ``(seed, run_index)`` pairs one PVT point needs.
+
+    This is where the "no seed, no evidence" rule from ``sim/README.md`` is
+    enforced, so that both the serial (:func:`run_point`) and the parallel
+    (``run_corners.py -j``) execution paths inherit it from one place.
+    """
+    if not tb.stochastic:
+        return [(None, 0)]
+    if not seeds:
+        raise ValueError(
+            f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
+            "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
+        )
+    return [(seed, i) for i, seed in enumerate(seeds)]
+
+
 def run_point(
     tb: Testbench,
     pdk: Pdk,
@@ -233,14 +250,7 @@ def run_point(
     timeout_s: int = DEFAULT_TIMEOUT_S,
 ) -> list[RunResult]:
     """Run every seed (or the single deterministic run) for one PVT point."""
-    if not tb.stochastic:
-        return [run_one(tb, pdk, point, workdir, seed=None, timeout_s=timeout_s)]
-    if not seeds:
-        raise ValueError(
-            f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
-            "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
-        )
     return [
-        run_one(tb, pdk, point, workdir, seed=seed, run_index=i, timeout_s=timeout_s)
-        for i, seed in enumerate(seeds)
+        run_one(tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s)
+        for seed, index in plan_runs(tb, seeds)
     ]
