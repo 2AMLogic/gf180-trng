@@ -57,3 +57,40 @@ Two conventions govern what lands in those directories:
 - **[`spec/decision-records/TEMPLATE.md`](spec/decision-records/TEMPLATE.md)**
   — the numbered decision-record template (`DR-0001-<slug>.md`). Spec
   changes go through a decision record.
+
+### `sim/` harness bootstrap
+
+The PVT corner runner is a stdlib-only Python CLI, bootstrapped from the
+harness pattern in [`2AMLogic/gf180-bandgap`](https://github.com/2AMLogic/gf180-bandgap)
+(gf180-bandgap#23) and adapted to emit into this repo's own ratified
+`sim/README.md` record format — see
+[`DR-0005`](spec/decision-records/DR-0005-sim-harness-record-granularity.md)
+for how the two conventions reconcile.
+
+```sh
+# One-time PDK check (no hardcoded paths -- see sim/harness/pdk.py for the
+# GF180_PDK_PATH / PDK_ROOT+PDK / sim/pdk.local.json / sim/pdk.json /
+# built-in-search-root resolution chain).
+python3 sim/run_corners.py --check-env
+
+# List testbenches (sim/tb/<slug>/tb.json) and available corners/corner-sets.
+python3 sim/run_corners.py --list
+
+# Run a testbench across a PVT grid -- one evidence record per grid point,
+# written under sim/records/, per sim/README.md. No manual netlist edits.
+python3 sim/run_corners.py <testbench-slug> --corner-set mos
+
+# Harness acceptance test: unit tests + env check + smoke run + the
+# corner-sanity guardrail (does switching process corner actually move
+# device behavior, or is a corner file being silently ignored?).
+sim/selftest.sh                # no evidence written
+sim/selftest.sh --record       # also mints real records under sim/records/
+```
+
+Bootstrap testbenches under `sim/tb/` exercise the harness itself (not yet
+the TRNG design, which has no `design/` content as of this bootstrap):
+`smoke-op` (trivial op-point smoke test), `corner-sanity-nfet-id` (the
+automated guardrail behind `sim/tools/corner_sanity_check.py`), and
+`nfet-mismatch-seed` (demonstrates per-run seed control and exact
+reproducibility for stochastic analyses — see `sim/README.md`'s "no seed,
+no evidence" rule).

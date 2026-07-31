@@ -1,0 +1,16 @@
+{
+  "name": "nfet-mismatch-seed",
+  "description": "Seed-control demo: NMOS Id under device mismatch, same seed reproduces exactly, different seeds diverge.",
+  "netlist": "tb_mismatch.sp",
+  "analysis_type": "mc",
+  "corners": ["tt"],
+  "temperatures_c": [27],
+  "default_runs": 3,
+  "design_params": {
+    "sw_stat_mismatch": 1
+  },
+  "extra_lib_sections": ["statistical"],
+  "measure": {
+    "id": "-i(vdd)"
+  }
+}
