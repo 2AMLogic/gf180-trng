@@ -15,15 +15,27 @@ Selection rationale: The one verified security-demand signal on this node (Tilli
 | Parameter | Target | Stretch |
 |---|---|---|
 | Entropy source | ring-oscillator jitter | metastability hybrid |
-| Raw rate | > 1 Mbps | > 4 Mbps |
-| Quality | NIST SP 800-90B entropy validation pass | AIS-31 PTG.2 |
-| Health tests | continuous (RCT + APT) on-die | — |
+| Raw rate | > 1 Mbps sustained at the raw tap (sampler output), binding at the slowest-RO corner: `ss` / −10 % / +125 °C ([DR-0003]) | > 4 Mbps, same definition |
+| Quality | designed-for-SP 800-90B (raw access + RCT/APT + entropy-source model), plus a **simulation-derived design-stage min-entropy estimate** within the #10 claim limits; 90B validation itself deferred to measured silicon ([DR-0004]) | AIS-31 PTG.2 — same three-tier treatment (structure now, conformance deferred) |
+| Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (draft H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test ([DR-0002]) | — |
 | Power | < 500 µW active, < 1 µA idle | — |
 | Area | < 0.05 mm² | — |
-| Interface | streaming + register read | — |
+| Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]) | — |
+
+> **Rows carrying a DR reference are *proposed* clarifications.** All four
+> decision records are status `Proposed` and are ratified together with this
+> table in #1; the table stays DRAFT until then. Note the two rows bind at
+> **opposite** corners — rate at the slowest-RO corner, min-entropy per bit at
+> the fast/high-V/cold corner (see #13) — and neither at nominal.
+
+[DR-0001]: spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md
+[DR-0002]: spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
+[DR-0003]: spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
-seat → measured silicon over temperature.
+seat → measured silicon over temperature. The SP 800-90B validation claim
+attaches to the last rung, not the first ([DR-0004]).
 
 ## Layout
 
