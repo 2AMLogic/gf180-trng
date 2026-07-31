@@ -78,9 +78,9 @@ both, so the two paths are never confused by a reader:
   independent of the conditioner.
 
 **4. Raw access is unconditional in this block.** There is no fuse, lock bit,
-or debug-mode gate on `RAW_DATA` or on `OUT_MODE = raw`. This is a canary /
-catalog-inventory block whose product is verifiability; a locked raw path
-would make the block unassessable by anyone but us.
+or debug-mode gate on `RAW_DATA` or on `OUT_MODE = raw`. This is a canary
+block whose product is verifiability; a locked raw path would make the block
+unassessable by anyone but us.
 
 **5. The raw path is never gated by a health-test failure.** Health-test
 failure gates the *conditioned* path only (see DR-0002). Gating the raw path
@@ -181,7 +181,7 @@ availability rules above are binding.**
     derivative of this block. Explicitly out of scope here.
   - README Interface row updated to name the two paths (done alongside this DR).
 
-- **Revisit if**: the block is retargeted from canary/catalog use to a
+- **Revisit if**: the block is retargeted from canary use to a
   production part with a hostile-integrator threat model (then the lock-bit
   alternative above becomes live), or if #8 finds the conditioner cannot be
   bypassed without an unacceptable area or timing cost.

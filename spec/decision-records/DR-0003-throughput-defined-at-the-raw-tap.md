@@ -83,9 +83,9 @@ follow-up work for a later DR.
 **6. No post-conditioning rate target is set here.** The conditioned rate is
 `R_cond = R_raw / K`, where K is the conditioner's compression ratio, which
 #8 owns. **#8 must publish K and the resulting `R_cond` at the same binding
-corner.** If a conditioned-rate number is later needed for the catalog
-datasheet, it lands as a new DR once K is fixed — it is not silently inferred
-from this row.
+corner.** If a conditioned-rate number is later needed for a datasheet, it
+lands as a new DR once K is fixed — it is not silently inferred from this
+row.
 
 **7. The target applies to the healthy, ungated state.** While the conditioned
 path is gated by a health-test failure (DR-0002), throughput on that path is
@@ -157,7 +157,7 @@ failure — which is what makes it the right place to define the row.
 
 - **Negative / accepted cost**:
   - The headline table figure is one an end user does not directly consume;
-    the catalog entry will need `R_cond` added once #8 lands.
+    the datasheet will need `R_cond` added once #8 lands.
   - Two binding corners is more to explain than one, and a reader skimming the
     table can still conflate them. Mitigated by naming the corner inline in the
     README row.
