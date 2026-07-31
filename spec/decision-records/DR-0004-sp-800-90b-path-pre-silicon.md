@@ -1,12 +1,12 @@
 ---
 dr: DR-0004-sp-800-90b-path-pre-silicon
 title: Claim designed-for-SP-800-90B plus a bounded sim-stage min-entropy estimate; defer 90B validation to measured silicon
-status: Proposed
-date: 2026-07-30
-deciders: pending — engineering (Robb) ratifies via #1
+status: Accepted
+date: 2026-07-31
+deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amendments landed by #29
 supersedes: n/a
 superseded_by: n/a
-related: "#6 (origin), #1 (ratification), #8, #10, #12, #13; README §Target specification — Quality row; DR-0001 (raw access), DR-0002 (health tests)"
+related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), #8, #10, #12, #13; README §Target specification — Quality row; DR-0001 (raw access), DR-0002 (health tests), DR-0007 (entropy-source sizing and the entropy-binding corner)"
 ---
 
 # DR-0004: Claim designed-for-SP-800-90B plus a bounded sim-stage min-entropy estimate; defer 90B validation to measured silicon
@@ -14,6 +14,24 @@ related: "#6 (origin), #1 (ratification), #8, #10, #12, #13; README §Target spe
 ## Status
 
 - 2026-07-30: Proposed
+- 2026-07-31: **Accepted**, as proposed and unamended, by Robb Walters
+  (engineering) — ratification decision recorded on #1 and executed by the #29
+  amendment package. The #29 spec review called the three-tier structure
+  "exemplary … comfortable as written, *because* it deliberately makes no
+  numeric entropy claim", and raised no amendment against it. Two ratification
+  notes, neither of which changes this record's decision:
+  - **Tier 2's corner statement is refined by DR-0007 §4.** Read "the expected
+    worst corner" as **the measured minimum-`Q` corner — expected cold /
+    +10 % supply, process letter TBD by #13** — and note that the corner
+    *metric* itself depends on the sampler clock source (#9). The direction
+    stated here (least-jitter corner, not the largest-relative-jitter one) is
+    correct and is the direction `sim/characterization-ro-delay-cell-jitter.md`
+    was corrected to, per #29's amendment A3.
+  - **Tier 2's headline number is now a number the design is sized to hit.**
+    DR-0007 fixes the entropy source as an N-way XOR-combined RO array sized
+    against H₀ = 0.5 at the raw rate. That does not upgrade any claim here:
+    an array-derived H is still a simulation-derived design estimate carrying
+    this record's mandatory label, and Tier 3 remains deferred to silicon.
 
 ## Context
 

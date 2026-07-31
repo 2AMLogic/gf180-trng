@@ -1,12 +1,12 @@
 ---
 dr: DR-0003-throughput-defined-at-the-raw-tap
 title: Define the > 1 Mbps target as sustained raw rate at the raw tap, binding at the slow/low-V/hot corner
-status: Proposed
-date: 2026-07-30
-deciders: pending — engineering (Robb) ratifies via #1
+status: Accepted
+date: 2026-07-31
+deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amendments landed by #29
 supersedes: n/a
 superseded_by: n/a
-related: "#6 (origin), #1 (ratification), #8, #9, #12, #13; README §Target specification — Raw rate row; DR-0001 (raw tap), DR-0002 (gating)"
+related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), #8, #9, #12, #13; README §Target specification — Raw rate row; DR-0001 (raw tap), DR-0002 (gating), DR-0007 (entropy source sized to hold H₀ at this rate)"
 ---
 
 # DR-0003: Define the > 1 Mbps target as sustained raw rate at the raw tap, binding at the slow/low-V/hot corner
@@ -14,6 +14,24 @@ related: "#6 (origin), #1 (ratification), #8, #9, #12, #13; README §Target spec
 ## Status
 
 - 2026-07-30: Proposed
+- 2026-07-31: **Accepted**, as proposed and unamended, by Robb Walters
+  (engineering) — ratification decision recorded on #1 and executed by the #29
+  amendment package. The #29 spec review found the rate row and its binding
+  corner sound as written, and specifically endorsed the two-opposite-corners
+  structure in §4. Two ratification notes, neither of which changes this
+  record's decision:
+  - **The rate target survived the review's rate × entropy finding by an
+    architectural change elsewhere, not by moving this row.** Holding > 1 Mbps
+    *while* holding H₀ = 0.5 is what forced DR-0007 (N-way XOR-combined RO
+    array). If DR-0007's sizing proves unbuildable within the power/area rows,
+    the superseding DR that results may have to reopen this row — see
+    DR-0007 §Revisit if.
+  - **§4's entropy-binding corner is refined, not corrected, by DR-0007 §4.**
+    The direction stated here (entropy binds at the *least*-jitter, cold /
+    +10 %-supply region, opposite the rate corner) is right; the process letter
+    is not settled and the corner *metric* depends on the sampler clock source
+    #9 has yet to pin. Read `ff`/+10 %/−40 °C in the table below as "cold /
+    +10 % supply, process letter TBD by #13".
 
 ## Context
 

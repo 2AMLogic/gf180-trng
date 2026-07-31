@@ -1,12 +1,12 @@
 ---
 dr: DR-0001-raw-and-conditioned-output-paths
 title: Expose both a raw and a conditioned output path, with raw access always available
-status: Proposed
-date: 2026-07-30
-deciders: pending — engineering (Robb) ratifies via #1
+status: Accepted
+date: 2026-07-31
+deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amendments landed by #29
 supersedes: n/a
 superseded_by: n/a
-related: "#6 (origin), #1 (ratification), #8, #9, #11, #12; README §Target specification — Interface row"
+related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), #8, #9, #11, #12; README §Target specification — Interface row; DR-0007 (entropy source feeding the sampler)"
 ---
 
 # DR-0001: Expose both a raw and a conditioned output path, with raw access always available
@@ -14,6 +14,14 @@ related: "#6 (origin), #1 (ratification), #8, #9, #11, #12; README §Target spec
 ## Status
 
 - 2026-07-30: Proposed
+- 2026-07-31: **Accepted**, as proposed and unamended, by Robb Walters
+  (engineering) — ratification decision recorded on #1 and executed by the #29
+  amendment package. The #29 spec review raised no amendment against this
+  record (its interface findings were "comfortable as written"). One
+  clarification that follows from DR-0007 rather than from any change here: the
+  raw tap stays at the **sampler output**, so an N-way XOR-combined ring array
+  presents exactly one raw tap — the XOR tree is part of the noise source, and
+  no per-ring signal is a raw tap.
 
 ## Context
 

@@ -7,11 +7,13 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, four proposed decision records, an entropy-source architecture
-survey, and a working PVT corner simulation harness with its first
-device-characterization results. There is no schematic in `design/` yet and no
-GDS in `layout/`. The specification table below is a **draft** the design has
-not yet been held to.
+convention, seven decision records, an entropy-source architecture survey, and a
+working PVT corner simulation harness with its first device-characterization
+results. There is no schematic in `design/` yet and no GDS in `layout/`. The
+specification table below was
+[ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
+binding on the design — but several of its rows are explicitly *unmeasured
+placeholders*, and the table labels which.
 
 ## Why this repo exists
 
@@ -53,28 +55,59 @@ So the standard is enforced by structure rather than by supervision:
 If the structure works, it should be legible from the outside. If it does not,
 that should be legible too.
 
-## Target specification (DRAFT — not yet ratified, see issue #1)
+## Target specification (ratified 2026-07-31)
 
 | Parameter | Target | Stretch |
 |---|---|---|
-| Entropy source | ring-oscillator jitter | metastability hybrid |
+| Entropy source | **N-way array of independent free-running ring oscillators, XOR-combined ahead of a single sampler**, N fixed by the jitter-budget sizing law `Q_array ≥ 1.5 × 4.0×10⁻³` at the entropy-binding corner ([DR-0007]) | metastability hybrid, scoped as a *secondary tap on the RO core* — not a free-standing source |
 | Raw rate | > 1 Mbps sustained at the raw tap (sampler output), binding at the slowest-RO corner: `ss` / −10 % / +125 °C ([DR-0003]) | > 4 Mbps, same definition |
+| Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner (measured minimum-`Q` corner; expected cold / +10 % supply, process letter TBD by #13). The measured number is owed by #12/#13 as a simulation-derived design estimate ([DR-0004] Tier 2, [DR-0007] §2–4) | — |
 | Quality | designed-for-SP 800-90B (raw access + RCT/APT + entropy-source model), plus a **simulation-derived design-stage min-entropy estimate** within the #10 claim limits; 90B validation itself deferred to measured silicon ([DR-0004]) | AIS-31 PTG.2 — same three-tier treatment (structure now, conformance deferred) |
-| Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (draft H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test ([DR-0002]) | — |
-| Power | < 500 µW active, < 1 µA idle | — |
+| Conditioning | **TBD per #8** ([DR-0003] §6, [DR-0004] §Constraint on #8). Default assumption: a lightweight **non-vetted** function; #8's own DR owes the function, its vetted/non-vetted status, the compression ratio K, an area estimate, and the non-vetted entropy accounting | a 90B-*vetted* conditioning function, if #8's area estimate shows one fits |
+| Delivered (post-conditioning) rate | **TBD per #8** — `R_cond = R_raw / K` at the same binding corner as the raw-rate row; deliberately **not** inferred from that row until K exists ([DR-0003] §6) | — |
+| Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (at H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test. The parameterization has a hard floor: **no valid APT cutoff exists at H ≤ 0.03** ([DR-0002]) | — |
+| Time-to-first-valid | **≥ ~1.05 ms** at 1 Mbps — an arithmetic floor, not a measurement: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus conditioner latency. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior) | — |
+| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Neither figure has any evidence behind it yet** — see the note below | — |
 | Area | < 0.05 mm² | — |
+| Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
 | Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]) | — |
 
-> **Rows carrying a DR reference are *proposed* clarifications.** All four
-> decision records are status `Proposed` and are ratified together with this
-> table in #1; the table stays DRAFT until then. Note the two rows bind at
-> **opposite** corners — rate at the slowest-RO corner, min-entropy per bit at
-> the fast/high-V/cold corner (see #13) — and neither at nominal.
+**Scope**: this block is an **entropy source only** — there is no DRBG in it,
+and it defines no seeding or reseeding semantics. An integrator that needs a
+DRBG supplies its own and treats this block as the seed source.
+
+> **Ratified, with three rows explicitly unmeasured.** The table was ratified
+> on 2026-07-31 by engineering (Robb) — see
+> [`spec/ratification-2026-07-31-target-spec.md`](spec/ratification-2026-07-31-target-spec.md)
+> and issue #1 — together with the amendment package in #29. Every row carrying
+> a DR reference is now `Accepted`; a row that cannot be met is a **superseding
+> decision record**, not an edit. What ratification does *not* do is turn
+> placeholders into claims:
+>
+> - **Raw min-entropy per bit** is a design target (H₀ = 0.5). The entropy
+>   source is *sized* to hit it ([DR-0007]); it has not been measured (#12/#13).
+> - **Conditioning / delivered rate** are deferred to #8 with reasons on the
+>   record — deferred, not omitted.
+> - **Power** has no supply-current or leakage measurement anywhere in `sim/`;
+>   the characterization task is #32. "Idle" means: all ring oscillators
+>   stopped and no bits being produced, with the block powered and register
+>   state retained — i.e. leakage plus static bias only. Both halves of the row
+>   are unevidenced, and the < 1 µA idle
+>   figure is order-of-magnitude questionable for an ungated few-kGE digital
+>   section at `ff`/+125 °C without power gating. [DR-0007] additionally records
+>   that its first-cut array size projects far more active power than this row
+>   allows — a tracked, unresolved conflict, not a rounding error.
+>
+> Note also that rows bind at **different** corners, and none at nominal: rate
+> at the slowest-RO corner, min-entropy per bit at the *least*-jitter
+> (minimum-`Q`) corner, power at the fastest/leakiest corner, time-to-first-valid
+> at the slowest-sampling corner.
 
 [DR-0001]: spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md
 [DR-0002]: spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
 [DR-0003]: spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
+[DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
