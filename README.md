@@ -34,3 +34,14 @@ sim/           testbenches + PVT corner results (ngspice)
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 measurements/  silicon characterization (empty until tape-out)
 ```
+
+Two conventions govern what lands in those directories:
+
+- **[`sim/README.md`](sim/README.md)** — the append-only evidence record
+  format. Every recorded simulation result carries its testbench/netlist
+  identity, ngspice version, P/V/T corner, and seeds; re-runs are new
+  records, never edits. A transient-noise result without its seeds is not
+  evidence.
+- **[`spec/decision-records/TEMPLATE.md`](spec/decision-records/TEMPLATE.md)**
+  — the numbered decision-record template (`DR-0001-<slug>.md`). Spec
+  changes go through a decision record.
