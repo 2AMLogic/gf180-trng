@@ -143,6 +143,22 @@ class BuildRecordTests(unittest.TestCase):
         text = report.render_result_section(self.record)
         self.assertIn("`vout`: 1.65", text)
 
+    def test_reproduce_section_pins_the_exact_recorded_supply(self):
+        # The point built in setUp is 3.3 V -- pass a non-nominal point here
+        # to check the regression this guards: omitting --supply/--supply-tol
+        # would silently re-sweep tb.nominal_supply_v +/- tb.supply_tolerance
+        # (3 points) instead of reproducing the single recorded corner.
+        offset_point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.63])[0]
+        record = report.build_record(
+            tb=self.tb, pdk=self.pdk, point=offset_point, results=self.results,
+            ngspice="ngspice-46", repo_root=Path(self.tmp.name), stem="2026-07-31-an-experiment-02",
+            completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.3, raw_dir=Path(self.tmp.name) / "raw",
+            git={"commit": "f" * 40, "dirty": False},
+        )
+        text = report.render_reproduce_section(record, self.tb)
+        self.assertIn("--supply 3.63 --supply-tol 0", text)
+
     def test_write_record_refuses_to_overwrite(self):
         records_dir = Path(self.tmp.name) / "records"
         path = report.write_record(self.record, self.tb, records_dir, ["a caveat"])

@@ -1,0 +1,30 @@
+{
+  "name": "inv-stage-noise",
+  "description": "Candidate A delay cell (plain 3.3 V CMOS inverter) at its trip point: .noise device-noise densities + small-signal gain.",
+  "netlist": "tb_inv_stage.sp",
+  "analysis_type": "noise",
+  "corners": ["mos"],
+  "tstop": "n/a (small-signal: .ac and .noise, 1 kHz - 100 GHz)",
+  "analyses": [
+    "op",
+    "ac dec 10 1e3 1e11",
+    "noise v(out) vn dec 10 1e3 1e11 1",
+    "noise v(out) vn dec 10 1e8 1e11 1",
+    "setplot noise2"
+  ],
+  "measure": {
+    "vtrip": "op1.v(out)",
+    "gain_1meg": "mag(ac1.v(out)[30])",
+    "gain_100meg": "mag(ac1.v(out)[50])",
+    "gain_1g": "mag(ac1.v(out)[60])",
+    "inoise_dens_1meg": "noise1.inoise_spectrum[30]",
+    "inoise_dens_10meg": "noise1.inoise_spectrum[40]",
+    "inoise_dens_100meg": "noise1.inoise_spectrum[50]",
+    "inoise_dens_1g": "noise1.inoise_spectrum[60]",
+    "inoise_dens_10g": "noise1.inoise_spectrum[70]",
+    "onoise_dens_1meg": "noise1.onoise_spectrum[30]",
+    "onoise_dens_1g": "noise1.onoise_spectrum[60]",
+    "onoise_rms_1k_100g": "noise2.onoise_total",
+    "onoise_rms_100meg_100g": "noise4.onoise_total"
+  }
+}

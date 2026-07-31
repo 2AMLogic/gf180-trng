@@ -1,0 +1,47 @@
+{
+  "name": "ro-inv-09stage-jitter",
+  "description": "Candidate A ring, 9 stages: transient-noise period jitter and jitter accumulation at a fixed injected per-stage noise density.",
+  "netlist": "tb_ro_inv_09stage_jitter.sp",
+  "analysis_type": "tran-noise",
+  "corners": [
+    "mos"
+  ],
+  "default_runs": 4,
+  "params": {
+    "vn_rms": "2.2361e-3",
+    "vn_dt": "1e-11"
+  },
+  "tstop": "300n",
+  "tstep": "1p (print step; ngspice's own LTE and the trnoise breakpoints at vn_dt set the actual solver step)",
+  "noise_params": "per-stage trnoise( NA=2.2361e-3 NT=1e-11 NALPHA=0 NAMP=0 ) -> injected white PSD 1e-16 V^2/Hz (1e-08 V/sqrt(Hz))",
+  "analyses": [
+    "tran 1p 300n",
+    "meas tran ts40 when v(xs40)=0 rise=5",
+    "meas tran ts60 when v(xs60)=0 rise=5",
+    "let tc = vector(129)",
+    "let k = 2",
+    "while k <= 130",
+    "  meas tran tk when v(xing)=0 rise=$&k",
+    "  let tc[k-2] = tk",
+    "  let k = k + 1",
+    "end",
+    "let tbar = (tc[128] - tc[0])/128",
+    "let r1 = (tc[1,128] - tc[0,127]) - 1*tbar",
+    "let r2 = (tc[2,128] - tc[0,126]) - 2*tbar",
+    "let r4 = (tc[4,128] - tc[0,124]) - 4*tbar",
+    "let r8 = (tc[8,128] - tc[0,120]) - 8*tbar",
+    "let r16 = (tc[16,128] - tc[0,112]) - 16*tbar",
+    "let r32 = (tc[32,128] - tc[0,96]) - 32*tbar"
+  ],
+  "measure": {
+    "period": "tbar",
+    "f_osc": "1/tbar",
+    "slew_v_per_s": "0.2*mean(v(vdd))/(ts60-ts40)",
+    "sigma_1": "sqrt(mean(r1*r1)/(1 - 1/128))",
+    "sigma_2": "sqrt(mean(r2*r2)/(1 - 2/128))",
+    "sigma_4": "sqrt(mean(r4*r4)/(1 - 4/128))",
+    "sigma_8": "sqrt(mean(r8*r8)/(1 - 8/128))",
+    "sigma_16": "sqrt(mean(r16*r16)/(1 - 16/128))",
+    "sigma_32": "sqrt(mean(r32*r32)/(1 - 32/128))"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "noise-floor-resistor",
+  "description": "Analytic anchor: ideal resistor-divider Johnson noise, fixes the meaning of ngspice's onoise_spectrum / onoise_total units.",
+  "netlist": "tb_rdiv.sp",
+  "analysis_type": "noise",
+  "corners": ["mos"],
+  "tstop": "n/a (small-signal .noise sweep 1 kHz - 1 MHz)",
+  "analyses": [
+    "noise v(nout) vn dec 10 1e3 1e6 1",
+    "setplot noise2"
+  ],
+  "measure": {
+    "onoise_dens_1k": "noise1.onoise_spectrum[0]",
+    "onoise_dens_1meg": "noise1.onoise_spectrum[30]",
+    "inoise_dens_1k": "noise1.inoise_spectrum[0]",
+    "onoise_total_1k_1meg": "onoise_total",
+    "inoise_total_1k_1meg": "inoise_total"
+  }
+}

@@ -12,7 +12,7 @@ import argparse
 import datetime as _dt
 import shutil
 import sys
-import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
@@ -77,7 +77,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--seeds", nargs="+", type=int, metavar="N",
         help="explicit seed list for a stochastic testbench (one run per seed, per PVT point)",
     )
-    parser.add_argument("-j", "--jobs", type=int, default=1, help="parallel ngspice runs (points run sequentially by default)")
+    parser.add_argument(
+        "-j", "--jobs", type=int, default=1,
+        help="parallel ngspice runs across the whole (PVT point x seed) task list "
+             "(default 1 = sequential). Records are still written in grid order.",
+    )
     parser.add_argument("--timeout", type=int, default=runner.DEFAULT_TIMEOUT_S, help="per-run ngspice timeout in seconds")
     parser.add_argument("--supersedes", default="", metavar="RECORD", help="prior record stem this run corrects or replaces")
     parser.add_argument("--no-write", action="store_true", help="run but do not record evidence (debugging only)")
@@ -139,11 +143,17 @@ def _fmt(value) -> str:
     return str(value)
 
 
-def _default_caveats(tb, point) -> list[str]:
+def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
     caveats = [
         f"Single corner ({point.corner.name} / {point.vdd:.2f} V / {point.temp_c:g} C). "
         "Says nothing about any other corner.",
     ]
+    if jobs > 1:
+        caveats.append(
+            f"Run concurrently (-j {jobs}); wall_time is the SUMMED per-run ngspice "
+            "cost for this point, not elapsed time, and is inflated relative to a "
+            "quiet machine by contention between concurrent runs."
+        )
     if str(tb.netlist) == str((tb.directory / tb.netlist.name)) and tb.netlist.parent == tb.directory:
         caveats.append(
             "Harness-bootstrap testbench: no design/ DUT schematic-derived netlist exists yet "
@@ -208,31 +218,60 @@ def run(args: argparse.Namespace) -> int:
     overall_ok = True
     written_paths: list[Path] = []
 
-    for i, point in enumerate(points, start=1):
-        wall_start = time.monotonic()
-        completed_utc = _dt.datetime.now(_dt.timezone.utc)
-        date_str = completed_utc.strftime("%Y-%m-%d")
+    completed_utc = _dt.datetime.now(_dt.timezone.utc)
+    date_str = completed_utc.strftime("%Y-%m-%d")
 
-        if args.no_write:
-            workdir = WORK_DIR / tb.slug / point.corner_id
+    if args.no_write:
+        stems: list[str] = ["" for _ in points]
+        workdirs = [WORK_DIR / tb.slug / p.corner_id for p in points]
+        for workdir in workdirs:
             if workdir.exists():
                 shutil.rmtree(workdir)
-        else:
-            stem = report.allocate_record_stem(RECORDS_DIR, date_str, tb.slug)
-            workdir = RECORDS_DIR / report.RAW_DIRNAME / stem
+    else:
+        # Allocated for the whole grid up front so concurrent points cannot
+        # race for the same append-only sequence number.
+        stems = report.allocate_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
+        workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
 
-        try:
-            results = runner.run_point(tb, pdk, point, workdir, seeds, timeout_s=args.timeout)
-        except NgspiceMissing as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return EXIT_ENVIRONMENT
-        except ValueError as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return EXIT_ENVIRONMENT
+    try:
+        plan = runner.plan_runs(tb, seeds)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
 
-        wall = time.monotonic() - wall_start
-        n_ok = sum(1 for r in results if r.status == "ok")
-        point_ok = n_ok == len(results)
+    jobs = max(1, int(args.jobs))
+    tasks = [(pi, seed, index) for pi in range(len(points)) for seed, index in plan]
+    results_by_point: dict[int, list] = {pi: [None] * len(plan) for pi in range(len(points))}
+    remaining_by_point: dict[int, int] = {pi: len(plan) for pi in range(len(points))}
+
+    def _work(task):
+        point_index, seed, run_index = task
+        result = runner.run_one(
+            tb, pdk, points[point_index], workdirs[point_index],
+            seed=seed, run_index=run_index, timeout_s=args.timeout,
+        )
+        return point_index, run_index, result
+
+    def _emit(point_index: int) -> None:
+        """Print + write the record for one PVT point as soon as every seed
+        it needs has completed.
+
+        Emitting per-point as results arrive (rather than after the whole
+        grid finishes) means a crash, timeout, or Ctrl-C partway through a
+        large -j grid still leaves every already-finished point recorded --
+        sim/README.md's evidence is meant to be an artifact of runs that
+        actually completed, not something withheld until the slowest point
+        in the grid also finishes.
+        """
+        nonlocal overall_ok
+        point = points[point_index]
+        i = point_index + 1
+        results = results_by_point[point_index]
+        # Summed per-run cost, not elapsed: under -j the runs overlap, and a
+        # wall_time that shrank because the machine had spare cores would be
+        # useless for the coverage/cost trade-offs sim/README.md wants it for.
+        wall = sum(r.seconds for r in results)
+        point_ok = all(r.status == "ok" for r in results)
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
@@ -252,11 +291,35 @@ def run(args: argparse.Namespace) -> int:
         if not args.no_write:
             record = report.build_record(
                 tb=tb, pdk=pdk, point=point, results=results, ngspice=ngspice,
-                repo_root=REPO_ROOT, stem=stem, completed_utc=completed_utc,
-                wall_seconds=wall, raw_dir=workdir, git=git, supersedes=args.supersedes,
+                repo_root=REPO_ROOT, stem=stems[point_index], completed_utc=completed_utc,
+                wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
+                supersedes=args.supersedes,
             )
-            path = report.write_record(record, tb, RECORDS_DIR, _default_caveats(tb, point))
+            path = report.write_record(
+                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs)
+            )
             written_paths.append(path)
+
+    try:
+        if jobs == 1:
+            for task in tasks:
+                point_index, run_index, result = _work(task)
+                results_by_point[point_index][run_index] = result
+                remaining_by_point[point_index] -= 1
+                if remaining_by_point[point_index] == 0:
+                    _emit(point_index)
+        else:
+            with ThreadPoolExecutor(max_workers=jobs) as pool:
+                futures = [pool.submit(_work, task) for task in tasks]
+                for future in as_completed(futures):
+                    point_index, run_index, result = future.result()
+                    results_by_point[point_index][run_index] = result
+                    remaining_by_point[point_index] -= 1
+                    if remaining_by_point[point_index] == 0:
+                        _emit(point_index)
+    except NgspiceMissing as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
 
     print()
     if args.no_write:

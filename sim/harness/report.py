@@ -25,6 +25,7 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import platform
+import statistics
 import subprocess
 from pathlib import Path
 
@@ -81,18 +82,28 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def allocate_record_stem(records_dir: Path, date: str, slug: str) -> str:
-    """Mint the next unused ``<date>-<slug>-<nn>`` stem. Append-only: never
-    reuses a sequence number, even across superseded records."""
+def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
+    """Mint ``count`` consecutive unused ``<date>-<slug>-<nn>`` stems.
+
+    Append-only: never reuses a sequence number, even across superseded
+    records. Allocating a whole PVT grid's stems in one call (rather than
+    one at a time as each point finishes) is what lets ``run_corners.py``
+    execute points concurrently without two workers racing for the same
+    sequence number.
+    """
     records_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{date}-{slug}-"
-    existing = sorted(records_dir.glob(f"{prefix}*.md"))
     max_n = 0
-    for path in existing:
+    for path in sorted(records_dir.glob(f"{prefix}*.md")):
         suffix = path.stem[len(prefix):]
         if suffix.isdigit():
             max_n = max(max_n, int(suffix))
-    return f"{prefix}{max_n + 1:02d}"
+    return [f"{prefix}{max_n + i:02d}" for i in range(1, count + 1)]
+
+
+def allocate_record_stem(records_dir: Path, date: str, slug: str) -> str:
+    """Mint the next unused ``<date>-<slug>-<nn>`` stem."""
+    return allocate_record_stems(records_dir, date, slug, 1)[0]
 
 
 def _voltage_label(vdd: float, nominal: float) -> str:
@@ -196,6 +207,7 @@ def build_record(
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
+        "corner_voltage_v": point.vdd,
         "corner_temperature": point.temp_c,
         "analysis_type": tb.analysis_type,
         "analysis_tstop": tb.tstop or "n/a (op-point analysis)",
@@ -294,9 +306,16 @@ def render_result_section(record: dict) -> str:
             lines.append(f"- `{name}`: {_fmt(values[0])}")
         else:
             mean = sum(values) / len(values)
+            # Sample standard deviation across seeds: the run-to-run spread
+            # sim/README.md requires alongside every multi-run figure. For a
+            # figure that is ITSELF a spread (a jitter sigma), this is the
+            # uncertainty on that sigma, and downstream consumers need it to
+            # know how many digits of it are real.
+            sd = statistics.stdev(values) if len(values) > 1 else 0.0
+            rel = f", {sd / abs(mean) * 100:.1f}% of mean" if mean else ""
             lines.append(
                 f"- `{name}`: mean {_fmt(mean)} over {len(values)} seeds "
-                f"(min {_fmt(min(values))}, max {_fmt(max(values))})"
+                f"(sd {_fmt(sd)}{rel}; min {_fmt(min(values))}, max {_fmt(max(values))})"
             )
     failed = [r for r in record["results"] if r.status != "ok"]
     if failed:
@@ -312,17 +331,25 @@ def render_result_section(record: dict) -> str:
 
 def render_reproduce_section(record: dict, tb: Testbench) -> str:
     lines = ["## How to reproduce", "", "```sh"]
+    # --supply/--supply-tol pin the EXACT recorded voltage (tolerance 0 ->
+    # supply_points() returns a single point equal to --supply): omitting
+    # these would default to tb.nominal_supply_v +/- tb.supply_tolerance,
+    # silently re-sweeping all 3 supply points instead of reproducing the
+    # one non-nominal corner (e.g. the +/-10% points) this record is for.
+    supply_args = (
+        f"--supply {_fmt(record['corner_voltage_v'])} --supply-tol 0 "
+    )
     if isinstance(record["seeds"], list) and record["seeds"]:
         for seed in record["seeds"]:
             lines.append(
                 f"python3 sim/run_corners.py {tb.slug} --corners {record['corner_process']} "
-                f"--temps {_fmt(record['corner_temperature'])} "
+                f"--temps {_fmt(record['corner_temperature'])} {supply_args}"
                 f"--seeds {seed} --no-write"
             )
     else:
         lines.append(
             f"python3 sim/run_corners.py {tb.slug} --corners {record['corner_process']} "
-            f"--temps {_fmt(record['corner_temperature'])} --no-write"
+            f"--temps {_fmt(record['corner_temperature'])} {supply_args}--no-write"
         )
     lines += ["```", ""]
     return "\n".join(lines)
