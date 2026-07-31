@@ -1,0 +1,11 @@
+{
+  "name": "smoke-op",
+  "description": "Harness end-to-end smoke test: a trivial resistor divider, op-point only.",
+  "netlist": "tb_smoke.sp",
+  "corners": ["tt"],
+  "temperatures_c": [27],
+  "measure": {
+    "vout": "v(out)",
+    "iq": "-i(vdd)"
+  }
+}

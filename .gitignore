@@ -2,6 +2,17 @@
 *.log
 __pycache__/
 .DS_Store
+
+# sim/ harness: machine-local PDK override (never committed, see sim/README.md
+# and sim/harness/pdk.py), and the scratch workdir for --no-write runs.
+sim/pdk.local.json
+sim/.work/
+
+# Evidence records ARE meant to be committed even though their raw output
+# uses the generically-ignored *.log/*.raw extensions above (sim/README.md:
+# "sim/ results are append-only evidence").
+!sim/records/raw/**/*.log
+!sim/records/raw/**/*.raw
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

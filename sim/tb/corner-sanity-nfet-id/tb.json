@@ -1,0 +1,9 @@
+{
+  "name": "corner-sanity-nfet-id",
+  "description": "Corner-sanity guardrail: NMOS Id(sat) must measurably shift with process corner.",
+  "netlist": "tb_id.sp",
+  "corners": ["mos"],
+  "measure": {
+    "id": "-i(vdd)"
+  }
+}
