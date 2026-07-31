@@ -1,12 +1,12 @@
 {
   "name": "loom-workspace",
-  "description": "Loom-managed workspace with AI development orchestration",
+  "description": "Loom-managed workspace. There is no JavaScript in this repo; these scripts are named entry points for the stdlib-only Python/shell self-checks, so agents, contributors and CI all invoke the same commands. check:ci is what .github/workflows/ci.yml runs; check:all adds the PDK-dependent sim stages, which need ngspice >= 46 and the gf180mcu PDK installed locally.",
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "echo 'No CI checks configured. Customize this script for your project.' && exit 0",
-    "check:all": "echo 'No checks configured. Customize this script for your project.' && exit 0",
-    "test": "echo 'No tests configured. Customize this script for your project.' && exit 0",
-    "lint": "echo 'No linter configured. Customize this script for your project.' && exit 0"
+    "lint": "python3 -m compileall -q sim && bash -n sim/selftest.sh",
+    "test": "python3 -m unittest discover -s sim/tests -t sim/tests",
+    "check:ci": "npm run lint && npm run test && sim/selftest.sh",
+    "check:all": "npm run lint && npm run test && sim/selftest.sh --require-pdk"
   }
 }
