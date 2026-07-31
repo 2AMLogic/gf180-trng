@@ -178,10 +178,18 @@ PDK-dependent stages detect the missing PDK and skip themselves on a hosted
 runner. The same set is `npm run check:ci` locally.
 
 The smoke run and the corner-sanity check are deliberately *not* on the PR
-path: they need ngspice and a multi-gigabyte PDK. Run them on a machine that
-has both — `sim/selftest.sh --require-pdk`, or `npm run check:all` — before
-committing an evidence record. The workflow file carries the full inventory of
-which self-checks run in CI and why the rest do not.
+path: they need ngspice and a multi-gigabyte PDK, and a pull request should not
+block on provisioning either. They run instead on a nightly schedule —
+[`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly.yml) builds
+the pinned ngspice release, installs the gf180mcu PDK at a pinned open_pdks
+commit, and runs `sim/selftest.sh --require-pdk`, the form that fails rather
+than skips. That job writes no evidence records and fails if `sim/records/`
+changes.
+
+The nightly run does not replace the local one: run `sim/selftest.sh
+--require-pdk` (or `npm run check:all`) on a machine that has ngspice and the
+PDK before committing an evidence record. `ci.yml` carries the full inventory
+of which self-checks run where, and why.
 
 Bootstrap testbenches under `sim/tb/` exercise the harness itself (not yet
 the TRNG design, which has no `design/` content as of this bootstrap):
