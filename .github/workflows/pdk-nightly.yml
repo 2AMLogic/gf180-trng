@@ -1,0 +1,164 @@
+name: PDK nightly
+
+# The PDK-dependent half of this repository's self-checks, deliberately kept
+# off the pull-request path.
+#
+# `sim/selftest.sh` stage 3 (end-to-end smoke run) and stage 4 (the
+# corner-sanity guardrail) need ngspice >= 46 and the gf180mcu PDK. On the PR
+# path they self-skip, so nothing exercises them unattended -- see the
+# self-check inventory at the top of ci.yml. This workflow provisions both and
+# runs `sim/selftest.sh --require-pdk`, which fails instead of skipping.
+#
+# It has no `push` / `pull_request` trigger by construction: a pull request
+# must never block on a source build plus a PDK download.
+#
+# Everything external is pinned so a version change is a visible commit rather
+# than silent drift:
+#
+#   NGSPICE_VERSION / NGSPICE_SHA256  the ngspice release tarball and its digest
+#   PDK_VERSION                       the open_pdks commit the PDK build is cut from
+#   CIEL_VERSION                      the PDK version manager itself
+#
+# Every pin is part of the cache key it belongs to, so a stale cache cannot mask
+# a bump.
+#
+# This job writes no evidence records. `sim/records/` is append-only and minted
+# deliberately by a human or agent with the PDK installed (sim/README.md), never
+# by CI: selftest is invoked without `--record`, and the last step fails the job
+# if anything appeared under `sim/records/` regardless.
+#
+# Note: GitHub disables scheduled workflows in a repository with no activity for
+# 60 days. If this stops running, re-enable it from the Actions tab.
+
+on:
+  schedule:
+    # 07:27 UTC daily. Off the hour on purpose -- the shared scheduler is
+    # congested on the hour and delays runs queued there.
+    - cron: "27 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One provisioning run at a time; never cancel one in flight, since a
+  # cancelled cold run leaves the caches unpopulated for the next.
+  group: pdk-nightly
+  cancel-in-progress: false
+
+jobs:
+  selftest:
+    name: sim/selftest.sh --require-pdk
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # README.md requires ngspice 46 or newer; ubuntu-latest ships older, so
+      # this is a source build of the pinned release.
+      NGSPICE_VERSION: "46"
+      NGSPICE_SHA256: "a0d1699af1940b06649276dcd6ff5a566c8c0cad01b2f7b5e99dedbb4d64c19b"
+      CIEL_VERSION: "2.6.1"
+      # open_pdks commit; the matching PDK build is published as
+      # https://github.com/fossi-foundation/ciel-releases/releases/tag/gf180mcu-<PDK_VERSION>
+      PDK_VERSION: "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      # The harness needs the device models under <variant>/libs.tech/ngspice,
+      # which ride in the release's `common` tarball (always fetched), plus the
+      # primitive library. No sim/tb testbench uses standard cells, IO or SRAM,
+      # so the rest of the ~5 GB default set is skipped; add `-l` entries here
+      # if one ever does.
+      PDK_LIBRARIES: "gf180mcu_fd_pr"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Resolve install prefix
+        run: echo "NGSPICE_PREFIX=${HOME}/.local/ngspice-${NGSPICE_VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Cache ngspice build
+        id: cache-ngspice
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NGSPICE_PREFIX }}
+          key: ngspice-${{ env.NGSPICE_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Build ngspice ${{ env.NGSPICE_VERSION }} from source
+        if: steps.cache-ngspice.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential bison flex
+          tarball="ngspice-${NGSPICE_VERSION}.tar.gz"
+          curl -fsSL --retry 3 --retry-delay 5 -o "${tarball}" \
+            "https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/${NGSPICE_VERSION}/${tarball}"
+          echo "${NGSPICE_SHA256}  ${tarball}" | sha256sum --check --strict
+          tar xzf "${tarball}"
+          cd "ngspice-${NGSPICE_VERSION}"
+          # Batch-mode simulator only: no X11, no readline. XSPICE is enabled
+          # because open_pdks device models may use its extensions.
+          ./configure \
+            --prefix="${NGSPICE_PREFIX}" \
+            --with-x=no \
+            --with-readline=no \
+            --enable-xspice \
+            --disable-debug
+          make -j"$(nproc)"
+          make install
+
+      - name: Put ngspice on PATH and enforce the minimum version
+        run: |
+          set -euo pipefail
+          echo "${NGSPICE_PREFIX}/bin" >> "${GITHUB_PATH}"
+          out="$("${NGSPICE_PREFIX}/bin/ngspice" --version)"
+          printf '%s\n' "${out}" | head -n 3
+          major="$(printf '%s\n' "${out}" | sed -n 's/.*ngspice-\([0-9][0-9]*\).*/\1/p' | head -n 1)"
+          if [ -z "${major}" ] || [ "${major}" -lt 46 ]; then
+            echo "FAIL: ngspice >= 46 required (README.md), found: ${major:-unparseable}"
+            exit 1
+          fi
+
+      - name: Cache gf180mcu PDK
+        id: cache-pdk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ciel
+          key: pdk-gf180mcu-${{ env.PDK_VERSION }}-${{ env.PDK_LIBRARIES }}-ciel${{ env.CIEL_VERSION }}
+
+      - name: Provision the gf180mcu PDK at the pinned open_pdks commit
+        env:
+          # Rate-limit headroom for the GitHub API calls ciel makes. httpx drops
+          # the Authorization header on the cross-host redirect to the release
+          # asset CDN, so the token never leaves github.com.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check "ciel==${CIEL_VERSION}"
+          # ciel is the maintained successor to volare -- same open_pdks build
+          # format and CLI shape, but volare's PDK release feed stopped in
+          # Aug 2025 while ciel's is current. It installs into ~/.ciel/<variant>,
+          # one of sim/harness/pdk.py's built-in search roots, so no
+          # GF180_PDK_PATH / PDK_ROOT wiring is needed. Leaving PDK_ROOT unset
+          # is load-bearing: ciel would install there instead if it were set.
+          ciel enable --pdk-family gf180mcu -l "${PDK_LIBRARIES}" "${PDK_VERSION}"
+
+      - name: Environment probe (must report ngspice OK and PDK OK)
+        run: python3 sim/run_corners.py --check-env
+
+      # --require-pdk turns the PR path's skip into a failure, so a broken
+      # ngspice or PDK provisioning step above shows up as a red job instead of
+      # a green run that quietly skipped stages 3-4.
+      - name: Harness acceptance test including the PDK-dependent stages
+        run: sim/selftest.sh --require-pdk
+
+      - name: Assert no evidence records were written
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain -- sim/records)" ]; then
+            echo "FAIL: this job modified sim/records/. Evidence records are"
+            echo "      append-only and minted deliberately (sim/README.md);"
+            echo "      CI must never write them."
+            git status --porcelain -- sim/records
+            exit 1
+          fi
+          echo "OK: sim/records/ untouched"
