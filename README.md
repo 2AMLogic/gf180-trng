@@ -1,16 +1,59 @@
 # gf180-trng
 
-**PRIVATE — 2AM Logic proprietary IP. Canary block (wave 1).**
+A true random number generator on **gf180mcu**, GlobalFoundries' open PDK,
+designed end to end by AI agents driving an entirely open-source analog flow:
+xschem for schematics, ngspice for simulation, and
+[klayout-tools](https://github.com/2AMLogic/klayout-tools) for layout.
 
-True random number generator on gf180mcu (open PDK), designed by agents driving
-[klayout-tools](https://github.com/2AMLogic/klayout-tools) and the
-open-source analog flow. Dual purpose, per the canary model: catalog
-inventory (eventually silicon-measured) and tool forcing-function
-(friction issues go to the public klayout-tools tracker).
+**Status: early. Nothing here has been fabricated, and nothing here has been
+measured on silicon.** As of this writing the repository contains an evidence-record
+convention, four proposed decision records, an entropy-source architecture
+survey, and a working PVT corner simulation harness with its first
+device-characterization results. There is no schematic in `design/` yet and no
+GDS in `layout/`. The specification table below is a **draft** the design has
+not yet been held to.
 
-Selection rationale: The one verified security-demand signal on this node (Tillitis-sponsored port); cheap to measure (matrix row 10).
+## Why this repo exists
 
-## Target specification (DRAFT — engineering to ratify, see issue #1)
+Two reasons, and the second is why it is public.
+
+**It is a real design.** A TRNG is a good first block for an open-PDK flow: it
+is small, it is analog where it matters, and its central claim — that the bits
+are actually random — cannot be hand-waved. It has to be simulated across
+process, voltage and temperature, and eventually measured.
+
+**It is a forcing function for the tools.** Every time the open-source flow is
+awkward, missing a capability, or wrong for the job, that friction gets filed
+as an issue against [klayout-tools](https://github.com/2AMLogic/klayout-tools)
+rather than worked around silently. A block that is actually being built finds
+tool gaps that a test case never will. Those issues are public, and they are
+part of the point.
+
+## Built by agents
+
+This repository is developed autonomously. Issues are triaged, specified,
+implemented, reviewed and merged by AI agents orchestrated with
+[Loom](https://github.com/rjwalters/loom); the commit history, the decision
+records, and the simulation evidence are all agent-authored. That is not a
+disclaimer — it is the thesis being tested. The interesting question is not
+whether an agent can write a netlist, it is whether an agent-run project can
+hold itself to an engineering standard of evidence over hundreds of commits.
+
+So the standard is enforced by structure rather than by supervision:
+
+- **No claim without a testbench.** Every recorded number comes from a
+  simulation that can be re-run.
+- **Every result carries its corner.** Process, voltage and temperature on
+  every record — no nominal-only results.
+- **Evidence is append-only.** A re-run is a new record, never an edit to an
+  old one. A stochastic result without its seeds is not evidence.
+- **Spec changes go through a decision record**, so that "the spec moved" is
+  always visible as a deliberate act rather than a quiet convenience.
+
+If the structure works, it should be legible from the outside. If it does not,
+that should be legible too.
+
+## Target specification (DRAFT — not yet ratified, see issue #1)
 
 | Parameter | Target | Stretch |
 |---|---|---|
@@ -34,17 +77,19 @@ Selection rationale: The one verified security-demand signal on this node (Tilli
 [DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
-seat → measured silicon over temperature. The SP 800-90B validation claim
-attaches to the last rung, not the first ([DR-0004]).
+seat → measured silicon over temperature. **The block is on the first rung.**
+The SP 800-90B validation claim attaches to the last rung, not the first
+([DR-0004]) — a simulated min-entropy estimate is not an entropy assessment,
+and this repository will not let one be read as the other.
 
 ## Layout
 
 ```
-spec/          ratified spec + decision records
-design/        schematics / netlists (xschem)
+spec/          spec + decision records
+design/        schematics / netlists (xschem)                 — empty
 sim/           testbenches + PVT corner results (ngspice)
-layout/        GDS + DRC/LVS reports (klayout-tools driven)
-measurements/  silicon characterization (empty until tape-out)
+layout/        GDS + DRC/LVS reports (klayout-tools driven)   — empty
+measurements/  silicon characterization                       — empty until tape-out
 ```
 
 Two conventions govern what lands in those directories:
@@ -58,14 +103,17 @@ Two conventions govern what lands in those directories:
   — the numbered decision-record template (`DR-0001-<slug>.md`). Spec
   changes go through a decision record.
 
-### `sim/` harness bootstrap
+### `sim/` harness
 
-The PVT corner runner is a stdlib-only Python CLI, bootstrapped from the
-harness pattern in [`2AMLogic/gf180-bandgap`](https://github.com/2AMLogic/gf180-bandgap)
-(gf180-bandgap#23) and adapted to emit into this repo's own ratified
-`sim/README.md` record format — see
-[`DR-0005`](spec/decision-records/DR-0005-sim-harness-record-granularity.md)
-for how the two conventions reconcile.
+The PVT corner runner is a stdlib-only Python CLI. It emits into this repo's
+`sim/README.md` evidence-record format — one record per PVT point — as
+reconciled in
+[`DR-0005`](spec/decision-records/DR-0005-sim-harness-record-granularity.md).
+
+You will need the gf180mcu PDK (via
+[open_pdks](https://github.com/RTimothyEdwards/open_pdks) or the
+[IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) container) and
+ngspice 46 or newer. Nothing else — the harness is stdlib-only Python 3.
 
 ```sh
 # One-time PDK check (no hardcoded paths -- see sim/harness/pdk.py for the
@@ -94,3 +142,8 @@ automated guardrail behind `sim/tools/corner_sanity_check.py`), and
 `nfet-mismatch-seed` (demonstrates per-run seed control and exact
 reproducibility for stochastic analyses — see `sim/README.md`'s "no seed,
 no evidence" rule).
+
+## License
+
+[Apache-2.0](LICENSE). `klayout-tools`, which this project drives, is
+MIT-licensed and separately maintained.

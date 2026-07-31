@@ -107,7 +107,7 @@ estimate**, not an entropy assessment. Concretely:
 - **Mandatory labelling.** Every such number carries the label
   *"simulation-derived design estimate; not an SP 800-90B entropy
   assessment"* wherever it appears — evidence record, summary, spec, or
-  catalog entry.
+  datasheet.
 - **Corner.** The headline min-entropy figure is the **worst-corner** value per
   #13 (fast / +10 % / −40 °C is the expected worst corner), not the nominal
   value — consistent with DR-0003's two-binding-corner structure and with
@@ -148,7 +148,7 @@ same artifact as Tier 1 item 3.
 
 - **What**: Leave the row unchanged and let downstream issues interpret it.
 - **Why plausible**: It is the recognizable industry claim, it is what a
-  catalog buyer looks for, and it sets an unambiguously high bar.
+  integrator looks for, and it sets an unambiguously high bar.
 - **Why rejected**: It is unachievable pre-silicon by construction, so the row
   would be permanently unmet and would give #10/#12 no scoping signal at all —
   the exact ambiguity #6 exists to remove. Worse, an unqualified row invites a
@@ -204,13 +204,13 @@ same artifact as Tier 1 item 3.
   - The quality row becomes a claim the project can actually meet and defend,
     which is the point of a canary block whose product is verification.
   - The mandatory labelling rule makes it structurally hard for a simulation
-    number to be laundered into a certification claim in a summary or catalog
-    entry.
+    number to be laundered into a certification claim in a summary or
+    datasheet.
   - Nothing is foreclosed: the vetted-conditioner and full-suite paths remain
     reachable via superseding DRs if area or cost analysis changes the picture.
 
 - **Negative / accepted cost**:
-  - The catalog quality row is weaker-sounding than "90B validation pass". That
+  - The quality row is weaker-sounding than "90B validation pass". That
     is the honest state of the block until silicon, and the maturity ladder
     already communicates staged claims.
   - Choosing a non-vetted conditioner means the eventual output-entropy
