@@ -186,6 +186,21 @@ Concretely:
     (`sim/tb/sampler-dff-setup-hold/`) is characterized against an ideal
     clock edge, not against a realistic external clock's own jitter.
 
+- **Evidence as of 2026-08-01** (added with this record's implementing PR, so
+  the claim in item 4 above is not left as an assertion): the
+  setup/hold/metastability obligation this decision creates has been measured
+  over the full 45-point PVT grid,
+  `sim/records/2026-08-01-sampler-dff-setup-hold-01…45.md`. `clk`→`Q` is
+  82.3 ps (`ff`/−40 °C/3.63 V) to 203.0 ps (`ss`/+125 °C/2.97 V — DR-0003's
+  rate-binding corner), the asynchronous reset takes at every point, and **no
+  point shows a metastable hang**: an edge struck at zero setup *and* zero
+  hold leaves `Q` within 0.33 mV of a rail 1 ns later and within 6.4 µV at
+  100 ns. That last one is the property item 4 actually depends on, since a
+  fixed external clock guarantees the data edge will sometimes land inside the
+  aperture. Setup time is bracketed to under 500 ps everywhere, crossing 59 ps
+  inside the grid (captured at 59 ps in 13 of 45 points, all fast and/or cold).
+  See `design/README.md` § "Setup/hold and metastability, measured".
+
 - **Follow-up required**:
   - **#13**: use the `Q ∝ σ₁²/T₀³` metric and the `ss`/−40 °C/3.63 V minimum
     named above when identifying the process letter for the entropy-binding
