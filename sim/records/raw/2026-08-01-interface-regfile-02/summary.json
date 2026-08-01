@@ -1,0 +1,44 @@
+{
+  "scenario": "ht-gate",
+  "why": "DR-0002's latch-and-gate: a failure latches HT_FAIL_*, flushes the conditioned FIFO and deasserts streaming valid, while RAW_DATA keeps working; recovery needs an explicit write-1-to-clear plus a fresh start-up-test pass",
+  "seed": 2,
+  "declared_h_per_bit": "0.5",
+  "source_p_one_target": "0.292893218813",
+  "source_threshold_u32": 1257966796,
+  "raw_samples": 8192,
+  "startup_samples": 1024,
+  "startup_windows_run": 2,
+  "first_conditioned_word_at_cycle": 1319,
+  "raw_samples_before_first_conditioned_word": 1280,
+  "data_words_read": 21,
+  "raw_words_read": 255,
+  "raw_words_packed": 255,
+  "cond_words_offered": 21,
+  "flush_events": 2,
+  "words_dropped_by_flush": 0,
+  "raw_bits_dropped_by_flush": 12,
+  "status_final": "0x00000010",
+  "status_ht_alarm": 0,
+  "status_startup": 0,
+  "status_cond_ready": 1,
+  "status_ovf_data": 0,
+  "status_ovf_raw": 0,
+  "status_data_level": 0,
+  "status_raw_level": 0,
+  "data_stream_sha256": "1ac048226117e985e485c3e72d03d4e79085b738fdcf5fa6d860aae101b07e09",
+  "raw_stream_sha256": "b6e4ff3c240af5c4e095d22c2e60815b86111fca0c48ea9d4a3274b173baa9b4",
+  "events": [
+    {
+      "sample": 3000,
+      "event": "ht_fail_rct pulse"
+    },
+    {
+      "sample": 3500,
+      "event": "write-1-to-clear HT_FAIL_RCT"
+    }
+  ],
+  "wall_time_s": 1.2551600933074951,
+  "raw_words_packed_while_alarmed": 16,
+  "raw_words_read_while_alarmed": 16,
+  "data_words_read_while_alarmed": 0
+}
