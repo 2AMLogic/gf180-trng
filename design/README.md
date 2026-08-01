@@ -7,11 +7,13 @@ they are committed so that every evidence record under `sim/records/` can name
 a `netlist.path` /`netlist.sha` that a reader can actually fetch, and they are
 regenerated — never hand-edited — by `design/netlist.py`.
 
-The digital half lives beside it in two directories, each a behavioural model
-plus synthesisable RTL with its own README:
-[`design/conditioner/`](conditioner/) (the post-processing stage) and
+The digital half lives beside it in three directories, each a behavioural
+model plus synthesisable RTL with its own README:
+[`design/conditioner/`](conditioner/) (the post-processing stage),
+[`design/health_test/`](health_test/) (the on-die RCT/APT health tests and
+the start-up test, #11), and
 [`design/interface/`](interface/) (the register file, output FIFOs,
-`OUT_MODE` mux and gate/flush machine). Neither has a schematic or a netlist,
+`OUT_MODE` mux and gate/flush machine). None has a schematic or a netlist,
 so `design/netlist.py` neither reads nor checks them; the boundary between the
 analog and digital halves is the raw tap, per
 [`DR-0009`](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md).

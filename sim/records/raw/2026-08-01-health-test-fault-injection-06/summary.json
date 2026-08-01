@@ -1,0 +1,21 @@
+{
+  "kind": "startup-gate",
+  "n_bits": 2335,
+  "declared_h": "0.5",
+  "seed": 30,
+  "c_rct": 81,
+  "c_apt": 824,
+  "w": 1024,
+  "startup_passed_cleanly": true,
+  "startup_counter_was_reset_by_failure": true,
+  "restart_discarded_the_window": true,
+  "fresh_window_passed_after_restart": true,
+  "phase1_startup_events": [
+    1023
+  ],
+  "phase2_startup_events": [],
+  "phase2_rct_failures": 1,
+  "wall_time_s": 0.44558191299438477,
+  "scenario": "startup-gate",
+  "why": "DR-0002 Sec.4: an RCT/APT failure must reset the start-up counter, and startup_req must discard any in-flight window and re-arm it -- ht_startup_pass must only ever pulse after a full STARTUP_SAMPLES run with neither test failing"
+}
