@@ -90,11 +90,23 @@ def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -
     one at a time as each point finishes) is what lets ``run_corners.py``
     execute points concurrently without two workers racing for the same
     sequence number.
+
+    An already-allocated stem is counted as used from the moment its
+    ``raw/<stem>/`` directory exists, not from when its ``.md`` is written.
+    A record's ``.md`` only appears when its point finishes, so scanning
+    ``.md`` alone would hand the same number to a *second* ``run_corners.py``
+    invocation started while the first is still simulating -- and long
+    transient-noise runs (hours per PVT point) make running one corner per
+    invocation, concurrently, the normal way to cover a grid. The loser of
+    that race used to discover the collision only at ``write_record`` time,
+    i.e. after paying for the whole run.
     """
     records_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{date}-{slug}-"
     max_n = 0
-    for path in sorted(records_dir.glob(f"{prefix}*.md")):
+    candidates = list(records_dir.glob(f"{prefix}*.md"))
+    candidates += [p for p in (records_dir / RAW_DIRNAME).glob(f"{prefix}*") if p.is_dir()]
+    for path in candidates:
         suffix = path.stem[len(prefix):]
         if suffix.isdigit():
             max_n = max(max_n, int(suffix))
