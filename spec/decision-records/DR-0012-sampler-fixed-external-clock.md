@@ -1,5 +1,5 @@
 ---
-dr: DR-0011-sampler-fixed-external-clock
+dr: DR-0012-sampler-fixed-external-clock
 title: Clock the sampler from a fixed external clock, not a divider on either entropy-source ring
 status: Accepted
 date: 2026-08-01
@@ -9,7 +9,7 @@ superseded_by: n/a
 related: "#9 (origin), #7/PR #45 (ro_array_core), #8 (conditioner, already fixes the clk/rst_n/raw_bit/raw_valid interface this record's cell drives), #13 (worst-corner analysis, blocked on this record's corner-metric selection); DR-0001 (raw tap), DR-0003 (raw rate, ratified), DR-0007 §4/§6 (corner metric, binding obligation), DR-0010 (proposed raw-rate row, not ratified); design/README.md §The sampler (#9)"
 ---
 
-# DR-0011: Clock the sampler from a fixed external clock, not a divider on either entropy-source ring
+# DR-0012: Clock the sampler from a fixed external clock, not a divider on either entropy-source ring
 
 ## Status
 
@@ -17,6 +17,15 @@ related: "#9 (origin), #7/PR #45 (ro_array_core), #8 (conditioner, already fixes
   scopes this choice to #9 and names it binding on #13; this record is the
   short decision record DR-0007 §6 recommends (not strictly mandatory, but
   called out because the choice gates a downstream worst-corner analysis).
+- 2026-08-01: Renumbered `DR-0011` → `DR-0012` before merge. This record was
+  drafted as DR-0011 on a branch that forked before
+  [#47](https://github.com/2AMLogic/gf180-trng/pull/47) merged; #47 took
+  DR-0011 for the metastability-hybrid tap's claims and scope. Two numbers
+  were allocated in parallel from two branches, and the one that merged first
+  keeps its number. Nothing in the decision changed. Simulation records and
+  testbench headers written before the renumber are cited under the correct
+  number here; `design/README.md` §Erratum records the two testbench-source
+  SHAs the renumber moved.
 
 ## Context
 

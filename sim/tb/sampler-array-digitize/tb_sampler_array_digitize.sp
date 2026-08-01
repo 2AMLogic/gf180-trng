@@ -62,7 +62,7 @@
 * 1 Mbps clock period is sim/tb/sampler-dff-setup-hold/'s job, across the
 * full PVT grid, where it is affordable because the rings are not present.
 *
-* Per DR-0011 the sample clock is a fixed external clock with no frequency
+* Per DR-0012 the sample clock is a fixed external clock with no frequency
 * relationship to either ring, so retargeting the rate is the `tclk` param
 * and nothing else. That is the decision, not a limitation of this deck.
 *

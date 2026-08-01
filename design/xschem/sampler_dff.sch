@@ -45,7 +45,7 @@ never hands the slave a value the master disagrees with.
 
 Sampler clock source (binding decision): clk is a FIXED EXTERNAL clock,
 not divided down from either entropy-source ring -- see design/README.md
-and spec/decision-records/DR-0011-sampler-fixed-external-clock.md for the
+and spec/decision-records/DR-0012-sampler-fixed-external-clock.md for the
 full argument. In short: deriving the sample clock from a ring that also
 feeds the XOR node this cell digitizes risks a deterministic beat between
 source and sampler (the very thing the original issue calls out to

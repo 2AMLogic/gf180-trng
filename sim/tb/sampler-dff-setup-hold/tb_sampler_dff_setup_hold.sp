@@ -8,7 +8,7 @@
 * the sampler on a real, noisy analog xo swing, but at a clock frequency
 * scaled up from the 1 Mbps target for transient-noise cost reasons (see
 * that testbench's own header). This testbench answers the complementary,
-* cheaper question DR-0011 leaves to it: does sampler_dff itself resolve
+* cheaper question DR-0012 leaves to it: does sampler_dff itself resolve
 * correctly at the REAL 1 Mbps clock period, across the full PVT grid? xo
 * swings rail to rail with fast edges (design/README.md), so D here is an
 * ideal 1 ps digital transition -- this testbench characterizes the
@@ -17,7 +17,7 @@
 * sampling flip-flop's metastability behavior is part of the entropy
 * story, not just a hazard" note is about.
 *
-* Because sampler_core.clk is a fixed external clock (DR-0011), meeting
+* Because sampler_core.clk is a fixed external clock (DR-0012), meeting
 * DR-0003's raw-rate row reduces to this testbench's question: does the
 * sampler resolve correctly at the target clock rate, at every corner? A
 * clock with no relationship to either ring makes R_raw = f(clk) by

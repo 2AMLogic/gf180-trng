@@ -23,7 +23,7 @@ a second bespoke circuit.
 
 clk / rst_n are the block's FIXED EXTERNAL sample clock and its async
 active-low reset -- see sampler_dff.sch and
-spec/decision-records/DR-0011-sampler-fixed-external-clock.md for why the
+spec/decision-records/DR-0012-sampler-fixed-external-clock.md for why the
 clock is external rather than divided down from either ring. This
 schematic contains no divider and no clock-generation circuitry; that is
 the point of the decision, not an omission.
