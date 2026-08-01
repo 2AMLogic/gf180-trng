@@ -1,0 +1,29 @@
+{
+  "name": "jitter-estimator-calibration",
+  "description": "Calibration anchor for DR-0012: the already-calibrated trnoise() source pushed through a comparator bit-extraction step and a most-common-value min-entropy point estimator, at three bias levels chosen so the closed-form P(bit=1)=Phi(bias/NA) gives H in {1.0, 0.5, 0.1} bit/sample. See sim/tools/jitter_estimator_calibration_check.py for the derivation and the --check comparison.",
+  "netlist": "tb_jitter_estimator_cal.sp",
+  "analysis_type": "tran-noise",
+  "corners": ["tt"],
+  "default_runs": 4,
+  "params": {
+    "vn_rms": "2.2361e-3",
+    "vn_dt": "1e-11"
+  },
+  "tstop": "4u",
+  "tstep": "10p",
+  "noise_params": "trnoise(NA=2.2361e-3 NT=1e-11 NALPHA=0 NAMP=0); same S/H mapping validated in sim/tb/trnoise-calibration (S_w = 2*NA^2*NT). Each held sample v(nw) ~ N(0, NA^2); thresholding v(nw)+bias against 0 gives P(bit=1) = Phi(bias/NA) exactly.",
+  "analyses": [
+    "tran 10p 4u",
+    "linearize",
+    "let bit_h100 = (v(nw) + 0) gt 0",
+    "let bit_h050 = (v(nw) + 1.2185674704539796e-3) gt 0",
+    "let bit_h010 = (v(nw) + 3.351393504430205e-3) gt 0"
+  ],
+  "measure": {
+    "p1_h100": "mean(bit_h100[100,400000])",
+    "p1_h050": "mean(bit_h050[100,400000])",
+    "p1_h010": "mean(bit_h010[100,400000])",
+    "rms_check": "sqrt(mean(v(nw)[100,400000]*v(nw)[100,400000]))",
+    "n_samples": "length(v(nw))"
+  }
+}
