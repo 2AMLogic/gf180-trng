@@ -1,0 +1,26 @@
+{
+  "name": "sampler-dff-reset-current-xsv",
+  "description": "sampler_dff's xsv instance (design/sampler_core.spice: raw_valid path, D tied permanently to vdd), biased at D=vdd, clk=0, rst_n=0 -- the reset-asserted, clk-low phase where the input transmission gate and the reset pulldown both conduct (#48): static supply current of the resulting continuous contention path.",
+  "netlist": "tb_sampler_dff_reset_current_xsv.sp",
+  "design_netlist": "design/sampler_core.spice",
+  "analysis_type": "dc",
+  "corners": [
+    "mos"
+  ],
+  "tstop": "n/a (operating-point analysis: no time axis)",
+  "analyses": [
+    "op"
+  ],
+  "measure": {
+    "i_reset_xsv_a": "-i(vdd)",
+    "p_reset_xsv_w": "-i(vdd)*v(vdd)",
+    "v_q": "v(q)",
+    "v_m": "v(xdut.m)",
+    "v_rst": "v(xdut.rst)"
+  },
+  "caveats": [
+    "Models the WORST-CASE phase relationship (clk held at 0 for the whole reset assertion), not any specific power-on sequence -- how long reset is actually asserted, and at what clk phase, is a system-level timing question #26 owns, not measured here.",
+    "This is deliberate resistive contention between two simultaneously-ON pass devices, not subthreshold/junction leakage -- do not compare this current directly against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ figures as if they were the same phenomenon.",
+    "xsv's D is wired directly to vdd in design/sampler_core.spice, so this DC bias is exactly xsv's real condition during a clk-low, reset-asserted interval -- not an approximation of it."
+  ]
+}

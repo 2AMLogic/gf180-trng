@@ -1,0 +1,34 @@
+{
+  "name": "sampler-dff-reset-current-xsb",
+  "description": "sampler_dff's xsb instance (design/sampler_core.spice: raw_bit path, D = xo, the oscillating entropy XOR node), with clk=0 and rst_n=0 held for the whole window and D driven by a representative 500 ps square wave -- the reset-asserted, clk-low phase where the input transmission gate and the reset pulldown both conduct (#48): mean supply current of the resulting duty-cycled contention path.",
+  "netlist": "tb_sampler_dff_reset_current_xsb.sp",
+  "design_netlist": "design/sampler_core.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "mos"
+  ],
+  "tstop": "4.6n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 4.6n",
+    "meas tran qint1 find v(qint) at=0.5n",
+    "meas tran qint2 find v(qint) at=2.5n",
+    "meas tran qint3 find v(qint) at=4.5n",
+    "meas tran qout_rst find v(q) at=0.5n",
+    "let cq = 1e-9"
+  ],
+  "measure": {
+    "i_reset_xsb_a": "cq*(qint3-qint1)/4e-9",
+    "p_reset_xsb_w": "cq*(qint3-qint1)/4e-9*mean(v(vdd))",
+    "i_reset_xsb_first_a": "cq*(qint2-qint1)/2e-9",
+    "i_reset_xsb_last_a": "cq*(qint3-qint2)/2e-9",
+    "q_v": "qout_rst"
+  },
+  "caveats": [
+    "D is an ideal 500 ps (2 GHz) square wave, not the real ro_array_core -- deliberately, so this record does not conflate the reset-window conduction mechanism's PVT dependence with the ring's own frequency PVT dependence. See the testbench header for why the result should not depend on the chosen frequency (checked via i_reset_xsb_first_a vs i_reset_xsb_last_a, not assumed).",
+    "Models the WORST-CASE phase relationship (clk held at 0 for the whole window), not any specific power-on sequence -- how long reset is actually asserted, and at what clk phase, is a system-level timing question #26 owns, not measured here.",
+    "This is deliberate resistive contention between two simultaneously-ON pass devices, not subthreshold/junction leakage -- do not compare this current directly against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ figures as if they were the same phenomenon.",
+    "The 50% duty cycle assumed by driving D symmetrically is representative, not measured from xo -- xo's own duty cycle (rise/fall symmetry of the XOR node) is not characterized by this testbench or any other in this repository.",
+    "D's driving current is idealized as a zero-impedance source powered from the same vdd rail (fq/fqd both integrate into the same charge node -- see the testbench header): a real xor2 output stage has finite ON resistance, which this record does not include."
+  ]
+}
