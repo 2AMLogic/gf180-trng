@@ -179,6 +179,10 @@ def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
             f"the actually-loaded model section is {', '.join(tb.extra_lib_sections)} "
             "(see pdk.models), which replaces the plain per-family corner sections."
         )
+    # Testbench-specific method limits, declared once in tb.json rather than
+    # re-typed into every record of a PVT sweep. sim/README.md: "Stating a
+    # limit is not a weakness in the record; an unstated limit is a defect."
+    caveats.extend(tb.caveats)
     return caveats
 
 

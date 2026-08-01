@@ -71,6 +71,7 @@ TOP_CELLS = (
     "ro_array_core_meta",
     "ro_array_sanity",
     "ro_meta_tap",
+    "sampler_core",
 )
 
 XSCHEM = "xschem"

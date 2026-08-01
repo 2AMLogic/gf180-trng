@@ -25,7 +25,18 @@ record is only meaningful if it provably comes from the schematic it claims to,
 and `--check` is what makes that provable rather than asserted. See the script's
 own module docstring for how it makes xschem's output machine-independent
 (generated rc file, PDK resolved through the same chain `sim/harness/pdk.py`
-uses, absolute paths rewritten to repo-relative).
+uses, absolute paths rewritten to repo-relative, and SPICE continuation lines
+re-wrapped at a column the script owns).
+
+That last one exists because xschem 3.4.4 and 3.4.7 emit byte-identical netlist
+*content* for these schematics but break long device lines onto `+`
+continuations at different columns. Left alone that made `--check` a test of the
+developer's distro rather than of the schematics: the same commit passed on one
+xschem and failed on the other, with nothing having changed. Since SPICE joins
+`+` continuations back into one logical line before parsing, the wrap point
+carries no information, so `netlist.py` now discards xschem's choice and applies
+its own. Content changes still fail `--check` loudly, which is the part worth
+being loud about.
 
 ---
 
@@ -44,9 +55,12 @@ uses, absolute paths rewritten to repo-relative).
 | `meta_arb` | the tap's metastable element: a cross-coupled NAND2 SR latch, symmetric by construction |
 | `ro_meta_tap` | the metastability-hybrid **stretch tap** (issue #43, [`DR-0011`](../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md)): a self-timed matched-delay strobe off an RO transition into `meta_arb`, on its own supply pin `vddm` |
 | `ro_array_core_meta` | `ro_array_core` (unmodified, instantiated) plus `ro_meta_tap` hanging off `xo`; exists only to simulate the tap in situ, nothing on `main` instantiates it by default |
+| `sampler_dff` | **the sampler/digitizer**: a transmission-gate master-slave D flip-flop, positive-edge, async active-low reset — the cell that turns `xo`'s analog swing into a logic-level raw bit |
+| **`sampler_core`** | **the sampler, wired to the source**: `ro_array_core` + two `sampler_dff` (one for `raw_bit`, one for the `raw_valid` reset-release indicator), clocked by a fixed external clock — see [The sampler](#the-sampler-9) below |
 
 Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`,
-`design/meta_arb.spice`, `design/ro_meta_tap.spice`, `design/ro_array_core_meta.spice`.
+`design/meta_arb.spice`, `design/ro_meta_tap.spice`, `design/ro_array_core_meta.spice`,
+`design/sampler_core.spice`.
 
 ---
 
@@ -220,9 +234,10 @@ size than the one in `design/`, and exits non-zero if the inequality fails.
 `xo` is the noise source's output, not the block's raw tap. DR-0001 puts the raw
 tap at the **sampler** output, after digitisation, and no per-ring signal leaves
 `ro_array_core` at all — which is why `ro_array_sanity`, and not
-`ro_array_core`, is the cell with `ro*` observation pins. The sampler and its
-clock are #9's, and #9's choice of clock source selects which corner metric
-DR-0007 §4 applies; nothing here assumes one.
+`ro_array_core`, is the cell with `ro*` observation pins. The sampler is
+`sampler_core` (see [The sampler](#the-sampler-9) below), and its clock source
+— a fixed external clock, per DR-0011 — pins DR-0007 §4's corner metric to
+`Q ∝ σ₁²/T₀³`, minimum at `ss`/−40 °C/3.63 V.
 
 ### Per-ring liveness
 
@@ -289,6 +304,90 @@ objections head-on rather than assuming them away:
   `sim/tb/meta-arb-regeneration/`, `sim/tb/ro-meta-tap-skew/`, each at
   `ff`/−40 °C/3.63 V, `ss`/−40 °C/3.63 V and `tt`/27 °C/3.30 V — see
   `sim/records/2026-08-01-{ro-array-core-meta-power,meta-arb-regeneration,ro-meta-tap-skew}-{01,02,03}.md`.
+
+## The sampler (#9)
+
+`xo` is not a chip output. The raw tap DR-0001 requires is the **sampler's**
+output, and that is what `sampler_core` produces: `ro_array_core` plus two
+`sampler_dff` instances, one registering `xo` into `raw_bit` and one
+registering a constant `1` into `raw_valid` (a one-cycle reset-release
+indicator sharing the same clock and cell as the data path, rather than a
+second bespoke circuit). The port shape — `clk` / `rst_n` / `raw_bit` /
+`raw_valid` — matches [`design/conditioner/README.md`](conditioner/README.md)'s
+already-fixed input contract exactly.
+
+### `sampler_dff`: why a transmission-gate master-slave DFF
+
+The sampling flip-flop's own metastability behavior is part of the entropy
+story, not just a hazard to be designed around — the original issue is
+explicit about this. A static, fully-complementary transmission-gate
+master-slave DFF (the standard "TGFF" topology: two opposite-phase TG
+latches, each closed by a *second* inverter feeding its hold loop rather
+than a single inverter looped directly through a TG — the one-inverter form
+is not bistable, it settles at a metastable half-rail voltage by
+construction, not merely under adversarial timing) was chosen for the same
+reason `xor2` is fully static and complementary rather than pass-transistor:
+the node that decides the raw bit must not have its drive strength depend on
+its own data, and its resolution behavior must be characterizable rather
+than assumed. Reset is async and reset-dominant (oversized pull devices on
+both storage nodes, active regardless of clock phase), because a sampler
+that can power up in an undefined state is not a sampler with a defined raw
+tap.
+
+### Clock-source decision (binding, DR-0011): fixed external, not RO-divided
+
+DR-0007 §6 makes this issue's clock-source choice binding: it selects which
+corner metric §4 applies, so #13's worst-corner analysis cannot proceed
+without it. **`sampler_core.clk` is a fixed external clock — not divided down
+from either entropy-source ring.**
+
+Two consequences drive the choice, both argued in full in
+[`DR-0011`](../spec/decision-records/DR-0011-sampler-fixed-external-clock.md):
+
+- **Independence.** Deriving the sample clock from one of the two rings that
+  also feed the XOR node the sampler digitizes creates exactly the
+  deterministic source/sampler relationship the original issue calls out to
+  avoid — the sampled ring's own jitter would partially cancel between its
+  role as entropy source and its role as timing reference. An external clock
+  with no frequency relationship to either ring has no such coupling.
+- **Corner-metric resolution.** DR-0007 §4: with a fixed clock the entropy
+  metric is `Q ∝ σ₁²/T₀³` (measured minimum at `ss`/−40 °C/3.63 V, ~1.5× worse
+  than `ff`); with an RO-divided clock it collapses to `Q ∝ σ₁/T₀`, under
+  which `ss` and `ff` are within 4 % — unresolvable at this repository's
+  4-seed grid. The fixed-clock choice is the one that leaves #13 a corner to
+  find.
+
+The cost is an external clock pin instead of an on-chip divider chain — this
+schematic contains no clock-generation circuitry, which is the decision, not
+an omission.
+
+### Rate target: DR-0003's ratified `> 1 Mbps`, not DR-0010's proposed `> 500 bps`
+
+Two rate figures are live in this repository at once. [`DR-0003`](../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md)
+(`> 1 Mbps` raw, binding at `ss`/−10 %/+125 °C) is the **ratified** README
+figure as of this writing. [`DR-0010`](../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md)
+(`> 500 bps`) is **proposed**, not ratified — its own §Status is explicit that
+the README edit is deliberately withheld until an operator accepts it. This
+issue targets **DR-0003's ratified 1 Mbps**, and does not pre-empt DR-0010's
+acceptance.
+
+The fixed-external-clock architecture makes re-targeting later a one-line
+change, not a redesign: because `clk` is external and carries no frequency
+relationship to either ring, `R_raw = f(clk)` by construction, at every
+corner — retargeting 1 Mbps to 500 bps (or anything else) is choosing a
+different external clock frequency, and does not touch the clock-source
+decision above. The two questions the original issue's curation flagged as
+independent (clock source, target rate) stay independent in the schematic:
+nothing here assumes 1 Mbps beyond the clock frequency `sim/tb/sampler-dff-setup-hold/`
+happens to drive.
+
+One consequence of the fixed-clock choice is worth stating plainly: DR-0003's
+"report `R_raw` at the binding corner, sustained" obligation is satisfied
+*architecturally* rather than by a long transient-noise run. Because the
+sample rate does not depend on ring speed, `R_raw` equals the external clock
+frequency at every corner as long as the sampler resolves correctly there —
+which is a setup/hold/metastability question, not a rate-measurement one, and
+is exactly what `sim/tb/sampler-dff-setup-hold/` is for.
 
 ## The sanity vehicle
 
@@ -384,6 +483,8 @@ documented error. The three things that close this out instead:
 | [`sim/tb/ro-array-core-meta-power/`](../sim/tb/ro-array-core-meta-power/) | the shipped array with the metastability tap attached, measurement-for-measurement identical to `ro-array-core-power/`, plus the tap's own supply current on `vddm` |
 | [`sim/tb/meta-arb-regeneration/`](../sim/tb/meta-arb-regeneration/) | the tap's arbiter (`meta_arb`): regeneration time constant via the Kinniment/Chester decade-pair method |
 | [`sim/tb/ro-meta-tap-skew/`](../sim/tb/ro-meta-tap-skew/) | the tap (`ro_meta_tap`): trim-load-to-skew sensitivity and its own supply energy per event |
+| [`sim/tb/sampler-array-digitize/`](../sim/tb/sampler-array-digitize/) | `sampler_core` end to end: `xo` under transient noise, sampled by the real `sampler_dff` into `raw_bit`/`raw_valid` — a functional raw-bitstream demonstration, not a rate or entropy measurement |
+| [`sim/tb/sampler-dff-setup-hold/`](../sim/tb/sampler-dff-setup-hold/) | `sampler_dff` alone, at the real 1 Mbps target clock period, across the full PVT grid: correct capture at normal setup margin and at a clock-aligned (worst-case) data transition |
 
 Testbenches that instantiate a cell from here set `design_netlist` in their
 `tb.json`; the harness then `.include`s the schematic-derived netlist and records

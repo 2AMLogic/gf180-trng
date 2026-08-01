@@ -3,7 +3,7 @@ G {}
 K {type=subcircuit
 format="@name @pinlist @symname"
 template="name=x1"
-description="The gf180-trng entropy source: two separately-supplied 11-stage starved rings, XOR-combined into xo (DR-0007, DR-0010)."
+description="The gf180-trng entropy source: two separately-supplied 11-stage starved rings, XOR-combined into xo (DR-0007, DR-0010). Pin order MUST track design/xschem/ro_array_core.sch's own .subckt signature exactly: en1 en2 vddr1 vddr2 vdd vss xo -- see design/ro_array_core.spice."
 }
 V {}
 S {}

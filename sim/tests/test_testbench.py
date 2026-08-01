@@ -137,6 +137,27 @@ class TestbenchLoadTests(unittest.TestCase):
                 )
                 self.assertEqual(tb.dut_netlist, tb.design_netlist)
 
+    def test_caveats_default_to_empty(self):
+        tb = testbench.load(self._write("v1 out 0 dc 3.3\n"))
+        self.assertEqual(tb.caveats, ())
+
+    def test_caveats_are_loaded_from_the_manifest(self):
+        tb = testbench.load(
+            self._write("v1 out 0 dc 3.3\n", {"caveats": ["not a rate measurement", "ideal clock"]})
+        )
+        self.assertEqual(tb.caveats, ("not a rate measurement", "ideal clock"))
+
+    def test_the_sampler_testbenches_declare_their_method_limits(self):
+        """The two testbenches whose records would otherwise overstate what
+        they measured -- a bitstream captured well above the target rate, and
+        a cell characterized without its entropy source -- must carry that
+        limit in the manifest so every minted record repeats it. sim/README.md:
+        "an unstated limit is a defect"."""
+        for slug in ("sampler-array-digitize", "sampler-dff-setup-hold"):
+            with self.subTest(slug=slug):
+                tb = testbench.load(SIM_DIR / "tb" / slug)
+                self.assertTrue(tb.caveats, f"{slug} must declare its method limits")
+
 
 if __name__ == "__main__":
     unittest.main()
