@@ -1,0 +1,43 @@
+{
+  "scenario": "mode-switch",
+  "why": "DR-0001 \u00a72's flush rule: switching OUT_MODE in either direction flushes the conditioner and both output FIFOs, so no bit produced before the switch is readable after it",
+  "seed": 3,
+  "declared_h_per_bit": "0.5",
+  "source_p_one_target": "0.292893218813",
+  "source_threshold_u32": 1257966796,
+  "raw_samples": 8192,
+  "startup_samples": 1024,
+  "startup_windows_run": 1,
+  "first_conditioned_word_at_cycle": 1319,
+  "raw_samples_before_first_conditioned_word": 1280,
+  "data_words_read": 26,
+  "raw_words_read": 254,
+  "raw_words_packed": 254,
+  "cond_words_offered": 26,
+  "flush_events": 2,
+  "words_dropped_by_flush": 0,
+  "raw_bits_dropped_by_flush": 39,
+  "status_final": "0x00000010",
+  "status_ht_alarm": 0,
+  "status_startup": 0,
+  "status_cond_ready": 1,
+  "status_ovf_data": 0,
+  "status_ovf_raw": 0,
+  "status_data_level": 0,
+  "status_raw_level": 0,
+  "data_stream_sha256": "92911321fcce6db6676feba5e30c8a46d0e56df5171d42ee861c944a72f2c1cd",
+  "raw_stream_sha256": "efebf43a17c0e62545ebb8bbcc42542e9044d1c6767f4067dd34f00b73087a00",
+  "events": [
+    {
+      "sample": 3000,
+      "event": "OUT_MODE -> raw"
+    },
+    {
+      "sample": 5000,
+      "event": "OUT_MODE -> conditioned"
+    }
+  ],
+  "wall_time_s": 1.0241782665252686,
+  "fifo_words_held_at_last_switch": 0,
+  "fifo_words_surviving_last_switch": 0
+}

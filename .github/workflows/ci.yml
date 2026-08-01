@@ -48,6 +48,14 @@ name: CI
 #       evidence record (sim/README.md), and it is what `npm run check:all`
 #       invokes; the nightly job does not replace the local pre-commit run.
 #
+#   design/interface/regmap.py --check (register-map staleness guard)
+#       RUN on every push/PR, twice over: as its own step below, and inside
+#       sim/tests/test_interface.py. It regenerates the interface block's
+#       Verilog header and pinout document from the one normative table and
+#       diffs them against what is committed -- stdlib-only, no external
+#       tool, sub-second. Without it the RTL's addresses and the pinout #16
+#       and #27 consume could drift apart silently.
+#
 #   design/netlist.py --check (schematic-vs-netlist staleness guard)
 #       RUN on a schedule, not here: it shells out to xschem and resolves the
 #       gf180mcu xschem symbol library through the PDK, neither of which this
@@ -111,6 +119,14 @@ jobs:
         run: |
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check
+
+      # The digital half's equivalent of design/netlist.py --check: the
+      # interface block's Verilog header and pinout document are generated
+      # from design/interface/regmap.py, and this fails if either is stale.
+      # Unlike the netlist guard it needs no PDK and no external tool, so it
+      # belongs on the PR-blocking path.
+      - name: Register-map staleness guard
+        run: python3 design/interface/regmap.py --check
 
       # sim/selftest.sh re-runs the unit tests as its own stage 1; the few
       # seconds of overlap buy coverage of the acceptance script itself --

@@ -72,7 +72,7 @@ that should be legible too.
 | Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Neither figure has any evidence behind it yet** — see the note below | — |
 | Area | < 0.05 mm² | — |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
-| Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]) | — |
+| Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013]) | — |
 
 **Scope**: this block is an **entropy source only** — there is no DRBG in it,
 and it defines no seeding or reseeding semantics. An integrator that needs a
@@ -114,6 +114,7 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
+[DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
@@ -132,8 +133,10 @@ measurements/  silicon characterization                       — empty until ta
 ```
 
 `design/` holds the two halves of the block, one on each side of the raw tap.
-[`conditioner/`](design/conditioner/) is the digital post-processing stage, as
-a normative behavioural model plus synthesisable RTL checked against it.
+[`conditioner/`](design/conditioner/) is the digital post-processing stage and
+[`interface/`](design/interface/) is the register file, output FIFOs and
+gate/flush machine — each a normative behavioural model plus synthesisable RTL
+checked against it.
 [`xschem/`](design/xschem/) is the analog entropy source — the starved delay
 cell, the ring built from it, and the XOR-combined multi-ring array — together
 with the SPICE netlists exported from those schematics by
@@ -217,7 +220,8 @@ sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absen
 pull request, the checks that need no PDK: a Python/shell syntax check, the
 harness unit tests on Python 3.10 and 3.13, the two spec-arithmetic checks that
 are pure derivations over committed records (`sim/tools/jitter_energy_law.py
---check` and `sim/tools/array_sizing.py --check`), and `sim/selftest.sh` — whose
+--check` and `sim/tools/array_sizing.py --check`), the register-map staleness
+guard (`design/interface/regmap.py --check`), and `sim/selftest.sh` — whose
 PDK-dependent stages detect the missing PDK and skip themselves on a hosted
 runner. The same set is `npm run check:ci` locally.
 
@@ -251,7 +255,9 @@ has no `tb.json`, is not discovered by `run_corners.py`, and is run directly
 (`python3 sim/tb/conditioner-crc32/run_demo.py`). Its records carry
 `level: behavioral` and no P/V/T corner, and may not be cited for anything
 corner-dependent — see `sim/README.md` §Behavioral-level records and
-[DR-0009].
+[DR-0009]. `sim/tb/interface-regfile/` is the second, and runs both digital
+blocks against each other with the conditioner's `en`/`flush` taken from the
+interface's own outputs — the inter-block contract, not a stand-in for it.
 
 ## License
 

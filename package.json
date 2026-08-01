@@ -1,14 +1,15 @@
 {
   "name": "loom-workspace",
-  "description": "Loom-managed workspace. There is no JavaScript in this repo; these scripts are named entry points for the stdlib-only Python/shell self-checks, so agents, contributors and CI all invoke the same commands. check:ci is what .github/workflows/ci.yml runs, and its check:spec stage holds the two jitter-energy derivations (plain cell and shipped starved cell) and the array sizing to the committed evidence records; check:all adds the PDK-dependent checks (the sim stages, plus the schematic-vs-netlist staleness guard), which need ngspice >= 46, xschem and the gf180mcu PDK installed locally.",
+  "description": "Loom-managed workspace. There is no JavaScript in this repo; these scripts are named entry points for the stdlib-only Python/shell self-checks, so agents, contributors and CI all invoke the same commands. check:ci is what .github/workflows/ci.yml runs, and its check:spec stage holds the two jitter-energy derivations (plain cell and shipped starved cell) and the array sizing to the committed evidence records, while check:regmap holds the interface block's generated Verilog header and pinout document to the one normative register-map table; check:all adds the PDK-dependent checks (the sim stages, plus the schematic-vs-netlist staleness guard), which need ngspice >= 46, xschem and the gf180mcu PDK installed locally.",
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
     "lint": "python3 -m compileall -q sim design && bash -n sim/selftest.sh",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests",
     "check:spec": "python3 sim/tools/jitter_energy_law.py --check && python3 sim/tools/starved_cell_jitter_energy.py --check && python3 sim/tools/array_sizing.py --check",
+    "check:regmap": "python3 design/interface/regmap.py --check",
     "check:netlist": "python3 design/netlist.py --check",
-    "check:ci": "npm run lint && npm run test && npm run check:spec && sim/selftest.sh",
-    "check:all": "npm run lint && npm run test && npm run check:spec && npm run check:netlist && sim/selftest.sh --require-pdk"
+    "check:ci": "npm run lint && npm run test && npm run check:spec && npm run check:regmap && sim/selftest.sh",
+    "check:all": "npm run lint && npm run test && npm run check:spec && npm run check:regmap && npm run check:netlist && sim/selftest.sh --require-pdk"
   }
 }
