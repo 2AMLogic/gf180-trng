@@ -36,8 +36,8 @@ DEFAULT_VARIANT = "gf180mcuD"
 # Search roots used when nothing else pins the PDK down. Each is a directory
 # that is expected to *contain* variant directories (gf180mcuA..D).
 BUILTIN_SEARCH_ROOTS = (
-    "~/.volare",
     "~/.ciel",
+    "~/.volare",
     "/usr/share/pdk",
     "/usr/local/share/pdk",
     "~/share/pdk",
@@ -63,10 +63,10 @@ automatically -- leave PDK_ROOT unset while installing, or ciel installs into
 that prefix instead.
 
 volare, ciel's predecessor, still works if you already have a volare-installed
-PDK: ~/.volare/<variant> is searched too (and, when both exist, first -- set
-GF180_PDK_PATH to override). But volare's gf180mcu release feed stopped in
-Aug 2025, so it cannot install anything newer than open_pdks
-c6d73a35f524070e85faff4a6a9eef49553ebc2b.
+PDK: ~/.volare/<variant> is searched too, but only after ~/.ciel (set
+GF180_PDK_PATH to override and force a specific install). But volare's
+gf180mcu release feed stopped in Aug 2025, so it cannot install anything
+newer than open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b.
 
 If your PDK lives somewhere else, point the harness at it:
 

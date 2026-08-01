@@ -76,6 +76,52 @@ class ResolutionOrderTests(unittest.TestCase):
                 found = pdk_mod.find_pdk()
         self.assertTrue(found.source.startswith("search_root:"))
 
+    def test_ciel_wins_over_volare_when_both_present(self):
+        # Regression test for #37: ~/.ciel must be tried before ~/.volare so a
+        # stale volare-installed PDK doesn't shadow a current ciel install.
+        ciel_root = self.root / "ciel_store"
+        volare_root = self.root / "volare_store"
+        _make_variant(ciel_root, "gf180mcuD")
+        _make_variant(volare_root, "gf180mcuD")
+        import os
+
+        env = dict(os.environ)
+        env.pop("GF180_PDK_PATH", None)
+        env.pop("PDK_ROOT", None)
+        with mock.patch.dict("os.environ", env, clear=True):
+            with mock.patch.object(
+                pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+            ):
+                with mock.patch.object(
+                    pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(ciel_root), str(volare_root))
+                ):
+                    found = pdk_mod.find_pdk()
+        self.assertEqual(found.path, ciel_root / "gf180mcuD")
+        self.assertEqual(found.source, f"search_root:{ciel_root}")
+
+    def test_volare_only_still_found_when_no_ciel(self):
+        # No-regression edge case: a volare-only install (no ~/.ciel) must
+        # still resolve -- the escape hatch for existing volare users.
+        volare_root = self.root / "volare_store"
+        _make_variant(volare_root, "gf180mcuD")
+        import os
+
+        env = dict(os.environ)
+        env.pop("GF180_PDK_PATH", None)
+        env.pop("PDK_ROOT", None)
+        with mock.patch.dict("os.environ", env, clear=True):
+            with mock.patch.object(
+                pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+            ):
+                with mock.patch.object(
+                    pdk_mod,
+                    "BUILTIN_SEARCH_ROOTS",
+                    (str(self.root / "ciel_store_absent"), str(volare_root)),
+                ):
+                    found = pdk_mod.find_pdk()
+        self.assertEqual(found.path, volare_root / "gf180mcuD")
+        self.assertEqual(found.source, f"search_root:{volare_root}")
+
     def test_not_found_raises_with_a_helpful_message(self):
         import os
 
