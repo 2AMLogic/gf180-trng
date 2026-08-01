@@ -1,0 +1,46 @@
+{
+  "name": "meta-arb-regeneration",
+  "description": "Metastability tap's arbiter (design/meta_arb.spice): regeneration time constant tau from the resolution-time-vs-release-skew slope, over five decades of skew, plus the exactly-balanced control.",
+  "netlist": "tb_meta_arb_regeneration.sp",
+  "design_netlist": "design/meta_arb.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "tt",
+    "ff",
+    "ss"
+  ],
+  "tstop": "9n",
+  "tstep": "0.5p (print step; also caps ngspice's internal tmax)",
+  "options": [
+    "reltol=1e-5"
+  ],
+  "analyses": [
+    "tran 0.5p 9n",
+    "meas tran ts when v(sn)=v(vth) rise=1",
+    "meas tran tq1 when v(q1)=v(vth) fall=1",
+    "meas tran tq2 when v(q2)=v(vth) fall=1",
+    "meas tran tq3 when v(q3)=v(vth) fall=1",
+    "meas tran tq4 when v(q4)=v(vth) fall=1",
+    "meas tran tq5 when v(q5)=v(vth) fall=1",
+    "meas tran tq6 when v(q6)=v(vth) fall=1",
+    "meas tran vq0 find v(q0) at=8.5n",
+    "meas tran vqn0 find v(qn0) at=8.5n",
+    "let ln10 = 2.302585092994046"
+  ],
+  "measure": {
+    "t_res_100p_s": "tq6-ts",
+    "t_res_10p_s": "tq5-ts",
+    "t_res_1p_s": "tq4-ts",
+    "t_res_100f_s": "tq3-ts",
+    "t_res_10f_s": "tq2-ts",
+    "t_res_1f_s": "tq1-ts",
+    "tau_100p_10p_s": "(tq5-tq6)/ln10",
+    "tau_10p_1p_s": "(tq4-tq5)/ln10",
+    "tau_1p_100f_s": "(tq3-tq4)/ln10",
+    "tau_100f_10f_s": "(tq2-tq3)/ln10",
+    "tau_10f_1f_s": "(tq1-tq2)/ln10",
+    "v_q0_bal_v": "vq0",
+    "v_qn0_bal_v": "vqn0",
+    "v_diff_bal_v": "abs(vq0-vqn0)"
+  }
+}

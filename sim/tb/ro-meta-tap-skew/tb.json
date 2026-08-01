@@ -1,0 +1,54 @@
+{
+  "name": "ro-meta-tap-skew",
+  "description": "Metastability tap (design/ro_meta_tap.spice): matched-strobe-path skew vs trim imbalance, arbiter resolution time, strobe-path delay, and the tap's own supply energy per event.",
+  "netlist": "tb_ro_meta_tap_skew.sp",
+  "design_netlist": "design/ro_meta_tap.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "tt",
+    "ff",
+    "ss"
+  ],
+  "tstop": "12n",
+  "tstep": "0.2p (print step; also caps ngspice's internal tmax)",
+  "options": [
+    "reltol=1e-5"
+  ],
+  "analyses": [
+    "tran 0.2p 12n",
+    "meas tran txf when v(xin)=v(vth) fall=1",
+    "meas tran ta1 when v(xt1.pa)=v(vth) rise=1",
+    "meas tran tb1 when v(xt1.pb)=v(vth) rise=1",
+    "meas tran ta2 when v(xt2.pa)=v(vth) rise=1",
+    "meas tran tb2 when v(xt2.pb)=v(vth) rise=1",
+    "meas tran ta3 when v(xt3.pa)=v(vth) rise=1",
+    "meas tran tb3 when v(xt3.pb)=v(vth) rise=1",
+    "meas tran ta4 when v(xt4.pa)=v(vth) rise=1",
+    "meas tran tb4 when v(xt4.pb)=v(vth) rise=1",
+    "meas tran tq2 when v(xt2.mq)=v(vth) fall=1",
+    "meas tran tq4 when v(xt4.mq)=v(vth) fall=1",
+    "meas tran vmo find v(mo4) at=9.5n",
+    "meas tran tpa when v(xinp)=v(vth) rise=2",
+    "meas tran tpb when v(xinp)=v(vth) rise=6",
+    "meas tran cpa find v(qp) when v(xinp)=v(vth) rise=2",
+    "meas tran cpb find v(qp) when v(xinp)=v(vth) rise=6",
+    "let cq = 1e-9",
+    "let nper = 4"
+  ],
+  "measure": {
+    "dt_005ff_s": "tb1-ta1",
+    "dt_05ff_s": "tb2-ta2",
+    "dt_1ff_s": "tb3-ta3",
+    "dt_2ff_s": "tb4-ta4",
+    "dt_per_ff_s": "(tb4-ta4)/2",
+    "lin_2ff_over_1ff": "(tb4-ta4)/(tb3-ta3)",
+    "t_path_s": "ta1-txf",
+    "t_res_05ff_s": "tq2-ta2",
+    "t_res_2ff_s": "tq4-ta4",
+    "mo_final_v": "vmo",
+    "i_tap_a": "cq*(cpb-cpa)/(tpb-tpa)",
+    "p_tap_w": "cq*(cpb-cpa)/(tpb-tpa)*mean(v(vsup))",
+    "e_period_j": "cq*(cpb-cpa)/nper*mean(v(vsup))",
+    "f_drive_hz": "nper/(tpb-tpa)"
+  }
+}

@@ -40,8 +40,13 @@ uses, absolute paths rewritten to repo-relative).
 | `xor2` | one node of the combining tree (static CMOS, minimum width) |
 | **`ro_array_core`** | **the entropy source**: two `ro_ring11` with skewed starve widths and separate supply pins, XOR-combined into one output |
 | `ro_array_sanity` | a four-ring array built from `ro_ring5`, with the ring outputs brought out for observation; a simulation vehicle, not a shipped cell |
+| `meta_inv` / `meta_nand2` | unstarved minimum-width delay/logic cells for the metastability-hybrid tap (`ro_stage`/`ro_nand2` want the opposite: the sharpest edge the tap wants is the wrong thing for a ring) |
+| `meta_arb` | the tap's metastable element: a cross-coupled NAND2 SR latch, symmetric by construction |
+| `ro_meta_tap` | the metastability-hybrid **stretch tap** (issue #43, [`DR-0011`](../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md)): a self-timed matched-delay strobe off an RO transition into `meta_arb`, on its own supply pin `vddm` |
+| `ro_array_core_meta` | `ro_array_core` (unmodified, instantiated) plus `ro_meta_tap` hanging off `xo`; exists only to simulate the tap in situ, nothing on `main` instantiates it by default |
 
-Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`.
+Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`,
+`design/meta_arb.spice`, `design/ro_meta_tap.spice`, `design/ro_array_core_meta.spice`.
 
 ---
 
@@ -248,10 +253,42 @@ ring is half the array — which is stated in `DR-0010` §Consequences.
 
 The survey (§Recommendation 2) and DR-0007 §1 keep the metastability hybrid as a
 *stretch* item — a secondary tap layered on this RO core, never a free-standing
-source. It is not in these schematics. It is deferred to #43, for the reason #7
-itself names as its first deferral candidate: the core plus its
-superseding decision record is already the whole of this deliverable, and a
-half-argued second tap would be worse than none.
+source. Originally deferred out of #7 for the reason #7 itself named as its
+first deferral candidate — the core plus its superseding decision record was
+already the whole of that deliverable, and a half-argued second tap would have
+been worse than none — it is built by #43 as `ro_meta_tap`
+(`design/xschem/ro_meta_tap.sch`), instantiated alongside the unmodified core
+in `ro_array_core_meta.sch`. Nothing on `main` instantiates
+`ro_array_core_meta` by default; the shipped `ro_array_core` is untouched.
+
+**[`DR-0011`](../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md)**
+states what is and is not claimed for it, addressing the survey's B.2
+(ngspice-substantiability) and B.4 (PVT/mismatch balance-point drift)
+objections head-on rather than assuming them away:
+
+- **Claimed, measured**: the tap does not perturb the core (period, per-ring
+  current, ring power and ring swing move under 0.03 % at three PVT corners
+  with the tap present; `xo_swing_v` moves −0.07 % to −0.13 %, the one real
+  residual coupling path, through the combining gate's own load).
+- **Claimed, with a stated limit**: the survey's own "directly substantiable"
+  method (Kinniment/Chester regeneration-time-constant characterization) does
+  not converge to a single `tau` on this solver — it bounds the arbiter's
+  regeneration behavior to roughly 3–300 fs and fails in a physically
+  explicable way outside that range, which is new information, not a design
+  parameter.
+- **Claimed, measured**: the tap's trim-to-skew sensitivity drifts up to 1.45×
+  across the three PVT corners tested — a direct, quantified answer to the
+  survey's concern that a one-time trim cannot be assumed to hold.
+- **Claimed, measured, and NOT counted against the ratified `< 500 µW` row**
+  (which is measured against `ro_array_core` alone): the tap costs ~187 µW at
+  the power-binding corner — adopting it as shipped would put the combined
+  total 1.21× over that row, unresolved by this record.
+- **Not claimed, at any point**: entropy, a resolution-time histogram, or that
+  any calibration scheme could hold the tap's balance point over PVT and
+  mismatch. Evidence: `sim/tb/ro-array-core-meta-power/`,
+  `sim/tb/meta-arb-regeneration/`, `sim/tb/ro-meta-tap-skew/`, each at
+  `ff`/−40 °C/3.63 V, `ss`/−40 °C/3.63 V and `tt`/27 °C/3.30 V — see
+  `sim/records/2026-08-01-{ro-array-core-meta-power,meta-arb-regeneration,ro-meta-tap-skew}-{01,02,03}.md`.
 
 ## The sanity vehicle
 
@@ -344,6 +381,9 @@ documented error. The three things that close this out instead:
 | [`sim/tb/rostage-noise/`](../sim/tb/rostage-noise/) | `ro_stage` device-noise density, gain and bias point at its trip point |
 | [`sim/tb/ro-array-core-power/`](../sim/tb/ro-array-core-power/) | the shipped array: per-ring period and supply current, XOR-tree current, ring and XOR-node swing |
 | [`sim/tb/ro-array-sanity-jitter/`](../sim/tb/ro-array-sanity-jitter/) | the five-stage array under transient noise: per-ring period and jitter accumulation, frequency independence, XOR-node swing |
+| [`sim/tb/ro-array-core-meta-power/`](../sim/tb/ro-array-core-meta-power/) | the shipped array with the metastability tap attached, measurement-for-measurement identical to `ro-array-core-power/`, plus the tap's own supply current on `vddm` |
+| [`sim/tb/meta-arb-regeneration/`](../sim/tb/meta-arb-regeneration/) | the tap's arbiter (`meta_arb`): regeneration time constant via the Kinniment/Chester decade-pair method |
+| [`sim/tb/ro-meta-tap-skew/`](../sim/tb/ro-meta-tap-skew/) | the tap (`ro_meta_tap`): trim-load-to-skew sensitivity and its own supply energy per event |
 
 Testbenches that instantiate a cell from here set `design_netlist` in their
 `tb.json`; the harness then `.include`s the schematic-derived netlist and records

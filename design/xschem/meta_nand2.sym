@@ -1,0 +1,26 @@
+v {xschem version=3.4.4 file_version=1.2}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname cld=@cld"
+template="name=x1 cld=0.5f"
+description="Plain minimum-width static CMOS NAND2; half-cell of the metastability tap's arbiter."
+}
+V {}
+S {}
+E {}
+B 5 -42.5 -22.5 -37.5 -17.5 {name=a dir=in}
+B 5 -42.5 17.5 -37.5 22.5 {name=b dir=in}
+B 5 37.5 -2.5 42.5 2.5 {name=y dir=out}
+B 5 -2.5 -42.5 2.5 -37.5 {name=vdd dir=inout}
+B 5 -2.5 37.5 2.5 42.5 {name=vss dir=inout}
+L 4 -40 -20 -30 -20 {}
+L 4 -40 20 -30 20 {}
+L 4 30 0 40 0 {}
+L 4 0 -40 0 -30 {}
+L 4 0 30 0 40 {}
+L 4 -30 -30 10 -30 {}
+L 4 -30 30 10 30 {}
+L 4 -30 -30 -30 30 {}
+A 4 10 0 30 270 180 {}
+T {@name} -25 -45 0 0 0.25 0.25 {}
+T {&} -22.5 -7.5 0 0 0.3 0.3 {}
