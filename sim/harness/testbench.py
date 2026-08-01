@@ -67,6 +67,14 @@ class Testbench:
     design_params: dict[str, str | float] = field(default_factory=dict)
     extra_lib_sections: tuple[str, ...] = ()
     design_netlist: Path | None = None
+    #: Testbench-specific entries appended to every record's Caveats
+    #: section. ``sim/README.md`` requires each record to state what the run
+    #: does NOT show, and the method limits that matter are properties of
+    #: the testbench (a relaxed solver tolerance, a clock frequency scaled
+    #: away from the target, an accumulation window that truncates), not of
+    #: the PVT point -- so they belong in the manifest, next to the settings
+    #: that cause them, rather than being re-typed per record.
+    caveats: tuple[str, ...] = ()
 
     @property
     def stochastic(self) -> bool:
@@ -172,6 +180,7 @@ def load(directory: str | Path) -> Testbench:
         design_params={k: v for k, v in manifest.get("design_params", {}).items()},
         extra_lib_sections=tuple(manifest.get("extra_lib_sections", ())),
         design_netlist=design_netlist,
+        caveats=tuple(manifest.get("caveats", ())),
     )
     validate_netlist(tb)
     if tb.stochastic and tb.default_runs < 1:
