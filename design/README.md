@@ -332,7 +332,20 @@ its own data, and its resolution behavior must be characterizable rather
 than assumed. Reset is async and reset-dominant (oversized pull devices on
 both storage nodes, active regardless of clock phase), because a sampler
 that can power up in an undefined state is not a sampler with a defined raw
-tap.
+tap. It does take — `q_rst_v` is under 0.68 µV at every one of the 45 PVT
+points measured below.
+
+Reset by brute force has a known cost, stated here rather than left for a
+reader to find in the netlist: while `rst_n` is low **and** `clk` is low, the
+master's input transmission gate is transparent, so there is a conducting
+path from whatever drives `D`, through that gate, into the reset pull-down.
+Reset still wins — that is what the sizing is for, and the measurements say
+so — but current flows for as long as reset is asserted. The magnitude is
+unmeasured and the fix (gating reset into the storage loops instead of
+overriding the nodes) is a schematic change rather than a sizing tweak, so
+it is tracked separately in
+[#48](https://github.com/2AMLogic/gf180-trng/issues/48) rather than done
+here.
 
 ### Clock-source decision (binding, DR-0011): fixed external, not RO-divided
 
@@ -444,6 +457,57 @@ value" is a legitimate outcome of an edge that arrived too late, and it is one
 of the mechanisms by which ring phase becomes bit value. The number matters for
 the *system* (what `clk` may be asked to do relative to other logic), not as a
 pass/fail on the sampler.
+
+### The source, digitised end to end
+
+`sim/tb/sampler-array-digitize/` closes the loop: the shipped two-ring array
+under transient noise, its XOR node sampled by the shipped `sampler_dff`, ten
+raw bits out. It exists to answer whether the sampler produces a clean logic
+level from a real analog `xo` swing, and whether `raw_valid` follows the
+conditioner's contract. It answers both, at both corners run
+(`sim/records/2026-08-01-sampler-array-digitize-01…02.md`):
+
+| | `tt` / 27 °C / 3.30 V (`…-01`) | `ss` / −40 °C / 3.63 V (`…-02`) |
+|---|---|---|
+| Ten raw bits (`b0`…`b9`) | `0101111100` | `1111010011` |
+| Worst distance from a rail, any bit | 16 nV | 108 µV |
+| `raw_bit` / `raw_valid` during reset | 67 nV / 18 nV | 3.7 µV / 18 nV |
+| `raw_valid` at first and last sample | high | high |
+| Ring frequency ratio | 1.0613 | 1.0607 |
+| `xo` swing | 3.391 V | 3.747 V |
+| Ring periods accumulated per sample | 1.404 | 1.628 |
+
+- Every bit sits within **110 µV of a rail at worst** — the sampler is not
+  handing the conditioner a half-resolved level at either corner.
+- `raw_bit` and `raw_valid` are both low through reset, and `raw_valid` is
+  high from the first clock edge after `rst_n` releases and stays high, which
+  is exactly what `design/conditioner/README.md` specifies.
+- The two rings keep their own frequencies with the sampler's load hung on the
+  XOR node, and the ratio stays comfortably non-integer — the schematic-level
+  half of the injection-locking argument. At `tt`/27 °C/3.30 V it is 1.0613
+  with the sampler attached against 1.0623 for the same array without it
+  (`…-ro-array-core-power-06.md`), a 0.1 % shift. Treat that cross-record
+  comparison as indicative rather than exact: the two testbenches differ in
+  measurement window and in whether noise sources are present, not only in
+  sampler load.
+
+**And at both corners the ten bits are identical across all three noise
+seeds.** That is not a defect in the run; it is the run telling the truth
+about its own clock rate. At `tclk` = 10 ns the sampler accumulates only
+1.4–1.6 ring periods of jitter per bit, nowhere near enough for the injected
+noise to move a sampling decision — the noise perturbs the sampled analog
+levels by microvolts (visible as the seed-to-seed spread on `b2` at `ss`) and
+never crosses a decision boundary. The bitstream is therefore a deterministic
+function of the ring phases, not of the noise.
+
+That is precisely what makes this a *functional* demonstration and not an
+entropy measurement, and it is an independent, bit-level illustration of the
+argument [`DR-0010`](../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md)
+makes from the jitter-energy law: a raw rate anywhere near this one buys no
+entropy at all. Sampling slowly enough to accumulate usable jitter is the
+whole of DR-0010's case, and this is what that case looks like from the
+bitstream end. It is evidence *about the sampler*, and deliberately not
+evidence about how much entropy a raw bit carries.
 
 ## The sanity vehicle
 
