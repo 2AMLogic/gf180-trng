@@ -6,7 +6,7 @@ date: 2026-08-01
 deciders: Proposed by #46 (validating DR-0010's `(★)` on the shipped cell). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004, DR-0007 and DR-0010 were.
 supersedes: "DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit — its §1 rate VALUE only, and only on acceptance. Everything else in DR-0010 stands unchanged: `(★)` as the sizing law, N = 2, eleven stages, the array of §3, the Power row, and DR-0003's definition of where the rate is measured and what corner it binds at."
 superseded_by: n/a
-related: "#46 (the measurement — this record's whole basis), #7 (array sizing), #12 (min-entropy on bitstreams, still owns H), #13 (minimum-Q corner over the full grid), #16 (two-ring isolation); DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law), DR-0010 (the record this supersedes, §1 only); sim/characterization-starved-cell-jitter-energy.md; sim/records/2026-08-01-ro-ring5-starved-jitter-long-{01,02,03}.md"
+related: "#46 (the measurement — this record's whole basis), #51 (why the four-ring array deck disagrees — the follow-up this record hands off), #7 (array sizing), #12 (min-entropy on bitstreams, still owns H), #13 (minimum-Q corner over the full grid), #16 (two-ring isolation); DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law), DR-0010 (the record this supersedes, §1 only); sim/characterization-starved-cell-jitter-energy.md; sim/records/2026-08-01-ro-ring5-starved-jitter-long-{01,02,03}.md"
 ---
 
 # DR-0011: Re-derive the raw-rate row from the jitter-energy constant measured on the shipped starved cell
@@ -269,8 +269,10 @@ produced.
     XOR tree in one deck, with `ro1` driving `xa1`. The leading hypothesis is
     deterministic ring-to-ring perturbation through the shared XOR input stage,
     which would be seed-independent and would accumulate faster than `√t`. That
-    is a hypothesis, not a finding; it is **filed as its own issue** and it
-    matters beyond bookkeeping, because ring-to-ring independence is [#16]'s
+    is a hypothesis, not a finding; it is filed as **[#51]**, which sets out
+    the four DUT variants that would tell electrical coupling apart from a
+    shared-timestep numerical artefact. It matters beyond bookkeeping, because
+    ring-to-ring independence is [#16]'s
     subject and DR-0010 §Consequences already flags that at N = 2 the cost of
     getting it wrong is doubled.
   - **`a` on the shipped eleven-stage ring** — the stage-count check this
@@ -290,3 +292,4 @@ produced.
 [#12]: https://github.com/2AMLogic/gf180-trng/issues/12
 [#16]: https://github.com/2AMLogic/gf180-trng/issues/16
 [#46]: https://github.com/2AMLogic/gf180-trng/issues/46
+[#51]: https://github.com/2AMLogic/gf180-trng/issues/51

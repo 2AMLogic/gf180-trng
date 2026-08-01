@@ -25,11 +25,13 @@ states the ratio to ``(*)``.
 
 The two things it checks about the *method*, not the circuit
 ------------------------------------------------------------
-The measurement this replaces
+The measurement this family stands beside
 (``sim/records/2026-08-01-ro-array-sanity-jitter-01.md``) produced a plausible
-looking ``sigma`` that was start-up settling drift rather than jitter. Two
-diagnostics caught it, and both are computed here for every record so the same
-mistake cannot pass silently a second time:
+looking ``sigma`` that is not jitter at all. Two diagnostics caught it, and both
+are computed here for every record so the same mistake cannot pass silently a
+second time. (What that run's ``sigma`` actually *is* remains open -- the
+start-up-drift explanation is refuted by this family's own 16-period window; see
+``sim/characterization-starved-cell-jitter-energy.md`` and issue #51.)
 
 * **Seed spread.** A ``sigma`` estimate from a finite window is itself a random
   variable, and its seed-to-seed scatter scales as ``sqrt(L / NP)`` for lag
@@ -44,12 +46,12 @@ mistake cannot pass silently a second time:
   ``sqrt(NP_ref / NP)``. Both the empirical reference and the analytic bound are
   printed; ``--check`` gates on the empirical one.
 
-  The run this family replaces varied **0.3 %** at lag 1 over a 16-period
-  window, where the empirical reference predicts ~15 %. That is not a tight
-  measurement, it is every seed tracing the same deterministic settling curve.
+  The array-sanity run varied **0.3 %** at lag 1 over a 16-period window, where
+  the empirical reference predicts ~15 %. That is not a tight measurement, it is
+  every seed tracing the same deterministic curve.
 * **Accumulation exponent.** A phase random walk gives
-  ``sigma_acc(L) ~ L^0.5``. Deterministic drift gives ``L^1``. The sanity run
-  came back at ``L^0.81``.
+  ``sigma_acc(L) ~ L^0.5``. A deterministic perturbation gives ``L^1``. The
+  array-sanity run came back at ``L^0.81``.
 
 Both are reported per record; ``--check`` gates on the first only. The exponent
 is deliberately **not** gated: a starved ring whose accumulation genuinely
@@ -58,11 +60,12 @@ failure (issue #46 acceptance criterion 4).
 
 kappa^2, two ways, and why the difference matters
 -------------------------------------------------
-``jitter_energy_law.py`` takes ``kappa^2 = sigma_1^2 / T0`` -- the lag-1 figure
--- because on the plain cell the accumulation is clean ``sqrt(t)`` and every lag
-gives the same answer. That is not guaranteed for a starved cell, whose series
-starve devices give the ring a memory longer than one period. So this script
-reports **both**:
+``jitter_energy_law.py`` takes ``kappa^2 = sigma_1^2 / T0`` -- the lag-1 figure.
+That is only the whole story if ``sigma_acc`` is a pure ``sqrt(t)`` law from
+lag 1 onwards. Measured, it is not, for **either** cell: the all-lag exponent is
+0.39-0.46 for the starved cell and 0.40-0.55 across the plain-cell grid, i.e.
+lag 1 sits above the line drawn through the long-lag behaviour, by a
+non-accumulating amount. So this script reports **both**:
 
 * ``kappa2_lag1``  -- ``sigma_1^2 / T0``, like-for-like with ``(*)``;
 * ``kappa2_asym``  -- a zero-intercept least-squares slope of
@@ -109,8 +112,7 @@ PLAIN_TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "ro-inv-05stage-jitter" / "tb.jso
 #: spread rescaled to this window length, in EITHER direction. Three is
 #: deliberately generous -- with 8 seeds the sample standard deviation itself
 #: carries ~27 % uncertainty, and the reference is itself an 4-seed estimate --
-#: and still rejects the ~30x-too-tight signature of the run this family
-#: replaces.
+#: and still rejects the ~30x-too-tight signature of the array-sanity run.
 SPREAD_TOLERANCE = 3.0
 
 _MEAN = re.compile(

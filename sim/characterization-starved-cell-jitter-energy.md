@@ -56,9 +56,12 @@ taken at face value, and the record itself contains the two reasons:
    exactly `lag^0.5`; a deterministic frequency drift gives `lag^1.0`. 0.81 is
    most of the way to drift.
 
-Both point at the same cause: the window was 16 periods long and opened at the
-*second edge after start-up*, so what it measured was the ring settling, not
-its jitter.
+Both say the same thing about what that record contains: something
+deterministic, not jitter. The *diagnosis* on record — DR-0010's, and issue
+#46's — was that the cause is the window: 16 periods, opened at the second edge
+after start-up. That diagnosis turns out to be wrong, and this document says so
+in [§4](#4-what-this-does-and-does-not-settle-about-the-array-sanity-run). The
+conclusion it supported — that the record's `σ` is not usable — stands.
 
 ## Method
 
@@ -109,7 +112,7 @@ its jitter.
 
 ### The two diagnostics, and how their expectations are calibrated
 
-Both failure signatures of the superseded run are computed for every record by
+Both failure signatures of the array-sanity run are computed for every record by
 `python3 sim/tools/starved_cell_jitter_energy.py`, so the same mistake cannot
 pass silently a second time.
 
@@ -159,14 +162,14 @@ python3 sim/tools/starved_cell_jitter_energy.py --check
 
 ### 1. The window is measuring jitter, not settling
 
-The three checks the superseded run failed, on the same three axes:
+The axes on which the array-sanity run fails, on the same three corners:
 
 | Corner | Block-period drift, before the window | …inside the window | `σ₁` seed spread | reference | 16-period start-up window, `σ₁` seed spread | reference |
 |---|---|---|---|---|---|---|
 | `ss`/−40/3.63 | 14 ppm | 18 ppm | **4.1 %** | 2.7 % | **17.7 %** | 15.2 % |
 | `tt`/27/3.30 | 11 ppm | 34 ppm | **3.9 %** | 2.7 % | **16.0 %** | 15.2 % |
 | `ff`/−40/3.63 | 29 ppm | 29 ppm | **5.9 %** | 2.7 % | **24.2 %** | 15.2 % |
-| *superseded* `2026-08-01-ro-array-sanity-jitter-01` | — | — | — | — | **0.3 %** | 15.2 % |
+| *for contrast:* `2026-08-01-ro-array-sanity-jitter-01` | not reported | not reported | — | — | **0.3 %** | 15.2 % |
 
 and the seed spread scales with lag the way a genuine estimate must — the
 √L law, over more than two decades of lag, is reproduced without being
@@ -203,7 +206,7 @@ transient in this deck at all.
 | `ss`/−40/3.63 | 0.394 | **0.500** |
 | `tt`/27/3.30 | 0.421 | **0.472** |
 | `ff`/−40/3.63 | 0.457 | **0.479** |
-| *superseded array run, lags 1…8* | *0.807* | — |
+| *for contrast: array-sanity run, lags 1…8* | *0.807* | — |
 
 **Over the top decade of lag the exponent is 0.47–0.50 — a random walk, to
 three significant figures at the entropy-binding corner.** That answers issue
@@ -245,7 +248,12 @@ across a grid on which `P_ring` itself spans 2.14× and `κ²` spans 2.43× — 
 same constancy the plain-cell fit shows (1.29× over its own grid). What moved
 is the value, and it moved a long way.
 
-### 4. What this does and does not settle about the superseded run
+### 4. What this does and does not settle about the array-sanity run
+
+**That record is not superseded by this work**, in the formal sense
+`sim/README.md` gives the word: nothing here re-runs its testbench, so it keeps
+`status: valid` and no `superseded_by` field. What follows is a reading of it
+alongside a different measurement.
 
 It settles the number: the `κ²` in
 [`2026-08-01-ro-array-sanity-jitter-01`](records/2026-08-01-ro-array-sanity-jitter-01.md)
@@ -273,7 +281,8 @@ That is a hypothesis, not a measurement: nothing in this repository has
 measured it, and CLAUDE.md does not allow it to be stated as a finding. The
 testbench that would settle it is `sim/tb/ro-array-sanity-jitter/` re-run with
 this deck's window geometry, comparing ring 1 with and without the tree
-attached. It is filed as its own issue.
+attached — filed as [#51], which sets out the four DUT variants that would
+tell electrical coupling apart from a shared-timestep numerical artefact.
 
 Until that runs, the honest reading is: **`a` is measured here for the cell,
 on a ring loaded exactly as the plain-cell reference ring is, and the array's
@@ -336,7 +345,16 @@ price the alternative without any of them.
   solver takes 2.6× fewer points and the same deck's mean period agrees to five
   significant figures, but no `σ` comparison at the two settings was run, so
   every figure here is at 1 ps.
+- **The testbench's own header carries the pre-measurement hypothesis.**
+  `sim/tb/ro-ring5-starved-jitter-long/tb_ro_ring5_starved_jitter_long.sp`
+  states, as its reason for existing, that the array-sanity run measured
+  "deterministic settling drift". §4 above shows that explanation is
+  incomplete. The header is left as it was written because its blob SHA is
+  recorded in all three records (`testbench.sha`), and editing it after the run
+  would break the provenance those records exist to provide. §4, not the
+  header, is the current reading.
 - **Not an entropy assessment.** DR-0004's tiering is unchanged.
 
 [#12]: https://github.com/2AMLogic/gf180-trng/issues/12
+[#51]: https://github.com/2AMLogic/gf180-trng/issues/51
 [#46]: https://github.com/2AMLogic/gf180-trng/issues/46
