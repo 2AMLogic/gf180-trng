@@ -197,6 +197,45 @@ def find_pdk(variant: str | None = None) -> Pdk:
     )
 
 
+def find_all_variant_dirs(variant: str | None = None) -> list[tuple[Path, str]]:
+    """Walk every roots-list search location and return *every* valid
+    variant directory found, in search order -- unlike :func:`find_pdk`,
+    which stops at the first hit.
+
+    This exists only for diagnostics (``--check-env``): it lets a shadowed
+    or stale PDK install under a losing search root become visible instead
+    of silently ignored. ``find_pdk()`` itself is unchanged and keeps its
+    first-hit-wins short-circuit for the common path.
+
+    Only the roots-list tiers (``sim/pdk.local.json`` + ``sim/pdk.json``
+    ``search_roots``, plus :data:`BUILTIN_SEARCH_ROOTS`) are scanned.
+    ``GF180_PDK_PATH`` and ``PDK_ROOT`` are single explicit locations, not
+    searched lists, so "found under more than one root" cannot happen for
+    them -- they are intentionally excluded from this scan.
+
+    Returns a list of ``(path, source)`` pairs, deduplicated by resolved
+    absolute path so a root listed twice (e.g. coincidentally the same
+    directory in both ``sim/pdk.local.json`` and
+    :data:`BUILTIN_SEARCH_ROOTS`) is only reported once.
+    """
+    config = _load_config()
+    variant = variant or os.environ.get("PDK") or config.get("variant") or DEFAULT_VARIANT
+
+    roots = list(config.get("search_roots") or ()) + list(BUILTIN_SEARCH_ROOTS)
+    found: list[tuple[Path, str]] = []
+    seen: set[Path] = set()
+    for root in roots:
+        path = _expand(root) / variant
+        if not _is_valid_variant_dir(path):
+            continue
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        found.append((path, f"search_root:{root}"))
+    return found
+
+
 def pdk_available(variant: str | None = None) -> bool:
     try:
         find_pdk(variant)

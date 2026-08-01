@@ -142,6 +142,102 @@ class ResolutionOrderTests(unittest.TestCase):
         self.assertIn("volare", message)
 
 
+class FindAllVariantDirsTests(unittest.TestCase):
+    """Tests for the all-roots-walk helper (#39) used only by --check-env
+    to surface a PDK variant shadowed under a losing search root."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def test_no_hits_returns_empty_list(self):
+        with mock.patch.object(
+            pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+        ):
+            with mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(self.root / "empty"),)):
+                found = pdk_mod.find_all_variant_dirs()
+        self.assertEqual(found, [])
+
+    def test_single_hit_returns_one_entry(self):
+        _make_variant(self.root, "gf180mcuD")
+        with mock.patch.object(
+            pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+        ):
+            with mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(self.root),)):
+                found = pdk_mod.find_all_variant_dirs()
+        self.assertEqual(found, [(self.root / "gf180mcuD", f"search_root:{self.root}")])
+
+    def test_multiple_hits_all_reported_in_search_order(self):
+        ciel_root = self.root / "ciel_store"
+        volare_root = self.root / "volare_store"
+        _make_variant(ciel_root, "gf180mcuD")
+        _make_variant(volare_root, "gf180mcuD")
+        with mock.patch.object(
+            pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+        ):
+            with mock.patch.object(
+                pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(ciel_root), str(volare_root))
+            ):
+                found = pdk_mod.find_all_variant_dirs()
+        self.assertEqual(
+            found,
+            [
+                (ciel_root / "gf180mcuD", f"search_root:{ciel_root}"),
+                (volare_root / "gf180mcuD", f"search_root:{volare_root}"),
+            ],
+        )
+
+    def test_duplicate_resolved_path_reported_once(self):
+        # A root reachable via both sim/pdk.local.json search_roots and
+        # BUILTIN_SEARCH_ROOTS (coincidentally the same directory) must only
+        # be reported once, keyed off the resolved absolute path.
+        _make_variant(self.root, "gf180mcuD")
+        with mock.patch.object(
+            pdk_mod,
+            "_load_config",
+            return_value={"variant": "gf180mcuD", "search_roots": [str(self.root)]},
+        ):
+            with mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(self.root),)):
+                found = pdk_mod.find_all_variant_dirs()
+        self.assertEqual(len(found), 1)
+
+    def test_explicit_tiers_not_included_in_scan(self):
+        # GF180_PDK_PATH / PDK_ROOT are single explicit locations, not
+        # searched lists -- find_all_variant_dirs() must not consult them,
+        # even when set, since only roots-list tiers can have "more than one
+        # hit".
+        other_variant = _make_variant(self.root / "explicit", "gf180mcuD")
+        env = {"GF180_PDK_PATH": str(other_variant), "PDK_ROOT": str(self.root / "explicit")}
+        with mock.patch.dict("os.environ", env, clear=False):
+            with mock.patch.object(
+                pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+            ):
+                with mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(self.root / "empty"),)):
+                    found = pdk_mod.find_all_variant_dirs()
+        self.assertEqual(found, [])
+
+    def test_find_pdk_unchanged_first_hit_wins_despite_new_helper(self):
+        # find_pdk() itself must still short-circuit on the first hit -- the
+        # all-roots walk is additive and does not change its behavior.
+        ciel_root = self.root / "ciel_store"
+        volare_root = self.root / "volare_store"
+        _make_variant(ciel_root, "gf180mcuD")
+        _make_variant(volare_root, "gf180mcuD")
+        env = dict(__import__("os").environ)
+        env.pop("GF180_PDK_PATH", None)
+        env.pop("PDK_ROOT", None)
+        with mock.patch.dict("os.environ", env, clear=True):
+            with mock.patch.object(
+                pdk_mod, "_load_config", return_value={"variant": "gf180mcuD", "search_roots": []}
+            ):
+                with mock.patch.object(
+                    pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(ciel_root), str(volare_root))
+                ):
+                    found = pdk_mod.find_pdk()
+        self.assertEqual(found.path, ciel_root / "gf180mcuD")
+
+
 class PdkPropertiesTests(unittest.TestCase):
     def test_provenance_and_paths(self):
         with tempfile.TemporaryDirectory() as tmp:

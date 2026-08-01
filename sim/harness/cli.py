@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
-from .pdk import PdkNotFound, find_pdk
+from .pdk import PdkNotFound, find_all_variant_dirs, find_pdk
 from .runner import NgspiceMissing
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -119,6 +119,12 @@ def cmd_check_env() -> int:
         pdk = find_pdk()
         print(f"PDK     : OK   {pdk.path} (open_pdks {pdk.version}, via {pdk.source})")
         print(f"  models: {pdk.model_lib}")
+        winner = pdk.path.resolve()
+        for shadowed_path, shadowed_source in find_all_variant_dirs(pdk.variant):
+            if shadowed_path.resolve() == winner:
+                continue
+            root = shadowed_source.removeprefix("search_root:")
+            print(f"  note: {pdk.variant} also found under {root} ({shadowed_source}) -- shadowed, not used")
     except PdkNotFound as exc:
         print(f"PDK     : MISSING\n{exc}")
         status = EXIT_ENVIRONMENT
