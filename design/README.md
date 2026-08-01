@@ -389,6 +389,62 @@ frequency at every corner as long as the sampler resolves correctly there —
 which is a setup/hold/metastability question, not a rate-measurement one, and
 is exactly what `sim/tb/sampler-dff-setup-hold/` is for.
 
+### Setup/hold and metastability, measured
+
+Setup and hold violations at this flip-flop are **not** a fault to be designed
+out. `xo` is asynchronous to `clk` by construction — that is the whole point of
+DR-0011's clock-source choice — so the data edge lands at an arbitrary phase
+relative to the sampling edge, and some samples necessarily arrive inside the
+aperture. What the design has to guarantee is not "no violation" but **bounded
+resolution**: that a struck edge settles to a rail quickly and never leaves the
+raw tap parked at a half-rail level the conditioner would read as noise-shaped
+garbage.
+
+`sim/tb/sampler-dff-setup-hold/` measures that over the full 45-point PVT grid
+(5 process corners × 3 temperatures × 3 supplies), one record per point,
+`sim/records/2026-08-01-sampler-dff-setup-hold-01…45.md`:
+
+| Quantity | Result over all 45 points |
+|---|---|
+| `clk`→`Q` delay, rising | 82.3 ps (`ff`/−40 °C/3.63 V) … 194.3 ps (`ss`/+125 °C/2.97 V) |
+| `clk`→`Q` delay, falling | 81.0 ps (`ff`/−40 °C/3.63 V) … 203.0 ps (`ss`/+125 °C/2.97 V) |
+| `Q` after asynchronous reset | ≤ 0.68 µV at every point |
+| Capture at generous margin (4 clean edges) | correct at every point |
+| Settling after a **zero-margin** (zero setup *and* zero hold) edge | within 0.33 mV of a rail at +1 ns; within 6.4 µV at +100 ns |
+| Settling after a **59 ps** setup margin | within 8.1 mV of a rail at +1 ns; within 10 µV at +100 ns |
+| Settling after a **500 ps** setup margin | within 6.4 mV of a rail at +1 ns; within 10 µV at +100 ns |
+
+**No point on the grid shows a metastable hang.** Every stressed edge is
+resolved to within millivolts of a rail one nanosecond later — three orders of
+magnitude inside the 1 µs sample period the ratified rate implies — and to
+within ten microvolts by 100 ns. That is the property the raw tap depends on.
+
+The two marginal edges also **bracket the cell's setup time**, and the bracket
+moves with the corner exactly as it should:
+
+| Corner family | Captured data arriving 59 ps before the edge? |
+|---|---|
+| `ff` | 6 of 9 points (all of −40 °C and +27 °C, every supply) |
+| `fs` | 3 of 9 | 
+| `tt` | 2 of 9 (−40 °C, 3.30 V and 3.63 V) |
+| `sf` | 2 of 9 (−40 °C, 3.30 V and 3.63 V) |
+| `ss` | 0 of 9 |
+
+Data arriving **500 ps** before the edge is captured at **all 45 points**. So
+the setup time is under 500 ps everywhere and crosses 59 ps somewhere inside
+the grid — fast-and-cold captures at 59 ps, slow-or-hot does not. This is a
+bracket, not a measurement: the testbench probes two offsets rather than
+sweeping the data-to-clock offset, so it bounds the setup time and does not
+resolve it. #26 has the number it needs to budget a clock/data relationship at
+the pin; anyone who needs it tighter should sweep the offset.
+
+Note what this does **not** say. A missed capture at 59 ps margin is not an
+error at this flip-flop — with an asynchronous source, "captured the previous
+value" is a legitimate outcome of an edge that arrived too late, and it is one
+of the mechanisms by which ring phase becomes bit value. The number matters for
+the *system* (what `clk` may be asked to do relative to other logic), not as a
+pass/fail on the sampler.
+
 ## The sanity vehicle
 
 `ro_array_sanity` is a separately-supplied, XOR-combined array built from

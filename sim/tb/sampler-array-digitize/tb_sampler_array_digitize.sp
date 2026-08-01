@@ -191,6 +191,10 @@ vclk clk 0 dc 0 pulse(0 'vdd_val' 'tclk0' 'tclk_tr' 'tclk_tr' 'tclk/2-tclk_tr' '
 bx1 x1 0 v = v(ro1) - 0.5*vdd_val
 bx2 x2 0 v = v(ro2) - 0.5*vdd_val
 bvth vth 0 v = 0.5*vdd_val
+* the clock period as a vector, so the control block can use it: ngspice's
+* control language cannot read a .param directly (a bare `tclk` there is a
+* parse error, exactly as `0.5*vdd_val` is)
+btclk tclkv 0 v = tclk
 
 .ic v(n11)=0
 .ic v(n21)=0
