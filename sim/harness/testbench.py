@@ -66,10 +66,22 @@ class Testbench:
     tmax: str = ""
     design_params: dict[str, str | float] = field(default_factory=dict)
     extra_lib_sections: tuple[str, ...] = ()
+    design_netlist: Path | None = None
 
     @property
     def stochastic(self) -> bool:
         return self.analysis_type in STOCHASTIC_ANALYSIS_TYPES
+
+    @property
+    def dut_netlist(self) -> Path:
+        """The netlist that defines the device under test.
+
+        For a bootstrap testbench that carries its own devices this is the
+        fragment itself. For a testbench that instantiates a cell from
+        ``design/`` it is the schematic-derived netlist -- which is what
+        ``sim/README.md``'s ``netlist.path``/``netlist.sha`` fields are for.
+        """
+        return self.design_netlist or self.netlist
 
     @property
     def netlist_sha256(self) -> str:
@@ -123,6 +135,19 @@ def load(directory: str | Path) -> Testbench:
     if not analyses:
         raise ValueError(f"{manifest_path}: 'analyses' must not be empty")
 
+    design_netlist = None
+    if "design_netlist" in manifest:
+        # Repo-relative (e.g. "design/ro_array_core.spice"): the DUT is a
+        # schematic-derived netlist shared by several testbenches, not a
+        # copy living inside this testbench directory.
+        repo_root = Path(__file__).resolve().parents[2]
+        design_netlist = (repo_root / manifest["design_netlist"]).resolve()
+        if not design_netlist.is_file():
+            raise FileNotFoundError(
+                f"{manifest_path}: design_netlist {design_netlist} does not exist "
+                "-- run `python3 design/netlist.py` to export it"
+            )
+
     tb = Testbench(
         directory=directory,
         slug=manifest.get("name", directory.name),
@@ -146,6 +171,7 @@ def load(directory: str | Path) -> Testbench:
         tmax=str(manifest.get("tmax", "")),
         design_params={k: v for k, v in manifest.get("design_params", {}).items()},
         extra_lib_sections=tuple(manifest.get("extra_lib_sections", ())),
+        design_netlist=design_netlist,
     )
     validate_netlist(tb)
     if tb.stochastic and tb.default_runs < 1:

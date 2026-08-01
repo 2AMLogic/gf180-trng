@@ -102,6 +102,41 @@ class TestbenchLoadTests(unittest.TestCase):
         self.assertEqual(tb.default_runs, 3)
         self.assertEqual(tb.extra_lib_sections, ("statistical",))
 
+    # -- design_netlist: a testbench whose DUT lives in design/ ------------
+
+    def test_dut_netlist_defaults_to_the_fragment_itself(self):
+        """With no design_netlist, netlist.path in the record is the fragment."""
+        tb = testbench.load(self._write("v1 out 0 dc 3.3\n"))
+        self.assertIsNone(tb.design_netlist)
+        self.assertEqual(tb.dut_netlist, tb.netlist)
+
+    def test_design_netlist_resolves_repo_relative(self):
+        tb = testbench.load(
+            self._write(
+                "v1 out 0 dc 3.3\n", {"design_netlist": "design/ro_array_core.spice"}
+            )
+        )
+        self.assertIsNotNone(tb.design_netlist)
+        self.assertEqual(tb.design_netlist.name, "ro_array_core.spice")
+        # The record's netlist.path/sha must point at the DUT, not the fragment.
+        self.assertEqual(tb.dut_netlist, tb.design_netlist)
+        self.assertNotEqual(tb.dut_netlist, tb.netlist)
+
+    def test_missing_design_netlist_raises(self):
+        with self.assertRaises(FileNotFoundError):
+            testbench.load(
+                self._write("v1 out 0 dc 3.3\n", {"design_netlist": "design/nope.spice"})
+            )
+
+    def test_the_repo_array_testbenches_name_their_dut(self):
+        for slug in ("ro-array-core-power", "ro-array-sanity-jitter", "rostage-noise"):
+            with self.subTest(slug=slug):
+                tb = testbench.load(SIM_DIR / "tb" / slug)
+                self.assertIsNotNone(
+                    tb.design_netlist, f"{slug} must instantiate a design/ cell"
+                )
+                self.assertEqual(tb.dut_netlist, tb.design_netlist)
+
 
 if __name__ == "__main__":
     unittest.main()

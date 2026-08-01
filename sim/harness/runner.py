@@ -97,6 +97,13 @@ def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint, seed: int | None = No
     for option in tb.options:
         lines.append(f".options {option}")
 
+    if tb.design_netlist is not None:
+        lines += [
+            "",
+            "* ---- device under test (schematic-derived, design/netlist.py) -------",
+            f'.include "{tb.design_netlist}"',
+        ]
+
     lines += [
         "",
         "* ---- testbench ------------------------------------------------------",

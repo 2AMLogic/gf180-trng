@@ -9,6 +9,14 @@ name: PDK nightly
 # self-check inventory at the top of ci.yml. This workflow provisions both and
 # runs `sim/selftest.sh --require-pdk`, which fails instead of skipping.
 #
+#
+# `design/netlist.py --check` is here for the same reason. It re-exports every
+# top cell in design/xschem/ and fails if the committed design/*.spice disagrees
+# with the schematic it claims to come from -- which is what makes the
+# `netlist.sha` recorded in every evidence record mean something. It shells out
+# to xschem and resolves the gf180mcu xschem symbol library through the PDK, so
+# it cannot run on the PR path.
+#
 # It has no `push` / `pull_request` trigger by construction: a pull request
 # must never block on a source build plus a PDK download.
 #
@@ -21,6 +29,14 @@ name: PDK nightly
 #
 # Every pin is part of the cache key it belongs to, so a stale cache cannot mask
 # a bump.
+#
+# xschem is the one exception: it comes from the runner's distro rather than a
+# pin, because it is a netlister and not a numerical tool. Its output formatting
+# is an input to the staleness comparison, so a distro version bump can turn
+# this job red without any schematic having changed. That is the intended
+# failure mode -- loud rather than silent. The fix in that case is to regenerate
+# with `python3 design/netlist.py` and commit the diff, noting the version bump.
+# The step below prints the version it used.
 #
 # This job writes no evidence records. `sim/records/` is append-only and minted
 # deliberately by a human or agent with the PDK installed (sim/README.md), never
@@ -144,6 +160,20 @@ jobs:
 
       - name: Environment probe (must report ngspice OK and PDK OK)
         run: python3 sim/run_corners.py --check-env
+
+      - name: Install xschem (the schematic netlister)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xschem
+          xschem --version 2>&1 | head -n 2
+
+      # Fails if design/*.spice no longer matches design/xschem/*.sch. Writes
+      # nothing: --check exports to a temp dir and diffs. The gf180mcu symbol
+      # library it needs lives at <variant>/libs.tech/xschem/symbols, which
+      # rides in the PDK release's `common` tarball provisioned above.
+      - name: Schematic-vs-netlist staleness guard
+        run: python3 design/netlist.py --check
 
       # --require-pdk turns the PR path's skip into a failure, so a broken
       # ngspice or PDK provisioning step above shows up as a red job instead of

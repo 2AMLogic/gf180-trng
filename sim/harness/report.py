@@ -195,8 +195,8 @@ def build_record(
         "supersedes": supersedes,
         "testbench_path": _relpath(repo_root, tb.netlist),
         "testbench_sha": blob_sha(repo_root, tb.netlist),
-        "netlist_path": _relpath(repo_root, tb.netlist),
-        "netlist_sha": blob_sha(repo_root, tb.netlist),
+        "netlist_path": _relpath(repo_root, tb.dut_netlist),
+        "netlist_sha": blob_sha(repo_root, tb.dut_netlist),
         "repo_commit": repo_commit_field(git),
         "pdk": f"{pdk.variant} @ {pdk.version}",
         "pdk_models": [
@@ -223,7 +223,7 @@ def build_record(
         "samples": samples,
         "results": results,
         "tb_slug": tb.slug,
-        "netlist_rel": _relpath(repo_root, tb.netlist),
+        "netlist_rel": _relpath(repo_root, tb.dut_netlist),
         "manifest_rel": _relpath(repo_root, tb.manifest_path),
     }
 
