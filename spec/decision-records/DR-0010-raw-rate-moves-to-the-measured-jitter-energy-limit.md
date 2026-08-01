@@ -1,5 +1,5 @@
 ---
-dr: DR-0008-raw-rate-moves-to-the-measured-jitter-energy-limit
+dr: DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit
 title: Resolve the DR-0007-versus-Power-row collision by moving the raw-rate row to the rate a minimum-energy ring array delivers inside the ratified power budget
 status: Proposed
 date: 2026-08-01
@@ -10,7 +10,7 @@ related: "#7 (origin — array sizing), #32/PR #38 (sim/characterization-supply-
 #46 (validating (★) on the shipped starved cell — this record's largest open risk); DR-0002 (H0, health-test cutoffs), DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law) and §Revisit if; README §Target specification — Raw rate, Power"
 ---
 
-# DR-0008: Resolve the DR-0007-versus-Power-row collision by moving the raw-rate row to the rate a minimum-energy ring array delivers inside the ratified power budget
+# DR-0010: Resolve the DR-0007-versus-Power-row collision by moving the raw-rate row to the rate a minimum-energy ring array delivers inside the ratified power budget
 
 ## Status
 
@@ -22,7 +22,7 @@ request that proposes this record:
 1. `README.md`'s `Raw rate` row changes to this record's number and cites this
    record alongside DR-0003.
 2. [`DR-0003`](DR-0003-throughput-defined-at-the-raw-tap.md) gains
-   `superseded_by: DR-0008-raw-rate-moves-to-the-measured-jitter-energy-limit`
+   `superseded_by: DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit`
    and a status line, and nothing else — its text is not rewritten.
 3. [`DR-0007`](DR-0007-multi-ro-xor-combined-entropy-source.md) §3's indicative
    `N₀ = 560` is annotated as answered by this record. Its §1 topology and §2

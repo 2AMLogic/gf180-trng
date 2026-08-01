@@ -10,10 +10,10 @@ Two independent, separately-supplied, free-running ring oscillators of a
 common cell design with deliberately skewed frequencies, XOR-combined into
 one node (xo) that a single sampler observes. Topology is DR-0007 section 1;
 sizing (N = 2, 11 stages, minimum-width series-starved cell, lstv = 2u) is
-DR-0008.
+DR-0010.
 
 Why N = 2 and not more. Entropy is indifferent to N at fixed total ring
-power (DR-0008's jitter-energy law), so N is chosen for independence and
+power (DR-0010's jitter-energy law), so N is chosen for independence and
 for what the combiner costs -- and the combiner is what binds. A four-ring
 array of these same rings measures 1.02 mW at the ff/+10%/-40 C power
 corner, of which the two-level XOR tree alone is 444 uW
@@ -22,7 +22,7 @@ corner, of which the two-level XOR tree alone is 444 uW
 still measures 939 uW because the tree energy per transition rises as the
 ring edges slow (record -02/-03). Halving the ring count halves the tree's
 transition rate AND its depth, which is the only lever that moved the total
-under the row. N = 2 is the floor of DR-0007's array concept, and DR-0008
+under the row. N = 2 is the floor of DR-0007's array concept, and DR-0010
 says so and names the Power row as the next thing that gives if #16 finds
 two rings insufficient.
 

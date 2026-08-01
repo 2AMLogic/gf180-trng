@@ -7,7 +7,7 @@ E {}
 T {ro_ring11 -- one ring of the entropy-source array: a starved NAND2 enable
 stage followed by ten starved inverters, closed on itself.
 
-Why eleven stages and not three. Under DR-0008's jitter-energy law the
+Why eleven stages and not three. Under DR-0010's jitter-energy law the
 entropy delivered per unit of ring power goes as the inverse SQUARE of the
 energy switched per ring cycle, which is proportional to the stage count,
 so three stages -- the minimum an inverting ring allows -- would be the

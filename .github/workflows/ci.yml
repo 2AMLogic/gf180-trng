@@ -21,7 +21,7 @@ name: CI
 #   sim/tools/array_sizing.py --check
 #       RUN on every push/PR. Both are pure derivations over records already
 #       committed under sim/records/ -- stdlib-only, no ngspice, no PDK,
-#       sub-second. They are what keeps DR-0008's premise (the jitter-energy
+#       sub-second. They are what keeps DR-0010's premise (the jitter-energy
 #       invariant) and its sizing result (DR-0007 §2's inequality at the
 #       entropy-binding corner) from rotting silently as records are appended:
 #       without them the spec's central arithmetic is only checked by a human
@@ -103,9 +103,9 @@ jobs:
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. jitter_energy_law.py --check fails if the
-      # three record families it reads stop agreeing on the invariant DR-0008
+      # three record families it reads stop agreeing on the invariant DR-0010
       # calls `a`; array_sizing.py --check fails if the shipped array stops
-      # satisfying DR-0007 §2 at any measured corner at DR-0008's rate, or if
+      # satisfying DR-0007 §2 at any measured corner at DR-0010's rate, or if
       # its own copy of `a` has drifted from that derivation.
       - name: Spec arithmetic self-checks (jitter-energy law, array sizing)
         run: |

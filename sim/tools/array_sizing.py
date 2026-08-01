@@ -2,7 +2,7 @@
 """Check the entropy source against DR-0007 §2's sizing inequality.
 
     python3 sim/tools/array_sizing.py                  # report Q_array per corner
-    python3 sim/tools/array_sizing.py --check          # assert DR-0008's rate holds
+    python3 sim/tools/array_sizing.py --check          # assert DR-0010's rate holds
     python3 sim/tools/array_sizing.py --rate 2000      # ask about a different rate
 
 DR-0007 §6 makes this an acceptance criterion rather than a nicety: "#7 may not
@@ -44,7 +44,7 @@ Every run *also* prints ``kappa^2`` as measured by the transient-noise array
 records (``sim/tb/ro-array-sanity-jitter/``, which measure ``sigma_1`` and the
 ring's supply current in the same run) beside what the law predicts. That
 comparison is **reported, not enforced**: the one such record in the tree
-disagrees by four orders of magnitude, and DR-0008 §Consequences diagnoses that
+disagrees by four orders of magnitude, and DR-0010 §Consequences diagnoses that
 run's ``sigma`` as start-up settling drift rather than jitter (seed-independent
 to 0.3 %, accumulating as lag^0.81 rather than lag^0.5). Confirming the law on
 the shipped starved cell needs a longer, later window; that measurement is #46's
@@ -69,9 +69,9 @@ RECORDS = REPO_ROOT / "sim" / "records"
 
 KB = 1.380649e-23
 
-#: DR-0008's ``a``, from sim/tools/jitter_energy_law.py over the candidate-A
+#: DR-0010's ``a``, from sim/tools/jitter_energy_law.py over the candidate-A
 #: 27-point grid. Deliberately a *stated* constant rather than a live one: the
-#: figures in DR-0008 §3, the README's Raw rate row and design/README.md are all
+#: figures in DR-0010 §3, the README's Raw rate row and design/README.md are all
 #: quoted against this exact value, and they must not shift under a reader every
 #: time a record is appended. It is kept honest by ``--check``, which re-runs the
 #: derivation and fails if the two have drifted by more than A_TOLERANCE.
@@ -87,8 +87,8 @@ A_TOLERANCE = 0.05
 Q_H0 = 4.0e-3
 MARGIN_M = 1.5
 
-#: DR-0008 §1's proposed raw-rate row, in bits per second.
-DR0008_RATE_BPS = 500.0
+#: DR-0010 §1's proposed raw-rate row, in bits per second.
+DR0010_RATE_BPS = 500.0
 
 #: The fixed injected per-stage noise density of the jitter testbenches, V/sqrt(Hz).
 INJECTED_DENSITY = 1.0e-8
@@ -214,8 +214,8 @@ def main(argv: list[str] | None = None) -> int:
         description="Evaluate DR-0007 §2's sizing inequality for the shipped array.",
     )
     parser.add_argument(
-        "--rate", type=float, default=DR0008_RATE_BPS, metavar="BPS",
-        help=f"raw rate to test the inequality at (default {DR0008_RATE_BPS:g} bps, DR-0008 §1)",
+        "--rate", type=float, default=DR0010_RATE_BPS, metavar="BPS",
+        help=f"raw rate to test the inequality at (default {DR0010_RATE_BPS:g} bps, DR-0010 §1)",
     )
     parser.add_argument(
         "--check", action="store_true",
@@ -301,7 +301,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"\nFAIL: A_JITTER_ENERGY = {A_JITTER_ENERGY:g} has drifted {drift:.1%} "
                 f"from the {a_derived:.3f} sim/tools/jitter_energy_law.py now derives "
                 f"(tolerance {A_TOLERANCE:.0%}). The constant is not the thing to edit "
-                f"on its own: DR-0008 §3's arithmetic and every rate figure quoted from "
+                f"on its own: DR-0010 §3's arithmetic and every rate figure quoted from "
                 f"it move with it.",
                 file=sys.stderr,
             )

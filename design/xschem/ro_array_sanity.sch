@@ -20,7 +20,7 @@ exist to make a transient-noise run finish:
 
 Together those make one accumulated ring period ~6.6x cheaper to simulate
 than the shipped ring's. What connects this cell's numbers to the shipped
-array's is DR-0008's jitter-energy law -- which is exactly what this cell's
+array's is DR-0010's jitter-energy law -- which is exactly what this cell's
 run exists to TEST, by measuring sigma_1 and the ring's own supply current
 in the same run and checking their product against the constant the
 ratified plain-inverter grid gives.
@@ -37,7 +37,7 @@ array match the same ring standing alone, does jitter still accumulate as
 sqrt(t) inside the array, and is the XOR node alive -- are all questions
 about the ARRAY, not about the stage count. The shipped operating point
 (N = 4 x 11 stages) is sized from the deterministic ro-array-core-power
-grid plus DR-0008's jitter-energy law, not from this cell. Do not cite
+grid plus DR-0010's jitter-energy law, not from this cell. Do not cite
 this cell's numbers as the core's.} -1200 -700 0 0 0.25 0.25 {}
 C {ipin.sym} -1200 -300 0 0 {name=pe1 lab=en1}
 C {ipin.sym} -1200 -250 0 0 {name=pe2 lab=en2}

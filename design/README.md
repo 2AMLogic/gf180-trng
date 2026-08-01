@@ -1,11 +1,18 @@
 # `design/` — schematics and their exported netlists
 
-This directory holds the block's xschem schematics (`design/xschem/`) and the
-SPICE netlists exported from them (`design/*.spice`). The netlists are
-**generated files under version control**: they are committed so that every
-evidence record under `sim/records/` can name a `netlist.path` /`netlist.sha`
-that a reader can actually fetch, and they are regenerated — never hand-edited
-— by `design/netlist.py`.
+This file covers the block's **analog** half: the xschem schematics
+(`design/xschem/`) and the SPICE netlists exported from them
+(`design/*.spice`). The netlists are **generated files under version control**:
+they are committed so that every evidence record under `sim/records/` can name
+a `netlist.path` /`netlist.sha` that a reader can actually fetch, and they are
+regenerated — never hand-edited — by `design/netlist.py`.
+
+The digital half lives beside it in
+[`design/conditioner/`](conditioner/) — a behavioural model plus synthesisable
+RTL, with its own README. It has no schematic and no netlist, so
+`design/netlist.py` neither reads nor checks it; the boundary between the two
+is the raw tap, per
+[`DR-0009`](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md).
 
 ```sh
 python3 design/netlist.py            # (re-)export every top cell
@@ -45,7 +52,7 @@ The topology is not a free choice: [`DR-0007`](../spec/decision-records/DR-0007-
 deliberately non-integer frequency ratios, XOR-combined into the single node one
 sampler observes. What this issue owned was the *sizing*: the delay cell, the
 stage count, N, and the operating point. The reasoning is in
-[`DR-0008`](../spec/decision-records/DR-0008-raw-rate-moves-to-the-measured-jitter-energy-limit.md);
+[`DR-0010`](../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md);
 this section is the short version, mapped onto the cells above.
 
 ### The one equation the sizing turns on
@@ -128,7 +135,7 @@ corner. Simulated directly with this cell, the consequence is visible:
 
 A ring that does not reach the rails is a ring whose swing margin is being spent
 rather than banked. The five-stage case is the one that costs something real —
-about 4.2× on the raw-rate row — and `DR-0008` §3 (*What five stages would buy*)
+about 4.2× on the raw-rate row — and `DR-0010` §3 (*What five stages would buy*)
 prices it against exactly these swing figures rather than leaving the trade
 unquantified. Note in fairness that the XOR node in that same sanity record does
 restore to 3.52 V on a 3.30 V rail from 2.64 V inputs, so "the sampler is handed
@@ -177,7 +184,7 @@ measured frequency ratio is 1.057 at `ff`/−40 °C/3.63 V and 1.062 at
 schematic-level half of the injection-locking argument. Both ring outputs and
 the XOR node swing rail to rail (3.65–3.73 V on a 3.63 V supply).
 
-N = 2 is the floor of what DR-0007 §1 means by an array. `DR-0008` says so
+N = 2 is the floor of what DR-0007 §1 means by an array. `DR-0010` says so
 explicitly and names the `Power` row as the next thing that has to give if #16's
 isolation work finds two rings insufficient. The lever that would buy N back
 without touching that row is a cheaper combiner, which nobody has scheduled.
@@ -198,7 +205,7 @@ python3 sim/tools/array_sizing.py --check
 
 At the entropy-binding corner (`ss`/−40 °C/3.63 V), `Q_array = 7.82 × 10⁻³`
 against the required `M · Q_H₀ = 6.0 × 10⁻³` — a 1.30× margin on top of
-DR-0007's own `M = 1.5` — at the 500 bps raw rate `DR-0008` proposes. The tool
+DR-0007's own `M = 1.5` — at the 500 bps raw rate `DR-0010` proposes. The tool
 evaluates the inequality from the committed per-ring period and supply-current
 records via the jitter-energy law, refuses to use records of a different array
 size than the one in `design/`, and exits non-zero if the inequality fails.
@@ -235,7 +242,7 @@ Designing the monitor is deliberately **not** in this directory: it is digital
 logic, it belongs with the health tests, and it is deferred to #44.
 What this issue owed was that the mechanism exists and is not foreclosed by the
 schematic. With N = 2 the stakes are higher than DR-0007 anticipated — one dead
-ring is half the array — which is stated in `DR-0008` §Consequences.
+ring is half the array — which is stated in `DR-0010` §Consequences.
 
 ### Metastability-hybrid tap
 
@@ -280,7 +287,7 @@ What the first run
   thing — `sigma` grows as roughly lag^0.81 rather than the lag^0.5 of a random
   walk.
 
-  That is a real finding and it is the reason the array's `Q_array` in DR-0008
+  That is a real finding and it is the reason the array's `Q_array` in DR-0010
   is derived from the jitter-energy law and the deterministic power grid rather
   than from this record. It also sets a concrete requirement for **#46**, which
   owns re-running this measurement properly: the window must open well after

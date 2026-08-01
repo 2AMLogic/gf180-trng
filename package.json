@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "lint": "python3 -m compileall -q design sim && bash -n sim/selftest.sh",
+    "lint": "python3 -m compileall -q sim design && bash -n sim/selftest.sh",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests",
     "check:spec": "python3 sim/tools/jitter_energy_law.py --check && python3 sim/tools/array_sizing.py --check",
     "check:netlist": "python3 design/netlist.py --check",

@@ -11,7 +11,7 @@ Mp/Mn are the smallest inverter the gf180mcu 3.3 V core devices allow
 (gates tied to the opposite rail) whose W/L sets the charge/discharge
 current, and therefore the stage delay, WITHOUT adding switched
 capacitance to the output node y. That separation is the whole point:
-per DR-0008 the entropy source's energy cost per raw bit scales as the
+per DR-0010 the entropy source's energy cost per raw bit scales as the
 SQUARE of the energy switched per ring cycle, while the ring frequency
 (and hence the XOR node's transition density) can be traded freely
 against the ring count N at constant energy per cycle. Starving buys

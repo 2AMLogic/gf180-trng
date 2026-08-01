@@ -36,7 +36,7 @@ that cover the *same* 27 PVT points:
 
 If ``a`` is in fact constant across that grid, then ``kappa^2`` -- and
 therefore the entropy a ring delivers -- is fixed by the ring's power
-budget and is *not* a free design variable. That is the premise DR-0008
+budget and is *not* a free design variable. That is the premise DR-0010
 rests on, so it is checkable here rather than asserted there.
 
 Accuracy inherited from the inputs
@@ -145,9 +145,9 @@ def grid_points() -> list[Point]:
 def derive_a(points: list[Point] | None = None) -> tuple[float, float, float]:
     """``(mean, min, max)`` of ``a = kappa^2 * P / (kB * T)`` over that grid.
 
-    This function is the single source of truth for the constant DR-0008 calls
+    This function is the single source of truth for the constant DR-0010 calls
     ``a``. ``sim/tools/array_sizing.py`` sizes the array against a *stated*
-    value of it (so that the numbers quoted in DR-0008 and the README do not
+    value of it (so that the numbers quoted in DR-0010 and the README do not
     shift under them every time a record is appended), and its ``--check``
     re-runs this derivation and fails if the two have drifted apart. Raises
     :class:`RecordError` if the record families it reads are incomplete.

@@ -7,10 +7,11 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, nine decision records, an entropy-source architecture survey, and a
+convention, ten decision records, an entropy-source architecture survey, and a
 working PVT corner simulation harness with its first device-characterization
-results. `design/` holds one block — the digital conditioner, as a behavioural
-model plus synthesisable RTL — and there is still no analog schematic and no
+results. `design/` holds two blocks — the digital conditioner, as a behavioural
+model plus synthesisable RTL, and the analog entropy source, as xschem
+schematics with a deterministic SPICE netlist export — and there is still no
 GDS in `layout/`. The specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
@@ -124,18 +125,26 @@ and this repository will not let one be read as the other.
 
 ```
 spec/          spec + decision records
-design/        schematics / netlists (xschem) + digital blocks
+design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
 layout/        GDS + DRC/LVS reports (klayout-tools driven)   — empty
 measurements/  silicon characterization                       — empty until tape-out
 ```
 
-`design/` currently holds only [`conditioner/`](design/conditioner/) — the
-digital post-processing stage, as a normative behavioural model plus
-synthesisable RTL checked against it. Which parts of the block are simulated
-at transistor level and which are modelled behaviourally is fixed by
-[DR-0009]: the boundary is the raw tap, and every evidence record says which
-side of it produced the number.
+`design/` holds the two halves of the block, one on each side of the raw tap.
+[`conditioner/`](design/conditioner/) is the digital post-processing stage, as
+a normative behavioural model plus synthesisable RTL checked against it.
+[`xschem/`](design/xschem/) is the analog entropy source — the starved delay
+cell, the ring built from it, and the XOR-combined multi-ring array — together
+with the SPICE netlists exported from those schematics by
+[`design/netlist.py`](design/netlist.py), which also provides the
+schematic-vs-netlist staleness guard that makes a netlist SHA quoted in an
+evidence record provable rather than asserted. See
+[`design/README.md`](design/README.md) for the cell-by-cell inventory.
+
+Which parts of the block are simulated at transistor level and which are
+modelled behaviourally is fixed by [DR-0009]: the boundary is the raw tap, and
+every evidence record says which side of it produced the number.
 
 Two conventions govern what lands in those directories:
 
@@ -227,13 +236,15 @@ The nightly run does not replace the local one: run `sim/selftest.sh
 PDK before committing an evidence record. `ci.yml` carries the full inventory
 of which self-checks run where, and why.
 
-Bootstrap testbenches under `sim/tb/` exercise the harness itself (not yet
-the TRNG design, which has no `design/` content as of this bootstrap):
-`smoke-op` (trivial op-point smoke test), `corner-sanity-nfet-id` (the
-automated guardrail behind `sim/tools/corner_sanity_check.py`), and
-`nfet-mismatch-seed` (demonstrates per-run seed control and exact
-reproducibility for stochastic analyses — see `sim/README.md`'s "no seed,
-no evidence" rule).
+Some testbenches under `sim/tb/` exercise the harness itself rather than the
+TRNG design — they predate any `design/` content and are kept as the harness's
+own regression set: `smoke-op` (trivial op-point smoke test),
+`corner-sanity-nfet-id` (the automated guardrail behind
+`sim/tools/corner_sanity_check.py`), and `nfet-mismatch-seed` (demonstrates
+per-run seed control and exact reproducibility for stochastic analyses — see
+`sim/README.md`'s "no seed, no evidence" rule). The rest exercise the design:
+`rostage-noise`, `ro-array-core-power` and `ro-array-sanity-jitter` run against
+the netlists exported from `design/xschem/`.
 
 `sim/tb/conditioner-crc32/` is the first **behavioral-level** testbench: it
 has no `tb.json`, is not discovered by `run_corners.py`, and is run directly

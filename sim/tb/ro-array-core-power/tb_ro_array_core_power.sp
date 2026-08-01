@@ -16,7 +16,7 @@
 *     lose output swing before it loses oscillation, and a degraded swing
 *     is a sampler problem, not a ring problem.
 *
-* Together with DR-0008's jitter law those numbers are the array's sizing
+* Together with DR-0010's jitter law those numbers are the array's sizing
 * evidence: energy per ring cycle sets the entropy cost per raw bit, and
 * the sum of ring frequencies sets the transition density the sampler has
 * to resolve.

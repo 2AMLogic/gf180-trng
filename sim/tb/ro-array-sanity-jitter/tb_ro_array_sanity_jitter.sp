@@ -35,7 +35,7 @@
 *      the nominal wstv skew, and against each other)
 *   2. does each ring's jitter in the array match a ring standing alone?
 *      (sigma_r1_1 against sim/records/2026-07-31-ro-inv-05stage-jitter-*,
-*      via the jitter-energy law of DR-0008 -- the cells differ, so the
+*      via the jitter-energy law of DR-0010 -- the cells differ, so the
 *      comparison is at equal power, not equal sigma)
 *   3. does jitter still accumulate as sqrt(t) inside the array?
 *      (sigma_r1_1 .. sigma_r1_32)
@@ -44,7 +44,7 @@
 *
 * Per-ring charge integrators (fq/cq/rq, as in sim/tb/ro-inv-05stage-power/)
 * run alongside, so the energy per ring cycle and the jitter come from the
-* SAME run -- DR-0008's jitter-energy law relates exactly those two
+* SAME run -- DR-0010's jitter-energy law relates exactly those two
 * quantities, and relating them across two different runs would import a
 * needless cross-run assumption.
 *
