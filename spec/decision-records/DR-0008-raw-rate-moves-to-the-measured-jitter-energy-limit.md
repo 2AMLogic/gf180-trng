@@ -435,9 +435,14 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
     flags that with N = 2 the consequence of getting it wrong is worse.
   - **A cheaper combiner** is the one piece of design work that would buy N back
     inside the ratified Power row, and it is not scheduled anywhere.
-  - **Per-ring liveness monitoring** and the **metastability-hybrid stretch
-    tap** are both deferred out of #7 to their own issues; `design/README.md`
-    records the mechanism each is deferred *against*, so neither is foreclosed.
+  - **Per-ring liveness monitoring (#44)** and the **metastability-hybrid
+    stretch tap (#43)** are both deferred out of #7 to their own issues;
+    `design/README.md` records the mechanism each is deferred *against*, so
+    neither is foreclosed. #44 matters more under this record than it did
+    under DR-0007: at N = 2 a single dead ring is half the array.
+    #43 matters more too — a metastability tap is not rate-limited by
+    accumulated phase noise, so it is the one architectural option that could
+    raise the rate row back up without spending power.
 
 - **Revisit if**: #12 measures `σ_acc(T_s)` for the shipped cell over a window
   long enough to be jitter rather than settling drift, and finds `a` in `(★)`

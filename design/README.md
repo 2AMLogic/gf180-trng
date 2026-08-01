@@ -225,7 +225,7 @@ design question this issue inherits, and the schematic answers it by making it
    internally.
 
 Designing the monitor is deliberately **not** in this directory: it is digital
-logic, it belongs with the health tests, and it is deferred to its own issue.
+logic, it belongs with the health tests, and it is deferred to #44.
 What this issue owed was that the mechanism exists and is not foreclosed by the
 schematic. With N = 2 the stakes are higher than DR-0007 anticipated — one dead
 ring is half the array — which is stated in `DR-0008` §Consequences.
@@ -234,8 +234,8 @@ ring is half the array — which is stated in `DR-0008` §Consequences.
 
 The survey (§Recommendation 2) and DR-0007 §1 keep the metastability hybrid as a
 *stretch* item — a secondary tap layered on this RO core, never a free-standing
-source. It is not in these schematics. It is deferred to its own issue, for the
-reason #7 itself names as its first deferral candidate: the core plus its
+source. It is not in these schematics. It is deferred to #43, for the reason #7
+itself names as its first deferral candidate: the core plus its
 superseding decision record is already the whole of this deliverable, and a
 half-argued second tap would be worse than none.
 
