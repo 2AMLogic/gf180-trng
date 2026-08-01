@@ -7,12 +7,23 @@ they are committed so that every evidence record under `sim/records/` can name
 a `netlist.path` /`netlist.sha` that a reader can actually fetch, and they are
 regenerated — never hand-edited — by `design/netlist.py`.
 
-The digital half lives beside it in
-[`design/conditioner/`](conditioner/) — a behavioural model plus synthesisable
-RTL, with its own README. It has no schematic and no netlist, so
-`design/netlist.py` neither reads nor checks it; the boundary between the two
-is the raw tap, per
+The digital half lives beside it in two directories, each a behavioural model
+plus synthesisable RTL with its own README:
+[`design/conditioner/`](conditioner/) (the post-processing stage) and
+[`design/interface/`](interface/) (the register file, output FIFOs,
+`OUT_MODE` mux and gate/flush machine). Neither has a schematic or a netlist,
+so `design/netlist.py` neither reads nor checks them; the boundary between the
+analog and digital halves is the raw tap, per
 [`DR-0009`](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md).
+
+The digital half is not unguarded, though — it carries the same
+*deterministic-export* discipline in the form it actually has. The interface
+block's register map lives in one normative table
+(`design/interface/regmap.py`) that generates both the RTL's included header
+and the integrator-facing pinout document, with
+`python3 design/interface/regmap.py --check` as the staleness guard. Unlike
+`netlist.py --check` it needs no PDK and no external tool, so it runs inside
+the PR-blocking unit-test set rather than nightly.
 
 ```sh
 python3 design/netlist.py            # (re-)export every top cell
