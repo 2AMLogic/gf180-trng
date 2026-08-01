@@ -160,7 +160,13 @@ def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
             "cost for this point, not elapsed time, and is inflated relative to a "
             "quiet machine by contention between concurrent runs."
         )
-    if str(tb.netlist) == str((tb.directory / tb.netlist.name)) and tb.netlist.parent == tb.directory:
+    if tb.design_netlist is not None:
+        caveats.append(
+            f"DUT is the schematic-derived netlist {tb.design_netlist.name}; netlist.sha above "
+            "is that file's blob SHA, and `python3 design/netlist.py --check` is what ties it "
+            "to the schematic it claims to come from."
+        )
+    elif tb.netlist.parent == tb.directory:
         caveats.append(
             "Harness-bootstrap testbench: no design/ DUT schematic-derived netlist exists yet "
             "for this block, so testbench.path and netlist.path are the same self-contained "

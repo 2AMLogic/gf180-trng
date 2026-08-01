@@ -1,0 +1,51 @@
+{
+  "name": "ro-array-core-power",
+  "description": "Shipped 2-ring x 11-stage entropy-source array (design/ro_array_core.spice): per-ring period, per-ring supply current, XOR-gate current, ring and XOR-node swing.",
+  "netlist": "tb_ro_array_core_power.sp",
+  "design_netlist": "design/ro_array_core.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "tt",
+    "ff",
+    "ss"
+  ],
+  "tstop": "50n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 50n",
+    "meas tran t1a when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran t1b when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran t2a when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran t2b when v(xdut.ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(xdut.ro2)=v(vth) rise=6",
+    "meas tran cta find v(qt) when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran ctb find v(qt) when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran vhi max v(xdut.ro1) from=25n to=48n",
+    "meas tran vlo min v(xdut.ro1) from=25n to=48n",
+    "meas tran vxhi max v(xo) from=25n to=48n",
+    "meas tran vxlo min v(xo) from=25n to=48n",
+    "let cq = 1e-9",
+    "let nper = 4",
+    "let nstg = 11"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)",
+    "i_tree_a": "cq*(ctb-cta)/(t1b-t1a)",
+    "e_cycle_r1_j": "cq*(c1b-c1a)/nper*mean(v(vsup))",
+    "c_eff_node_r1_f": "cq*(c1b-c1a)/(nper*nstg*mean(v(vsup)))",
+    "ring_swing_v": "vhi-vlo",
+    "xo_swing_v": "vxhi-vxlo",
+    "i_total_a": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))",
+    "p_rings_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a))*mean(v(vsup))",
+    "p_total_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))*mean(v(vsup))",
+    "xo_trans_per_s": "2*(nper/(t1b-t1a)+nper/(t2b-t2a))"
+  }
+}
