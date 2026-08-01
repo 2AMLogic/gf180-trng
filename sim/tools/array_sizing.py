@@ -125,8 +125,15 @@ def load(glob: str) -> list[Record]:
 class ArrayPoint:
     """One PVT point of the shipped array."""
 
-    def __init__(self, rec: Record) -> None:
+    def __init__(self, rec: Record, a: float = A_JITTER_ENERGY) -> None:
         self.rec = rec
+        #: the jitter-energy constant this point is sized against. Defaults to
+        #: the stated A_JITTER_ENERGY; ``--a`` overrides it so a superseding
+        #: decision record can price a *different* measured constant (issue #46
+        #: measures one for the shipped starved cell) without editing the
+        #: stated constant that DR-0010 §3's published arithmetic is quoted
+        #: against. Changing the stated constant is a decision, not a run.
+        self.a = a
         v = rec.values
         # N is read off the record, not assumed: a record of a two-ring array
         # carries period_r1/period_r2 and nothing else.
@@ -148,9 +155,7 @@ class ArrayPoint:
     def g(self) -> float:
         """Q_array per second of sample period: Q_array(T_s) = g * T_s."""
         kt = KB * self.rec.temp_k
-        return sum(
-            A_JITTER_ENERGY * kt / p / (t * t) for p, t in zip(self.powers, self.periods)
-        )
+        return sum(self.a * kt / p / (t * t) for p, t in zip(self.powers, self.periods))
 
     def q_array(self, rate_bps: float) -> float:
         return self.g / rate_bps
@@ -218,10 +223,26 @@ def main(argv: list[str] | None = None) -> int:
         help=f"raw rate to test the inequality at (default {DR0010_RATE_BPS:g} bps, DR-0010 §1)",
     )
     parser.add_argument(
+        "--a", type=float, default=A_JITTER_ENERGY, dest="a", metavar="A",
+        help=f"jitter-energy constant to size against (default {A_JITTER_ENERGY:g}, the "
+             "stated DR-0010 value). Overriding it prices a different measured constant "
+             "-- e.g. the shipped starved cell's, from "
+             "sim/tools/starved_cell_jitter_energy.py -- WITHOUT moving the stated one; "
+             "moving that is a decision record's job, not a flag's. Incompatible with "
+             "--check, which exists to hold the stated constant to the derivation.",
+    )
+    parser.add_argument(
         "--check", action="store_true",
         help="exit non-zero unless the inequality holds at every measured corner",
     )
     args = parser.parse_args(argv)
+    if args.check and args.a != A_JITTER_ENERGY:
+        print(
+            "error: --check asserts the STATED constant still matches its derivation, "
+            "so it cannot be combined with an overridden --a",
+            file=sys.stderr,
+        )
+        return 2
 
     records = load("*-ro-array-core-power-*.md")
     if not records:
@@ -230,7 +251,8 @@ def main(argv: list[str] | None = None) -> int:
     shipped_n = shipped_ring_count()
     points, other = [], []
     for rec in records:
-        (points if ArrayPoint(rec).n == shipped_n else other).append(ArrayPoint(rec))
+        point = ArrayPoint(rec, a=args.a)
+        (points if point.n == shipped_n else other).append(point)
     if not points:
         print(
             f"ERROR: no record measures the shipped {shipped_n}-ring array "
@@ -243,9 +265,15 @@ def main(argv: list[str] | None = None) -> int:
     need = MARGIN_M * Q_H0
     print(f"DR-0007 §2 requires Q_array >= M * Q_H0 = {MARGIN_M} * {Q_H0:g} = {need:g}")
     print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s)")
-    print(
-        f"sizing constant a = {A_JITTER_ENERGY:g}; jitter_energy_law.py {a_note}\n"
-    )
+    if args.a == A_JITTER_ENERGY:
+        print(f"sizing constant a = {A_JITTER_ENERGY:g}; jitter_energy_law.py {a_note}\n")
+    else:
+        print(
+            f"sizing constant a = {args.a:g}  <-- OVERRIDDEN via --a "
+            f"({args.a / A_JITTER_ENERGY:.2f}x the stated {A_JITTER_ENERGY:g}). "
+            f"Nothing published is quoted at this value.\n"
+            f"jitter_energy_law.py {a_note}\n"
+        )
 
     header = (
         f"{'corner':<15} {'N':>2} {'T0_r1 (s)':>10} {'P_rings':>10} {'P_tree':>10} {'P_tot':>10} "
