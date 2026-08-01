@@ -1,0 +1,34 @@
+{
+  "name": "ro-inv-05stage-power",
+  "description": "Candidate A ring, 5 stages, free-running: mean supply current and derived active power over an exact integer number of oscillation periods.",
+  "netlist": "tb_ro_inv_05stage_power.sp",
+  "analysis_type": "tran",
+  "corners": [
+    "tt",
+    "ff",
+    "ss"
+  ],
+  "tstop": "45n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 45n",
+    "meas tran t1 when v(xing)=0 rise=3",
+    "meas tran t2 when v(xing)=0 rise=19",
+    "meas tran t3 when v(xing)=0 rise=35",
+    "meas tran q1 find v(q) when v(xing)=0 rise=3",
+    "meas tran q2 find v(q) when v(xing)=0 rise=19",
+    "meas tran q3 find v(q) when v(xing)=0 rise=35",
+    "let cq = 1e-9",
+    "let nper = 32"
+  ],
+  "measure": {
+    "period": "(t3-t1)/nper",
+    "f_osc": "nper/(t3-t1)",
+    "i_supply_a": "cq*(q3-q1)/(t3-t1)",
+    "p_active_w": "cq*(q3-q1)/(t3-t1)*mean(v(vdd))",
+    "e_per_cycle_j": "cq*(q3-q1)/nper*mean(v(vdd))",
+    "c_eff_node_f": "cq*(q3-q1)/(nper*5*mean(v(vdd)))",
+    "i_supply_first16_a": "cq*(q2-q1)/(t2-t1)",
+    "i_supply_last16_a": "cq*(q3-q2)/(t3-t2)"
+  }
+}
