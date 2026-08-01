@@ -1,0 +1,26 @@
+{
+  "name": "ro-inv-05stage-stopped-leakage",
+  "description": "Candidate A ring, 5 stages, held STOPPED by its enable (the README's 'idle' definition): DC static/leakage supply current.",
+  "netlist": "tb_ro_inv_05stage_stopped.sp",
+  "analysis_type": "dc",
+  "corners": [
+    "mos"
+  ],
+  "tstop": "n/a (operating-point analysis: no time axis)",
+  "params": {
+    "en_val": "0"
+  },
+  "analyses": [
+    "op"
+  ],
+  "measure": {
+    "i_leak_a": "-i(vdd)",
+    "p_idle_w": "-i(vdd)*v(vdd)",
+    "v_n1": "v(n1)",
+    "v_n2": "v(n2)",
+    "v_n3": "v(n3)",
+    "v_n4": "v(n4)",
+    "v_n5": "v(n5)",
+    "v_en": "v(en)"
+  }
+}

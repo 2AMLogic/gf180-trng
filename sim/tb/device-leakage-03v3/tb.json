@@ -1,0 +1,19 @@
+{
+  "name": "device-leakage-03v3",
+  "description": "gf180mcu 3.3 V core devices in their off state (Vgs=0, |Vds|=supply): drain leakage per micron of gate width, for block-level idle projection.",
+  "netlist": "tb_device_leakage.sp",
+  "analysis_type": "dc",
+  "corners": [
+    "mos"
+  ],
+  "tstop": "n/a (operating point; single DC bias solution, no sweep)",
+  "analyses": [
+    "op"
+  ],
+  "measure": {
+    "ioff_nfet_a": "i(vdn)",
+    "ioff_pfet_a": "i(vdp)",
+    "ioff_nfet_a_per_um": "i(vdn)/10",
+    "ioff_pfet_a_per_um": "i(vdp)/10"
+  }
+}
