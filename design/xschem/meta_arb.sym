@@ -1,0 +1,30 @@
+v {xschem version=3.4.4 file_version=1.2}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname cld=@cld"
+template="name=x1 cld=0.5f"
+description="Cross-coupled NAND2 SR latch used as the metastability tap's two-input arbiter."
+}
+V {}
+S {}
+E {}
+B 5 -42.5 -22.5 -37.5 -17.5 {name=sn dir=in}
+B 5 -42.5 17.5 -37.5 22.5 {name=rn dir=in}
+B 5 37.5 -22.5 42.5 -17.5 {name=q dir=out}
+B 5 37.5 17.5 42.5 22.5 {name=qn dir=out}
+B 5 -2.5 -42.5 2.5 -37.5 {name=vdd dir=inout}
+B 5 -2.5 37.5 2.5 42.5 {name=vss dir=inout}
+L 4 -40 -20 -30 -20 {}
+L 4 -40 20 -30 20 {}
+L 4 30 -20 40 -20 {}
+L 4 30 20 40 20 {}
+L 4 0 -40 0 -30 {}
+L 4 0 30 0 40 {}
+L 4 -30 -30 30 -30 {}
+L 4 30 -30 30 30 {}
+L 4 30 30 -30 30 {}
+L 4 -30 30 -30 -30 {}
+L 4 -30 0 30 0 {}
+T {@name} -25 -45 0 0 0.25 0.25 {}
+T {ARB} -20 -27 0 0 0.2 0.2 {}
+T {meta_arb} -30 32 0 0 0.2 0.2 {layer=13}

@@ -21,12 +21,22 @@ through an rc file. Both are machine-specific, so this script:
   the same chain ``sim/harness/pdk.py`` uses (``GF180_PDK_PATH`` /
   ``PDK_ROOT`` + ``PDK`` / ``sim/pdk.local.json`` / ``sim/pdk.json`` /
   built-in search roots), so nothing here hardcodes a path; and
-* rewrites every absolute path in the output to a repo-relative one.
+* rewrites every absolute path in the output to a repo-relative one; and
+* re-wraps every SPICE continuation (``+``) line itself, at a width this
+  file owns, instead of inheriting xschem's. Line *breaks* carry no
+  circuit meaning -- a continuation is glued back on by any SPICE parser --
+  but they are the part of xschem's output that has actually moved between
+  releases. xschem 3.4.4 emits a device line broken after ``as=``; 3.4.7
+  reflows the same tokens and breaks after ``pd=``. Same netlist, different
+  bytes, and ``--check`` cannot tell that apart from a real schematic edit.
+  Canonicalising the wrap here removes the whole class of difference, so
+  the guard fires on circuit changes and only on circuit changes.
 
-The result is byte-identical on any machine with the same xschem version
-and PDK symbol set. The xschem version is *not* pinned by this script; if a
-future xschem changes its netlist formatting, ``--check`` will say so
-loudly rather than letting the two drift apart silently.
+The result is byte-identical on any machine with the same PDK symbol set,
+across xschem releases that differ only in line-wrapping. A change in what
+xschem actually *emits* -- different tokens, different hierarchy -- still
+makes ``--check`` say so loudly rather than letting the netlist and the
+schematic drift apart silently.
 """
 
 from __future__ import annotations
@@ -47,9 +57,29 @@ SCHEMATIC_DIR = DESIGN_DIR / "xschem"
 
 #: Schematics exported as stand-alone netlists. Cells not listed here are
 #: still netlisted, but only as subcircuits inside a top cell that uses them.
-TOP_CELLS = ("ro_array_core", "ro_array_sanity")
+#:
+#: A cell earns a place here when a testbench needs to instantiate it
+#: directly, because ``sim/README.md``'s ``netlist.path``/``netlist.sha``
+#: should name the netlist that defines the DUT and nothing more. That is
+#: why ``meta_arb`` and ``ro_meta_tap`` are exported separately from
+#: ``ro_array_core_meta``: they are characterized on their own, and a
+#: record that pointed at the whole array netlist would overstate what was
+#: simulated.
+TOP_CELLS = (
+    "meta_arb",
+    "ro_array_core",
+    "ro_array_core_meta",
+    "ro_array_sanity",
+    "ro_meta_tap",
+)
 
 XSCHEM = "xschem"
+
+#: Column at which this script re-wraps SPICE continuation lines. Any value
+#: works as long as it is fixed here rather than inherited from xschem --
+#: see the module docstring. 120 keeps device lines to roughly the shape
+#: xschem 3.4.4 produced, so the committed netlists stay readable diffs.
+WRAP_COLUMN = 120
 
 EXIT_OK = 0
 EXIT_STALE = 1
@@ -93,7 +123,89 @@ def _write_rcfile(target: Path, symbol_dir: Path, netlist_dir: Path) -> None:
     )
 
 
-def _normalize(text: str) -> str:
+def _tokens(line: str) -> list[str]:
+    """Split a SPICE line on whitespace, keeping quoted expressions whole.
+
+    ``ad='int((nf+1)/2) * W/nf * 0.18u'`` is one token even though it
+    contains spaces: breaking a line inside it would produce a netlist that
+    no longer parses.
+    """
+    out: list[str] = []
+    current: list[str] = []
+    quote = ""
+    for char in line:
+        if quote:
+            current.append(char)
+            if char == quote:
+                quote = ""
+        elif char in "'\"":
+            quote = char
+            current.append(char)
+        elif char.isspace():
+            if current:
+                out.append("".join(current))
+                current = []
+        else:
+            current.append(char)
+    if current:
+        out.append("".join(current))
+    return out
+
+
+def _rewrap(line: str) -> list[str]:
+    """Re-wrap one logical SPICE line at :data:`WRAP_COLUMN`.
+
+    Greedy, and deliberately so: the rule has to be reproducible by reading
+    this function, not by matching a particular xschem release's output.
+    A token longer than the column is emitted on its own line rather than
+    split, because splitting it would change the netlist.
+    """
+    tokens = _tokens(line)
+    if not tokens:
+        return [line]
+    wrapped: list[str] = []
+    current = tokens[0]
+    for token in tokens[1:]:
+        candidate = f"{current} {token}"
+        if len(candidate) <= WRAP_COLUMN:
+            current = candidate
+            continue
+        wrapped.append(current)
+        current = f"+ {token}"
+    wrapped.append(current)
+    return wrapped
+
+
+def _join_continuations(lines: list[str]) -> list[str]:
+    """Glue ``+`` continuation lines back onto the line they continue."""
+    joined: list[str] = []
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("+") and joined:
+            joined[-1] = f"{joined[-1]} {stripped[1:].strip()}".rstrip()
+        else:
+            joined.append(line)
+    return joined
+
+
+def _schematic_params(schematic: Path) -> str:
+    """The top schematic's own parameter block (the xschem ``G {...}`` line).
+
+    xschem treats a top schematic as a deck, so it drops that block from the
+    ``.subckt`` line it comments out -- which leaves a parameterised top cell
+    exporting instance lines that reference names nothing declares
+    (``xtap ... cta=cta`` with no ``cta``). Restoring the block alongside the
+    ``.subckt`` wrapper is the same fix, for the same reason: here the top
+    cell IS a cell, and a testbench needs to override its parameters.
+    """
+    text = schematic.read_text()
+    match = re.search(r"^G \{(.*?)\}\s*$", text, re.MULTILINE | re.DOTALL)
+    if not match:
+        return ""
+    return " ".join(match.group(1).split())
+
+
+def _normalize(text: str, top_params: str = "") -> str:
     """Make the netlist machine-independent and stable line-for-line."""
     out = []
     for line in text.splitlines():
@@ -112,10 +224,18 @@ def _normalize(text: str) -> str:
         # is already emitted uncommented and is untouched by this.
         if line.startswith("**.subckt ") or line.strip() == "**.ends":
             line = line[2:]
+            if top_params and line.startswith(".subckt "):
+                line = f"{line} {top_params}"
         out.append(line.rstrip())
     while out and not out[-1]:
         out.pop()
-    return "\n".join(out) + "\n"
+    reflowed: list[str] = []
+    for line in _join_continuations(out):
+        if line.startswith("*") or not line.strip():
+            reflowed.append(line)
+        else:
+            reflowed.extend(_rewrap(line))
+    return "\n".join(reflowed) + "\n"
 
 
 def export(top: str, outdir: Path) -> str:
@@ -154,7 +274,7 @@ def export(top: str, outdir: Path) -> str:
                 f"xschem produced no netlist for {top}\n"
                 f"--- stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}"
             )
-        text = _normalize(produced.read_text())
+        text = _normalize(produced.read_text(), _schematic_params(schematic))
     header = (
         f"* {top} -- GENERATED by design/netlist.py from design/xschem/{top}.sch\n"
         "* Do not edit by hand: `python3 design/netlist.py --check` fails if this\n"
