@@ -1,0 +1,25 @@
+{
+  "kind": "onset-fault",
+  "onset": 2000,
+  "n_bits": 2300,
+  "c_rct": 81,
+  "c_apt": 824,
+  "w": 1024,
+  "fault": {
+    "generator": "constant_bits",
+    "value": 1,
+    "n_bits": 300
+  },
+  "rct_events": [
+    2078
+  ],
+  "apt_events": [],
+  "first_event_after_onset": 2078,
+  "detection_latency": 78,
+  "latency_bound_expr": "c_rct - 1",
+  "latency_bound": 80,
+  "detected_within_bound": true,
+  "wall_time_s": 0.1077120304107666,
+  "scenario": "stuck-output",
+  "why": "DR-0002's first detection-latency target: a stuck raw output must be detected within C_RCT samples of onset"
+}

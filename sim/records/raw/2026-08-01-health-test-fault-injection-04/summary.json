@@ -1,0 +1,36 @@
+{
+  "kind": "onset-fault",
+  "onset": 2000,
+  "n_bits": 6096,
+  "c_rct": 81,
+  "c_apt": 824,
+  "w": 1024,
+  "fault": {
+    "generator": "biased_bits",
+    "seed": 210,
+    "h": "0.05",
+    "n_bits_multiple_of_w": 4
+  },
+  "rct_events": [
+    2239,
+    3603,
+    3807,
+    4387,
+    4789,
+    4947,
+    5782
+  ],
+  "apt_events": [
+    3071,
+    4095,
+    5119
+  ],
+  "first_event_after_onset": 2239,
+  "detection_latency": 239,
+  "latency_bound_expr": "2*w - 1",
+  "latency_bound": 2047,
+  "detected_within_bound": true,
+  "wall_time_s": 0.13559508323669434,
+  "scenario": "heavily-biased",
+  "why": "DR-0002's second detection-latency target: a heavily biased stream (declared H=0.05, near the APT degeneracy floor but still valid) must be detected within 2*W samples of onset, since the bias may begin mid-window"
+}

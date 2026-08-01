@@ -1,0 +1,20 @@
+{
+  "kind": "no-alarm",
+  "n_bits": 4096,
+  "seed": 10,
+  "declared_h": "0.5",
+  "p_one_target": "0.292893218813452475599155637895150960715164062311525963411660",
+  "threshold_u32": 1257966796,
+  "c_rct": 81,
+  "c_apt": 824,
+  "w": 1024,
+  "rct_events": [],
+  "apt_events": [],
+  "startup_events": [
+    1023
+  ],
+  "no_alarm": true,
+  "wall_time_s": 0.028913021087646484,
+  "scenario": "healthy",
+  "why": "the DR-0002 design target H0 = 0.5 bit/sample, run long enough to cover several full APT windows -- neither test should ever fire on a source whose declared min-entropy matches the assumption the cutoffs were derived from"
+}

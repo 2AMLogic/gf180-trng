@@ -1,0 +1,31 @@
+{
+  "kind": "onset-fault",
+  "onset": 2000,
+  "n_bits": 6096,
+  "c_rct": 81,
+  "c_apt": 824,
+  "w": 1024,
+  "fault": {
+    "generator": "oscillator_lockup_bits",
+    "half_period": 2000,
+    "n_bits_multiple_of_w": 4
+  },
+  "rct_events": [
+    2079,
+    4080,
+    6080
+  ],
+  "apt_events": [
+    3071,
+    4095,
+    5119
+  ],
+  "first_event_after_onset": 2079,
+  "detection_latency": 79,
+  "latency_bound_expr": "2*w - 1",
+  "latency_bound": 2047,
+  "detected_within_bound": true,
+  "wall_time_s": 0.11462879180908203,
+  "scenario": "injection-locked",
+  "why": "DR-0002 groups 'heavily biased stream / injection-locked source' under the same 2*W latency target -- a locked pair of rings presents the combined node as a long deterministic run rather than a per-sample independent bit"
+}
