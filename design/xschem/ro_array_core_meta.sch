@@ -11,17 +11,25 @@ This cell exists so that the tap can be simulated in situ WITHOUT editing
 ro_array_core. That is not a stylistic preference: the tap's first
 acceptance criterion is that the core is unchanged in period, power and
 swing, and the strongest available form of that evidence is that
-design/xschem/ro_array_core.sch and design/ro_array_core.spice are
-byte-identical to what they were before the tap existed. The comparison
-that remains -- whether one extra gate load on xo perturbs the rings
-through the combining gate's Cgd -- is measured, at PVT corners, by
+design/xschem/ro_array_core.sch is byte-identical to what it was before the
+tap existed (git diff main..HEAD -- design/xschem/ro_array_core.sch is
+empty). design/ro_array_core.spice's BYTES differ from before the tap
+existed -- this issue's netlist-export fix (design/netlist.py) re-wraps
+every SPICE continuation line at a column the exporter now owns, which
+reformats this and every other committed netlist -- but its TOKEN STREAM
+does not, which sim/tests/test_netlist_export.py asserts as a property. The
+comparison that remains -- whether one extra gate load on xo perturbs the
+rings through the combining gate's Cgd -- is measured, at PVT corners, by
 running sim/tb/ro-array-core-meta-power/ against the SAME measurement set
 as sim/tb/ro-array-core-power/.
 
   xcore   ro_array_core, unmodified. Its xo is the tap's only input.
   xtap    ro_meta_tap on its own supply pin vddm, so the tap's power is
-          separately accountable against the ratified < 500 uW row and the
-          per-ring liveness observation on vddr1/vddr2 stays clean.
+          separately measurable and does NOT count against the ratified
+          < 500 uW row, which is measured against ro_array_core alone
+          (DR-0011): the tap is a stretch item nothing on main instantiates
+          by default. The per-ring liveness observation on vddr1/vddr2
+          stays clean either way.
 
   xo      still the combined RO node, still not the raw tap (DR-0001).
   mo      the tap's output, likewise not a raw tap -- see ro_meta_tap.
