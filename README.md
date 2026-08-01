@@ -206,18 +206,21 @@ sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absen
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs, on every push and
 pull request, the checks that need no PDK: a Python/shell syntax check, the
-harness unit tests on Python 3.10 and 3.13, and `sim/selftest.sh` — whose
+harness unit tests on Python 3.10 and 3.13, the two spec-arithmetic checks that
+are pure derivations over committed records (`sim/tools/jitter_energy_law.py
+--check` and `sim/tools/array_sizing.py --check`), and `sim/selftest.sh` — whose
 PDK-dependent stages detect the missing PDK and skip themselves on a hosted
 runner. The same set is `npm run check:ci` locally.
 
-The smoke run and the corner-sanity check are deliberately *not* on the PR
-path: they need ngspice and a multi-gigabyte PDK, and a pull request should not
-block on provisioning either. They run instead on a nightly schedule —
-[`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly.yml) builds
-the pinned ngspice release, installs the gf180mcu PDK at a pinned open_pdks
-commit, and runs `sim/selftest.sh --require-pdk`, the form that fails rather
-than skips. That job writes no evidence records and fails if `sim/records/`
-changes.
+The smoke run, the corner-sanity check and the schematic-vs-netlist staleness
+guard (`python3 design/netlist.py --check`) are deliberately *not* on the PR
+path: they need ngspice, xschem and a multi-gigabyte PDK, and a pull request
+should not block on provisioning any of them. They run instead on a nightly
+schedule — [`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly.yml)
+builds the pinned ngspice release, installs the gf180mcu PDK at a pinned
+open_pdks commit, and runs both `design/netlist.py --check` and
+`sim/selftest.sh --require-pdk`, the form that fails rather than skips. That job
+writes no evidence records and fails if `sim/records/` changes.
 
 The nightly run does not replace the local one: run `sim/selftest.sh
 --require-pdk` (or `npm run check:all`) on a machine that has ngspice and the

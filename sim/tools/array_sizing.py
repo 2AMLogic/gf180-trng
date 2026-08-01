@@ -30,10 +30,25 @@ shipped eleven-stage array over the tens of thousands of periods a direct
 ``sigma_acc`` measurement would need is not affordable, whereas its supply
 current is cheap and bit-reproducible.
 
-The law is not taken on faith here. ``--check`` also re-derives ``a`` from the
-transient-noise array records (``sim/tb/ro-array-sanity-jitter/``), which
-measure ``sigma_1`` and the ring's supply current *in the same run*, and reports
-it next to the value the plain-inverter grid gives.
+What ``--check`` actually enforces
+---------------------------------
+Exactly two things, both hard failures:
+
+  * ``Q_array >= M * Q_H0`` at every measured corner of the shipped array, at
+    the rate given by ``--rate``; and
+  * that ``A_JITTER_ENERGY`` below still agrees, to within ``A_TOLERANCE``,
+    with what ``sim/tools/jitter_energy_law.py`` derives from the record
+    families it reads -- so the two cannot drift apart unnoticed.
+
+Every run *also* prints ``kappa^2`` as measured by the transient-noise array
+records (``sim/tb/ro-array-sanity-jitter/``, which measure ``sigma_1`` and the
+ring's supply current in the same run) beside what the law predicts. That
+comparison is **reported, not enforced**: the one such record in the tree
+disagrees by four orders of magnitude, and DR-0008 §Consequences diagnoses that
+run's ``sigma`` as start-up settling drift rather than jitter (seed-independent
+to 0.3 %, accumulating as lag^0.81 rather than lag^0.5). Confirming the law on
+the shipped starved cell needs a longer, later window; that measurement is #46's
+and this script does not pretend to stand in for it.
 
 What this does NOT do
 ---------------------
@@ -54,8 +69,19 @@ RECORDS = REPO_ROOT / "sim" / "records"
 
 KB = 1.380649e-23
 
-#: from sim/tools/jitter_energy_law.py over the candidate-A 27-point grid
+#: DR-0008's ``a``, from sim/tools/jitter_energy_law.py over the candidate-A
+#: 27-point grid. Deliberately a *stated* constant rather than a live one: the
+#: figures in DR-0008 §3, the README's Raw rate row and design/README.md are all
+#: quoted against this exact value, and they must not shift under a reader every
+#: time a record is appended. It is kept honest by ``--check``, which re-runs the
+#: derivation and fails if the two have drifted by more than A_TOLERANCE.
 A_JITTER_ENERGY = 1.79
+
+#: Allowed relative drift between A_JITTER_ENERGY and the live derivation.
+#: Comfortably tighter than the 1.29x spread of ``a`` across the grid itself,
+#: so a record family swapped for an inconsistent one fails loudly, and loose
+#: enough that ordinary rounding does not.
+A_TOLERANCE = 0.05
 
 #: DR-0007 §2
 Q_H0 = 4.0e-3
@@ -151,6 +177,24 @@ def sanity_invariant() -> list[tuple[str, float, float, float]]:
     return out
 
 
+def derived_law_constant() -> tuple[float | None, str]:
+    """Re-derive ``a`` with ``sim/tools/jitter_energy_law.py``.
+
+    Returns ``(value, description)``. ``value`` is None when the derivation
+    could not run at all, with the reason in ``description`` -- that is a
+    ``--check`` failure, not something to shrug at, because the constant this
+    file sizes against would then be unverifiable.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    try:
+        from jitter_energy_law import derive_a  # noqa: PLC0415
+
+        mean_a, lo, hi = derive_a()
+    except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+        return None, f"could not be re-derived: {exc}"
+    return mean_a, f"mean {mean_a:.3f} (min {lo:.3f}, max {hi:.3f})"
+
+
 def shipped_ring_count() -> int:
     """How many rings design/ro_array_core.spice actually instantiates.
 
@@ -195,9 +239,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    a_derived, a_note = derived_law_constant()
     need = MARGIN_M * Q_H0
     print(f"DR-0007 §2 requires Q_array >= M * Q_H0 = {MARGIN_M} * {Q_H0:g} = {need:g}")
-    print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s)\n")
+    print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s)")
+    print(
+        f"sizing constant a = {A_JITTER_ENERGY:g}; jitter_energy_law.py {a_note}\n"
+    )
 
     header = (
         f"{'corner':<15} {'N':>2} {'T0_r1 (s)':>10} {'P_rings':>10} {'P_tree':>10} {'P_tot':>10} "
@@ -241,6 +289,23 @@ def main(argv: list[str] | None = None) -> int:
         print("\n(no ro-array-sanity-jitter records paired with a rostage-noise corner yet)")
 
     if args.check:
+        if a_derived is None:
+            print(
+                f"\nFAIL: the sizing constant a = {A_JITTER_ENERGY:g} {a_note}",
+                file=sys.stderr,
+            )
+            return 2
+        drift = abs(a_derived - A_JITTER_ENERGY) / A_JITTER_ENERGY
+        if drift > A_TOLERANCE:
+            print(
+                f"\nFAIL: A_JITTER_ENERGY = {A_JITTER_ENERGY:g} has drifted {drift:.1%} "
+                f"from the {a_derived:.3f} sim/tools/jitter_energy_law.py now derives "
+                f"(tolerance {A_TOLERANCE:.0%}). The constant is not the thing to edit "
+                f"on its own: DR-0008 §3's arithmetic and every rate figure quoted from "
+                f"it move with it.",
+                file=sys.stderr,
+            )
+            return 1
         failures = [p for p in points if p.q_array(args.rate) < need]
         if failures:
             for p in failures:
@@ -249,7 +314,11 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
             return 1
-        print(f"\nOK: DR-0007 §2 holds at every measured corner at {args.rate:g} bps.")
+        print(
+            f"\nOK: a = {A_JITTER_ENERGY:g} is within {A_TOLERANCE:.0%} of the derivation "
+            f"({drift:.1%} off), and DR-0007 §2 holds at every measured corner at "
+            f"{args.rate:g} bps."
+        )
     return 0
 
 

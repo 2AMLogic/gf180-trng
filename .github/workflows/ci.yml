@@ -11,11 +11,21 @@ name: CI
 # Every self-check that exists in this repo is either run below or excluded
 # here with a reason:
 #
-#   sim/tests/*.py (unittest, 56 cases)
+#   sim/tests/*.py (unittest, 71 cases)
 #       RUN on every push/PR, on the oldest and newest supported Python.
 #
 #   sim/selftest.sh stage 1 (harness unit tests)
 #       RUN on every push/PR (via sim/selftest.sh itself).
+#
+#   sim/tools/jitter_energy_law.py --check
+#   sim/tools/array_sizing.py --check
+#       RUN on every push/PR. Both are pure derivations over records already
+#       committed under sim/records/ -- stdlib-only, no ngspice, no PDK,
+#       sub-second. They are what keeps DR-0008's premise (the jitter-energy
+#       invariant) and its sizing result (DR-0007 §2's inequality at the
+#       entropy-binding corner) from rotting silently as records are appended:
+#       without them the spec's central arithmetic is only checked by a human
+#       who remembers to run it.
 #
 #   sim/selftest.sh stage 2 (python3 sim/run_corners.py --check-env)
 #       RUN on every push/PR. On a hosted runner it reports ngspice/PDK
@@ -37,6 +47,13 @@ name: CI
 #       That is also the command a contributor runs before committing any
 #       evidence record (sim/README.md), and it is what `npm run check:all`
 #       invokes; the nightly job does not replace the local pre-commit run.
+#
+#   design/netlist.py --check (schematic-vs-netlist staleness guard)
+#       RUN on a schedule, not here: it shells out to xschem and resolves the
+#       gf180mcu xschem symbol library through the PDK, neither of which this
+#       PR-blocking path provisions -- same exclusion, and the same reason, as
+#       selftest stages 3-4 above. See .github/workflows/pdk-nightly.yml. Its
+#       *syntax* is still compiled here (the compileall step covers design/).
 #
 #   sim/run_corners.py evidence runs (sim/records/)
 #       EXCLUDED from both workflows. Recording evidence is a deliberate,
@@ -78,11 +95,22 @@ jobs:
 
       - name: Syntax check (Python + shell)
         run: |
-          python3 -m compileall -q sim
+          python3 -m compileall -q design sim
           bash -n sim/selftest.sh
 
       - name: Harness unit tests
         run: python3 -m unittest discover -s sim/tests -t sim/tests
+
+      # Derivations over committed sim/records/ only: no ngspice, no PDK, no
+      # network, nothing written. jitter_energy_law.py --check fails if the
+      # three record families it reads stop agreeing on the invariant DR-0008
+      # calls `a`; array_sizing.py --check fails if the shipped array stops
+      # satisfying DR-0007 §2 at any measured corner at DR-0008's rate, or if
+      # its own copy of `a` has drifted from that derivation.
+      - name: Spec arithmetic self-checks (jitter-energy law, array sizing)
+        run: |
+          python3 sim/tools/jitter_energy_law.py --check
+          python3 sim/tools/array_sizing.py --check
 
       # sim/selftest.sh re-runs the unit tests as its own stage 1; the few
       # seconds of overlap buy coverage of the acceptance script itself --

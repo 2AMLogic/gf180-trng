@@ -105,7 +105,7 @@ Slowing a ring the other way — by loading its output — would raise `C_eff` a
 cost `Q_array` quadratically. That is why the starve device is a series element
 and not a capacitor.
 
-### `ro_ring11`: eleven stages, and why not three
+### `ro_ring11`: eleven stages, and why not three — or five
 
 `E_cycle` is proportional to the stage count, so entropy per unit of ring power
 would prefer the minimum inverting ring, three stages. Measurement says
@@ -126,9 +126,16 @@ corner. Simulated directly with this cell, the consequence is visible:
 | 5-stage | 2.64 V (80 %) | 3.30 V (`…-ro-array-sanity-jitter-01.md`, `ring1_swing_v`) |
 | 11-stage | rail to rail | 3.30 / 3.63 V (`…-ro-array-core-power-*.md`, `ring_swing_v`) |
 
-A ring that does not reach the rails hands the XOR tree, and through it the
-sampler, an analog level. That is a different and worse problem than a slow
-ring, and it is not a trade this design makes for a factor in `E_cycle`.
+A ring that does not reach the rails is a ring whose swing margin is being spent
+rather than banked. The five-stage case is the one that costs something real —
+about 4.2× on the raw-rate row — and `DR-0008` §3 (*What five stages would buy*)
+prices it against exactly these swing figures rather than leaving the trade
+unquantified. Note in fairness that the XOR node in that same sanity record does
+restore to 3.52 V on a 3.30 V rail from 2.64 V inputs, so "the sampler is handed
+an analog level" is not established at nominal; what is established is that a
+five-stage ring has 20 percentage points less swing margin at the one corner it
+has been measured at, and no measurement at all at the corners the spec binds
+on.
 
 A second constraint points the same way: the combined node sees
 `R_x = 2 N / T0` transitions per second and is driven by ordinary minimum-width
@@ -275,9 +282,12 @@ What the first run
 
   That is a real finding and it is the reason the array's `Q_array` in DR-0008
   is derived from the jitter-energy law and the deterministic power grid rather
-  than from this record. It also sets a concrete requirement for #12: the
-  measurement window must open well after start-up and span orders of magnitude
-  more periods than 16.
+  than from this record. It also sets a concrete requirement for **#46**, which
+  owns re-running this measurement properly: the window must open well after
+  start-up and span orders of magnitude more periods than 16. (#46 rather than
+  #12 — #12 is blocked on the conditioner, the sampler and the methodology
+  issue, because its scope is min-entropy on *bitstreams*; what is needed here
+  is `σ_acc(t)` on a ring node, which needs none of them.)
 
 ## Reading the recorded currents
 
@@ -291,6 +301,34 @@ ones; `sim/tools/array_sizing.py` takes absolute values, and every figure quoted
 from those records in `design/` and `spec/` is a magnitude. The opposite sign
 convention in `sim/tb/ro-inv-05stage-power/`'s records is noted here rather than
 corrected there, because `sim/records/` is append-only.
+
+### Erratum: a stale caveat in the first records of these testbenches
+
+Eight records minted while this block was being built carry a caveat line that
+was already false when it was written:
+
+> Harness-bootstrap testbench: no design/ DUT schematic-derived netlist exists
+> yet for this block, so testbench.path and netlist.path are the same
+> self-contained demo fragment.
+
+The records are `2026-08-01-ro-array-core-power-{01,02,03}.md`,
+`2026-08-01-ro-array-sanity-jitter-01.md` and
+`2026-08-01-rostage-noise-{01..04}.md`. Their own frontmatter refutes the
+sentence two lines above it: `netlist.path` is `design/ro_array_core.spice` or
+`design/ro_array_sanity.spice`, not the testbench fragment. The cause was
+ordering — those runs were made before `sim/harness/cli.py` learned that a
+testbench with a `design_netlist` needs the *other* caveat.
+
+Nothing is corrected in place: `sim/records/` is append-only, and a record that
+is silently edited after the fact is worth less than a record with a known,
+documented error. The three things that close this out instead:
+
+1. `sim/harness/cli.py` now emits the correct caveat whenever a testbench
+   declares a `design_netlist`, so no future record repeats it — visible in
+   `2026-08-01-ro-array-core-power-{04,05,06}.md`, which carry the right text.
+2. The frontmatter of the affected records is correct and is what tooling reads;
+   only the prose caveat is wrong.
+3. This note is the erratum, in the one place that is not append-only.
 
 ## Simulation vehicles for these cells
 

@@ -6,7 +6,8 @@ date: 2026-08-01
 deciders: Proposed by #7 (entropy-source array sizing). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004 and DR-0007 were.
 supersedes: "DR-0003-throughput-defined-at-the-raw-tap — its rate VALUE only, and only on acceptance. DR-0003's definition of where the rate is measured (the raw tap), what 'sustained' means, and its binding corner all stand unchanged."
 superseded_by: n/a
-related: "#7 (origin — array sizing), #32/PR #38 (sim/characterization-supply-current-and-leakage.md), #29/#1 (DR-0007 ratification), #4 (sim/characterization-ro-delay-cell-jitter.md), #8 (conditioner K), #9 (sampler clock), #11 (health-test RTL), #12/#13 (array H and minimum-Q corner), #16 (isolation); DR-0002 (H0, health-test cutoffs), DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law) and §Revisit if; README §Target specification — Raw rate, Power"
+related: "#7 (origin — array sizing), #32/PR #38 (sim/characterization-supply-current-and-leakage.md), #29/#1 (DR-0007 ratification), #4 (sim/characterization-ro-delay-cell-jitter.md), #8 (conditioner K), #9 (sampler clock), #11 (health-test RTL), #12/#13 (array H and minimum-Q corner), #16 (isolation),
+#46 (validating (★) on the shipped starved cell — this record's largest open risk); DR-0002 (H0, health-test cutoffs), DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law) and §Revisit if; README §Target specification — Raw rate, Power"
 ---
 
 # DR-0008: Resolve the DR-0007-versus-Power-row collision by moving the raw-rate row to the rate a minimum-energy ring array delivers inside the ratified power budget
@@ -219,6 +220,98 @@ because it halves the tree's transition rate *and* its depth at once.
 N = 2 is the floor of what DR-0007 §1 means by an array, and this record does
 not pretend otherwise — see Consequences.
 
+### What five stages would buy, and why this record still ships eleven
+
+The `ro_ring11` bullet above rejects a *three*-stage ring on measured gain, and
+the Alternatives section below concedes that the same measurement puts the
+practical floor at **five**, not three. Five is therefore the stage count that
+actually costs this record something, and it is priced here rather than passed
+over. A record that moves a ratified row by ~2000× owes the reader the one
+alternative that recovers a large fraction of it.
+
+**What it buys.** `E_cycle ∝ n` is not assumed here; it is measured, on the same
+cell, at the same corner, with the same starve devices (`wstv` = 0.220 µm,
+`lstv` = 2 µm, ring 1 of each array, `tt`/27 °C/3.30 V):
+
+| Ring | `T₀` | `E_cycle` | ring supply power | record |
+|---|---|---|---|---|
+| 5-stage (`ro_ring5`) | 3.305 ns | 1.987 × 10⁻¹³ J | 60.1 µW | `2026-08-01-ro-array-sanity-jitter-01.md` |
+| 11-stage (`ro_ring11`, shipped) | 7.137 ns | 4.399 × 10⁻¹³ J | 61.7 µW | `2026-08-01-ro-array-core-power-06.md` |
+
+The `E_cycle` ratio is **2.21**, i.e. 11/5 to within 1 %, and per-ring power is
+the same to within 2.5 %. That is the series starve device doing exactly what §3
+claims for it: it fixes the ring's current, so stage count buys `E_cycle`
+without buying power. Substituted into `(★)`, where `E_cycle` enters squared,
+five stages is nominally worth **(2.21)² = 4.90×** on `Q_array` and therefore on
+the rate row.
+
+**What the combiner takes back.** `T₀` falls by the same 2.16×, so the XOR
+node's transition rate rises by 2.16× and the tree's power rises with it. At the
+`ff`/+10 %/−40 °C **power**-binding corner, where the shipped array measures
+270 µW of rings and 146 µW of tree, the five-stage array of the same two rings
+would be
+
+```
+P_rings ≈ 263 µW   (270 × 60.1/61.7)
+P_tree  ≈ 315 µW   (146 × 2.16)
+P_total ≈ 578 µW   —  1.16× over the ratified < 500 µW row
+```
+
+Getting back inside the row means starving harder, which scales ring power and
+tree power together — under `(★)`, at constant `E_cycle`, `T₀ ∝ 1/P_ring`, and
+the tree's transition rate follows `T₀` — while `Q_array` scales linearly with
+`P_rings`. The factor needed is 500/578 = 0.87, so the **net** gain is
+4.90 × 0.87 = **4.2×**, not 4.90×.
+
+**So the price of eleven stages is a factor of ~4.2 on the headline row.** A
+five-stage array would put §1 at roughly **2.1 kbps** — 2.8 kbps at the
+inequality's edge, quoted with the same 1.30× margin this record uses elsewhere
+— instead of 500 bps. That is the largest single number this record leaves on
+the table and it is not recovered anywhere else in it.
+
+**Why it is declined anyway.** Not because five stages is *disqualified* — the
+evidence in hand does not reach that far — but because it is **unmeasured where
+it binds**, and this record's whole method is to derive the rate row from
+measurements of the array it actually ships:
+
+- The only five-stage ring of this cell that has been simulated swings
+  **2.643 V on a 3.30 V rail, 80 %** (`2026-08-01-ro-array-sanity-jitter-01.md`,
+  `ring1_swing_v`), at `tt`/27 °C/3.30 V — the *most favourable* of the corners
+  for the starved cell's gain, which falls from 2.59 at nominal to 1.68 at
+  `ss`/125 °C/2.97 V (`2026-08-01-rostage-noise-{01,04}.md`, `gain_1g`). The
+  eleven-stage ring measures rail-to-rail at every corner it has been run at,
+  including both binding ones (3.38 V on 3.30 V; 3.65 V and 3.73 V on 3.63 V).
+  No five-stage ring has been run at any corner but nominal.
+- The three-stage datapoint shows how steeply swing falls once the margin over
+  `1/cos(π/n)` runs out: margin **1.30× → 45 %** swing, **2.10×** (five stages,
+  nominal) **→ 80 %**, **2.48×** (eleven, nominal) **→ rail to rail**. Five
+  stages at `ss`/125 °C/2.97 V has a margin of **1.36×** — the same
+  neighbourhood as the three-stage case that collapsed — and nothing in this
+  repository measures what it does there.
+- The 578 µW estimate above is optimistic in a direction already measured here:
+  it assumes the tree's energy per transition is unchanged, whereas the `lstv`
+  2 → 6 µm experiment showed that figure *rising* when the ring's edges degrade.
+  Partial-swing inputs degrade it the same way, so the real five-stage total is
+  above 578 µW, not below.
+
+**In fairness to the five-stage case**, the thing it is usually assumed to break
+it does not: the same record measures the XOR node at **3.521 V on a 3.30 V
+rail** while its rings swing 2.64 V, so an `xor2` tree does restore full swing
+from 80 %-swing inputs at nominal. The objection is therefore *not* "the sampler
+is handed an analog level" — that is not established, and this record does not
+claim it. It is that the ring's own swing margin is 20 percentage points thinner
+at the single corner it has been measured at, and there is no swing data at all
+at the corners the spec binds on.
+
+**What would reopen it.** A `ro-array-core-power`-style run of a five-stage
+`ro_array_core` at `ss`/−40 °C/3.63 V and `ff`/−40 °C/3.63 V — a deterministic
+power run, not a transient-noise one, so hours rather than days — reporting
+`ring_swing_v` rail-to-rail and a re-starved `P_total` inside `< 500 µW`. If it
+comes back clean, the rate row is worth ~4× more than §1 states and should be
+moved there by a superseding record. This record does not claim five stages is
+wrong. It claims eleven is what has been measured, and `CLAUDE.md` does not
+allow a headline number to be quoted from the other one.
+
 ### The §2 inequality, at the entropy-binding corner
 
 `sim/tools/array_sizing.py` evaluates DR-0007 §2 from the committed records
@@ -317,10 +410,17 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
   own, and the gf180mcu 3.3 V devices are not characterised for it. `C_eff` is
   already the minimum-width device with no added load. `n ≥ 3` for an inverting
   ring, and the measured gain of the starved cell puts the practical floor at
-  five, not three. The full exercise of this lever is in the Decision above and
-  it leaves a shortfall that only the rate row can close. This is why the record
-  moves one row rather than none — and also why it does not move that row
-  further than it has to.
+  five, not three — and §3's *What five stages would buy* prices that floor
+  rather than waving at it: five stages is worth **4.2× net** (not the 4.9× the
+  inverse square alone suggests, once the XOR tree's 2.16× higher transition
+  rate is paid for inside the unmoved `Power` row), which would put the rate row
+  near 2.1 kbps. **Even taking it, this alternative fails by ~500×**, which is
+  why it is listed here as a lever that does not reach rather than as the
+  resolution. It is declined on its own terms too, for the measured reason
+  in §3. The full exercise of this lever is in the Decision above and it leaves
+  a shortfall that only the rate row can close. This is why the record moves one
+  row rather than none — and also why it does not move that row further than it
+  has to.
 
 ### Keep every row and under-size the array
 
@@ -382,7 +482,8 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
     has to give** — this record names it as the live successor path, exactly as
     DR-0007 named the rate row for this one. The lever that would buy N back
     without touching the Power row is a cheaper combiner (the XOR tree is
-    35–44 % of the measured total), which is design work nobody has scheduled.
+    35–56 % of the measured total — 35.2 % at N = 2, 43.7 % and 55.9 % in the
+    two N = 4 arrays of §3's table), which is design work nobody has scheduled.
   - **The entropy source uses 83 % of the active budget** (415 µW of 500 µW at
     `ff`/+10 %/−40 °C), leaving ~85 µW for the sampler, health tests,
     conditioner and register file — none of which exist or are measured. That
@@ -406,9 +507,10 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
     over a window that short, opened that soon after start-up, what is being
     measured is a deterministic settling drift, not jitter. So the discrepancy
     is unresolved in **both** directions and `(★)` is used here as the
-    conservative estimate rather than the confirmed one. If #12 shows the
-    starved cell really does deliver far more jitter per unit power than the
-    plain one, the rate row moves back up — by a superseding record.
+    conservative estimate rather than the confirmed one. **#46** owns settling
+    it. If it shows the starved cell really does deliver far more jitter per
+    unit power than the plain one, the rate row moves back up — by a superseding
+    record.
   - **The flicker exclusion still stands** (DR-0007 §2): `σ_acc(T_s)` is
     extrapolated from a short white-noise window by √t, so the measured `Q` is a
     lower bound on the physical one and the rate here is correspondingly
@@ -419,12 +521,18 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
   - **#8, #11 and the README's time-to-first-valid row** must be re-derived at
     the new rate on acceptance. None of them can simply keep their current
     numbers.
+  - **#46 is this record's largest open risk**: the first real test of `(★)` on
+    the shipped *starved* cell, by a transient-noise run whose measurement
+    window opens well after start-up and spans orders of magnitude more than the
+    16 periods the sanity run managed. It is filed as its own issue rather than
+    left with #12 on purpose — #12 is blocked on #8, #9 and #10 because its
+    scope is min-entropy on *bitstreams* from the sampler chain, whereas this
+    measurement is `σ_acc(t)` on a ring node and needs none of them. Parking the
+    validation of this record's central model behind three unrelated blockers
+    would have been a filing error, not a schedule.
   - **#12** measures `H` for the *array* at the actual sample interval rather
     than by √t extrapolation, and reports an empirical independence check
-    across the two rings. It is also the first real test of `(★)` on the
-    shipped cell, and this record's largest open risk: the measurement window
-    must open well after start-up and span orders of magnitude more than the
-    16 periods the sanity run managed.
+    across the two rings. Its scope is unchanged by this record.
   - **#13** confirms the minimum-`Q` corner and its process letter over the full
     grid; §4 above resolves it only over the corners this issue measured.
   - **#9** pins the sampler clock source, which selects the corner metric
@@ -444,7 +552,7 @@ the grid; the `fs`/`sf` exclusion of DR-0006 also still applies.
     accumulated phase noise, so it is the one architectural option that could
     raise the rate row back up without spending power.
 
-- **Revisit if**: #12 measures `σ_acc(T_s)` for the shipped cell over a window
+- **Revisit if**: #46 measures `σ_acc(T_s)` for the shipped cell over a window
   long enough to be jitter rather than settling drift, and finds `a` in `(★)`
   is materially different for a series-starved cell than for a plain inverter —
   the first array run hints strongly that it is, in the favourable direction,

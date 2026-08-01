@@ -137,6 +137,25 @@ class Point:
         return self.kappa2 * t_s / self.period**2
 
 
+def grid_points() -> list[Point]:
+    """Every point of the candidate-A grid this repository has measured."""
+    return [Point(nn) for nn in GRID_POINTS]
+
+
+def derive_a(points: list[Point] | None = None) -> tuple[float, float, float]:
+    """``(mean, min, max)`` of ``a = kappa^2 * P / (kB * T)`` over that grid.
+
+    This function is the single source of truth for the constant DR-0008 calls
+    ``a``. ``sim/tools/array_sizing.py`` sizes the array against a *stated*
+    value of it (so that the numbers quoted in DR-0008 and the README do not
+    shift under them every time a record is appended), and its ``--check``
+    re-runs this derivation and fails if the two have drifted apart. Raises
+    :class:`RecordError` if the record families it reads are incomplete.
+    """
+    values = [p.a for p in (points if points is not None else grid_points())]
+    return statistics.mean(values), min(values), max(values)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="jitter_energy_law.py",
@@ -157,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        points = [Point(nn) for nn in GRID_POINTS]
+        points = grid_points()
     except RecordError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
@@ -176,12 +195,13 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     values = [p.a for p in points]
-    spread = max(values) / min(values)
+    mean_a, min_a, max_a = derive_a(points)
+    spread = max_a / min_a
     worst = min(points, key=lambda p: p.q(args.sample_period))
     print()
     print(
-        f"a = kappa^2 P / (kB T):  mean {statistics.mean(values):.3f}   "
-        f"min {min(values):.3f}   max {max(values):.3f}   "
+        f"a = kappa^2 P / (kB T):  mean {mean_a:.3f}   "
+        f"min {min_a:.3f}   max {max_a:.3f}   "
         f"sd {statistics.pstdev(values):.3f}   spread {spread:.2f}x"
     )
     print(
