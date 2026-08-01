@@ -245,9 +245,15 @@ def run(args: argparse.Namespace) -> int:
                 shutil.rmtree(workdir)
     else:
         # Allocated for the whole grid up front so concurrent points cannot
-        # race for the same append-only sequence number.
+        # race for the same append-only sequence number. The raw directory is
+        # created immediately rather than lazily at first write, because that
+        # directory is what allocate_record_stems() reads to see a stem as
+        # taken -- a hours-long run must claim its number before it starts,
+        # not when it finishes.
         stems = report.allocate_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
         workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
+        for workdir in workdirs:
+            workdir.mkdir(parents=True, exist_ok=True)
 
     try:
         plan = runner.plan_runs(tb, seeds)

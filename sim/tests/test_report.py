@@ -64,6 +64,21 @@ class RecordStemTests(unittest.TestCase):
             # the existing record was not touched
             self.assertEqual((records_dir / f"{first}.md").read_text(), "# first\n")
 
+    def test_allocation_respects_a_raw_dir_with_no_record_yet(self):
+        """A run still in flight has a raw/<stem>/ but no <stem>.md.
+
+        A second concurrent run_corners.py invocation must not be handed that
+        same number -- it would only find out at write_record() time, after
+        paying for the whole run.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            records_dir = Path(tmp)
+            in_flight = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            (records_dir / report.RAW_DIRNAME / in_flight).mkdir(parents=True)
+            second = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            self.assertEqual(in_flight, "2026-08-14-ro-jitter-01")
+            self.assertEqual(second, "2026-08-14-ro-jitter-02")
+
     def test_different_slugs_do_not_collide(self):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
