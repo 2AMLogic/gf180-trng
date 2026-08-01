@@ -84,6 +84,7 @@ re-parsing prose.
 | `record` | The record's own filename stem. Self-identifying. |
 | `date` | UTC date/time the run completed, ISO 8601 (`2026-08-14T09:12:00Z`). |
 | `status` | `valid`, or `superseded` (see [Superseding](#superseding-a-record)). |
+| `level` | `transistor` or `behavioral` — which side of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary produced this. Absent means `transistor` (records predating DR-0009); new records state it. |
 | `testbench.path` | Repo-relative path to the testbench entry point. |
 | `testbench.sha` | `git rev-parse HEAD:<path>` — blob SHA of the testbench at run time. |
 | `netlist.path` | Repo-relative path to the DUT netlist/schematic-derived netlist. |
@@ -125,6 +126,43 @@ indistinguishable from a forgotten one.
 
 ---
 
+## Behavioral-level records
+
+Blocks downstream of the [DR-0001] raw tap — the conditioner, the health
+tests, the FIFO/register file, the estimator pipeline — contain no device
+models, so a record of one has no process/voltage/temperature point and
+never invokes ngspice. [DR-0009] fixes where that boundary sits and what
+such a record may be used for. In this format that means:
+
+- `level: behavioral`.
+- `pdk`, `pdk.models`, `tool.ngspice`, `corner.process`, `corner.voltage`
+  and `corner.temperature` are written as `n/a` **with the reason** — the
+  same rule as any other inapplicable field. They are not omitted.
+- The record **names its input source**: either *transistor-derived* (a raw
+  bitstream captured from a transistor-level sampler run, cited by record
+  stem) or *declared synthetic* (a source model, with its parameters and
+  seed stated). A run driven by a synthetic source is evidence about the
+  **block**, never about the source.
+- **A behavioral record may not be cited for any claim that depends on
+  process, voltage or temperature** — rate, power, jitter, metastability,
+  timing closure, min-entropy. It can establish functional behaviour,
+  bit-exactness, block structure and arithmetic, and nothing that moves
+  with a corner.
+
+Behavioral testbenches live under `sim/tb/<slug>/` like any other but have
+**no `tb.json`**, so `sim/run_corners.py` cannot discover them and cannot
+sweep them across a PVT grid they have no meaning on. Each carries a
+`README.md` saying how it is run. See `sim/tb/conditioner-crc32/` for the
+first one.
+
+This is the one bounded exception to CLAUDE.md's "PVT corners on every
+recorded result". The rule is unchanged for every claim that *has* a corner.
+
+[DR-0001]: ../spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md
+[DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
+
+---
+
 ## Superseding a record
 
 Mistaken, misconfigured, or invalidated runs are **not** deleted or edited.
@@ -155,7 +193,9 @@ Mechanical; run through it before committing any record.
 - [ ] Seeds recorded for every stochastic run, in run order.
 - [ ] `testbench.sha`, `netlist.sha`, and `repo_commit` captured from the tree that actually ran.
 - [ ] `tool.ngspice` is the verbatim version string, not "latest".
-- [ ] Corner is a single P/V/T point, and it is stated explicitly.
+- [ ] Corner is a single P/V/T point, and it is stated explicitly — or the
+      record is `level: behavioral` and every device-model field carries
+      `n/a` plus a reason, and the input source is named.
 - [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed.
 - [ ] "How to reproduce" is copy-pasteable from the repo root.
 - [ ] No claim in the record goes beyond what this run measured.

@@ -7,10 +7,11 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, seven decision records, an entropy-source architecture survey, and a
+convention, nine decision records, an entropy-source architecture survey, and a
 working PVT corner simulation harness with its first device-characterization
-results. There is no schematic in `design/` yet and no GDS in `layout/`. The
-specification table below was
+results. `design/` holds one block — the digital conditioner, as a behavioural
+model plus synthesisable RTL — and there is still no analog schematic and no
+GDS in `layout/`. The specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
 placeholders*, and the table labels which.
@@ -63,10 +64,10 @@ that should be legible too.
 | Raw rate | > 1 Mbps sustained at the raw tap (sampler output), binding at the slowest-RO corner: `ss` / −10 % / +125 °C ([DR-0003]) | > 4 Mbps, same definition |
 | Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner (measured minimum-`Q` corner; expected cold / +10 % supply, process letter TBD by #13). The measured number is owed by #12/#13 as a simulation-derived design estimate ([DR-0004] Tier 2, [DR-0007] §2–4) | — |
 | Quality | designed-for-SP 800-90B (raw access + RCT/APT + entropy-source model), plus a **simulation-derived design-stage min-entropy estimate** within the #10 claim limits; 90B validation itself deferred to measured silicon ([DR-0004]) | AIS-31 PTG.2 — same three-tier treatment (structure now, conformance deferred) |
-| Conditioning | **TBD per #8** ([DR-0003] §6, [DR-0004] §Constraint on #8). Default assumption: a lightweight **non-vetted** function; #8's own DR owes the function, its vetted/non-vetted status, the compression ratio K, an area estimate, and the non-vetted entropy accounting | a 90B-*vetted* conditioning function, if #8's area estimate shows one fits |
-| Delivered (post-conditioning) rate | **TBD per #8** — `R_cond = R_raw / K` at the same binding corner as the raw-rate row; deliberately **not** inferred from that row until K exists ([DR-0003] §6) | — |
+| Conditioning | **non-vetted** 32-bit CRC-32 LFSR compression (Galois, poly `0xEDB88320`), state cleared every block, **K = 8** — 256 raw bits in : one 32-bit word out. Creditable output entropy **0.85 bit per output bit** (SP 800-90B's non-vetted cap) for any raw stream at or above **H = 0.107 bit/sample**; a 4.70× margin under the H₀ = 0.5 target. ~0.005–0.008 mm² ([DR-0008]) | a 90B-*vetted* conditioning function — **rejected on area**: a compact serialised AES-128 is 88–124 % of the whole block budget ([DR-0008] §4). Live again only if the area budget grows |
+| Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
 | Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (at H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test. The parameterization has a hard floor: **no valid APT cutoff exists at H ≤ 0.03** ([DR-0002]) | — |
-| Time-to-first-valid | **≥ ~1.05 ms** at 1 Mbps — an arithmetic floor, not a measurement: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus conditioner latency. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior) | — |
+| Time-to-first-valid | **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor, not a measurement: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7) | — |
 | Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Neither figure has any evidence behind it yet** — see the note below | — |
 | Area | < 0.05 mm² | — |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
@@ -86,8 +87,10 @@ DRBG supplies its own and treats this block as the seed source.
 >
 > - **Raw min-entropy per bit** is a design target (H₀ = 0.5). The entropy
 >   source is *sized* to hit it ([DR-0007]); it has not been measured (#12/#13).
-> - **Conditioning / delivered rate** are deferred to #8 with reasons on the
->   record — deferred, not omitted.
+> - **Conditioning / delivered rate** were deferred to #8; [DR-0008] has since
+>   filled both rows in. The delivered rate is still `R_raw / K` derived from a
+>   *target* raw rate — filling in K does not turn the raw-rate row into a
+>   measurement.
 > - **Power** has no supply-current or leakage measurement anywhere in `sim/`;
 >   the characterization task is #32. "Idle" means: all ring oscillators
 >   stopped and no bits being produced, with the block powered and register
@@ -108,6 +111,8 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0003]: spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 [DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
+[DR-0008]: spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
+[DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
@@ -119,11 +124,18 @@ and this repository will not let one be read as the other.
 
 ```
 spec/          spec + decision records
-design/        schematics / netlists (xschem)                 — empty
+design/        schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
 layout/        GDS + DRC/LVS reports (klayout-tools driven)   — empty
 measurements/  silicon characterization                       — empty until tape-out
 ```
+
+`design/` currently holds only [`conditioner/`](design/conditioner/) — the
+digital post-processing stage, as a normative behavioural model plus
+synthesisable RTL checked against it. Which parts of the block are simulated
+at transistor level and which are modelled behaviourally is fixed by
+[DR-0009]: the boundary is the raw tap, and every evidence record says which
+side of it produced the number.
 
 Two conventions govern what lands in those directories:
 
@@ -219,6 +231,13 @@ automated guardrail behind `sim/tools/corner_sanity_check.py`), and
 `nfet-mismatch-seed` (demonstrates per-run seed control and exact
 reproducibility for stochastic analyses — see `sim/README.md`'s "no seed,
 no evidence" rule).
+
+`sim/tb/conditioner-crc32/` is the first **behavioral-level** testbench: it
+has no `tb.json`, is not discovered by `run_corners.py`, and is run directly
+(`python3 sim/tb/conditioner-crc32/run_demo.py`). Its records carry
+`level: behavioral` and no P/V/T corner, and may not be cited for anything
+corner-dependent — see `sim/README.md` §Behavioral-level records and
+[DR-0009].
 
 ## License
 
