@@ -301,28 +301,69 @@ class Point:
         return kappa2 * self.power_w / (KB * self.rec.temp_k)
 
     @property
-    def period_drift_ppm(self) -> float:
-        """Peak-to-peak spread of the per-block mean period, in ppm of the
-        window mean -- the record's own evidence that the period has stopped
-        drifting before (and during) the measurement window."""
-        blocks = [v for k, v in self.rec.values.items() if re.fullmatch(r"period_b\d+", k)]
+    def _blocks(self) -> list[float]:
+        """Per-block mean period, in block order, over the WHOLE run."""
+        keys = sorted(k for k in self.rec.values if re.fullmatch(r"period_b\d+", k))
+        return [self.rec.values[k] for k in keys]
+
+    def _drift_ppm(self, blocks: list[float]) -> float:
         if not blocks:
             return float("nan")
         return 1e6 * (max(blocks) - min(blocks)) / self.period
+
+    @property
+    def drift_startup_ppm(self) -> float:
+        """Peak-to-peak spread of the per-block mean period over the blocks
+        that lie entirely BEFORE the measurement window, in ppm of the window
+        mean. This is the settling transient the window exists to skip: a big
+        number here and a small one in :attr:`drift_window_ppm` is the record's
+        own evidence that the discard length was chosen long enough."""
+        blocks = self._blocks
+        if not blocks:
+            return float("nan")
+        per_block = (self.discarded + self.n_periods) / len(blocks)
+        return self._drift_ppm(
+            [b for i, b in enumerate(blocks) if (i + 1) * per_block <= self.discarded]
+        )
+
+    @property
+    def drift_window_ppm(self) -> float:
+        """Same, over the blocks that lie entirely INSIDE the measurement
+        window. Residual deterministic drift here inflates sigma at long lags
+        and would push the accumulation exponent above 0.5, so it is reported
+        beside the exponent rather than left implicit."""
+        blocks = self._blocks
+        if not blocks:
+            return float("nan")
+        per_block = (self.discarded + self.n_periods) / len(blocks)
+        return self._drift_ppm(
+            [b for i, b in enumerate(blocks) if i * per_block >= self.discarded]
+        )
 
     @property
     def measured_spread_1(self) -> float | None:
         return self.rec.spread("sigma_1")
 
 
-def load_points() -> list[Point]:
+def load_points() -> tuple[list[Point], list[str]]:
+    """``(points, skipped)`` -- one Point per usable record, plus the stems of
+    any record in the family that carries no data.
+
+    A record whose runs all failed is still a record (``sim/README.md``: an
+    invalid run that is never recorded is one the next person re-derives), but
+    it has no numbers to derive anything from, so it is named and skipped
+    rather than crashing the derivation for the corners that did complete.
+    """
     jitter = [Record(p) for p in sorted(RECORDS.glob(JITTER_GLOB))]
     if not jitter:
         raise RecordError(f"no sim/records/{JITTER_GLOB} records found")
     noise = {r.corner: r for r in (Record(p) for p in sorted(RECORDS.glob(NOISE_GLOB)))}
     discarded, n_periods = window_geometry()
-    points = []
+    points, skipped = [], []
     for rec in jitter:
+        if "period" not in rec.values or "sigma_1" not in rec.values:
+            skipped.append(rec.stem)
+            continue
         n = noise.get(rec.corner)
         if n is None:
             raise RecordError(
@@ -330,7 +371,12 @@ def load_points() -> list[Point]:
                 "injection cannot be scaled to this corner's device-noise density"
             )
         points.append(Point(rec, n, discarded, n_periods))
-    return points
+    if not points:
+        raise RecordError(
+            f"every sim/records/{JITTER_GLOB} record is data-less "
+            f"({', '.join(skipped)}); nothing to derive"
+        )
+    return points, skipped
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -347,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        points = load_points()
+        points, skipped = load_points()
         a_plain, a_lo, a_hi = derive_a()
     except Exception as exc:  # noqa: BLE001 - reported, never swallowed
         print(f"ERROR: {exc}", file=sys.stderr)
@@ -360,6 +406,8 @@ def main(argv: list[str] | None = None) -> int:
         f"plain-cell reference (sim/tools/jitter_energy_law.py): "
         f"a = {a_plain:.3f} (min {a_lo:.3f}, max {a_hi:.3f})\n"
     )
+    if skipped:
+        print(f"skipped (record carries no data): {', '.join(skipped)}\n")
 
     header = (
         f"{'corner':<15} {'T0 (s)':>11} {'P (W)':>11} {'sig_1 (s)':>11} "
@@ -394,7 +442,7 @@ def main(argv: list[str] | None = None) -> int:
         f"  analytic upper bound sqrt(1/(2*{n_periods})): {100 * ana_1:.2f}%"
     )
     print(
-        f"  {'corner':<15} {'blk drift':>10} {'spread_1':>9} {'ref':>9} "
+        f"  {'corner':<15} {'drift pre':>11} {'drift win':>11} {'spread_1':>9} {'ref':>9} "
         f"{'ratio':>7} {'16-per a':>9} {'16-per expon':>13}"
     )
     ok = True
@@ -404,14 +452,17 @@ def main(argv: list[str] | None = None) -> int:
         if got is None or not (1 / SPREAD_TOLERANCE <= ratio <= SPREAD_TOLERANCE):
             ok = False
         print(
-            f"  {p.rec.corner:<15} {p.period_drift_ppm:9.1f}p {100 * (got or 0):8.2f}% "
-            f"{100 * ref_1:8.2f}% {ratio:7.2f} {p.a(p.startup_kappa2):9.3f} "
-            f"{p.startup_exponent:13.3f}"
+            f"  {p.rec.corner:<15} {p.drift_startup_ppm:10.0f}p {p.drift_window_ppm:10.0f}p "
+            f"{100 * (got or 0):8.2f}% {100 * ref_1:8.2f}% {ratio:7.2f} "
+            f"{p.a(p.startup_kappa2):9.3f} {p.startup_exponent:13.3f}"
         )
     print(
-        "  'blk drift' is the peak-to-peak spread of the per-block mean period, in ppm.\n"
-        "  '16-per' columns are the SAME run measured the way the superseded sanity\n"
-        "  run measured it: 16 periods, window opened at the second edge."
+        "  'drift pre'/'drift win' are the peak-to-peak spreads of the per-block mean\n"
+        "  period, in ppm, over the blocks entirely before / entirely inside the\n"
+        "  measurement window: the record's own evidence that the discard was long\n"
+        "  enough, and that what is left in the window is not deterministic drift.\n"
+        "  '16-per' columns are the SAME run measured the way the sanity run measured\n"
+        "  it: 16 periods, window opened at the second edge."
     )
 
     mean_lag1 = sum(p.a(p.kappa2_lag1) for p in points) / len(points)
