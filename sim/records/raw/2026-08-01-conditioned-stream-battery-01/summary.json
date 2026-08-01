@@ -1,0 +1,60 @@
+{
+  "seed": 1,
+  "declared_h_per_bit": "0.5",
+  "source_p_one_target": "0.292893218813",
+  "source_threshold_u32": 1257966796,
+  "raw_bits": 32768,
+  "raw_ones": 9594,
+  "raw_p_one_measured": 0.29278564453125,
+  "cond_words": 128,
+  "cond_bits": 4096,
+  "cond_ones": 2056,
+  "cond_p_one_measured": 0.501953125,
+  "cond_stream_sha256": "767be8482eb91328fbe4726b3f1a9bfe90b89f73055c5b34d2997349243013ed",
+  "alpha": 0.01,
+  "battery": [
+    {
+      "name": "monobit (frequency)",
+      "n": 4096,
+      "min_n": 100,
+      "omitted": false,
+      "statistic": 0.25,
+      "p_value": 0.8025873486341526,
+      "pass": true,
+      "alpha": 0.01
+    },
+    {
+      "name": "block frequency (M=128)",
+      "n": 4096,
+      "min_n": 100,
+      "omitted": false,
+      "statistic": 20.625,
+      "p_value": 0.9395459348273275,
+      "blocks": 32,
+      "pass": true,
+      "alpha": 0.01
+    },
+    {
+      "name": "runs",
+      "n": 4096,
+      "min_n": 100,
+      "omitted": false,
+      "statistic": 2068.0,
+      "p_value": 0.5313240491644307,
+      "pass": true,
+      "alpha": 0.01
+    },
+    {
+      "name": "longest run of ones (M=8)",
+      "n": 4096,
+      "min_n": 128,
+      "omitted": false,
+      "statistic": 0.6882131791540126,
+      "p_value": 0.8759727645427272,
+      "blocks": 512,
+      "pass": true,
+      "alpha": 0.01
+    }
+  ],
+  "wall_time_s": 1.0503079891204834
+}
