@@ -8,12 +8,12 @@ Resolution order (first hit wins):
 
 1. ``GF180_PDK_PATH``   -- absolute path to the *variant* directory
                            (the one containing ``libs.tech/``), e.g.
-                           ``~/.volare/gf180mcuD``.
+                           ``~/.ciel/gf180mcuD``.
 2. ``PDK_ROOT`` (+ ``PDK``, default ``gf180mcuD``) -- the conventional
-                           open_pdks / volare / OpenLane environment.
+                           open_pdks / ciel / OpenLane environment.
 3. ``sim/pdk.local.json`` -- machine-local override, git-ignored.
 4. ``sim/pdk.json``      -- committed defaults: variant + search roots.
-5. Built-in search roots -- volare store, open_pdks install prefixes.
+5. Built-in search roots -- ciel/volare stores, open_pdks install prefixes.
 
 Adapted from the harness pattern bootstrapped in 2AMLogic/gf180-bandgap
 (gf180-bandgap#23); this module is unchanged in substance from that
@@ -47,13 +47,28 @@ BUILTIN_SEARCH_ROOTS = (
 INSTALL_HINT = """\
 gf180mcu PDK not found.
 
-Install it with volare (recommended, ~5 GB):
+Install it with ciel (FOSSi Foundation), the maintained PDK version manager:
 
-    pip install volare
-    volare enable --pdk gf180mcu <version-hash>     # see: volare ls-remote --pdk gf180mcu
+    pip install ciel
+    ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr \\
+        f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7   # ciel ls-remote --pdk-family gf180mcu
 
-volare installs into ~/.volare/<variant> and this harness finds it there
-automatically. If your PDK lives somewhere else, point the harness at it:
+That open_pdks commit is the one .github/workflows/pdk-nightly.yml pins, so a
+local run and the nightly agree on a PDK version by default. The -l flag
+fetches just the primitive device library the testbenches here need (the full
+set is ~5 GB); drop it to install everything.
+
+ciel installs into ~/.ciel/<variant> and this harness finds it there
+automatically -- leave PDK_ROOT unset while installing, or ciel installs into
+that prefix instead.
+
+volare, ciel's predecessor, still works if you already have a volare-installed
+PDK: ~/.volare/<variant> is searched too (and, when both exist, first -- set
+GF180_PDK_PATH to override). But volare's gf180mcu release feed stopped in
+Aug 2025, so it cannot install anything newer than open_pdks
+c6d73a35f524070e85faff4a6a9eef49553ebc2b.
+
+If your PDK lives somewhere else, point the harness at it:
 
     export GF180_PDK_PATH=/path/to/gf180mcuD        # variant dir, contains libs.tech/
     # or the conventional pair:

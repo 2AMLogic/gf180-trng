@@ -4,7 +4,7 @@
     "file, and sim/pdk.local.json (git-ignored) wins over both.",
     "  variant       gf180mcu flavor directory to use (A/B/C/D differ in metal stack)",
     "  search_roots  extra directories that CONTAIN variant dirs, searched before",
-    "                the built-in list (~/.volare, /usr/share/pdk, ...)"
+    "                the built-in list (~/.volare, ~/.ciel, /usr/share/pdk, ...)"
   ],
   "variant": "gf180mcuD",
   "search_roots": []

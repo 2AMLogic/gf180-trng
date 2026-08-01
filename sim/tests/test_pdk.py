@@ -89,7 +89,11 @@ class ResolutionOrderTests(unittest.TestCase):
                 with mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", (str(self.root / "empty"),)):
                     with self.assertRaises(pdk_mod.PdkNotFound) as ctx:
                         pdk_mod.find_pdk()
-        self.assertIn("volare", str(ctx.exception))
+        message = str(ctx.exception)
+        # The hint must lead with ciel (maintained) and still name volare as a
+        # recognized alternative for anyone with an existing volare install.
+        self.assertIn("ciel enable --pdk-family gf180mcu", message)
+        self.assertIn("volare", message)
 
 
 class PdkPropertiesTests(unittest.TestCase):

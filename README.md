@@ -143,10 +143,31 @@ The PVT corner runner is a stdlib-only Python CLI. It emits into this repo's
 reconciled in
 [`DR-0005`](spec/decision-records/DR-0005-sim-harness-record-granularity.md).
 
-You will need the gf180mcu PDK (via
-[open_pdks](https://github.com/RTimothyEdwards/open_pdks) or the
-[IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) container) and
-ngspice 46 or newer. Nothing else — the harness is stdlib-only Python 3.
+You will need the gf180mcu PDK and ngspice 46 or newer. Nothing else — the
+harness is stdlib-only Python 3.
+
+The simplest way to get the PDK is
+[ciel](https://github.com/fossi-foundation/ciel), which installs prebuilt
+[open_pdks](https://github.com/RTimothyEdwards/open_pdks) releases into
+`~/.ciel/<variant>` — one of the harness's built-in search roots, so nothing
+needs wiring up afterwards:
+
+```sh
+pip install ciel
+ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr \
+  f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+```
+
+That open_pdks commit is the one
+[`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly.yml) pins,
+so a local run and the nightly agree on a PDK version by default;
+`-l gf180mcu_fd_pr` fetches only the primitive device library the testbenches
+here need instead of the full ~5 GB set. A PDK from
+[IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS), a source
+`open_pdks` build, or ciel's predecessor
+[volare](https://github.com/efabless/volare) works too — but volare's gf180mcu
+release feed stopped publishing in Aug 2025, so it can no longer install a
+current PDK.
 
 ```sh
 # One-time PDK check (no hardcoded paths -- see sim/harness/pdk.py for the
