@@ -340,12 +340,38 @@ reader to find in the netlist: while `rst_n` is low **and** `clk` is low, the
 master's input transmission gate is transparent, so there is a conducting
 path from whatever drives `D`, through that gate, into the reset pull-down.
 Reset still wins — that is what the sizing is for, and the measurements say
-so — but current flows for as long as reset is asserted. The magnitude is
-unmeasured and the fix (gating reset into the storage loops instead of
-overriding the nodes) is a schematic change rather than a sizing tweak, so
-it is tracked separately in
-[#48](https://github.com/2AMLogic/gf180-trng/issues/48) rather than done
-here.
+so — but current flows for as long as reset is asserted. [#48](https://github.com/2AMLogic/gf180-trng/issues/48)
+measured it, at both instances `sampler_core` actually contains and across
+the full PVT grid:
+
+| Instance | Nominal (`tt`/27 °C/3.30 V) | Binding corner (`ff`/−40 °C/3.63 V) | Grid minimum (`ss`/125 °C/2.97 V) |
+|---|---|---|---|
+| `xsv` (`D` tied to `vdd`: continuous conduction) | 195 µA / 644 µW | 314 µA / 1.141 mW | 110 µA / 326 µW |
+| `xsb` (`D` = `xo`, ≈50 % duty) | 97.7 µA / 322 µW | 157 µA / 570 µW | 55.2 µA / 164 µW |
+| **Both instances simultaneously** (the real `sampler_core` reset window) | **967 µW** | **1.71 mW** | — |
+
+`sim/tb/sampler-dff-reset-current-xsv/` and `sim/tb/sampler-dff-reset-current-xsb/`,
+45 records each, `sim/records/2026-08-01-sampler-dff-reset-current-{xsv,xsb}-{01..45}.md`.
+`xsb`'s current tracks `xsv`'s at 0.500–0.503 across every one of the 45
+points — confirming the ≈50 % duty-cycle mechanism the netlist predicts —
+and both instances' first-half/second-half currents agree to within
+9.4 × 10⁻⁷ relative, confirming the result does not depend on the arbitrary
+500 ps drive frequency the `xsb` testbench uses for `D`. `q` stays within
+3.9 µV of its reset value at every point on both grids: reset still takes,
+exactly as the setup/hold characterization above already established.
+
+**This is material, not a rounding term.** A single instance's reset-window
+current alone exceeds the entire `< 500 µW` active-power row at every PVT
+point measured — the grid minimum (65 % of the budget, one path, one
+instance) to the binding corner (2.3× the budget). Both `sampler_core`
+instances share `rst_n` and assert together, so the real reset-window draw
+is 1.9–3.4× the whole block's active-power budget for as long as reset is
+held with `clk` low — on top of, not instead of, the entropy source's own
+415 µW. How long that window lasts in the real power-on sequence is not yet
+specified (#26), so this is a power figure, not yet an energy one; the fix
+(gating reset into the storage loops instead of overriding the nodes) is a
+schematic change rather than a sizing tweak, and is tracked as
+[#53](https://github.com/2AMLogic/gf180-trng/issues/53).
 
 ### Clock-source decision (binding, DR-0012): fixed external, not RO-divided
 
@@ -631,6 +657,8 @@ a simulation result, and neither was made to make one pass.
 | [`sim/tb/ro-meta-tap-skew/`](../sim/tb/ro-meta-tap-skew/) | the tap (`ro_meta_tap`): trim-load-to-skew sensitivity and its own supply energy per event |
 | [`sim/tb/sampler-array-digitize/`](../sim/tb/sampler-array-digitize/) | `sampler_core` end to end: `xo` under transient noise, sampled by the real `sampler_dff` into `raw_bit`/`raw_valid` — a functional raw-bitstream demonstration, not a rate or entropy measurement |
 | [`sim/tb/sampler-dff-setup-hold/`](../sim/tb/sampler-dff-setup-hold/) | `sampler_dff` alone, at the real 1 Mbps target clock period, across the full PVT grid: correct capture at normal setup margin and at a clock-aligned (worst-case) data transition |
+| [`sim/tb/sampler-dff-reset-current-xsv/`](../sim/tb/sampler-dff-reset-current-xsv/) | `sampler_dff`'s `xsv` instance (`D` tied to `vdd`), biased at `clk=0`/`rst_n=0`: static reset-window contention current (#48), full PVT grid |
+| [`sim/tb/sampler-dff-reset-current-xsb/`](../sim/tb/sampler-dff-reset-current-xsb/) | `sampler_dff`'s `xsb` instance (`D` an ideal representative square wave standing in for `xo`), `clk=0`/`rst_n=0` held: duty-cycled reset-window contention current (#48), full PVT grid |
 
 Testbenches that instantiate a cell from here set `design_netlist` in their
 `tb.json`; the harness then `.include`s the schematic-derived netlist and records
