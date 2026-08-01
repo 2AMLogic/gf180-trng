@@ -181,6 +181,25 @@ jobs:
       - name: Harness acceptance test including the PDK-dependent stages
         run: sim/selftest.sh --require-pdk
 
+      # The layout half of the same idea. klayout-tools brings its own KLayout
+      # Python module, so this needs no GUI, no Qt and no apt package -- but it
+      # does need the PDK provisioned above, which is why it lives here and not
+      # on the PR path (where layout/verify.py self-skips).
+      #
+      # --require-tools turns that skip into a failure. Expect this step to be
+      # the first place a klayout-tools upgrade shows up: if a new klt version
+      # changes a verdict, a rule id, or the shape of a report, this goes red
+      # and layout/reports/ needs regenerating with `layout/verify.py --write`.
+      # That is the point of committing the reports.
+      - name: Install klayout-tools (the DRC/LVS driver)
+        run: |
+          set -euo pipefail
+          python3 -m pip install --upgrade klayout-tools
+          klt --version
+
+      - name: Layout DRC/LVS flow including the PDK-dependent stages
+        run: python3 layout/verify.py --require-tools
+
       - name: Assert no evidence records were written
         run: |
           set -euo pipefail

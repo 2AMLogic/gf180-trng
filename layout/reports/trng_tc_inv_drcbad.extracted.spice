@@ -1,0 +1,14 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell trng_tc_inv
+* pin A
+* pin VDD
+* pin VSS
+* pin ZN
+* pin vsubs
+.SUBCKT trng_tc_inv A VDD VSS ZN vsubs
+* device instance $1 r0 *1 0.8,0.4 nfet
+M$1 ZN A VSS vsubs nfet L=0.28U W=0.8U AS=0.528P AD=0.528P PS=2.92U PD=2.92U
+* device instance $2 r0 *1 0.8,2.4 pfet
+M$2 ZN A VDD \$5 pfet L=0.28U W=0.8U AS=0.528P AD=0.528P PS=2.92U PD=2.92U
+.ENDS trng_tc_inv
