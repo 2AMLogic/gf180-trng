@@ -9,6 +9,14 @@ a trivial CMOS inverter and two deliberately broken copies of it. They exist
 to demonstrate the flow, and nothing in `layout/reports/` should be read as
 a statement about the TRNG.
 
+**[`layout/floorplan/`](floorplan/) is the one thing here that is about the
+TRNG** — the entropy source's isolation rationale (#16) and the floorplan
+abstract that carries it: four guarded regions, real generated guard rings,
+DRC'd as one stream, with an area rollup against the `< 0.05 mm²` row. Its
+regions are *empty*, so it is a floorplan and not a layout, and
+[`floorplan/README.md`](floorplan/README.md) is explicit about what a clean
+DRC result over it does and does not mean.
+
 The flow is stood up before the layout it will check, for the same reason
 `sim/` was stood up before the first result: a verification flow that first
 runs on the thing you care about is a flow you cannot distinguish from a
@@ -95,6 +103,13 @@ uv tool install --force \
 layout/
   README.md                  this document
   verify.py                  the flow driver + the expectations that make it a test
+  floorplan/
+    README.md                the entropy-source isolation rationale (#16)
+    floorplan.py             builds the floorplan abstract, DRCs it, prices it
+    trng_floorplan.gds       the composed abstract (timestamps normalised)
+    reports/area.json        the area rollup vs the < 0.05 mm^2 row
+    reports/compose.json     the gen-compose request + response
+    reports/floorplan.drc.json  verbatim `klt drc` output for the abstract
   testcells/
     gdsii.py                 minimal stdlib GDSII writer (see "Tool friction" #1)
     build.py                 fixture geometry; `--check` guards the committed .gds
@@ -368,6 +383,16 @@ Running the flow since produced a fifth, of a different kind:
    own install metadata for the commit; a version a downstream flow can pin
    would make that unnecessary.
 
+Building the floorplan abstract in [`floorplan/`](floorplan/) produced three
+more, all open and all listed with their workarounds in
+[`floorplan/README.md`](floorplan/README.md#tool-friction):
+[klayout-tools#320][kt320] (generated streams carry wall-clock GDSII
+timestamps, so they cannot be committed and byte-diffed),
+[klayout-tools#321][kt321] (`gen-compose` has no explicit x/y placement, so a
+two-dimensional floorplan cannot be composed) and
+[klayout-tools#322][kt322] (`gen mos_array` rejects widths the tool's own
+gf180mcu DRC deck accepts).
+
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173
 [kt230]: https://github.com/2AMLogic/klayout-tools/issues/230
@@ -376,3 +401,6 @@ Running the flow since produced a fifth, of a different kind:
 [kt233]: https://github.com/2AMLogic/klayout-tools/issues/233
 [kt281]: https://github.com/2AMLogic/klayout-tools/issues/281
 [kt306]: https://github.com/2AMLogic/klayout-tools/issues/306
+[kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
+[kt321]: https://github.com/2AMLogic/klayout-tools/issues/321
+[kt322]: https://github.com/2AMLogic/klayout-tools/issues/322
