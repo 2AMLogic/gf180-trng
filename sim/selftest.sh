@@ -2,8 +2,9 @@
 #
 # Harness acceptance test.
 #
-#   sim/selftest.sh                 unit tests + smoke run + corner-sanity check
-#                                    (no evidence written)
+#   sim/selftest.sh                 unit tests + record-checksum check + smoke
+#                                    run + corner-sanity check (no evidence
+#                                    written)
 #   sim/selftest.sh --record        also mint real evidence records under sim/records/
 #   sim/selftest.sh --require-pdk   fail (instead of skipping) if ngspice/PDK are absent
 #
@@ -25,14 +26,27 @@ for arg in "$@"; do
   esac
 done
 
-echo "== 1/4 harness unit tests (no PDK required) =="
+echo "== 1/5 harness unit tests (no PDK required) =="
 if ! python3 -m unittest discover -s "${SIM_DIR}/tests" -t "${SIM_DIR}/tests"; then
   echo "FAIL: harness unit tests"
   exit 1
 fi
 
 echo
-echo "== 2/4 environment =="
+echo "== 2/5 record integrity (raw.files checksums, no PDK required) =="
+# Every committed record must still hash to what it says it does. Catches a
+# record whose raw output was overwritten after it was hashed -- e.g. by a
+# second concurrent run_corners.py invocation handed an overlapping stem.
+# --no-git here: this stage checks integrity, not commit state, so freshly
+# minted (not yet `git add`ed) records do not fail an otherwise clean tree.
+# The pre-commit form in sim/README.md keeps the commit-state check.
+if ! python3 "${SIM_DIR}/tools/verify_record_checksums.py" --quiet --no-git; then
+  echo "FAIL: record checksums do not match the raw output on disk"
+  exit 1
+fi
+
+echo
+echo "== 3/5 environment =="
 if ! python3 "${SIM_DIR}/run_corners.py" --check-env; then
   if [ "${REQUIRE_PDK}" -eq 1 ]; then
     echo "FAIL: ngspice and/or the gf180mcu PDK are not available"
@@ -46,7 +60,7 @@ if ! python3 "${SIM_DIR}/run_corners.py" --check-env; then
 fi
 
 echo
-echo "== 3/4 end-to-end smoke run (sim/tb/smoke-op) =="
+echo "== 4/5 end-to-end smoke run (sim/tb/smoke-op) =="
 if [ "${RECORD}" -eq 1 ]; then
   ok=1; python3 "${SIM_DIR}/run_corners.py" smoke-op || ok=0
 else
@@ -58,7 +72,7 @@ if [ "${ok}" -eq 0 ]; then
 fi
 
 echo
-echo "== 4/4 corner-sanity check (sim/tb/corner-sanity-nfet-id) =="
+echo "== 5/5 corner-sanity check (sim/tb/corner-sanity-nfet-id) =="
 # Guards against a wrong or silently-ignored corner mapping (CLAUDE.md:
 # a wrong corner mapping would pass a smoke test and contaminate every
 # downstream evidence record). Runs tt/ss/ff at nominal supply, one

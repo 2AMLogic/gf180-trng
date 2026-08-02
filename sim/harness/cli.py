@@ -29,6 +29,9 @@ EXIT_OK = 0
 EXIT_CHECK_FAILED = 1
 EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
+# Records were written but their raw.files checksums no longer match the
+# files on disk -- the evidence is not trustworthy and must not be committed.
+EXIT_RECORD_CORRUPT = 4
 
 
 def _resolve_tb_path(argument: str) -> Path:
@@ -233,6 +236,7 @@ def run(args: argparse.Namespace) -> int:
 
     overall_ok = True
     written_paths: list[Path] = []
+    written_records: list[dict] = []
 
     completed_utc = _dt.datetime.now(_dt.timezone.utc)
     date_str = completed_utc.strftime("%Y-%m-%d")
@@ -244,16 +248,15 @@ def run(args: argparse.Namespace) -> int:
             if workdir.exists():
                 shutil.rmtree(workdir)
     else:
-        # Allocated for the whole grid up front so concurrent points cannot
-        # race for the same append-only sequence number. The raw directory is
-        # created immediately rather than lazily at first write, because that
-        # directory is what allocate_record_stems() reads to see a stem as
-        # taken -- a hours-long run must claim its number before it starts,
-        # not when it finishes.
-        stems = report.allocate_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
+        # Reserved for the whole grid up front so concurrent points cannot
+        # race for the same append-only sequence number, and reserved by
+        # *creating* raw/<stem>/ (an atomic mkdir) rather than by scanning
+        # for a free number, so a second run_corners.py invocation for the
+        # same date+slug cannot be handed a stem this one is using -- an
+        # hours-long run must claim its numbers before it starts, not when
+        # it finishes.
+        stems = report.reserve_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
         workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
-        for workdir in workdirs:
-            workdir.mkdir(parents=True, exist_ok=True)
 
     try:
         plan = runner.plan_runs(tb, seeds)
@@ -321,6 +324,7 @@ def run(args: argparse.Namespace) -> int:
                 record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs)
             )
             written_paths.append(path)
+            written_records.append(record)
 
     try:
         if jobs == 1:
@@ -349,10 +353,62 @@ def run(args: argparse.Namespace) -> int:
     else:
         print(f"records   : {len(written_paths)} written under {RECORDS_DIR}/")
         for path in written_paths:
-            print(f"  - {path.relative_to(REPO_ROOT)}")
+            print(f"  - {_display_path(path)}")
+        corrupt = _verify_written_records(written_records)
+        if corrupt:
+            _report_corrupt_records(corrupt)
+            print("status    : FAIL (raw output does not match the recorded checksums)")
+            return EXIT_RECORD_CORRUPT
     print(f"status    : {'OK' if overall_ok else 'FAIL'}")
 
     return EXIT_OK if overall_ok else EXIT_CHECK_FAILED
+
+
+def _display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:  # pragma: no cover - only under a relocated RECORDS_DIR
+        return str(path)
+
+
+def _verify_written_records(records: list[dict]) -> list[tuple[str, list[str]]]:
+    """Re-hash every record's raw output after the whole grid has finished.
+
+    write_record() already checks each record as it is written; this second
+    pass is what catches raw output clobbered *later* -- e.g. by a second
+    run_corners.py invocation that was handed an overlapping stem, the
+    failure mode #60 reports, which produced a full grid of plausible
+    records with wrong provenance and exited OK.
+    """
+    corrupt: list[tuple[str, list[str]]] = []
+    for record in records:
+        problems = report.verify_record(record)
+        if problems:
+            corrupt.append((record["record"], problems))
+    return corrupt
+
+
+def _report_corrupt_records(corrupt: list[tuple[str, list[str]]]) -> None:
+    print(file=sys.stderr)
+    print(
+        f"error: {len(corrupt)} record(s) no longer match their raw output. "
+        "The raw files changed after they were hashed -- most likely another "
+        "run_corners.py invocation wrote into the same sim/records/raw/ "
+        "directories.",
+        file=sys.stderr,
+    )
+    for stem, problems in corrupt:
+        print(f"  {stem}:", file=sys.stderr)
+        for problem in problems:
+            print(f"    - {problem}", file=sys.stderr)
+    print(
+        "\nDo NOT commit these records: their numbers cannot be tied to the raw "
+        "output they cite. Delete them together with their raw directories "
+        "(they are not committed evidence yet, so the append-only rule does not "
+        "apply) and re-run with no other invocation of this testbench in "
+        "flight.",
+        file=sys.stderr,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -370,6 +426,9 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_ENVIRONMENT
     try:
         return run(args)
+    except report.RawFilesMismatch as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_RECORD_CORRUPT
     except (FileNotFoundError, ValueError, KeyError, report.RecordExists) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT

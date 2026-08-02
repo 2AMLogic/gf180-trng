@@ -25,6 +25,7 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import platform
+import re
 import statistics
 import subprocess
 from pathlib import Path
@@ -40,6 +41,15 @@ RAW_DIRNAME = "raw"
 
 class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
+
+
+class RawFilesMismatch(RuntimeError):
+    """A record's ``raw.files`` checksums disagree with the files on disk.
+
+    The record is then not evidence of anything: its numbers no longer
+    provably come from the raw output it points at. Raised (or reported)
+    rather than swallowed -- see ``verify_raw_files``.
+    """
 
 
 def _git(*args: str, cwd: Path) -> str:
@@ -100,6 +110,10 @@ def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -
     invocation, concurrently, the normal way to cover a grid. The loser of
     that race used to discover the collision only at ``write_record`` time,
     i.e. after paying for the whole run.
+
+    This scan is advisory only: it reports what is *already* taken, which
+    two invocations that scan at the same instant will answer identically.
+    ``reserve_record_stems`` is the allocator that actually claims stems.
     """
     records_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{date}-{slug}-"
@@ -116,6 +130,43 @@ def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -
 def allocate_record_stem(records_dir: Path, date: str, slug: str) -> str:
     """Mint the next unused ``<date>-<slug>-<nn>`` stem."""
     return allocate_record_stems(records_dir, date, slug, 1)[0]
+
+
+def reserve_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
+    """Claim ``count`` stems, using ``mkdir`` of ``raw/<stem>/`` as the lock.
+
+    Scanning for the next free number and then using it (what
+    ``allocate_record_stems`` does on its own) is not safe against a
+    *second* ``run_corners.py`` process: both scans can return the same
+    number, both runs then write their decks and logs into the same
+    ``raw/<stem>/``, and the loser's raw output is silently overwritten
+    after the winner has already hashed it into a record.
+
+    ``Path.mkdir(exist_ok=False)`` is atomic (``mkdir(2)`` fails with
+    ``EEXIST`` rather than racing), so creating the raw directory *is* the
+    reservation: exactly one process can create any given one, and the
+    other moves on to the next sequence number. The scan above is still
+    used to pick a sensible starting point so this does not walk from 01
+    on every run.
+    """
+    prefix = f"{date}-{slug}-"
+    raw_root = records_dir / RAW_DIRNAME
+    raw_root.mkdir(parents=True, exist_ok=True)
+    start = allocate_record_stems(records_dir, date, slug, 1)[0]
+    n = int(start[len(prefix):])
+    stems: list[str] = []
+    while len(stems) < count:
+        stem = f"{prefix}{n:02d}"
+        n += 1
+        if (records_dir / f"{stem}.md").exists():
+            # Raw directory removed but the record kept: the number is spent.
+            continue
+        try:
+            (raw_root / stem).mkdir()
+        except FileExistsError:
+            continue  # another invocation owns this one
+        stems.append(stem)
+    return stems
 
 
 def _voltage_label(vdd: float, nominal: float) -> str:
@@ -230,6 +281,9 @@ def build_record(
         "seeds": seeds if seeds else "n/a (deterministic analysis)",
         "raw_path": _relpath(repo_root, raw_dir) + "/",
         "raw_files": raw_files,
+        # Not rendered: kept so the record can be re-verified against the
+        # directory it was actually hashed from (see verify_record).
+        "raw_dir": raw_dir,
         "wall_time": _fmt_wall(wall_seconds),
         "measure_names": measure_names,
         "samples": samples,
@@ -392,12 +446,110 @@ def render_record(record: dict, tb: Testbench, caveats: list[str]) -> str:
 
 
 def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[str]) -> Path:
-    """Write ``records/<stem>.md``; never overwrite an existing record."""
+    """Write ``records/<stem>.md``; never overwrite an existing record.
+
+    Raises ``RawFilesMismatch`` if the raw output has changed underneath the
+    record between hashing (``build_record``) and writing -- a record whose
+    checksums are already wrong at birth must not reach the disk.
+    """
     records_dir.mkdir(parents=True, exist_ok=True)
     path = records_dir / f"{record['record']}.md"
     if path.exists():
         raise RecordExists(
             f"{path} already exists; records are append-only -- mint a new record stem"
         )
+    problems = verify_record(record)
+    if problems:
+        raise RawFilesMismatch(
+            f"refusing to write {path}: raw output changed after it was hashed "
+            "(another run_corners.py invocation writing into the same raw "
+            "directory?)\n  " + "\n  ".join(problems)
+        )
     path.write_text(render_record(record, tb, caveats))
     return path
+
+
+RAW_FILE_LINE = re.compile(r"^\s*-\s+(?P<name>\S+)\s+sha256:(?P<digest>[0-9a-f]{64})\s*$")
+
+
+def parse_raw_section(text: str) -> tuple[str, list[tuple[str, str]]]:
+    """Read ``raw.path`` and ``raw.files`` back out of a rendered record.
+
+    Deliberately a small line scanner over the shape ``render_frontmatter``
+    emits, not a YAML parse: the harness is stdlib-only (see README.md), and
+    this is the inverse of exactly one renderer.
+    """
+    raw_path = ""
+    files: list[tuple[str, str]] = []
+    in_raw = False
+    in_files = False
+    for line in text.splitlines():
+        if line == "---" and files:
+            break
+        if line.startswith("raw:"):
+            in_raw = True
+            continue
+        if in_raw and line.startswith("  path:"):
+            raw_path = line.split(":", 1)[1].strip()
+            continue
+        if in_raw and line.strip() == "files:":
+            in_files = True
+            continue
+        if in_files:
+            match = RAW_FILE_LINE.match(line)
+            if match:
+                files.append((match.group("name"), match.group("digest")))
+            else:
+                in_raw = in_files = False
+    return raw_path, files
+
+
+def verify_raw_files(
+    raw_dir: Path, raw_files: list[tuple[str, str]], *, check_unlisted: bool = True
+) -> list[str]:
+    """Re-hash ``raw_files`` against ``raw_dir``; return one line per problem.
+
+    Empty list means the record's checksums still describe the bytes on
+    disk. Three ways that can fail, all seen in the collision this guards
+    (#60): a listed file is gone, a listed file's digest has changed
+    (overwritten by another run), or the directory holds raw output the
+    record never listed (another run's decks/logs landed in it).
+    """
+    problems: list[str] = []
+    if not raw_dir.is_dir():
+        return [f"{raw_dir}: raw directory is missing"]
+    for fname, digest in raw_files:
+        path = raw_dir / fname
+        if not path.is_file():
+            problems.append(f"{fname}: listed in raw.files but not present in {raw_dir}")
+            continue
+        actual = sha256_file(path)
+        if actual != digest:
+            problems.append(
+                f"{fname}: sha256 on disk {actual} != {digest} recorded in raw.files"
+            )
+    if check_unlisted:
+        listed = {name for name, _ in raw_files}
+        for path in sorted(raw_dir.iterdir()):
+            if path.is_file() and path.name not in listed:
+                problems.append(
+                    f"{path.name}: present in {raw_dir} but absent from raw.files"
+                )
+    return problems
+
+
+def verify_record(record: dict, *, check_unlisted: bool = True) -> list[str]:
+    """``verify_raw_files`` for an in-memory record from ``build_record``."""
+    return verify_raw_files(
+        Path(record["raw_dir"]), list(record["raw_files"]), check_unlisted=check_unlisted
+    )
+
+
+def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = True) -> list[str]:
+    """``verify_raw_files`` for a record already written to disk."""
+    raw_path, raw_files = parse_raw_section(path.read_text())
+    if not raw_path:
+        return [f"{path.name}: no raw.path in frontmatter"]
+    if not raw_files:
+        return [f"{path.name}: raw.files lists no files"]
+    return verify_raw_files(repo_root / raw_path, raw_files, check_unlisted=check_unlisted)
