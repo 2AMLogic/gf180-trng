@@ -61,13 +61,27 @@ POWER_GLOB_UNBUFFERED = "*-ro-array-core-power-[0-9]*.md"
 POWER_GLOB_BUFFERED = "*-ro-array-core-power-buffered-*.md"
 
 #: ``(label, record glob)``, in the order the comparisons are meant to be read.
-#: The first three are issue #51's own committed records (PR #67); the fourth
-#: is this issue's new buffered variant.
+#: The first three are issue #51's own committed records (PR #67); the last two
+#: are this issue's buffered pair.
+#:
+#: The two UNBUFFERED globs end ``-[0-9]*`` deliberately: without it they also
+#: match this issue's own ``…-buffered-…`` records and the "unbuffered" rows
+#: would silently become the buffered ones.
+#:
+#: The buffered pair is a PAIR on purpose. Reading the buffered driven deck
+#: against issue #51's unbuffered controls mixes two changes -- the buffer's
+#: isolation and the buffer's lighter load, which moves the ring's operating
+#: point. ``xor-static-buffered`` holds the load fixed at the buffered
+#: operating point with the neighbour on a rail, so
+#: ``xor-driven-buffered`` / ``xor-static-buffered`` differs in exactly one
+#: thing (does the neighbour switch), the same one-change ratio that gives
+#: 28.6x unbuffered.
 VARIANTS = [
-    ("1 control", "*-ro-ring5-starved-jitter-long-*.md"),
-    ("2 xor-static", "*-ro-array-coupling-xor-static-*.md"),
+    ("1 control", "*-ro-ring5-starved-jitter-long-[0-9]*.md"),
+    ("2 xor-static", "*-ro-array-coupling-xor-static-[0-9]*.md"),
     ("3 xor-driven", "*-ro-array-coupling-xor-driven-[0-9]*.md"),
-    ("5 xor-driven-buffered", "*-ro-array-coupling-xor-driven-buffered-*.md"),
+    ("5 xor-static-buffered", "*-ro-array-coupling-xor-static-buffered-*.md"),
+    ("6 xor-driven-buffered", "*-ro-array-coupling-xor-driven-buffered-*.md"),
 ]
 
 
@@ -255,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     by_label = {v.label.split()[-1]: v for v in variants}
     static = by_label["xor-static"]
     driven = by_label["xor-driven"]
+    static_buf = by_label["xor-static-buffered"]
     buffered = by_label["xor-driven-buffered"]
 
     print(
@@ -286,24 +301,35 @@ def main(argv: list[str] | None = None) -> int:
     ratio_to_driven = buffered.sigma[1] / driven.sigma[1]
     driven_ratio_to_control = driven.sigma[1] / control.sigma[1]
 
-    print("\nratio to the two #51 controls at lag 1, buffered variant")
-    print(f"  vs standalone control (1.00x baseline) : {ratio_to_control:6.2f}x")
-    print(f"  vs xor-static (1.06x baseline)         : {ratio_to_static:6.2f}x")
-    print(f"  vs xor-driven, the unbuffered 28.6x case: {ratio_to_driven:6.3f}x "
-          f"({(1 - ratio_to_driven) * 100:.1f}% of the unbuffered excess removed, "
-          f"where unbuffered was {driven_ratio_to_control:.1f}x the control)")
+    print("\nratio to the two #51 controls at lag 1, buffered driven variant")
+    print(f"  vs standalone control (#51's 1.00x baseline): {ratio_to_control:6.2f}x")
+    print(f"  vs xor-static        (#51's 1.06x baseline): {ratio_to_static:6.2f}x")
+    print(f"  vs xor-driven, the unbuffered 28.6x case   : {ratio_to_driven:6.3f}x")
 
-    removed_of_excess = None
-    driven_excess = driven_ratio_to_control - 1.0
-    if driven_excess > 0:
-        buffered_excess = ratio_to_control - 1.0
-        removed_of_excess = 1.0 - (buffered_excess / driven_excess)
-        print(
-            f"\n  of the {driven_excess * 100:.0f}% excess sigma_1 (28.6x - 1.00x) the "
-            f"unbuffered variant added over the control,\n  the buffered variant "
-            f"still carries {buffered_excess * 100:.0f}% excess -- "
-            f"{removed_of_excess * 100:.1f}% of the EXCESS is removed."
-        )
+    # The attributing comparison. Every other ratio above spans TWO changes
+    # (the buffer's isolation AND the buffer's lighter load, which moves the
+    # ring's operating point). This one spans exactly one -- whether the
+    # neighbour switches -- and it is the direct counterpart of the 28.6x
+    # issue #51 got from the same ratio without the buffer.
+    coupling_unbuffered = driven.sigma[1] / static.sigma[1]
+    coupling_buffered = buffered.sigma[1] / static_buf.sigma[1]
+    print("\nTHE COUPLING FACTOR -- driven/static at the SAME operating point")
+    print("  (one change between numerator and denominator: does the neighbour switch)")
+    print(f"  unbuffered: {driven.sigma[1]:.4e} / {static.sigma[1]:.4e} = "
+          f"{coupling_unbuffered:8.2f}x   (issue #51's headline)")
+    print(f"  buffered  : {buffered.sigma[1]:.4e} / {static_buf.sigma[1]:.4e} = "
+          f"{coupling_buffered:8.2f}x")
+    if coupling_unbuffered > 1.0:
+        removed = 1.0 - (coupling_buffered - 1.0) / (coupling_unbuffered - 1.0)
+        print(f"  -> the buffer removes {removed * 100:.2f}% of the coupling excess, "
+              f"leaving {coupling_buffered:.2f}x")
+        print(f"  -> squared (what DR-0007 §2 substitutes): "
+              f"{coupling_unbuffered ** 2:.0f}x over-statement becomes "
+              f"{coupling_buffered ** 2:.2f}x")
+
+    print("\noperating points (the reason the matched control exists)")
+    for v in (static, driven, static_buf, buffered):
+        print(f"  {v.label:<24} T0 = {v.period:.4e} s")
 
     rollup = {}
     if not args.no_power:
@@ -315,17 +341,21 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.check:
         failed = False
-        if buffered.sigma[1] < driven.sigma[1]:
+        # The gate is on the ATTRIBUTING ratio, not on the raw sigma: the
+        # claim sim/characterization-ring-buffer-mitigation.md makes is that
+        # the coupling factor collapses, and the coupling factor is
+        # driven/static at one operating point.
+        if coupling_buffered < coupling_unbuffered:
             print(
-                f"\nOK: buffered sigma_1 ({buffered.sigma[1]:.4e} s) is below the "
-                f"unbuffered xor-driven variant's ({driven.sigma[1]:.4e} s) -- the "
-                "mitigation moved sigma_1 in the isolating direction."
+                f"\nOK: the coupling factor falls from {coupling_unbuffered:.2f}x "
+                f"(unbuffered) to {coupling_buffered:.2f}x (buffered) at {CORNER} -- "
+                "the mitigation isolates the ring."
             )
         else:
             print(
-                f"\nFAIL: buffered sigma_1 ({buffered.sigma[1]:.4e} s) is NOT below "
-                f"the unbuffered xor-driven variant's ({driven.sigma[1]:.4e} s) -- "
-                "the buffer did not isolate the ring at this corner.",
+                f"\nFAIL: the coupling factor is {coupling_buffered:.2f}x buffered "
+                f"against {coupling_unbuffered:.2f}x unbuffered at {CORNER} -- the "
+                "buffer did not isolate the ring.",
                 file=sys.stderr,
             )
             failed = True
