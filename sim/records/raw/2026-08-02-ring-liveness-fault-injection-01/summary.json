@@ -1,0 +1,16 @@
+{
+  "kind": "no-alarm",
+  "n_bits": 648,
+  "seed": 40,
+  "c_live": 81,
+  "n_rings": 2,
+  "per_ring_events": [
+    [],
+    []
+  ],
+  "any_events": [],
+  "no_alarm": true,
+  "wall_time_s": 0.0026848316192626953,
+  "scenario": "healthy",
+  "why": "both rings healthy (declared IID, H = 1.0 bit/sample each) for several multiples of C_LIVE -- neither ring's watchdog should ever fire on a freely running source"
+}

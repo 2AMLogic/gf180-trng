@@ -1,0 +1,29 @@
+{
+  "kind": "onset-fault-both",
+  "onset": 2000,
+  "n_bits": 2131,
+  "c_live": 81,
+  "n_rings": 2,
+  "per_ring_events": [
+    [
+      2078
+    ],
+    [
+      2079
+    ]
+  ],
+  "any_events": [
+    2078,
+    2079
+  ],
+  "per_ring_first_after_onset": [
+    2078,
+    2079
+  ],
+  "any_first_after_onset": 2078,
+  "latency_bound": 80,
+  "all_rings_detected_within_bound": true,
+  "wall_time_s": 0.08262991905212402,
+  "scenario": "both-stuck",
+  "why": "both rings stop at the same onset -- ring_stuck_any must still fire (and each individual ring_stuck bit), demonstrating the monitor does not depend on a surviving ring to detect the shared failure mode"
+}

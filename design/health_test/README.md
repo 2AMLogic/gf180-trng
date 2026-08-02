@@ -1,10 +1,12 @@
-# `design/health_test/` — on-die health tests (RCT + APT)
+# `design/health_test/` — on-die health tests (RCT + APT) and per-ring liveness
 
 The continuous health-test block: the Repetition Count Test (RCT), the
 Adaptive Proportion Test (APT), and the start-up test built from the same two
-tests. Fixed by
-[`DR-0002`](../../spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md);
-verified at the level fixed by
+tests, plus the per-ring liveness monitor. Fixed by
+[`DR-0002`](../../spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md)
+(RCT/APT/start-up) and
+[`DR-0016`](../../spec/decision-records/DR-0016-per-ring-liveness-monitor.md)
+(per-ring liveness); verified at the level fixed by
 [`DR-0009`](../../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md);
 follows the `design/conditioner/` (#8) structural precedent.
 
@@ -16,13 +18,23 @@ follows the `design/conditioner/` (#8) structural precedent.
                        └───────────────────────────────────────────┘
                                           ▲
                                     startup_req (from design/interface/, #26)
+
+                       ┌───────────────────────────────────────────┐
+  ring_bit[N-1:0]  ───►│ N x RCT, one per ring (DR-0016)            │──► ring_stuck[N-1:0]
+  (per-ring, already   │                                            │──► ring_stuck_any
+   digitized/synced)   └───────────────────────────────────────────┘
 ```
 
-**Both tests observe the raw tap directly, at the full raw sample rate,
+**Both RCT/APT observe the raw tap directly, at the full raw sample rate,
 undecimated** (DR-0002 "Test inputs and placement") — never the conditioned
-stream, and this block never gates anything itself. Gating, latching, and the
-FIFO flush live downstream in `design/interface/` (#26); see
-[Interface contract](#interface-contract-with-designinterface-26) below.
+stream — and **the liveness monitor observes each ring's own digitized
+sample instead** (DR-0016), because RCT/APT's combined-tap view cannot see one
+dead ring out of N=2 (design/README.md "Per-ring liveness"). Neither block
+gates anything itself. Gating, latching, and the FIFO flush live downstream in
+`design/interface/` (#26); see
+[Interface contract](#interface-contract-with-designinterface-26) below --
+**`ring_stuck_any` is not wired into that path yet**, see
+[What is *not* here](#what-is-not-here).
 
 ## Files
 
@@ -30,6 +42,8 @@ FIFO flush live downstream in `design/interface/` (#26); see
 |---|---|
 | `rct_apt.py` | **Normative** bit-exact behavioural model: the cutoff formulas (`c_rct`, `c_apt`), the APT tail-probability check, and the cycle-accurate `HealthTest` state machine. DR-0009 makes this the definition of correct behaviour. |
 | `rct_apt.v` | Synthesisable RTL. Checked against the model cycle-for-cycle under Icarus Verilog by `sim/tests/test_health_test.py`. |
+| `ring_liveness.py` | **Normative** bit-exact behavioural model of the per-ring liveness monitor (DR-0016): N independent instances of `rct_apt.c_rct`'s RCT run-length test, one per ring. |
+| `ring_liveness.v` | Synthesisable RTL (`trng_ring_liveness`). Checked against the model cycle-for-cycle under Icarus Verilog by `sim/tests/test_ring_liveness.py`. |
 
 ## Cutoffs are parameters, not constants
 
@@ -97,6 +111,39 @@ parameters have no exception mechanism.
   `== W` by default, kept as its own parameter for clarity). Any RCT/APT
   failure resets the counter to 0, and so does `startup_req`.
 
+## The per-ring liveness monitor (DR-0016)
+
+- **Mechanism**: N independent instances of the *same* RCT run-length test
+  above, each watching one ring's own already-digitized, already-`clk`-
+  synchronized sample (`ring_bit[i]`) instead of the combined raw tap.
+  `ring_stuck[i]` pulses for one cycle exactly when ring `i`'s bit has
+  repeated `C_LIVE` times in a row; the run counter saturates the same way
+  RCT's does. `ring_stuck_any` is the bitwise OR of `ring_stuck`.
+- **Why a separate observation point at all**: RCT/APT above observe the
+  *combined* raw tap, where (per `design/README.md` "Per-ring liveness") one
+  dead ring out of the shipped N=2 array still leaves a live ring driving the
+  XOR node, so the combined stream can stay inside both cutoffs indefinitely
+  while true min-entropy has halved.
+- **`C_LIVE` defaults to `rct_apt.c_rct(H0)` = 81** — DR-0002's own draft
+  `C_RCT`, reused unchanged rather than re-derived, because the same
+  phase-aliasing argument DR-0002 already rests its `H0` assumption on for
+  the combined tap applies identically to an individual ring's own sampled
+  bit. A future ratified `H` (#13) updates both cutoffs from one edit.
+- **Detection latency**: exactly `C_LIVE` sampler-clock cycles (default 81)
+  after a ring's digitized bit starts holding a constant value — 81 us at
+  DR-0003's ratified `> 1 Mbps`, 162 ms at DR-0010's proposed `> 500 bps`.
+- **Digitizer**: `ring_bit[i]` is assumed already produced by a per-ring
+  digitizer structurally identical to the raw tap's own `sampler_dff`
+  (DR-0014's cell, unmodified) — this module performs no synchronization of
+  its own, the same contract `rct_apt.v` has for `raw_bit`.
+- **Flag, not hard stop**: `ring_stuck_any` is designed to be OR'd into the
+  *same* latch-and-gate mechanism `ht_fail_rct`/`ht_fail_apt` already use —
+  see DR-0016 "Failure behavior" for the full argument. **This wiring is not
+  built yet** — see "What is *not* here" below.
+- **No exposed per-ring tap (DR-0001)**: `ring_bit`/`ring_stuck`/
+  `ring_stuck_any` are internal health-test-block signals only, the same
+  status `raw_bit`/`ht_fail_rct` already have.
+
 ## Interface contract with `design/interface/` (#26)
 
 Port names/directions match `design/interface/regmap.py`'s port table exactly
@@ -124,12 +171,23 @@ discarded, not the fresh one.
 - **Latching, gating, and the FIFO flush.** `design/interface/README.md`'s
   block diagram shows exactly where: `ht_fail_* ───► latch ──► ht_alarm, gate
   ──► startup_req`. This block only ever *reports*; it never decides what
-  happens to the conditioned or raw output paths.
+  happens to the conditioned or raw output paths. **`ring_stuck_any` is not
+  yet wired into that path** — DR-0016 specifies the wiring (a fourth OR term
+  and `STATUS` bit, exactly parallel to `HT_FAIL_RCT`/`HT_FAIL_APT`) and
+  tracks it as a follow-up (#65) rather than reopening the closed, ratified
+  `design/interface/` block (#26) in the same change that adds the monitor.
 - **The raw tap itself.** That is #9's `sampler_core`; this block only
   consumes `raw_bit`/`raw_valid`.
+- **The per-ring digitizer's electrical connection to `ro1`/`ro2`.** DR-0016
+  bounds its cost using ngspice's hierarchical internal-node addressing in
+  `sim/tb/ring-liveness-tap-power/` (two `sampler_dff` instances tied to
+  `ro_array_core`'s internal nodes from the testbench, not from a `design/`
+  schematic), because `ro1`/`ro2` are not reachable from outside
+  `ro_array_core.sch` today. Promoting this into shipped RTL/schematic is
+  tracked as a follow-up (#65).
 - **A ratified worst-corner `H`.** #13's deliverable; this block ships with
   the DR-0002 draft `H0 = 0.5` default and the parameter hook to take a
-  different value once #13 lands.
+  different value once #13 lands (both `C_RCT` and `C_LIVE`).
 
 ## Running things
 
@@ -141,6 +199,11 @@ python3 -m unittest discover -s sim/tests -t sim/tests
 
 # Demonstration run: fault injection against the real health-test model.
 python3 sim/tb/health-test-fault-injection/run_demo.py --no-write
+
+# Demonstration run: fault injection against the per-ring liveness monitor
+# (DR-0016) -- freezes one (then both) ring's digitized bit and confirms
+# ring_stuck fires within C_LIVE samples, while a healthy ring never does.
+python3 sim/tb/ring-liveness-fault-injection/run_demo.py --no-write
 ```
 
 ## Health warning
