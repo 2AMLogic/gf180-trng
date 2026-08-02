@@ -240,6 +240,26 @@ class BuildRecordTests(unittest.TestCase):
         text = report.render_reproduce_section(record, self.tb)
         self.assertIn("--supply 3.63 --supply-tol 0", text)
 
+    def _reproduce_with_timeout(self, timeout_s):
+        record = report.build_record(
+            tb=self.tb, pdk=self.pdk, point=self.point, results=self.results,
+            ngspice="ngspice-46", repo_root=Path(self.tmp.name), stem="2026-07-31-an-experiment-03",
+            completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.3, raw_dir=Path(self.tmp.name) / "raw",
+            git={"commit": "f" * 40, "dirty": False}, timeout_s=timeout_s,
+        )
+        return report.render_reproduce_section(record, self.tb)
+
+    def test_reproduce_section_carries_a_non_default_timeout(self):
+        # A multi-hour transient-noise run is not reproducible by a command
+        # that omits the --timeout it ran with: the re-run dies on the 300 s
+        # default and records "no data (all runs failed to converge)".
+        self.assertIn("--timeout 40000", self._reproduce_with_timeout(40000))
+
+    def test_reproduce_section_omits_the_default_timeout(self):
+        self.assertNotIn("--timeout", self._reproduce_with_timeout(runner.DEFAULT_TIMEOUT_S))
+        self.assertNotIn("--timeout", self._reproduce_with_timeout(None))
+
     def test_write_record_refuses_to_overwrite(self):
         records_dir = Path(self.tmp.name) / "records"
         path = report.write_record(self.record, self.tb, records_dir, ["a caveat"])

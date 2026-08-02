@@ -30,6 +30,7 @@ import statistics
 import subprocess
 from pathlib import Path
 
+from . import runner
 from .corners import PvtPoint
 from .pdk import Pdk
 from .runner import RunResult
@@ -227,6 +228,7 @@ def build_record(
     raw_dir: Path,
     git: dict,
     supersedes: str = "",
+    timeout_s: int | None = None,
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
     (testbench, PVT point) record."""
@@ -256,6 +258,12 @@ def build_record(
         "date": completed_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "status": status,
         "supersedes": supersedes,
+        # Not rendered in the frontmatter; only used by the "How to reproduce"
+        # section, which must stay copy-pasteable (sim/README.md). A run that
+        # needed a non-default --timeout is NOT reproducible by a command that
+        # omits it: the re-run dies on the default timeout and records "no
+        # data (all runs failed to converge)" instead of the numbers above.
+        "timeout_s": timeout_s,
         "testbench_path": _relpath(repo_root, tb.netlist),
         "testbench_sha": blob_sha(repo_root, tb.netlist),
         "netlist_path": _relpath(repo_root, tb.dut_netlist),
@@ -405,17 +413,25 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
     supply_args = (
         f"--supply {_fmt(record['corner_voltage_v'])} --supply-tol 0 "
     )
+    # A long transient-noise run needs the --timeout it actually ran with, or
+    # the reproduce command dies on the 300 s default and records nothing.
+    timeout_s = record.get("timeout_s")
+    timeout_args = (
+        f"--timeout {timeout_s} "
+        if timeout_s is not None and timeout_s != runner.DEFAULT_TIMEOUT_S
+        else ""
+    )
     if isinstance(record["seeds"], list) and record["seeds"]:
         for seed in record["seeds"]:
             lines.append(
                 f"python3 sim/run_corners.py {tb.slug} --corners {record['corner_process']} "
                 f"--temps {_fmt(record['corner_temperature'])} {supply_args}"
-                f"--seeds {seed} --no-write"
+                f"--seeds {seed} {timeout_args}--no-write"
             )
     else:
         lines.append(
             f"python3 sim/run_corners.py {tb.slug} --corners {record['corner_process']} "
-            f"--temps {_fmt(record['corner_temperature'])} {supply_args}--no-write"
+            f"--temps {_fmt(record['corner_temperature'])} {supply_args}{timeout_args}--no-write"
         )
     lines += ["```", ""]
     return "\n".join(lines)

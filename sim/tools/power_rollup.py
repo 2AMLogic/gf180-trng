@@ -81,7 +81,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
 DIGITAL_SCRIPT = REPO_ROOT / "design" / "digital_power_estimate.py"
 
-ARRAY_GLOBS = ("*-ro-array-core-pvt-q-*.md", "*-ro-array-core-power-*.md")
+# `-[0-9]` and not `-`: the sequence number must follow the slug directly, so
+# a record from a *variant* testbench whose slug starts with one of these
+# (e.g. ro-array-core-power-BUFFERED, issue #75's unadopted buffer mitigation)
+# can never be rolled up as if it were the shipped design.
+ARRAY_GLOBS = ("*-ro-array-core-pvt-q-[0-9]*.md", "*-ro-array-core-power-[0-9]*.md")
 SAMPLER_ACTIVE_GLOB = "*-sampler-dff-active-current-*.md"
 IDLE_GLOB = "*-sampler-core-idle-leakage-*.md"
 

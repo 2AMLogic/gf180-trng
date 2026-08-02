@@ -318,7 +318,7 @@ def run(args: argparse.Namespace) -> int:
                 tb=tb, pdk=pdk, point=point, results=results, ngspice=ngspice,
                 repo_root=REPO_ROOT, stem=stems[point_index], completed_utc=completed_utc,
                 wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
-                supersedes=args.supersedes,
+                supersedes=args.supersedes, timeout_s=args.timeout,
             )
             path = report.write_record(
                 record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs)

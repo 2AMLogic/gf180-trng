@@ -109,7 +109,11 @@ VARIANTS = [
     ),
     (
         "3 xor-driven",
-        "*-ro-array-coupling-xor-driven-*.md",
+        # `-[0-9]` and not `-`: the sequence number must follow the slug
+        # directly, so a *variant* testbench whose slug merely starts with
+        # this one's (e.g. ro-array-coupling-xor-driven-BUFFERED, issue #75)
+        # cannot be picked up as variant 3 of this experiment.
+        "*-ro-array-coupling-xor-driven-[0-9]*.md",
         TB / "ro-array-coupling-xor-driven" / "tb.json",
         "+ xa1 driven by ring 2",
     ),
