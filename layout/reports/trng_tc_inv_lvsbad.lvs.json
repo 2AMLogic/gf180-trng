@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../testcells/trng_tc_inv_lvsbad.gds",
+  "reference": "../testcells/trng_tc_inv.spice",
+  "top": "trng_tc_inv",
+  "status": "mismatch",
+  "mismatch_count": 2,
+  "category_counts": {
+    "device.unmatched": 1,
+    "net.unmatched": 1
+  },
+  "counts": {
+    "nets": {
+      "layout": 7,
+      "reference": 6,
+      "matched": 4
+    },
+    "devices": {
+      "layout": 2,
+      "reference": 2,
+      "matched": 1
+    },
+    "pins": {
+      "layout": 5,
+      "reference": 5,
+      "matched": 5
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "6a6b1827e4b8944c47502a8aabd82caa7e263b6b0679092661d02e06d70f2a76",
+    "reference_sha256": "321469d35e90312394871cdc3937ac4aa08b9ccda38f5883bb4db5986d8e12b0",
+    "extracted_netlist": null
+  },
+  "mismatches": [
+    {
+      "category": "device.unmatched",
+      "severity": "error",
+      "description": "device has no counterpart on the other side",
+      "side": "reference",
+      "net": null,
+      "device": {
+        "layout": "$2",
+        "reference": "P",
+        "class": "pfet"
+      },
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "layout net has no reference counterpart",
+      "side": "layout",
+      "net": {
+        "layout": "$5",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+* trng_tc_inv -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output: an LVS run whose
+* reference is the extractor's own output proves nothing. This is what the
+* inverter is *supposed* to be, written independently, and `klt lvs` is
+* asked to agree that the drawn geometry implements it.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see `layout/README.md`, "What the curated decks do and do not
+* check"):
+*   - NMOS bulk is the deck's substrate global, `vsubs`.
+*   - PMOS bulk is a floating net: the curated deck does not tie an Nwell to
+*     the tap inside it, so the well is an unnamed net with exactly one
+*     connection. `NWELL_FLOAT` below is that net, and it is deliberately
+*     connected to nothing else.
+*
+* Device sizes must agree with layout/testcells/build.py's DEVICE_W_UM /
+* DEVICE_L_UM; `klt lvs` compares W and L as device properties.
+
+.SUBCKT trng_tc_inv A VDD VSS ZN vsubs
+MN ZN A VSS vsubs nfet L=0.28U W=0.8U
+MP ZN A VDD NWELL_FLOAT pfet L=0.28U W=0.8U
+.ENDS trng_tc_inv

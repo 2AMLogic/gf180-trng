@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "file": "layout/testcells/trng_tc_inv_drcbad.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "violations",
+  "violation_count": 2,
+  "rule_counts": {
+    "metal1.space.1": 1,
+    "metal1.width.1": 1
+  },
+  "violations": [
+    {
+      "rule": "metal1.space.1",
+      "description": "minimum metal1 spacing",
+      "check": "space",
+      "layer": "Metal1",
+      "cell": "trng_tc_inv",
+      "bbox": {
+        "left": 440,
+        "bottom": 2220,
+        "right": 600,
+        "top": 2580
+      },
+      "polygon": [
+        [
+          440,
+          2220
+        ],
+        [
+          440,
+          2580
+        ],
+        [
+          600,
+          2580
+        ],
+        [
+          600,
+          2220
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.width.1",
+      "description": "minimum metal1 width",
+      "check": "width",
+      "layer": "Metal1",
+      "cell": "trng_tc_inv",
+      "bbox": {
+        "left": 200,
+        "bottom": 580,
+        "right": 350,
+        "top": 900
+      },
+      "polygon": [
+        [
+          200,
+          580
+        ],
+        [
+          200,
+          900
+        ],
+        [
+          350,
+          900
+        ],
+        [
+          350,
+          580
+        ]
+      ]
+    }
+  ]
+}

@@ -8,6 +8,10 @@ __pycache__/
 sim/pdk.local.json
 sim/.work/
 
+# layout/ flow: scratch workdir. layout/verify.py runs every tool into here in
+# both modes so a check run never overwrites a committed report (layout/README.md).
+layout/.work/
+
 # Evidence records ARE meant to be committed even though their raw output
 # uses the generically-ignored *.log/*.raw extensions above (sim/README.md:
 # "sim/ results are append-only evidence").

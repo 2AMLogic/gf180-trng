@@ -1,0 +1,540 @@
+#!/usr/bin/env python3
+"""Run the gf180mcu DRC + LVS flow over `layout/testcells/` and check it.
+
+    python3 layout/verify.py                # run the flow, assert expectations
+    python3 layout/verify.py --write        # ... and refresh layout/reports/
+    python3 layout/verify.py --require-tools  # fail (not skip) if klt/PDK absent
+    python3 layout/verify.py --list         # print the fixture/expectation table
+
+This is the layout-side analogue of `sim/selftest.sh`: it exists so that
+"the DRC/LVS flow works" is a claim somebody can re-run in one command
+instead of a claim somebody has to believe.
+
+What it does, per fixture (`layout/testcells/build.py` owns the geometry):
+
+1. `klt drc  <fixture>.gds --deck gf180mcu`
+2. `klt extract <fixture>.gds --deck gf180mcu --pdk <variant>`
+3. `klt lvs  <request>`  -- only for fixtures with an LVS expectation
+
+...then compares each result against the expectation declared in
+`EXPECTATIONS` below. **The expectations are the test.** A tool upgrade that
+silently stopped reporting `metal1.width.1`, or a comparer that started
+calling the cut-strap fixture a match, fails here -- which is the whole
+reason the known-bad fixtures exist. A run that merely *ran* is not a pass.
+
+Reports land under `layout/reports/` as the verbatim JSON `klt` emitted,
+plus the extracted netlists. Those are the checked-in evidence; this script
+is what regenerates them. See `layout/README.md`.
+
+Standard library only, like the rest of the repo's tooling: everything that
+touches KLayout goes through the `klt` command line, which is the point --
+the flow is the tool's public interface, not a Python API this repo pins.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+LAYOUT_DIR = REPO_ROOT / "layout"
+TESTCELL_DIR = LAYOUT_DIR / "testcells"
+REPORT_DIR = LAYOUT_DIR / "reports"
+
+#: Scratch space (git-ignored). Every tool that writes a file writes it here
+#: first, in both `--write` and check mode, so that a check run never touches
+#: a committed artefact -- and so that the paths echoed into the reports are
+#: the same either way. `layout/reports/` is then updated by copy, or diffed
+#: against, from here.
+WORK_DIR = LAYOUT_DIR / ".work"
+
+sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(TESTCELL_DIR))
+
+import build as testcells  # noqa: E402  (layout/testcells/build.py)
+
+#: The DRC deck / extraction deck name `klt` knows this PDK family by. Not
+#: the PDK *variant* (gf180mcuA..D) -- klt's curated decks are per-family.
+DECK = "gf180mcu"
+
+#: Exit codes. Mirrors sim/selftest.sh: 0 pass or deliberate skip, 1 fail.
+EXIT_OK = 0
+EXIT_FAIL = 1
+
+
+# --------------------------------------------------------------------------- #
+# Expectations -- the actual test
+# --------------------------------------------------------------------------- #
+#
+# `drc.rule_counts` is compared for exact equality, not "at least": a
+# known-bad fixture that starts reporting a *third* rule has drifted and the
+# report no longer says what this file claims it says.
+#
+# `lvs.category_counts` is compared the same way. `lvs.reference` names the
+# schematic-side netlist under layout/testcells/; a fixture with no `lvs`
+# key is not LVS'd at all.
+EXPECTATIONS: dict[str, dict] = {
+    "trng_tc_inv": {
+        "why": "known-good: the flow must pass a correct cell",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "trng_tc_inv.spice",
+            "status": "match",
+            "category_counts": {},
+        },
+    },
+    "trng_tc_inv_drcbad": {
+        "why": "known-bad geometry: DRC must flag these two rules and no others",
+        "drc": {
+            "status": "violations",
+            "rule_counts": {"metal1.width.1": 1, "metal1.space.1": 1},
+        },
+        # Deliberately not LVS'd: its defects are geometric, and running LVS
+        # on it would only prove that a shape nobody connected anything to
+        # does not change the netlist.
+    },
+    "trng_tc_inv_lvsbad": {
+        "why": "known-bad connectivity: DRC must stay clean and LVS must fail",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "trng_tc_inv.spice",
+            "status": "mismatch",
+            "category_counts": {"net.unmatched": 1, "device.unmatched": 1},
+        },
+    },
+}
+
+
+class FlowError(Exception):
+    """A tool invocation could not produce a verdict at all."""
+
+
+# --------------------------------------------------------------------------- #
+# Environment
+# --------------------------------------------------------------------------- #
+
+
+def klt_version() -> str | None:
+    """Return the installed `klt --version` string, or None if absent."""
+    if shutil.which("klt") is None:
+        return None
+    try:
+        done = subprocess.run(
+            ["klt", "--version"], capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return (done.stdout or done.stderr).strip() or None
+
+
+def resolve_pdk():
+    """Resolve the gf180mcu install through the repo's one PDK resolver.
+
+    `sim/harness/pdk.py` is that resolver (its own docstring: "No PDK path is
+    ever hardcoded ... Everything resolves through this module"), so the
+    layout flow uses it rather than re-implementing discovery and risking a
+    DRC/LVS run against a different PDK install than the simulations cite.
+    Returns None when no install is found.
+    """
+    try:
+        from sim.harness import pdk as pdk_mod
+    except ImportError:  # pragma: no cover - repo layout guarantees this
+        return None
+    try:
+        return pdk_mod.find_pdk()
+    except Exception:
+        return None
+
+
+def environment_report() -> dict:
+    version = klt_version()
+    pdk = resolve_pdk()
+    return {
+        "klt": version,
+        "deck": DECK,
+        "pdk": pdk.provenance() if pdk is not None else None,
+        "platform": f"{os.uname().sysname} {os.uname().release} {os.uname().machine}",
+    }
+
+
+# --------------------------------------------------------------------------- #
+# klt invocations
+# --------------------------------------------------------------------------- #
+
+
+def _run_klt(args: list[str]) -> dict:
+    """Run `klt <args> --format json` from the repo root and parse stdout.
+
+    Every path handed to `klt` is repo-root-relative and the working
+    directory is the repo root, so the paths echoed back into the reports
+    are stable across machines.
+    """
+    argv = ["klt", *args, "--format", "json"]
+    done = subprocess.run(
+        argv, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=600
+    )
+    # klt writes its success payload to stdout and its `{"error": ...}`
+    # payload to stderr, so both streams have to be considered before
+    # concluding a run produced nothing at all.
+    raw = done.stdout.strip() or done.stderr.strip()
+    if not raw:
+        raise FlowError(
+            f"`{' '.join(argv)}` produced no output (exit {done.returncode})"
+        )
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise FlowError(f"`{' '.join(argv)}` emitted unparseable JSON: {exc}") from exc
+    if "error" in payload:
+        raise FlowError(f"`{' '.join(argv)}` failed: {payload['error'].get('message')}")
+    return payload
+
+
+def run_drc(stem: str) -> dict:
+    return _run_klt([
+        "drc",
+        f"layout/testcells/{stem}.gds",
+        "--deck",
+        DECK,
+    ])
+
+
+def run_extract(stem: str, pdk_variant: str | None) -> dict:
+    """Extract into the scratch dir. The netlist is copied/diffed later.
+
+    `layout/.work/` sits at the same depth as `layout/reports/`, so the
+    relative paths *inside* an emitted artefact (notably the LVS request's
+    `../testcells/...`) mean the same thing from either directory. The one
+    field that does depend on where the file landed is the extract report's
+    own `netlist_path`, which `klt` echoes back from `-o`; `_committed_view`
+    below restates it before the report is written or compared.
+    """
+    args = [
+        "extract",
+        f"layout/testcells/{stem}.gds",
+        "--deck",
+        DECK,
+        "--top",
+        testcells.TOP_CELL,
+        "-o",
+        f"layout/.work/{stem}.extracted.spice",
+    ]
+    if pdk_variant:
+        args += ["--pdk", pdk_variant]
+    return _run_klt(args)
+
+
+def lvs_request(stem: str, reference: str) -> dict:
+    """The LVS request document for one fixture.
+
+    Committed under `layout/reports/` so the exact invocation is
+    reproducible by hand. Paths are relative to the request file's own
+    directory, which is how `klt lvs` resolves them.
+    """
+    return {
+        "_comment": (
+            "Generated by layout/verify.py. Paths are relative to this file. "
+            "Re-run by hand with: klt lvs layout/reports/"
+            f"{stem}.lvs-request.json --format json"
+        ),
+        "layout": {
+            "file": f"../testcells/{stem}.gds",
+            "deck": DECK,
+            "top": testcells.TOP_CELL,
+        },
+        "reference": {
+            "netlist": f"../testcells/{reference}",
+            "top": testcells.TOP_CELL,
+        },
+    }
+
+
+def run_lvs(stem: str, reference: str) -> dict:
+    """Run LVS from a scratch copy of the request and return the report."""
+    path = WORK_DIR / f"{stem}.lvs-request.json"
+    path.write_text(json.dumps(lvs_request(stem, reference), indent=2) + "\n")
+    return _run_klt(["lvs", f"layout/.work/{stem}.lvs-request.json"])
+
+
+# --------------------------------------------------------------------------- #
+# Expectation checking
+# --------------------------------------------------------------------------- #
+
+
+def _check(label: str, expected, actual, failures: list[str]) -> bool:
+    if expected == actual:
+        print(f"    ok   {label}: {actual}")
+        return True
+    print(f"    FAIL {label}: expected {expected}, got {actual}")
+    failures.append(f"{label}: expected {expected}, got {actual}")
+    return False
+
+
+def verify_fixture(stem: str, spec: dict, pdk_variant: str | None) -> tuple[dict, list[str]]:
+    """Run every stage declared for one fixture and check its expectations."""
+    failures: list[str] = []
+    results: dict[str, dict] = {}
+
+    print(f"  {stem} -- {spec['why']}")
+
+    drc_expect = spec["drc"]
+    drc = run_drc(stem)
+    results["drc"] = drc
+    _check(f"{stem} drc.status", drc_expect["status"], drc.get("status"), failures)
+    _check(
+        f"{stem} drc.rule_counts",
+        drc_expect["rule_counts"],
+        drc.get("rule_counts"),
+        failures,
+    )
+
+    extract = run_extract(stem, pdk_variant)
+    results["extract"] = extract
+    print(
+        f"    ok   {stem} extract: {extract.get('device_count')} devices, "
+        f"{extract.get('net_count')} nets"
+    )
+
+    lvs_expect = spec.get("lvs")
+    if lvs_expect:
+        lvs = run_lvs(stem, lvs_expect["reference"])
+        results["lvs"] = lvs
+        _check(f"{stem} lvs.status", lvs_expect["status"], lvs.get("status"), failures)
+        _check(
+            f"{stem} lvs.category_counts",
+            lvs_expect["category_counts"],
+            lvs.get("category_counts"),
+            failures,
+        )
+
+    return results, failures
+
+
+def _text_artifacts(stem: str, spec: dict) -> list[str]:
+    """Scratch files that are committed verbatim alongside the JSON reports.
+
+    The extracted netlist is the actual thing LVS compared, and the request
+    is the actual invocation -- both belong in the checked-in evidence, and
+    both must be diffed, not just regenerated.
+    """
+    names = [f"{stem}.extracted.spice"]
+    if spec.get("lvs"):
+        names.append(f"{stem}.lvs-request.json")
+    return names
+
+
+def _committed_view(stem: str, stage: str, payload: dict) -> dict:
+    """The form of one stage's report that belongs in `layout/reports/`.
+
+    Everything the tools emit is recorded verbatim except a single field.
+    `klt extract` echoes its `-o` argument back as `netlist_path`, and this
+    flow always extracts into the git-ignored scratch dir so that a check run
+    can never overwrite a committed artefact. Recorded literally, the
+    committed report would name `layout/.work/<stem>.extracted.spice` -- a
+    path absent from a fresh checkout -- while the netlist it describes is
+    committed beside it in `layout/reports/`. So the committed copy names the
+    committed netlist.
+
+    This restatement cannot hide a difference: `netlist_sha256` sits directly
+    beside it, is emitted by the tool, and IS compared, and the netlist itself
+    is byte-compared by `compare_reports`. Write mode and check mode apply it
+    identically, so every other field is still compared exactly.
+    """
+    if stage != "extract":
+        return payload
+    restated = dict(payload)
+    restated["netlist_path"] = f"layout/reports/{stem}.extracted.spice"
+    return restated
+
+
+def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    written = []
+    for stage, payload in results.items():
+        path = REPORT_DIR / f"{stem}.{stage}.json"
+        path.write_text(
+            json.dumps(_committed_view(stem, stage, payload), indent=2) + "\n"
+        )
+        written.append(path)
+    for name in _text_artifacts(stem, spec):
+        destination = REPORT_DIR / name
+        shutil.copyfile(WORK_DIR / name, destination)
+        written.append(destination)
+    return written
+
+
+def _stable(payload: dict) -> dict:
+    """Strip the fields that legitimately move between machines.
+
+    `klt lvs` echoes an `environment` block carrying the KLayout engine
+    version; a klt upgrade changes it without changing any verdict. Every
+    other field in every report is a function of the fixture geometry and
+    the deck, so it is compared.
+    """
+    trimmed = dict(payload)
+    trimmed.pop("environment", None)
+    return trimmed
+
+
+_REGENERATE = "-- re-run `python3 layout/verify.py --write`"
+
+
+def compare_reports(stem: str, spec: dict, results: dict) -> list[str]:
+    """Diff live results against the committed reports (stable fields only)."""
+    drift: list[str] = []
+    for stage, payload in results.items():
+        path = REPORT_DIR / f"{stem}.{stage}.json"
+        if not path.exists():
+            drift.append(f"{path.relative_to(REPO_ROOT)} is missing {_REGENERATE}")
+            continue
+        committed = json.loads(path.read_text())
+        if _stable(committed) != _stable(_committed_view(stem, stage, payload)):
+            drift.append(
+                f"{path.relative_to(REPO_ROOT)} does not match this run {_REGENERATE}"
+            )
+    for name in _text_artifacts(stem, spec):
+        path = REPORT_DIR / name
+        if not path.exists():
+            drift.append(f"{path.relative_to(REPO_ROOT)} is missing {_REGENERATE}")
+            continue
+        if path.read_bytes() != (WORK_DIR / name).read_bytes():
+            drift.append(
+                f"{path.relative_to(REPO_ROOT)} does not match this run {_REGENERATE}"
+            )
+    return drift
+
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
+
+
+def print_table() -> None:
+    print("fixture                DRC expectation                 LVS expectation")
+    print("-" * 78)
+    for stem, spec in EXPECTATIONS.items():
+        drc = spec["drc"]
+        rules = ", ".join(f"{k}x{v}" for k, v in drc["rule_counts"].items()) or "-"
+        lvs = spec.get("lvs")
+        lvs_text = (
+            f"{lvs['status']}"
+            + (
+                " (" + ", ".join(f"{k}x{v}" for k, v in lvs["category_counts"].items()) + ")"
+                if lvs["category_counts"]
+                else ""
+            )
+            if lvs
+            else "not run"
+        )
+        print(f"{stem:<22} {drc['status']:<10} {rules:<20} {lvs_text}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="refresh the committed reports under layout/reports/",
+    )
+    parser.add_argument(
+        "--require-tools",
+        action="store_true",
+        help="fail instead of skipping when klt or the gf180mcu PDK is absent",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="print the fixture/expectation table and exit",
+    )
+    args = parser.parse_args(argv)
+
+    if args.list:
+        print_table()
+        return EXIT_OK
+
+    version = klt_version()
+    pdk = resolve_pdk()
+    missing = []
+    if version is None:
+        missing.append("klayout-tools (`klt`) is not on PATH")
+    if pdk is None:
+        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
+    if missing:
+        for line in missing:
+            print(f"  - {line}")
+        if args.require_tools:
+            print("FAIL: --require-tools was given and the flow cannot run")
+            return EXIT_FAIL
+        print(
+            "SKIP: layout verification -- the tools above are not available.\n"
+            "      Install them to run the DRC/LVS flow (see layout/README.md)."
+        )
+        return EXIT_OK
+
+    print(f"klt:  {version}")
+    print(f"pdk:  {pdk.variant} @ {pdk.version} ({pdk.source})")
+    print(f"deck: {DECK}")
+    print()
+
+    # `klt extract -o` refuses to create its own output directory, so the
+    # scratch directory has to exist before the first invocation.
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+
+    # A stale fixture invalidates every report downstream of it, so the
+    # geometry staleness guard runs first and hard-fails.
+    print("== fixtures ==")
+    if testcells.check_all() != 0:
+        print("FAIL: committed .gds fixtures do not match layout/testcells/build.py")
+        return EXIT_FAIL
+    print()
+
+    print("== flow ==")
+    all_failures: list[str] = []
+    all_results: dict[str, dict] = {}
+    for stem, spec in EXPECTATIONS.items():
+        try:
+            results, failures = verify_fixture(stem, spec, pdk.variant)
+        except FlowError as exc:
+            print(f"    FAIL {stem}: {exc}")
+            all_failures.append(str(exc))
+            continue
+        all_results[stem] = results
+        all_failures.extend(failures)
+    print()
+
+    if args.write:
+        REPORT_DIR.mkdir(parents=True, exist_ok=True)
+        (REPORT_DIR / "environment.json").write_text(
+            json.dumps(environment_report(), indent=2) + "\n"
+        )
+        written: list[Path] = []
+        for stem, results in all_results.items():
+            written.extend(write_reports(stem, EXPECTATIONS[stem], results))
+        print(f"== reports ==\n  wrote {len(written) + 1} files under layout/reports/")
+    else:
+        drift: list[str] = []
+        for stem, results in all_results.items():
+            drift.extend(compare_reports(stem, EXPECTATIONS[stem], results))
+        print("== reports ==")
+        if drift:
+            for line in drift:
+                print(f"  FAIL {line}")
+            all_failures.extend(drift)
+        else:
+            print("  ok   committed reports match this run")
+    print()
+
+    if all_failures:
+        print(f"FAIL: {len(all_failures)} expectation(s) not met")
+        return EXIT_FAIL
+    print("PASS: DRC/LVS flow is functional end to end.")
+    return EXIT_OK
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
