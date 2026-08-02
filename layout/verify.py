@@ -78,6 +78,35 @@ EXIT_FAIL = 1
 # `lvs.category_counts` is compared the same way. `lvs.reference` names the
 # schematic-side netlist under layout/testcells/; a fixture with no `lvs`
 # key is not LVS'd at all.
+#
+# `lvs.error_count` is how many of the reported mismatches carry
+# `severity: "error"`. It exists because `category_counts` alone cannot say
+# whether a category is a finding or a disclosure, and this table has to
+# carry two `severity: "warning"` categories on *every* fixture:
+#
+#   device.body_unverified x2   one per MOS: the deck compares each device's
+#                               body terminal against a net it synthesized
+#                               (`vsubs` for NMOS, an anonymous well net for
+#                               PMOS) rather than a real schematic net, so
+#                               that terminal was not actually verified.
+#                               This is the deck limitation layout/README.md
+#                               has always documented in prose under "Bulk
+#                               terminals are approximated"; klayout-tools
+#                               #281 made the tool state it per run instead.
+#   topology x1                 a device class the deck declares (bjt,
+#                               cap_mim, resistor -- klayout-tools #219/#227)
+#                               has no counterpart on the reference side, and
+#                               zero devices of it were extracted. The tool
+#                               says so itself: "not a real topology
+#                               mismatch".
+#
+# Both appeared on 2026-08-02 without any version string moving -- see
+# layout/README.md, "Pinning the tool", for why `klt --version` could not
+# have told us and what identifies a klt build instead. They are recorded
+# rather than filtered out because the point of this table is that a report
+# says the same thing tomorrow as today; and `error_count` is checked
+# alongside them so that absorbing two warnings did not quietly buy a pass
+# for a future *error* landing in the same category.
 EXPECTATIONS: dict[str, dict] = {
     "trng_tc_inv": {
         "why": "known-good: the flow must pass a correct cell",
@@ -85,7 +114,10 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "trng_tc_inv.spice",
             "status": "match",
-            "category_counts": {},
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            # Nothing the tool calls an error. That, not `status: match`
+            # alone, is what "the flow accepts a correct cell" means now.
+            "error_count": 0,
         },
     },
     "trng_tc_inv_drcbad": {
@@ -104,7 +136,18 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "trng_tc_inv.spice",
             "status": "mismatch",
-            "category_counts": {"net.unmatched": 1, "device.unmatched": 1},
+            # The two `severity: "error"` categories below are the defect
+            # this fixture exists to catch, and they are what `error_count`
+            # counts. The two warning categories are the same deck
+            # disclosures the known-good fixture carries -- present here
+            # because they describe the deck, not the defect.
+            "category_counts": {
+                "net.unmatched": 1,
+                "device.unmatched": 1,
+                "device.body_unverified": 2,
+                "topology": 1,
+            },
+            "error_count": 2,
         },
     },
 }
@@ -132,6 +175,60 @@ def klt_version() -> str | None:
     return (done.stdout or done.stderr).strip() or None
 
 
+#: Asks the `klt` venv's own interpreter what it installed. `importlib.metadata`
+#: only sees distributions on the interpreter running it, and `klt` lives in its
+#: own pipx/uv venv, so the question has to be asked over there.
+_KLT_ORIGIN_PROBE = (
+    "import importlib.metadata as m;"
+    "print(m.distribution('klayout-tools').read_text('direct_url.json') or '')"
+)
+
+
+def klt_origin() -> dict | None:
+    """Return what a `klt` install was built from, or None if unknowable.
+
+    `klt --version` reports `0.1.0` for every build of klayout-tools to date,
+    including installs straight off the tip of its main branch -- which is
+    what `pipx install klayout-tools` / `uv tool install klayout-tools` from
+    the repository URL gives you. So the version string does not identify a
+    build, and on 2026-08-02 two `0.1.0` installs produced different LVS
+    reports for the same fixture (#73). The commit does identify it.
+
+    Best effort by construction: an install from a wheel has no upstream
+    commit to report, and a layout this does not recognise reports nothing
+    rather than guessing. A None here means "not recorded", never "the same
+    as last time".
+    """
+    executable = shutil.which("klt")
+    if executable is None:
+        return None
+    try:
+        # The console script's shebang names the interpreter of the venv the
+        # distribution is installed into -- the one that can answer.
+        script = Path(executable).resolve().read_text(errors="replace")
+    except OSError:
+        return None
+    shebang = script.split("\n", 1)[0]
+    if not shebang.startswith("#!"):
+        return None
+    try:
+        done = subprocess.run(
+            [shebang[2:].strip(), "-c", _KLT_ORIGIN_PROBE],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        record = json.loads(done.stdout.strip())
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    return {
+        "url": record.get("url"),
+        "commit": (record.get("vcs_info") or {}).get("commit_id"),
+    }
+
+
 def resolve_pdk():
     """Resolve the gf180mcu install through the repo's one PDK resolver.
 
@@ -156,6 +253,7 @@ def environment_report() -> dict:
     pdk = resolve_pdk()
     return {
         "klt": version,
+        "klt_origin": klt_origin(),
         "deck": DECK,
         "pdk": pdk.provenance() if pdk is not None else None,
         "platform": f"{os.uname().sysname} {os.uname().release} {os.uname().machine}",
@@ -311,6 +409,16 @@ def verify_fixture(stem: str, spec: dict, pdk_variant: str | None) -> tuple[dict
             lvs.get("category_counts"),
             failures,
         )
+        mismatches = lvs.get("mismatches") or []
+        errors = sum(1 for m in mismatches if m.get("severity") == "error")
+        _check(f"{stem} lvs.error_count", lvs_expect["error_count"], errors, failures)
+        # Printed, not checked: the engine version is machine state, and
+        # `_stable` drops it from the report comparison for that reason. It
+        # is echoed here so that "did the tool move under me?" is a question
+        # a plain run answers, instead of one that costs a --write and a
+        # git diff to ask (#73).
+        engine = (lvs.get("environment") or {}).get("engine_version")
+        print(f"    --   {stem} lvs engine_version: {engine}")
 
     return results, failures
 
@@ -369,15 +477,24 @@ def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
 
 
 def _stable(payload: dict) -> dict:
-    """Strip the fields that legitimately move between machines.
+    """Strip the one field that legitimately moves between machines.
 
     `klt lvs` echoes an `environment` block carrying the KLayout engine
-    version; a klt upgrade changes it without changing any verdict. Every
-    other field in every report is a function of the fixture geometry and
-    the deck, so it is compared.
+    version; an engine upgrade changes it without changing any verdict, so
+    `engine_version` is dropped before the comparison.
+
+    Nothing else is. The rest of that block is `layout_sha256` /
+    `reference_sha256` -- content hashes of the exact bytes LVS compared,
+    which are a function of the committed fixtures and not of the machine.
+    Dropping the whole block, as this did before #73, discarded those two
+    alongside the version for no reason.
     """
     trimmed = dict(payload)
-    trimmed.pop("environment", None)
+    environment = trimmed.get("environment")
+    if isinstance(environment, dict):
+        environment = dict(environment)
+        environment.pop("engine_version", None)
+        trimmed["environment"] = environment
     return trimmed
 
 
@@ -476,7 +593,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return EXIT_OK
 
-    print(f"klt:  {version}")
+    origin = klt_origin()
+    commit = (origin or {}).get("commit")
+    print(f"klt:  {version}" + (f" (built from {commit})" if commit else ""))
     print(f"pdk:  {pdk.variant} @ {pdk.version} ({pdk.source})")
     print(f"deck: {DECK}")
     print()

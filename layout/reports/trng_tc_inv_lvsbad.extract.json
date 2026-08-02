@@ -5,7 +5,7 @@
   "top": "trng_tc_inv",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/trng_tc_inv_lvsbad.extracted.spice",
-  "netlist_sha256": "0432804781f3f656c5c1299829e3e9f1e39c642c3fe277d8daacc88cc96358a6",
+  "netlist_sha256": "04fd22e7e70b39198f96c207567dfb6ef70c653ac216cbb506fe104d9f1723a0",
   "status": "extracted",
   "device_count": 2,
   "net_count": 7,
@@ -14,6 +14,15 @@
     "nfet": 1,
     "pfet": 1
   },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
   "devices": [
     {
       "name": "$1",
@@ -82,9 +91,24 @@
     }
   ],
   "warnings": [],
+  "black_box_regions": [],
   "pdk": {
     "variant": "gf180mcuD",
     "root": "/Users/rwalters/.volare",
     "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
-  }
+  },
+  "provenance": {
+    "klt_version": "0.1.0",
+    "klayout_version": "0.30.10",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8"
+    }
+  },
+  "parasitics": null
 }
