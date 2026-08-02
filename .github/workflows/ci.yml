@@ -136,10 +136,15 @@ jobs:
       # calls `a`; array_sizing.py --check fails if the shipped array stops
       # satisfying DR-0007 §2 at any measured corner at DR-0010's rate, or if
       # its own copy of `a` has drifted from that derivation.
-      - name: Spec arithmetic self-checks (jitter-energy law, array sizing)
+      # array_coupling_variants.py --check fails if the four DUT variants of
+      # issue #51 stop classifying the way sim/characterization-array-ring-
+      # coupling.md says they do -- i.e. if a record moves the conclusion out
+      # from under a summary document that still asserts it.
+      - name: Spec arithmetic self-checks (jitter-energy law, array sizing, ring coupling)
         run: |
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check
+          python3 sim/tools/array_coupling_variants.py --check
 
       # Ties every record's numbers to the raw ngspice output it cites: each
       # file listed in raw.files is re-hashed against sim/records/raw/, and a

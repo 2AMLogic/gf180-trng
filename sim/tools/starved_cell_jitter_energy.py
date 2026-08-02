@@ -29,9 +29,11 @@ The measurement this family stands beside
 (``sim/records/2026-08-01-ro-array-sanity-jitter-01.md``) produced a plausible
 looking ``sigma`` that is not jitter at all. Two diagnostics caught it, and both
 are computed here for every record so the same mistake cannot pass silently a
-second time. (What that run's ``sigma`` actually *is* remains open -- the
-start-up-drift explanation is refuted by this family's own 16-period window; see
-``sim/characterization-starved-cell-jitter-energy.md`` and issue #51.)
+second time. (What that run's ``sigma`` actually *is* was settled by issue #51:
+not start-up drift -- this family's own 16-period window refutes that -- but a
+deterministic beat driven into ring 1 by ring 2 through the XOR combiner's
+input stage. See ``sim/characterization-array-ring-coupling.md`` and
+``sim/tools/array_coupling_variants.py``.)
 
 * **Seed spread.** A ``sigma`` estimate from a finite window is itself a random
   variable, and its seed-to-seed scatter scales as ``sqrt(L / NP)`` for lag
