@@ -63,6 +63,15 @@ sim/
 Example: `2026-08-14-ro-delay-cell-jitter-03.md`, with its raw ngspice
 output under `sim/records/raw/2026-08-14-ro-delay-cell-jitter-03/`.
 
+`sim/run_corners.py` claims each `<nn>` by *creating* that raw directory
+(an atomic `mkdir`, so exactly one process can win it) before the first
+simulation starts, and re-hashes every `raw.files` entry before it reports
+success. Two invocations for the same date and testbench — two terminals,
+a retried CI step, an agent that re-launches a long background run — are
+therefore safe to overlap: they get disjoint numbers, and a run whose raw
+output changed underneath it fails loudly instead of writing a record whose
+checksums match nothing.
+
 One record covers **one testbench at one corner** (one process/voltage/
 temperature point). A PVT sweep produces one record per corner, not one
 record with a table of corners. This keeps a corner citable by record ID
@@ -196,10 +205,29 @@ Mechanical; run through it before committing any record.
 - [ ] Corner is a single P/V/T point, and it is stated explicitly — or the
       record is `level: behavioral` and every device-model field carries
       `n/a` plus a reason, and the input source is named.
-- [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed.
+- [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed —
+      `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.
 - [ ] No claim in the record goes beyond what this run measured.
 - [ ] No existing record was modified, except a permitted `status`/`superseded_by` edit.
+
+### Checking the raw-output checksums
+
+The checksum item is the one item on this list a human cannot do by eye, so it
+is a command:
+
+```sh
+python3 sim/tools/verify_record_checksums.py --changed   # records this branch adds
+python3 sim/tools/verify_record_checksums.py             # every record in the repo
+python3 sim/tools/verify_record_checksums.py <record.md>...
+```
+
+It re-hashes every file listed in `raw.files` and fails on a digest that no
+longer matches, a listed file that is missing, a file sitting in the raw
+directory that the record never listed, or raw output that was never `git
+add`ed (`--no-git` drops that last check). Exit 0 means the item is satisfied.
+CI runs it over every record on every pull request, and `sim/selftest.sh`
+runs it as stage 2.
 
 ---
 

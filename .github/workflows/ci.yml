@@ -17,6 +17,18 @@ name: CI
 #   sim/selftest.sh stage 1 (harness unit tests)
 #       RUN on every push/PR (via sim/selftest.sh itself).
 #
+#   sim/tools/verify_record_checksums.py
+#   sim/selftest.sh stage 2 (the same check, --no-git)
+#       RUN on every push/PR. Re-hashes every file listed in every record's
+#       raw.files against sim/records/raw/ and fails on a digest that no
+#       longer matches, a listed file that is missing, an unlisted file
+#       sitting in a raw directory, or raw output that was never committed.
+#       Stdlib-only, no ngspice, no PDK, ~10s over the whole corpus. This is
+#       what stops a record whose provenance is broken (#60: two concurrent
+#       run_corners.py invocations overwriting each other's raw output) from
+#       reaching main, where sim/records/ is append-only and a bad record can
+#       only be superseded, never fixed.
+#
 #   sim/tools/jitter_energy_law.py --check
 #   sim/tools/array_sizing.py --check
 #       RUN on every push/PR. Both are pure derivations over records already
@@ -27,14 +39,14 @@ name: CI
 #       without them the spec's central arithmetic is only checked by a human
 #       who remembers to run it.
 #
-#   sim/selftest.sh stage 2 (python3 sim/run_corners.py --check-env)
+#   sim/selftest.sh stage 3 (python3 sim/run_corners.py --check-env)
 #       RUN on every push/PR. On a hosted runner it reports ngspice/PDK
 #       MISSING and the script exits 0 -- that skip path is exactly what CI
 #       verifies, so a regression that made the harness hard-fail (or silently
 #       "find" a PDK that isn't there) shows up as a red check.
 #
-#   sim/selftest.sh stage 3 (end-to-end smoke run, sim/tb/smoke-op)
-#   sim/selftest.sh stage 4 (sim/tools/corner_sanity_check.py)
+#   sim/selftest.sh stage 4 (end-to-end smoke run, sim/tb/smoke-op)
+#   sim/selftest.sh stage 5 (sim/tools/corner_sanity_check.py)
 #       RUN on a schedule, not here: see .github/workflows/pdk-nightly.yml,
 #       which provisions ngspice >= 46 and the gf180mcu PDK (pinned open_pdks
 #       commit) and runs `sim/selftest.sh --require-pdk` -- the form that fails
@@ -60,7 +72,7 @@ name: CI
 #       RUN on a schedule, not here: it shells out to xschem and resolves the
 #       gf180mcu xschem symbol library through the PDK, neither of which this
 #       PR-blocking path provisions -- same exclusion, and the same reason, as
-#       selftest stages 3-4 above. See .github/workflows/pdk-nightly.yml. Its
+#       selftest stages 4-5 above. See .github/workflows/pdk-nightly.yml. Its
 #       *syntax* is still compiled here (the compileall step covers design/).
 #
 #   design/netlist.py --lint (schematic T {...} text-block brace guard)
@@ -129,6 +141,15 @@ jobs:
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check
 
+      # Ties every record's numbers to the raw ngspice output it cites: each
+      # file listed in raw.files is re-hashed against sim/records/raw/, and a
+      # mismatch, a missing file, an unlisted file in a raw directory, or raw
+      # output that was never committed fails the run. sim/records/ is
+      # append-only, so a record with broken provenance that reaches main can
+      # only be superseded -- this is the gate that keeps one out (#60).
+      - name: Record checksum verification (sim/records/ raw.files)
+        run: python3 sim/tools/verify_record_checksums.py --quiet
+
       # The digital half's equivalent of design/netlist.py --check: the
       # interface block's Verilog header and pinout document are generated
       # from design/interface/regmap.py, and this fails if either is stale.
@@ -143,9 +164,10 @@ jobs:
       - name: Schematic text-block brace guard
         run: python3 design/netlist.py --lint
 
-      # sim/selftest.sh re-runs the unit tests as its own stage 1; the few
-      # seconds of overlap buy coverage of the acceptance script itself --
-      # its argument handling, its environment probe, and its PDK-absent skip
-      # path (stages 3-4 self-skip and the script exits 0 on this runner).
+      # sim/selftest.sh re-runs the unit tests and the record-checksum check
+      # as its own stages 1-2; the few seconds of overlap buy coverage of the
+      # acceptance script itself -- its argument handling, its environment
+      # probe, and its PDK-absent skip path (stages 4-5 self-skip and the
+      # script exits 0 on this runner).
       - name: Harness acceptance test (PDK stages self-skip on a hosted runner)
         run: sim/selftest.sh

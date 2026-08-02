@@ -3,7 +3,7 @@ name: PDK nightly
 # The PDK-dependent half of this repository's self-checks, deliberately kept
 # off the pull-request path.
 #
-# `sim/selftest.sh` stage 3 (end-to-end smoke run) and stage 4 (the
+# `sim/selftest.sh` stage 4 (end-to-end smoke run) and stage 5 (the
 # corner-sanity guardrail) need ngspice >= 46 and the gf180mcu PDK. On the PR
 # path they self-skip, so nothing exercises them unattended -- see the
 # self-check inventory at the top of ci.yml. This workflow provisions both and
@@ -177,7 +177,7 @@ jobs:
 
       # --require-pdk turns the PR path's skip into a failure, so a broken
       # ngspice or PDK provisioning step above shows up as a red job instead of
-      # a green run that quietly skipped stages 3-4.
+      # a green run that quietly skipped stages 4-5.
       - name: Harness acceptance test including the PDK-dependent stages
         run: sim/selftest.sh --require-pdk
 
