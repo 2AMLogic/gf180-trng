@@ -1192,6 +1192,21 @@ if [[ -d "$WORKTREE_PATH" ]]; then
         local_commits_behind=$(git -C "$WORKTREE_PATH" rev-list --count "HEAD..$BASE_REF" 2>/dev/null) || local_commits_behind="0"
         local_uncommitted=$(git -C "$WORKTREE_PATH" status --porcelain 2>/dev/null) || local_uncommitted=""
 
+        # Also check the worktree's OWN remote feature branch, not just
+        # $BASE_REF. $local_commits_ahead/$local_commits_behind above are
+        # computed purely relative to main (or the stacked --base ref) — a
+        # local branch can land at 0-commits-ahead-of-main parity for reasons
+        # unrelated to origin/$BRANCH_NAME (a prior reset, a rebase, etc.)
+        # while origin/$BRANCH_NAME still holds real, pushed, unmerged work.
+        # Best-effort fetch: a brand-new worktree that has never been pushed
+        # has no origin/$BRANCH_NAME yet, which must degrade gracefully to
+        # today's behavior rather than error (#68).
+        remote_branch_ahead="0"
+        git -C "$WORKTREE_PATH" fetch origin "$BRANCH_NAME" 2>/dev/null || true
+        if git -C "$WORKTREE_PATH" show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
+            remote_branch_ahead=$(git -C "$WORKTREE_PATH" rev-list --count "HEAD..origin/$BRANCH_NAME" 2>/dev/null) || remote_branch_ahead="0"
+        fi
+
         if [[ "$local_commits_ahead" -gt 0 || -n "$local_uncommitted" ]]; then
             # Worktree has real work - preserve it
             # Back-fill/refresh the Loom sentinel so a resumed worktree that
@@ -1208,8 +1223,51 @@ if [[ -d "$WORKTREE_PATH" ]]; then
                 print_info "To use this worktree: cd $WORKTREE_PATH"
             fi
             exit 0
+        elif [[ "$remote_branch_ahead" -gt 0 ]]; then
+            # Local HEAD is at parity with main (the condition that used to be
+            # treated as unconditionally "stale"), but origin/$BRANCH_NAME has
+            # commits the local worktree does not. Hard-resetting to $BASE_REF
+            # here would silently discard the local worktree's view of those
+            # pushed commits (origin itself is untouched, but a Judge/Doctor/
+            # re-dispatched Builder trusting this worktree's checked-out state
+            # would be evaluating/editing the wrong code — the exact failure
+            # mode reported in #68). Never silently reset past them: fast-
+            # forward when it is safe to do so, otherwise warn and leave the
+            # worktree exactly as it is.
+            write_loom_sentinel "$WORKTREE_PATH"
+            if git -C "$WORKTREE_PATH" merge-base --is-ancestor HEAD "origin/$BRANCH_NAME" 2>/dev/null; then
+                # Local HEAD is a strict ancestor of origin/$BRANCH_NAME: a
+                # fast-forward is lossless (it can only add commits already
+                # present on origin, never discard local-only work).
+                if git -C "$WORKTREE_PATH" reset --hard "origin/$BRANCH_NAME" 2>/dev/null; then
+                    if [[ "$JSON_OUTPUT" != "true" ]]; then
+                        print_warning "Local worktree HEAD was behind origin/$BRANCH_NAME ($remote_branch_ahead commit(s)) while at parity with $BASE_DISPLAY"
+                        print_success "Fast-forwarded local worktree to origin/$BRANCH_NAME instead of resetting to $BASE_DISPLAY"
+                        echo ""
+                        print_info "To use this worktree: cd $WORKTREE_PATH"
+                    fi
+                    exit 0
+                fi
+            fi
+            # Either not a fast-forward (local and origin/$BRANCH_NAME
+            # diverged, e.g. a rebase happened on origin) or the fast-forward
+            # attempt itself failed. Do not reset to $BASE_REF and do not
+            # force-update to origin either — warn and leave as-is, matching
+            # the script's existing "warn and leave as-is over silent data
+            # loss" pattern.
+            if [[ "$JSON_OUTPUT" != "true" ]]; then
+                print_warning "origin/$BRANCH_NAME has $remote_branch_ahead commit(s) not in the local worktree HEAD, and local HEAD is not a fast-forward ancestor of it (history diverged)"
+                print_warning "NOT resetting this worktree to $BASE_DISPLAY - that would silently discard the local view of origin/$BRANCH_NAME's commits"
+                print_info "Reconcile manually, e.g.:"
+                echo "    git -C $WORKTREE_PATH log --oneline HEAD..origin/$BRANCH_NAME"
+                echo ""
+                print_info "To use this worktree: cd $WORKTREE_PATH"
+            fi
+            exit 0
         else
-            # Stale worktree: no commits ahead, no uncommitted changes
+            # Stale worktree: no commits ahead of $BASE_REF, no uncommitted
+            # changes, and origin/$BRANCH_NAME (if it exists at all) has no
+            # commits beyond local HEAD either.
             # Reset in place instead of removing (avoids CWD corruption)
             if [[ "$JSON_OUTPUT" != "true" ]]; then
                 print_warning "Stale worktree detected (0 commits ahead, $local_commits_behind behind $BASE_DISPLAY, no uncommitted changes)"
