@@ -135,21 +135,34 @@ def ring_edges(rec: Record, ring: int) -> list[float]:
     return out
 
 
-def converged_time(edges: list[float], t_en: float, tol: float):
+#: How many consecutive in-band period estimates a corner must show before this
+#: script will call it converged. Without a floor here the test is vacuous: the
+#: last estimate is always inside its own tolerance band, so "converged by the
+#: last edge" would be true of a ring whose period was still growing
+#: monotonically. Three is the smallest number that distinguishes a plateau
+#: from a pair of points, and it leaves six of the nine recorded estimates free
+#: to be part of the settling transient.
+MIN_STABLE_PERIODS = 3
+
+
+def converged_time(edges: list[float], t_en: float, tol: float,
+                   min_stable: int = MIN_STABLE_PERIODS):
     """(elapsed start-up time, steady period, index) or (None, period, None).
 
     The steady period is the last available estimate. Convergence is the first
     estimate that is inside the tolerance band around it AND is followed only
     by estimates that are also inside it -- so a single lucky crossing on the
-    way past does not count. The start-up time is the elapsed time from ``en``
-    to the edge that OPENS that first converged period.
+    way past does not count -- AND that is followed by at least ``min_stable``
+    in-band estimates in total, so a run that never settles cannot qualify on
+    the strength of its own final point. The start-up time is the elapsed time
+    from ``en`` to the edge that OPENS that first converged period.
     """
-    if len(edges) < 3:
+    if len(edges) < min_stable + 1:
         return None, None, None
     periods = [b - a for a, b in zip(edges, edges[1:])]
     steady = periods[-1]
     inside = [abs(p - steady) <= tol * abs(steady) for p in periods]
-    for i in range(len(periods)):
+    for i in range(len(periods) - min_stable + 1):
         if all(inside[i:]):
             return edges[i] - t_en, steady, i
     return None, steady, None

@@ -45,7 +45,20 @@ The library is characterised at 3.60 V and the envelope's upper rail is
 3.63 V (3.3 V + 10 %). That 0.8 % voltage gap is not corrected for; it is
 noted in the output, and it is far below the estimate's own uncertainty.
 
+Why CI does not run this
+------------------------
+It needs ``libs.ref/gf180mcu_fd_sc_mcu7t5v0``, and the PDK nightly provisions
+only ``gf180mcu_fd_pr`` (the device models ngspice needs). That is the same
+constraint ``design/conditioner/area_estimate.py`` already lives with, and
+the same answer: the script is run locally, its output is quoted in
+``sim/characterization-startup-and-power-budget.md`` and
+[DR-0017] with the command that regenerates it, and what CI *does* enforce is
+in ``sim/tests/test_power_rollups.py`` -- the Liberty parser against a
+synthetic library, and staleness guards that fail if any RTL parameter the
+gate inventories depend on moves without the inventory being revisited.
+
 [DR-0004]: ../spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
+[DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 """
 
 from __future__ import annotations
@@ -505,6 +518,7 @@ def estimate_block(cells, inventory, vdd: float, freq: float,
     total would hide which one is carrying the answer.
     """
     leak_def = leak_min = leak_max = 0.0
+    leak_flop = leak_comb = 0.0
     flops = cell_count = 0
     clock_cap_f = clock_cap_eff_f = data_cap_f = 0.0
     p_clock = p_data = p_internal = 0.0
@@ -519,6 +533,10 @@ def estimate_block(cells, inventory, vdd: float, freq: float,
             leak_def += n * d * LEAKAGE_UNIT_W
             leak_min += n * (c.leak_min if c.leak_min is not None else d) * LEAKAGE_UNIT_W
             leak_max += n * (c.leak_max if c.leak_max is not None else d) * LEAKAGE_UNIT_W
+            if suffix.startswith("dff"):
+                leak_flop += n * d * LEAKAGE_UNIT_W
+            else:
+                leak_comb += n * d * LEAKAGE_UNIT_W
 
             if suffix.startswith("dff") or suffix.startswith("icgtp"):
                 if suffix.startswith("dff"):
@@ -547,6 +565,8 @@ def estimate_block(cells, inventory, vdd: float, freq: float,
         "leak_default_w": leak_def,
         "leak_min_w": leak_min,
         "leak_max_w": leak_max,
+        "leak_flop_w": leak_flop,
+        "leak_comb_w": leak_comb,
         "clock_cap_total_f": clock_cap_f,
         "clock_cap_effective_f": clock_cap_eff_f,
         "data_cap_f": data_cap_f,
@@ -586,6 +606,7 @@ def run(pdk_root: Path, corner: str, freq: float, activity: float,
         "blocks": {},
     }
     shipped_leak = shipped_leak_min = shipped_leak_max = shipped_dyn = 0.0
+    shipped_leak_flop = shipped_leak_comb = 0.0
     shipped_flops = shipped_cells = 0
     for name, inventory, shipped in BLOCKS:
         est = estimate_block(cells, inventory, vdd, freq, activity, fanout, wire_cap_f)
@@ -593,6 +614,8 @@ def run(pdk_root: Path, corner: str, freq: float, activity: float,
         out["blocks"][name] = est
         if shipped:
             shipped_leak += est["leak_default_w"]
+            shipped_leak_flop += est["leak_flop_w"]
+            shipped_leak_comb += est["leak_comb_w"]
             shipped_leak_min += est["leak_min_w"]
             shipped_leak_max += est["leak_max_w"]
             shipped_dyn += est["p_dynamic_w"]
@@ -624,6 +647,10 @@ def run(pdk_root: Path, corner: str, freq: float, activity: float,
         "cells": shipped_cells,
         "flops": shipped_flops,
         "leakage_w": shipped_leak,
+        "leakage_flop_w": shipped_leak_flop,
+        "leakage_comb_w": shipped_leak_comb,
+        "leakage_flop_a": shipped_leak_flop / vdd,
+        "leakage_comb_a": shipped_leak_comb / vdd,
         "leakage_min_w": shipped_leak_min,
         "leakage_max_w": shipped_leak_max,
         "leakage_a": shipped_leak / vdd,
@@ -688,6 +715,10 @@ def report(res: dict) -> None:
           f"   = {t['active_frac_of_budget']:.1%} of the < 500 uW row")
     print(f"digital idle   (leakage only)      : {_a(t['leakage_a'])}"
           f"   = {t['idle_frac_of_budget']:.1%} of the < 1 uA row")
+    print(f"  of which flip-flops (enumerated) : {_a(t['leakage_flop_a'])}"
+          f"   = {t['leakage_flop_a'] / IDLE_BUDGET_A:.0%} of that row on their own")
+    print(f"  of which combinational (estimated): {_a(t['leakage_comb_a'])}"
+          f"   = {t['leakage_comb_a'] / IDLE_BUDGET_A:.0%} of that row")
     print(f"  leakage range over input states  : {_a(t['leakage_min_a'])}"
           f" .. {_a(t['leakage_max_a'])}"
           f"  ({t['idle_min_frac_of_budget']:.0%} .. {t['idle_max_frac_of_budget']:.0%}"

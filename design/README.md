@@ -228,6 +228,38 @@ below the ratified characterization cell's 1.93 mW at the same corner**
 minimum-width, unloaded, series-starved cell buys, and it is why an array is
 affordable at all.
 
+### Start-up: one ring period, and no `.ic` needed
+
+`sim/tb/ro-array-core-startup/`
+(`sim/records/2026-08-02-ro-array-core-startup-{01..27}.md`, the same 27-point
+grid as `ro-array-core-pvt-q`) measures what
+`sim/tb/ro-array-core-power/`'s header explicitly declined to: how long the
+array takes to reach a stable period after `en` actually asserts.
+
+**4.40 ns** (`ff`/−40 °C/3.63 V) to **13.38 ns** (`ss`/+125 °C/2.97 V) — in
+every case 1.02–1.03 × that corner's own steady period, with the ring swing
+already within 7 % of its final value in a window opening 15 ns after `en`. The
+array starts in essentially one cycle, which is what a NAND-clamped digital
+ring released from a defined static state should do: there is no envelope to
+build up.
+
+The methodological point is worth keeping. The two running-state decks hold
+`en` high from t = 0 and kick each ring off its unstable symmetric equilibrium
+with `.ic v(xr*.n1) = 0`, because a noiseless solver started at `en = 1` can
+otherwise converge to that equilibrium and never oscillate. **The start-up deck
+uses no `.ic` and must not**: with `en` low, `ro_nand2`'s output is forced high
+independently of its ring input, the loop gain is zero, and the eleven stages
+have exactly one stable DC solution — so ngspice's own operating point *is* the
+"off, clamped" idle state, and the rising `en` edge, not an initial condition
+the testbench invented, starts the oscillation. Carrying the running decks'
+kick across would have forced `n1 = 0` against an `en = 0` state that wants
+`n1 = 1`, leaving the ring relaxing out of a testbench artefact at the exact
+moment being measured.
+
+That 4–13 ns is one part in 10⁵ of the block's 1.281 ms time-to-first-valid,
+which is dominated by the 1024-sample health-test window; the rollup is
+[`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md).
+
 ### Does the array meet DR-0007 §2?
 
 Yes, with margin, and it is checkable rather than asserted:
@@ -450,6 +482,72 @@ transmission gates, not a logic-level disturbance: at worst 4.22 % of supply,
 it is more than a factor of ten below any logic threshold, and it decays inside
 the same clock phase. The last two rows are there so a cell that "passed" by
 being broken — stuck low, never capturing — would not pass.
+
+### Running current: the flop burns power at `xo`'s rate, not the clock's
+
+The three testbenches above all hold something still. What the cell draws while
+it is actually working — clocked, reset released, digitising a moving input —
+was the gap #14 closed with `sim/tb/sampler-dff-active-current/`
+(`sim/records/2026-08-02-sampler-dff-active-current-{01..45}.md`, full 45-point
+grid).
+
+The result is a property of the topology and is easy to get wrong. A
+transmission-gate master-slave flop has its **master gate transparent for the
+whole `clk`-low half of every clock period**, so `D`'s transitions propagate
+into `m` → `mb` → `mc` for half the time — and `D` here is `xo`, which
+`sim/tb/ro-array-core-pvt-q/` measures at **3.1×10⁸ … 9.6×10⁸ transitions/s**.
+The flop therefore dissipates at the *entropy node's* rate, hundreds of
+megahertz, not at the 1 MHz sample clock. At the power-binding corner
+(`ff`/−40 °C/3.63 V):
+
+| Event | Charge | Rate that multiplies it | Contribution |
+|---|---|---|---|
+| One `D` transition, master **open** (`clk` low) | 9.02 fC | 4.80×10⁸ /s (½ × `xo_trans_per_s`) | **15.7 µW** |
+| One `D` transition, master **shut** (`clk` high) | 5×10⁻⁵ fC | 4.80×10⁸ /s | negligible |
+| One clock cycle, both instances | 8.3 fC each | 1×10⁶ /s | 60.3 nW |
+
+Only `xsb` pays the data term (`xsv`'s `D` is tied to `vdd` and never moves);
+both pay the clock term, which is **260× smaller**. That is why the testbench
+records energy **per event** rather than an average current: the rate that
+converts one into the other is corner-dependent, is measured separately, and —
+under `DR-0010` — may yet change by 2000×. A deck that averaged current over
+one clock period would have baked one rate into the record permanently, and
+could not be run in any case (one 1 µs clock period is ~2000 `D` periods; a
+first attempt at exactly that deck timed out at all 45 PVT points).
+
+### Idle: the whole analog block leaks 32.8 nA
+
+`sim/tb/sampler-core-idle-leakage/`
+(`sim/records/2026-08-02-sampler-core-idle-leakage-{01..45}.md`) measures the
+README's ratified idle state on the *whole* of `sampler_core` — both rings, the
+XOR combiner and both flops, with `en` low, reset released, state retained and
+the clock parked. At the leakiest corner (`ff`/+125 °C/3.63 V) it draws
+**32.8 nA (119 nW)**, i.e. 3.3 % of the block's `< 1 µA` idle row; the two
+clock-park states differ by 12 %. The clamped ring array is a genuinely quiet
+idle state — with `en` low, `ro_nand2`'s output is forced high regardless of its
+ring input, every node in both eleven-stage rings sits at a rail, and there is
+no crowbar path.
+
+Two method notes, both of which were wrong answers that ran cleanly:
+
+- **An `op` analysis of this block reports 193 µA and it is meaningless.**
+  `sampler_dff`'s storage loops are bistable, so with `rst_n` released they
+  have an unstable mid-rail DC solution alongside the two real ones and the DC
+  solver has no reason to prefer a stable one. It lands at 1.543 V on a 3.63 V
+  rail with every latch inverter at its trip point. The deck therefore drives
+  the block into idle the way a real one gets there and reads the current
+  600 ns later.
+- **Instantaneous branch-current reads are unusable in a quiescent transient**
+  — with nothing switching, ngspice's timestep grows to a large fraction of the
+  window and `meas ... find i(v…) at=1u` disagreed with the integrated value by
+  three orders of magnitude, and in sign. Every current in that family is a
+  charge-integrator average over a stated window, with a second window as the
+  record's own self-check.
+
+The block-level rollup of both figures, and the `< 1 µA` idle row's 4.5× miss
+(whose cause is the digital section, not this one), are in
+[`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md)
+and [`DR-0017`](../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md).
 
 ### Clock-source decision (binding, DR-0012): fixed external, not RO-divided
 
