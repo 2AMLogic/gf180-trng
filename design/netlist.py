@@ -3,6 +3,7 @@
 
     python3 design/netlist.py            # (re-)export every top cell
     python3 design/netlist.py --check    # export to a temp dir and diff; never writes
+    python3 design/netlist.py --lint     # brace-in-T{}-block guard only; no xschem/PDK
 
 ``--check`` is the staleness guard: it fails if the committed ``.spice``
 netlist does not match what the current schematics produce. That is what
@@ -10,6 +11,21 @@ makes a committed netlist evidence rather than a snapshot someone forgot to
 refresh -- ``sim/README.md`` records a ``netlist.sha`` in every evidence
 record, and that SHA is only meaningful if the netlist provably comes from
 the schematic it claims to.
+
+Text-block brace guard
+-----------------------
+Every schematic carries one or more ``T {...}`` free-text elements -- the
+prose headers that document each cell's rationale. That block has no
+electrical meaning, but xschem's own line/element parser miscounts when the
+block's *content* contains a literal ``{`` or ``}`` character, even a
+balanced pair, and silently drops parts of the exported netlist with no
+error from xschem or from this script (#61). ``--lint`` (and every other
+invocation of this script, which runs the same guard before shelling out to
+xschem) scans every ``design/xschem/*.sch`` file's text directly for stray
+braces inside ``T {...}`` blocks. That scan is pure Python over the
+schematic's own text -- no xschem, no PDK -- so unlike ``--check`` it can run
+in the PR-blocking CI job, catching the problem at the point of authorship
+instead of the next scheduled ``pdk-nightly.yml`` run.
 
 Determinism
 -----------
@@ -89,6 +105,92 @@ EXIT_ENVIRONMENT = 3
 
 class ExportError(RuntimeError):
     pass
+
+
+def _display_path(path: Path) -> str:
+    """*path* relative to :data:`REPO_ROOT` when possible, else as given.
+
+    Schematics under :data:`SCHEMATIC_DIR` always resolve relative to the
+    repo; a fixture schematic under a test's own temp directory (see
+    ``sim/tests/test_netlist_export.py``) does not, and should still print
+    something readable rather than raising.
+    """
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _text_block_violations(text: str) -> list[tuple[int, str]]:
+    """Find stray braces inside every ``T {...}`` free-text block of *text*.
+
+    Returns a list of ``(line_number, message)`` pairs, in document order.
+
+    This walks the schematic's raw text with a simple brace-depth counter
+    rather than trying to reproduce whatever xschem's own parser does --
+    that parser is exactly what miscounts here (#61). Depth starts at 1 right
+    after a line-initial ``T {``; any ``{`` or ``}`` seen while depth is
+    already >= 1 is, by construction, inside the block's content, so it is
+    flagged unconditionally -- a balanced nested pair corrupts xschem's
+    export just as surely as an unbalanced one, so this guard does not try
+    to distinguish them. The counter still lets it find the block's true
+    (depth == 0) end, so a single scan both locates the block and flags
+    every stray brace inside it.
+    """
+    violations: list[tuple[int, str]] = []
+    i = 0
+    n = len(text)
+    line = 1
+    while i < n:
+        if text.startswith("T {", i) and (i == 0 or text[i - 1] == "\n"):
+            block_start_line = line
+            j = i + len("T {")
+            depth = 1
+            while j < n and depth > 0:
+                ch = text[j]
+                if ch == "\n":
+                    line += 1
+                if ch == "{":
+                    depth += 1
+                    if depth > 1:
+                        violations.append((line, "stray '{' inside a T {...} text block"))
+                elif ch == "}":
+                    depth -= 1
+                    if depth > 0:
+                        violations.append((line, "stray '}' inside a T {...} text block"))
+                j += 1
+            if depth != 0:
+                violations.append(
+                    (block_start_line, "T {...} text block starting here never closes")
+                )
+            i = j
+            continue
+        if text[i] == "\n":
+            line += 1
+        i += 1
+    return violations
+
+
+def text_block_violations(schematic: Path) -> list[tuple[int, str]]:
+    """``_text_block_violations`` over one schematic file's committed text."""
+    return _text_block_violations(schematic.read_text())
+
+
+def lint_schematics(paths: list[Path] | None = None) -> int:
+    """Fail loudly if any schematic has a stray brace in a ``T {...}`` block.
+
+    Pure Python over the schematics' own text: no xschem, no PDK. *paths*
+    defaults to every ``design/xschem/*.sch`` file.
+    """
+    status = EXIT_OK
+    for schematic in paths if paths is not None else sorted(SCHEMATIC_DIR.glob("*.sch")):
+        rel = _display_path(schematic)
+        for lineno, message in text_block_violations(schematic):
+            print(f"BRACE  {rel}:{lineno}: {message}")
+            status = EXIT_STALE
+    if status == EXIT_OK:
+        print(f"ok     no stray braces in any T {{...}} text block under {_display_path(SCHEMATIC_DIR)}")
+    return status
 
 
 def _pdk_symbol_dir() -> Path:
@@ -240,15 +342,33 @@ def _normalize(text: str, top_params: str = "") -> str:
 
 
 def export(top: str, outdir: Path) -> str:
+    schematic = SCHEMATIC_DIR / f"{top}.sch"
+    if not schematic.is_file():
+        raise ExportError(f"no schematic {schematic}")
+    # Refuse before ever invoking xschem: a stray brace in any schematic's
+    # T {...} block corrupts xschem's own parse silently (#61), and `top`'s
+    # export can pull in any other schematic in SCHEMATIC_DIR hierarchically,
+    # so the whole directory is in scope here, not just `top`.sch.
+    violations = [
+        (sch, lineno, message)
+        for sch in sorted(SCHEMATIC_DIR.glob("*.sch"))
+        for lineno, message in text_block_violations(sch)
+    ]
+    if violations:
+        detail = "\n".join(
+            f"  {_display_path(sch)}:{lineno}: {message}" for sch, lineno, message in violations
+        )
+        raise ExportError(
+            "stray brace(s) found in a T {...} text block -- xschem's own "
+            "parser miscounts these and silently corrupts the exported "
+            f"netlist (#61); run `python3 design/netlist.py --lint` for detail:\n{detail}"
+        )
     if shutil.which(XSCHEM) is None:
         raise ExportError(
             "xschem not found on PATH.\n"
             "  Debian/Ubuntu: apt-get install xschem\n"
             "  or build from https://github.com/StefanSchippers/xschem"
         )
-    schematic = SCHEMATIC_DIR / f"{top}.sch"
-    if not schematic.is_file():
-        raise ExportError(f"no schematic {schematic}")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         rcfile = tmpdir / "xschemrc"
@@ -295,8 +415,18 @@ def main(argv: list[str] | None = None) -> int:
         "--check", action="store_true",
         help="do not write: re-export and fail if the committed netlist is stale",
     )
+    parser.add_argument(
+        "--lint", action="store_true",
+        help=(
+            "only run the T {...} text-block brace guard over every schematic "
+            "and exit; needs neither xschem nor the PDK (#61)"
+        ),
+    )
     parser.add_argument("--top", action="append", metavar="CELL", help="cell to export (repeatable)")
     args = parser.parse_args(argv)
+
+    if args.lint:
+        return lint_schematics()
 
     tops = tuple(args.top) if args.top else TOP_CELLS
     status = EXIT_OK

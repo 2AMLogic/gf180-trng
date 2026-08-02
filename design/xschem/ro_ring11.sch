@@ -14,7 +14,7 @@ so three stages -- the minimum an inverting ring allows -- would be the
 cheapest. The starved cell does not have the gain for it. ro_stage
 measures a small-signal gain at its own trip point of 2.59 at 1 GHz at
 nominal and 1.68 at ss/125 C/2.97 V (sim/records/2026-08-01-rostage-noise-
-{01,04}.md), against the 2.0 per stage a three-stage ring needs to sustain
+01,04.md), against the 2.0 per stage a three-stage ring needs to sustain
 a rail-to-rail oscillation. Simulated directly, a three-stage ring of this
 cell oscillates at ~45% of the supply and a five-stage one at ~79%; only
 the eleven-stage ring reaches the rails (sim/records/2026-08-01-ro-array-
@@ -29,7 +29,7 @@ cycle. Longer is not better: at lstv = 6 um the four-ring array still
 measures 939 uW against a < 500 uW row, worse per-transition tree energy
 and a ring swing down to 3.19 V, because slower ring edges cost the
 combining gates more short-circuit charge than the lower transition rate
-saves (sim/records/2026-08-01-ro-array-core-power-{01,02,03}.md are the
+saves (sim/records/2026-08-01-ro-array-core-power-01,02,03.md are the
 2 um and 6 um measurements side by side). The array fits its power row by
 ring COUNT, not by starve length; see ro_array_core.sch.
 

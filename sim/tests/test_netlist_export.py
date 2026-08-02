@@ -16,8 +16,10 @@ worth testing is therefore: re-wrapping never changes the token stream.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "design"))
@@ -158,6 +160,89 @@ class TopCellTests(unittest.TestCase):
                     continue
                 with self.subTest(top=top, line=lineno):
                     self.assertLessEqual(len(line), netlist.WRAP_COLUMN)
+
+
+class TextBlockBraceGuardTests(unittest.TestCase):
+    """Regression coverage for #61: a brace inside a T {...} block's prose,
+    even a balanced pair, silently corrupts xschem's own parse and the
+    netlist it produces -- with no error from xschem or from this script.
+    These use synthetic snippets built inline, not a schematic committed
+    under design/xschem/: a shipped schematic could be edited later and
+    silently stop exercising the case (per #61's own acceptance criteria)."""
+
+    def test_reported_shorthand_is_flagged(self):
+        """The exact shorthand from #61's bug report: a balanced brace pair
+        embedded in otherwise-ordinary prose."""
+        text = (
+            "T {some header text -- see the 45-point grid "
+            "sim/records/2026-08-01-sampler-dff-reset-clocked-{01..45}.md.\n"
+            "the rest of the paragraph.} -200 -900 0 0 0.2 0.2 {}\n"
+        )
+        violations = netlist._text_block_violations(text)
+        self.assertTrue(violations, "a brace inside T {...} content must be flagged")
+        self.assertTrue(any("{" in message for _, message in violations))
+
+    def test_brace_free_multiline_prose_passes(self):
+        text = (
+            "T {line one of a long header.\n"
+            "line two, still prose, no braces at all.\n"
+            "line three -- closes.} -200 -900 0 0 0.2 0.2 {}\n"
+        )
+        self.assertEqual(netlist._text_block_violations(text), [])
+
+    def test_sampler_dff_header_is_clean(self):
+        """The shipped sampler_dff.sch header is exactly the long,
+        prose-heavy, brace-free case #61's own reproduction warns future
+        editors about -- it must stay clean."""
+        violations = netlist.text_block_violations(netlist.SCHEMATIC_DIR / "sampler_dff.sch")
+        self.assertEqual(violations, [])
+
+    def test_stray_brace_line_number_points_at_the_brace(self):
+        text = "T {line one\nline two has a {stray} brace here\nline three closes.} 0 0 0 0 1 1 {}\n"
+        violations = netlist._text_block_violations(text)
+        self.assertTrue(violations)
+        self.assertTrue(all(lineno == 2 for lineno, _ in violations), violations)
+
+    def test_unterminated_block_is_flagged_too(self):
+        text = "T {this block never closes\nmore text\n"
+        violations = netlist._text_block_violations(text)
+        self.assertTrue(violations)
+        self.assertIn("never closes", violations[0][1])
+
+    def test_lint_schematics_fails_on_a_brace_and_passes_without_one(self):
+        """python3 design/netlist.py --lint's underlying check: needs
+        neither xschem nor the PDK to run."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmpdir = Path(tmp)
+            bad = tmpdir / "bad.sch"
+            bad.write_text(
+                "v {xschem version=3.4.4 file_version=1.2}\n"
+                "T {header with a stray {brace} in it.} -200 -900 0 0 0.2 0.2 {}\n"
+            )
+            self.assertEqual(netlist.lint_schematics([bad]), netlist.EXIT_STALE)
+
+            good = tmpdir / "good.sch"
+            good.write_text(
+                "v {xschem version=3.4.4 file_version=1.2}\n"
+                "T {header with no braces in it at all.} -200 -900 0 0 0.2 0.2 {}\n"
+            )
+            self.assertEqual(netlist.lint_schematics([good]), netlist.EXIT_OK)
+
+    def test_export_refuses_before_touching_xschem_when_a_brace_is_present(self):
+        """Reproduces #61 at the export() boundary: a brace anywhere under
+        SCHEMATIC_DIR raises before xschem is ever invoked, so this test
+        must not require xschem or the PDK to run (and does not mock or
+        stub xschem -- it never gets called)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture_dir = Path(tmp)
+            (fixture_dir / "faketop.sch").write_text(
+                "v {xschem version=3.4.4 file_version=1.2}\n"
+                "T {header with a {stray} brace.} -200 -900 0 0 0.2 0.2 {}\n"
+            )
+            with mock.patch.object(netlist, "SCHEMATIC_DIR", fixture_dir):
+                with self.assertRaises(netlist.ExportError) as ctx:
+                    netlist.export("faketop", fixture_dir)
+            self.assertIn("#61", str(ctx.exception))
 
 
 if __name__ == "__main__":
