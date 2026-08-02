@@ -68,7 +68,7 @@ being loud about.
 | `meta_arb` | the tap's metastable element: a cross-coupled NAND2 SR latch, symmetric by construction |
 | `ro_meta_tap` | the metastability-hybrid **stretch tap** (issue #43, [`DR-0011`](../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md)): a self-timed matched-delay strobe off an RO transition into `meta_arb`, on its own supply pin `vddm` |
 | `ro_array_core_meta` | `ro_array_core` (unmodified, instantiated) plus `ro_meta_tap` hanging off `xo`; exists only to simulate the tap in situ, nothing on `main` instantiates it by default |
-| `sampler_dff` | **the sampler/digitizer**: a transmission-gate master-slave D flip-flop, positive-edge, async active-low reset — the cell that turns `xo`'s analog swing into a logic-level raw bit |
+| `sampler_dff` | **the sampler/digitizer**: a transmission-gate master-slave D flip-flop, positive-edge, async active-low reset gated into the storage loops' own inverters ([`DR-0014`](../spec/decision-records/DR-0014-sampler-reset-gated-into-the-storage-loops.md)) — the cell that turns `xo`'s analog swing into a logic-level raw bit |
 | **`sampler_core`** | **the sampler, wired to the source**: `ro_array_core` + two `sampler_dff` (one for `raw_bit`, one for the `raw_valid` reset-release indicator), clocked by a fixed external clock — see [The sampler](#the-sampler-9) below |
 
 Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`,
@@ -342,49 +342,103 @@ construction, not merely under adversarial timing) was chosen for the same
 reason `xor2` is fully static and complementary rather than pass-transistor:
 the node that decides the raw bit must not have its drive strength depend on
 its own data, and its resolution behavior must be characterizable rather
-than assumed. Reset is async and reset-dominant (oversized pull devices on
-both storage nodes, active regardless of clock phase), because a sampler
-that can power up in an undefined state is not a sampler with a defined raw
-tap. It does take — `q_rst_v` is under 0.68 µV at every one of the 45 PVT
-points measured below.
+than assumed. Reset is async and reset-dominant, because a sampler that can
+power up in an undefined state is not a sampler with a defined raw tap.
 
-Reset by brute force has a known cost, stated here rather than left for a
-reader to find in the netlist: while `rst_n` is low **and** `clk` is low, the
-master's input transmission gate is transparent, so there is a conducting
-path from whatever drives `D`, through that gate, into the reset pull-down.
-Reset still wins — that is what the sizing is for, and the measurements say
-so — but current flows for as long as reset is asserted. [#48](https://github.com/2AMLogic/gf180-trng/issues/48)
-measured it, at both instances `sampler_core` actually contains and across
-the full PVT grid:
+### Reset is gated into the storage loops, not forced onto the storage nodes
 
-| Instance | Nominal (`tt`/27 °C/3.30 V) | Binding corner (`ff`/−40 °C/3.63 V) | Grid minimum (`ss`/125 °C/2.97 V) |
+**How reset works in the shipped cell.** Exactly one inverter in each latch's
+hold loop is a 2-input NAND2 whose second input is `rst_n`:
+
+- **master**, the *forward* inverter `m → mb` (`Mimpa`/`Mimpb`/`Mimna`/`Mimnb`);
+- **slave**, the *feedback* inverter `q → qb` (`Mis2pa`/`Mis2pb`/`Mis2na`/`Mis2nb`).
+
+A PMOS gated by `rst_n` is ON exactly when reset is asserted, so neither NAND2
+needs an active-high copy of `rst_n` and the cell contains no local reset
+inverter. While `rst_n` is low both NAND2s are forced HIGH, so `mb = 1` and
+`qb = 1` — and those are the *only* two signals that can drive the slave's
+storage node `s` (`mb` through `TG_S` while `clk = 1`, `qb` through `TG_FBS`
+while `clk = 0`). They agree, so `s = 1` and `Q = 0` in either clock phase and
+across every clock edge, and the master's node `m` is pulled to 0 through the
+master's own feedback path (`mb = 1 → INVM2 → mc = 0 → TG_FBM`) on every
+`clk = 1` phase. **No reset device shares a node with a transmission gate**,
+which is the whole point: there is nothing left for the transparent input path
+to fight. Device count is unchanged at 22 — four devices added (two per NAND2)
+against four removed (the two old storage-node pull devices and the local
+`rst_n` inverter that fed one of them).
+
+**What that replaced, and why.** The cell previously reset by brute force:
+oversized pull devices directly on both storage nodes, active regardless of
+clock phase. That works, but while `rst_n` is low **and** `clk` is low the
+master's input transmission gate is transparent, so whatever drives `D` has a
+conducting path through that gate into the reset pull-down.
+[#48](https://github.com/2AMLogic/gf180-trng/issues/48) measured that path, at
+both instances `sampler_core` actually contains and across the full 45-point
+PVT grid (`sim/records/2026-08-01-sampler-dff-reset-current-{xsv,xsb}-{01..45}.md`):
+
+| Instance (**pre-#53 cell**) | Nominal (`tt`/27 °C/3.30 V) | Binding corner (`ff`/−40 °C/3.63 V) | Grid minimum (`ss`/125 °C/2.97 V) |
 |---|---|---|---|
 | `xsv` (`D` tied to `vdd`: continuous conduction) | 195 µA / 644 µW | 314 µA / 1.141 mW | 110 µA / 326 µW |
 | `xsb` (`D` = `xo`, ≈50 % duty) | 97.7 µA / 322 µW | 157 µA / 570 µW | 55.2 µA / 164 µW |
 | **Both instances simultaneously** (the real `sampler_core` reset window) | **967 µW** | **1.71 mW** | — |
 
-`sim/tb/sampler-dff-reset-current-xsv/` and `sim/tb/sampler-dff-reset-current-xsb/`,
-45 records each, `sim/records/2026-08-01-sampler-dff-reset-current-{xsv,xsb}-{01..45}.md`.
-`xsb`'s current tracks `xsv`'s at 0.500–0.503 across every one of the 45
-points — confirming the ≈50 % duty-cycle mechanism the netlist predicts —
-and both instances' first-half/second-half currents agree to within
-9.4 × 10⁻⁷ relative, confirming the result does not depend on the arbitrary
-500 ps drive frequency the `xsb` testbench uses for `D`. `q` stays within
-3.9 µV of its reset value at every point on both grids: reset still takes,
-exactly as the setup/hold characterization above already established.
+A single instance's reset-window current alone exceeded the entire `< 500 µW`
+active-power row at every PVT point measured, and both `sampler_core` instances
+share `rst_n` and assert together — 1.9–3.4× the whole block's active-power
+budget for as long as reset was held with `clk` low, on top of the entropy
+source's own 415 µW. That is what [#53](https://github.com/2AMLogic/gf180-trng/issues/53)
+removed, and why the fix is a schematic change rather than a sizing tweak. The
+decision, its rejected alternatives and its evidence are
+[`DR-0014`](../spec/decision-records/DR-0014-sampler-reset-gated-into-the-storage-loops.md).
 
-**This is material, not a rounding term.** A single instance's reset-window
-current alone exceeds the entire `< 500 µW` active-power row at every PVT
-point measured — the grid minimum (65 % of the budget, one path, one
-instance) to the binding corner (2.3× the budget). Both `sampler_core`
-instances share `rst_n` and assert together, so the real reset-window draw
-is 1.9–3.4× the whole block's active-power budget for as long as reset is
-held with `clk` low — on top of, not instead of, the entropy source's own
-415 µW. How long that window lasts in the real power-on sequence is not yet
-specified (#26), so this is a power figure, not yet an energy one; the fix
-(gating reset into the storage loops instead of overriding the nodes) is a
-schematic change rather than a sizing tweak, and is tracked as
-[#53](https://github.com/2AMLogic/gf180-trng/issues/53).
+**The same two testbenches, unchanged, against the shipped cell**
+(`sim/records/2026-08-02-sampler-dff-reset-current-{xsv,xsb}-{01..45}.md` — the
+decks were deliberately not touched, so this is the same measurement on two
+cells rather than a comparison of methods):
+
+| Instance (**shipped cell**) | Nominal (`tt`/27 °C/3.30 V) | #48's binding corner (`ff`/−40 °C/3.63 V) | Grid maximum |
+|---|---|---|---|
+| `xsv` (`D` tied to `vdd`) | 50.5 pA / 167 pW | 54.0 pA / 196 pW | 5.09 nA / 18.5 nW (`ff`/125 °C/3.63 V) |
+| `xsb` (`D` = `xo`, ≈50 % duty) | 20.1 nA / 66.2 nW | 17.3 nA / 63.0 nW | 29.2 nA / 106 nW (`ss`/125 °C/3.63 V) |
+| **Both instances simultaneously** | **66.3 nW** | **63.2 nW** | **119 nW** (`ff`/125 °C/3.63 V) |
+
+That is a factor of **≈14,600 at nominal** (967 µW → 66.3 nW) and **≈14,400
+between the two grids' worst points** (1.71 mW → 119 nW); at #48's own binding
+corner the same-corner ratio is ≈27,000. The reset window's worst-case draw is
+now **0.024 % of the `< 500 µW` row** instead of 3.4× it. The residual is not a
+contention path at all — with no reset device on a storage node there is no DC
+path from `D` to `vss`, and what the `xsv` deck reads at that bias (tens of
+picoamps) is ordinary off-device leakage, comparable to
+`sim/tb/device-leakage-03v3/` rather than orders of magnitude above it. Reset
+still takes: `xsv`'s `Q` stays within 0.68 µV of `vss` at every one of the 45
+points, `xsb`'s within 31.8 µV.
+
+**Reset with the clock running, which the DC decks cannot see.** Both
+reset-current testbenches hold `clk` at a fixed level, and
+`sim/tb/sampler-dff-setup-hold/` releases reset before the clock starts —
+neither exercises a `clk` edge while `rst_n` is low. A *gated* reset acts
+through the loops, so that case is now a property of which inverter is gated
+rather than something a pull device guaranteed outright, and it needs its own
+evidence. `sim/tb/sampler-dff-reset-clocked/` supplies it: `rst_n` held low
+across three full periods of the running 1 MHz sample clock with `D` tied high
+(the worst case — it forces the master to disagree with the reset state at
+*every* rising edge — and also literally `xsv`'s condition in the shipped
+block), 45-point grid,
+`sim/records/2026-08-01-sampler-dff-reset-clocked-{01..45}.md`:
+
+| Quantity | Result over all 45 points |
+|---|---|
+| Worst excursion of `Q` from its reset value, over the whole reset window | 114 mV (`fs`/125 °C/2.97 V) … 152 mV (`sf`/−40 °C/3.63 V) |
+| …as a fraction of the supply | 3.82 % … 4.22 % |
+| `mb` held high by the master NAND2 | ≥ 95.2 % of supply at every point |
+| `Q` immediately before `rst_n` releases | ≤ 4.03 µV |
+| `Q` after the first rising edge following release (`D` = 1) | full rail at every point (within ±3.4 ppm of supply) |
+
+The excursion is capacitive coupling from the clock through the latches'
+transmission gates, not a logic-level disturbance: at worst 4.22 % of supply,
+it is more than a factor of ten below any logic threshold, and it decays inside
+the same clock phase. The last two rows are there so a cell that "passed" by
+being broken — stuck low, never capturing — would not pass.
 
 ### Clock-source decision (binding, DR-0012): fixed external, not RO-divided
 
@@ -453,38 +507,54 @@ raw tap parked at a half-rail level the conditioner would read as noise-shaped
 garbage.
 
 `sim/tb/sampler-dff-setup-hold/` measures that over the full 45-point PVT grid
-(5 process corners × 3 temperatures × 3 supplies), one record per point,
-`sim/records/2026-08-01-sampler-dff-setup-hold-01…45.md`:
+(5 process corners × 3 temperatures × 3 supplies), one record per point. The
+shipped gated-reset cell was re-characterized over the same grid by #53
+(`sim/records/2026-08-02-sampler-dff-setup-hold-01…45.md`; the pre-#53 cell's
+own grid is `2026-08-01-sampler-dff-setup-hold-01…45.md`, and the two are
+directly comparable — the testbench did not change):
 
-| Quantity | Result over all 45 points |
-|---|---|
-| `clk`→`Q` delay, rising | 82.3 ps (`ff`/−40 °C/3.63 V) … 194.3 ps (`ss`/+125 °C/2.97 V) |
-| `clk`→`Q` delay, falling | 81.0 ps (`ff`/−40 °C/3.63 V) … 203.0 ps (`ss`/+125 °C/2.97 V) |
-| `Q` after asynchronous reset | ≤ 0.68 µV at every point |
-| Capture at generous margin (4 clean edges) | correct at every point |
-| Settling after a **zero-margin** (zero setup *and* zero hold) edge | within 0.33 mV of a rail at +1 ns; within 6.4 µV at +100 ns |
-| Settling after a **59 ps** setup margin | within 8.1 mV of a rail at +1 ns; within 10 µV at +100 ns |
-| Settling after a **500 ps** setup margin | within 6.4 mV of a rail at +1 ns; within 10 µV at +100 ns |
+| Quantity | Result over all 45 points (shipped cell) | Pre-#53 cell |
+|---|---|---|
+| `clk`→`Q` delay, rising | 71.4 ps (`ff`/−40 °C/3.63 V) … 170.4 ps (`ss`/+125 °C/2.97 V) | 82.3 … 194.3 ps |
+| `clk`→`Q` delay, falling | 80.0 ps (`ff`/−40 °C/3.63 V) … 193.0 ps (`ss`/+125 °C/2.97 V) | 81.0 … 203.0 ps |
+| `Q` after asynchronous reset | ≤ 0.68 µV at every point | ≤ 0.68 µV |
+| Capture at generous margin (4 clean edges) | correct at every point (worst deviation 18 µV) | correct at every point |
+| Settling after a **zero-margin** (zero setup *and* zero hold) edge | within 0.37 mV of a rail at +1 ns; within 6.3 µV at +100 ns | 0.33 mV; 6.4 µV |
+| Settling after a **59 ps** setup margin | within 5.5 mV of a rail at +1 ns; within 20 µV at +100 ns | 8.1 mV; 10 µV |
+| Settling after a **500 ps** setup margin | within 3.1 mV of a rail at +1 ns; within 10 µV at +100 ns | 6.4 mV; 10 µV |
 
-**No point on the grid shows a metastable hang.** Every stressed edge is
-resolved to within millivolts of a rail one nanosecond later — three orders of
-magnitude inside the 1 µs sample period the ratified rate implies — and to
-within ten microvolts by 100 ns. That is the property the raw tap depends on.
+**No point on the grid shows a metastable hang**, on either cell. Every stressed
+edge is resolved to within millivolts of a rail one nanosecond later — three
+orders of magnitude inside the 1 µs sample period the ratified rate implies —
+and to within tens of microvolts by 100 ns. That is the property the raw tap
+depends on, and #53's change to the storage loops does not disturb it.
+
+The propagation delays got **faster** — 12–13 % on the rising edge, 1–5 % on
+the falling one — which is the expected direction rather than a surprise: #53
+deleted an 0.88 µm PMOS from the
+slave's storage node `s` and an 0.44 µm NMOS from the master's node `m` (the
+two reset pull devices), and the `clk`→`Q` path runs straight through `s`. The
+NAND2s that replaced two of the loop inverters sit on `mb` and `qb`, neither of
+which is on that path, and their series legs are sized 2× the device they
+replace so the loop's own drive is unchanged.
 
 The two marginal edges also **bracket the cell's setup time**, and the bracket
 moves with the corner exactly as it should:
 
-| Corner family | Captured data arriving 59 ps before the edge? |
-|---|---|
-| `ff` | 6 of 9 points (all of −40 °C and +27 °C, every supply) |
-| `fs` | 3 of 9 | 
-| `tt` | 2 of 9 (−40 °C, 3.30 V and 3.63 V) |
-| `sf` | 2 of 9 (−40 °C, 3.30 V and 3.63 V) |
-| `ss` | 0 of 9 |
+| Corner family | Captured data arriving 59 ps before the edge? | Pre-#53 |
+|---|---|---|
+| `ff` | 7 of 9 points (all of −40 °C and +27 °C, plus +125 °C at 3.63 V) | 6 of 9 |
+| `fs` | 4 of 9 (all of −40 °C, plus +27 °C at 3.63 V) | 3 of 9 |
+| `tt` | 4 of 9 (all of −40 °C, plus +27 °C at 3.63 V) | 2 of 9 |
+| `sf` | 4 of 9 (all of −40 °C, plus +27 °C at 3.63 V) | 2 of 9 |
+| `ss` | 1 of 9 (−40 °C, 3.63 V) | 0 of 9 |
 
-Data arriving **500 ps** before the edge is captured at **all 45 points**. So
-the setup time is under 500 ps everywhere and crosses 59 ps somewhere inside
-the grid — fast-and-cold captures at 59 ps, slow-or-hot does not. This is a
+Data arriving **500 ps** before the edge is captured at **all 45 points**, and
+the zero-margin edge is captured at none of them, on both cells. So the setup
+time is under 500 ps everywhere and crosses 59 ps somewhere inside the grid —
+fast-and-cold captures at 59 ps, slow-or-hot does not. It crosses at 20 of 45
+points on the shipped cell against 13 of 45 before, i.e. the setup time moved
+*down* alongside the propagation delay, for the same reason. This is a
 bracket, not a measurement: the testbench probes two offsets rather than
 sweeping the data-to-clock offset, so it bounds the setup time and does not
 resolve it. #26 has the number it needs to budget a clock/data relationship at
@@ -504,20 +574,29 @@ under transient noise, its XOR node sampled by the shipped `sampler_dff`, ten
 raw bits out. It exists to answer whether the sampler produces a clean logic
 level from a real analog `xo` swing, and whether `raw_valid` follows the
 conditioner's contract. It answers both, at both corners run
-(`sim/records/2026-08-01-sampler-array-digitize-01…02.md`):
+(`sim/records/2026-08-01-sampler-array-digitize-03…04.md`, the shipped
+gated-reset cell; `…-01…02.md` are the same two corners on the pre-#53 cell):
 
-| | `tt` / 27 °C / 3.30 V (`…-01`) | `ss` / −40 °C / 3.63 V (`…-02`) |
+| | `tt` / 27 °C / 3.30 V (`…-03`) | `ss` / −40 °C / 3.63 V (`…-04`) |
 |---|---|---|
-| Ten raw bits (`b0`…`b9`) | `0101111100` | `1111010011` |
-| Worst distance from a rail, any bit | 16 nV | 108 µV |
-| `raw_bit` / `raw_valid` during reset | 67 nV / 18 nV | 3.7 µV / 18 nV |
+| Ten raw bits (`b0`…`b9`) | `0001111100` | `1111010011` |
+| Worst distance from a rail, any bit | 18 nV | 6.3 µV |
+| `raw_bit` / `raw_valid` during reset | 92 nV / 18 nV | 38 µV / 18 nV |
 | `raw_valid` at first and last sample | high | high |
-| Ring frequency ratio | 1.0613 | 1.0607 |
-| `xo` swing | 3.391 V | 3.747 V |
-| Ring periods accumulated per sample | 1.404 | 1.628 |
+| Ring frequency ratio | 1.0605 | 1.0597 |
+| `xo` swing | 3.394 V | 3.740 V |
+| Ring periods accumulated per sample | 1.404 | 1.629 |
 
-- Every bit sits within **110 µV of a rail at worst** — the sampler is not
+- Every bit sits within **20 µV of a rail at worst** — the sampler is not
   handing the conditioner a half-resolved level at either corner.
+- The `ss` bitstream is bit-identical to the pre-#53 cell's (`…-02`); the `tt`
+  one differs in `b1` (`0101111100` → `0001111100`). That is expected and is
+  not a functional change: at this deck's 10 ns clock the bitstream is a
+  deterministic function of the ring phases at the sampling instants (see
+  below), and #53 moved the sampler's input-node parasitics slightly, so a
+  sample taken near a `xo` transition can land on the other side of it. Both
+  corners' ring frequencies, swing and periods-per-sample are unchanged to
+  within 0.1 %.
 - `raw_bit` and `raw_valid` are both low through reset, and `raw_valid` is
   high from the first clock edge after `rst_n` releases and stays high, which
   is exactly what `design/conditioner/README.md` specifies.
@@ -670,8 +749,9 @@ a simulation result, and neither was made to make one pass.
 | [`sim/tb/ro-meta-tap-skew/`](../sim/tb/ro-meta-tap-skew/) | the tap (`ro_meta_tap`): trim-load-to-skew sensitivity and its own supply energy per event |
 | [`sim/tb/sampler-array-digitize/`](../sim/tb/sampler-array-digitize/) | `sampler_core` end to end: `xo` under transient noise, sampled by the real `sampler_dff` into `raw_bit`/`raw_valid` — a functional raw-bitstream demonstration, not a rate or entropy measurement |
 | [`sim/tb/sampler-dff-setup-hold/`](../sim/tb/sampler-dff-setup-hold/) | `sampler_dff` alone, at the real 1 Mbps target clock period, across the full PVT grid: correct capture at normal setup margin and at a clock-aligned (worst-case) data transition |
-| [`sim/tb/sampler-dff-reset-current-xsv/`](../sim/tb/sampler-dff-reset-current-xsv/) | `sampler_dff`'s `xsv` instance (`D` tied to `vdd`), biased at `clk=0`/`rst_n=0`: static reset-window contention current (#48), full PVT grid |
-| [`sim/tb/sampler-dff-reset-current-xsb/`](../sim/tb/sampler-dff-reset-current-xsb/) | `sampler_dff`'s `xsb` instance (`D` an ideal representative square wave standing in for `xo`), `clk=0`/`rst_n=0` held: duty-cycled reset-window contention current (#48), full PVT grid |
+| [`sim/tb/sampler-dff-reset-current-xsv/`](../sim/tb/sampler-dff-reset-current-xsv/) | `sampler_dff`'s `xsv` instance (`D` tied to `vdd`), biased at `clk=0`/`rst_n=0`: static reset-window supply current, full PVT grid — the contention path #48 measured on the pre-#53 cell, and its absence on the shipped one (#53) |
+| [`sim/tb/sampler-dff-reset-current-xsb/`](../sim/tb/sampler-dff-reset-current-xsb/) | `sampler_dff`'s `xsb` instance (`D` an ideal representative square wave standing in for `xo`), `clk=0`/`rst_n=0` held: duty-cycled reset-window supply current, full PVT grid — same before/after pair as `…-xsv/` |
+| [`sim/tb/sampler-dff-reset-clocked/`](../sim/tb/sampler-dff-reset-clocked/) | `sampler_dff` with `rst_n` held low across three periods of the *running* sample clock: how far `Q` and the slave storage node depart from the reset state at a `clk` edge, and that the cell captures normally once reset releases — the case the two DC reset-current decks cannot see (#53) |
 
 Testbenches that instantiate a cell from here set `design_netlist` in their
 `tb.json`; the harness then `.include`s the schematic-derived netlist and records

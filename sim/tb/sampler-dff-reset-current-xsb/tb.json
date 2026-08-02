@@ -1,6 +1,6 @@
 {
   "name": "sampler-dff-reset-current-xsb",
-  "description": "sampler_dff's xsb instance (design/sampler_core.spice: raw_bit path, D = xo, the oscillating entropy XOR node), with clk=0 and rst_n=0 held for the whole window and D driven by a representative 500 ps square wave -- the reset-asserted, clk-low phase where the input transmission gate and the reset pulldown both conduct (#48): mean supply current of the resulting duty-cycled contention path.",
+  "description": "sampler_dff's xsb instance (design/sampler_core.spice: raw_bit path, D = xo, the oscillating entropy XOR node), with clk=0 and rst_n=0 held for the whole window and D driven by a representative 500 ps square wave -- the reset-asserted, clk-low phase in which the pre-#53 cell left the input transmission gate and a reset pulldown conducting simultaneously (#48): mean supply current at that bias, over vdd and the D source's own branch together. Unchanged across #53 so the before/after record sets are the same measurement on two cells.",
   "netlist": "tb_sampler_dff_reset_current_xsb.sp",
   "design_netlist": "design/sampler_core.spice",
   "analysis_type": "tran",
@@ -25,10 +25,12 @@
     "q_v": "qout_rst"
   },
   "caveats": [
-    "D is an ideal 500 ps (2 GHz) square wave, not the real ro_array_core -- deliberately, so this record does not conflate the reset-window conduction mechanism's PVT dependence with the ring's own frequency PVT dependence. See the testbench header for why the result should not depend on the chosen frequency (checked via i_reset_xsb_first_a vs i_reset_xsb_last_a, not assumed).",
+    "D is an ideal 500 ps (2 GHz) square wave, not the real ro_array_core -- deliberately, so this record does not conflate the reset-window conduction mechanism's PVT dependence with the ring's own frequency PVT dependence. See the testbench header for why the pre-#53 result should not depend on the chosen frequency.",
     "Models the WORST-CASE phase relationship (clk held at 0 for the whole window), not any specific power-on sequence -- how long reset is actually asserted, and at what clk phase, is a system-level timing question #26 owns, not measured here.",
-    "This is deliberate resistive contention between two simultaneously-ON pass devices, not subthreshold/junction leakage -- do not compare this current directly against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ figures as if they were the same phenomenon.",
+    "What this current IS depends on which cell the record ran against, and the record's netlist.sha says which. Pre-#53 (a reset pulldown on node m): deliberate resistive contention between two simultaneously-ON pass devices, which must NOT be compared against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ as if it were the same phenomenon. Post-#53 (reset gated into the latches' inverters, no device on a storage node): that path does not exist and what is left is nanoamp-scale.",
+    "i_reset_xsb_first_a vs i_reset_xsb_last_a is a start-up/frequency-dependence check only while the measured total is large compared with the charge integrator's numerical residue. On the post-#53 cell it is not -- the two halves differ by a large fraction of a very small number, and that ratio carries no physical meaning.",
     "The 50% duty cycle assumed by driving D symmetrically is representative, not measured from xo -- xo's own duty cycle (rise/fall symmetry of the XOR node) is not characterized by this testbench or any other in this repository.",
-    "D's driving current is idealized as a zero-impedance source powered from the same vdd rail (fq/fqd both integrate into the same charge node -- see the testbench header): a real xor2 output stage has finite ON resistance, which this record does not include."
+    "D's driving current is idealized as a zero-impedance source powered from the same vdd rail (fq/fqd both integrate into the same charge node -- see the testbench header): a real xor2 output stage has finite ON resistance, which this record does not include.",
+    "clk is held at 0 for the whole window, so this says nothing about what a clk EDGE does while reset is asserted. Post-#53 that is the case the cell's reset structure turns on (see design/xschem/sampler_dff.sch's header); it is not measured by this testbench."
   ]
 }

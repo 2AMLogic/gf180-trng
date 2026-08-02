@@ -21,27 +21,81 @@ functional check while building this cell; noted here so nobody
 "simplifies" it back to the one-inverter form):
 
   master: TG_D (transparent clk=0) writes D into node m
-          INVM: m -> mb            (drives the slave's TG_S)
+          NANDM: NAND(m, rst_n) -> mb  (gated; drives the slave's TG_S)
           INVM2: mb -> mc          (second inversion, feedback only)
           TG_FBM (transparent clk=1) feeds mc back into m  -- hold
   slave:  TG_S (transparent clk=1) passes mb -> node s
           INVS: s -> q             (the cell's output)
-          INVS2: q -> qb           (second inversion, feedback only)
+          NANDS2: NAND(q, rst_n) -> qb (gated second inversion, feedback only)
           TG_FBS (transparent clk=0) feeds qb back into s  -- hold
 
 D is captured into the master while clk=0; the master closes and the
 slave opens as clk rises, so Q updates on the RISING clk edge -- ordinary
 positive-edge D-FF behavior.
 
-Reset is asynchronous and reset-dominant, not scan-style: Mrm pulls node m
-to vss and Mrs pulls node s to vdd whenever rst_n=0, each sized 2x the
-minimum-width devices in the loops they override (Mrs is a PMOS pull-up,
-so it is gated directly by rst_n -- active LOW turns a PMOS ON -- not by
-the internal active-high "rst" signal, which is the polarity Mrm needs
-instead as an NMOS pull-down). That drives mb=1 and q=NOT(s)=0 regardless
-of clk phase, and because both storage nodes are forced to the SAME
-steady state the normal clk=1 hand-off would produce, releasing rst_n
-never hands the slave a value the master disagrees with.
+Reset is asynchronous and is gated INTO the loops' own inverters rather
+than overriding either storage node directly (#53, fixing the contention
+#48 measured in the prior brute-force-pulldown design -- see git history
+for that version). Exactly one inverter per latch becomes a 2-input NAND2
+taking rst_n directly (a PMOS pull-up gated by rst_n is active LOW, so no
+extra rst/rst_n inversion is needed on either):
+
+  NANDM  = Mimpa/Mimpb/Mimna/Mimnb, the master's FORWARD inverter m -> mb
+  NANDS2 = Mis2pa/Mis2pb/Mis2na/Mis2nb, the slave's FEEDBACK inverter q -> qb
+
+Whenever rst_n=0 the series NMOS pull-down of each NAND2 is broken and its
+parallel PMOS pull-up forces the output HIGH regardless of the data input,
+so mb=1 and qb=1. Those are the only two signals that can drive the slave's
+storage node s -- mb through TG_S while clk=1, qb through TG_FBS while
+clk=0 -- so BOTH agree on s=1, hence q=0, in either clock phase and across
+every clock edge. Node m is driven to 0 through the master's own feedback
+path (mb=1 -> INVM2 -> mc=0 -> TG_FBM) on every clk=1 phase. No reset
+device ever fights a transmission gate for a shared node: the brute-force
+pull-down/pull-up this replaces (the old Mrm on node m, Mrs on node s) is
+gone entirely. So is the local rst_n inverter that fed it (the old Mpr/Mnr
+pair and their internal "rst" node): both NAND2s take rst_n directly, so
+nothing in this cell needs the active-high copy any more, and a gate whose
+output drives nothing does not get to ship. Device count is unchanged at
+22 -- four devices added (two per NAND2) against four removed (Mrm, Mrs,
+Mpr, Mnr).
+
+WHY THE MASTER'S FORWARD INVERTER AND NOT ITS FEEDBACK ONE. Gating INVM2
+(mb -> mc) instead -- which is the arrangement #53 was filed proposing --
+reaches node m through the same feedback path and holds q=0 in both STATIC
+clock phases, so on paper it looks equivalent. It is not: it leaves mb
+tracking D while reset is asserted, and mb is exactly what TG_S hands the
+slave on each clk RISING edge. With D=1 that drives s=0 and hence q=1 for
+the whole clk-high phase, every phase. This is measured, not argued, on the
+same deck this cell ships with (sim/tb/sampler-dff-reset-clocked/, rst_n
+held low across three periods of a running 1 MHz clk, D=vdd) -- worst
+excursion of q away from its reset value during the reset window:
+
+  cell                             ss/125C/2.97V  tt/27C/3.30V  ff/-40C/3.63V
+  this cell (forward gated)          116 mV         134 mV         149 mV
+  feedback gated (INVM2) instead    3.05 V         3.53 V         3.72 V
+  pre-#53 brute force                127 mV         147 mV         163 mV
+
+The first and third rows are ~4% of supply -- clock coupling through the
+latches' transmission gates, a decade below any logic threshold. The middle
+row is a FULL RAIL: with the feedback inverter gated, reset is not glitching,
+it is defeated for as long as clk is high (that variant also reads q = the
+full supply at the instant rst_n releases, versus <= 3.0 uV for this cell).
+Only the first row is committed evidence -- it is three points out of the
+45-point grid sim/records/2026-08-01-sampler-dff-reset-clocked-01..45.md.
+The other two rows are scratch --no-write runs of the same deck against
+netlists this repository does not ship (the rejected variant, and the pre-#53
+cell as it stood at commit dc8570a), so they are design rationale for the
+choice above rather than evidence about anything shipped.
+
+Reset here is meant to be independent of clock phase, and the power-on
+clock/reset relationship is not specified (#26), so the sampler must not
+depend on clk being parked while rst_n is low.
+
+The series leg of each NAND2 is sized 2x the minimum-width device it
+replaces (NMOS 0.44u, against the 0.22u of a plain inverter) to compensate
+for series-stack resistance, matching this schematic's existing convention
+(see xor2.sch's series devices) rather than degrading the loop's
+regenerative gain; the parallel PMOS legs keep the original 0.44u sizing.
 
 Sampler clock source (binding decision): clk is a FIXED EXTERNAL clock,
 not divided down from either entropy-source ring -- see design/README.md
@@ -62,12 +116,12 @@ C {iopin.sym} -300 -300 0 0 {name=p5 lab=vdd}
 C {iopin.sym} -300 -250 0 0 {name=p6 lab=vss}
 C {pfet_03v3.sym} 0 -300 0 0 {name=Mpc L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {nfet_03v3.sym} 0 -100 0 0 {name=Mnc L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
-C {pfet_03v3.sym} 300 -300 0 0 {name=Mpr L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
-C {nfet_03v3.sym} 300 -100 0 0 {name=Mnr L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
 C {pfet_03v3.sym} 600 -300 0 0 {name=Mtdp L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {nfet_03v3.sym} 600 -100 0 0 {name=Mtdn L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
-C {pfet_03v3.sym} 900 -300 0 0 {name=Mimp L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
-C {nfet_03v3.sym} 900 -100 0 0 {name=Mimn L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
+C {pfet_03v3.sym} 900 -300 0 0 {name=Mimpa L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
+C {pfet_03v3.sym} 1050 -300 0 0 {name=Mimpb L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
+C {nfet_03v3.sym} 900 -100 0 0 {name=Mimna L=0.28u W=0.44u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
+C {nfet_03v3.sym} 1050 -100 0 0 {name=Mimnb L=0.28u W=0.44u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
 C {pfet_03v3.sym} 1200 -300 0 0 {name=Mim2p L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {nfet_03v3.sym} 1200 -100 0 0 {name=Mim2n L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
 C {pfet_03v3.sym} 1500 -300 0 0 {name=Mfmp L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
@@ -76,12 +130,12 @@ C {pfet_03v3.sym} 1800 -300 0 0 {name=Mtsp L=0.28u W=0.44u nf=1 m=1 model=pfet_0
 C {nfet_03v3.sym} 1800 -100 0 0 {name=Mtsn L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
 C {pfet_03v3.sym} 2100 -300 0 0 {name=Misp L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {nfet_03v3.sym} 2100 -100 0 0 {name=Misn L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
-C {pfet_03v3.sym} 2400 -300 0 0 {name=Mis2p L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
-C {nfet_03v3.sym} 2400 -100 0 0 {name=Mis2n L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
+C {pfet_03v3.sym} 2400 -300 0 0 {name=Mis2pa L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
+C {pfet_03v3.sym} 2550 -300 0 0 {name=Mis2pb L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
+C {nfet_03v3.sym} 2400 -100 0 0 {name=Mis2na L=0.28u W=0.44u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
+C {nfet_03v3.sym} 2550 -100 0 0 {name=Mis2nb L=0.28u W=0.44u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
 C {pfet_03v3.sym} 2700 -300 0 0 {name=Mfsp L=0.28u W=0.44u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {nfet_03v3.sym} 2700 -100 0 0 {name=Mfsn L=0.28u W=0.22u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
-C {nfet_03v3.sym} 3000 -100 0 0 {name=Mrm L=0.28u W=0.44u nf=1 m=1 model=nfet_03v3 spiceprefix=X}
-C {pfet_03v3.sym} 3300 -300 0 0 {name=Mrs L=0.28u W=0.88u nf=1 m=1 model=pfet_03v3 spiceprefix=X}
 C {lab_pin.sym} 20 -270 0 0 {name=l1 lab=clkb}
 C {lab_pin.sym} -20 -300 0 0 {name=l2 lab=clk}
 C {lab_pin.sym} 20 -330 0 0 {name=l3 lab=vdd}
@@ -90,14 +144,6 @@ C {lab_pin.sym} 20 -130 0 0 {name=l5 lab=clkb}
 C {lab_pin.sym} -20 -100 0 0 {name=l6 lab=clk}
 C {lab_pin.sym} 20 -70 0 0 {name=l7 lab=vss}
 C {lab_pin.sym} 20 -100 0 0 {name=l8 lab=vss}
-C {lab_pin.sym} 320 -270 0 0 {name=l9 lab=rst}
-C {lab_pin.sym} 280 -300 0 0 {name=l10 lab=rst_n}
-C {lab_pin.sym} 320 -330 0 0 {name=l11 lab=vdd}
-C {lab_pin.sym} 320 -300 0 0 {name=l12 lab=vdd}
-C {lab_pin.sym} 320 -130 0 0 {name=l13 lab=rst}
-C {lab_pin.sym} 280 -100 0 0 {name=l14 lab=rst_n}
-C {lab_pin.sym} 320 -70 0 0 {name=l15 lab=vss}
-C {lab_pin.sym} 320 -100 0 0 {name=l16 lab=vss}
 C {lab_pin.sym} 620 -270 0 0 {name=l17 lab=d}
 C {lab_pin.sym} 580 -300 0 0 {name=l18 lab=clk}
 C {lab_pin.sym} 620 -330 0 0 {name=l19 lab=m}
@@ -110,10 +156,18 @@ C {lab_pin.sym} 920 -270 0 0 {name=l25 lab=mb}
 C {lab_pin.sym} 880 -300 0 0 {name=l26 lab=m}
 C {lab_pin.sym} 920 -330 0 0 {name=l27 lab=vdd}
 C {lab_pin.sym} 920 -300 0 0 {name=l28 lab=vdd}
+C {lab_pin.sym} 1070 -270 0 0 {name=l25b lab=mb}
+C {lab_pin.sym} 1030 -300 0 0 {name=l26b lab=rst_n}
+C {lab_pin.sym} 1070 -330 0 0 {name=l27b lab=vdd}
+C {lab_pin.sym} 1070 -300 0 0 {name=l28b lab=vdd}
 C {lab_pin.sym} 920 -130 0 0 {name=l29 lab=mb}
 C {lab_pin.sym} 880 -100 0 0 {name=l30 lab=m}
-C {lab_pin.sym} 920 -70 0 0 {name=l31 lab=vss}
+C {lab_pin.sym} 920 -70 0 0 {name=l31 lab=mmid}
 C {lab_pin.sym} 920 -100 0 0 {name=l32 lab=vss}
+C {lab_pin.sym} 1070 -130 0 0 {name=l29b lab=mmid}
+C {lab_pin.sym} 1030 -100 0 0 {name=l30b lab=rst_n}
+C {lab_pin.sym} 1070 -70 0 0 {name=l31b lab=vss}
+C {lab_pin.sym} 1070 -100 0 0 {name=l32b lab=vss}
 C {lab_pin.sym} 1220 -270 0 0 {name=l33 lab=mc}
 C {lab_pin.sym} 1180 -300 0 0 {name=l34 lab=mb}
 C {lab_pin.sym} 1220 -330 0 0 {name=l35 lab=vdd}
@@ -150,10 +204,18 @@ C {lab_pin.sym} 2420 -270 0 0 {name=l65 lab=qb}
 C {lab_pin.sym} 2380 -300 0 0 {name=l66 lab=q}
 C {lab_pin.sym} 2420 -330 0 0 {name=l67 lab=vdd}
 C {lab_pin.sym} 2420 -300 0 0 {name=l68 lab=vdd}
+C {lab_pin.sym} 2570 -270 0 0 {name=l65b lab=qb}
+C {lab_pin.sym} 2530 -300 0 0 {name=l66b lab=rst_n}
+C {lab_pin.sym} 2570 -330 0 0 {name=l67b lab=vdd}
+C {lab_pin.sym} 2570 -300 0 0 {name=l68b lab=vdd}
 C {lab_pin.sym} 2420 -130 0 0 {name=l69 lab=qb}
 C {lab_pin.sym} 2380 -100 0 0 {name=l70 lab=q}
-C {lab_pin.sym} 2420 -70 0 0 {name=l71 lab=vss}
+C {lab_pin.sym} 2420 -70 0 0 {name=l71 lab=s2mid}
 C {lab_pin.sym} 2420 -100 0 0 {name=l72 lab=vss}
+C {lab_pin.sym} 2570 -130 0 0 {name=l69b lab=s2mid}
+C {lab_pin.sym} 2530 -100 0 0 {name=l70b lab=rst_n}
+C {lab_pin.sym} 2570 -70 0 0 {name=l71b lab=vss}
+C {lab_pin.sym} 2570 -100 0 0 {name=l72b lab=vss}
 C {lab_pin.sym} 2720 -270 0 0 {name=l73 lab=qb}
 C {lab_pin.sym} 2680 -300 0 0 {name=l74 lab=clk}
 C {lab_pin.sym} 2720 -330 0 0 {name=l75 lab=s}
@@ -162,11 +224,3 @@ C {lab_pin.sym} 2720 -130 0 0 {name=l77 lab=qb}
 C {lab_pin.sym} 2680 -100 0 0 {name=l78 lab=clkb}
 C {lab_pin.sym} 2720 -70 0 0 {name=l79 lab=s}
 C {lab_pin.sym} 2720 -100 0 0 {name=l80 lab=vss}
-C {lab_pin.sym} 3020 -130 0 0 {name=l81 lab=m}
-C {lab_pin.sym} 2980 -100 0 0 {name=l82 lab=rst}
-C {lab_pin.sym} 3020 -70 0 0 {name=l83 lab=vss}
-C {lab_pin.sym} 3020 -100 0 0 {name=l84 lab=vss}
-C {lab_pin.sym} 3320 -270 0 0 {name=l85 lab=s}
-C {lab_pin.sym} 3280 -300 0 0 {name=l86 lab=rst_n}
-C {lab_pin.sym} 3320 -330 0 0 {name=l87 lab=vdd}
-C {lab_pin.sym} 3320 -300 0 0 {name=l88 lab=vdd}

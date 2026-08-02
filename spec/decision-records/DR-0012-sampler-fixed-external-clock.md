@@ -210,6 +210,24 @@ Concretely:
   inside the grid (captured at 59 ps in 13 of 45 points, all fast and/or cold).
   See `design/README.md` § "Setup/hold and metastability, measured".
 
+- **Evidence as of 2026-08-02** (the bullet above is left exactly as written —
+  it was true of the cell that existed on 2026-08-01, which
+  [`DR-0014`](DR-0014-sampler-reset-gated-into-the-storage-loops.md) has since
+  replaced): `sampler_dff`'s asynchronous reset moved from pull devices on the
+  storage nodes to NAND2s inside the hold loops, which changes those loops'
+  regenerative structure, so item 4's obligation was **re-discharged on the new
+  cell over the same 45-point grid**,
+  `sim/records/2026-08-02-sampler-dff-setup-hold-01…45.md`. The finding is
+  unchanged and slightly better: **no point shows a metastable hang**, a
+  zero-setup/zero-hold edge leaves `Q` within 0.37 mV of a rail at 1 ns and
+  6.3 µV at 100 ns, and `clk`→`Q` is 71.4 ps (`ff`/−40 °C/3.63 V) to 193.0 ps
+  (`ss`/+125 °C/2.97 V), faster than the pre-DR-0014 cell because that change
+  also deleted two oversized pull devices from the storage nodes. Setup time is
+  still under 500 ps everywhere and still crosses 59 ps inside the grid (20 of
+  45 points now, against 13). **This record's decision is unaffected** — nothing
+  in DR-0014 touches the clock source, and `R_raw = f(clk)` still follows
+  architecturally.
+
 - **Follow-up required**:
   - **#13**: use the `Q ∝ σ₁²/T₀³` metric and the `ss`/−40 °C/3.63 V minimum
     named above when identifying the process letter for the entropy-binding
