@@ -10,7 +10,9 @@ Three groups:
    ``.subckt`` signature, which wraps ``design/sampler_core.spice``
    unchanged) must be exactly the names the digital blocks' own RTL ports
    declare (``design/conditioner/crc32_conditioner.v``,
-   ``design/health_test/rct_apt.v``).
+   ``design/health_test/rct_apt.v``). The DR-0016 per-ring liveness taps
+   cross the same boundary and are checked the same way -- including the
+   scalar-pin-to-vector-index mapping, which no waveform would reveal.
 2. **Behavioural wiring (`trng_top.TopLevel`).** The three real block models
    wired together produce the same cross-block behaviour
    ``sim/tb/interface-regfile/run_demo.py``'s stand-in health-test counter
@@ -52,12 +54,27 @@ TRNG_TOP_SPICE = DESIGN_DIR / "trng_top.spice"
 SAMPLER_CORE_SPICE = DESIGN_DIR / "sampler_core.spice"
 CONDITIONER_V = DESIGN_DIR / "conditioner" / "crc32_conditioner.v"
 HEALTH_TEST_V = DESIGN_DIR / "health_test" / "rct_apt.v"
+RING_LIVENESS_V = DESIGN_DIR / "health_test" / "ring_liveness.v"
 INTERFACE_V = IFACE_DIR / "trng_interface.v"
 TOP_V = TOP_DIR / "trng_top.v"
 
 #: The DR-0001 raw tap, and the block's shared clock/reset -- the four
 #: signals that cross the DR-0009 analog/digital boundary.
 RAW_TAP_SIGNALS = ("clk", "rst_n", "raw_bit", "raw_valid")
+
+#: The DR-0016 per-ring liveness taps, which cross the same boundary: one
+#: already-digitized sample per ring. ``design/xschem/sampler_core.sch``
+#: names them per-ring (scalar pins, 1-based like ro1/ro2); the RTL carries
+#: them as one ``ring_bit[N_RINGS-1:0]`` vector because ``ring_liveness.v``
+#: is parameterised in N_RINGS. The mapping between the two is
+#: ``ring_bit<i+1>`` -> ``ring_bit[i]``.
+RING_TAP_PINS = ("ring_bit1", "ring_bit2")
+
+
+def bit(word: int, register: regmap.Register, name: str) -> int:
+    """One STATUS/CTRL field out of a register value, by name."""
+    f = next(f for f in register.fields if f.name == name)
+    return (word >> f.lsb) & ((1 << f.width) - 1)
 
 
 def _subckt_ports(spice_path: Path, name: str) -> list[str]:
@@ -169,6 +186,63 @@ class PinoutCrossCheckTests(unittest.TestCase):
             self.assertIn(sig, iface_ports, sig)
 
 
+class RingLivenessPinoutTests(unittest.TestCase):
+    """DR-0016's taps cross the same analog/digital boundary the raw tap
+    does, so they get the same by-name check -- plus one the raw tap does not
+    need, because two scalar schematic pins meet one RTL vector here."""
+
+    def test_the_ring_taps_leave_the_transistor_level_side(self):
+        top_ports = _subckt_ports(TRNG_TOP_SPICE, "trng_top")
+        sampler_ports = _subckt_ports(SAMPLER_CORE_SPICE, "sampler_core")
+        for pin in RING_TAP_PINS:
+            self.assertIn(pin, top_ports, f"{pin} missing from trng_top.spice")
+            self.assertIn(pin, sampler_ports, f"{pin} missing from sampler_core.spice")
+
+    def test_there_is_one_ring_tap_pin_per_ring_in_the_rtl_vector(self):
+        """A schematic that digitizes two rings and RTL that monitors three
+        (or one) is exactly the mismatch a picture cannot catch."""
+        top_ports = _subckt_ports(TRNG_TOP_SPICE, "trng_top")
+        pins = [p for p in top_ports if re.fullmatch(r"ring_bit\d+", p)]
+        self.assertEqual(sorted(pins), sorted(RING_TAP_PINS))
+        text = re.sub(r"//[^\n]*", "", TOP_V.read_text())
+        m = re.search(r"parameter\s+integer\s+N_RINGS\s*=\s*(\d+)", text)
+        self.assertIsNotNone(m, "trng_top.v declares no N_RINGS parameter")
+        self.assertEqual(int(m.group(1)), len(pins))
+
+    def test_the_ring_tap_pins_are_numbered_from_one_like_the_ring_nodes(self):
+        """`ring_bit1` is ring 1 (`ro1`), and `trng_top.v` documents the
+        off-by-one to `ring_bit[0]`. Locking the schematic-side numbering
+        here is what makes that documented mapping checkable."""
+        core_ports = _subckt_ports(TRNG_TOP_SPICE, "ro_array_core")
+        for i, pin in enumerate(RING_TAP_PINS, start=1):
+            self.assertEqual(pin, f"ring_bit{i}")
+            self.assertIn(f"ro{i}", core_ports, f"ro{i} missing from ro_array_core")
+
+    def test_the_ring_digitizers_are_the_raw_taps_own_cell(self):
+        """DR-0016 "Digitization": the per-ring digitizer is `sampler_dff`,
+        unmodified -- no new analog cell was designed for the monitor. In the
+        netlist that is literally four instances of one subcircuit."""
+        text = SAMPLER_CORE_SPICE.read_text()
+        body = text.split(".subckt sampler_core", 1)[1].split(".ends", 1)[0]
+        instances = [ln.split() for ln in body.splitlines() if ln.startswith("x")]
+        dffs = [ln for ln in instances if ln[-1] == "sampler_dff"]
+        self.assertEqual(len(dffs), 2 + len(RING_TAP_PINS))
+        driven = {ln[4] for ln in dffs}
+        for pin in RING_TAP_PINS:
+            self.assertIn(pin, driven)
+
+    def test_the_liveness_monitor_and_the_interface_agree_on_the_alarm_path(self):
+        """DR-0016 "Failure behavior": ring_stuck_any is a third source of
+        DR-0002's latch. That is one connection, and a rename on either side
+        would break it silently."""
+        rl_ports = _verilog_module_ports(RING_LIVENESS_V, "trng_ring_liveness")
+        iface_ports = _verilog_module_ports(INTERFACE_V, "trng_interface")
+        self.assertIn("ring_stuck_any", rl_ports)
+        self.assertIn("ht_fail_ring", iface_ports)
+        top = re.sub(r"//[^\n]*", "", TOP_V.read_text())
+        self.assertRegex(top, r"\.ht_fail_ring\s*\(\s*ring_stuck_any\s*\)")
+
+
 class TopLevelBehaviouralTests(unittest.TestCase):
     """trng_top.TopLevel: the three real block models, wired."""
 
@@ -186,10 +260,14 @@ class TopLevelBehaviouralTests(unittest.TestCase):
         t = top.TopLevel()
         c_rct = t.health.c_rct
         out = None
-        for _ in range(c_rct + 5):
-            out = t.step(raw_bit=1, raw_valid=True)
+        for i in range(c_rct + 5):
+            # Both rings kept alive on purpose, so this test still isolates
+            # the combined-tap RCT failure now that a stuck ring is a second
+            # way into the same alarm (DR-0016).
+            out = t.step(raw_bit=1, raw_valid=True, ring_bit=(i % 2, (i + 1) % 2))
         self.assertTrue(out.ht_alarm)
         self.assertGreater(t.health.rct_failures, 0)
+        self.assertEqual(bit(t.iface.status_value(), top.STATUS, "HT_FAIL_RING"), 0)
 
     def test_raw_sample_counting_matches_raw_valid_cycles(self):
         t = top.TopLevel()
@@ -200,6 +278,55 @@ class TopLevelBehaviouralTests(unittest.TestCase):
         self.assertEqual(t.cycles, len(bits) + 1)
         self.assertEqual(t.raw_samples, len(bits))
 
+    def test_a_dead_ring_latches_the_alarm_the_combined_tap_cannot_see(self):
+        """The whole point of DR-0016, end to end through the assembly: ring
+        1 freezes while the raw tap keeps producing a plausible stream (the
+        surviving ring still drives the XOR), so RCT/APT stay silent -- and
+        HT_ALARM still fires, from HT_FAIL_RING alone."""
+        t = top.TopLevel()
+        bits = [0, 1, 1, 0, 1, 0, 0, 1] * 40      # never a run near C_RCT
+        out = None
+        for i in range(t.liveness.c_live + 5):
+            out = t.step(
+                raw_bit=bits[i % len(bits)], raw_valid=True,
+                # ring 1 stuck at 1; ring 2 alive and toggling.
+                ring_bit=(1, i % 2),
+            )
+        self.assertEqual(t.health.rct_failures, 0)
+        self.assertEqual(t.health.apt_failures, 0)
+        self.assertTrue(out.ht_alarm)
+        status = t.iface.status_value()
+        self.assertEqual(bit(status, top.STATUS, "HT_FAIL_RING"), 1)
+        self.assertEqual(bit(status, top.STATUS, "HT_FAIL_RCT"), 0)
+        self.assertEqual(bit(status, top.STATUS, "HT_FAIL_APT"), 0)
+        self.assertEqual(t.liveness.stuck_events[1], [])
+
+    def test_the_dead_ring_gate_leaves_the_raw_path_alone(self):
+        """DR-0016 inherits DR-0001 §5 verbatim: the raw tap is how an
+        integrator diagnoses the dead ring, so the gate must not take it."""
+        t = top.TopLevel()
+        for i in range(t.liveness.c_live + 40):
+            t.step(raw_bit=i % 2, raw_valid=True, ring_bit=(0, 0))
+        self.assertTrue(t.iface.alarm)
+        self.assertGreater(len(t.iface.raw_fifo), 0)
+
+    def test_both_rings_alive_never_trips_the_liveness_monitor(self):
+        t = top.TopLevel()
+        out = None
+        for i in range(t.liveness.c_live * 3):
+            out = t.step(raw_bit=i % 2, raw_valid=True, ring_bit=(i % 2, (i // 3) % 2))
+        self.assertFalse(out.ht_alarm)
+        self.assertEqual(t.liveness.stuck_events, [[], []])
+
+    def test_omitting_ring_bit_holds_every_ring_at_zero(self):
+        """The default is documented as "an unwired caller sees all-zero,
+        which is what a dead ring looks like" -- so it must actually alarm
+        rather than quietly never firing."""
+        t = top.TopLevel()
+        for _ in range(t.liveness.c_live):
+            t.step(raw_bit=1, raw_valid=False)
+        self.assertEqual([len(e) for e in t.liveness.stuck_events], [1, 1])
+
     def test_a_healthy_short_run_never_alarms(self):
         # Far short of a full RCT/APT window at either cutoff -- this is
         # the smoke-test property (bits flow, nothing spuriously trips),
@@ -208,8 +335,8 @@ class TopLevelBehaviouralTests(unittest.TestCase):
         t = top.TopLevel()
         bits = [0, 0, 0, 1, 1, 1, 1, 1, 0, 0]
         out = None
-        for b in bits:
-            out = t.step(raw_bit=b, raw_valid=True)
+        for i, b in enumerate(bits):
+            out = t.step(raw_bit=b, raw_valid=True, ring_bit=(i % 2, (i + 1) % 2))
         self.assertFalse(out.ht_alarm)
         self.assertEqual(t.health.rct_failures, 0)
         self.assertEqual(t.health.apt_failures, 0)
@@ -230,7 +357,8 @@ class RtlWiringTests(unittest.TestCase):
                 [
                     "iverilog", "-g2012", "-I", str(IFACE_DIR),
                     "-o", str(vvp),
-                    str(TOP_V), str(CONDITIONER_V), str(HEALTH_TEST_V), str(INTERFACE_V),
+                    str(TOP_V), str(CONDITIONER_V), str(HEALTH_TEST_V),
+                    str(RING_LIVENESS_V), str(INTERFACE_V),
                 ],
                 check=True, capture_output=True, text=True,
             )

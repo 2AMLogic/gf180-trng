@@ -2,27 +2,31 @@
 * electrical cost against the shipped entropy-source array.
 *
 * DUT: design/sampler_core.spice (design/netlist.py output). That file
-* already contains BOTH .subckt ro_array_core AND .subckt sampler_dff (the
-* already-verified, already-characterized cell that digitizes xo -> raw_bit
-* in the shipped design), so this deck needs no schematic change and no new
-* cell: xdut below is a bare ro_array_core instance (not the sampler_core
-* wrapper), and xtap1/xtap2 are two MORE sampler_dff instances, tied
-* directly to ro_array_core's own internal ro1/ro2 nodes.
+* contains .subckt ro_array_core, .subckt sampler_dff and the shipped
+* sampler_core wrapper that now instantiates FOUR sampler_dff cells: the two
+* raw-tap ones (xo -> raw_bit, raw_valid) and the two DR-0016 liveness
+* digitizers (ro1/ro2 -> ring_bit1/ring_bit2). This deck deliberately does
+* NOT instantiate that wrapper: xdut below is a bare ro_array_core, and
+* xtap1/xtap2 restate only the two liveness taps, so every measurement here
+* is directly comparable, expression for expression, to the un-tapped
+* baseline sim/tb/ro-array-core-power/ -- which is the whole point of the
+* deck. The raw tap's own two flip-flops are held out for the same reason
+* the baseline holds them out: they load xo, not ro1/ro2, and this deck
+* bounds what the LIVENESS taps cost the rings.
 *
-* Why this does not require a new pin, and is not an exposed tap (DR-0001):
-* xdut.ro1 / xdut.ro2 are addressed the same hierarchical way
-* sim/tb/ro-array-core-power/'s own .measure lines already do
-* (`v(xdut.ro1)`) -- ngspice flattens subcircuit instances into one global
-* node namespace, so any element (not only a .measure probe) can reference
-* an internal node of an already-instantiated subcircuit by its dotted name.
-* This testbench goes one step further than a read-only probe and ties two
-* sampler_dff D inputs to those nodes -- exactly the electrical shape the
-* DR-0016 liveness monitor's per-ring digitizer needs -- without adding a
-* pin to ro_array_core.sym and without any per-ring signal leaving the
-* schematic. The digitized outputs (ro1_bit/ro2_bit) are new nodes of THIS
-* testbench fragment, not of the design; DR-0016 records the corresponding
-* shipped-design integration (promoting this tap into design/ RTL/schematic)
-* as follow-up work, not something this record does.
+* Originally (#44) this deck reached ro1/ro2 through ngspice's hierarchical
+* internal-node naming (`xdut.ro1`), because those nets had no pin. #65
+* promoted the tap into the shipped design: ro_array_core.sym now carries
+* ro1/ro2 as observation-only output pins and sampler_core.sch instantiates
+* the two digitizers, so this deck names the same two nets at its own top
+* level (`ro1`/`ro2`) instead. Same nets, same circuit, same numbers -- a
+* subcircuit port is simply not addressable as an internal node. What this
+* deck measures is now the cost of something the design actually contains
+* rather than a bound on something it might one day contain.
+*
+* Still not an exposed tap (DR-0001): ro1/ro2 and ring_bit1/ring_bit2 are
+* block-internal signals that stop at design/health_test/, exactly as
+* raw_bit's predecessors do. No per-ring signal reaches a die pin.
 *
 * What this measures, per PVT point, directly comparable point for point to
 * the un-tapped baseline sim/records/2026-08-01-ro-array-core-power-{04,05,06}.md
@@ -69,12 +73,12 @@ vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 vtap vsup vddtap dc 0
 
-xdut en en vddr1 vddr2 vdd 0 xo ro_array_core
+xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 ro_array_core
 
 * ---- the two liveness-monitor taps: sampler_dff, unmodified, digitizing
 * ---- ro1/ro2 directly (the same cell that digitizes xo -> raw_bit today)
-xtap1 xdut.ro1 mclk mrst_n ro1_bit vddtap 0 sampler_dff
-xtap2 xdut.ro2 mclk mrst_n ro2_bit vddtap 0 sampler_dff
+xtap1 ro1 mclk mrst_n ro1_bit vddtap 0 sampler_dff
+xtap2 ro2 mclk mrst_n ro2_bit vddtap 0 sampler_dff
 
 * ---- local measurement clock and reset for the taps (see method notes) --
 vmclk mclk 0 dc 0 pulse(0 'vdd_val' 5n 200p 200p 4.6n 10n)

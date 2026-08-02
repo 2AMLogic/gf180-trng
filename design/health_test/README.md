@@ -32,9 +32,10 @@ sample instead** (DR-0016), because RCT/APT's combined-tap view cannot see one
 dead ring out of N=2 (design/README.md "Per-ring liveness"). Neither block
 gates anything itself. Gating, latching, and the FIFO flush live downstream in
 `design/interface/` (#26); see
-[Interface contract](#interface-contract-with-designinterface-26) below --
-**`ring_stuck_any` is not wired into that path yet**, see
-[What is *not* here](#what-is-not-here).
+[Interface contract](#interface-contract-with-designinterface-26) below.
+**`ring_stuck_any` reaches that path as `ht_fail_ring`** — the third source of
+DR-0002's single latch, wired in `design/trng_top/` by #65 and reported by
+`STATUS.HT_FAIL_RING`.
 
 ## Files
 
@@ -136,13 +137,35 @@ parameters have no exception mechanism.
   digitizer structurally identical to the raw tap's own `sampler_dff`
   (DR-0014's cell, unmodified) — this module performs no synchronization of
   its own, the same contract `rct_apt.v` has for `raw_bit`.
-- **Flag, not hard stop**: `ring_stuck_any` is designed to be OR'd into the
-  *same* latch-and-gate mechanism `ht_fail_rct`/`ht_fail_apt` already use —
-  see DR-0016 "Failure behavior" for the full argument. **This wiring is not
-  built yet** — see "What is *not* here" below.
+- **Flag, not hard stop**: `ring_stuck_any` is OR'd into the *same*
+  latch-and-gate mechanism `ht_fail_rct`/`ht_fail_apt` already use — see
+  DR-0016 "Failure behavior" for the full argument, and
+  [The wiring, end to end](#the-wiring-end-to-end) below for where each hop
+  lives.
 - **No exposed per-ring tap (DR-0001)**: `ring_bit`/`ring_stuck`/
   `ring_stuck_any` are internal health-test-block signals only, the same
-  status `raw_bit`/`ht_fail_rct` already have.
+  status `raw_bit`/`ht_fail_rct` already have. `ro_array_core` does now carry
+  `ro1`/`ro2` as observation-only *cell* pins so the digitizers can reach the
+  ring nodes, but no per-ring signal reaches a die pin: DR-0001 constrains
+  what the block publishes, not what it monitors internally.
+
+## The wiring, end to end
+
+Built by #65; before it, the monitor existed but nothing consumed it. Each
+hop lives in exactly one file:
+
+| Hop | Where | What it is |
+|---|---|---|
+| `ro1`/`ro2` leave the array | `design/xschem/ro_array_core.sch`/`.sym` | two observation-only output pins. No device added, no ring changed — a parent that leaves them unconnected gets the identical circuit, which is why the pre-#65 power and jitter records still describe that cell. |
+| ring node → `ring_bit` | `design/xschem/sampler_core.sch` | two more `sampler_dff` instances (`xsr1`/`xsr2`), the raw tap's own already-characterized cell (DR-0014), on the same DR-0012 external clock. Their electrical cost is measured, not assumed: `sim/tb/ring-liveness-tap-power/`. |
+| `ring_bit` → `ring_stuck_any` | `design/health_test/ring_liveness.v` | this block. Reports; never latches or gates. |
+| `ring_stuck_any` → alarm/gate | `design/trng_top/trng_top.v`/`.py` → `design/interface/` | wired to the interface's `ht_fail_ring` input, the third source of the DR-0002 latch. |
+| the reader's view | `STATUS.HT_FAIL_RING` (bit 9, W1C) | latched, distinguishable from `HT_FAIL_RCT`/`HT_FAIL_APT`, cleared the same way. |
+
+`STATUS` says *a* ring stopped, not *which* one: a per-ring status bit would
+make DR-0013's published register map depend on `N_RINGS`. `ring_stuck[i]`
+stays a named net in `trng_top.v`, which is where a future per-ring report
+would take it from.
 
 ## Interface contract with `design/interface/` (#26)
 
@@ -170,21 +193,16 @@ discarded, not the fresh one.
 
 - **Latching, gating, and the FIFO flush.** `design/interface/README.md`'s
   block diagram shows exactly where: `ht_fail_* ───► latch ──► ht_alarm, gate
-  ──► startup_req`. This block only ever *reports*; it never decides what
-  happens to the conditioned or raw output paths. **`ring_stuck_any` is not
-  yet wired into that path** — DR-0016 specifies the wiring (a fourth OR term
-  and `STATUS` bit, exactly parallel to `HT_FAIL_RCT`/`HT_FAIL_APT`) and
-  tracks it as a follow-up (#65) rather than reopening the closed, ratified
-  `design/interface/` block (#26) in the same change that adds the monitor.
-- **The raw tap itself.** That is #9's `sampler_core`; this block only
-  consumes `raw_bit`/`raw_valid`.
-- **The per-ring digitizer's electrical connection to `ro1`/`ro2`.** DR-0016
-  bounds its cost using ngspice's hierarchical internal-node addressing in
-  `sim/tb/ring-liveness-tap-power/` (two `sampler_dff` instances tied to
-  `ro_array_core`'s internal nodes from the testbench, not from a `design/`
-  schematic), because `ro1`/`ro2` are not reachable from outside
-  `ro_array_core.sch` today. Promoting this into shipped RTL/schematic is
-  tracked as a follow-up (#65).
+  ──► startup_req`. This block only ever *reports* — including
+  `ring_stuck_any` — and never decides what happens to the conditioned or raw
+  output paths. The consuming end is `design/interface/`'s `ht_fail_ring`
+  input; the connection between them is `design/trng_top/`'s.
+- **The raw tap itself, and the per-ring digitizers.** Those are #9's
+  `sampler_core` (`xsb`/`xsv` for the raw tap, `xsr1`/`xsr2` for the ring
+  taps since #65); this block only consumes the already-digitized,
+  already-synchronized `raw_bit`/`raw_valid` and `ring_bit`.
+- **Per-ring reporting.** `STATUS.HT_FAIL_RING` says a ring stopped, not
+  which one — see "The wiring, end to end" above for why.
 - **A ratified worst-corner `H`.** #13's deliverable; this block ships with
   the DR-0002 draft `H0 = 0.5` default and the parameter hook to take a
   different value once #13 lands (both `C_RCT` and `C_LIVE`).

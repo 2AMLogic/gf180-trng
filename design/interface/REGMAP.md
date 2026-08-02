@@ -37,13 +37,14 @@ Bits not listed are reserved: they read 0 and ignore writes.
 |---|---|---|---|---|
 | `0` | `HT_FAIL_RCT` | W1C | 0 | Repetition Count Test failure, latched (DR-0002 §Failure behavior 1). Write 1 to clear. |
 | `1` | `HT_FAIL_APT` | W1C | 0 | Adaptive Proportion Test failure, latched. Write 1 to clear. Clearing the last set HT_FAIL_* bit restarts the noise source and the start-up health test (DR-0002 §Failure behavior 4). |
-| `2` | `HT_ALARM` | RO | 0 | HT_FAIL_RCT | HT_FAIL_APT -- the same signal as the block-level `ht_alarm` output pin, so a register reader and a pin observer cannot disagree. |
+| `2` | `HT_ALARM` | RO | 0 | HT_FAIL_RCT | HT_FAIL_APT | HT_FAIL_RING -- the same signal as the block-level `ht_alarm` output pin, so a register reader and a pin observer cannot disagree. |
 | `3` | `STARTUP` | RO | 1 | Start-up health test in progress: the conditioned path is gated but nothing has failed. Distinct from HT_ALARM by construction, so a reader can tell 'still starting up' from 'failed and gated'. Reset value 1. |
 | `4` | `COND_READY` | RO | 0 | Conditioned path is ungated: enabled, start-up test passed, no latched alarm. DATA reads and conditioned streaming return bits only while this is 1. |
 | `5` | `DATA_AVAIL` | RO | 0 | Conditioned output FIFO is non-empty. |
 | `6` | `RAW_AVAIL` | RO | 0 | Raw output FIFO is non-empty. |
 | `7` | `OVF_DATA` | W1C | 0 | A conditioned word was dropped because the FIFO was full. Latched; write 1 to clear. The *incoming* word is dropped, never a buffered one, so what remains in the FIFO is always a contiguous run -- and this bit is how a reader learns the run ended. |
 | `8` | `OVF_RAW` | W1C | 0 | A raw word was dropped because the raw FIFO was full. Latched; write 1 to clear. This is the bit that makes DR-0001's 'non-consecutive samples silently invalidate the dataset' hazard detectable rather than silent. |
+| `9` | `HT_FAIL_RING` | W1C | 0 | Per-ring liveness failure, latched: at least one entropy-source ring's own digitized sample repeated C_LIVE times in a row (DR-0016). Write 1 to clear. Behaves exactly like HT_FAIL_RCT / HT_FAIL_APT -- it is a third source of the same latch, the same HT_ALARM and the same conditioned-path gate, and clearing the last set HT_FAIL_* bit restarts the noise source and the start-up health test. It sits at bit 9 rather than bit 2 because bits 0-8 were already published by DR-0013: a new failure source is an additive bit in the reserved space, never a renumbering of the ratified map. Distinct from HT_FAIL_RCT/HT_FAIL_APT because the observation point differs -- RCT/APT watch the XOR-combined raw tap, where one dead ring out of the shipped N=2 array is invisible; this bit is the only one that says 'a ring stopped'. |
 | `19:16` | `DATA_LEVEL` | RO | 0 | Conditioned FIFO occupancy in 32-bit words, 0..FIFO_DEPTH. |
 | `23:20` | `RAW_LEVEL` | RO | 0 | Raw FIFO occupancy in 32-bit words, 0..FIFO_DEPTH. |
 
@@ -51,7 +52,7 @@ Bits not listed are reserved: they read 0 and ignore writes.
 
 ## Ports
 
-`trng_interface` has **21 ports**, of which **11** are
+`trng_interface` has **22 ports**, of which **11** are
 expected to leave the die at `trng_top` (#27) and are therefore the
 block's contribution to the top-level pinout (#16). The rest are
 block-to-block signals inside `trng_top`.
@@ -86,6 +87,7 @@ block-to-block signals inside `trng_top`.
 |---|---|---|---|---|
 | `ht_fail_rct` | in | 1 | no (block-internal at trng_top) | One-cycle RCT failure pulse. |
 | `ht_fail_apt` | in | 1 | no (block-internal at trng_top) | One-cycle APT failure pulse. |
+| `ht_fail_ring` | in | 1 | no (block-internal at trng_top) | One-cycle per-ring liveness failure pulse -- `trng_ring_liveness.ring_stuck_any` (DR-0016). A third source of the same latch as ht_fail_rct/ht_fail_apt, on a different observation point (each ring's own digitized sample, not the combined raw tap). |
 | `ht_startup_pass` | in | 1 | no (block-internal at trng_top) | One-cycle pulse: 1024 consecutive raw samples passed both tests (DR-0002 §Failure behavior 4). Ignored unless STATUS.STARTUP. |
 | `startup_req` | out | 1 | no (block-internal at trng_top) | One-cycle pulse: restart the noise source and the start-up test window. The health-test block must discard any in-flight window. |
 | `ht_alarm` | out | 1 | yes | Block-level alarm output (DR-0002 §Failure behavior 1); mirrors STATUS.HT_ALARM. |

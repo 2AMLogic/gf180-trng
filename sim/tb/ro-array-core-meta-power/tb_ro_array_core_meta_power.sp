@@ -6,6 +6,13 @@
 * counterpart sim/tb/ro-array-core-power/ measures -- plus ro_meta_tap
 * hanging off xo on its own supply pin.
 *
+* Node-naming note (#65): ro_array_core's two per-ring nodes are now
+* observation-only output pins (ro1/ro2, for the DR-0016 liveness monitor),
+* which ro_array_core_meta brings out to same-named local nets and leaves
+* unloaded. No device changed and no ring changed; the per-ring measurement
+* expressions in tb.json therefore moved one level up the hierarchy, from
+* v(xdut.xcore.ro1) to v(xdut.ro1), and name the same nets as before.
+*
 * WHY THIS TESTBENCH IS A CLONE
 *
 * It is deliberately measurement-for-measurement identical to

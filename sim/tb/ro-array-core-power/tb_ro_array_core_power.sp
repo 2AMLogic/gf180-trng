@@ -6,9 +6,9 @@
 *
 * What it measures, per PVT point:
 *   - each ring's oscillation period, from that ring's own output node
-*     (probed hierarchically: no per-ring signal is brought out of the
-*     core, per DR-0001/DR-0007 -- observability in the testbench must not
-*     become an exposed tap in the design);
+*     (ro1/ro2 -- an observation-only pin of the core since #65, and still
+*     not an exposed tap: DR-0001 constrains what leaves the die, and no
+*     per-ring signal does; see the node-naming note below);
 *   - each ring's supply current, integrated over an exact integer number
 *     of that ring's periods;
 *   - the XOR tree's supply current, over the same window;
@@ -42,6 +42,16 @@
 *   - bvth is a measurement-only probe: a mid-supply reference so
 *     `meas ... when v(ring)=v(vth)` finds crossings at any supply without
 *     a hard-coded trip voltage.
+*
+* Node-naming note (#65): ro_array_core now exposes its two per-ring nodes as
+* observation-only output pins (ro1/ro2), so the shipped DR-0016 liveness
+* digitizers in design/xschem/sampler_core.sch can reach them. That change
+* adds no device and changes no ring. The two extra nodes on the xdut line
+* below, and the v(ro1)/v(ro2) measurement expressions in tb.json, name the
+* SAME nets this deck already measured hierarchically as v(xdut.ro1) before
+* the pins existed -- a subcircuit port is not addressable as an internal
+* node, so the reference moved from dotted to top-level. The circuit
+* simulated here is identical to the one the pre-#65 records describe.
 
 vsup vsup 0 dc vdd_val
 ven en 0 dc vdd_val
@@ -50,7 +60,7 @@ vr1 vsup vddr1 dc 0
 vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 
-xdut en en vddr1 vddr2 vdd 0 xo ro_array_core
+xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 ro_array_core
 
 fq1 q1 0 vr1 1
 cq1 q1 0 1n

@@ -14,15 +14,15 @@
   "analyses": [
     "tran 2p 140n 40n",
     "let dxo = deriv(v(xo))",
-    "let dro = deriv(v(xdut.ro1))",
+    "let dro = deriv(v(ro1))",
     "meas tran sxr max dxo from=50n to=135n",
     "meas tran sxf min dxo from=50n to=135n",
     "meas tran srr max dro from=50n to=135n",
     "meas tran srf min dro from=50n to=135n",
-    "meas tran ta when v(xdut.ro1)=v(v40) rise=2",
-    "meas tran tb when v(xdut.ro1)=v(v60) rise=2",
-    "meas tran tc when v(xdut.ro1)=v(v40) rise=4",
-    "meas tran td when v(xdut.ro1)=v(v60) rise=4",
+    "meas tran ta when v(ro1)=v(v40) rise=2",
+    "meas tran tb when v(ro1)=v(v60) rise=2",
+    "meas tran tc when v(ro1)=v(v40) rise=4",
+    "meas tran td when v(ro1)=v(v60) rise=4",
     "meas tran xhi max v(xo) from=50n to=135n",
     "meas tran xlo min v(xo) from=50n to=135n"
   ],
@@ -38,7 +38,7 @@
   "caveats": [
     "fs/sf process corners are NOT covered, per DR-0006's ratified reduced process axis.",
     "`max(deriv(v(...)))` is the STEEPEST dV/dt anywhere in the window, not the dV/dt at any particular threshold. A sampler whose decision threshold sits away from the steepest point of the edge sees a slower crossing than this number, so using it to convert a voltage offset into a timing offset UNDERSTATES the timing offset. The 40-60% band figures on the ring node bracket it from the other side: they are an average across the middle fifth of the swing, and the ratio between the two on the same node is what says how much the choice matters.",
-    "The band-crossing figures are measured on the ring node (xdut.ro1), not on xo: xo is the XOR of two independent rings, so its transitions are aperiodic and can include narrow runt pulses that a rise=N edge count would mis-pair across two different levels. That is exactly why the derivative method is used on xo. The ring node carries both methods so they can be compared on the SAME signal.",
+    "The band-crossing figures are measured on the ring node (ro1), not on xo: xo is the XOR of two independent rings, so its transitions are aperiodic and can include narrow runt pulses that a rise=N edge count would mis-pair across two different levels. That is exactly why the derivative method is used on xo. The ring node carries both methods so they can be compared on the SAME signal.",
     "Deterministic (mismatch-free, noiseless) transient: one nominal device draw per PVT point, and a slew rate is quoted from a single window rather than averaged over many edges (except the ring node's two band measurements, which are two separate edges).",
     "Says nothing about the sampler's own input loading: the DUT here drives the testbench's (essentially open) xo node, whereas in design/xschem/sampler_core.sch that node also drives sampler_dff's data transmission gate. A real load slows the edge, so the slew measured here is an upper bound on the loaded slew."
   ]

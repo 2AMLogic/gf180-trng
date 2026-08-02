@@ -62,14 +62,14 @@ being loud about.
 | `ro_ring11` | one ring of the shipped array: `ro_nand2` + ten `ro_stage`, closed on itself, on its own supply pin |
 | `ro_ring5` | the five-stage variant, used only by the transient-noise sanity testbench |
 | `xor2` | one node of the combining tree (static CMOS, minimum width) |
-| **`ro_array_core`** | **the entropy source**: two `ro_ring11` with skewed starve widths and separate supply pins, XOR-combined into one output |
+| **`ro_array_core`** | **the entropy source**: two `ro_ring11` with skewed starve widths and separate supply pins, XOR-combined into one output, plus two observation-only per-ring outputs (`ro1`/`ro2`) for the DR-0016 liveness monitor |
 | `ro_array_sanity` | a four-ring array built from `ro_ring5`, with the ring outputs brought out for observation; a simulation vehicle, not a shipped cell |
 | `meta_inv` / `meta_nand2` | unstarved minimum-width delay/logic cells for the metastability-hybrid tap (`ro_stage`/`ro_nand2` want the opposite: the sharpest edge the tap wants is the wrong thing for a ring) |
 | `meta_arb` | the tap's metastable element: a cross-coupled NAND2 SR latch, symmetric by construction |
 | `ro_meta_tap` | the metastability-hybrid **stretch tap** (issue #43, [`DR-0011`](../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md)): a self-timed matched-delay strobe off an RO transition into `meta_arb`, on its own supply pin `vddm` |
 | `ro_array_core_meta` | `ro_array_core` (unmodified, instantiated) plus `ro_meta_tap` hanging off `xo`; exists only to simulate the tap in situ, nothing on `main` instantiates it by default |
 | `sampler_dff` | **the sampler/digitizer**: a transmission-gate master-slave D flip-flop, positive-edge, async active-low reset gated into the storage loops' own inverters ([`DR-0014`](../spec/decision-records/DR-0014-sampler-reset-gated-into-the-storage-loops.md)) — the cell that turns `xo`'s analog swing into a logic-level raw bit |
-| **`sampler_core`** | **the sampler, wired to the source**: `ro_array_core` + two `sampler_dff` (one for `raw_bit`, one for the `raw_valid` reset-release indicator), clocked by a fixed external clock — see [The sampler](#the-sampler-9) below |
+| **`sampler_core`** | **the sampler, wired to the source**: `ro_array_core` + four `sampler_dff` — one for `raw_bit`, one for the `raw_valid` reset-release indicator, and one per ring digitizing `ro1`/`ro2` into `ring_bit1`/`ring_bit2` for the DR-0016 liveness monitor — all clocked by the same fixed external clock, see [The sampler](#the-sampler-9) below |
 | **`trng_top`** | **the top-level integration (#27)**: instantiates `sampler_core` unmodified as the analog half, at the DR-0009 raw-tap boundary. The digital half (conditioner #8, health tests #11, interface #26) is wired downstream in [`design/trng_top/`](trng_top/) — see that directory's README for why it is not also drawn in this schematic. |
 
 Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`,
@@ -279,8 +279,9 @@ size than the one in `design/`, and exits non-zero if the inequality fails.
 
 `xo` is the noise source's output, not the block's raw tap. DR-0001 puts the raw
 tap at the **sampler** output, after digitisation, and no per-ring signal leaves
-`ro_array_core` at all — which is why `ro_array_sanity`, and not
-`ro_array_core`, is the cell with `ro*` observation pins. The sampler is
+**the die** — `ro_array_core`'s `ro1`/`ro2` pins (#65) are consumed one level up
+by `sampler_core`'s own liveness digitizers and go no further; see
+[Per-ring liveness](#per-ring-liveness) below. The sampler is
 `sampler_core` (see [The sampler](#the-sampler-9) below), and its clock source
 — a fixed external clock, per DR-0012 — pins DR-0007 §4's corner metric to
 `Q ∝ σ₁²/T₀³`, minimum at `ss`/−40 °C/3.63 V.
@@ -298,11 +299,10 @@ design question this issue inherits, and the schematic answers it by making it
    nanoamps (`sim/records/2026-08-01-ro-array-core-power-*.md` against
    `sim/records/2026-08-01-ro-inv-05stage-stopped-leakage-*.md`). Because each
    ring has its own supply node, that collapse is per-ring and unambiguous.
-2. **The per-ring output inside the block.** `ro1` and `ro2` are ordinary
-   internal nets of `ro_array_core`. A liveness monitor can divide each of them
-   down and check for toggling without either becoming an exposed tap —
-   DR-0001 constrains what the block *publishes*, not what it monitors
-   internally.
+2. **The per-ring output inside the block.** `ro1` and `ro2` are each ring's
+   own node. A liveness monitor can watch them without either becoming an
+   exposed tap — DR-0001 constrains what the block *publishes* at the die
+   boundary, not what it monitors internally.
 
 Designing the monitor was deliberately **not** in this directory: it is digital
 logic, it belongs with the health tests, and #44 built it in
@@ -314,11 +314,29 @@ rather than a new analog sensor or a new statistical assumption. What this
 issue (#7) owed was that the mechanism exists and is not foreclosed by the
 schematic. With N = 2 the stakes are higher than DR-0007 anticipated — one dead
 ring is half the array — which is stated in `DR-0010` §Consequences.
-`ro1`/`ro2` still have no pin on `ro_array_core.sym`: DR-0016 bounds its
-per-ring digitizer's electrical cost using ngspice's hierarchical internal-node
-addressing (the same technique the "Reading the recorded currents" section
-below already relies on for read-only probing) rather than a schematic change,
-and tracks promoting the tap into shipped RTL/schematic as a follow-up (#65).
+
+**The tap is shipped, not just anticipated (#65).** `ro_array_core.sym`/`.sch`
+now carry `ro1`/`ro2` as **observation-only output pins**, and
+`sampler_core.sch` digitizes them with two more `sampler_dff` instances
+(`xsr1`/`xsr2`) on the same DR-0012 external clock the raw tap already uses.
+Three things are worth being precise about:
+
+- **Nothing about the entropy source changed.** The two pins add no device and
+  alter no ring; a parent that leaves them unconnected netlists to the
+  identical circuit, which is why every pre-#65 power, jitter and swing record
+  still describes this cell. What did change is node *naming* in the
+  testbenches: a subcircuit port is not addressable as an internal node, so
+  `v(xdut.ro1)` became `v(ro1)` in the decks that probe the ring nodes.
+- **The loading cost is measured, not assumed.**
+  `sim/tb/ring-liveness-tap-power/` bounds what the two digitizers' input
+  capacitance costs the rings at three PVT points — +28.53 µW at the
+  power-binding corner, 34 % of the ratified Power row's measured headroom
+  (DR-0016 §Power/area cost). That measurement is what licensed shipping the
+  instances rather than only drawing them.
+- **Still no exposed per-ring tap.** `ro1`/`ro2` and `ring_bit1`/`ring_bit2`
+  stop inside the block: they reach `design/health_test/ring_liveness.v`, whose
+  `ring_stuck_any` becomes `design/interface/`'s `ht_fail_ring` and surfaces as
+  one `STATUS.HT_FAIL_RING` bit. No per-ring signal reaches a die pin.
 
 ### Metastability-hybrid tap
 
@@ -371,6 +389,15 @@ indicator sharing the same clock and cell as the data path, rather than a
 second bespoke circuit). The port shape — `clk` / `rst_n` / `raw_bit` /
 `raw_valid` — matches [`design/conditioner/README.md`](conditioner/README.md)'s
 already-fixed input contract exactly.
+
+Since #65 the same cell also carries **two more instances of that same
+`sampler_dff`** (`xsr1`/`xsr2`), digitizing `ro_array_core`'s `ro1`/`ro2`
+observation pins into `ring_bit1`/`ring_bit2` for the DR-0016 per-ring liveness
+monitor. They are here rather than in `ro_array_core` for a structural reason:
+a digitizer needs a clock, and the entropy source is a free-running analog cell
+with none — the sample clock enters the design at *this* level (DR-0012), and
+this is already the cell that owns it. Their loading on the ring nodes is
+measured at three PVT points by `sim/tb/ring-liveness-tap-power/`.
 
 ### `sampler_dff`: why a transmission-gate master-slave DFF
 
@@ -846,6 +873,32 @@ nothing. The recorded SHAs remain the honest statement of what was simulated;
 this note is the mapping from them to what is committed. Neither edit can change
 a simulation result, and neither was made to make one pass.
 
+### Erratum: array-cell records predate the `ro1`/`ro2` observation pins (#65)
+
+Every record whose `netlist.path` is `design/ro_array_core.spice`,
+`design/ro_array_core_meta.spice` or `design/sampler_core.spice`, and every
+record from the decks that probe a ring node
+(`ro-array-core-power/`, `ro-array-core-pvt-q/`, `ro-array-core-xo-slew/`,
+`ro-array-core-mc-freq/`, `ro-array-core-meta-power/`,
+`ring-liveness-tap-power/`), was run before #65 added `ro1`/`ro2` as
+observation-only pins. Their `netlist.sha` and/or `testbench.sha` therefore
+name blobs that are not the ones now committed. Two claims make those records
+still-honest evidence rather than stale ones:
+
+- **No device or connection changed.** The netlist diff is the `.subckt` port
+  line and two `*.opin` comments; `xr1`/`xr2`/`xa1` and every transistor
+  beneath them are byte-identical. An unconnected parent netlists to exactly
+  the circuit that was simulated.
+- **Only node *naming* changed in the decks.** A subcircuit port is not
+  addressable as an internal node, so `v(xdut.ro1)` became `v(ro1)` — the same
+  net, under the name it now has at the deck's top level. Re-running
+  `ring-liveness-tap-power/` at `tt`/27 °C/3.30 V after the change reproduces
+  `2026-08-02-ring-liveness-tap-power-04.md` to the digit
+  (`p_total_w` = 203.27 µW, `p_tap_avg_w` = 46.69 µW), which is the direct
+  evidence for both claims above.
+
+Nothing is corrected in place, for the same reason as the two errata above.
+
 ## Simulation vehicles for these cells
 
 | Testbench | What it measures |
@@ -857,6 +910,7 @@ a simulation result, and neither was made to make one pass.
 | [`sim/tb/ro-array-core-mc-freq/`](../sim/tb/ro-array-core-mc-freq/) | the shipped array under Monte Carlo device mismatch at the nominal corner: per-ring period/current spread across virtual chip samples, and the two rings' frequency ratio per draw (#13) |
 | [`sim/tb/ro-array-sanity-jitter/`](../sim/tb/ro-array-sanity-jitter/) | the five-stage array under transient noise: per-ring period and jitter accumulation, frequency independence, XOR-node swing |
 | [`sim/tb/ro-array-core-meta-power/`](../sim/tb/ro-array-core-meta-power/) | the shipped array with the metastability tap attached, measurement-for-measurement identical to `ro-array-core-power/`, plus the tap's own supply current on `vddm` |
+| [`sim/tb/ring-liveness-tap-power/`](../sim/tb/ring-liveness-tap-power/) | what the two DR-0016 per-ring liveness digitizers cost the rings they tap: `ro-array-core-power/`'s measurements, expression for expression, with two `sampler_dff` instances on `ro1`/`ro2`, plus their own switching power on a separate supply branch |
 | [`sim/tb/meta-arb-regeneration/`](../sim/tb/meta-arb-regeneration/) | the tap's arbiter (`meta_arb`): regeneration time constant via the Kinniment/Chester decade-pair method |
 | [`sim/tb/ro-meta-tap-skew/`](../sim/tb/ro-meta-tap-skew/) | the tap (`ro_meta_tap`): trim-load-to-skew sensitivity and its own supply energy per event |
 | [`sim/tb/sampler-array-digitize/`](../sim/tb/sampler-array-digitize/) | `sampler_core` end to end: `xo` under transient noise, sampled by the real `sampler_dff` into `raw_bit`/`raw_valid` — a functional raw-bitstream demonstration, not a rate or entropy measurement |

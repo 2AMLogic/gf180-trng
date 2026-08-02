@@ -7,7 +7,10 @@ conditioned path. Fixed by
 which derives its contract from
 [`DR-0001`](../../spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md)
 and
-[`DR-0002`](../../spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md);
+[`DR-0002`](../../spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md),
+extended by
+[`DR-0016`](../../spec/decision-records/DR-0016-per-ring-liveness-monitor.md)
+with a third source of that same latch;
 verified at the level fixed by
 [`DR-0009`](../../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md).
 
@@ -19,13 +22,19 @@ verified at the level fixed by
   cond_word/valid  ───►│ conditioned FIFO ────────────────┘            │
   (from #8)            │        ▲                                      ├──► DATA (gated)
                        │  cond_en / cond_flush                         │
-  ht_fail_* (#11)  ───►│  latch ──► ht_alarm, gate ──► startup_req ────┼──► ht_alarm
-                       └───────────────────────────────────────────────┘
+  ht_fail_rct/apt  ───►│  latch ──► ht_alarm, gate ──► startup_req ────┼──► ht_alarm
+  ht_fail_ring (#65)───►│    ▲                                          │
+                       └────┼──────────────────────────────────────────┘
+                            └─ three sources, ONE latch: RCT and APT watch the
+                               combined raw tap, ring watches each ring's own
+                               digitized sample (DR-0016)
 ```
 
 **A health-test failure never reaches the raw path.** That is the one property
 worth reading twice, and it is why there are two flush signals rather than one
-— see DR-0013 §4.
+— see DR-0013 §4. It holds identically for `ht_fail_ring`: a dead ring is
+exactly the situation in which an integrator most needs the raw stream to
+diagnose with.
 
 ## Files
 
@@ -44,7 +53,7 @@ The full table is in [`REGMAP.md`](REGMAP.md) (generated). In summary:
 | Word | Register | Access | Purpose |
 |---|---|---|---|
 | 0 | `CTRL` | RW | `EN` (reset 1), `OUT_MODE` (reset `conditioned`), `SOFT_RESET` |
-| 1 | `STATUS` | RO + W1C | `HT_FAIL_RCT`/`HT_FAIL_APT`, `HT_ALARM`, `STARTUP`, `COND_READY`, `DATA_AVAIL`/`RAW_AVAIL`, `OVF_DATA`/`OVF_RAW`, FIFO levels |
+| 1 | `STATUS` | RO + W1C | `HT_FAIL_RCT`/`HT_FAIL_APT`/`HT_FAIL_RING`, `HT_ALARM`, `STARTUP`, `COND_READY`, `DATA_AVAIL`/`RAW_AVAIL`, `OVF_DATA`/`OVF_RAW`, FIFO levels |
 | 2 | `DATA` | RO | conditioned FIFO; a read pops; gated by health-test state |
 | 3 | `RAW_DATA` | RO | raw FIFO, 32 raw samples per word LSB first; a read pops; **never** gated |
 
@@ -58,7 +67,7 @@ whichever FIFO `CTRL.OUT_MODE` selects, and transfers on `valid && ready`.
 | idle | 0 | 0 | 0 | `CTRL.EN` = 0 |
 | startup | **1** | 0 | 0 | DR-0002 start-up test running; nothing has failed |
 | run | 0 | 0 | **1** | conditioned path ungated |
-| failed | 0 | **1** | 0 | a latched `HT_FAIL_*` gates it |
+| failed | 0 | **1** | 0 | a latched `HT_FAIL_*` (RCT, APT **or** ring) gates it |
 
 Startup and failure both gate the conditioned path, so `COND_READY` alone
 cannot tell them apart — and DR-0002's recovery path is meaningless if
@@ -100,9 +109,13 @@ python3 sim/tb/interface-regfile/run_demo.py --no-write
 
 ## What is *not* here
 
-- **The health tests.** RCT/APT, their cutoffs and the 1024-sample start-up
-  window are #11's. This block consumes `ht_fail_rct`/`ht_fail_apt`/
-  `ht_startup_pass` and produces `startup_req`.
+- **The health tests, and the per-ring liveness monitor.** RCT/APT, their
+  cutoffs, the 1024-sample start-up window and DR-0016's per-ring RCT are
+  #11's and #44's. This block consumes `ht_fail_rct`/`ht_fail_apt`/
+  `ht_fail_ring`/`ht_startup_pass` and produces `startup_req`. It does not
+  know how many rings there are: `ht_fail_ring` is one wire, and
+  `STATUS.HT_FAIL_RING` is one bit, precisely so that the published register
+  map does not depend on `N_RINGS`.
 - **A bus protocol and any clock-domain crossing.** The register bus is a
   bare synchronous interface in the sampler clock domain (DR-0012). APB/AHB/
   Wishbone adaptation and CDC are #27's wrapper, deliberately not baked in
@@ -115,6 +128,7 @@ python3 sim/tb/interface-regfile/run_demo.py --no-write
 
 `STATUS` reports what the *health tests* concluded; it does not conclude
 anything itself. A clear `HT_ALARM` means no RCT or APT window tripped its
-cutoff — at cutoffs derived from an **assumed** H₀ = 0.5 (DR-0002), which no
+cutoff and no ring held a constant digitized value for `C_LIVE` samples — at
+cutoffs derived from an **assumed** H₀ = 0.5 (DR-0002/DR-0016), which no
 measurement has yet replaced. `COND_READY` means the block is not gating; it
 does not mean the bits are good.

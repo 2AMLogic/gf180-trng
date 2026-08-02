@@ -10,10 +10,10 @@ This schematic is the ANALOG half of the top-level assembly, and it stops
 exactly at the DR-0001 raw tap -- the same boundary
 spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 draws for the whole repository. It instantiates sampler_core.sym (#9's
-entropy source, #7's ro_array_core, plus the two sampler_dff instances that
-digitize xo into raw_bit/raw_valid) UNMODIFIED: no device here differs from
-design/xschem/sampler_core.sch, so this cell adds a name and a place in the
-hierarchy, not a new circuit.
+entropy source, #7's ro_array_core, plus the sampler_dff instances that
+digitize xo into raw_bit/raw_valid and ro1/ro2 into ring_bit1/ring_bit2)
+UNMODIFIED: no device here differs from design/xschem/sampler_core.sch, so
+this cell adds a name and a place in the hierarchy, not a new circuit.
 
 The three digital blocks DR-0009 assigns to behavioural verification --
 design/conditioner/ (#8), design/health_test/ (#11) and design/interface/
@@ -42,6 +42,19 @@ Pin-for-pin, this schematic's four raw-tap pins feed:
   raw_valid  -> design/conditioner/crc32_conditioner.v      raw_valid
              -> design/health_test/rct_apt.v                raw_valid
 
+and the two per-ring liveness taps DR-0016 adds (#65) cross the same
+boundary into the same file, one bit per ring:
+
+  ring_bit1  -> design/health_test/ring_liveness.v          ring_bit[0]
+  ring_bit2  -> design/health_test/ring_liveness.v          ring_bit[1]
+
+design/trng_top/trng_top.v names that port ring_bit[1:0] -- one vector
+rather than two scalars, because ring_liveness.v is parameterised in
+N_RINGS -- and sim/tests/test_trng_top.py checks the index mapping above by
+name so a silent swap cannot survive. The monitor's ring_stuck_any then
+enters design/interface/'s ht_fail_ring, the third source of the DR-0002
+latch, which is likewise digital and appears nowhere in this file.
+
 en1/en2/vddr1/vddr2/vdd/vss are forwarded straight through to
 sampler_core.sym, unchanged from what design/xschem/sampler_core.sch
 already does; ring enable/start-up sequencing is not this cell's job
@@ -66,6 +79,8 @@ C {ipin.sym} -1000 0 0 0 {name=pc lab=clk}
 C {ipin.sym} -1000 50 0 0 {name=pr lab=rst_n}
 C {opin.sym} -1000 100 0 0 {name=pb lab=raw_bit}
 C {opin.sym} -1000 150 0 0 {name=pvv lab=raw_valid}
+C {opin.sym} -1000 200 0 0 {name=pr1 lab=ring_bit1}
+C {opin.sym} -1000 250 0 0 {name=pr2 lab=ring_bit2}
 C {sampler_core.sym} 0 0 0 0 {name=xsc}
 C {lab_pin.sym} -70 -60 0 1 {name=l1 lab=en1}
 C {lab_pin.sym} -70 -20 0 1 {name=l2 lab=en2}
@@ -77,3 +92,5 @@ C {lab_pin.sym} -70 20 0 1 {name=l7 lab=clk}
 C {lab_pin.sym} -70 60 0 1 {name=l8 lab=rst_n}
 C {lab_pin.sym} 70 -20 0 0 {name=l9 lab=raw_bit}
 C {lab_pin.sym} 70 20 0 0 {name=l10 lab=raw_valid}
+C {lab_pin.sym} 70 -60 0 0 {name=l11 lab=ring_bit1}
+C {lab_pin.sym} 70 60 0 0 {name=l12 lab=ring_bit2}

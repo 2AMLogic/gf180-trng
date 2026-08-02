@@ -2,7 +2,7 @@
 * Do not edit by hand: `python3 design/netlist.py --check` fails if this
 * file and the schematic disagree. Regenerate with `python3 design/netlist.py`.
 ** sch_path: sampler_core.sch
-.subckt sampler_core en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid
+.subckt sampler_core en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2
 *.ipin en1
 *.ipin en2
 *.iopin vddr1
@@ -13,15 +13,19 @@
 *.ipin rst_n
 *.opin raw_bit
 *.opin raw_valid
-xdut en1 en2 vddr1 vddr2 vdd vss xo ro_array_core
+*.opin ring_bit1
+*.opin ring_bit2
+xdut en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 ro_array_core
 xsb xo clk rst_n raw_bit vdd vss sampler_dff
 xsv vdd clk rst_n raw_valid vdd vss sampler_dff
+xsr1 ro1 clk rst_n ring_bit1 vdd vss sampler_dff
+xsr2 ro2 clk rst_n ring_bit2 vdd vss sampler_dff
 .ends
 
-* expanding   symbol:  ro_array_core.sym # of pins=7
+* expanding   symbol:  ro_array_core.sym # of pins=9
 ** sym_path: ro_array_core.sym
 ** sch_path: ro_array_core.sch
-.subckt ro_array_core en1 en2 vddr1 vddr2 vdd vss xo
+.subckt ro_array_core en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2
 *.ipin en1
 *.ipin en2
 *.iopin vddr1
@@ -29,6 +33,8 @@ xsv vdd clk rst_n raw_valid vdd vss sampler_dff
 *.iopin vdd
 *.iopin vss
 *.opin xo
+*.opin ro1
+*.opin ro2
 xr1 en1 ro1 vddr1 vss ro_ring11 wstv=0.220u lstv=2u cld=0.5f
 xr2 en2 ro2 vddr2 vss ro_ring11 wstv=0.240u lstv=2u cld=0.5f
 xa1 ro1 ro2 xo vdd vss xor2
