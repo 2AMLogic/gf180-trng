@@ -111,7 +111,7 @@ jobs:
       # issue #51 stop classifying the way sim/characterization-array-ring-
       # coupling.md says they do -- i.e. if a record moves the conclusion out
       # from under a summary document that still asserts it.
-      - name: Spec arithmetic self-checks (jitter-energy law, array sizing)
+      - name: Spec arithmetic self-checks (jitter-energy law, array sizing, ring coupling)
         run: |
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check

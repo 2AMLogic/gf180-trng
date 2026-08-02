@@ -170,13 +170,17 @@ is visible directly in the accumulation:
 |---|---|---|---|---|---|---|---|---|
 | `σ_acc` (ps) | 18.3 | 33.4 | 56.1 | 71.3 | **8.3** | 16.1 | 31.2 | 60.1 |
 
-`σ` at lag 16 is **8.6× smaller than at lag 8**. No random process can do
-that: for any stationary increment process `σ_acc(L)` is non-decreasing in `L`.
-A perturbation that nearly cancels when the two samples are one beat period
-apart is periodic and phase-locked to the neighbour, i.e. deterministic — which
-is the same thing the 1.0 % seed spread says, arrived at independently. Beyond
-one beat period `σ` grows as `L^0.95`, near-linear, the signature of a
-deterministic drift rather than the `L^0.5` of a random walk.
+`σ` at lag 16 is **8.6× smaller than at lag 8**. An accumulating jitter
+process cannot do that: for independent (or non-negatively correlated)
+increments — a phase random walk — `σ_acc(L)` is non-decreasing in `L`. A
+`σ_acc` that collapses at one particular lag requires strongly anti-correlated
+increments, i.e. a near-periodic component with a period close to that lag; and
+the lag at which it collapses is the beat period predicted independently from
+`|f₁ − f₂|`. That the component is not merely near-periodic but *phase-locked
+to the neighbour* — i.e. deterministic — is what the 1.0 % seed spread says,
+arrived at independently. Beyond one beat period `σ` grows as `L^0.95`,
+near-linear, the signature of a deterministic drift rather than the `L^0.5` of
+a random walk.
 
 The control, variant 2 and variant 4 all accumulate at `L^0.42`–`L^0.45` with
 seed spreads of 3.9 %, 2.3 % and 6.0 % against a 2.7 % reference. They are
