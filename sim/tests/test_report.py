@@ -7,6 +7,7 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import json
+import subprocess
 import sys
 import tempfile
 import threading
@@ -240,12 +241,75 @@ class BuildRecordTests(unittest.TestCase):
         text = report.render_reproduce_section(record, self.tb)
         self.assertIn("--supply 3.63 --supply-tol 0", text)
 
+    def _reproduce_with_timeout(self, timeout_s):
+        record = report.build_record(
+            tb=self.tb, pdk=self.pdk, point=self.point, results=self.results,
+            ngspice="ngspice-46", repo_root=Path(self.tmp.name), stem="2026-07-31-an-experiment-03",
+            completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.3, raw_dir=Path(self.tmp.name) / "raw",
+            git={"commit": "f" * 40, "dirty": False}, timeout_s=timeout_s,
+        )
+        return report.render_reproduce_section(record, self.tb)
+
+    def test_reproduce_section_carries_a_non_default_timeout(self):
+        # A multi-hour transient-noise run is not reproducible by a command
+        # that omits the --timeout it ran with: the re-run dies on the 300 s
+        # default and records "no data (all runs failed to converge)".
+        self.assertIn("--timeout 40000", self._reproduce_with_timeout(40000))
+
+    def test_reproduce_section_omits_the_default_timeout(self):
+        self.assertNotIn("--timeout", self._reproduce_with_timeout(runner.DEFAULT_TIMEOUT_S))
+        self.assertNotIn("--timeout", self._reproduce_with_timeout(None))
+
     def test_write_record_refuses_to_overwrite(self):
         records_dir = Path(self.tmp.name) / "records"
         path = report.write_record(self.record, self.tb, records_dir, ["a caveat"])
         self.assertTrue(path.is_file())
         with self.assertRaises(report.RecordExists):
             report.write_record(self.record, self.tb, records_dir, ["a caveat"])
+
+
+class ChangedRecordDiscoveryTests(unittest.TestCase):
+    """`verify_record_checksums.py --changed` must find the records it lists.
+
+    `git diff --name-only` prints paths from the REPO ROOT no matter which
+    directory it is invoked in, so joining its output onto `sim/` produced
+    `sim/sim/records/...` and every changed record failed as "no such
+    record" -- turning the pre-commit command sim/README.md mandates into a
+    check that could only ever fail once a branch actually added a record.
+    """
+
+    def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+        import verify_record_checksums as vrc  # noqa: PLC0415
+
+        self.vrc = vrc
+
+    def test_git_output_is_joined_onto_the_repo_root_not_sim(self):
+        """`git diff --name-only` output is repo-root-relative, always."""
+        printed = "sim/records/2026-01-01-an-experiment-01.md\n"
+        real_run = subprocess.run
+
+        def fake_run(argv, **kwargs):
+            if argv[:2] == ["git", "diff"]:
+                return subprocess.CompletedProcess(argv, 0, stdout=printed, stderr="")
+            return real_run(argv, **kwargs)
+
+        self.vrc.subprocess.run = fake_run
+        self.addCleanup(setattr, self.vrc.subprocess, "run", real_run)
+
+        paths = self.vrc._changed_records("origin/main")
+        self.assertEqual(
+            paths, [self.vrc.REPO_ROOT / "sim/records/2026-01-01-an-experiment-01.md"]
+        )
+        self.assertNotIn("sim/sim/", str(paths[0]))
+
+    def test_changed_records_that_exist_are_reported_as_existing(self):
+        """End-to-end against the real repo: whatever this branch added must
+        resolve to files on disk, never to a doubled `sim/sim/...` path."""
+        for path in self.vrc._changed_records("origin/main"):
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.is_file(), f"discovered a path that does not exist: {path}")
 
 
 class RawFileVerificationTests(unittest.TestCase):

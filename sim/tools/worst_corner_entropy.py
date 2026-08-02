@@ -146,8 +146,12 @@ DR0008_BREAK_EVEN_H = 0.106456
 
 _MEAS_LOG = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$", re.M)
 
-PVT_Q_GLOB = "*-ro-array-core-pvt-q-*.md"
-POWER_GLOB = "*-ro-array-core-power-*.md"
+# `-[0-9]` and not `-`: the sequence number must follow the slug directly, so
+# a record from a *variant* testbench whose slug starts with one of these
+# (e.g. ro-array-core-power-BUFFERED, issue #75's unadopted buffer mitigation)
+# can never be read as a shipped-array corner.
+PVT_Q_GLOB = "*-ro-array-core-pvt-q-[0-9]*.md"
+POWER_GLOB = "*-ro-array-core-power-[0-9]*.md"
 
 
 # --------------------------------------------------------------------------

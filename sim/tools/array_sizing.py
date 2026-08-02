@@ -132,7 +132,11 @@ def load(glob: str) -> list[Record]:
 #: measured agreement at the three PVT points they share). Both are read
 #: here, because "the inequality holds at every measured corner" is a much
 #: weaker statement if the script only looks at three of them.
-ARRAY_RECORD_GLOBS = ("*-ro-array-core-power-*.md", "*-ro-array-core-pvt-q-*.md")
+#: `-[0-9]` and not `-`: the sequence number must follow the slug directly, so
+#: a record from a *variant* testbench whose slug starts with one of these
+#: (e.g. ro-array-core-power-BUFFERED, issue #75's unadopted buffer
+#: mitigation) can never be read as a shipped-array corner.
+ARRAY_RECORD_GLOBS = ("*-ro-array-core-power-[0-9]*.md", "*-ro-array-core-pvt-q-[0-9]*.md")
 
 
 def load_array_records() -> list[Record]:

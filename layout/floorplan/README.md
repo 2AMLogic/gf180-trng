@@ -20,6 +20,11 @@ measured at 28.6× in this repository, and survives every mitigation the first
 two get. Getting that distinction wrong is how an array that is correlated by
 construction ends up documented as independent.
 
+The circuit-level mitigation for that third mechanism — one buffer per ring
+ahead of the combiner — has since been **measured** ([#75]): it removes 92.8 %
+of the coupling and *returns* power rather than costing it, and a 2.87×
+residual survives. It is recommended below and not yet adopted ([#78]).
+
 ---
 
 ## The one command
@@ -318,34 +323,48 @@ to `ro1` (`XMpiA` 0.44 + `XMniA` 0.22 + `XMp1` 0.88 + `XMn1` 0.44), while an
 inverter buffer's input presents **0.66 µm**. Buffering therefore takes load
 *off* the ring node as well as isolating it.
 
-**What it costs.**
+**What it costs — MEASURED, [#75].** This section previously carried an
+estimate and a refusal to adopt on the grounds that nothing measured it.
+[#75] measured it, in
+[`sim/characterization-ring-buffer-mitigation.md`](../../sim/characterization-ring-buffer-mitigation.md).
+The estimate is kept below because being wrong in an interesting way is worth
+recording, not because it is still the number:
 
-| | Estimate | Method |
+| | What was **estimated** here | What was **measured** ([#75]) |
 |---|---|---|
-| Area | 2 × `inv_1` = **17.6 µm²** cell, ~29 µm² placed at 60 % — **0.06 % of the < 0.05 mm² row** | LEF area, same model as the rollup below |
-| Power | **≈ 24.4 µW** at the `ff`/−40 °C/3.63 V power-binding corner (11.9 µW + 12.6 µW) | `P = C_eff · V² · f` with the *measured* `c_eff_node_r1` = 3.865 fF and `f_r1` / `f_r2` = 233.3 / 246.5 MHz from `sim/records/2026-08-01-ro-array-core-power-04.md` |
+| Area | 2 × `inv_1` = **17.6 µm²** cell, ~29 µm² placed at 60 % — **0.06 % of the < 0.05 mm² row** | not re-measured; this is a LEF area, not a simulation |
+| Buffer power | **≈ 24.4 µW** at `ff`/−40 °C/3.63 V, from `P = C_eff · V² · f` with `c_eff_node_r1` = 3.865 fF | **61.8 µW** — 2.5× the estimate. `c_eff_node_r1` averages a ring stage driving the *next* ring stage's 0.66 µm; the buffer drives `xa1`'s full 1.98 µm |
+| Ring power | offset from the 3× load reduction deliberately **not** priced | per-cycle energy −5.0 %, average power **+1.4 %** — the ring spends the saving on running 6.7 % faster |
+| Combiner power | not considered | **−85.6 µW (−58.8 %)**. The buffer's un-starved output gives `xa1` fast edges where the starved ring gave it slow ones |
+| **Block active rollup** | 454.2 µW (90.8 %) → **≈ 478.6 µW, 95.7 %** of the `< 500 µW` row | 454.2 µW (90.8 %) → **435.1 µW, 87.0 %** |
 
-Against the block's active-power rollup (`python3 sim/tools/power_rollup.py`:
-454.2 µW total, 90.8 % of the `< 500 µW` row, with 84.7 µW of headroom left by
-the entropy source of which the rest of the block needs 38.9 µW), two buffers
-take the total to **≈ 478.6 µW, 95.7 % of the row**. It fits, and it is not
-cheap: it spends slightly over half of what is left. The estimate is an **upper
-bound** in one respect — it charges the buffer the full measured ring-node
-`C_eff` while the ring node itself gets lighter by the 3× load reduction above,
-and that offset is not priced.
+The estimate had the **sign** wrong, not just the magnitude: the mitigation
+does not spend half the remaining headroom, it *returns* 19.1 µW of it. The
+term the estimate omitted — what happens inside the combiner once it is driven
+by fast edges — is larger than the two terms it included.
 
-**What is explicitly NOT claimed.** That this works. Nothing in this repository
-measures whether buffering reduces the coupling, by how much, or at which
-corners; #51's own scoping says so, and this repo does not accept an unmeasured
-mechanism as a mitigation. The decision this document takes is:
+**What it buys, measured at `tt`/27 °C/3.30 V.** With a matched
+quiet-neighbour control at the *same* buffered operating point
+(`sim/tb/ro-array-coupling-xor-static-buffered/`, so the comparison spans one
+change and not two), the coupling factor falls from **27.10× to 2.87×** —
+**92.8 % of the excess removed**. It is **not** removed entirely, and the
+residual is still deterministic (1.1 % seed spread against the ~2.7 % a real
+jitter estimate scatters, accumulation exponent 0.141 against the control's
+0.421, and a still-non-monotonic `σ_acc`). Squared, 2.87× is an **8.24×**
+over-statement of one ring's contribution to `Q_array`, still in the unsafe
+direction.
 
-> **Adopt the measurement rule below now** (it costs nothing and it is the part
-> that prevents a wrong number entering [DR-0007] §2), and **do not adopt the
-> buffer until it is measured.** The area cost is negligible and the power cost
-> fits, so the blocker is evidence, not budget. The measurement is a variant of
-> `sim/tb/ro-array-coupling-xor-driven/` with an inverter inserted — the deck
-> already exists and the control (`…-xor-static`, 1.06×) is already the right
-> comparison. Filed as **[#75]**.
+**The decision this document now takes:**
+
+> **The measurement rule below is unchanged and remains adopted** — an 8.24×
+> residual is not a licence to measure per-ring `σ_acc,i` with the neighbours
+> switching, and the buffer does not relax it. **The buffer is recommended for
+> adoption**: it removes 92.8 % of the coupling, costs 0.06 % of the area row,
+> and *returns* 19.1 µW to the power row. It is **not adopted by this
+> document**, because adopting it edits `design/xschem/ro_array_core.sch` and
+> obsoletes every shipped-array record's operating point (+6.7 % frequency,
+> −4.9 % power), which is a decision record and a re-run, not a floorplan
+> edit. Filed as **[#78]**.
 
 The edge case the issue asks about is worth stating explicitly: **the buffers
 must be per-ring, never shared.** A single buffer stage feeding both combiner
@@ -517,7 +536,11 @@ Stated as a list because an unstated limit is a defect.
 3. **No corner coverage on the coupling factor.** 28.6× is `tt`/27 °C/3.30 V
    only. It is a circuit ratio with no reason to be corner-independent, and the
    sweep belongs to #13/#12.
-4. **No measurement of the buffer mitigation**, as stated above — [#75].
+4. **No adoption of the buffer mitigation.** [#75] measured it (92.8 % of
+   the coupling excess removed, and it *returns* 19.1 µW rather than
+   costing 24.4 µW), and this document now recommends it — but the
+   schematic still ships unbuffered, and the residual coupling is 2.87×
+   at one corner. Adoption is [#78].
 5. **No measurement of the `clk`-driven liveness-tap path**, as stated above —
    [#76].
 6. **No attribution of the residual 1.21×** between one XOR gate with one
@@ -574,6 +597,7 @@ design. This work produced three, all filed against
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
+[#78]: https://github.com/2AMLogic/gf180-trng/issues/78
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md

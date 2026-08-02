@@ -206,6 +206,26 @@ class PowerRecordTests(unittest.TestCase):
         self.assertEqual(len(self.idles), 45)
         self.assertGreaterEqual(len(self.arrays), 27)
 
+    def test_variant_testbench_records_never_enter_the_shipped_rollup(self):
+        """A slug that merely *starts with* a shipped slug is not the shipped design.
+
+        ``sim/tb/ro-array-core-power-buffered/`` (issue #75) measures an
+        UNADOPTED mitigation -- a per-ring buffer that is not in
+        ``design/ro_array_core.spice``. Its record stem begins
+        ``…-ro-array-core-power-``, so the loose ``…-power-*.md`` glob these
+        rollups used before #75 would have folded an unshipped circuit's power
+        into the block budget silently. The globs require the sequence number
+        to follow the slug directly instead; this test fails if that is ever
+        relaxed back.
+        """
+        for glob in pr.ARRAY_GLOBS:
+            with self.subTest(glob=glob):
+                self.assertIn("-[0-9]", glob)
+        stems = [rec.stem for rec in pr.load(pr.ARRAY_GLOBS)]
+        self.assertTrue(stems, "no shipped-array records matched at all")
+        for stem in stems:
+            self.assertNotIn("buffered", stem)
+
     def test_every_sampler_record_witnesses_both_flops_capturing(self):
         for corner, rec in self.samplers.items():
             with self.subTest(corner=corner):

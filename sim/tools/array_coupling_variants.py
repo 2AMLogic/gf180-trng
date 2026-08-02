@@ -94,28 +94,36 @@ CORNER = "tt/27/3.30"
 #: ``(label, record glob, testbench manifest, what makes it different)``.
 #: Order is the issue's variant order, which is also the order in which the
 #: comparisons below are meant to be read.
+#:
+#: Every glob ends ``-[0-9]*`` and not ``-*``: the record's sequence number
+#: must follow the testbench slug DIRECTLY. Without that, a glob also matches
+#: any *derived* testbench whose slug merely starts with this one's -- issue
+#: #75 added ``ro-array-coupling-xor-driven-buffered`` and
+#: ``ro-array-coupling-xor-static-buffered``, either of which would otherwise
+#: have been read in here as one of this experiment's own variants and moved
+#: sim/characterization-array-ring-coupling.md's conclusion silently.
 VARIANTS = [
     (
         "1 control",
-        "*-ro-ring5-starved-jitter-long-*.md",
+        "*-ro-ring5-starved-jitter-long-[0-9]*.md",
         TB / "ro-ring5-starved-jitter-long" / "tb.json",
         "one ring, nothing attached",
     ),
     (
         "2 xor-static",
-        "*-ro-array-coupling-xor-static-*.md",
+        "*-ro-array-coupling-xor-static-[0-9]*.md",
         TB / "ro-array-coupling-xor-static" / "tb.json",
         "+ xa1, 2nd input on a rail",
     ),
     (
         "3 xor-driven",
-        "*-ro-array-coupling-xor-driven-*.md",
+        "*-ro-array-coupling-xor-driven-[0-9]*.md",
         TB / "ro-array-coupling-xor-driven" / "tb.json",
         "+ xa1 driven by ring 2",
     ),
     (
         "4 rings-only",
-        "*-ro-array-coupling-rings-only-*.md",
+        "*-ro-array-coupling-rings-only-[0-9]*.md",
         TB / "ro-array-coupling-rings-only" / "tb.json",
         "2 rings, unconnected",
     ),

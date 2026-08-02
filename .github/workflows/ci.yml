@@ -140,6 +140,14 @@ jobs:
       # issue #51 stop classifying the way sim/characterization-array-ring-
       # coupling.md says they do -- i.e. if a record moves the conclusion out
       # from under a summary document that still asserts it.
+      # array_coupling_buffer_variant.py --check is the same guard for issue
+      # #75's follow-on: it fails if the buffered variant stops isolating the
+      # ring (sigma_1 no longer below the unbuffered variant's), or if
+      # substituting the buffered array into the block's active rollup stops
+      # being power-neutral-or-better -- the two claims
+      # sim/characterization-ring-buffer-mitigation.md rests on. On a runner
+      # with no PDK the digital term is unavailable, which changes both rollup
+      # totals by the same constant and so leaves that comparison valid.
       # time_to_first_valid.py --check fails if any start-up corner stops
       # converging, if the ring swing stops being settled by the early window,
       # or if the measured total drops below the README's arithmetic floor
@@ -157,6 +165,7 @@ jobs:
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check
           python3 sim/tools/array_coupling_variants.py --check
+          python3 sim/tools/array_coupling_buffer_variant.py --check
           python3 sim/tools/time_to_first_valid.py --check
           python3 sim/tools/power_rollup.py --check
 

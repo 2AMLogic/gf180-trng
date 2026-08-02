@@ -65,12 +65,18 @@ def git_tracked_raw_files() -> set[str]:
 
 
 def _changed_records(base: str) -> list[Path]:
+    # `git diff --name-only` prints paths from the REPO ROOT regardless of the
+    # cwd it is run in (only --relative changes that), so the result is joined
+    # onto REPO_ROOT and not onto SIM_DIR -- joining onto SIM_DIR yields
+    # `sim/sim/records/...`, and every record then fails as "no such record".
+    # The *pathspec* is still cwd-relative, hence `records/*.md` with
+    # cwd=SIM_DIR.
     out = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=A", f"{base}...HEAD", "--",
          f"{report.RECORDS_DIRNAME}/*.md"],
         cwd=SIM_DIR, capture_output=True, text=True, check=False,
     )
-    return [SIM_DIR / line for line in out.stdout.splitlines() if line]
+    return [REPO_ROOT / line for line in out.stdout.splitlines() if line]
 
 
 def verify_one(path: Path, tracked: set[str] | None = None) -> list[str]:
