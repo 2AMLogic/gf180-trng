@@ -1,0 +1,42 @@
+{
+  "name": "ro-array-core-mc-freq",
+  "description": "Monte Carlo device mismatch on the shipped 2-ring x 11-stage entropy-source array (design/ro_array_core.spice): per-ring period/current spread across virtual chip samples, at the nominal corner. Issue #13's RO-frequency-spread MC run.",
+  "netlist": "tb_ro_array_core_mc_freq.sp",
+  "design_netlist": "design/ro_array_core.spice",
+  "analysis_type": "mc",
+  "corners": ["tt"],
+  "temperatures_c": [27],
+  "design_params": {
+    "sw_stat_mismatch": 1
+  },
+  "extra_lib_sections": ["statistical"],
+  "default_runs": 8,
+  "tstop": "100n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 100n",
+    "meas tran t1a when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran t1b when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran t2a when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran t2b when v(xdut.ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(xdut.ro2)=v(vth) rise=6",
+    "let cq = 1e-9",
+    "let nper = 4"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)"
+  },
+  "caveats": [
+    "Nominal corner only (tt/27C/3.30V). gf180mcu's `statistical` library section supplies intra-die mismatch on top of whichever corner's devices are loaded; this run does not repeat the mismatch draw at ff/ss or at temperature/supply extremes, so it says nothing about whether mismatch spread widens or narrows at those corners.",
+    "8 mismatch seeds is enough to characterize the spread's rough magnitude, not to bound a tail probability -- a claim about the FRACTION of parts that would violate the non-integer-ratio requirement needs many more samples than this record provides.",
+    "Each seed is an independent full-array mismatch draw (both rings, the XOR gate, everything in design/ro_array_core.spice redrawn together), which is the physically correct picture for one chip -- but it means the two rings' mismatch draws are correlated only through whatever global (not per-device) variation `sw_stat_global` would add, which this testbench leaves off (sw_stat_mismatch=1, sw_stat_global=0 default): local/intra-die mismatch only, no die-to-die global corner spread on top of the tt corner already selected."
+  ]
+}

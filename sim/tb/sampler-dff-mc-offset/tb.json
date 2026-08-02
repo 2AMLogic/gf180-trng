@@ -1,0 +1,28 @@
+{
+  "name": "sampler-dff-mc-offset",
+  "description": "Monte Carlo device mismatch on sampler_dff's master-latch decision threshold (design/sampler_core.spice), at the nominal corner. Issue #13's sampler offset/asymmetry MC run.",
+  "netlist": "tb_sampler_dff_mc_offset.sp",
+  "design_netlist": "design/sampler_core.spice",
+  "analysis_type": "mc",
+  "corners": ["tt"],
+  "temperatures_c": [27],
+  "design_params": {
+    "sw_stat_mismatch": 1
+  },
+  "extra_lib_sections": ["statistical"],
+  "default_runs": 30,
+  "analyses": [
+    "dc vd 0 3.3 0.0066",
+    "meas dc dtrip when v(xdut.mb)=1.65 fall=1"
+  ],
+  "measure": {
+    "dtrip_v": "dtrip"
+  },
+  "caveats": [
+    "Nominal corner only (tt/27C/3.30V) -- see this testbench's own header for why, and sim/tb/ro-array-core-mc-freq/'s header for the identical rationale restated in the RO context.",
+    "The dc sweep bounds (0-3.3V) and the mid-supply comparison value (1.65) in this manifest's `analyses`/`measure` are hardcoded numeric literals, not vdd_val-parameterized expressions: ngspice's control-block `dc`/`meas dc` commands rejected a parenthesized `vdd_val`-derived increment during this testbench's bring-up. Harmless only because this testbench is pinned to the single 3.30 V nominal point above -- re-parameterize before ever sweeping this testbench's voltage axis.",
+    "Measures the MASTER LATCH's own decision threshold (node xdut.mb) with clk held at 0 throughout, not a full clocked capture. It says nothing about clk-to-Q delay, setup/hold margin or metastable resolution time -- those are sim/tb/sampler-dff-setup-hold/'s job, unchanged by this run.",
+    "The .dc sweep is quasi-static (no dV/dt): it measures the offset of the STATIC switching threshold, not a dynamic one. Converting it to a raw-bit-probability bias (issue #13's own analysis) additionally assumes the real XOR node's crossing is fast enough, and its slew rate near mid-supply steady enough, that the static and dynamic thresholds coincide to first order -- a modeling assumption stated once here rather than re-derived per record.",
+    "30 mismatch seeds characterizes the offset distribution's rough mean and spread, not a tail probability."
+  ]
+}

@@ -122,6 +122,40 @@ def load(glob: str) -> list[Record]:
     return [Record(p) for p in sorted(RECORDS.glob(glob))]
 
 
+#: Every record family that measures the shipped array's per-ring period and
+#: supply current, i.e. everything this script's inequality can be evaluated
+#: at. ``ro-array-core-power`` is the original three-point family;
+#: ``ro-array-core-pvt-q`` (issue #13) is the full 27-point covered-grid
+#: family, measured by the same expressions on the same DUT with a longer
+#: transient window (see that testbench's header, and
+#: ``sim/tools/worst_corner_entropy.py``, which reports the two families'
+#: measured agreement at the three PVT points they share). Both are read
+#: here, because "the inequality holds at every measured corner" is a much
+#: weaker statement if the script only looks at three of them.
+ARRAY_RECORD_GLOBS = ("*-ro-array-core-power-*.md", "*-ro-array-core-pvt-q-*.md")
+
+
+def load_array_records() -> list[Record]:
+    """Every shipped-array PVT record from every family in ``ARRAY_RECORD_GLOBS``."""
+    return [rec for glob in ARRAY_RECORD_GLOBS for rec in load(glob)]
+
+
+def dedupe_by_corner(points: list["ArrayPoint"]) -> list["ArrayPoint"]:
+    """One point per PVT corner, preferring the full-grid family.
+
+    Where both families measure the same corner they agree to a few parts in
+    100 000 (``sim/tools/worst_corner_entropy.py`` reports that comparison),
+    so which one wins is immaterial to any number here -- but printing the
+    same corner twice would make the table look like a disagreement.
+    """
+    best: dict[str, ArrayPoint] = {}
+    for point in points:
+        current = best.get(point.rec.corner)
+        if current is None or "pvt-q" in point.rec.stem:
+            best[point.rec.corner] = point
+    return list(best.values())
+
+
 class ArrayPoint:
     """One PVT point of the shipped array."""
 
@@ -244,15 +278,20 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    records = load("*-ro-array-core-power-*.md")
+    records = load_array_records()
     if not records:
-        print("ERROR: no sim/records/*-ro-array-core-power-*.md records found", file=sys.stderr)
+        print(
+            "ERROR: no shipped-array records found (globs: "
+            + ", ".join(ARRAY_RECORD_GLOBS) + ")",
+            file=sys.stderr,
+        )
         return 2
     shipped_n = shipped_ring_count()
     points, other = [], []
     for rec in records:
         point = ArrayPoint(rec, a=args.a)
         (points if point.n == shipped_n else other).append(point)
+    points = dedupe_by_corner(points)
     if not points:
         print(
             f"ERROR: no record measures the shipped {shipped_n}-ring array "

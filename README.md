@@ -63,7 +63,7 @@ that should be legible too.
 |---|---|---|
 | Entropy source | **N-way array of independent free-running ring oscillators, XOR-combined ahead of a single sampler**, N fixed by the jitter-budget sizing law `Q_array ≥ 1.5 × 4.0×10⁻³` at the entropy-binding corner ([DR-0007]) | metastability hybrid, scoped as a *secondary tap on the RO core* — not a free-standing source |
 | Raw rate | > 1 Mbps sustained at the raw tap (sampler output), binding at the slowest-RO corner: `ss` / −10 % / +125 °C ([DR-0003]) | > 4 Mbps, same definition |
-| Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner (measured minimum-`Q` corner; expected cold / +10 % supply, process letter TBD by #13). The measured number is owed by #12/#13 as a simulation-derived design estimate ([DR-0004] Tier 2, [DR-0007] §2–4) | — |
+| Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner, which #13 measured over the full covered 27-point grid as **`ss` / +125 °C / 3.63 V** — the hot end of the `ss`/+10 % edge, *not* the cold end [DR-0012] predicted from three points ([DR-0015]; `fs`/`sf` remain uncovered per [DR-0006]). The measured `H` figure itself is still owed by #12 as a simulation-derived design estimate ([DR-0004] Tier 2, [DR-0007] §2–4) | — |
 | Quality | designed-for-SP 800-90B (raw access + RCT/APT + entropy-source model), plus a **simulation-derived design-stage min-entropy estimate** within the #10 claim limits; 90B validation itself deferred to measured silicon ([DR-0004]) | AIS-31 PTG.2 — same three-tier treatment (structure now, conformance deferred) |
 | Conditioning | **non-vetted** 32-bit CRC-32 LFSR compression (Galois, poly `0xEDB88320`), state cleared every block, **K = 8** — 256 raw bits in : one 32-bit word out. Creditable output entropy **0.85 bit per output bit** (SP 800-90B's non-vetted cap) for any raw stream at or above **H = 0.107 bit/sample**; a 4.70× margin under the H₀ = 0.5 target. ~0.005–0.008 mm² ([DR-0008]) | a 90B-*vetted* conditioning function — **rejected on area**: a compact serialised AES-128 is 88–124 % of the whole block budget ([DR-0008] §4). Live again only if the area budget grows |
 | Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
@@ -87,7 +87,9 @@ DRBG supplies its own and treats this block as the seed source.
 > placeholders into claims:
 >
 > - **Raw min-entropy per bit** is a design target (H₀ = 0.5). The entropy
->   source is *sized* to hit it ([DR-0007]); it has not been measured (#12/#13).
+>   source is *sized* to hit it ([DR-0007]); the corner it has to hold at is
+>   now measured over the whole covered grid and moved as a result
+>   ([DR-0015], from #13), but `H` itself has not been measured (#12).
 > - **Conditioning / delivered rate** were deferred to #8; [DR-0008] has since
 >   filled both rows in. The delivered rate is still `R_raw / K` derived from a
 >   *target* raw rate — filling in K does not turn the raw-rate row into a
@@ -111,10 +113,13 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0002]: spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
 [DR-0003]: spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
+[DR-0006]: spec/decision-records/DR-0006-ro-jitter-characterization-pvt-sampling-strategy.md
 [DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
+[DR-0012]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
+[DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
