@@ -140,11 +140,25 @@ jobs:
       # issue #51 stop classifying the way sim/characterization-array-ring-
       # coupling.md says they do -- i.e. if a record moves the conclusion out
       # from under a summary document that still asserts it.
-      - name: Spec arithmetic self-checks (jitter-energy law, array sizing, ring coupling)
+      # time_to_first_valid.py --check fails if any start-up corner stops
+      # converging, if the ring swing stops being settled by the early window,
+      # or if the measured total drops below the README's arithmetic floor
+      # (which claims to be a lower bound, so falling under it would make the
+      # ratified row wrong rather than conservative).
+      # power_rollup.py --check fails on a missing corner, on an idle record
+      # whose two measurement windows disagree (its own static-state
+      # self-check), or on a sampler record that never witnessed a capture. It
+      # deliberately does NOT fail on a README row being missed -- the idle row
+      # IS missed, by 4.5x, and that is routed through DR-0017 rather than
+      # through a red build. It degrades to the measured-silicon-only view on
+      # this runner, which has no PDK and therefore no Liberty library.
+      - name: Spec arithmetic self-checks (jitter-energy law, array sizing, ring coupling, #14 rollups)
         run: |
           python3 sim/tools/jitter_energy_law.py --check
           python3 sim/tools/array_sizing.py --check
           python3 sim/tools/array_coupling_variants.py --check
+          python3 sim/tools/time_to_first_valid.py --check
+          python3 sim/tools/power_rollup.py --check
 
       # Ties every record's numbers to the raw ngspice output it cites: each
       # file listed in raw.files is re-hashed against sim/records/raw/, and a
