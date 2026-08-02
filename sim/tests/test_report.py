@@ -7,6 +7,7 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import json
+import subprocess
 import sys
 import tempfile
 import threading
@@ -266,6 +267,49 @@ class BuildRecordTests(unittest.TestCase):
         self.assertTrue(path.is_file())
         with self.assertRaises(report.RecordExists):
             report.write_record(self.record, self.tb, records_dir, ["a caveat"])
+
+
+class ChangedRecordDiscoveryTests(unittest.TestCase):
+    """`verify_record_checksums.py --changed` must find the records it lists.
+
+    `git diff --name-only` prints paths from the REPO ROOT no matter which
+    directory it is invoked in, so joining its output onto `sim/` produced
+    `sim/sim/records/...` and every changed record failed as "no such
+    record" -- turning the pre-commit command sim/README.md mandates into a
+    check that could only ever fail once a branch actually added a record.
+    """
+
+    def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+        import verify_record_checksums as vrc  # noqa: PLC0415
+
+        self.vrc = vrc
+
+    def test_git_output_is_joined_onto_the_repo_root_not_sim(self):
+        """`git diff --name-only` output is repo-root-relative, always."""
+        printed = "sim/records/2026-01-01-an-experiment-01.md\n"
+        real_run = subprocess.run
+
+        def fake_run(argv, **kwargs):
+            if argv[:2] == ["git", "diff"]:
+                return subprocess.CompletedProcess(argv, 0, stdout=printed, stderr="")
+            return real_run(argv, **kwargs)
+
+        self.vrc.subprocess.run = fake_run
+        self.addCleanup(setattr, self.vrc.subprocess, "run", real_run)
+
+        paths = self.vrc._changed_records("origin/main")
+        self.assertEqual(
+            paths, [self.vrc.REPO_ROOT / "sim/records/2026-01-01-an-experiment-01.md"]
+        )
+        self.assertNotIn("sim/sim/", str(paths[0]))
+
+    def test_changed_records_that_exist_are_reported_as_existing(self):
+        """End-to-end against the real repo: whatever this branch added must
+        resolve to files on disk, never to a doubled `sim/sim/...` path."""
+        for path in self.vrc._changed_records("origin/main"):
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.is_file(), f"discovered a path that does not exist: {path}")
 
 
 class RawFileVerificationTests(unittest.TestCase):
