@@ -205,10 +205,49 @@ This record's own cost has two parts:
    measurement, or in the design it measures, creates an exposed per-ring tap
    (see "No exposed tap" below).
 
-<!-- MEASURED-VALUES-PLACEHOLDER: filled in from
-sim/records/2026-08-02-ring-liveness-tap-power-{NN}.md once the ngspice run
-completes; see the PR description for the numbers and whether they fit the
-85 uW headroom. -->
+**Measured, at all three of the baseline sweep's points** (`sim/records/2026-08-02-ring-liveness-tap-power-{02,03,04}.md`, directly comparable point for point to the un-tapped baseline `sim/records/2026-08-01-ro-array-core-power-{04,05,06}.md`):
+
+| Corner | Baseline `p_total_w` | Tapped `p_total_w` | Loading delta (`ring_swing`/`p_total_w` only) | Tap's own switching (`p_tap_avg_w`, at this deck's 100 MHz measurement clock) |
+|---|---|---|---|---|
+| `ff` / -40 C / 3.63 V (Power-row binding corner) | 415.27 uW (-04) | 443.79 uW (-02) | **+28.53 uW** | 81.33 uW |
+| `ss` / -40 C / 3.63 V | 236.78 uW (-05) | 242.83 uW (-03) | +6.05 uW | 42.46 uW |
+| `tt` / 27 C / 3.30 V (nominal) | 191.94 uW (-06) | 203.27 uW (-04) | +11.33 uW | 46.69 uW |
+
+The two columns are two different, separately-accounted costs (see item 2
+above: the tap's own switching lives on its own supply branch, `vddtap`, not
+on either ring's `vddr`):
+
+- **Loading delta** is the part that actually spends the Power row's
+  headroom: two `sampler_dff` gate inputs tied to `ro1`/`ro2` add input
+  capacitance to the ring nodes, which measurably slows both rings (e.g. at
+  `ff`/-40 C, `period_r1` goes from 4.286 ns un-tapped to 4.617 ns tapped) and
+  raises `p_total_w` by the amounts above. This delta is **independent of the
+  tap's own clock rate** -- it is a DC/AC loading effect on the ring itself,
+  present at any digitizer clock frequency, including the real DR-0012
+  external sample clock this deck does not use (see next point). At the
+  binding corner (`ff`/-40 C/3.63 V), **+28.53 uW is 34 % of the ~85 uW
+  headroom, leaving ~56 uW** for everything this repository has never
+  measured the power of: the raw tap's own `sampler_dff`, `rct_apt.v`,
+  `ring_liveness.v` itself, the conditioner, and `design/interface/` (item 1
+  above already names this as an existing, not a new, gap).
+- **The tap's own switching power (`p_tap_avg_w`)** is measured at this
+  deck's deliberately fast 100 MHz local measurement clock (`tb.json`'s
+  caveats), not DR-0012's real fixed external sample clock, and CMOS dynamic
+  power scales linearly with clock frequency. Scaled down to the ratified
+  DR-0003 raw rate (>= 1 Mbps, i.e. >= 100x slower than this deck's clock),
+  the bound becomes **<= 0.81 uW** at the binding corner (<= 3.25 uW at the
+  stretch 4 Mbps rate) -- negligible next to the loading delta above. This
+  scaling is a bound, not a fresh measurement: no PVT sweep was run at the
+  real clock rate, but dynamic power's linear frequency dependence is a
+  standard CMOS result, not a new assumption specific to this record.
+
+**Conclusion**: the part of this record's own cost that can spend the Power
+row's headroom (the electrical loading on `ro1`/`ro2`) fits inside it at
+every corner measured, using at most 34 % of the ~85 uW headroom at the
+binding corner. It does not, by itself, threaten the ratified `< 500 uW`
+row. The RTL and conditioner/interface/health-test digital-logic power this
+repository has never measured (item 1) remains an open, pre-existing gap
+this record does not close and does not worsen.
 
 ### No exposed per-ring tap (DR-0001)
 
