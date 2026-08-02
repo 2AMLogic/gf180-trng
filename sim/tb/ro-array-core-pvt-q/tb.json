@@ -1,0 +1,58 @@
+{
+  "name": "ro-array-core-pvt-q",
+  "description": "Shipped 2-ring x 11-stage entropy-source array (design/ro_array_core.spice) over the full covered PVT grid ({tt,ff,ss} x {-40,27,125} C x {2.97,3.30,3.63} V): per-ring period, per-ring supply current, XOR-gate current, ring and XOR-node swing. Same DUT, rails and measurement expressions as sim/tb/ro-array-core-power/, with a 300 ns / 5 ps transient window so the slow corners' sixth ring edge fits inside it. Issue #13's per-corner Q table.",
+  "netlist": "tb_ro_array_core_pvt_q.sp",
+  "design_netlist": "design/ro_array_core.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "tt",
+    "ff",
+    "ss"
+  ],
+  "temperatures_c": [-40, 27, 125],
+  "tstop": "300n",
+  "tstep": "5p (print step; it also caps ngspice's own solver step, which is the reason it is stated rather than left at the default)",
+  "analyses": [
+    "tran 5p 300n",
+    "meas tran t1a when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran t1b when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran t2a when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran t2b when v(xdut.ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(xdut.ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(xdut.ro2)=v(vth) rise=6",
+    "meas tran cta find v(qt) when v(xdut.ro1)=v(vth) rise=2",
+    "meas tran ctb find v(qt) when v(xdut.ro1)=v(vth) rise=6",
+    "meas tran vhi max v(xdut.ro1) from=200n to=295n",
+    "meas tran vlo min v(xdut.ro1) from=200n to=295n",
+    "meas tran vxhi max v(xo) from=200n to=295n",
+    "meas tran vxlo min v(xo) from=200n to=295n",
+    "let cq = 1e-9",
+    "let nper = 4",
+    "let nstg = 11"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)",
+    "i_tree_a": "cq*(ctb-cta)/(t1b-t1a)",
+    "e_cycle_r1_j": "cq*(c1b-c1a)/nper*mean(v(vsup))",
+    "c_eff_node_r1_f": "cq*(c1b-c1a)/(nper*nstg*mean(v(vsup)))",
+    "ring_swing_v": "vhi-vlo",
+    "xo_swing_v": "vxhi-vxlo",
+    "i_total_a": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))",
+    "p_rings_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a))*mean(v(vsup))",
+    "p_total_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))*mean(v(vsup))",
+    "xo_trans_per_s": "2*(nper/(t1b-t1a)+nper/(t2b-t2a))"
+  },
+  "caveats": [
+    "fs/sf process corners are NOT covered, per DR-0006's ratified reduced process axis. Every minimum/maximum this record family supports is a minimum/maximum over {tt, ff, ss} only, and does not extend to fs/sf.",
+    "The 5 ps print step also caps ngspice's own solver step (SPICE3 defaults tmax to min(tstep, (tstop-tstart)/50)), which is 5x looser than the 1 ps of sim/tb/ro-array-core-power/. It is the reason a 6x longer window costs the same per point. The two families overlap at three PVT points (tt/27/3.30, ff/-40/3.63, ss/-40/3.63) and sim/tools/worst_corner_entropy.py reports the resulting per-quantity agreement; that comparison, not an assertion, is what justifies reading records from both families as the same measurement.",
+    "Deterministic (mismatch-free, noiseless) transient: one nominal device draw per PVT point. Device mismatch is sim/tb/ro-array-core-mc-freq/'s subject and jitter is sim/tb/ro-ring5-starved-jitter-long/'s; nothing here measures either.",
+    "The swing window (200-295 ns) and the 2nd-to-6th rising-edge measurement window are fixed in simulated time, not in ring periods, so they cover a different NUMBER of periods at fast and slow corners. That is deliberate -- period and integrated charge are both read between like edges an exact integer number of periods apart, so neither depends on how many periods the window happens to span -- but the swing figures are max/min over a fixed 95 ns window and therefore over more periods at fast corners than slow ones."
+  ]
+}
