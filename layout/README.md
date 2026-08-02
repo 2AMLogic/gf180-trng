@@ -51,6 +51,42 @@ The PDK variant is whatever `sim/pdk.json` pins (`gf180mcuD` today).
 `klt`'s DRC and extraction decks are per-*family* rather than per-variant,
 so the variant selects the install, not the rules.
 
+### Pinning the tool
+
+**`klt --version` does not identify a `klt` build.** It has read `0.1.0` for
+every build of klayout-tools so far, including installs taken straight off
+the tip of its main branch — which is what both commands above give you.
+Two installs reporting `0.1.0` can be months of development apart.
+
+This is not hypothetical. On 2026-08-02 the reports committed here stopped
+matching a fresh run on the same machine, with `klt --version` and the
+KLayout engine version (`0.30.10`) both unchanged. `klt` had gained new
+checks and a richer report envelope, and nothing recorded here could say so
+(#73). So:
+
+- `layout/reports/environment.json` records **`klt_origin`** — the upstream
+  URL and commit the installed `klt` was built from, read from the
+  distribution's own `direct_url.json`. That is the field to quote when
+  citing a result, not `klt`. It is best effort: an install from a released
+  wheel has no commit to report and records `null`, which means *not
+  recorded*, never *unchanged*.
+- Every `*.drc.json` / `*.extract.json` / `*.lvs.json` carries `klt`'s own
+  `provenance` block, including a content hash of the deck that produced it,
+  and those **are** compared against the committed copy. A deck edit now
+  fails the report check by name instead of surfacing as a mystery change in
+  a rule count.
+- `python3 layout/verify.py` prints the commit it ran and each LVS report's
+  KLayout `engine_version`, so "did the tool move under me?" is answerable
+  from a plain run.
+
+To reproduce a committed report exactly, install the commit
+`environment.json` names:
+
+```sh
+uv tool install --force \
+    "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@<commit>"
+```
+
 ---
 
 ## What is here
@@ -85,9 +121,18 @@ load-bearing for LVS diagnosis, not cosmetic; see Tool friction #2.)
 
 | fixture | DRC | LVS | what a passing run proves |
 |---|---|---|---|
-| `trng_tc_inv` | clean | match | the flow accepts a correct cell — no false positives from the deck, the layer numbering, or the extraction |
+| `trng_tc_inv` | clean | match, 0 errors | the flow accepts a correct cell — no false positives from the deck, the layer numbering, or the extraction |
 | `trng_tc_inv_drcbad` | `metal1.width.1` ×1, `metal1.space.1` ×1 | not run | DRC actually fires, and names the *specific* rules — not merely "some error" |
-| `trng_tc_inv_lvsbad` | clean | mismatch (`net.unmatched` ×1, `device.unmatched` ×1) | LVS catches a defect DRC structurally cannot see |
+| `trng_tc_inv_lvsbad` | clean | mismatch, 2 errors (`net.unmatched` ×1, `device.unmatched` ×1) | LVS catches a defect DRC structurally cannot see |
+
+Every LVS run — including the known-good one — also reports two categories
+at `severity: "warning"`: `device.body_unverified` ×2 and `topology` ×1.
+They describe the *deck*, not the fixture, so they are identical on all
+three; ["Warnings every run carries"](#warnings-every-run-carries) below says
+what each one means. `verify.py` pins them by exact count like everything
+else, and separately pins the number of `severity: "error"` mismatches — the
+column above — so that carrying two known warnings cannot quietly absorb a
+future error arriving in the same category.
 
 The third row is the interesting one. `trng_tc_inv_lvsbad` is the good cell
 with its output strap cut in two: the NMOS drain and the PMOS drain end up
@@ -138,20 +183,29 @@ different.
 reports here inherit exactly that scope. Stating the limits is the point:
 an unstated limit is a defect.
 
-**DRC** checks thirteen rules over Nwell, Comp, Poly2, Contact, Metal1 and
-the BJT mark layer — minimum widths, spacings, contact enclosures, and Nwell
-enclosure of Comp. It does **not** cover implant layers, upper metal
-(Metal2–Metal5) or vias, antenna rules, density, latch-up, or any
-context-dependent rule needing connectivity (the deck's own comments flag
-several rules as approximations for exactly that reason — e.g. Nwell
-spacing uses the equipotential value because the checker has no net
-information). Several of these gaps are tracked upstream
-([klayout-tools#188][kt188], [#173][kt173]).
+**DRC** checks minimum widths, spacings, contact enclosures, and Nwell
+enclosure of Comp. Read the scope off the report rather than off this
+paragraph: every `*.drc.json` here carries a `coverage` block naming the
+deck's layers, the layers it actually checked (Comp, Nwell, Poly2, Contact,
+Metal1 — the only ones these fixtures draw), and every rule it skipped for
+want of a layer. These fixtures skip eleven, all upper-metal, MiM, or BJT.
+The deck does **not** cover implant layers, antenna rules, density,
+latch-up, or any context-dependent rule needing connectivity (its own
+comments flag several rules as approximations for exactly that reason — e.g.
+Nwell spacing uses the equipotential value because the checker has no net
+information). It is also not the PDK's own shipped deck, and cannot yet be
+pointed at one ([klayout-tools#173][kt173]).
 
-**Extraction** recognises MOS devices only, through one drawn well layer and
-one metal level, and extracts no parasitics. There is no resistor,
-capacitor, or bipolar device class ([klayout-tools#219][kt219]), and only
-one metal level is declared ([klayout-tools#220][kt220]).
+**Extraction** extracts no parasitics, and recognises the device classes the
+deck declares — echoed into every `*.extract.json` and `*.lvs.json` as
+`device_classes`, currently `nfet`, `pfet`, `bjt`, a MiM capacitor, and a
+poly resistor. These fixtures contain MOS only, so the other three classes
+are declared and unused; that is where the `topology` warning below comes
+from. The extracted netlist is emitted as PDK subcircuit calls
+(`X$1 … nfet_03v3`) rather than primitive `M` cards; the hand-written
+reference still uses `M` cards with the generic `nfet`/`pfet` names, and
+`klt lvs` reconciles the two — so the reference stays a statement about the
+circuit rather than about the extractor's output format.
 
 **Bulk terminals** are approximated, and the fixtures' reference netlist
 says so explicitly:
@@ -169,10 +223,38 @@ The fixtures are drawn on the curated-deck layer subset only. Implant
 would change no result these decks produce, and drawing them would imply a
 fab-readiness these cells do not have.
 
+### Warnings every run carries
+
+`klt lvs` states two of the limits above per run rather than leaving them to
+this document. Both arrive at `severity: "warning"`, both appear on all
+three fixtures because both are properties of the deck, and neither changes
+a verdict — `trng_tc_inv` is still `match` and `trng_tc_inv_lvsbad` is still
+`mismatch`.
+
+| category | count | what it says |
+|---|---|---|
+| `device.body_unverified` | 2 | One per MOS. Each device's body terminal was compared against a net the deck synthesized — `vsubs` for the NMOS, an anonymous well net for the PMOS — rather than a real schematic net. That terminal was therefore **not** verified. This is the bulk-terminal approximation above, restated by the tool. |
+| `topology` | 1 | A device class the deck declares has no counterpart on the reference side *and* zero extracted devices. The tool's own text: "not a real topology mismatch". |
+
+They are pinned in `EXPECTATIONS` at their exact counts rather than filtered
+out, because "the tool says two body terminals are unverified" is a claim
+that should fail loudly the day it becomes three. And because a warning
+count alone cannot distinguish a disclosure from a finding, `verify.py` also
+pins the number of `severity: "error"` mismatches per fixture: 0 for the
+known-good cell, 2 for the known-bad one.
+
+Both categories appeared on 2026-08-02 with every version string this repo
+recorded unchanged, which is what prompted [Pinning the tool](#pinning-the-tool)
+above and the upstream note in
+[klayout-tools#306][kt306]. The `device.body_unverified` check is
+[klayout-tools#281][kt281]; the `topology` entry follows from the deck
+declaring device classes it did not previously have.
+
 **Therefore: a clean report from this flow is not tapeout sign-off**, and
 must never be cited as one. It is evidence that a specific, enumerated set
-of rules passed on a specific stream, under a specific tool version recorded
-in `layout/reports/environment.json`.
+of rules passed on a specific stream, under the specific tool build recorded
+as `klt_origin` in `layout/reports/environment.json` — and, for two MOS body
+terminals, evidence the tool explicitly declines to give.
 
 ---
 
@@ -190,9 +272,12 @@ So the convention here is different, deliberately:
   `python3 layout/verify.py --write`.
 - `python3 layout/verify.py` (no flag) regenerates in memory and fails if
   the committed reports no longer match, so a report cannot silently rot.
-  The comparison ignores each report's `environment` block, which carries
-  the KLayout engine version and moves on a tool upgrade without any verdict
-  changing.
+  The comparison ignores exactly one field, each LVS report's
+  `environment.engine_version`, which moves on a KLayout upgrade without any
+  verdict changing. The rest of that block is `layout_sha256` /
+  `reference_sha256` — hashes of the exact bytes LVS compared, a function of
+  the committed fixtures and not of the machine — and is compared, as is
+  `klt`'s `provenance` block including its deck content hash.
 
 The reports are the tools' own output, with exactly one field restated. The
 flow always extracts into the git-ignored scratch dir `layout/.work/`, so
@@ -220,10 +305,13 @@ then, in a decision record, not a default to inherit by accident.
 
 1. Put the stream under `layout/` and its schematic-side reference netlist
    next to it. Give the layout's **top cell the same name** as the
-   reference's `.SUBCKT` (Tool friction #2).
+   reference's `.SUBCKT` (Tool friction #2 — no longer required, still
+   advisable).
 2. Add an entry to `EXPECTATIONS` in `layout/verify.py` saying what the flow
-   must report — including, for a design cell, `status: clean` and
-   `status: match`.
+   must report — including, for a design cell, `status: clean`,
+   `status: match`, and `error_count: 0`. Run it once to learn which
+   deck-level warnings it carries, then pin those counts too rather than
+   ignoring them.
 3. Run `python3 layout/verify.py --write` and commit the reports with the
    layout.
 
@@ -242,33 +330,49 @@ wrong circuit.
 
 Per [CLAUDE.md](../CLAUDE.md), friction found while using klayout-tools is
 filed generically against the tool, not worked around silently. Bring-up
-produced four:
+produced four, all four since fixed upstream. They are kept here because
+each one still explains something about the shape of this directory, and
+because "we filed it and it got fixed" is the record the friction protocol
+exists to produce:
 
-1. **[klayout-tools#230][kt230]** — no supported way to emit a deliberately
+1. **[klayout-tools#230][kt230]** *(fixed — `klt draw`)* — no supported way to emit a deliberately
    rule-violating layout. `klt gen` validates params against PDK minimums
    (correctly), and no other verb writes a stream, so the known-bad half of
    a DRC fixture pair cannot be produced with `klt` at all. That is why
    `layout/testcells/gdsii.py` exists: a ~200-line stdlib GDSII writer,
    entirely outside the toolchain, whose only job is to place rectangles on
    named layers. It should not have to exist.
-2. **[klayout-tools#231][kt231]** — `klt lvs` pairs circuits by name and
+2. **[klayout-tools#231][kt231]** *(fixed)* — `klt lvs` pairs circuits by name and
    ignores the explicitly-declared `layout.top` / `reference.top`. With
    mismatched names the verdict is still correct but every finding collapses
    to a generic "circuit could not be matched to a counterpart". Naming all
-   three fixtures' top cell `trng_tc_inv` is the workaround, and it is why
+   three fixtures' top cell `trng_tc_inv` was the workaround, and it is why
    `trng_tc_inv_lvsbad.lvs.json` names the broken net instead of shrugging.
-3. **[klayout-tools#232][kt232]** — `klt lvs` accepts only a request *file*
+   The naming convention is kept — it is good practice regardless — but it
+   is no longer load-bearing.
+3. **[klayout-tools#232][kt232]** *(fixed)* — `klt lvs` accepts only a request *file*
    path, no inline JSON or stdin, unlike `klt gen --params`.
-4. **[klayout-tools#233][kt233]** — `klt extract -o` errors out when the
+4. **[klayout-tools#233][kt233]** *(fixed)* — `klt extract -o` errors out when the
    output directory does not exist rather than creating it, which every
    scripted flow hits once on a fresh checkout.
 
+Running the flow since produced a fifth, of a different kind:
+
+5. **[klayout-tools#306][kt306]** *(open)* — a `klt` build cannot be
+   identified from anything it reports. `klt --version` and the
+   `provenance.klt_version` inside every report both read `0.1.0` for every
+   build to date, so a golden-report flow cannot tell "the tool changed"
+   from "my inputs changed" — which is exactly the hour this directory lost
+   on 2026-08-02. The workaround is `klt_origin` in
+   `layout/reports/environment.json`, which reaches around the tool into its
+   own install metadata for the commit; a version a downstream flow can pin
+   would make that unnecessary.
+
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173
-[kt188]: https://github.com/2AMLogic/klayout-tools/issues/188
-[kt219]: https://github.com/2AMLogic/klayout-tools/issues/219
-[kt220]: https://github.com/2AMLogic/klayout-tools/issues/220
 [kt230]: https://github.com/2AMLogic/klayout-tools/issues/230
 [kt231]: https://github.com/2AMLogic/klayout-tools/issues/231
 [kt232]: https://github.com/2AMLogic/klayout-tools/issues/232
 [kt233]: https://github.com/2AMLogic/klayout-tools/issues/233
+[kt281]: https://github.com/2AMLogic/klayout-tools/issues/281
+[kt306]: https://github.com/2AMLogic/klayout-tools/issues/306
