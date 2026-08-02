@@ -576,11 +576,17 @@ design. This work produced three, all filed against
    `placement.strategy: "row"`. A floorplan is two-dimensional by nature and
    needs explicit per-block x/y placement with declared separations; a single
    row with one `spacing_um` is what this abstract had to be built as. (Two
-   smaller things in the same request document are noted there: `blocks[].
-   generator_report` paths resolve against the *working directory* while a
-   `klt lvs` request's paths resolve against the *request file*, and an
-   unrecognised `pdk` key falls back to the family default silently rather than
-   erroring.)
+   smaller things noted there have since been fixed upstream by
+   [klayout-tools#328][kt328]: `blocks[].generator_report` paths now resolve
+   against the request file's own directory rather than the working
+   directory — matching `klt lvs`'s convention all along — and an
+   unrecognised `pdk` key is now an application error instead of a silent
+   fallback to the family default. `floorplan.py` was updated to the new
+   `generator_report` resolution rule (gf180-trng#79); note that
+   `options.output` is deliberately *not* covered by it and still resolves
+   against the process's working directory, per `gen_compose.compose`'s
+   docstring, so this flow's compose request keeps that path repo-root
+   relative.)
 3. **[klayout-tools#322][kt322]** — `klt gen mos_array` rejects `w_um` below
    0.42 µm, which is above the device minimum the tool's *own* curated
    gf180mcu DRC deck enforces (0.22 µm Comp width — this repository's
@@ -593,6 +599,7 @@ design. This work produced three, all filed against
 [kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
 [kt321]: https://github.com/2AMLogic/klayout-tools/issues/321
 [kt322]: https://github.com/2AMLogic/klayout-tools/issues/322
+[kt328]: https://github.com/2AMLogic/klayout-tools/issues/328
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
