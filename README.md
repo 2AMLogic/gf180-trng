@@ -138,10 +138,14 @@ measurements/  silicon characterization                       — empty until ta
 ```
 
 `design/` holds the two halves of the block, one on each side of the raw tap.
-[`conditioner/`](design/conditioner/) is the digital post-processing stage and
+[`conditioner/`](design/conditioner/) is the digital post-processing stage,
+[`health_test/`](design/health_test/) is the on-die RCT/APT health tests, and
 [`interface/`](design/interface/) is the register file, output FIFOs and
 gate/flush machine — each a normative behavioural model plus synthesisable RTL
-checked against it.
+checked against it. [`trng_top/`](design/trng_top/) is the top-level
+integration (#27): the analog entropy source and sampler, plus these three
+digital blocks, wired together per their pinouts, with one nominal-corner
+smoke record proving bits flow end to end.
 [`xschem/`](design/xschem/) is the analog entropy source — the starved delay
 cell, the ring built from it, and the XOR-combined multi-ring array — together
 with the SPICE netlists exported from those schematics by
