@@ -118,6 +118,40 @@ git worktree remove .loom/worktrees/issue-42 --force
 git worktree prune
 ```
 
+### Re-invoking `worktree.sh` on an existing worktree that has pushed, unmerged commits on `origin/<branch>` (#68)
+
+`worktree.sh <issue-number>` on an **existing** worktree decides whether it's
+"stale" (safe to hard-reset to `origin/main`) using ahead/behind counts
+relative to main *and* origin's copy of the branch. Before the #68 fix, it
+only checked ahead/behind counts relative to `origin/main` — if a worktree's
+local branch ever reached 0-commits-ahead-of-main parity (a prior reset, a
+squash-merge elsewhere, anything), the next invocation treated it as stale and
+hard-reset it to `origin/main`, even if `origin/feature/issue-N` still held
+real, pushed, unmerged commits. Origin itself was never touched — the local
+worktree's *view* of those commits was what got silently discarded, which
+could fool a Judge/Doctor/re-dispatched Builder that trusted the worktree's
+on-disk state without checking it against `origin/<branch>` first.
+
+**The fix**: the staleness check now also fetches and compares against
+`origin/$BRANCH_NAME` before resetting. If origin has commits the local
+worktree lacks, `worktree.sh` no longer resets to main — it fast-forwards the
+local worktree to `origin/<branch>` when that's lossless, or warns and leaves
+the worktree untouched when local and origin have genuinely diverged (e.g. a
+rebase happened upstream). A worktree whose branch was never pushed still
+degrades to the ordinary stale-reset behavior, unchanged.
+
+**If you suspect a worktree might be stale relative to its own PR branch**
+(the symptom: `git log --oneline -1` in the worktree doesn't match the PR's
+head commit on GitHub), verify directly rather than trusting the checkout:
+
+```bash
+git -C .loom/worktrees/issue-N fetch origin feature/issue-N
+git -C .loom/worktrees/issue-N rev-parse HEAD
+git -C .loom/worktrees/issue-N rev-parse origin/feature/issue-N
+# If these differ, do not evaluate/edit the worktree's on-disk state as-is —
+# see judge.md's "Fetch and Compare Against origin/<branch>" step.
+```
+
 ### `loom-clean` / `loom-cleanup` / `loom-recover-orphans` fail on a stale binary (#4384)
 
 **Symptom**: one of the three commands below fails outright instead of doing

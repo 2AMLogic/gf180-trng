@@ -441,6 +441,41 @@ else
 fi
 ```
 
+### MANDATORY: Fetch and Compare Against `origin/<branch>` Before Trusting a Worktree (#68)
+
+**Do NOT trust an existing builder worktree's checked-out state on sight.** A
+worktree's local branch pointer can silently fall behind the PR's real pushed
+tip (e.g. `worktree.sh`'s stale-reset path resetting a worktree to main after
+the local branch happened to reach main-parity — see #68) — the branch looks
+checked out, but it is not at the commit the PR actually contains. Reviewing
+or editing from a stale worktree means evaluating the wrong code.
+
+**Before evaluating any existing worktree's contents**, run this check —
+every single time, not just when something looks off:
+
+```bash
+# $BRANCH is the PR's head ref, e.g. feature/issue-51
+git -C ".loom/worktrees/issue-${ISSUE_NUM}" fetch origin "$BRANCH"
+LOCAL_SHA=$(git -C ".loom/worktrees/issue-${ISSUE_NUM}" rev-parse HEAD)
+REMOTE_SHA=$(git -C ".loom/worktrees/issue-${ISSUE_NUM}" rev-parse "origin/$BRANCH")
+
+if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+    echo "MISMATCH: worktree HEAD ($LOCAL_SHA) != origin/$BRANCH ($REMOTE_SHA)"
+    echo "Do NOT evaluate this worktree's checked-out state as-is."
+    # Reconcile before proceeding: fast-forward if safe
+    #   (git -C ".loom/worktrees/issue-${ISSUE_NUM}" merge-base --is-ancestor "$LOCAL_SHA" "$REMOTE_SHA" \
+    #     && git -C ".loom/worktrees/issue-${ISSUE_NUM}" reset --hard "origin/$BRANCH")
+    # or fall back to a separate detached checkout of origin/$BRANCH instead of
+    # mutating the builder's worktree.
+fi
+```
+
+This is a required pass/fail gate, not an optional sanity check: **if
+`LOCAL_SHA` and `REMOTE_SHA` differ, evaluation MUST NOT proceed against the
+worktree's on-disk state** until it is reconciled (fast-forwarded to
+`origin/$BRANCH`) or you have switched to reviewing a fresh checkout of
+`origin/$BRANCH` instead.
+
 ### Why This Matters
 
 When the sweep orchestrator drives an issue through Builder → Judge, the builder worktree persists. The branch `feature/issue-N` is already checked out there, so `gh pr checkout` fails with:
