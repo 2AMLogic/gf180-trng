@@ -63,6 +63,15 @@ name: CI
 #       selftest stages 3-4 above. See .github/workflows/pdk-nightly.yml. Its
 #       *syntax* is still compiled here (the compileall step covers design/).
 #
+#   design/netlist.py --lint (schematic T {...} text-block brace guard)
+#       RUN on every push/PR, as its own step below. Unlike --check above,
+#       this is a pure-Python scan of the schematics' own text for a stray
+#       brace inside a T {...} free-text block -- no xschem, no PDK. A brace
+#       there (even a balanced pair) makes xschem's own parser miscount and
+#       silently corrupt the exported netlist with no error from either tool
+#       (#61), so this catches it at the point a schematic comment is
+#       authored rather than the next scheduled pdk-nightly.yml run.
+#
 #   sim/run_corners.py evidence runs (sim/records/)
 #       EXCLUDED from both workflows. Recording evidence is a deliberate,
 #       PDK-bound act performed by a human or agent with the PDK installed;
@@ -127,6 +136,12 @@ jobs:
       # belongs on the PR-blocking path.
       - name: Register-map staleness guard
         run: python3 design/interface/regmap.py --check
+
+      # Pure-Python, no xschem, no PDK: fails if any design/xschem/*.sch's
+      # T {...} free-text block contains a stray brace, which xschem's own
+      # parser silently mis-handles and turns into a corrupted netlist (#61).
+      - name: Schematic text-block brace guard
+        run: python3 design/netlist.py --lint
 
       # sim/selftest.sh re-runs the unit tests as its own stage 1; the few
       # seconds of overlap buy coverage of the acceptance script itself --
