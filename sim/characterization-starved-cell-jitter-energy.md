@@ -277,16 +277,21 @@ therefore that ring 1's crossings in that deck are perturbed
 **deterministically by ring 2 through the shared `xa1` input stage** — which
 would be seed-independent (0.3 % spread), would accumulate faster than `√t`
 (`lag^0.81`), and is a beat between two rings rather than noise in either.
-That is a hypothesis, not a measurement: nothing in this repository has
-measured it, and CLAUDE.md does not allow it to be stated as a finding. The
-testbench that would settle it is `sim/tb/ro-array-sanity-jitter/` re-run with
-this deck's window geometry, comparing ring 1 with and without the tree
-attached — filed as [#51], which sets out the four DUT variants that would
-tell electrical coupling apart from a shared-timestep numerical artefact.
+That was a hypothesis when this document was first written. [#51] has since
+measured it, with four DUT variants that differ from this deck by one thing
+each, and **it is confirmed**: one ring plus the array's own `xa1` driven by
+one neighbouring ring reproduces `σ₁` to 0.83×, the accumulation exponent to
+0.825 against 0.810, and the anomalous 1.0 % seed spread, while the same two
+rings with no wire between them reproduce this deck's `σ₁` to 1.00×. The
+mechanism is electrical coupling through the combiner's input stage, not a
+shared-timestep numerical artefact. See
+[`characterization-array-ring-coupling.md`](characterization-array-ring-coupling.md).
 
-Until that runs, the honest reading is: **`a` is measured here for the cell,
-on a ring loaded exactly as the plain-cell reference ring is, and the array's
-own `σ` remains unmeasured.**
+The honest reading is therefore: **`a` is measured here for the cell, on a ring
+loaded exactly as the plain-cell reference ring is; the array record's `σ_r1_*`
+is dominated by a deterministic neighbour-driven beat and is not that ring's
+jitter.** What the array's own `σ` is, with that term removed, is still
+unmeasured — `sim/tb/ro-array-sanity-jitter/` has not been re-run.
 
 ## What this means for DR-0010 §1
 
