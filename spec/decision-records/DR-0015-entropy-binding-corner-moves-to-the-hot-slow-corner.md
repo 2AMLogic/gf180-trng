@@ -1,5 +1,5 @@
 ---
-dr: DR-0014-entropy-binding-corner-moves-to-the-hot-slow-corner
+dr: DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner
 title: Move the entropy-binding corner from ss/-40 C/3.63 V to ss/+125 C/3.63 V, measured over the full covered 27-point PVT grid
 status: Proposed
 date: 2026-08-02
@@ -9,11 +9,20 @@ superseded_by: n/a
 related: "#13 (the measurement — this record's whole basis), #12 (measuring H, which must now be measured at this corner), #17 (post-layout re-run), #11 (health-test RTL); DR-0002 (RCT/APT cutoffs stated in H), DR-0004 (quality tiers), DR-0006 (the covered PVT grid), DR-0007 §2/§4 (the sizing inequality and the corner-metric fork), DR-0010/DR-0011 (raw rate), DR-0012-sampler-fixed-external-clock (the record this supersedes, its corner only); sim/characterization-worst-corner-and-mc-mismatch.md; sim/records/2026-08-02-ro-array-core-pvt-q-{01..27}.md"
 ---
 
-# DR-0014: Move the entropy-binding corner from `ss`/−40 °C/3.63 V to `ss`/+125 °C/3.63 V
+# DR-0015: Move the entropy-binding corner from `ss`/−40 °C/3.63 V to `ss`/+125 °C/3.63 V
 
 ## Status
 
 - 2026-08-02: Proposed, by #13. Not ratified.
+- 2026-08-02: Drafted as `DR-0014` on a branch that forked before
+  [#59](https://github.com/2AMLogic/gf180-trng/pull/59) merged; #59 took
+  DR-0014 for `sampler_dff`'s reset structure. Renumbered `DR-0014` →
+  `DR-0015` before this record's own PR, following the precedent this
+  repository set for the DR-0011 and DR-0012 collisions (see
+  [`DR-0012-sampler-fixed-external-clock`](DR-0012-sampler-fixed-external-clock.md)'s
+  Status section): two numbers allocated in parallel from two branches, and
+  the one that merged first keeps its number. Nothing in the decision
+  changed.
 
 ## Context
 

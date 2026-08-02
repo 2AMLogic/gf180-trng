@@ -40,7 +40,7 @@ warming that corner from −40 °C to +125 °C lengthens ``T0`` by two thirds,
 whose ``1/T0^2`` term outweighs both the higher ``kT`` and the lower ring
 power. Nothing about the metric changed -- the 3-point set the prediction
 was made over simply did not contain a hot point at high supply.
-``spec/decision-records/DR-0014-entropy-binding-corner-moves-to-the-hot-slow-corner.md``
+``spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md``
 records that, under DR-0012's own "Revisit if" trigger; the testbench was
 not adjusted to reproduce the prediction.
 
@@ -105,7 +105,7 @@ RECORDS = REPO_ROOT / "sim" / "records"
 PREDICTED_MIN_Q_CORNER = "ss/-40/3.63"
 
 #: What the full covered grid actually measures, and what
-#: ``DR-0014-entropy-binding-corner-moves-to-the-hot-slow-corner`` records.
+#: ``DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner`` records.
 #: Stated rather than derived so that a future record family which moves the
 #: minimum again fails ``--check`` loudly instead of silently re-pointing
 #: every document that cites this corner by name.
@@ -529,7 +529,7 @@ def report_bias_margins(rate_bps: float) -> None:
          "corner's own measured slew and jitter. The offset's own corner dependence "
          "is unmeasured"),
         (MEASURED_MIN_Q_CORNER,
-         "the entropy-binding corner (DR-0014). Same extrapolation of the offset as "
+         "the entropy-binding corner (DR-0015). Same extrapolation of the offset as "
          "above, and sigma_acc here is law-derived rather than measured -- see the "
          "provenance line"),
     ):
@@ -638,7 +638,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"\nDR-0012-sampler-fixed-external-clock predicted minimum-Q corner: "
           f"{PREDICTED_MIN_Q_CORNER} (from 3 measured PVT points)")
-    print(f"this repository's stated entropy-binding corner (DR-0014, from the "
+    print(f"this repository's stated entropy-binding corner (DR-0015, from the "
           f"{total}-point grid): {MEASURED_MIN_Q_CORNER}")
     ok = True
     for label, worst in worsts:
@@ -664,7 +664,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"Q ~ T_K/(P*T0^2), and going from -40 C to +125 C at ss/3.63 V "
                   f"lengthens T0 from {pred.periods[0] * 1e9:.2f} ns to "
                   f"{meas.periods[0] * 1e9:.2f} ns, whose 1/T0^2 term outweighs both "
-                  f"the higher kT and the lower ring power. DR-0014 records this; "
+                  f"the higher kT and the lower ring power. DR-0015 records this; "
                   f"DR-0012-sampler-fixed-external-clock's own 'Revisit if' clause "
                   f"names this exact outcome as its trigger.")
 

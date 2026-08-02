@@ -7,7 +7,7 @@ consequence:
    measured over the **full covered 27-point grid** rather than inferred from
    three points — and it is **not** the corner
    [DR-0012-sampler-fixed-external-clock] predicted. That is recorded, not
-   reconciled away: [DR-0014] is the superseding decision record, filed under
+   reconciled away: [DR-0015] is the superseding decision record, filed under
    DR-0012's own "Revisit if" trigger.
 2. What intra-die device **mismatch** does to the array's ring-frequency
    ratio and to the sampler's decision threshold, from two new Monte Carlo
@@ -118,7 +118,7 @@ Two further things the grid settles:
   for the entropy source.
 
 `fs`/`sf` remain uncovered ([DR-0006]); no minimum claimed here extends to
-them. [DR-0014] carries that as an explicit follow-up, sharpened by the fact
+them. [DR-0015] carries that as an explicit follow-up, sharpened by the fact
 that an edge-triggered sampler now exists downstream ([#9]) — which is the
 condition DR-0006 itself named for adding those corners.
 
@@ -164,20 +164,31 @@ input-referred offset is the master latch's own switching threshold: the `d`
 voltage at which its first inversion (node `mb`) crosses mid-supply, with
 `clk` held at 0 so that the master is in its open-loop, non-bistable phase and
 a `.dc` sweep has a single-valued solution. 30 independent mismatch draws at
-`tt`/27 °C/3.30 V — `sim/records/2026-08-01-sampler-dff-mc-offset-01.md`.
+`tt`/27 °C/3.30 V — `sim/records/2026-08-02-sampler-dff-mc-offset-01.md`.
 
 | Quantity | Value |
 |---|---|
-| Decision threshold, mean over 30 seeds | 1.4392 V |
-| Decision threshold, seed-to-seed sd (**mismatch-driven**) | 16.37 mV (0.50 % of VDD) |
-| **Systematic** offset from ideal mid-supply (1.65 V) | **−210.8 mV** |
+| Decision threshold, mean over 30 seeds | 1.3830 V |
+| Decision threshold, seed-to-seed sd (**mismatch-driven**) | 16.88 mV (0.51 % of VDD) |
+| **Systematic** offset from ideal mid-supply (1.65 V) | **−267.0 mV** |
 
-The −211 mV is present at *every* seed alike: it is a property of this cell's
-P/N sizing (0.44 µm/0.22 µm, matching `xor2`/`ro_stage`) on this PDK's device
-models, not a mismatch effect, and it would be there in a mismatch-free
-simulation too. It is reported because it is what the testbench measures and
-because it dominates the mismatch term by 13×, but it is a design observation
-rather than this issue's deliverable; no design change is proposed here.
+The −267 mV is present at *every* seed alike: it is a property of the cell's
+structure on this PDK's device models, not a mismatch effect, and it would be
+there in a mismatch-free simulation too. Since
+[`DR-0014-sampler-reset-gated-into-the-storage-loops`](../spec/decision-records/DR-0014-sampler-reset-gated-into-the-storage-loops.md)
+(#59, merged while this issue was in flight) the master's first inversion is a
+reset-gated NAND2 with a width-compensated NMOS stack rather than a plain
+0.44 µm/0.22 µm inverter; a series stack does not compensate exactly, which is
+where the offset comes from. It is reported because it is what the testbench
+measures and because it dominates the mismatch term by 16×, but it is a design
+observation rather than this issue's deliverable; no design change is proposed
+here.
+
+This measurement was **re-run against the post-#59 netlist**:
+`sim/records/2026-08-01-sampler-dff-mc-offset-01.md` measured the pre-#59
+cell and is marked `superseded` accordingly. The mismatch-driven spread — the
+quantity issue #13 is actually about — barely moved (16.37 → 16.88 mV); the
+systematic offset grew from −211 mV to −267 mV with the new reset structure.
 
 ### 3.3 The slew rate the conversion needs — measured, not assumed
 
@@ -212,9 +223,10 @@ measured band/peak shape factor, i.e. a band-average slew for `xo` built from
 
 The proxy was conservative in the safe direction, but conservative by a factor
 of 31–38 is not a usable engineering statement — and at the proxy's numbers
-the systematic offset would have looked like a third of the jitter budget at
-the binding corner. That is why it was replaced by a measurement rather than
-reasoned around. (Ten records were written, covering `ff` and `ss` at −40 °C
+the systematic offset would have looked like roughly *half* the jitter budget
+at the binding corner, i.e. like a live spec problem, when the measured slew
+puts it at 1.5 %. That is why the proxy was replaced by a measurement rather
+than reasoned around. (Ten records were written, covering `ff` and `ss` at −40 °C
 and `ss` at +125 °C across ±10 % supply as well as the nominal point; the
 three used above are the ones the bias analysis quotes.)
 
@@ -228,34 +240,34 @@ if bias were the *only* departure from ideal — so the question it answers is
 not "what is `H`" but "is bias anywhere near being the binding constraint".
 
 The tool evaluates it at three corners. At **`ss`/+125 °C/3.63 V, the
-entropy-binding corner** ([DR-0014]) — measured slew 1.380×10¹⁰ V/s,
+entropy-binding corner** ([DR-0015]) — measured slew 1.380×10¹⁰ V/s,
 `σ_acc` = 1.547 ns at [DR-0010]'s 500 bps:
 
 | case | `dt/σ_acc` | `p_major` | `H` ceiling | vs H₀ = 0.5 | vs [DR-0008] break-even |
 |---|---|---|---|---|---|
 | mismatch spread, 1 sd | 0.001 | 0.5003 | 0.9991 | 2.00× | 9.39× |
-| mismatch spread, 3 sd | 0.002 | 0.5009 | 0.9974 | 1.99× | 9.37× |
-| systematic offset alone | 0.010 | 0.5039 | 0.9887 | 1.98× | 9.29× |
-| systematic + 3 sd mismatch | 0.012 | 0.5049 | 0.9861 | 1.97× | 9.26× |
+| mismatch spread, 3 sd | 0.002 | 0.5009 | 0.9973 | 1.99× | 9.37× |
+| systematic offset alone | 0.012 | 0.5050 | 0.9857 | 1.97× | 9.26× |
+| systematic + 3 sd mismatch | 0.015 | 0.5059 | 0.9830 | 1.97× | 9.23× |
 
 At `tt`/27 °C/3.30 V (where the offset itself was measured, and where `κ²` is
 directly measured rather than law-derived) and at `ss`/−40 °C/3.63 V, the same
 four rows land within 0.003 of these — the three corners' slews and jitter sds
 move in the same direction and largely cancel. The worst of all twelve rows,
-anywhere, is `p_major` = 0.5065.
+anywhere, is `p_major` = 0.5080.
 
 **The mismatch-driven bias — issue #13's actual question — is ~1 ps of timing
 offset against a 1.2–1.5 ns jitter sd, i.e. one part in a thousand.** Even the
-13×-larger systematic offset costs 10–16 ps, ~1 % of the jitter budget.
+16×-larger systematic offset costs 13–18 ps, ~1.5 % of the jitter budget.
 
 Against the spec's own margins, at the worst of those twelve rows
-(`p_major` = 0.5065):
+(`p_major` = 0.5080):
 
 | Margin | Requirement | At the modelled worst case | Headroom |
 |---|---|---|---|
-| [DR-0008] conditioner: K = 8 CRC-32 earns the full 0.85 bit/bit non-vetted cap at `H` ≥ 0.106456 | `H` ≥ 0.106456 | bias-only ceiling 0.981 | **9.2×** |
-| [DR-0002] RCT, cutoff `C_RCT` = 81 frozen at H₀ = 0.5, α = 2⁻⁴⁰ | `Pr(81 identical consecutive)` ≤ 9.095×10⁻¹³ | 2.3×10⁻²⁴ | 11 orders of magnitude |
-| [DR-0002] APT, cutoff `C_APT` = 824 in W = 1024, α = 2⁻⁴⁰ | `Pr(X ≥ 824 \| X ~ Bin(1024, p))` ≤ 9.095×10⁻¹³ | 3.1×10⁻⁸⁷ | expected majority count 519 vs the 824 cutoff — **19.1 sd** |
+| [DR-0008] conditioner: K = 8 CRC-32 earns the full 0.85 bit/bit non-vetted cap at `H` ≥ 0.106456 | `H` ≥ 0.106456 | bias-only ceiling 0.977 | **9.2×** |
+| [DR-0002] RCT, cutoff `C_RCT` = 81 frozen at H₀ = 0.5, α = 2⁻⁴⁰ | `Pr(81 identical consecutive)` ≤ 9.095×10⁻¹³ | 2.9×10⁻²⁴ | 11 orders of magnitude |
+| [DR-0002] APT, cutoff `C_APT` = 824 in W = 1024, α = 2⁻⁴⁰ | `Pr(X ≥ 824 \| X ~ Bin(1024, p))` ≤ 9.095×10⁻¹³ | 1.8×10⁻⁸⁶ | expected majority count 520 vs the 824 cutoff — **19.0 sd** |
 
 **The conditioner and health-test margins cover the observed mismatch spread
 with room to spare**, which is the question issue #13 asks. Note what that
@@ -282,7 +294,7 @@ and these are ceilings.
   `ss`/+125 °C/3.63 V, so `σ_acc` there comes from [DR-0010]'s jitter-energy
   law applied to a measured period and current. That is exactly how DR-0007
   §2 intends `Q` to be evaluated, but it is a model at the one corner that
-  matters most; [DR-0014] carries the follow-up.
+  matters most; [DR-0015] carries the follow-up.
 - **The minimum is flat along temperature.** 7.185×10⁻³ at +125 °C against
   7.816×10⁻³ at −40 °C is an 8 % separation on a metric whose constant `a` is
   itself known to ±8 %. "The minimum is on the `ss`/3.63 V edge" is a much
@@ -300,8 +312,9 @@ and these are ceilings.
 - **The slew testbench drives an unloaded `xo`.** In
   `design/xschem/sampler_core.sch` that node also drives `sampler_dff`'s data
   transmission gate, which would slow the edge. The measured slew is
-  therefore an upper bound on the loaded one — but it exceeds the old proxy by
-  31×, so §4's conclusion has a very large amount of room in it.
+  therefore an upper bound on the loaded one — but §4's worst case sits at
+  1.5 % of the jitter budget, so the loaded edge would have to be ~30× slower
+  than the measured one before the conclusion moved.
 - **Not an entropy assessment.** [DR-0004]'s tiering is unchanged.
 
 [#9]: https://github.com/2AMLogic/gf180-trng/issues/9
@@ -318,4 +331,4 @@ and these are ceilings.
 [DR-0011]: ../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 [DR-0012]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0012-sampler-fixed-external-clock]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
-[DR-0014]: ../spec/decision-records/DR-0014-entropy-binding-corner-moves-to-the-hot-slow-corner.md
+[DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md

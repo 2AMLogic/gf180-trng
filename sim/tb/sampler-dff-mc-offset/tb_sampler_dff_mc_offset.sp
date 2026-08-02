@@ -23,11 +23,18 @@
 * input by design (design/xschem/sampler_dff.sch: "the ONLY cell ... that
 * turns an analog swing ... into a logic-level bit") -- it is an ordinary
 * static CMOS transmission-gate flip-flop. Its closest analogue to a
-* comparator's input-referred offset is the first inversion's (INVM's)
-* own switching threshold: the ``d`` voltage at which ``mb`` crosses
-* mid-supply. In a mismatch-free device this sits at VDD/2 by the cell's
-* own symmetric P/N sizing (0.44u/0.22u, matching xor2/ro_stage); under
-* device mismatch it shifts. Because the real entropy-source XOR node
+* comparator's input-referred offset is the first inversion's own
+* switching threshold: the ``d`` voltage at which ``mb`` crosses
+* mid-supply. Since DR-0014-sampler-reset-gated-into-the-storage-loops
+* (issue #53) that first inversion is a reset-gated NAND2 rather than a
+* plain inverter -- ``rst_n`` is its second input, held HIGH here so the
+* gate is in its inverting mode, and its NMOS stack is width-compensated
+* (0.44u devices in series) rather than left at the plain cell's 0.22u.
+* A series stack does not compensate exactly, so the switching threshold
+* of the shipped cell is a property of THAT structure, not of a symmetric
+* 0.44u/0.22u inverter; measuring it, rather than assuming VDD/2, is the
+* point. Under device mismatch it shifts further. Because the real
+* entropy-source XOR node
 * (design/xschem/ro_array_core.sch) drives ``d`` with a fast, rail-to-rail
 * transition (design/README.md), a threshold sitting away from VDD/2 does
 * not change WHETHER the cell captures correctly -- it changes WHEN,
