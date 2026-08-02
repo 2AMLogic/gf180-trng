@@ -1,6 +1,6 @@
 {
   "name": "sampler-dff-reset-current-xsv",
-  "description": "sampler_dff's xsv instance (design/sampler_core.spice: raw_valid path, D tied permanently to vdd), biased at D=vdd, clk=0, rst_n=0 -- the reset-asserted, clk-low phase where the input transmission gate and the reset pulldown both conduct (#48): static supply current of the resulting continuous contention path.",
+  "description": "sampler_dff's xsv instance (design/sampler_core.spice: raw_valid path, D tied permanently to vdd), biased at D=vdd, clk=0, rst_n=0 -- the reset-asserted, clk-low phase in which the pre-#53 cell left the input transmission gate and a reset pulldown conducting simultaneously (#48): static supply current at that bias. Unchanged across #53 so the before/after record sets are the same measurement on two cells.",
   "netlist": "tb_sampler_dff_reset_current_xsv.sp",
   "design_netlist": "design/sampler_core.spice",
   "analysis_type": "dc",
@@ -16,11 +16,13 @@
     "p_reset_xsv_w": "-i(vdd)*v(vdd)",
     "v_q": "v(q)",
     "v_m": "v(xdut.m)",
-    "v_rst": "v(xdut.rst)"
+    "v_mb": "v(xdut.mb)",
+    "v_qb": "v(xdut.qb)"
   },
   "caveats": [
     "Models the WORST-CASE phase relationship (clk held at 0 for the whole reset assertion), not any specific power-on sequence -- how long reset is actually asserted, and at what clk phase, is a system-level timing question #26 owns, not measured here.",
-    "This is deliberate resistive contention between two simultaneously-ON pass devices, not subthreshold/junction leakage -- do not compare this current directly against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ figures as if they were the same phenomenon.",
-    "xsv's D is wired directly to vdd in design/sampler_core.spice, so this DC bias is exactly xsv's real condition during a clk-low, reset-asserted interval -- not an approximation of it."
+    "What this current IS depends on which cell the record ran against, and the record's netlist.sha says which. Pre-#53 (a reset pulldown on node m): deliberate resistive contention between two simultaneously-ON pass devices, which must NOT be compared against sim/tb/device-leakage-03v3/ or sim/tb/ro-inv-05stage-stopped-leakage/ as if it were the same phenomenon. Post-#53 (reset gated into the latches' inverters, no device on a storage node): that path does not exist and what is left is ordinary off-device leakage at this bias.",
+    "xsv's D is wired directly to vdd in design/sampler_core.spice, so this DC bias is exactly xsv's real condition during a clk-low, reset-asserted interval -- not an approximation of it.",
+    "A DC operating point says nothing about what happens at a clk EDGE while reset is asserted. Post-#53 that is the case the cell's reset structure turns on (see design/xschem/sampler_dff.sch's header); it is not measured by this testbench."
   ]
 }

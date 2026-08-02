@@ -1,0 +1,36 @@
+{
+  "name": "sampler-dff-reset-clocked",
+  "description": "sampler_dff with rst_n held low across three full periods of the running 1 MHz sample clock and D tied high: how far the output q (and the slave storage node s) departs from the reset state at a clk edge, and whether the cell captures normally once reset is released. The clock-running counterpart to sim/tb/sampler-dff-reset-current-{xsv,xsb}/, which hold clk at a DC level, and to sim/tb/sampler-dff-setup-hold/, which releases reset before the clock starts.",
+  "netlist": "tb_sampler_dff_reset_clocked.sp",
+  "design_netlist": "design/sampler_core.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "mos"
+  ],
+  "tstop": "6u",
+  "tstep": "100p (print step; ngspice's own LTE sets the actual solver step -- same choice as sim/tb/sampler-dff-setup-hold/, whose header argues it)",
+  "analyses": [
+    "tran 100p 6u",
+    "meas tran q_rst_max max v(q) from=0.05u to=3.55u",
+    "meas tran s_rst_min min v(xdut.s) from=0.05u to=3.55u",
+    "meas tran q_rel find v(q) at=3.55u",
+    "meas tran q_cap find v(q) at=4.9u",
+    "meas tran mb_rst_min min v(xdut.mb) from=0.05u to=3.55u",
+    "let vsup = mean(v(vdd))"
+  ],
+  "measure": {
+    "q_rst_max_v": "q_rst_max",
+    "q_rst_max_frac": "q_rst_max/vsup",
+    "s_rst_min_v": "s_rst_min",
+    "s_rst_dev_frac": "(vsup-s_rst_min)/vsup",
+    "mb_rst_min_v": "mb_rst_min",
+    "q_rel_v": "q_rel",
+    "q_cap_v": "q_cap"
+  },
+  "caveats": [
+    "Characterizes the SAMPLER CELL only, with an ideal 1 ps-edge clock and an ideal D. The entropy source is not present and nothing here is evidence about jitter, min-entropy or the raw bitstream.",
+    "D is held at vdd for the whole window -- argued in the testbench header as the worst case for this mechanism (it forces the master to disagree with the reset state at every rising edge) and as xsv's literal condition in the shipped block. It is an argument from the topology plus a measurement at that point, not a sweep of D's phase against the clock.",
+    "Three clock periods, one reset release, one release phase (between edges). Releasing rst_n coincident with a clk edge is a separate question this deck does not probe.",
+    "q_cap_v checks that the cell still captures a 1 on the first rising edge after release; it is a functional sanity check on this deck's own stimulus, not a substitute for sim/tb/sampler-dff-setup-hold/'s setup/hold and metastability characterization."
+  ]
+}
