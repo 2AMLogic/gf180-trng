@@ -70,10 +70,11 @@ being loud about.
 | `ro_array_core_meta` | `ro_array_core` (unmodified, instantiated) plus `ro_meta_tap` hanging off `xo`; exists only to simulate the tap in situ, nothing on `main` instantiates it by default |
 | `sampler_dff` | **the sampler/digitizer**: a transmission-gate master-slave D flip-flop, positive-edge, async active-low reset gated into the storage loops' own inverters ([`DR-0014`](../spec/decision-records/DR-0014-sampler-reset-gated-into-the-storage-loops.md)) — the cell that turns `xo`'s analog swing into a logic-level raw bit |
 | **`sampler_core`** | **the sampler, wired to the source**: `ro_array_core` + two `sampler_dff` (one for `raw_bit`, one for the `raw_valid` reset-release indicator), clocked by a fixed external clock — see [The sampler](#the-sampler-9) below |
+| **`trng_top`** | **the top-level integration (#27)**: instantiates `sampler_core` unmodified as the analog half, at the DR-0009 raw-tap boundary. The digital half (conditioner #8, health tests #11, interface #26) is wired downstream in [`design/trng_top/`](trng_top/) — see that directory's README for why it is not also drawn in this schematic. |
 
 Exported netlists: `design/ro_array_core.spice`, `design/ro_array_sanity.spice`,
 `design/meta_arb.spice`, `design/ro_meta_tap.spice`, `design/ro_array_core_meta.spice`,
-`design/sampler_core.spice`.
+`design/sampler_core.spice`, `design/trng_top.spice`.
 
 ---
 

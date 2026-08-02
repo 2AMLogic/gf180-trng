@@ -1,0 +1,37 @@
+v {xschem version=3.4.4 file_version=1.2}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname"
+template="name=x1"
+description="#9's sampler, wired to the source: design/xschem/sampler_core.sch's ro_array_core plus two sampler_dff instances (raw_bit/raw_valid), on a fixed external sample clock. Pin order MUST track design/xschem/sampler_core.sch's own .subckt signature exactly: en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid -- see design/sampler_core.spice. Instantiated by trng_top.sch (#27) as the analog half of the top-level assembly; raw_bit/raw_valid is the DR-0001 raw tap and the DR-0009 analog/digital verification-level boundary."
+}
+V {}
+S {}
+E {}
+B 5 -72.5 -62.5 -67.5 -57.5 {name=en1 dir=in}
+B 5 -72.5 -22.5 -67.5 -17.5 {name=en2 dir=in}
+B 5 -32.5 97.5 -27.5 102.5 {name=vddr1 dir=inout}
+B 5 -2.5 97.5 2.5 102.5 {name=vddr2 dir=inout}
+B 5 27.5 97.5 32.5 102.5 {name=vdd dir=inout}
+B 5 -2.5 -102.5 2.5 -97.5 {name=vss dir=inout}
+B 5 -72.5 17.5 -67.5 22.5 {name=clk dir=in}
+B 5 -72.5 57.5 -67.5 62.5 {name=rst_n dir=in}
+B 5 67.5 -22.5 72.5 -17.5 {name=raw_bit dir=out}
+B 5 67.5 17.5 72.5 22.5 {name=raw_valid dir=out}
+L 4 -70 -60 -60 -60 {}
+L 4 -70 -20 -60 -20 {}
+L 4 -30 100 -30 90 {}
+L 4 0 100 0 90 {}
+L 4 30 100 30 90 {}
+L 4 0 -100 0 -90 {}
+L 4 -70 20 -60 20 {}
+L 4 -70 60 -60 60 {}
+L 4 70 -20 60 -20 {}
+L 4 70 20 60 20 {}
+L 4 -60 -90 60 -90 {}
+L 4 60 -90 60 90 {}
+L 4 60 90 -60 90 {}
+L 4 -60 90 -60 -90 {}
+T {@name} -55 -125 0 0 0.25 0.25 {}
+T {sampler_core} -55 0 0 0 0.2 0.2 {}
+T {DR-0001 raw tap ->} 20 -35 0 0 0.2 0.2 {layer=13}

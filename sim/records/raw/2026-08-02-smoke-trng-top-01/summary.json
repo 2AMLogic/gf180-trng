@@ -1,0 +1,28 @@
+{
+  "raw_bits_driven": [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0
+  ],
+  "raw_bits_str": "0001111100",
+  "cycles": 11,
+  "raw_samples": 10,
+  "data_words_available": 0,
+  "raw_words_available": 0,
+  "cond_words_offered": 0,
+  "health_test_rct_failures": 0,
+  "health_test_apt_failures": 0,
+  "health_test_startup_passes": 0,
+  "status_final": "0x00000008",
+  "status_ht_alarm": 0,
+  "status_startup": 1,
+  "status_cond_ready": 0,
+  "wall_time_s": 0.013751029968261719
+}
