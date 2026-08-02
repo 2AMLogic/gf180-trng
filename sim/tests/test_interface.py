@@ -10,7 +10,8 @@ Four groups:
 2. The behavioural model's contract, clause by clause against the two
    ratified records it implements -- DR-0001 (`OUT_MODE`, flush on switch,
    raw always available) and DR-0002 (latch, gate, flush, explicit clear plus
-   a fresh start-up test).
+   a fresh start-up test) -- and against DR-0016, whose `ring_stuck_any`
+   enters that same latch as a third failure source (`ht_fail_ring`).
 3. Cross-block contract: the `en`/`flush` the conditioner (#8) documents as
    #26's obligation are actually driven that way.
 4. RTL/model equivalence -- runs ``design/interface/trng_interface.v`` under
@@ -117,7 +118,8 @@ class RegisterMapTests(unittest.TestCase):
         self.assertEqual(bit(STATUS.reset, STATUS, "HT_ALARM"), 0)
 
     def test_health_flags_are_write_one_to_clear(self):
-        for name in ("HT_FAIL_RCT", "HT_FAIL_APT", "OVF_DATA", "OVF_RAW"):
+        for name in ("HT_FAIL_RCT", "HT_FAIL_APT", "HT_FAIL_RING",
+                     "OVF_DATA", "OVF_RAW"):
             self.assertEqual(field(STATUS, name).access, "W1C")
 
     def test_data_and_raw_data_are_distinct_read_only_registers(self):
@@ -144,6 +146,41 @@ class RegisterMapTests(unittest.TestCase):
         self.assertIn('`include "trng_regmap.vh"', rtl)
         for register in regmap.REGISTERS:
             self.assertIn(f"TRNG_ADDR_{register.name}", rtl)
+
+    def test_the_ring_liveness_failure_source_has_its_own_status_bit(self):
+        """DR-0016 "Failure behavior": `ring_stuck_any` reports through the
+        same latch as RCT/APT but must be *distinguishable* from them, so a
+        reader can tell "a ring stopped" from "the combined tap misbehaved"
+        -- they are different observation points and imply different repairs."""
+        f = field(STATUS, "HT_FAIL_RING")
+        self.assertEqual(f.access, "W1C")
+        self.assertEqual(f.width, 1)
+        self.assertEqual(f.reset, 0)
+        self.assertNotIn(f.lsb, (field(STATUS, "HT_FAIL_RCT").lsb,
+                                 field(STATUS, "HT_FAIL_APT").lsb))
+
+    def test_adding_the_ring_bit_did_not_renumber_the_published_map(self):
+        """DR-0013's map is ratified and published (REGMAP.md, #16/#27 read
+        it). A fourth failure source is an additive bit in reserved space --
+        every previously published bit position must be exactly where it
+        was."""
+        published = {
+            "HT_FAIL_RCT": 0, "HT_FAIL_APT": 1, "HT_ALARM": 2, "STARTUP": 3,
+            "COND_READY": 4, "DATA_AVAIL": 5, "RAW_AVAIL": 6,
+            "OVF_DATA": 7, "OVF_RAW": 8, "DATA_LEVEL": 16, "RAW_LEVEL": 20,
+        }
+        for name, lsb in published.items():
+            self.assertEqual(field(STATUS, name).lsb, lsb, name)
+        self.assertGreater(field(STATUS, "HT_FAIL_RING").lsb,
+                           field(STATUS, "OVF_RAW").lsb)
+
+    def test_the_ring_failure_port_exists_and_stays_block_internal(self):
+        """DR-0016 "No exposed per-ring tap": the monitor's own signals are
+        health-test-block internal, exactly as `ht_fail_rct` already is."""
+        port = next(p for p in regmap.PORTS if p.name == "ht_fail_ring")
+        self.assertEqual((port.direction, port.width), ("in", 1))
+        self.assertFalse(port.external)
+        self.assertIn("ht_fail_ring", RTL.read_text())
 
     def test_external_ports_are_the_ones_16_needs(self):
         external = {p.name for p in regmap.PORTS if p.external}
@@ -426,6 +463,172 @@ class HealthTestGateTests(unittest.TestCase):
         self.assertEqual(bit(dut.status_value(), STATUS, "HT_ALARM"), 0)
 
 
+class RingLivenessGateTests(unittest.TestCase):
+    """DR-0016 §Failure behavior: `ring_stuck_any` is OR'd into the *same*
+    latch-and-gate mechanism DR-0002 defines for RCT/APT -- flag, latch, gate
+    the conditioned path only, leave the raw path ungated, recover only via an
+    explicit clear plus a fresh start-up test. Each clause below is the
+    ring-liveness twin of a HealthTestGateTests case, deliberately, because
+    "behaves exactly like HT_FAIL_RCT" is the whole of the decision."""
+
+    def _running_with_data(self):
+        dut = iface.Interface()
+        dut.step(ht_startup_pass=True)
+        for word in (0x33333333, 0x44444444):
+            dut.step(cond_word=word, cond_valid=True)
+        return dut
+
+    def test_a_stuck_ring_latches_its_own_flag_and_asserts_the_alarm(self):
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        status = dut.status_value()
+        self.assertEqual(bit(status, STATUS, "HT_FAIL_RING"), 1)
+        self.assertEqual(bit(status, STATUS, "HT_FAIL_RCT"), 0)
+        self.assertEqual(bit(status, STATUS, "HT_FAIL_APT"), 0)
+        self.assertEqual(bit(status, STATUS, "HT_ALARM"), 1)
+        self.assertTrue(dut.step().ht_alarm)
+        self.assertEqual(dut.state, iface.FAILED)
+
+    def test_the_ring_latch_does_not_self_clear(self):
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        for _ in range(200):
+            dut.step(raw_bit=1, raw_valid=True, ht_startup_pass=True)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_FAIL_RING"), 1)
+        self.assertEqual(dut.state, iface.FAILED)
+
+    def test_a_stuck_ring_gates_and_flushes_the_conditioned_path(self):
+        dut = self._running_with_data()
+        self.assertEqual(len(dut.cond_fifo), 2)
+        out = dut.step(ht_fail_ring=True)
+        self.assertFalse(out.str_valid)
+        self.assertTrue(out.cond_flush)
+        self.assertFalse(out.cond_en)
+        self.assertEqual(len(dut.cond_fifo), 0)
+        for _ in range(10):
+            self.assertEqual(dut.step(**iface.reg_read(DATA)).reg_rdata, 0)
+
+    def test_a_stuck_ring_does_not_take_the_raw_path_away(self):
+        """The property DR-0016 inherits verbatim from DR-0001 §5 / DR-0002:
+        the raw tap is exactly what an integrator needs to *diagnose* a dead
+        ring, so gating it on this alarm would delete the evidence."""
+        dut = iface.Interface()
+        dut.step(ht_startup_pass=True)
+        run_model(raw_cycles(pattern_bits(64, seed=21)), dut)
+        self.assertEqual(len(dut.raw_fifo), 2)
+        dut.step(ht_fail_ring=True)
+        self.assertEqual(len(dut.raw_fifo), 2)
+        self.assertNotEqual(dut.step(**iface.reg_read(RAW_DATA)).reg_rdata, 0)
+        before = len(dut.raw_fifo)
+        run_model(raw_cycles(pattern_bits(32, seed=22)), dut)
+        self.assertEqual(len(dut.raw_fifo), before + 1)
+
+    def test_raw_streaming_keeps_flowing_through_a_ring_alarm(self):
+        dut = iface.Interface()
+        dut.step(**iface.ctrl_write(out_mode_raw=True))
+        run_model(raw_cycles(pattern_bits(32, seed=23)), dut)
+        self.assertTrue(dut.step(str_ready=False).str_valid)
+        dut.step(ht_fail_ring=True)
+        self.assertTrue(dut.step(str_ready=False).str_valid)
+
+    def test_recovery_needs_an_explicit_clear_and_a_fresh_startup_pass(self):
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        self.assertEqual(dut.state, iface.FAILED)
+
+        out = dut.step(**iface.status_w1c("HT_FAIL_RING"))
+        self.assertTrue(out.startup_req)
+        self.assertEqual(dut.state, iface.STARTUP)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_ALARM"), 0)
+
+        for _ in range(50):
+            self.assertFalse(dut.step(cond_word=0xFF, cond_valid=True).cond_en)
+        self.assertEqual(len(dut.cond_fifo), 0)
+        dut.step(ht_startup_pass=True)
+        self.assertEqual(dut.state, iface.RUN)
+
+    def test_a_ring_failure_in_the_same_cycle_as_a_clear_wins(self):
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        clear = dict(iface.status_w1c("HT_FAIL_RING"))
+        clear["ht_fail_ring"] = True
+        dut.step(**clear)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_FAIL_RING"), 1)
+        self.assertEqual(dut.state, iface.FAILED)
+
+    def test_a_dead_ring_re_fails_after_a_clear_and_the_block_stays_gated(self):
+        """DR-0016's own argument for flag-not-hard-stop: a genuinely dead
+        ring self-consistently re-fails, so software cannot clear its way to
+        conditioned bits from a compromised source."""
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        dut.step(**iface.status_w1c("HT_FAIL_RING"))
+        self.assertEqual(dut.state, iface.STARTUP)
+        dut.step(ht_fail_ring=True)          # the ring is still dead
+        self.assertEqual(dut.state, iface.FAILED)
+        for _ in range(20):
+            self.assertFalse(dut.step(ht_startup_pass=True).cond_en)
+        self.assertEqual(dut.state, iface.FAILED)
+
+    def test_a_ring_failure_while_disabled_is_ignored(self):
+        dut = iface.Interface()
+        dut.step(**iface.ctrl_write(en=False))
+        dut.step(ht_fail_ring=True)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_ALARM"), 0)
+
+    def test_soft_reset_cannot_escape_a_latched_ring_alarm(self):
+        dut = self._running_with_data()
+        dut.step(ht_fail_ring=True)
+        dut.step(**iface.ctrl_write(soft_reset=True))
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_FAIL_RING"), 1)
+        self.assertEqual(dut.state, iface.FAILED)
+
+
+class SharedLatchInteractionTests(unittest.TestCase):
+    """The three failure sources share one latch, one alarm and one gate.
+    That sharing is the edge case worth testing directly: any one of them
+    still set must keep the block gated, whichever cleared."""
+
+    def _failed(self, **sources):
+        dut = iface.Interface()
+        dut.step(ht_startup_pass=True)
+        dut.step(cond_word=0xABCDEF, cond_valid=True)
+        dut.step(**sources)
+        return dut
+
+    def test_all_three_firing_at_once_latch_independently(self):
+        dut = self._failed(ht_fail_rct=True, ht_fail_apt=True, ht_fail_ring=True)
+        status = dut.status_value()
+        for name in ("HT_FAIL_RCT", "HT_FAIL_APT", "HT_FAIL_RING"):
+            self.assertEqual(bit(status, STATUS, name), 1, name)
+        self.assertEqual(bit(status, STATUS, "HT_ALARM"), 1)
+        self.assertEqual(len(dut.cond_fifo), 0)
+
+    def test_clearing_two_of_three_does_not_resume(self):
+        dut = self._failed(ht_fail_rct=True, ht_fail_apt=True, ht_fail_ring=True)
+        out = dut.step(**iface.status_w1c("HT_FAIL_RCT", "HT_FAIL_APT"))
+        self.assertFalse(out.startup_req)
+        self.assertEqual(dut.state, iface.FAILED)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_ALARM"), 1)
+
+    def test_a_ring_failure_alone_keeps_the_block_gated_after_an_rct_clear(self):
+        dut = self._failed(ht_fail_rct=True, ht_fail_ring=True)
+        dut.step(**iface.status_w1c("HT_FAIL_RCT"))
+        self.assertEqual(dut.state, iface.FAILED)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_FAIL_RING"), 1)
+        out = dut.step(**iface.status_w1c("HT_FAIL_RING"))
+        self.assertTrue(out.startup_req)
+        self.assertEqual(dut.state, iface.STARTUP)
+
+    def test_clearing_all_three_together_restarts_once(self):
+        dut = self._failed(ht_fail_rct=True, ht_fail_apt=True, ht_fail_ring=True)
+        out = dut.step(**iface.status_w1c("HT_FAIL_RCT", "HT_FAIL_APT", "HT_FAIL_RING"))
+        self.assertTrue(out.startup_req)
+        self.assertTrue(out.cond_flush)
+        self.assertEqual(dut.state, iface.STARTUP)
+        self.assertEqual(bit(dut.status_value(), STATUS, "HT_ALARM"), 0)
+
+
 class OutModeTests(unittest.TestCase):
     """DR-0001 §2: the mode switch and its flush."""
 
@@ -622,13 +825,14 @@ _STIM_BITS = (
 
 
 def encode_vector(cycle: dict) -> int:
-    """Pack one stimulus cycle into the 75-bit word tb_rtl_equivalence.v reads."""
+    """Pack one stimulus cycle into the 76-bit word tb_rtl_equivalence.v reads."""
     word = 0
     for name, position in _STIM_BITS:
         word |= (int(bool(cycle[name])) & 1) << position
     word |= (cycle["reg_addr"] & 0b11) << 9
     word |= (cycle["reg_wdata"] & 0xFFFFFFFF) << 11
     word |= (cycle["cond_word"] & 0xFFFFFFFF) << 43
+    word |= (int(bool(cycle["ht_fail_ring"])) & 1) << 75
     return word
 
 
@@ -668,6 +872,21 @@ def _mixed_vectors():
     vectors.append(iface.status_w1c("HT_FAIL_RCT"))
     vectors.append(iface.reg_read(STATUS))
     vectors.append(iface.status_w1c("HT_FAIL_APT"))
+    vectors += raw_cycles(bits[:64])
+    vectors.append(iface.default_stimulus_word(ht_startup_pass=True))
+
+    # DR-0016: the same latch, entered from the per-ring liveness monitor --
+    # on its own first, then simultaneously with an RCT failure, so the
+    # shared-latch interaction is in the equivalence stream too.
+    vectors.append(iface.default_stimulus_word(ht_fail_ring=True))
+    vectors.append(iface.reg_read(STATUS))
+    vectors.append(iface.reg_read(DATA))
+    vectors.append(iface.status_w1c("HT_FAIL_RING"))
+    vectors.append(iface.default_stimulus_word(ht_startup_pass=True))
+    vectors.append(iface.default_stimulus_word(ht_fail_ring=True, ht_fail_rct=True))
+    vectors.append(iface.status_w1c("HT_FAIL_RING"))
+    vectors.append(iface.reg_read(STATUS))
+    vectors.append(iface.status_w1c("HT_FAIL_RCT"))
     vectors += raw_cycles(bits[:64])
     vectors.append(iface.default_stimulus_word(ht_startup_pass=True))
 
@@ -758,6 +977,31 @@ class RtlEquivalenceTests(unittest.TestCase):
             raw_cycles(pattern_bits(32 * 6, seed=41))
             + [iface.ctrl_write(out_mode_raw=True)]
             + raw_cycles(pattern_bits(32 * 6, seed=42), str_ready=True)
+        )
+
+    def test_rtl_matches_model_across_a_ring_liveness_gate_and_recovery(self):
+        """DR-0016's failure path, end to end in the RTL: ring_stuck_any ->
+        latch -> HT_ALARM -> conditioned gate -> explicit clear -> start-up
+        retest -> ungated. The conditioned words either side of the gate make
+        the gating itself visible in the compared output stream."""
+        vectors = [iface.default_stimulus_word(ht_startup_pass=True)]
+        vectors += [
+            iface.default_stimulus_word(cond_word=0xAB1E0000 + i, cond_valid=True)
+            for i in range(4)
+        ]
+        vectors.append(iface.default_stimulus_word(ht_fail_ring=True))
+        vectors += [iface.reg_read(DATA)] * 3
+        vectors.append(iface.reg_read(STATUS))
+        vectors.append(iface.status_w1c("HT_FAIL_RING"))
+        vectors += [iface.reg_read(STATUS)] * 2
+        vectors.append(iface.default_stimulus_word(ht_startup_pass=True))
+        vectors += [
+            iface.default_stimulus_word(cond_word=0xC0DE0000 + i, cond_valid=True)
+            for i in range(4)
+        ]
+        vectors += [iface.reg_read(DATA)] * 5
+        self._assert_matches(
+            vectors, expect=("str_valid", "ht_alarm", "cond_flush", "startup_req")
         )
 
     def test_rtl_matches_model_across_a_gate_and_recovery(self):

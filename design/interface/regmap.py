@@ -178,9 +178,9 @@ STATUS = Register(
         ),
         Field(
             "HT_ALARM", 2, 1, "RO", 0,
-            "HT_FAIL_RCT | HT_FAIL_APT -- the same signal as the block-level "
-            "`ht_alarm` output pin, so a register reader and a pin observer "
-            "cannot disagree.",
+            "HT_FAIL_RCT | HT_FAIL_APT | HT_FAIL_RING -- the same signal as "
+            "the block-level `ht_alarm` output pin, so a register reader and a "
+            "pin observer cannot disagree.",
         ),
         Field(
             "STARTUP", 3, 1, "RO", 1,
@@ -211,6 +211,22 @@ STATUS = Register(
             "write 1 to clear. This is the bit that makes DR-0001's "
             "'non-consecutive samples silently invalidate the dataset' "
             "hazard detectable rather than silent.",
+        ),
+        Field(
+            "HT_FAIL_RING", 9, 1, "W1C", 0,
+            "Per-ring liveness failure, latched: at least one entropy-source "
+            "ring's own digitized sample repeated C_LIVE times in a row "
+            "(DR-0016). Write 1 to clear. Behaves exactly like HT_FAIL_RCT / "
+            "HT_FAIL_APT -- it is a third source of the same latch, the same "
+            "HT_ALARM and the same conditioned-path gate, and clearing the "
+            "last set HT_FAIL_* bit restarts the noise source and the start-up "
+            "health test. It sits at bit 9 rather than bit 2 because bits 0-8 "
+            "were already published by DR-0013: a new failure source is an "
+            "additive bit in the reserved space, never a renumbering of the "
+            "ratified map. Distinct from HT_FAIL_RCT/HT_FAIL_APT because the "
+            "observation point differs -- RCT/APT watch the XOR-combined raw "
+            "tap, where one dead ring out of the shipped N=2 array is "
+            "invisible; this bit is the only one that says 'a ring stopped'.",
         ),
         Field(
             "DATA_LEVEL", 16, LEVEL_BITS, "RO", 0,
@@ -280,6 +296,11 @@ PORTS: tuple[Port, ...] = (
          "One-cycle RCT failure pulse."),
     Port("ht_fail_apt", "in", 1, "health tests (#11)", False,
          "One-cycle APT failure pulse."),
+    Port("ht_fail_ring", "in", 1, "health tests (#11)", False,
+         "One-cycle per-ring liveness failure pulse -- "
+         "`trng_ring_liveness.ring_stuck_any` (DR-0016). A third source of the "
+         "same latch as ht_fail_rct/ht_fail_apt, on a different observation "
+         "point (each ring's own digitized sample, not the combined raw tap)."),
     Port("ht_startup_pass", "in", 1, "health tests (#11)", False,
          "One-cycle pulse: 1024 consecutive raw samples passed both tests "
          "(DR-0002 §Failure behavior 4). Ignored unless STATUS.STARTUP."),

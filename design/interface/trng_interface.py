@@ -22,6 +22,13 @@ which derives it from two ratified records:
   returns no new bits, the FIFO is flushed). Recovery is explicit:
   write-1-to-clear the flag, then a fresh 1024-sample start-up test must pass
   before the conditioned path ungates.
+* **DR-0016** -- the per-ring liveness monitor's ``ring_stuck_any`` is a
+  **third source of that same latch** (``ht_fail_ring`` here), not a new
+  mechanism: same flag/alarm/gate, same conditioned-path-only scope, same
+  explicit-clear-plus-start-up-retest recovery. It is separate from
+  ``ht_fail_rct``/``ht_fail_apt`` only because its observation point is
+  different -- each ring's own digitized sample rather than the XOR-combined
+  raw tap, where one dead ring out of the shipped N=2 array is invisible.
 
 Addresses, bit positions and reset values are **not** written here: they come
 from :mod:`regmap`, which also generates the Verilog header the RTL includes.
@@ -94,6 +101,7 @@ class _Events:
     mode_next: bool
     fail_rct_next: bool
     fail_apt_next: bool
+    fail_ring_next: bool
     alarm_next: bool
     restart: bool
     flush_raw: bool
@@ -118,6 +126,7 @@ class Interface:
     state: str = field(default=STARTUP, init=False)
     ht_fail_rct: bool = field(default=False, init=False)
     ht_fail_apt: bool = field(default=False, init=False)
+    ht_fail_ring: bool = field(default=False, init=False)
     ovf_data: bool = field(default=False, init=False)
     ovf_raw: bool = field(default=False, init=False)
 
@@ -158,6 +167,7 @@ class Interface:
         self.state = STARTUP if self.en else IDLE
         self.ht_fail_rct = False
         self.ht_fail_apt = False
+        self.ht_fail_ring = False
         self.ovf_data = False
         self.ovf_raw = False
         self.cond_fifo.clear()
@@ -177,7 +187,7 @@ class Interface:
 
     @property
     def alarm(self) -> bool:
-        return self.ht_fail_rct or self.ht_fail_apt
+        return self.ht_fail_rct or self.ht_fail_apt or self.ht_fail_ring
 
     @property
     def cond_ready(self) -> bool:
@@ -194,6 +204,7 @@ class Interface:
         value = 0
         value |= int(self.ht_fail_rct) << self._status("HT_FAIL_RCT").lsb
         value |= int(self.ht_fail_apt) << self._status("HT_FAIL_APT").lsb
+        value |= int(self.ht_fail_ring) << self._status("HT_FAIL_RING").lsb
         value |= int(self.alarm) << self._status("HT_ALARM").lsb
         value |= int(self.state == STARTUP) << self._status("STARTUP").lsb
         value |= int(self.cond_ready) << self._status("COND_READY").lsb
@@ -211,6 +222,7 @@ class Interface:
         self,
         ht_fail_rct: bool,
         ht_fail_apt: bool,
+        ht_fail_ring: bool,
         reg_sel: bool,
         reg_write: bool,
         reg_addr: int,
@@ -240,17 +252,22 @@ class Interface:
         # cycle: set wins over clear, so a clear can never lose a failure.
         fail_rct_next = self.ht_fail_rct
         fail_apt_next = self.ht_fail_apt
+        fail_ring_next = self.ht_fail_ring
         if write_status:
             if _bit(reg_wdata, self._status("HT_FAIL_RCT").lsb):
                 fail_rct_next = False
             if _bit(reg_wdata, self._status("HT_FAIL_APT").lsb):
                 fail_apt_next = False
-        fail_event = bool(ht_fail_rct or ht_fail_apt) and self.en
+            if _bit(reg_wdata, self._status("HT_FAIL_RING").lsb):
+                fail_ring_next = False
+        fail_event = bool(ht_fail_rct or ht_fail_apt or ht_fail_ring) and self.en
         if ht_fail_rct and self.en:
             fail_rct_next = True
         if ht_fail_apt and self.en:
             fail_apt_next = True
-        alarm_next = fail_rct_next or fail_apt_next
+        if ht_fail_ring and self.en:
+            fail_ring_next = True
+        alarm_next = fail_rct_next or fail_apt_next or fail_ring_next
         alarm_cleared = self.alarm and not alarm_next
 
         # DR-0002 §Failure behavior 4: clearing the latched flag restarts the
@@ -278,6 +295,7 @@ class Interface:
             mode_next=mode_next,
             fail_rct_next=fail_rct_next,
             fail_apt_next=fail_apt_next,
+            fail_ring_next=fail_ring_next,
             alarm_next=alarm_next,
             restart=restart,
             flush_raw=flush_raw,
@@ -288,6 +306,7 @@ class Interface:
         self,
         ht_fail_rct: bool = False,
         ht_fail_apt: bool = False,
+        ht_fail_ring: bool = False,
         reg_sel: bool = False,
         reg_write: bool = False,
         reg_addr: int = 0,
@@ -301,7 +320,10 @@ class Interface:
         both blocks together can close the loop without inventing a cycle of
         skew that the hardware does not have.
         """
-        ev = self._events(ht_fail_rct, ht_fail_apt, reg_sel, reg_write, reg_addr, reg_wdata)
+        ev = self._events(
+            ht_fail_rct, ht_fail_apt, ht_fail_ring,
+            reg_sel, reg_write, reg_addr, reg_wdata,
+        )
         return (self.cond_ready and not ev.flush_cond, ev.flush_cond, ev.restart)
 
     # -- one clock edge ---------------------------------------------------
@@ -314,6 +336,7 @@ class Interface:
         cond_valid: bool = False,
         ht_fail_rct: bool = False,
         ht_fail_apt: bool = False,
+        ht_fail_ring: bool = False,
         ht_startup_pass: bool = False,
         reg_sel: bool = False,
         reg_write: bool = False,
@@ -330,11 +353,15 @@ class Interface:
         reg_read = bool(reg_sel) and not reg_write
         write_status = bool(reg_sel) and bool(reg_write) and reg_addr == regmap.STATUS.index
 
-        ev = self._events(ht_fail_rct, ht_fail_apt, reg_sel, reg_write, reg_addr, reg_wdata)
+        ev = self._events(
+            ht_fail_rct, ht_fail_apt, ht_fail_ring,
+            reg_sel, reg_write, reg_addr, reg_wdata,
+        )
         en_next = ev.en_next
         mode_next = ev.mode_next
         fail_rct_next = ev.fail_rct_next
         fail_apt_next = ev.fail_apt_next
+        fail_ring_next = ev.fail_ring_next
         alarm_next = ev.alarm_next
         restart = ev.restart
         flush_raw = ev.flush_raw
@@ -436,6 +463,7 @@ class Interface:
 
         self.ht_fail_rct = fail_rct_next
         self.ht_fail_apt = fail_apt_next
+        self.ht_fail_ring = fail_ring_next
         self.en = en_next
         self.out_mode_raw = mode_next
 
@@ -456,7 +484,8 @@ def default_stimulus_word(**kwargs) -> dict:
     """A no-op cycle, for tests and demos that override one field at a time."""
     cycle = dict(
         raw_bit=0, raw_valid=False, cond_word=0, cond_valid=False,
-        ht_fail_rct=False, ht_fail_apt=False, ht_startup_pass=False,
+        ht_fail_rct=False, ht_fail_apt=False, ht_fail_ring=False,
+        ht_startup_pass=False,
         reg_sel=False, reg_write=False, reg_addr=0, reg_wdata=0, str_ready=False,
     )
     cycle.update(kwargs)

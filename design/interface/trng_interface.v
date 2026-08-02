@@ -6,7 +6,10 @@
 // Fixed by
 // spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md,
 // which derives the contract from DR-0001 (raw/conditioned paths, OUT_MODE,
-// flush-on-switch) and DR-0002 (latch-and-gate failure behaviour). Verified
+// flush-on-switch) and DR-0002 (latch-and-gate failure behaviour), plus
+// DR-0016 (the per-ring liveness monitor's ring_stuck_any is a THIRD source
+// of that same latch -- ht_fail_ring below -- not a second mechanism).
+// Verified
 // against the bit-exact behavioural model in trng_interface.py
 // (sim/tests/test_interface.py runs both cycle-for-cycle and compares every
 // output), at the level fixed by DR-0009 §2.
@@ -19,6 +22,7 @@
 //   (from #8)          |         ^                                   |--> DATA
 //                      |    cond_en / cond_flush                     |    (gated)
 //   ht_fail_* (#11) ---|--> latch --> ht_alarm, gate                 |
+//   (rct | apt | ring)  |                                            |
 //                      +--------------------------------------------+
 //
 // Addresses, bit positions and reset values are NOT written here: they come
@@ -48,6 +52,11 @@ module trng_interface #(
     // Health tests (#11).
     input  wire        ht_fail_rct,
     input  wire        ht_fail_apt,
+    // trng_ring_liveness.ring_stuck_any (DR-0016): a per-ring liveness
+    // failure, on each ring's own digitized sample rather than the
+    // XOR-combined raw tap RCT/APT observe. Treated identically to the two
+    // above in every respect except which STATUS bit records it.
+    input  wire        ht_fail_ring,
     input  wire        ht_startup_pass,
     output wire        startup_req,
     output wire        ht_alarm,
@@ -81,6 +90,7 @@ module trng_interface #(
     reg       ctrl_out_mode_raw;
     reg       fail_rct;
     reg       fail_apt;
+    reg       fail_ring;
     reg       ovf_data;
     reg       ovf_raw;
 
@@ -106,13 +116,15 @@ module trng_interface #(
 
     // A failure pulse beats a write-1-to-clear presented in the same cycle:
     // set wins over clear, so a clear can never lose a failure.
-    wire w1c_rct = write_stat && reg_wdata[TRNG_STATUS_HT_FAIL_RCT_BIT];
-    wire w1c_apt = write_stat && reg_wdata[TRNG_STATUS_HT_FAIL_APT_BIT];
-    wire fail_event    = (ht_fail_rct || ht_fail_apt) && ctrl_en;
-    wire fail_rct_next = (ht_fail_rct && ctrl_en) || (fail_rct && !w1c_rct);
-    wire fail_apt_next = (ht_fail_apt && ctrl_en) || (fail_apt && !w1c_apt);
-    wire alarm_next    = fail_rct_next || fail_apt_next;
-    wire alarm_now     = fail_rct || fail_apt;
+    wire w1c_rct  = write_stat && reg_wdata[TRNG_STATUS_HT_FAIL_RCT_BIT];
+    wire w1c_apt  = write_stat && reg_wdata[TRNG_STATUS_HT_FAIL_APT_BIT];
+    wire w1c_ring = write_stat && reg_wdata[TRNG_STATUS_HT_FAIL_RING_BIT];
+    wire fail_event     = (ht_fail_rct || ht_fail_apt || ht_fail_ring) && ctrl_en;
+    wire fail_rct_next  = (ht_fail_rct  && ctrl_en) || (fail_rct  && !w1c_rct);
+    wire fail_apt_next  = (ht_fail_apt  && ctrl_en) || (fail_apt  && !w1c_apt);
+    wire fail_ring_next = (ht_fail_ring && ctrl_en) || (fail_ring && !w1c_ring);
+    wire alarm_next    = fail_rct_next || fail_apt_next || fail_ring_next;
+    wire alarm_now     = fail_rct || fail_apt || fail_ring;
     wire alarm_cleared = alarm_now && !alarm_next;
 
     // DR-0002 §Failure behavior 4: clearing the latched flag restarts the
@@ -163,6 +175,7 @@ module trng_interface #(
     assign status_value = (32'd0
         | ({31'd0, fail_rct}                     << TRNG_STATUS_HT_FAIL_RCT_BIT)
         | ({31'd0, fail_apt}                     << TRNG_STATUS_HT_FAIL_APT_BIT)
+        | ({31'd0, fail_ring}                    << TRNG_STATUS_HT_FAIL_RING_BIT)
         | ({31'd0, alarm_now}                    << TRNG_STATUS_HT_ALARM_BIT)
         | ({31'd0, (state == ST_STARTUP)}        << TRNG_STATUS_STARTUP_BIT)
         | ({31'd0, cond_ready}                   << TRNG_STATUS_COND_READY_BIT)
@@ -220,6 +233,7 @@ module trng_interface #(
             state             <= TRNG_CTRL_RESET[TRNG_CTRL_EN_BIT] ? ST_STARTUP : ST_IDLE;
             fail_rct          <= 1'b0;
             fail_apt          <= 1'b0;
+            fail_ring         <= 1'b0;
             ovf_data          <= 1'b0;
             ovf_raw           <= 1'b0;
             cond_head         <= {PTR_W{1'b0}};
@@ -277,6 +291,7 @@ module trng_interface #(
             // -- control/status latches
             fail_rct          <= fail_rct_next;
             fail_apt          <= fail_apt_next;
+            fail_ring         <= fail_ring_next;
             ctrl_en           <= en_next;
             ctrl_out_mode_raw <= mode_next;
 

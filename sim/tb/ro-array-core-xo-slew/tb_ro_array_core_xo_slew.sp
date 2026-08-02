@@ -29,7 +29,7 @@
 *      matters on `xo`, whose transitions are the XOR of two independent
 *      rings and are therefore NOT periodic and can include narrow runt
 *      pulses that a `rise=N` edge count would mis-pair.
-*   2. A 40 %-to-60 % band crossing time on the RING node (`xdut.ro1`),
+*   2. A 40 %-to-60 % band crossing time on the RING node (`ro1`),
 *      which IS periodic and runt-free, giving an average slew across the
 *      decision band rather than at the single steepest point.
 *
@@ -48,6 +48,16 @@
 * bv40/bv60 are measurement-only supply-referred band edges, the same
 * construction as ro-array-core-power's mid-supply `bvth` probe, so the
 * band tracks the supply instead of being hardcoded at one corner's volts.
+*
+* Node-naming note (#65): ro_array_core now exposes its two per-ring nodes as
+* observation-only output pins (ro1/ro2), so the shipped DR-0016 liveness
+* digitizers in design/xschem/sampler_core.sch can reach them. That change
+* adds no device and changes no ring. The two extra nodes on the xdut line
+* below, and the v(ro1)/v(ro2) measurement expressions in tb.json, name the
+* SAME nets this deck already measured hierarchically as v(xdut.ro1) before
+* the pins existed -- a subcircuit port is not addressable as an internal
+* node, so the reference moved from dotted to top-level. The circuit
+* simulated here is identical to the one the pre-#65 records describe.
 
 vsup vsup 0 dc vdd_val
 ven en 0 dc vdd_val
@@ -56,7 +66,7 @@ vr1 vsup vddr1 dc 0
 vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 
-xdut en en vddr1 vddr2 vdd 0 xo ro_array_core
+xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 ro_array_core
 
 bvth vth 0 v = 0.5*vdd_val
 bv40 v40 0 v = 0.4*vdd_val

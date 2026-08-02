@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
 supersedes: n/a
 superseded_by: n/a
-related: "#44 (origin), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/"
+related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/"
 ---
 
 # DR-0016: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
@@ -14,6 +14,32 @@ related: "#44 (origin), #7 / PR #45 (RO core schematic -- the two observation po
 ## Status
 
 - 2026-08-02: Proposed, by #44 (Builder). Not ratified.
+- 2026-08-02: **Amendment A1 (#65) -- the two integrations this record left as
+  follow-up are built. No decision, parameter, cutoff or mechanism in this
+  record changed; the record still stands as Proposed, and A1 only replaces
+  "designed to be wired" with "wired". What #65 delivered:**
+  - `ring_stuck_any` is the interface's `ht_fail_ring` input, OR'd into
+    exactly the latch/alarm/gate this record's "Failure behavior" specified,
+    and reported by a new `STATUS.HT_FAIL_RING` bit **at bit 9** -- reserved
+    space, so no previously published DR-0013 bit position moved. One bit for
+    "a ring stopped", not one per ring, so the published register map does not
+    acquire an `N_RINGS` dependency; `ring_stuck[i]` stays a named net in
+    `trng_top.v` for a future per-ring report to take from.
+  - The `ro1`/`ro2` tap is shipped rather than testbench-only:
+    `ro_array_core.sym`/`.sch` carry two **observation-only output pins** (no
+    device added, no ring changed -- an unconnected parent netlists to the
+    identical circuit, which is why this record's own power measurements below
+    still describe the shipped cell), `sampler_core.sch` digitizes them with
+    two more unmodified `sampler_dff` instances on the same DR-0012 clock, and
+    `trng_top.v`/`.py` instantiate `trng_ring_liveness` beside `rct_apt`.
+    The digitizers live in `sampler_core` rather than `ro_array_core` because
+    a digitizer needs a clock and the entropy source has none.
+  - `sim/tb/ring-liveness-tap-power/` now reaches those nets through the pins
+    (`v(ro1)`) instead of ngspice's hierarchical internal-node naming
+    (`v(xdut.ro1)`): the same nets, the same circuit, the same numbers -- a
+    subcircuit port is simply not addressable as an internal node. The
+    measured costs tabulated under "Power/area cost" are unaffected and are
+    now the cost of something the design contains.
 
 ## Context
 
@@ -253,12 +279,21 @@ this record does not close and does not worsen.
 
 `ring_liveness.v`'s port list is `clk`, `rst_n`, `ring_bit[N_RINGS-1:0]`,
 `ring_stuck[N_RINGS-1:0]`, `ring_stuck_any` -- all internal health-test-block
-signals, the same status `raw_bit`/`ht_fail_rct` already have. Nothing here
-adds a pin to `ro_array_core.sym`, and no per-ring signal reaches a chip-level
-pin. `sim/tb/ring-liveness-tap-power/`'s own tap connections are a
-testbench-only construct (ngspice hierarchical node addressing, exactly
-`ro-array-core-power/`'s existing technique extended from a read-only probe to
-an electrical connection) and are not part of any design deliverable.
+signals, the same status `raw_bit`/`ht_fail_rct` already have. **No per-ring
+signal reaches a chip-level pin**, which is the property DR-0001 actually
+constrains: it governs what the block publishes at the die boundary, not what
+it monitors internally.
+
+*(Amended by #65, A1.)* As written, this record added no pin to
+`ro_array_core.sym` at all, and `sim/tb/ring-liveness-tap-power/`'s tap
+connections were a testbench-only construct (ngspice hierarchical node
+addressing, `ro-array-core-power/`'s existing technique extended from a
+read-only probe to an electrical connection). #65 made the tap real:
+`ro_array_core.sym` gained `ro1`/`ro2` as observation-only **cell** pins, and
+`sampler_core.sch` consumes them. The DR-0001 property above is unchanged and
+is the one that matters -- a cell pin inside the block is not an exposed tap,
+and `trng_top`'s own pin list carries `ring_bit1`/`ring_bit2` no further than
+`design/health_test/`.
 
 ## Alternatives considered
 
@@ -339,25 +374,23 @@ an electrical connection) and are not part of any design deliverable.
     number derived for an individual ring's actual statistics -- no per-ring
     duty-cycle or bias measurement exists in this repository. A tighter,
     measured cutoff (faster detection) is possible but not built here.
-  - The electrical tap this record measures the cost of is not, itself,
-    shipped RTL/schematic yet -- `sim/tb/ring-liveness-tap-power/` proves the
-    mechanism and bounds its cost using ngspice's hierarchical internal-node
-    addressing, not a `design/` schematic change. Promoting it into the
-    shipped design needs `ro1`/`ro2` to be reachable by two more
-    `sampler_dff` instances at the schematic level, which this record does
-    not do (see Follow-up).
-  - `design/interface/`'s alarm/gate path does not yet consume
-    `ring_stuck_any` -- see Follow-up.
+  - The electrical tap this record measures the cost of was not, in this
+    record's own change, shipped RTL/schematic: `sim/tb/ring-liveness-tap-power/`
+    proved the mechanism and bounded its cost using ngspice's hierarchical
+    internal-node addressing rather than a `design/` schematic change.
+    **Closed by #65** (amendment A1): `ro1`/`ro2` are observation-only pins
+    and two `sampler_dff` instances digitize them in `sampler_core.sch`.
+  - `design/interface/`'s alarm/gate path did not consume `ring_stuck_any`
+    when this record was written. **Closed by #65** (amendment A1):
+    `ht_fail_ring` / `STATUS.HT_FAIL_RING`.
 - **Follow-up required**:
-  - [#65](https://github.com/2AMLogic/gf180-trng/issues/65): wire
-    `ring_stuck_any` into `design/interface/`'s `HT_ALARM`/gate OR-condition
-    and add a `STATUS` register bit (`HT_FAIL_RING` or similar), exactly
-    parallel to `HT_FAIL_RCT`/`HT_FAIL_APT`; and promote the `ro1`/`ro2` tap
-    from this record's testbench-only hierarchical connection into shipped
-    `design/` RTL/schematic (two more `sampler_dff` instances wired to the
-    ring nodes at the schematic level, and `trng_ring_liveness` instantiated
-    beside `rct_apt`), since `ro1`/`ro2` are not reachable from outside
-    `ro_array_core.sch` today.
+  - ~~[#65](https://github.com/2AMLogic/gf180-trng/issues/65)~~ -- **done**,
+    see amendment A1 under Status. It wired `ring_stuck_any` into
+    `design/interface/`'s `HT_ALARM`/gate OR-condition with a `STATUS`
+    register bit (`HT_FAIL_RING`, bit 9) exactly parallel to
+    `HT_FAIL_RCT`/`HT_FAIL_APT`, and promoted the `ro1`/`ro2` tap from this
+    record's testbench-only hierarchical connection into shipped `design/`
+    RTL/schematic.
   - #13's ratified worst-corner `H`, once available, is a one-line change to
     both `C_RCT` and `C_LIVE` (`rct_apt.c_rct(H)`).
 - **Revisit if**: a per-ring duty-cycle or bias measurement is ever taken

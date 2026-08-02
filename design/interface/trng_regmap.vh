@@ -37,6 +37,7 @@ localparam integer TRNG_STATUS_DATA_AVAIL_BIT = 5;
 localparam integer TRNG_STATUS_RAW_AVAIL_BIT = 6;
 localparam integer TRNG_STATUS_OVF_DATA_BIT = 7;
 localparam integer TRNG_STATUS_OVF_RAW_BIT = 8;
+localparam integer TRNG_STATUS_HT_FAIL_RING_BIT = 9;
 localparam integer TRNG_STATUS_DATA_LEVEL_LSB = 16;
 localparam integer TRNG_STATUS_DATA_LEVEL_MSB = 19;
 localparam integer TRNG_STATUS_RAW_LEVEL_LSB = 20;

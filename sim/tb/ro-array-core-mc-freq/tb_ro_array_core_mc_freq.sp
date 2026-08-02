@@ -33,9 +33,19 @@
 * assuming this record covers them.
 *
 * Reuses sim/tb/ro-array-core-power/tb_ro_array_core_power.sp's exact
-* measurement method (hierarchical per-ring probes, integer-period charge
+* measurement method (per-ring node probes, integer-period charge
 * integration, mid-supply crossing reference) -- see that testbench's
 * header for the method notes, unchanged here.
+*
+* Node-naming note (#65): ro_array_core now exposes its two per-ring nodes as
+* observation-only output pins (ro1/ro2), so the shipped DR-0016 liveness
+* digitizers in design/xschem/sampler_core.sch can reach them. That change
+* adds no device and changes no ring. The two extra nodes on the xdut line
+* below, and the v(ro1)/v(ro2) measurement expressions in tb.json, name the
+* SAME nets this deck already measured hierarchically as v(xdut.ro1) before
+* the pins existed -- a subcircuit port is not addressable as an internal
+* node, so the reference moved from dotted to top-level. The circuit
+* simulated here is identical to the one the pre-#65 records describe.
 
 vsup vsup 0 dc vdd_val
 ven en 0 dc vdd_val
@@ -44,7 +54,7 @@ vr1 vsup vddr1 dc 0
 vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 
-xdut en en vddr1 vddr2 vdd 0 xo ro_array_core
+xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 ro_array_core
 
 fq1 q1 0 vr1 1
 cq1 q1 0 1n

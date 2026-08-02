@@ -35,8 +35,21 @@ two rings insufficient.
   vdd/vss     block supply for the combining gate. Deliberately not either
               ring's vddr, so per-ring supply sensing sees rings only.
   xo          the combined node. The RAW TAP IS NOT HERE: DR-0001 puts it
-              at the sampler output, and no per-ring signal leaves this
-              cell. The sampler and its clock are #9's.
+              at the sampler output, and no per-ring signal leaves the die.
+              The sampler and its clock are #9's.
+  ro1, ro2    per-ring outputs, OBSERVATION ONLY, added by #65 for the
+              DR-0016 per-ring liveness monitor. They exist because a stuck
+              ring is invisible at xo, and a monitor that cannot see a ring
+              cannot report it. Nothing here digitizes them: the two
+              sampler_dff taps live one level up in sampler_core.sch, the
+              same cell and the same clock the raw tap already uses, so this
+              cell stays a purely analog free-running source with no clock.
+              Adding these pins adds NO device and changes NO ring; a parent
+              that leaves them unconnected gets the identical circuit, which
+              is why the pre-#65 power and jitter records still describe this
+              cell. They are per-ring signals INSIDE the block, not exposed
+              pins -- DR-0001 constrains what the block publishes at the die
+              boundary, not what it monitors internally, and DR-0016 says so.
 
 Frequency skew is by starve-device width (wstv), not by stage count, so the
 nominal ratio is set by a continuous parameter rather than by a ratio of
@@ -50,6 +63,8 @@ C {iopin.sym} -1000 -250 0 0 {name=pv2 lab=vddr2}
 C {iopin.sym} -800 -300 0 0 {name=pv lab=vdd}
 C {iopin.sym} -800 -250 0 0 {name=ps lab=vss}
 C {opin.sym} -800 -200 0 0 {name=po lab=xo}
+C {opin.sym} -800 -150 0 0 {name=po1 lab=ro1}
+C {opin.sym} -800 -100 0 0 {name=po2 lab=ro2}
 C {ro_ring11.sym} 0 0 0 0 {name=xr1 wstv=0.220u lstv=2u cld=0.5f}
 C {ro_ring11.sym} 0 300 0 0 {name=xr2 wstv=0.240u lstv=2u cld=0.5f}
 C {xor2.sym} 400 150 0 0 {name=xa1}

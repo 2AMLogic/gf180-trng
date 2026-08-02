@@ -20,7 +20,7 @@
 // is exactly the order the Python model's step() computes in.
 //
 // Plusargs:
-//   +stim=<path>   stimulus file, one 75-bit hex vector per line (see the bit
+//   +stim=<path>   stimulus file, one 76-bit hex vector per line (see the bit
 //                  layout below; sim/tests/test_interface.py writes it)
 //   +out=<path>    output file, one line per cycle:
 //                    <reg_rdata:08h> <str_data:08h> <str_valid><ht_alarm>
@@ -35,11 +35,13 @@ module tb_rtl_equivalence;
     localparam integer MAX_VEC = 1 << 16;
 
     // Stimulus bit layout, MSB first:
+    //   [75] ht_fail_ring (DR-0016; appended ABOVE the pre-existing layout so
+    //        adding a third failure source did not renumber any other field)
     //   [74:43] cond_word     [42:11] reg_wdata     [10:9] reg_addr
     //   [8] raw_bit  [7] raw_valid  [6] cond_valid  [5] ht_fail_rct
     //   [4] ht_fail_apt  [3] ht_startup_pass  [2] reg_sel  [1] reg_write
     //   [0] str_ready
-    reg [74:0] stim [0:MAX_VEC-1];
+    reg [75:0] stim [0:MAX_VEC-1];
 
     integer nvec;
     integer i;
@@ -56,6 +58,7 @@ module tb_rtl_equivalence;
     reg         cond_valid = 1'b0;
     reg         ht_fail_rct = 1'b0;
     reg         ht_fail_apt = 1'b0;
+    reg         ht_fail_ring = 1'b0;
     reg         ht_startup_pass = 1'b0;
     reg         reg_sel = 1'b0;
     reg         reg_write = 1'b0;
@@ -84,6 +87,7 @@ module tb_rtl_equivalence;
         .cond_flush      (cond_flush),
         .ht_fail_rct     (ht_fail_rct),
         .ht_fail_apt     (ht_fail_apt),
+        .ht_fail_ring    (ht_fail_ring),
         .ht_startup_pass (ht_startup_pass),
         .startup_req     (startup_req),
         .ht_alarm        (ht_alarm),
@@ -136,6 +140,7 @@ module tb_rtl_equivalence;
             cond_valid      = stim[i][6];
             ht_fail_rct     = stim[i][5];
             ht_fail_apt     = stim[i][4];
+            ht_fail_ring    = stim[i][75];
             ht_startup_pass = stim[i][3];
             reg_sel         = stim[i][2];
             reg_write       = stim[i][1];

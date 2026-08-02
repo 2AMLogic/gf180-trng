@@ -19,9 +19,13 @@
 * itself unmodified. Only the array's top-level wiring is restated; every
 * device, including all of the sampler's, still comes from the schematic.
 * Compare with design/xschem/ro_array_core.sch and
-* design/xschem/sampler_core.sch when reviewing. sampler_core's OTHER
-* difference from what is built here is nil: it is exactly
-* ro_array_core + xsb + xsv, and xsb/xsv are instantiated below verbatim.
+* design/xschem/sampler_core.sch when reviewing. What is built here is
+* sampler_core minus its two DR-0016 per-ring liveness digitizers (#65's
+* xsr1/xsr2 on ro1/ro2): the raw-tap path -- ro_array_core + xsb + xsv --
+* is instantiated below verbatim, and this deck is about the raw tap, not
+* the liveness taps. The liveness taps' own loading on the ring nodes is
+* measured separately, against the un-tapped baseline, by
+* sim/tb/ring-liveness-tap-power/.
 *
 * Injected per-stage input-referred white PSD (harness params vn_rms /
 * vn_dt, see tb.json):

@@ -23,7 +23,12 @@ rings through the combining gate's Cgd -- is measured, at PVT corners, by
 running sim/tb/ro-array-core-meta-power/ against the SAME measurement set
 as sim/tb/ro-array-core-power/.
 
-  xcore   ro_array_core, unmodified. Its xo is the tap's only input.
+  xcore   ro_array_core, unmodified. Its xo is the tap's only input. Its
+          two per-ring observation outputs (ro1/ro2, added for the DR-0016
+          liveness monitor by #65) are brought out to same-named local nets
+          here and left unloaded: this cell is the metastability-tap
+          experiment, not the liveness monitor, and loading them here would
+          change the very numbers the tap comparison is measuring.
   xtap    ro_meta_tap on its own supply pin vddm, so the tap's power is
           separately measurable and does NOT count against the ratified
           < 500 uW row, which is measured against ro_array_core alone
@@ -59,6 +64,8 @@ C {lab_pin.sym} 0 -70 0 0 {name=lw2 lab=vddr2}
 C {lab_pin.sym} 30 -70 0 0 {name=lw3 lab=vdd}
 C {lab_pin.sym} 0 70 0 0 {name=lg1 lab=vss}
 C {lab_pin.sym} 70 0 0 0 {name=lxo1 lab=xo}
+C {lab_pin.sym} 70 -30 0 0 {name=lro1 lab=ro1}
+C {lab_pin.sym} 70 30 0 0 {name=lro2 lab=ro2}
 C {lab_pin.sym} 240 -10 0 1 {name=lxo2 lab=xo}
 C {lab_pin.sym} 360 -10 0 0 {name=lmo lab=mo}
 C {lab_pin.sym} 300 -60 0 0 {name=lwm lab=vddm}

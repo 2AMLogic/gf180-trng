@@ -22,18 +22,27 @@ inherits the boundary rather than re-litigating it:
   │                            │raw │                       │                │
   │  en1/en2/vddr1/vddr2/      │val-┼─►  health tests (#11) ┼─► interface     │
   │  vdd/vss ◄──────────────── │id  │                       │   (#26) ──►    │
-  │                            │    │  ◄────────────────────┘   DATA/RAW_DATA│
+  │                            │ring│  ◄────────────────────┘   DATA/RAW_DATA│
+  │                            │bit1┼─►  ring liveness      │                │
+  │                            │/2  │    (DR-0016) ─────────┘                │
   └───────────────────────────┘    └──────────────────────────────────────┘
          DR-0001 raw tap = the DR-0009 analog/digital verification boundary
 ```
+
+Five signals cross that boundary, not three: the raw tap
+(`raw_bit`/`raw_valid`) plus DR-0016's two per-ring digitized samples
+(`ring_bit1`/`ring_bit2`, from the same `sampler_core` and the same
+`sampler_dff` cell). The liveness monitor's `ring_stuck_any` then joins
+`ht_fail_rct`/`ht_fail_apt` as the third input of the interface's single
+latch — one mechanism, three sources.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | [`../xschem/trng_top.sch`](../xschem/trng_top.sch) | The analog half: instantiates `sampler_core.sym` (#7 + #9) unmodified. Exported/checked by `design/netlist.py` like any other top cell — `design/trng_top.spice` is the generated netlist. |
-| `trng_top.py` | **Normative** behavioural wiring of the three digital blocks (`crc32_conditioner.Conditioner`, `rct_apt.HealthTest`, `trng_interface.Interface`), one `TopLevel.step()` call per sampler-clock edge. Documents, in its own docstring, the registered-vs-combinational ordering the wiring depends on. |
-| `trng_top.v` | Synthesisable RTL: instantiates `trng_conditioner_crc32`, `trng_health_test` and `trng_interface` with plain wires, no added logic. Compile-checked (and, where a stimulus-comparable path exists, cross-checked against `trng_top.py`) by `sim/tests/test_trng_top.py`. |
+| `trng_top.py` | **Normative** behavioural wiring of the four digital blocks (`crc32_conditioner.Conditioner`, `rct_apt.HealthTest`, `ring_liveness.RingLivenessMonitor`, `trng_interface.Interface`), one `TopLevel.step()` call per sampler-clock edge. Documents, in its own docstring, the registered-vs-combinational ordering the wiring depends on. |
+| `trng_top.v` | Synthesisable RTL: instantiates `trng_conditioner_crc32`, `trng_health_test`, `trng_ring_liveness` and `trng_interface` with plain wires, no added logic. Compile-checked (and, where a stimulus-comparable path exists, cross-checked against `trng_top.py`) by `sim/tests/test_trng_top.py`. |
 
 ## Why the schematic does not also draw the digital blocks
 
@@ -56,7 +65,12 @@ and `sim/tests/test_trng_top.py` checks it mechanically: that
 `clk`/`rst_n`/`raw_bit`/`raw_valid` on the analog side of the raw tap
 (`design/sampler_core.spice`'s `.subckt` signature, which `trng_top.spice`
 wraps unchanged) name the same four signals the conditioner's and the
-health tests' own RTL ports declare. That is the check that would catch a
+health tests' own RTL ports declare. The per-ring taps get the same check
+plus one the raw tap does not need: the schematic names them as scalar pins
+(`ring_bit1`/`ring_bit2`, 1-based like `ro1`/`ro2`) while the RTL carries one
+`ring_bit[N_RINGS-1:0]` vector, so the count and the `ring_bit<i+1>` →
+`ring_bit[i]` mapping are asserted by name — a swap there is invisible in
+every waveform, because both wires carry plausible bits. That is the check that would catch a
 signal "wired backwards" between the two halves — the risk this issue's own
 curation flagged — in the one place it is actually checkable, since DR-0009
 already rejected mixed-signal co-simulation as the mechanism that would
@@ -88,8 +102,13 @@ python3 sim/tb/smoke-trng-top/run_demo.py --no-write
 ## What is *not* here
 
 - **A ratified worst-corner `H`.** `trng_top.py` uses the health test's
-  DR-0002 draft `H0 = 0.5` default, same as every other block that consumes
-  it today.
+  DR-0002 draft `H0 = 0.5` default for both `C_RCT` and DR-0016's `C_LIVE`
+  (they come from the same `rct_apt.c_rct(h)` call), same as every other
+  block that consumes it today.
+- **Per-ring failure reporting.** `ring_stuck[i]` is a named net in
+  `trng_top.v` and nothing reads it: `STATUS.HT_FAIL_RING` says a ring
+  stopped, not which one, so DR-0013's published register map does not
+  acquire an `N_RINGS` dependency.
 - **A full start-up-window or entropy-quality demonstration at this level.**
   The smoke sim's job (per this issue's own curation) is proving the
   assembled netlist produces bits end to end at one nominal corner, not
