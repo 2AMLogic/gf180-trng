@@ -1,0 +1,25 @@
+{
+  "kind": "onset-fault",
+  "onset": 2000,
+  "n_bits": 2131,
+  "c_live": 81,
+  "n_rings": 2,
+  "stuck_ring": 0,
+  "per_ring_events": [
+    [
+      2079
+    ],
+    []
+  ],
+  "any_events": [
+    2079
+  ],
+  "first_event_after_onset": 2079,
+  "detection_latency": 79,
+  "latency_bound": 80,
+  "detected_within_bound": true,
+  "other_ring_ever_fired": false,
+  "wall_time_s": 0.12080073356628418,
+  "scenario": "ring1-stuck",
+  "why": "ring 1 (index 0) stops mid-stream while ring 2 keeps running -- the exact 'half the N=2 array silently dies' scenario DR-0010 raises the stakes on and design/README.md's 'Per-ring liveness' section names as invisible at the combined xo node"
+}

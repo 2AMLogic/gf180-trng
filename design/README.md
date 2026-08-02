@@ -272,11 +272,21 @@ design question this issue inherits, and the schematic answers it by making it
    DR-0001 constrains what the block *publishes*, not what it monitors
    internally.
 
-Designing the monitor is deliberately **not** in this directory: it is digital
-logic, it belongs with the health tests, and it is deferred to #44.
-What this issue owed was that the mechanism exists and is not foreclosed by the
+Designing the monitor was deliberately **not** in this directory: it is digital
+logic, it belongs with the health tests, and #44 built it in
+[`design/health_test/`](health_test/#the-per-ring-liveness-monitor-dr-0016)
+as [`DR-0016`](../spec/decision-records/DR-0016-per-ring-liveness-monitor.md)
+— N independent instances of the block's own RCT test, one per ring, reusing
+the same cutoff and the same already-verified `sampler_dff` digitizer cell
+rather than a new analog sensor or a new statistical assumption. What this
+issue (#7) owed was that the mechanism exists and is not foreclosed by the
 schematic. With N = 2 the stakes are higher than DR-0007 anticipated — one dead
 ring is half the array — which is stated in `DR-0010` §Consequences.
+`ro1`/`ro2` still have no pin on `ro_array_core.sym`: DR-0016 bounds its
+per-ring digitizer's electrical cost using ngspice's hierarchical internal-node
+addressing (the same technique the "Reading the recorded currents" section
+below already relies on for read-only probing) rather than a schematic change,
+and tracks promoting the tap into shipped RTL/schematic as a follow-up (#65).
 
 ### Metastability-hybrid tap
 
