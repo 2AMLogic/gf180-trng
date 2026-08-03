@@ -154,6 +154,14 @@ jobs:
       # sim/characterization-liveness-tap-phase-cost.md says they do -- either
       # the clk-locked finding on the pre-#82 direct tap, or the separate
       # finding about how much of it the buffer #82 adopted removes.
+      # sampler_bit_bias_variants.py --check is issue #86's guard, one level
+      # downstream of #76's: it fails if the sampled bit at the DR-0001 raw tap
+      # stops behaving the way sim/characterization-sampler-bit-bias.md says it
+      # does when the DR-0016 liveness digitizers' clock is running rather than
+      # parked -- i.e. if a future record turns that null into a measured bias,
+      # which would put a term into DR-0007 §1's independence argument. It also
+      # fails on a record whose sampled levels never settled to a rail, since
+      # bit statistics taken off a metastable capture are not bit statistics.
       # time_to_first_valid.py --check fails if any start-up corner stops
       # converging, if the ring swing stops being settled by the early window,
       # or if the measured total drops below the README's arithmetic floor
@@ -173,6 +181,7 @@ jobs:
           python3 sim/tools/array_coupling_variants.py --check
           python3 sim/tools/array_coupling_buffer_variant.py --check
           python3 sim/tools/liveness_tap_phase_variants.py --check
+          python3 sim/tools/sampler_bit_bias_variants.py --check
           python3 sim/tools/time_to_first_valid.py --check
           python3 sim/tools/power_rollup.py --check
 
