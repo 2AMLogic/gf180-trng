@@ -85,7 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="parallel ngspice runs across the whole (PVT point x seed) task list "
              "(default 1 = sequential). Records are still written in grid order.",
     )
-    parser.add_argument("--timeout", type=int, default=runner.DEFAULT_TIMEOUT_S, help="per-run ngspice timeout in seconds")
+    parser.add_argument(
+        "--timeout", type=int, default=runner.DEFAULT_TIMEOUT_S,
+        help="per-run ngspice wall-clock bound in seconds, enforced by an OS-level "
+             "watchdog (timeout(1)/gtimeout, see --check-env) so it survives even if "
+             "run_corners.py itself is killed; a killed run reports as FAILED-TIMEOUT",
+    )
     parser.add_argument("--supersedes", default="", metavar="RECORD", help="prior record stem this run corrects or replaces")
     parser.add_argument("--no-write", action="store_true", help="run but do not record evidence (debugging only)")
     parser.add_argument("--quiet", action="store_true", help="only print the summary")
@@ -118,6 +123,19 @@ def cmd_check_env() -> int:
     except NgspiceMissing as exc:
         print(f"ngspice : MISSING\n{exc}")
         status = EXIT_ENVIRONMENT
+    watchdog = runner.timeout_bin()
+    if watchdog is not None:
+        print(f"watchdog: OK   {watchdog}")
+    else:
+        # Not fatal -- ngspice still runs, just without the OS-level bound
+        # (see issue #83) that lets a hung run get killed even if this
+        # harness process itself dies mid-run. --check-env stays EXIT_OK so
+        # this degraded-but-functional mode doesn't block CI/smoke runs.
+        print(
+            "watchdog: MISSING (no timeout(1)/gtimeout on PATH -- a hung ngspice run\n"
+            "          will only be bounded while run_corners.py itself stays alive.\n"
+            "          macOS: brew install coreutils   Debian: apt-get install coreutils)"
+        )
     try:
         pdk = find_pdk()
         print(f"PDK     : OK   {pdk.path} (open_pdks {pdk.version}, via {pdk.source})")
@@ -300,8 +318,8 @@ def run(args: argparse.Namespace) -> int:
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
-            flag = "ok  " if point_ok else "FAIL"
             if point_ok:
+                flag = "ok  "
                 parts = []
                 for name in tb.measure:
                     values = [r.measurements[name] for r in results if name in r.measurements]
@@ -309,6 +327,12 @@ def run(args: argparse.Namespace) -> int:
                         parts.append(f"{name}={_fmt(sum(values) / len(values))}")
                 detail = "  ".join(parts)
             else:
+                # A killed corner must stand out from an ordinary
+                # convergence/parse failure in the printed summary -- see
+                # issue #83: a silently-hung corner is what took a whole
+                # worker offline for hours, and "FAIL" alone reads the same
+                # as any other failure.
+                flag = "FAILED-TIMEOUT" if any(r.status == "timeout" for r in results) else "FAIL"
                 first_failure = next((r for r in results if r.status != "ok"), None)
                 detail = first_failure.message if first_failure else "no runs"
             print(f"[{i:>3}/{len(points)}] {flag} {point.corner_id:<22} {detail}")
