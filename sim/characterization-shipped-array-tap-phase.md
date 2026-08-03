@@ -192,6 +192,41 @@ freely adjustable:
   period cannot be shorter than ~1 µs — and the settling periods and the
   measurement window are both counted in ring periods on top of that.
 
+**CPU-hours are not wall-clock hours here, and the gap is large.** The ≈ 23
+CPU-hour figure above silently assumes the batch can have as many cores as it
+has runs. On the host these attempts run on it cannot. Every `ngspice` started
+from an agent session inherits `nice 10`, and macOS maps that to a background
+QoS class scheduled on the efficiency-core cluster rather than across all 28
+cores — so the batch's *aggregate* throughput is capped near two and a half
+cores no matter how many runs are in flight. Measured on this host during
+attempt 4, by differencing the runs' summed CPU time over a fixed wall-clock
+window:
+
+| runs in flight | aggregate throughput |
+|---|---|
+| 4 (one deck) | ≈ 2.0 cores |
+| 8 (two decks) | ≈ 2.4 cores |
+| 16 (all four decks) | ≈ 1.8 cores |
+
+Two things follow, and both are scheduling facts about the host rather than
+anything about the circuit. First, **running all sixteen at once is slower in
+aggregate than running eight** — past the E-cluster's width the runs contend
+rather than overlap — so there is no parallelism left to buy: ≈ 23 CPU-hours
+is ≈ 9–11 hours of wall clock however the batch is arranged. Second, the only
+lever that would change this is raising the runs' priority, and `renice`
+downward from `nice 10` requires root, which is an operator action and not an
+agent one.
+
+The practical consequence for whoever runs this next: **run the two decks of
+one pair concurrently and the pairs one after the other**, rather than all
+four decks at once. It costs nothing in total wall clock — the ceiling is the
+same either way — and it lands a *complete, readable pair* (the shipped ratio)
+hours before the batch as a whole finishes, instead of leaving all four decks
+partially done and none readable if the host kills the batch. That is the
+arrangement attempt 4 settled on after measuring the table above, and
+`sim/tools/run_array_liveness_tap_phase.py --decks <a> <b>` is how to express
+it.
+
 ### What has stopped it so far
 
 Three launches of the sixteen runs were killed from outside the harness before
