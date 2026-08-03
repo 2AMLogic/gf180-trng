@@ -723,7 +723,7 @@ def main(argv: list[str] | None = None) -> int:
             if var.worst_rail_dev > 0.1:
                 print(
                     f"error: {var.rec.stem} sampled a level "
-                    f"{var.worst_rail_dev * 1e3:.1f} mV from mid-supply, i.e. a "
+                    f"{var.worst_rail_dev * 1e3:.1f} mV from the nearer supply rail, i.e. a "
                     "capture that never settled to a logic level. Bit statistics "
                     "taken off that are not statistics about a bit.",
                     file=sys.stderr,
