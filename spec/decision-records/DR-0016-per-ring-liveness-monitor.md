@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
 supersedes: n/a
 superseded_by: n/a
-related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/"
+related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/"
 ---
 
 # DR-0016: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
@@ -40,6 +40,18 @@ related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1),
     subcircuit port is simply not addressable as an internal node. The
     measured costs tabulated under "Power/area cost" are unaffected and are
     now the cost of something the design contains.
+- 2026-08-03: **Amendment A2 (#76) -- the tap's PHASE cost is measured. No
+  decision, parameter, cutoff or mechanism in this record changed; the record
+  still stands as Proposed. What changed is that "Power/area cost" was the
+  only cost this record priced, and it is not the only cost the tap has.**
+  Measured at `tt`/27 C/3.30 V in
+  `sim/characterization-liveness-tap-phase-cost.md`: with the digitizer's `d`
+  input directly on the ring node (the arrangement this record specified and
+  the block shipped up to PR #82), the ring runs at **two different
+  frequencies 25.6 % apart** depending on which rail `clk` sits on, and
+  alternates between them in lockstep with `clk`. Since PR #82 / DR-0018 the
+  digitizer taps a buffer output instead, which removes 96.5 % of that; the
+  residual is 19.9x and is still `clk`-locked. See "Phase cost" below.
 
 ## Context
 
@@ -274,6 +286,54 @@ binding corner. It does not, by itself, threaten the ratified `< 500 uW`
 row. The RTL and conditioner/interface/health-test digital-logic power this
 repository has never measured (item 1) remains an open, pre-existing gap
 this record does not close and does not worsen.
+
+### Phase cost, measured (#76, amendment A2)
+
+The table above prices the tap in **power**. It does not price it in **phase**,
+and the two are not the same cost: the loading delta it reports is a *time
+average* over the two states the tap's own `clk` puts it in, and averaging over
+those two states is exactly what hides the effect this section records.
+
+Measured at `tt`/27 C/3.30 V in
+[`sim/characterization-liveness-tap-phase-cost.md`](../../sim/characterization-liveness-tap-phase-cost.md),
+on the same 5-stage starved ring, injected noise density and window geometry
+issue #51's coupling ladder used, so the two are directly comparable:
+
+| | `T_0` | `sigma_1` vs its own static reference | per-block period swing |
+|---|---|---|---|
+| tap on the ring node, `clk` HIGH (master transmission gate off) | 2.7472 ns | 1.00x (reference) | 0.00 % |
+| tap on the ring node, `clk` LOW (master transmission gate on) | 3.4507 ns | — | 0.00 % |
+| tap on the ring node, **`clk` running** (the arrangement this record specified) | 3.0444 ns | **541.3x** | **23.11 %** |
+| tap on the **buffer output**, `clk` running (what ships since PR #82 / DR-0018) | 2.8596 ns | **19.9x** | **0.96 %** |
+
+Three points, in order of how much they change what this record claims:
+
+1. **The two static endpoints are 25.6 % apart on ring period.** Which rail
+   `clk` sits on decides how fast the ring runs, because the `sampler_dff`
+   master transmission gate conducts while `clk` is low and the ring node then
+   drives the master latch's input inverter through a full transition every
+   ring cycle. That gap is **rate-independent**: a 50 % duty-cycle clock puts
+   the ring in each state half the time whatever its frequency.
+2. **With `clk` running the ring visits exactly those two endpoints**, block
+   for block, with a repeat period equal to the clk period. What that inflates
+   is not jitter -- across four independent noise seeds the resulting
+   `sigma_1` reproduces to 0.01 % where a genuine estimate scatters 2.69 %,
+   and it accumulates as `L^0.95` rather than a random walk's `L^0.5`.
+3. **The consequence is a measurement rule, not a design change.** A per-ring
+   `sigma_acc,i` measured with a digitizer attached and `clk` toggling is not
+   admissible evidence for DR-0007 §2's sizing law, for the same reason
+   `sim/characterization-array-ring-coupling.md` ruled out one measured with
+   the combiner neighbours switching. No committed record in this repository
+   is affected -- every per-ring `sigma_acc` on file comes from a deck with no
+   digitizer in it -- so this is forward-looking. **DR-0007 §2 is unamended and
+   this amendment does not amend it.**
+
+This does not change this record's Decision, its cutoffs, `C_LIVE`, or the
+Power row conclusion above. It records a second measured cost of the same tap,
+and the direction of the finding is that the mitigation the block already
+adopted for a different reason (DR-0018) also happens to remove most of this
+one. What to do about the 19.9x residual is not decided here and has no
+evidence here.
 
 ### No exposed per-ring tap (DR-0001)
 

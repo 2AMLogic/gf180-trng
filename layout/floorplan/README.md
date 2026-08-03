@@ -274,31 +274,67 @@ mitigation above misses it.**
 > only the [DR-0007] §6 mitigations is incomplete, and incomplete in the
 > direction that overstates the array.
 
-### The same topology exists a second time, and its jitter cost is unmeasured
+### The same topology exists a second time — and it was measured ([#76])
 
 The measurement above indicts a specific arrangement: *a ring node driving the
-input gate of a cell whose internal nodes something else is driving*. The
-shipped block contains that arrangement twice more, and the floorplan work is
-where it surfaces:
+input gate of a cell whose internal nodes something else is driving*. The block
+contained that arrangement twice more, and the floorplan work is where it
+surfaced:
 
 - `xsr1` / `xsr2`, the DR-0016 per-ring liveness digitizers (#71), put each
   ring node `ro1` / `ro2` on a `sampler_dff` input — a transmission gate whose
   other terminal is the master latch node, and whose gate is driven by **`clk`**.
 - `xsb` does the same on `xo` with the same clock.
 
-`sim/tb/ring-liveness-tap-power/` measured what those digitizers cost the rings
-in **power** at three PVT points, and DR-0016 §Power/area cost prices it. **No
-testbench in this repository measures what they cost the rings in phase.** The
-mechanism is structurally identical to the one #51 measured, and the aggressor
-is worse in one specific way: `clk` is coherent with the sampling instant by
-definition, so a `clk`-correlated phase disturbance on a ring does **not**
-average away over many samples the way an incommensurate ring-to-ring beat
-does. It is also externally driven (DR-0012), so its rate is an attacker's
-choice rather than a design constant.
+This section previously said that nothing measured what those digitizers cost
+the rings in **phase**, and filed it as [#76]. [#76] measured it, in
+[`sim/characterization-liveness-tap-phase-cost.md`](../../sim/characterization-liveness-tap-phase-cost.md),
+at `tt`/27 °C/3.30 V through #51's own window geometry. **The concern stated
+here was correct, and the effect is larger than the one this document was
+written about:**
 
-This is a plausible mechanism with a measured analogue and **no measurement of
-its own**. It is stated here rather than assumed away, and it is filed as
-follow-up work rather than resolved inside a floorplan document: **[#76]**.
+| | `σ₁` against its own static reference | ring-period swing across the run |
+|---|---|---|
+| digitizer's `d` on the **ring node**, `clk` running (what shipped up to [#82]) | **541×** | **23.11 %** |
+| digitizer's `d` on the **buffer output**, `clk` running (what ships now) | **19.9×** | **0.96 %** |
+
+The mechanism is not the one the coupling section describes, and it is
+simpler: the `sampler_dff` master transmission gate conducts while `clk` is
+low, so the ring node drives the master latch's input inverter through a full
+transition every ring cycle in one clock phase and sees only junction and
+overlap capacitance in the other. The ring therefore runs at **two different
+frequencies, 25.6 % apart** (2.7472 ns and 3.4507 ns on the 5-stage reference
+ring), and a running `clk` switches it between them — block for block, at
+exactly those two periods, with a repeat period equal to the clk period. Across
+four independent noise seeds the resulting `σ₁` reproduces to 0.01 % where a
+genuine estimate scatters 2.69 %, and it accumulates as `L^0.95` rather than a
+random walk's `L^0.5`. It is deterministic, and unlike a ring-to-ring beat it is
+coherent with the sampling instant by construction.
+
+**The buffer this document proposed and [#78]/[DR-0018] adopted removes 96.5 %
+of it** — a fraction close to the 92.8 % it removes on the combiner path, from
+decks that share nothing with those but the cell. So the mitigation adopted for
+one mechanism turns out to address the other as well. It does not remove it:
+19.9× is far outside the 1.00×–1.08× band a quiet ring occupies, and the
+residual is as deterministic as the thing it is a residual of. What reaches the
+ring through a buffer is the `clk`-dependent load on the buffer's *output*,
+changing the buffer's output slew, fed back through the buffer's own gate-drain
+capacitance to its input.
+
+**What this adds to the isolation rationale**, stated once and plainly:
+
+> A `clk`-driven cell tapping a ring node is a **third** coupling mechanism,
+> distinct from injection locking and from XOR-combiner coupling. Like combiner
+> coupling it is **not mitigated by floorplan separation, guard rings, per-ring
+> supply routing, or frequency-ratio skew** — the digitizer's input stage is a
+> shared electrical node by construction. Unlike combiner coupling, its
+> aggressor is an **external pin** ([DR-0012]), so its rate is not a design
+> constant, and its disturbance is phase-locked to the sampling instant rather
+> than incommensurate with it. The per-ring buffer attenuates it by ~30×; no
+> floorplan measure attenuates it at all.
+
+Nothing here proposes a further design change: what should be done about the
+remaining 19.9×, if anything, is not decided by that document or this one.
 
 ### Adopted mitigation: one buffer per ring, ahead of everything
 
@@ -617,9 +653,11 @@ design. This work produced three, all filed against
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
 [#78]: https://github.com/2AMLogic/gf180-trng/issues/78
+[#82]: https://github.com/2AMLogic/gf180-trng/pull/82
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: ../../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
