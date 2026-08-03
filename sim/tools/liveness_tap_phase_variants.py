@@ -204,10 +204,11 @@ MODULATION_MATERIAL = 0.003
 #: without gating on its outcome.
 RECORDED_VERDICT: str | None = "clk-locked"
 
-#: Same contract for the buffer question, which is a separate finding with its
-#: own evidence: ``"removed"``, ``"reduced"``, ``"not-removed"``, or ``None`` to
-#: skip the gate.
-RECORDED_BUFFER_VERDICT: str | None = "removed"
+#: Same contract for the buffer question -- a separate finding with its own
+#: evidence, and since PR #82 a statement about the SHIPPED topology rather
+#: than about a proposal: ``"removed"``, ``"reduced"``, ``"not-removed"``, or
+#: ``None`` to skip the gate.
+RECORDED_BUFFER_VERDICT: str | None = "reduced"
 
 
 class Variant:

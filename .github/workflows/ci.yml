@@ -148,6 +148,12 @@ jobs:
       # sim/characterization-ring-buffer-mitigation.md rests on. On a runner
       # with no PDK the digital term is unavailable, which changes both rollup
       # totals by the same constant and so leaves that comparison valid.
+      # liveness_tap_phase_variants.py --check is the same guard for issue #76:
+      # it fails if the DUT variants of the DR-0016 liveness-digitizer
+      # phase-cost experiment stop classifying the way
+      # sim/characterization-liveness-tap-phase-cost.md says they do -- either
+      # the clk-locked finding on the pre-#82 direct tap, or the separate
+      # finding about how much of it the buffer #82 adopted removes.
       # time_to_first_valid.py --check fails if any start-up corner stops
       # converging, if the ring swing stops being settled by the early window,
       # or if the measured total drops below the README's arithmetic floor
@@ -166,6 +172,7 @@ jobs:
           python3 sim/tools/array_sizing.py --check
           python3 sim/tools/array_coupling_variants.py --check
           python3 sim/tools/array_coupling_buffer_variant.py --check
+          python3 sim/tools/liveness_tap_phase_variants.py --check
           python3 sim/tools/time_to_first_valid.py --check
           python3 sim/tools/power_rollup.py --check
 
