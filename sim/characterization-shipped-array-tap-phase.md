@@ -223,9 +223,88 @@ None of the three attempts produced a committable record — every run failed, s
 every measurement row read "no data" — and none was committed. `sim/`'s
 append-only rule governs committed evidence; these never became any.
 
+**Attempt 4** (issue #87, this change) lands
+[`sim/tools/run_array_liveness_tap_phase.py`](tools/run_array_liveness_tap_phase.py),
+which fixes both of the above rather than relying on a person to remember
+them next time:
+
+- it launches the actual batch under `subprocess.Popen(..., start_new_session=True)`
+  — the same effect as attempt 1's prescribed `os.setsid()` fix — so a SIGTERM
+  to the launching session's process group stops at this script and does not
+  reach the `ngspice` runs underneath it;
+- it loops per deck rather than issuing one `run_corners.py` invocation per
+  deck and hoping: before each attempt it checks whether a clean record (this
+  corner, all four seeds) already exists and skips the deck if so, and if a
+  previous attempt left an incomplete record or an orphaned `raw/<stem>/`
+  directory (a stem `run_corners.py` reserved but never got to write, because
+  the process died first), it deletes only that deck's leftovers and retries
+  — so a kill costs at most the deck that was running, and re-running the
+  same command later resumes rather than restarting the other three.
+
+It also addresses a fourth failure mode none of the first three hit yet but
+that a multi-hour job launched from an issue's worktree is exposed to: this
+repository's Loom tooling removes a `loom:building` issue's
+`.loom/worktrees/issue-N/` worktree by default once that issue's PR merges
+(`.loom/scripts/merge-pr.sh`), and this PR — like #90 before it — is expected
+to merge as a `Part of #87` partial increment well before a ~6–23 CPU-hour
+batch finishes. Running the batch inside `.loom/worktrees/issue-87/` would
+therefore risk exactly the same outcome as attempt 1 (files disappearing out
+from under a still-running job), just triggered by a merge instead of a
+session end. So this launch runs from a plain `git clone --local` of this
+branch outside any Loom-managed path — `merge-pr.sh`'s cleanup only ever
+touches `.loom/worktrees/issue-N/` and `.loom/worktrees/pr-N/`, and explicitly
+never auto-removes a worktree or clone anywhere else — rather than from the
+worktree this PR itself was authored in.
+
+This attempt's launch, for the record:
+
+- **command**: `python3 sim/tools/run_array_liveness_tap_phase.py` (all four
+  decks, default `--timeout 86400`, default `--max-attempts 5`), run from a
+  `git clone --local` of `feature/issue-87` at
+  `/Users/rwalters/loom-scratch/gf180-trng-issue87-tapphase` on the same host
+  the prior three attempts ran on;
+- **PID**: `94886` (the detached driver), PID file at
+  `sim/.work/array-liveness-tap-phase-launch/run.pid` under that clone;
+- **log**: `sim/.work/array-liveness-tap-phase-launch/run.log` under that
+  clone (machine-local scratch, gitignored, not meant to be read by anyone
+  without access to this host — the PR that lands this change has the
+  absolute path). `python3 sim/tools/run_array_liveness_tap_phase.py
+  --status`, run from any checkout, reads the committed records directly and
+  needs neither the PID nor the log to report which decks are still
+  outstanding;
+- **expected wall clock**: with `-j 4` (this deck's four seeds run
+  concurrently — a wall-clock choice only, per-seed cost is unaffected) each
+  deck costs roughly one seed's ~87 CPU-minutes rather than four seeds'
+  worth, so four decks run one after another come to **~6 hours**, plus
+  whatever retries a host-level kill (attempt 2/3's failure mode, still
+  outside this repository's control) costs on top.
+
+**One thing this launch found and had to clear first.** At launch time the
+same host was already running a fifth, uncoordinated set of `ngspice`
+processes for these same four deck names, from an untracked `/tmp` clone at
+an earlier commit than this document -- one predating even the geometry this
+document's Method section describes (`tstop` 2.6 µs, not 3.000003 µs, and
+carrying an `abstol=1e-10` relaxation this document's committed decks do not
+have). Diffing its testbench files against the committed ones confirmed it
+could not have produced a record matching what `sim/tb/` actually holds, so
+it was terminated (`SIGTERM`, then `SIGKILL` for anything still alive three
+seconds later) and its scratch directory removed, rather than left to finish
+and be mistaken for evidence. Recorded here in case a future attempt finds
+its own leftover processes on this host: check the testbench file hashes
+before trusting a run in progress, not just the deck name.
+
+If this attempt also fails to land all four records, the next one should run
+`python3 sim/tools/run_array_liveness_tap_phase.py --status` first rather than
+re-deriving which decks are still outstanding by hand — that is exactly what
+the flag is for.
+
 ### What is left to do
 
-1. Run the four decks and land their records:
+1. Run the four decks and land their records. The equivalent of the loop
+   below, made resumable and detached, is
+   [`sim/tools/run_array_liveness_tap_phase.py`](tools/run_array_liveness_tap_phase.py)
+   — see "What has stopped it so far" above for why the loop alone was never
+   enough:
 
    ```sh
    for tb in array-liveness-tap-phase-clocked array-liveness-tap-phase-static \
