@@ -154,13 +154,15 @@ jobs:
       # sim/characterization-liveness-tap-phase-cost.md says they do -- either
       # the clk-locked finding on the pre-#82 direct tap, or the separate
       # finding about how much of it the buffer #82 adopted removes.
-      # array_liveness_tap_phase_variants.py --check is issue #87's guard, which
-      # succeeds #76's on the SHIPPED topology: it fails if the shipped array's
-      # clk-locked residual stops coming in below the 19.9x upper bound #76
-      # recorded for it, or if the xsb-on-xo path stops being unreachable from
-      # either ring node -- the two findings
-      # sim/characterization-liveness-tap-phase-cost.md's "on the shipped array"
-      # section rests on.
+      # array_liveness_tap_phase_variants.py --check is issue #87's equivalent
+      # guard on the SHIPPED topology -- whether the shipped clk-locked residual
+      # comes in below the 19.9x upper bound #76 recorded for it, and whether the
+      # xsb-on-xo path reaches either ring node. It is deliberately NOT on the
+      # list below: its four decks exist but have not been run, so there is no
+      # record for it to read and no recorded verdict for it to gate against
+      # (both RECORDED_* constants are None, and
+      # sim/characterization-shipped-array-tap-phase.md's Results section says
+      # why). Adding the line here belongs to the change that lands the records.
       # sampler_bit_bias_variants.py --check is issue #86's guard, one level
       # downstream of #76's: it fails if the sampled bit at the DR-0001 raw tap
       # stops behaving the way sim/characterization-sampler-bit-bias.md says it
@@ -188,7 +190,6 @@ jobs:
           python3 sim/tools/array_coupling_variants.py --check
           python3 sim/tools/array_coupling_buffer_variant.py --check
           python3 sim/tools/liveness_tap_phase_variants.py --check
-          python3 sim/tools/array_liveness_tap_phase_variants.py --check
           python3 sim/tools/sampler_bit_bias_variants.py --check
           python3 sim/tools/time_to_first_valid.py --check
           python3 sim/tools/power_rollup.py --check

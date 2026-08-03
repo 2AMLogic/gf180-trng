@@ -181,7 +181,7 @@ MODULATION_MATERIAL = 0.003
 BOUND_MARGIN = 0.10
 
 #: The verdicts the committed records actually support, recorded in
-#: ``sim/characterization-liveness-tap-phase-cost.md``.
+#: ``sim/characterization-shipped-array-tap-phase.md``.
 #:
 #: ``--check`` gates on the *measured* verdict still equalling these. That is
 #: deliberately not the same as gating on a hypothesis being true: these are
@@ -189,8 +189,18 @@ BOUND_MARGIN = 0.10
 #: classification the check fails and whoever moved it has to update the recorded
 #: conclusion rather than quietly leaving a stale one in the characterization
 #: document. Set either to ``None`` to run the classification without gating.
-RECORDED_SHIPPED_VERDICT: str | None = "bound-confirmed-residual-remains"
-RECORDED_XSB_VERDICT: str | None = "unreachable"
+#:
+#: **Both are ``None``, because the four decks above have not been run yet.**
+#: There is no ``tt``/27 C/3.30 V record for any of them, so there is nothing
+#: for ``--check`` to read and nothing it could honestly gate against; its CI
+#: invocation is correspondingly absent from ``.github/workflows/ci.yml`` (the
+#: comment block there says so). Naming a verdict here before the run would
+#: pre-register a conclusion this repository has no evidence for -- the exact
+#: failure this gate exists to catch, pointed the wrong way. The change that
+#: lands the records is the change that fills these in, from what this script
+#: prints.
+RECORDED_SHIPPED_VERDICT: str | None = None
+RECORDED_XSB_VERDICT: str | None = None
 
 
 class Variant:
