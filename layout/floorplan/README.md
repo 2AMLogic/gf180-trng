@@ -21,9 +21,9 @@ two get. Getting that distinction wrong is how an array that is correlated by
 construction ends up documented as independent.
 
 The circuit-level mitigation for that third mechanism — one buffer per ring
-ahead of the combiner — has since been **measured** ([#75]): it removes 92.8 %
-of the coupling and *returns* power rather than costing it, and a 2.87×
-residual survives. It is recommended below and not yet adopted ([#78]).
+ahead of the combiner — has been **measured** ([#75]) and **adopted**
+([#78]): it removes 92.8 % of the coupling and *returns* power rather than
+costing it, and a 2.87× residual survives.
 
 ---
 
@@ -300,11 +300,14 @@ This is a plausible mechanism with a measured analogue and **no measurement of
 its own**. It is stated here rather than assumed away, and it is filed as
 follow-up work rather than resolved inside a floorplan document: **[#76]**.
 
-### Proposed mitigation: one buffer per ring, ahead of everything
+### Adopted mitigation: one buffer per ring, ahead of everything
 
-**The proposal.** Insert one minimum-width inverter on each ring output,
-between the ring node and *every* consumer — the combiner input and that ring's
-liveness digitizer both drive off the buffer's output, not off the ring node.
+**The mitigation, adopted ([#78]).** One minimum-width inverter on each ring
+output, between the ring node and *every* consumer — the combiner input and
+that ring's liveness digitizer both drive off the buffer's output, not off
+the ring node. [`DR-0018`](../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)
+records the decision; `design/xschem/ro_array_core.sch` and the new
+`design/xschem/ro_buf.sch`/`.sym` are where it lands.
 
 Inverting one or both XOR inputs does not change the entropy at the combined
 node (`a ⊕ b` and `¬a ⊕ b` differ by a constant inversion), so a single
@@ -354,17 +357,23 @@ jitter estimate scatters, accumulation exponent 0.141 against the control's
 over-statement of one ring's contribution to `Q_array`, still in the unsafe
 direction.
 
-**The decision this document now takes:**
+**The decision this document now records:**
 
 > **The measurement rule below is unchanged and remains adopted** — an 8.24×
 > residual is not a licence to measure per-ring `σ_acc,i` with the neighbours
-> switching, and the buffer does not relax it. **The buffer is recommended for
-> adoption**: it removes 92.8 % of the coupling, costs 0.06 % of the area row,
-> and *returns* 19.1 µW to the power row. It is **not adopted by this
-> document**, because adopting it edits `design/xschem/ro_array_core.sch` and
-> obsoletes every shipped-array record's operating point (+6.7 % frequency,
-> −4.9 % power), which is a decision record and a re-run, not a floorplan
-> edit. Filed as **[#78]**.
+> switching, and the buffer does not relax it. **The buffer is adopted**
+> ([#78], [`DR-0018`](../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)):
+> it removes 92.8 % of the coupling, costs 0.06 % of the area row, and
+> *returns* headroom to the power row. Adoption was not a floorplan edit — it
+> edited `design/xschem/ro_array_core.sch`, added `design/xschem/ro_buf.sch`,
+> and obsoleted every shipped-array record's operating point (+6.7 %
+> frequency, −4.9 % power), so it went through a decision record and a re-run
+> of the `ro-array-core-power`, `ro-array-core-pvt-q` and
+> `ro-array-core-startup` families. Against those re-run records the block's
+> active rollup at the binding corner (`ff`/−40 °C/3.63 V) is **433.2 µW,
+> 86.6 % of the `< 500 µW` row**, down from the pre-adoption 454.2 µW
+> (90.8 %) — close to, and slightly better than, the 435.1 µW the
+> testbench-only measurement projected.
 
 The edge case the issue asks about is worth stating explicitly: **the buffers
 must be per-ring, never shared.** A single buffer stage feeding both combiner
@@ -536,11 +545,14 @@ Stated as a list because an unstated limit is a defect.
 3. **No corner coverage on the coupling factor.** 28.6× is `tt`/27 °C/3.30 V
    only. It is a circuit ratio with no reason to be corner-independent, and the
    sweep belongs to #13/#12.
-4. **No adoption of the buffer mitigation.** [#75] measured it (92.8 % of
-   the coupling excess removed, and it *returns* 19.1 µW rather than
-   costing 24.4 µW), and this document now recommends it — but the
-   schematic still ships unbuffered, and the residual coupling is 2.87×
-   at one corner. Adoption is [#78].
+4. **No removal of the coupling — only 92.8 % of it.** The buffer mitigation
+   is measured ([#75]) and adopted ([#78], [`DR-0018`](../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)):
+   the schematic now ships buffered. What that does *not* establish is
+   independence. A **2.87× residual** survives at `tt`/27 °C/3.30 V — an
+   8.24× over-statement squared, still in the unsafe direction — so the
+   measurement rule below is unchanged, and per-ring `σ_acc,i` taken with the
+   neighbours switching stays inadmissible, buffered or not. The residual's
+   own corner coverage is item 3's gap, not a separate one.
 5. **No measurement of the `clk`-driven liveness-tap path**, as stated above —
    [#76].
 6. **No attribution of the residual 1.21×** between one XOR gate with one

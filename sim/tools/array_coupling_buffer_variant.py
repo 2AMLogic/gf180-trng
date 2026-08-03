@@ -29,6 +29,16 @@ result says how much of the 28.6x the buffer removes, not only that it moved.
 Sigma here is RAW at the fixed injected level, exactly as in
 ``array_coupling_variants.py`` -- comparable across these rows, not physical
 jitter, and no entropy claim may be built on it (DR-0004 tiering).
+
+A note on tense, since #78
+--------------------------
+#78 / ``DR-0018`` adopted the buffer, so this script is now retrospective: it
+states the case the decision record acted on, against the design that was
+shipping at the time. That makes its record selection the mirror image of
+every other tool's. The shipped-design rollups want the *newest* measurement
+of a corner; this one wants the *pre-adoption* one on the unbuffered side, and
+pins it by netlist blob SHA so a later re-run of the same family cannot drift
+into it -- see ``UNBUFFERED_NETLIST_SHA``.
 """
 
 from __future__ import annotations
@@ -59,6 +69,35 @@ POWER_CORNER = "ff/-40C/3.63V"
 #: buffered one (the same trap the shipped rollups carry a guard for).
 POWER_GLOB_UNBUFFERED = "*-ro-array-core-power-[0-9]*.md"
 POWER_GLOB_BUFFERED = "*-ro-array-core-power-buffered-*.md"
+
+#: ``design/ro_array_core.spice``'s blob SHA as it stood BEFORE #78 adopted
+#: the per-ring output buffer ([DR-0018]) -- the netlist every pre-adoption
+#: ``ro-array-core-power`` record was measured against.
+#:
+#: This pin is what the family glob alone cannot do. Adopting the buffer
+#: changed the shipped netlist and #78 re-ran ``ro-array-core-power`` against
+#: it, so ``sim/records/`` now holds two generations of ``ff/-40C/3.63V``
+#: under the SAME family slug: the pre-adoption unbuffered array, and the
+#: adopted buffered one. Both are ``status: valid`` and both stay committed --
+#: the records are append-only and each is true of the design it measured. But
+#: this script's "unbuffered" column is not "the newest measurement of that
+#: corner"; it is specifically *the design the buffer was adopted instead of*,
+#: and taking the newest record of the family silently makes the column
+#: buffered, compares buffered against buffered, and reduces the power gate
+#: below to testbench-to-testbench noise (~2 uW, in the wrong direction).
+#:
+#: The four shipped-design rollups fixed alongside this one (``power_rollup.
+#: by_corner``, ``array_sizing.dedupe_by_corner``, ``worst_corner_entropy.
+#: shipped_points``, ``time_to_first_valid.dedupe_by_corner``) resolve the
+#: same two generations the opposite way, and correctly: every claim they make
+#: is about the array *as it ships*, so for them the newest record of a corner
+#: wins. This script is the one place that means the older generation on
+#: purpose, so it is the one place that has to name it -- and it names it by
+#: the DUT's blob SHA rather than by record stem, because what makes that
+#: record the baseline is which netlist it measured, not when it was run.
+#:
+#: [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
+UNBUFFERED_NETLIST_SHA = "339e858e0010f1ca26412919af47621d40dedf93"
 
 #: ``(label, record glob)``, in the order the comparisons are meant to be read.
 #: The first three are issue #51's own committed records (PR #67); the last two
@@ -129,13 +168,32 @@ def load_variants() -> list[Variant]:
 # --------------------------------------------------------------------------
 
 
-def _power_record(glob: str) -> pr.Record:
-    """The one power record at ``POWER_CORNER`` matching ``glob``."""
-    matches = [
+def _power_record(glob: str, netlist_sha: str | None = None) -> pr.Record:
+    """The newest power record at ``POWER_CORNER`` matching ``glob``.
+
+    ``netlist_sha`` narrows the search to records measured against one
+    specific revision of the DUT netlist before "newest" is applied, which is
+    how the unbuffered baseline stays unbuffered now that #78 has re-run this
+    family against the adopted (buffered) netlist -- see
+    ``UNBUFFERED_NETLIST_SHA``. Record stems begin with the run date and the
+    glob is sorted, so the last surviving match is the newest one.
+    """
+    all_at_corner = [
         rec for rec in (pr.Record(p) for p in sorted(RECORDS.glob(glob)))
         if rec.corner == POWER_CORNER
     ]
+    matches = [
+        rec for rec in all_at_corner
+        if netlist_sha is None or rec.netlist_sha == netlist_sha
+    ]
     if not matches:
+        if all_at_corner and netlist_sha is not None:
+            raise RecordError(
+                f"sim/records/{glob} has {len(all_at_corner)} record(s) at "
+                f"{POWER_CORNER}, but none measured netlist {netlist_sha[:12]} "
+                "-- the baseline this comparison is against is no longer on "
+                "file, and sim/records/ is append-only, so it should be"
+            )
         raise RecordError(
             f"no sim/records/{glob} record at {POWER_CORNER}, so the buffer's "
             "measured cost cannot be read"
@@ -178,12 +236,13 @@ def _rollup_total(p_entropy_w: float, r_xo: float, rate_bps: float,
 
 def report_power(rate_bps: float) -> dict:
     """Print the measured cost of the mitigation; return the two rollup totals."""
-    unbuf = _power_record(POWER_GLOB_UNBUFFERED)
+    unbuf = _power_record(POWER_GLOB_UNBUFFERED, netlist_sha=UNBUFFERED_NETLIST_SHA)
     buf = _power_record(POWER_GLOB_BUFFERED)
     b_un, b_bu = _branches(unbuf), _branches(buf)
 
     print(f"\n\nwhat the buffer COSTS, at {POWER_CORNER} (the power-binding corner)")
-    print(f"  unbuffered: {unbuf.stem}")
+    print(f"  unbuffered: {unbuf.stem}  (pre-adoption netlist "
+          f"{UNBUFFERED_NETLIST_SHA[:12]})")
     print(f"  buffered  : {buf.stem}\n")
     header = f"{'branch':<16}{'unbuffered':>13}{'buffered':>13}{'delta':>13}"
     print(header)

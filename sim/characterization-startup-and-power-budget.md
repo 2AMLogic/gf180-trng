@@ -22,6 +22,20 @@ relaxed**: the miss is stated below with numbers and routed to
 which proposes what to do about it and is `Proposed`, not ratified. Nothing
 here decides anything.
 
+> **Update — the array this document measured is no longer the array that
+> ships (#78 / [`DR-0018`](../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)).**
+> Every number below was measured on the *unbuffered* entropy array. #78
+> adopted the per-ring output buffer and re-ran the three families this
+> document reads (`ro-array-core-power`, `ro-array-core-pvt-q`,
+> `ro-array-core-startup`), which moves the active-power row from **454.2 µW
+> (90.8 %)** to **433.2 µW (86.6 %)** — the array got *cheaper*, so the
+> "met" verdict below is met by a wider margin, not narrower. The idle row
+> and the time-to-first-valid row are unchanged in verdict. The two commands
+> above regenerate the current numbers from the current records at any time;
+> the text below is left in the state issue #14 measured it in, because the
+> re-run does not make what it measured untrue. Where a number here matters
+> to a decision, prefer the tool output over this document.
+
 ---
 
 ## Headline
@@ -29,7 +43,7 @@ here decides anything.
 | Row | Ratified target | Measured / estimated | Binding corner | Verdict |
 |---|---|---|---|---|
 | Time-to-first-valid | ≥ ~1.28 ms at 1 Mbps (an arithmetic floor) | **1.281 ms** | `ss`/+125 °C/2.97 V, but see below — the corner barely matters | **Met**, and the floor is confirmed as a floor |
-| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated**) | `ff`/−40 °C/3.63 V | **Met**, 90.8 % of the row |
+| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated**) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array | `ff`/−40 °C/3.63 V | **Met**, 90.8 % of the row (86.6 % since #78) |
 | Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated**) | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017] |
 
 ---
@@ -97,7 +111,7 @@ band, applied to nine successive period estimates per ring, first-and-thereafter
 
 | Quantity | Range over the 27-point grid |
 |---|---|
-| Oscillator start-up, `en` → stable period, both rings | **4.40 ns** (`ff`/−40 °C/3.63 V) … **13.38 ns** (`ss`/+125 °C/2.97 V) |
+| Oscillator start-up, `en` → stable period, both rings | **4.40 ns** (`ff`/−40 °C/3.63 V) … **13.38 ns** (`ss`/+125 °C/2.97 V); **4.08 ns … 12.41 ns** at the same two corners after #78's buffer adoption |
 | …as a multiple of that corner's own steady period | 1.02 – 1.03 × `T₀` |
 | First rising edge on the XOR node `xo` after `en` | 1.96 – 5.89 ns |
 | Ring swing, early window ÷ late window | 0.967 – 1.069 |
@@ -126,7 +140,7 @@ At DR-0003's ratified 1 Mbps:
 
 | Term | Samples | Time | Share |
 |---|---|---|---|
-| Oscillator start-up (measured, worst corner) | — | 13.38 ns | 0.001 % |
+| Oscillator start-up (measured, worst corner) | — | 13.38 ns (12.41 ns since #78) | 0.001 % |
 | Sampler, reset release → first raw bit | 1 | 1 µs | 0.08 % |
 | DR-0002 start-up health test | 1024 | 1.024 ms | 79.9 % |
 | DR-0008 conditioner latency (K = 8) | 256 | 256 µs | 20.0 % |

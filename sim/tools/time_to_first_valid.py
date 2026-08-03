@@ -124,6 +124,32 @@ def load_startup_records() -> list[Record]:
     return [Record(p) for p in sorted(RECORDS.glob(STARTUP_GLOB))]
 
 
+def dedupe_by_corner(records: list[Record]) -> list[Record]:
+    """One record per PVT corner: the newest measurement of that corner wins.
+
+    Until #78 this family had exactly one generation -- one record per corner,
+    nothing to choose between. #78 adopted the per-ring output buffer
+    (``DR-0018``), which moves the array's operating point, and re-ran this
+    whole 27-point grid against the adopted netlist. Both generations are
+    committed and both keep ``status: valid``: ``sim/records/`` is append-only
+    and the older ones remain true of the unbuffered array they measured. But
+    only one of them describes the array as it now ships, and a tool that
+    reports a start-up time for the *shipped* design must not average or race
+    the two -- the pre-adoption records are slower, so without this the
+    binding corner would be picked from the design that is no longer built.
+
+    Record stems begin with the run's date and ``load_startup_records`` sorts
+    them, so "later in the list" means "measured later"; the last record of a
+    given corner is the newest. Superseding a record in the
+    ``sim/README.md`` sense is a different operation -- it marks a run
+    *mistaken*, which these are not -- so it deliberately is not used here.
+    """
+    best: dict[str, Record] = {}
+    for rec in records:
+        best[rec.corner] = rec
+    return list(best.values())
+
+
 def ring_edges(rec: Record, ring: int) -> list[float]:
     """The recorded rising-edge times for one ring, in order."""
     out = []
@@ -237,10 +263,18 @@ def main(argv=None) -> int:
         print(f"ERROR: no start-up records found (glob: {STARTUP_GLOB})", file=sys.stderr)
         return 2
 
+    found = len(records)
+    records = dedupe_by_corner(records)
+    superseded_in_effect = found - len(records)
+
     results = [CornerResult(r, args.tolerance) for r in records]
     b = budget(args.rate)
 
     print(f"records          : {len(results)} x {STARTUP_GLOB}")
+    if superseded_in_effect:
+        print(f"                   ({found} found; {superseded_in_effect} older "
+              f"measurement(s) of an already-covered corner not used -- see "
+              f"dedupe_by_corner)")
     print(f"raw sample rate  : {args.rate:g} bit/s  (sample period {_s(b['sample_period_s'])})")
     print(f"convergence band : +/-{args.tolerance:.1%} of the last measured period")
     print()

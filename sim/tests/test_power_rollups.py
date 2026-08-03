@@ -37,6 +37,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(REPO_ROOT / "design"))
 sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 
+import array_coupling_buffer_variant as acbv  # noqa: E402
 import digital_power_estimate as dpe  # noqa: E402
 import power_rollup as pr  # noqa: E402
 import time_to_first_valid as ttfv  # noqa: E402
@@ -125,13 +126,30 @@ class StartupRecordTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.records = ttfv.load_startup_records()
+        cls.all_records = ttfv.load_startup_records()
+        cls.records = ttfv.dedupe_by_corner(cls.all_records)
 
     def test_the_full_covered_grid_is_present(self):
         self.assertEqual(len(self.records), 27)
         corners = {r.corner for r in self.records}
         self.assertEqual(len(corners), 27)
         self.assertEqual({r.process for r in self.records}, {"tt", "ff", "ss"})
+
+    def test_each_corner_is_measured_by_the_newest_record_of_that_corner(self):
+        """#78 re-ran this family, so a corner can now have >1 record.
+
+        The older generation stays committed and ``status: valid`` -- it
+        measured the pre-buffer array truthfully -- but every claim the tool
+        makes is about the array as it ships, so the newest record of a corner
+        is the one that must win. Stems begin with the run date and
+        ``load_startup_records`` sorts them.
+        """
+        chosen = {r.corner: r.stem for r in self.records}
+        for rec in self.all_records:
+            self.assertGreaterEqual(
+                chosen[rec.corner], rec.stem,
+                f"{rec.stem} is newer than the record chosen for {rec.corner}",
+            )
 
     def test_every_corner_converges_and_starts_from_the_clamped_state(self):
         for rec in self.records:
@@ -272,6 +290,99 @@ class PowerRecordTests(unittest.TestCase):
                         abs(rec.values["i_idle_clkhi_a"]))
             with self.subTest(corner=corner):
                 self.assertLess(worst, 0.2 * pr.IDLE_BUDGET_A)
+
+
+class BufferVariantBaselineTests(unittest.TestCase):
+    """``array_coupling_buffer_variant.py`` must keep its baseline unbuffered.
+
+    That script is the one tool in this repository that deliberately reads an
+    OLDER generation of a record family. Everything else answers a question
+    about the array as it ships and takes the newest record of a corner; this
+    one answers "what did adopting the buffer cost", so its unbuffered column
+    is specifically the design the buffer replaced. #78 re-ran
+    ``ro-array-core-power`` against the adopted (buffered) netlist under the
+    same family slug, so a naive glob-sort-take-last now hands that script a
+    buffered record labelled "unbuffered" -- both sides buffered, and its
+    power gate reduced to testbench-to-testbench noise in the wrong direction.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.at_corner = [
+            rec for rec in pr.load(acbv.POWER_GLOB_UNBUFFERED)
+            if rec.corner == acbv.POWER_CORNER
+        ]
+
+    def test_the_netlist_sha_is_read_back_off_every_record(self):
+        self.assertTrue(self.at_corner, "no shipped-array power records at all")
+        for rec in self.at_corner:
+            with self.subTest(record=rec.stem):
+                self.assertIsNotNone(
+                    rec.netlist_sha,
+                    f"{rec.stem} names no netlist, so its DUT revision is unknown",
+                )
+
+    def test_the_family_really_does_hold_two_dut_revisions_at_this_corner(self):
+        """The pin is load-bearing, not vestigial.
+
+        If this ever fails, the ``ro-array-core-power`` family has stopped
+        containing both a pre- and a post-adoption measurement of the
+        power-binding corner, and the pin below should be re-examined rather
+        than left asserting something that is no longer true.
+        """
+        shas = {rec.netlist_sha for rec in self.at_corner}
+        self.assertIn(acbv.UNBUFFERED_NETLIST_SHA, shas)
+        self.assertGreater(
+            len(shas), 1,
+            "only one netlist revision on file: the pre/post-adoption split "
+            "this pin exists to resolve is gone",
+        )
+
+    def test_the_baseline_is_the_pre_adoption_netlist_not_the_newest_record(self):
+        chosen = acbv._power_record(
+            acbv.POWER_GLOB_UNBUFFERED, netlist_sha=acbv.UNBUFFERED_NETLIST_SHA
+        )
+        self.assertEqual(chosen.netlist_sha, acbv.UNBUFFERED_NETLIST_SHA)
+        # And it is genuinely not what "newest of the family wins" would give,
+        # which is the regression this guards.
+        newest = self.at_corner[-1]
+        self.assertNotEqual(
+            chosen.stem, newest.stem,
+            "the pre-adoption baseline and the newest record coincide, so this "
+            "test is no longer exercising the selection it means to",
+        )
+        self.assertNotEqual(newest.netlist_sha, acbv.UNBUFFERED_NETLIST_SHA)
+
+    def test_the_baseline_is_the_newest_record_of_that_dut_revision(self):
+        """Within the pinned netlist, the ordinary "newest wins" still applies."""
+        chosen = acbv._power_record(
+            acbv.POWER_GLOB_UNBUFFERED, netlist_sha=acbv.UNBUFFERED_NETLIST_SHA
+        )
+        same_dut = [r for r in self.at_corner
+                    if r.netlist_sha == acbv.UNBUFFERED_NETLIST_SHA]
+        self.assertEqual(chosen.stem, max(r.stem for r in same_dut))
+
+    def test_the_unbuffered_baseline_is_measurably_unbuffered(self):
+        """A sha pin is only as good as what it selects, so check the physics.
+
+        The buffered variant meters its two buffers on their own supply
+        branches and unloads the combiner by more than half. A baseline that
+        had silently become buffered would show neither.
+        """
+        unbuf = acbv._power_record(
+            acbv.POWER_GLOB_UNBUFFERED, netlist_sha=acbv.UNBUFFERED_NETLIST_SHA
+        )
+        buf = acbv._power_record(acbv.POWER_GLOB_BUFFERED)
+        for key in ("i_buf1_a", "i_buf2_a"):
+            self.assertNotIn(key, unbuf.values)
+            self.assertIn(key, buf.values)
+        self.assertLess(abs(buf.values["i_tree_a"]),
+                        0.6 * abs(unbuf.values["i_tree_a"]))
+
+    def test_the_missing_baseline_is_an_error_and_not_a_silent_fallback(self):
+        with self.assertRaises(Exception) as ctx:
+            acbv._power_record(acbv.POWER_GLOB_UNBUFFERED, netlist_sha="0" * 40)
+        self.assertIn("append-only", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------------
