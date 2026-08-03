@@ -260,22 +260,38 @@ This attempt's launch, for the record:
 
 - **command**: `python3 sim/tools/run_array_liveness_tap_phase.py` (all four
   decks, default `--timeout 86400`, default `--max-attempts 5`), run from a
-  `git clone --local` of `feature/issue-87` (post-merge, `main`) at
+  `git clone --local` of `feature/issue-87` at
   `/Users/rwalters/loom-scratch/gf180-trng-issue87-tapphase` on the same host
   the prior three attempts ran on;
-- **PID**: the detached driver's own PID and the PID file it writes are
-  reported in the PR that lands this change, since both are only known once
-  the launch actually happens; `python3 sim/tools/run_array_liveness_tap_phase.py
-  --status` reads the committed records directly and needs neither;
+- **PID**: `94886` (the detached driver), PID file at
+  `sim/.work/array-liveness-tap-phase-launch/run.pid` under that clone;
 - **log**: `sim/.work/array-liveness-tap-phase-launch/run.log` under that
   clone (machine-local scratch, gitignored, not meant to be read by anyone
-  without access to this host — the PR body has the absolute path);
+  without access to this host — the PR that lands this change has the
+  absolute path). `python3 sim/tools/run_array_liveness_tap_phase.py
+  --status`, run from any checkout, reads the committed records directly and
+  needs neither the PID nor the log to report which decks are still
+  outstanding;
 - **expected wall clock**: with `-j 4` (this deck's four seeds run
   concurrently — a wall-clock choice only, per-seed cost is unaffected) each
   deck costs roughly one seed's ~87 CPU-minutes rather than four seeds'
   worth, so four decks run one after another come to **~6 hours**, plus
   whatever retries a host-level kill (attempt 2/3's failure mode, still
   outside this repository's control) costs on top.
+
+**One thing this launch found and had to clear first.** At launch time the
+same host was already running a fifth, uncoordinated set of `ngspice`
+processes for these same four deck names, from an untracked `/tmp` clone at
+an earlier commit than this document -- one predating even the geometry this
+document's Method section describes (`tstop` 2.6 µs, not 3.000003 µs, and
+carrying an `abstol=1e-10` relaxation this document's committed decks do not
+have). Diffing its testbench files against the committed ones confirmed it
+could not have produced a record matching what `sim/tb/` actually holds, so
+it was terminated (`SIGTERM`, then `SIGKILL` for anything still alive three
+seconds later) and its scratch directory removed, rather than left to finish
+and be mistaken for evidence. Recorded here in case a future attempt finds
+its own leftover processes on this host: check the testbench file hashes
+before trusting a run in progress, not just the deck name.
 
 If this attempt also fails to land all four records, the next one should run
 `python3 sim/tools/run_array_liveness_tap_phase.py --status` first rather than
