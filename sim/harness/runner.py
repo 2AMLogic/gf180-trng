@@ -3,8 +3,11 @@ seeded runs, for stochastic testbenches)."""
 
 from __future__ import annotations
 
+import functools
+import os
 import re
 import shutil
+import signal
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -17,6 +20,33 @@ from .testbench import Testbench
 NGSPICE = "ngspice"
 DEFAULT_TIMEOUT_S = 300
 
+# Grace period the OS-level watchdog (see `timeout_bin`) gives ngspice to
+# exit after its initial SIGTERM before escalating to an unblockable
+# SIGKILL. ngspice does not normally ignore SIGTERM, but a deadlocked run
+# (the incident this module guards against) might never reach a point where
+# it notices the signal at all -- SIGKILL is what actually guarantees exit.
+KILL_GRACE_S = 30
+
+# How far past the OS-level watchdog's own bound (timeout_s + KILL_GRACE_S)
+# the in-process guard (`Popen.communicate(timeout=...)`) waits before it
+# steps in itself. Purely a fallback margin -- in the common case (this
+# harness alive for the whole run, watchdog present) the watchdog always
+# fires first and this guard never triggers.
+_GUARD_PAD_S = 30
+
+# Exit codes coreutils `timeout(1)` uses when IT terminated the command
+# (rather than the command exiting on its own): 124 on a plain SIGTERM
+# timeout, 137 (128+SIGKILL) if `--kill-after` had to escalate, and 143
+# (128+SIGTERM) if ngspice happened to die from the TERM itself. This is a
+# secondary signal only -- see the elapsed-time check next to its use below,
+# which is what actually carries the classification: when `--kill-after`
+# has to escalate to SIGKILL, `timeout` (by default, non-`--foreground`)
+# puts itself in the *same* process group as the command it is watching, so
+# the group-wide SIGKILL it sends can also catch `timeout` itself, and this
+# process then observes `timeout`'s own exit as "killed by signal 9"
+# (returncode -9) rather than one of the codes below.
+_WATCHDOG_EXIT_CODES = frozenset({124, 137, 143})
+
 # `print` output for a length-1 vector: "m_vout = 6.9043645202e-01"
 _MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
 _ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
@@ -24,6 +54,53 @@ _ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.
 
 class NgspiceMissing(RuntimeError):
     pass
+
+
+@functools.lru_cache(maxsize=1)
+def timeout_bin() -> str | None:
+    """Locate the coreutils ``timeout(1)`` watchdog, or ``None`` if absent.
+
+    ``timeout(1)`` is what makes the per-run bound survive this harness
+    process itself being killed: it runs as ngspice's direct parent -- a
+    *sibling* of this Python process in the process tree, not a descendant
+    of it -- so if this harness is SIGKILLed mid-run (the actual failure
+    mode behind the incident this module guards against: the harness's own
+    Python process died, orphaning ``ngspice`` to init with nothing left to
+    enforce any bound), ``timeout(1)`` is simply reparented to init/systemd
+    right alongside it and keeps running its own alarm regardless -- it
+    still fires and kills ``ngspice`` on schedule. ``subprocess.run(...,
+    timeout=...)``'s enforcement, by contrast, lives entirely inside this
+    interpreter and dies with it.
+
+    macOS ships no ``timeout`` by default; Homebrew's ``coreutils`` package
+    installs the same tool as ``gtimeout`` (to avoid clobbering a BSD tool
+    of the same name), so both spellings are tried.
+    """
+    for name in ("timeout", "gtimeout"):
+        exe = shutil.which(name)
+        if exe:
+            return exe
+    return None
+
+
+def _kill_process_group(pid: int) -> None:
+    """Best-effort SIGKILL of ``pid``'s whole process group.
+
+    Only meaningful when the process was started with
+    ``start_new_session=True`` (so its pgid is its own pid, not this
+    interpreter's) -- otherwise this would signal every process this
+    harness itself belongs to. Swallows the case where the group is
+    already gone (it may have exited on its own between the timeout firing
+    and this call).
+    """
+    try:
+        pgid = os.getpgid(pid)
+    except ProcessLookupError:
+        return
+    try:
+        os.killpg(pgid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
 
 
 def ngspice_version() -> str:
@@ -129,7 +206,7 @@ class RunResult:
 
     point: PvtPoint
     seed: int | None
-    status: str                                   # "ok" | "failed" | "error"
+    status: str                                   # "ok" | "failed" | "error" | "timeout"
     measurements: dict[str, float] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
     seconds: float = 0.0
@@ -150,6 +227,48 @@ def parse_measurements(text: str) -> dict[str, float]:
     return found
 
 
+def _timeout_result(
+    point: PvtPoint,
+    seed: int | None,
+    deck_path: Path,
+    log_path: Path,
+    elapsed: float,
+    timeout_s: int,
+    output: str,
+    *,
+    watchdog_fired: bool,
+) -> RunResult:
+    """Build the ``RunResult`` + breadcrumb log for a run the timeout killed.
+
+    Used from both the OS-level watchdog path (``timeout(1)``/``gtimeout``
+    exited with a code that means *it* killed ngspice) and the in-process
+    fallback guard (``Popen.communicate(timeout=...)`` itself expired,
+    either because no watchdog binary is on ``PATH`` or because the
+    watchdog was somehow stuck too). Either way, the corner must report as
+    killed-by-timeout rather than as a generic ngspice failure -- see
+    ``sim/README.md`` and issue #83.
+    """
+    via = "timeout(1)/gtimeout" if watchdog_fired else "harness in-process guard"
+    message = (
+        f"ngspice timed out: no result after {elapsed:.1f}s "
+        f"(bound {timeout_s}s + {KILL_GRACE_S}s kill-grace), killed by {via} "
+        f"via process-group SIGKILL; deck {deck_path.name}"
+    )
+    log_path.write_text(
+        f"TIMEOUT after {elapsed:.1f}s (bound {timeout_s}s, killed by {via})\n"
+        f"deck: {deck_path.name}\n\n{output}"
+    )
+    return RunResult(
+        point=point,
+        seed=seed,
+        status="timeout",
+        seconds=elapsed,
+        deck_name=deck_path.name,
+        log_name=log_path.name,
+        message=message,
+    )
+
+
 def run_one(
     tb: Testbench,
     pdk: Pdk,
@@ -164,6 +283,25 @@ def run_one(
     ``workdir`` holds both the generated deck and the raw ngspice log --
     it is the eventual ``sim/records/raw/<record-stem>/`` directory (or a
     scratch directory for a ``--no-write`` run).
+
+    The ngspice invocation is bounded by ``timeout_s`` two ways at once
+    (see issue #83, filed after a hung ngspice ran ~4.5h undetected because
+    the harness process that launched it had itself been killed):
+
+    - An OS-level watchdog (``timeout(1)``/``gtimeout``, see
+      :func:`timeout_bin`) wraps the ngspice invocation directly. It runs
+      as ngspice's parent, independent of this Python process staying
+      alive, so it still fires even if this harness is itself killed
+      mid-run.
+    - ``Popen.communicate(timeout=...)`` is a secondary, in-process guard
+      for the common case (harness alive for the whole run), padded past
+      the watchdog's own bound so the watchdog gets first chance to act.
+
+    Both the ngspice invocation and (when present) the watchdog wrapping it
+    run in a fresh process session (``start_new_session=True``), so a kill
+    -- whether the watchdog's own default group-kill or this function's
+    :func:`_kill_process_group` fallback -- reaches every descendant, not
+    just the direct child.
     """
     workdir.mkdir(parents=True, exist_ok=True)
     stem = f"{point.corner_id}-run{run_index}" if seed is not None else point.corner_id
@@ -171,33 +309,74 @@ def run_one(
     log_path = workdir / f"{stem}.log"
     deck_path.write_text(compose_deck(tb, pdk, point, seed=seed))
 
+    watchdog = timeout_bin()
+    if watchdog is not None:
+        cmd = [
+            watchdog,
+            f"--kill-after={KILL_GRACE_S}s",
+            f"{timeout_s}s",
+            NGSPICE, "-b", str(deck_path),
+        ]
+        # This harness process may die before the watchdog's own bound
+        # elapses; pad the in-process guard well past it so the watchdog is
+        # given the chance to act first, and this guard is only a fallback
+        # for the (harness-alive) case where the watchdog is somehow stuck.
+        guard_s = timeout_s + KILL_GRACE_S + _GUARD_PAD_S
+    else:
+        # No coreutils timeout(1)/gtimeout on PATH: fall back to the
+        # in-process guard alone. It cannot survive this harness process
+        # itself dying (see issue #83) -- `--check-env` warns about this.
+        cmd = [NGSPICE, "-b", str(deck_path)]
+        guard_s = timeout_s
+
     started = time.monotonic()
     try:
-        proc = subprocess.run(
-            [NGSPICE, "-b", str(deck_path)],
-            capture_output=True,
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout_s,
             cwd=workdir,
-            check=False,
+            start_new_session=True,
         )
-        output = proc.stdout + "\n" + proc.stderr
-        returncode = proc.returncode
     except FileNotFoundError as exc:
         raise NgspiceMissing(str(exc)) from exc
+
+    try:
+        stdout, stderr = proc.communicate(timeout=guard_s)
+        returncode = proc.returncode
     except subprocess.TimeoutExpired:
+        # The in-process guard itself expired -- kill the whole process
+        # group (the watchdog too, if present) rather than trust anything
+        # further to exit on its own.
         elapsed = time.monotonic() - started
-        log_path.write_text(f"TIMEOUT after {timeout_s}s\n")
-        return RunResult(
-            point=point,
-            seed=seed,
-            status="error",
-            seconds=elapsed,
-            deck_name=deck_path.name,
-            log_name=log_path.name,
-            message=f"ngspice timed out after {timeout_s}s",
+        _kill_process_group(proc.pid)
+        try:
+            stdout, stderr = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:  # pragma: no cover - defensive only
+            stdout, stderr = "", ""
+        return _timeout_result(
+            point, seed, deck_path, log_path, elapsed, timeout_s,
+            (stdout or "") + "\n" + (stderr or ""), watchdog_fired=False,
         )
+
+    output = stdout + "\n" + stderr
     elapsed = time.monotonic() - started
+
+    # The watchdog enforced the bound itself -- communicate() returned
+    # normally (no TimeoutExpired) because the wrapped process already
+    # exited, not because ngspice finished on its own. Detected primarily
+    # by elapsed time (robust regardless of exactly which process the
+    # watchdog's own exit status reflects -- see `_WATCHDOG_EXIT_CODES`
+    # above), with the known exit codes as a fast-path/secondary signal.
+    if watchdog is not None and (
+        returncode in _WATCHDOG_EXIT_CODES or elapsed >= timeout_s
+    ):
+        return _timeout_result(
+            point, seed, deck_path, log_path, elapsed, timeout_s, output,
+            watchdog_fired=True,
+        )
+
     log_path.write_text(output)
 
     measurements = parse_measurements(output)

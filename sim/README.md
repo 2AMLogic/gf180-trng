@@ -193,6 +193,37 @@ The commit that supersedes a record should say so in its message, so
 
 ---
 
+## Hung and timed-out runs
+
+Every corner `run_corners.py` simulates is bounded by `--timeout` (default
+`runner.DEFAULT_TIMEOUT_S`, currently 300s). The bound is enforced two ways
+at once, precisely because a hung ngspice once outlived the harness process
+that launched it and burned a worker offline for hours undetected (issue
+#83):
+
+- An OS-level watchdog — coreutils `timeout(1)` (`gtimeout` on macOS via
+  Homebrew's `coreutils`; `--check-env` reports which, if either, is on
+  `PATH`) — wraps the ngspice invocation directly. It runs as ngspice's
+  parent, independent of `run_corners.py` staying alive, so it still fires
+  and kills the whole process group even if the harness itself is killed
+  mid-run.
+- An in-process `Popen.communicate(timeout=...)` guard is a secondary
+  backstop for the common case (harness alive for the whole run), and the
+  sole enforcement when no watchdog binary is available on `PATH` (a
+  degraded mode `--check-env` warns about, since it cannot survive the
+  harness process itself dying).
+
+A killed corner reports `FAILED-TIMEOUT` in the printed summary (not a
+plain `FAIL`, and never silently missing), and — same as any other
+completed point — still gets a normal written record under
+`sim/records/`, whose "Run failures" line and raw log name the deck and
+the elapsed/bound time, so a reviewing Judge sees the hang instead of an
+absent result. A record built this way is evidence that the run hung, not
+evidence about the device; `sim/README.md`'s "no claim beyond what this
+run measured" rule applies as usual.
+
+---
+
 ## Pre-commit checklist
 
 Mechanical; run through it before committing any record.

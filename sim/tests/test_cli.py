@@ -232,5 +232,118 @@ class RunIntegrityTests(unittest.TestCase):
         self.assertIn("raw output changed after it was hashed", err)
 
 
+class TimeoutSummaryTests(unittest.TestCase):
+    """A corner ``runner.run_one`` reports as killed by the wall-clock bound
+    (issue #83) must stand out in the summary and still leave a written
+    breadcrumb record naming the deck and elapsed time -- not vanish the
+    way the incident's silent 4.5h hang did."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.records_dir = self.root / "records"
+
+        self.tb_dir = self.root / "tb" / "an-experiment"
+        self.tb_dir.mkdir(parents=True)
+        (self.tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (self.tb_dir / "tb.json").write_text(
+            json.dumps({
+                "name": "an-experiment", "netlist": "x.spice",
+                "measure": {"vout": "v(out)"},
+            })
+        )
+
+        variant = _make_variant(self.root, "gf180mcuD")
+        (variant / "libs.tech" / "ngspice" / "design.ngspice").write_text("* fake\n")
+        (variant / "SOURCES").write_text("open_pdks deadbeef\n")
+        pdk = Pdk(path=variant, variant="gf180mcuD", source="test")
+
+        for target, value in (
+            ("RECORDS_DIR", self.records_dir),
+            ("REPO_ROOT", self.root),
+        ):
+            patcher = mock.patch.object(cli, target, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        for target, value in (
+            ("find_pdk", lambda: pdk),
+            ("git_provenance", lambda _root: {"commit": "f" * 40, "dirty": False}),
+        ):
+            patcher = mock.patch.object(
+                cli if target == "find_pdk" else cli.report, target, value
+            )
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _install_runner(self, timed_out_corner: str):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+            workdir.mkdir(parents=True, exist_ok=True)
+            stem = point.corner_id
+            deck = workdir / f"{stem}.spice"
+            deck.write_text(f"* deck for {stem}\n")
+            if point.corner.name == timed_out_corner:
+                log = workdir / f"{stem}.log"
+                log.write_text(f"TIMEOUT after {timeout_s}.0s (bound {timeout_s}s)\n")
+                return runner.RunResult(
+                    point=point, seed=seed, status="timeout", seconds=float(timeout_s),
+                    deck_name=deck.name, log_name=log.name,
+                    message=(
+                        f"ngspice timed out: no result after {timeout_s}.0s "
+                        f"(bound {timeout_s}s + 30s kill-grace), killed by timeout(1)/gtimeout "
+                        f"via process-group SIGKILL; deck {deck.name}"
+                    ),
+                )
+            log = workdir / f"{stem}.log"
+            log.write_text("m_vout = 1.65\n")
+            return runner.RunResult(
+                point=point, seed=seed, status="ok", measurements={"vout": 1.65},
+                seconds=0.1, deck_name=deck.name, log_name=log.name,
+            )
+
+        patcher = mock.patch.object(cli.runner, "run_one", side_effect=fake_run_one)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _run(self, *extra: str):
+        argv = [str(self.tb_dir), "--corners", "tt", "ss", "--temps", "27",
+                "--supply-tol", "0", *extra]
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = cli.main(argv)
+        return status, out.getvalue(), err.getvalue()
+
+    def test_timed_out_corner_reports_failed_timeout_and_fails_the_run(self):
+        self._install_runner(timed_out_corner="ss")
+        status, out, _err = self._run()
+
+        self.assertEqual(status, cli.EXIT_CHECK_FAILED)
+        self.assertIn("FAILED-TIMEOUT", out)
+        self.assertIn("status    : FAIL", out)
+        # The corner that actually completed must still read as ok, not be
+        # dragged down by its sibling's timeout.
+        self.assertIn("ok  ", out)
+
+    def test_timed_out_corner_still_leaves_a_written_breadcrumb_record(self):
+        self._install_runner(timed_out_corner="ss")
+        self._run()
+
+        stems = sorted(p.stem for p in self.records_dir.glob("*.md"))
+        self.assertEqual(len(stems), 2)
+        texts = [(self.records_dir / f"{s}.md").read_text() for s in stems]
+        candidates = [t for t in texts if "process: ss" in t]
+        self.assertEqual(len(candidates), 1, "expected exactly one ss-corner record")
+        text = candidates[0]
+        # Names the deck and the elapsed/bound time (issue #83 AC #3), and
+        # is a normal written record under sim/records/ -- not an absent
+        # result -- so a reviewing Judge sees the hang.
+        self.assertIn("timeout --", text)
+        self.assertIn("kill-grace", text)
+        self.assertIn(".spice", text)
+
+
 if __name__ == "__main__":
     unittest.main()
