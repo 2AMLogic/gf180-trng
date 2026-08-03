@@ -142,11 +142,25 @@ def load(globs) -> list[Record]:
 
 
 def by_corner(records: list[Record], prefer: str | None = None) -> dict[str, Record]:
-    """One record per PVT corner. ``prefer`` wins a tie by stem substring."""
+    """One record per PVT corner: the latest record of the preferred family wins.
+
+    ``prefer`` is a stem substring (e.g. ``"pvt-q"``) naming the preferred
+    family, exactly as ``sim/tools/array_sizing.py``'s own
+    ``dedupe_by_corner`` uses it. ``load()`` returns records in sorted
+    (chronological + sequence-number) order within each glob, so "later in
+    the list" means "newer evidence": a later record of the preferred family
+    always wins over an earlier one of that SAME family (#78 re-ran the
+    ``ro-array-core-pvt-q`` family under the buffer-adoption design change,
+    landing new records under the same slug as the pre-adoption ones -- the
+    first case in this repository's history where two generations of the
+    same corner, same family, both exist). A later NON-preferred record never
+    downgrades an already-preferred one, matching the original intent (full
+    covered-grid corners win over the 3-point family that overlaps it).
+    """
     out: dict[str, Record] = {}
     for rec in records:
         cur = out.get(rec.corner)
-        if cur is None or (prefer and prefer in rec.stem and prefer not in cur.stem):
+        if cur is None or not (prefer and prefer in cur.stem and prefer not in rec.stem):
             out[rec.corner] = rec
     return out
 

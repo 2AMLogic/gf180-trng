@@ -62,10 +62,45 @@
 * `meas ... when v(node)=v(vth)` finds crossings at any supply without a
 * hard-coded trip voltage. It is the same construction
 * sim/tb/ro-array-core-power/ uses.
+*
+* Pin-count fix (#78), pre-existing and unrelated to #78's own change: the
+* `xdut` line below originally supplied 7 nodes, matching ro_array_core's
+* port list BEFORE #65 added the ro1/ro2 observation pins. #65 updated
+* sim/tb/ro-array-core-power/ and sim/tb/ro-array-core-pvt-q/'s own `xdut`
+* lines to the resulting 9-node port list but missed this deck, which was
+* never re-run in the interim (its own last change, #72, predates #65), so
+* the gap went unnoticed until #78 re-ran this family and ngspice refused
+* the mismatched subcircuit call ("Too few parameters for subcircuit type
+* ro_array_core"). The same 7-node call fails identically against the
+* unbuffered, pre-#78 ro_array_core.spice on origin/main today. Fixed by
+* naming the two missing nodes, exactly as #65 did for the two decks above.
+*
+* Which node this deck measures, across both changes (#65 and #78). This
+* deck has always measured EACH RING'S OWN OUTPUT NODE -- the last stage's
+* output, before anything the array does with it -- and it still does. That
+* node has been addressable under three different names over three commits,
+* while remaining the same physical node:
+*   - pre-#65: `xdut.ro1`, an internal node of ro_array_core.
+*   - #65..#78: still the ring's own node, but promoted to a PORT (ro1), so
+*     ngspice reports it under the flat top-level name and `v(xdut.ro1)`
+*     stops resolving ("no such vector"). A subcircuit port is not
+*     addressable as an internal node; that is what broke this deck's
+*     measure lines the moment the pin-count fix let it run at all.
+*   - #78 onward: the ring's own node is `rn1`/`rn2`, internal again --
+*     ro_array_core's ro1/ro2 ports are now driven from the per-ring output
+*     BUFFERS (xb1/xb2, DR-0018), not from the rings directly. tb.json's
+*     measure lines therefore address `v(xdut.rn1)`/`v(xdut.rn2)`, which is
+*     the SAME physical node the pre-#65 records measured under
+*     `v(xdut.ro1)`, so this family's start-up times stay comparable across
+*     the buffer's adoption instead of silently changing what they mean.
+* The buffered ro1/ro2 ports are still connected here (the port list needs
+* nine nodes) and simply unmeasured: this deck's start-up question is about
+* the ring, and the node the SAMPLER sees is the combined node xo, which is
+* measured and IS driven through the buffers.
 
 vsup vsup 0 dc vdd_val
 ven en 0 dc 0 pulse(0 vdd_val 5n 1p 1p 10u 20u)
 
-xdut en en vsup vsup vsup 0 xo ro_array_core
+xdut en en vsup vsup vsup 0 xo ro1 ro2 ro_array_core
 
 bvth vth 0 v = 0.5*vdd_val

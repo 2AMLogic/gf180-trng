@@ -179,9 +179,30 @@ def _binom_tail(n: int, k: int, p: float) -> float:
 
 
 def shipped_points(glob: str, a: float) -> list[ArrayPoint]:
+    """The shipped array's points, one per PVT corner, newest measurement first.
+
+    The per-corner dedupe matters from #78 onward. Adopting the per-ring
+    output buffer (``DR-0018``) moved the shipped array's operating point and
+    the ``ro-array-core-pvt-q`` family was re-run against the adopted netlist,
+    so this glob now matches TWO generations of every corner. Both keep
+    ``status: valid`` -- ``sim/records/`` is append-only and the pre-adoption
+    records remain true of the unbuffered array they measured -- but only the
+    newer generation describes the array as it now ships, and every claim
+    below ("this corner minimizes Q", "the margin there is Nx") is a claim
+    about the shipped design. Ranking both generations in one table would
+    also let a pre-adoption corner win the ranking on the strength of a
+    slower ring the design no longer has.
+
+    ``load`` returns records sorted by stem, and stems begin with the run
+    date, so the last record of a corner is the newest one.
+    """
     n = shipped_ring_count()
     pts = [ArrayPoint(r, a=a) for r in load(glob)]
-    return [p for p in pts if p.n == n]
+    newest: dict[str, ArrayPoint] = {}
+    for p in pts:
+        if p.n == n:
+            newest[p.rec.corner] = p
+    return list(newest.values())
 
 
 # --------------------------------------------------------------------------

@@ -125,13 +125,30 @@ class StartupRecordTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.records = ttfv.load_startup_records()
+        cls.all_records = ttfv.load_startup_records()
+        cls.records = ttfv.dedupe_by_corner(cls.all_records)
 
     def test_the_full_covered_grid_is_present(self):
         self.assertEqual(len(self.records), 27)
         corners = {r.corner for r in self.records}
         self.assertEqual(len(corners), 27)
         self.assertEqual({r.process for r in self.records}, {"tt", "ff", "ss"})
+
+    def test_each_corner_is_measured_by_the_newest_record_of_that_corner(self):
+        """#78 re-ran this family, so a corner can now have >1 record.
+
+        The older generation stays committed and ``status: valid`` -- it
+        measured the pre-buffer array truthfully -- but every claim the tool
+        makes is about the array as it ships, so the newest record of a corner
+        is the one that must win. Stems begin with the run date and
+        ``load_startup_records`` sorts them.
+        """
+        chosen = {r.corner: r.stem for r in self.records}
+        for rec in self.all_records:
+            self.assertGreaterEqual(
+                chosen[rec.corner], rec.stem,
+                f"{rec.stem} is newer than the record chosen for {rec.corner}",
+            )
 
     def test_every_corner_converges_and_starts_from_the_clamped_state(self):
         for rec in self.records:

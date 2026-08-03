@@ -62,7 +62,8 @@ being loud about.
 | `ro_ring11` | one ring of the shipped array: `ro_nand2` + ten `ro_stage`, closed on itself, on its own supply pin |
 | `ro_ring5` | the five-stage variant, used only by the transient-noise sanity testbench |
 | `xor2` | one node of the combining tree (static CMOS, minimum width) |
-| **`ro_array_core`** | **the entropy source**: two `ro_ring11` with skewed starve widths and separate supply pins, XOR-combined into one output, plus two observation-only per-ring outputs (`ro1`/`ro2`) for the DR-0016 liveness monitor |
+| `ro_buf` | the **per-ring output buffer** (#78, [`DR-0018`](../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)): a minimum-width, *unstarved* inverter, device-for-device identical to `xor2`'s input stage, that isolates each ring's own node from everything that consumes it |
+| **`ro_array_core`** | **the entropy source**: two `ro_ring11` with skewed starve widths and separate supply pins, each through its own `ro_buf`, XOR-combined into one output, plus two observation-only per-ring outputs (`ro1`/`ro2` — the buffer outputs) for the DR-0016 liveness monitor |
 | `ro_array_sanity` | a four-ring array built from `ro_ring5`, with the ring outputs brought out for observation; a simulation vehicle, not a shipped cell |
 | `meta_inv` / `meta_nand2` | unstarved minimum-width delay/logic cells for the metastability-hybrid tap (`ro_stage`/`ro_nand2` want the opposite: the sharpest edge the tap wants is the wrong thing for a ring) |
 | `meta_arb` | the tap's metastable element: a cross-coupled NAND2 SR latch, symmetric by construction |
@@ -337,6 +338,31 @@ Three things are worth being precise about:
   stop inside the block: they reach `design/health_test/ring_liveness.v`, whose
   `ring_stuck_any` becomes `design/interface/`'s `ht_fail_ring` and surfaces as
   one `STATUS.HT_FAIL_RING` bit. No per-ring signal reaches a die pin.
+
+**Since #78, `ro1`/`ro2` are the BUFFERED nodes, not the rings' own
+([`DR-0018`](../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)).**
+Each ring's last stage now drives its own `ro_buf` instance (`xb1`/`xb2` —
+two separate instances; a shared one would recreate the shared node the
+mitigation exists to remove), and `ro1`/`ro2` are re-driven from those buffer
+outputs, so `xa1`, the two DR-0016 digitizers and the samplers all tap the
+buffered node. `sim/characterization-ring-buffer-mitigation.md` measured why:
+92.8 % of a 27.10× ring-to-ring coupling factor removed, at *negative* power
+cost. Three consequences for a reader of this directory:
+
+- **`ro1`/`ro2` are now the COMPLEMENT of their ring's own node.** `a ⊕ b`
+  equals `¬a ⊕ ¬b`, the liveness digitizer counts transitions, and sampler
+  entropy is polarity-blind — so nothing downstream changed, but the pins no
+  longer carry the ring's own sense.
+- **Unlike #65's pins, this one *is* a circuit change.** The ring's fanout
+  drops from `xa1`'s 1.98 µm of gate to the buffer's 0.66 µm, so ring
+  frequency moves +6.7 % and the block's active power −4.9 %. The
+  `ro-array-core-power`, `ro-array-core-pvt-q` and `ro-array-core-startup`
+  families were re-run against the adopted netlist for exactly that reason
+  (see the erratum below for the families that were not).
+- **Neither ring's own supply branch changed.** Both buffers run off the
+  block supply `vdd`/`vss` that `xa1` already uses, never off `vddr1`/`vddr2`,
+  so each ring's supply pin stays the pure per-ring current signature the
+  liveness argument above depends on.
 
 ### Metastability-hybrid tap
 
@@ -898,6 +924,62 @@ still-honest evidence rather than stale ones:
   evidence for both claims above.
 
 Nothing is corrected in place, for the same reason as the two errata above.
+
+### Erratum: which array-cell records predate the per-ring output buffer (#78)
+
+Unlike #65's pins, [`DR-0018`](../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md)'s
+buffer **is** a circuit change: it adds two devices per ring's output path and
+moves the array's operating point (+6.7 % frequency, −4.9 % power). Every
+record taken before it therefore describes an array that is no longer built.
+None of them is edited or superseded — `sim/records/` is append-only and they
+remain true of what they measured — so the discriminator is per-record: the
+`netlist.sha` in each record's front matter names the exact
+`design/ro_array_core.spice` blob it ran against, and records dated
+2026-08-02 or later on the families below carry the buffered one.
+
+**Re-run against the adopted netlist by #78** (these describe the shipped
+array): `ro-array-core-power`, `ro-array-core-pvt-q`, `ro-array-core-startup`.
+`sim/tools/array_sizing.py`, `power_rollup.py`, `worst_corner_entropy.py` and
+`time_to_first_valid.py` each take the newest record per PVT corner, so their
+`--check` runs describe the buffered array and the older generation is
+retained as evidence without polluting them.
+
+**NOT re-run, and why** (each still describes the unbuffered array):
+
+- `ro-array-core-xo-slew` — `sim/tools/worst_corner_entropy.py` uses it only
+  to convert a sampler voltage offset into a timing offset, and it divides by
+  the slew. The buffer makes `xo`'s edges *faster*, so the pre-adoption slew
+  can only make that converted offset larger than it now is: the number in
+  hand is conservative in the safe direction, and re-running it would only
+  widen an already-two-orders-of-magnitude margin.
+- `ro-array-core-mc-freq` — a mismatch spread of the *ratio* between the two
+  rings, and the buffer is identical on both rings, so it shifts both
+  frequencies together rather than scattering their ratio. The DR-0015
+  entropy-binding-corner ranking that reads it *was* re-derived against the
+  re-run PVT family and is unchanged (`ss`/+125 °C/3.63 V).
+- `ro-array-core-meta-power`, `ring-liveness-tap-power` — both measure a
+  *delta* (what a tap costs the array it hangs off). Both deltas are now
+  measured against the wrong baseline by −4.9 %, which is smaller than the
+  margin either is used to argue.
+- `sampler-core-idle-leakage` — instantiates the whole of `sampler_core`, so
+  its netlist now contains two more devices per ring. They are minimum-width
+  and static in the clamped idle state, contributing a few nanoamps to a
+  32.8 nA measured analog term inside a 4.46 µA row whose miss is 99 % a
+  digital-leakage *estimate* ([`DR-0017`](../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md)).
+  Re-running 45 corners to move a number by ~0.1 % of the row it is in was
+  not judged worth the machine time; the direction (slightly *up*) is stated
+  here rather than left to be discovered.
+- `sampler-array-digitize` — does not instantiate `ro_array_core` at all: it
+  hand-restates the array's top-level wiring inside the deck, which is now a
+  restatement of the *pre*-#78 array. It measures whether `sampler_dff`
+  digitizes `xo` cleanly, and the buffer makes `xo`'s edges faster, so the
+  unbuffered restatement is the harder case for that question.
+- `sampler-dff-*` — instantiate `sampler_dff` alone, with no array in the
+  deck at all (their `design_netlist` field names `sampler_core.spice` because
+  that is the file the cell is exported into). Unaffected.
+- `rostage-noise`, `ro-array-sanity-*`, `ro-ring5-*` — they instantiate the
+  ring or the delay cell, not `ro_array_core`, and the buffer is outside the
+  ring. Unaffected.
 
 ## Simulation vehicles for these cells
 

@@ -68,8 +68,8 @@ that should be legible too.
 | Conditioning | **non-vetted** 32-bit CRC-32 LFSR compression (Galois, poly `0xEDB88320`), state cleared every block, **K = 8** — 256 raw bits in : one 32-bit word out. Creditable output entropy **0.85 bit per output bit** (SP 800-90B's non-vetted cap) for any raw stream at or above **H = 0.107 bit/sample**; a 4.70× margin under the H₀ = 0.5 target. ~0.005–0.008 mm² ([DR-0008]) | a 90B-*vetted* conditioning function — **rejected on area**: a compact serialised AES-128 is 88–124 % of the whole block budget ([DR-0008] §4). Live again only if the area budget grows |
 | Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
 | Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (at H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test. The parameterization has a hard floor: **no valid APT cutoff exists at H ≤ 0.03** ([DR-0002]) | — |
-| Time-to-first-valid | **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7). **Now measured (#14): 1.281 ms**, the floor plus one sampler clock plus a 4.4–13.4 ns oscillator start-up — the row is met and the floor is confirmed as a floor ([`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md)) | — |
-| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14): active 454 µW — met, at 90.8 % of the row. Idle 4.46 µA — missed by 4.5×**, and the cause is ungated standard-cell leakage in the digital section (4.43 µA, an estimate), not the analog block (32.8 nA, measured). The miss is reported, not absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md) and [DR-0017] (`Proposed`), and the note below | — |
+| Time-to-first-valid | **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7). **Now measured (#14): 1.281 ms**, the floor plus one sampler clock plus a 4.1–12.4 ns oscillator start-up (4.4–13.4 ns before #78's buffer adoption) — the row is met and the floor is confirmed as a floor ([`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md)) | — |
+| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption): active 433 µW — met, at 86.6 % of the row. Idle 4.46 µA — missed by 4.5×**, and the cause is ungated standard-cell leakage in the digital section (4.43 µA, an estimate), not the analog block (32.8 nA, measured). The miss is reported, not absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md) and [DR-0017] (`Proposed`), and the note below | — |
 | Area | < 0.05 mm² | — |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
 | Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013]) | — |
@@ -100,11 +100,16 @@ DRBG supplies its own and treats this block as the seed source.
 >   leakage plus static bias only. #32 measured the delay cell, #7 the shipped
 >   array, and **#14 has now closed both halves of the row** — with one met and
 >   one missed:
->   - **Active: met.** 454 µW at `ff`/−40 °C/3.63 V — entropy source 415 µW
->     (measured), sampler 15.8 µW (measured), digital section 23 µW (a
+>   - **Active: met.** 433 µW at `ff`/−40 °C/3.63 V — entropy source 393 µW
+>     (measured), sampler 16.9 µW (measured), digital section 23 µW (a
 >     library-based estimate; those three blocks have no netlist to simulate).
->     [DR-0010]'s stated worry, that the array's 415 µW leaves only ~85 µW for
->     everything downstream, holds: everything downstream needs 39 µW of it.
+>     [DR-0010]'s stated worry, that the array leaves only ~85 µW for
+>     everything downstream, holds with a little more room than it did:
+>     everything downstream needs 40 µW of the 107 µW the array leaves.
+>     #14 first measured this row at **454 µW** (entropy source 415 µW); #78
+>     then adopted the per-ring output buffer ([DR-0018]), which *returns*
+>     power rather than spending it, and the families that measure the array
+>     were re-run against the buffered netlist — this is that re-run's number.
 >   - **Idle: missed, by 4.5×.** 4.46 µA at `ff`/+125 °C/3.63 V. The
 >     ratification note above guessed the cause exactly — the analog block
 >     idles at 32.8 nA (3.3 % of the row, measured across 45 corners), and the
@@ -144,6 +149,7 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
 [DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0017]: spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0018]: spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**

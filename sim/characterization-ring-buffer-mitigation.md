@@ -212,10 +212,13 @@ python3 sim/tools/array_coupling_buffer_variant.py --check
 
 ## Is the buffer adopted?
 
-**Recommended for adoption. Not adopted by this document**, because adopting
-it edits the shipped schematic and every downstream artefact that is derived
-from it, and this repository puts a design change through a decision record
-rather than through a summary document.
+**Yes, since [#78] / [`DR-0018`](../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md).**
+This document recommended adoption and did not perform it, because adopting it
+edits the shipped schematic and every downstream artefact derived from it, and
+this repository puts a design change through a decision record rather than
+through a summary document. `DR-0018` is that record; the paragraphs below are
+kept in the tense they were written in, as the case that record acted on, with
+[what actually landed](#what-actually-landed) noted at the end of this section.
 
 What the evidence supports:
 
@@ -249,6 +252,29 @@ Two consequences that adoption has to carry, neither of which is a blocker:
   +6.7 % and its power −4.9 %, so the PVT and `Q` families would need re-running
   against the adopted netlist before they describe the shipped design again.
   That re-run, not this measurement, is the expensive part of adopting.
+
+### What actually landed
+
+[#78] carried out the adoption above, unchanged in shape: `design/xschem/ro_buf.sch`
+is the buffer cell, `design/xschem/ro_array_core.sch` instantiates it twice
+(`xb1`/`xb2`, never shared), and `ro1`/`ro2` are re-driven from the buffer
+outputs. Both consequences listed above landed as described — the polarity of
+`ro1`/`ro2` inverted with no downstream change needed, and three record
+families (`ro-array-core-power`, `ro-array-core-pvt-q`,
+`ro-array-core-startup`) were re-run against the adopted netlist. Two numbers
+from this document are worth checking against those re-runs, since a
+two-testbench measurement is not the same thing as the shipped array measured
+in its own decks:
+
+| | projected here (testbench) | measured after adoption (shipped netlist) |
+|---|---|---|
+| entropy source, `ff`/−40 °C/3.63 V | 395.1 µW | **393.2 µW** |
+| block active rollup, same corner | 435.1 µW (87.0 % of the row) | **433.2 µW (86.6 %)** |
+
+Both landed slightly better than projected. `DR-0018` records what was *not*
+re-run: `sim/tb/ro-array-core-mc-freq/` and `sim/tools/worst_corner_entropy.py`'s
+`DR-0015` corner-ranking and Monte Carlo mismatch sections still describe the
+unbuffered array.
 
 ## Caveats
 
