@@ -5,8 +5,20 @@ digitizer's `d` input directly on the ring node — frequency-modulates its ring
 by 25.6 % in lockstep with `clk`, putting `σ₁` at 541× the same deck's with
 `clk` parked.** The per-ring output buffer [#82] had already adopted, on
 evidence from a *different* path, removes 96.5 % of that. It does not remove
-all of it: the shipped topology still carries a 19.9× `clk`-locked residual,
-and that residual is deterministic.
+all of it: this document's buffered deck still carries a 19.9× `clk`-locked
+residual, and that residual is deterministic.
+
+> **The 19.9× is an isolated-ring number, and the array that ships carries
+> 3.46×.** Every deck in this document has **one** ring whose buffer output
+> drives **one** consumer, the digitizer. `design/ro_array_core.spice` has each
+> buffer output driving the XOR combiner's input as well, so this document
+> recorded 19.9× as an *upper bound* on the shipped residual rather than as the
+> shipped number — see [issue #87](#the-shipped-array-carries-346-not-199) and
+> [`sim/characterization-shipped-array-tap-phase.md`](characterization-shipped-array-tap-phase.md),
+> which measured it at **3.46×** on the shipped topology at this same corner.
+> The bound holds, by 83 %. **Read every 19.9× below as the isolated-ring
+> measurement it is**; nothing in this document was re-run, and nothing in it
+> is withdrawn.
 
 **This is an ordinary summary, not evidence.** Every number below cites the
 `sim/records/` stem that produced it — treat this document as a reading guide
@@ -264,6 +276,57 @@ change in output load changes the buffer's output slew, which the gate-drain
 capacitance of the buffer's own devices carries back to its **input** — the
 ring node. A buffer attenuates that path; it does not open it.
 
+## The shipped array carries 3.46×, not 19.9×
+
+Variant 5 is the *cell-for-cell* topology the block ships, but it is not the
+*fan-out* the block ships. Its `ro_buf` output drives one consumer;
+[`design/ro_array_core.spice`](../design/ro_array_core.spice) has each buffer
+output driving the combiner as well:
+
+```
+xb1 rn1 ro1 vdd vss ro_buf
+xa1 ro1 ro2 xo  vdd vss xor2              <- ro1's OTHER consumer
+xsr1 ro1 clk rst_n ring_bit1 vdd vss      <- the digitizer
+```
+
+So the digitizer's `clk`-modulated capacitance is a smaller share of that
+node's load in the shipped array than it is here, and the residual should be
+smaller with it. **This document recorded 19.9× as an upper bound on the
+shipped number for exactly that reason, and said so rather than claiming it as
+the shipped number.** Issue [#87] measured the shipped number at the same
+corner, on the two-ring `sampler_core` array with both buffers driving `xa1`
+and their own digitizers:
+
+| | `σ₁` / own static reference | per-block period swing | seed spread |
+|---|---|---|---|
+| this document's isolated buffered deck (variant 5) | **19.9×** | 0.96 % | 0.12 % |
+| the shipped array, ring 1 ([`…-clocked-01`](records/2026-08-03-array-liveness-tap-phase-clocked-01.md) / [`…-static-01`](records/2026-08-03-array-liveness-tap-phase-static-01.md)) | **3.46×** | 0.136 % | 1.37 % |
+| the shipped array, ring 2 (same runs) | **5.80×** | — | — |
+
+**The bound holds, by 83 %, and the structural argument behind it is now
+measured rather than argued.** Two consequences for how this document should be
+read:
+
+- Every **19.9×** in it is an **isolated-ring** figure. It is not withdrawn and
+  nothing here was re-run — the decks, the records and the 96.5 % buffer
+  attenuation are all unchanged — but where the question is what the *block*
+  carries, 3.46× is the number, and `sim/characterization-shipped-array-tap-phase.md`
+  is the document that owns it.
+- The "**and that residual is deterministic**" finding is an isolated-ring
+  finding too, and it did **not** carry over. The shipped residual's seed
+  spread is 1.37 % against a 3.81 % reference for its window — above the
+  ⅓-of-reference line, so "not collapsed" rather than deterministic — where
+  this document's variant 5 was 0.12 % against 2.69 %. The shipped array's
+  per-block swing also lands *below* its family's 0.3 % materiality threshold,
+  where variant 5's 0.96 % is above. The `clk`-locking itself does reproduce:
+  the shipped clocked deck's per-block periods alternate on a ~0.96 µs cycle
+  against a 1.0007 µs `clk`.
+
+Nothing in this section changes what `DR-0016`, `DR-0018` or `DR-0007` §2 say.
+In particular the measurement-admissibility rule below is *strengthened*, not
+weakened, by the shipped number being smaller: 3.46× squared is still a ~12×
+over-statement of a ring's contribution to `Q_array`, in the unsafe direction.
+
 ## What this implies
 
 1. **`DR-0007` §2's measurement rule extends to the sample clock.**
@@ -273,8 +336,12 @@ ring node. A buffer attenuates that path; it does not open it.
    aggressor to that rule: a per-ring `σ_acc,i` measured while **`clk` is
    toggling** is not admissible either. At `tt`/27 °C/3.30 V the pre-#82
    topology inflates it 541× — squared, a ~2.9 × 10⁵ over-statement of that
-   ring's contribution to `Q_array`, in the unsafe direction — and the shipped
-   topology still inflates it 19.9× (a ~400× over-statement). **This is a
+   ring's contribution to `Q_array`, in the unsafe direction — and the
+   post-#82 topology still inflates it, by 19.9× on this document's isolated
+   deck (a ~400× over-statement) and by **3.46× on the shipped array** (a ~12×
+   over-statement, per the section above). Smaller, and still disqualifying:
+   the rule is that a per-ring `σ_acc,i` measured with `clk` toggling is not
+   admissible, not that it is admissible below some threshold. **This is a
    statement about measurement admissibility, not a spec change**; `DR-0007` §2
    is unamended and this document does not amend it.
 2. **No `sim/records/` entry in this repository is affected by that rule
@@ -293,13 +360,15 @@ ring node. A buffer attenuates that path; it does not open it.
    On the digitizer path it removes a comparable fraction (96.5 % against
    92.8 %), so the adoption decision is corroborated rather than undermined —
    but the residual it leaves here (19.9×) is larger than the one it leaves
-   there (2.87×), and it is `clk`-coherent rather than incommensurate.
+   there (2.87×), and it is `clk`-coherent rather than incommensurate. On the
+   shipped fan-out those two residuals are much closer: 3.46× against 2.87×.
 
-**Nothing here proposes a further design change.** What the remaining 19.9×
+**Nothing here proposes a further design change.** What the remaining residual
 should be done about — a bigger buffer, a `clk`-gated digitizer, sampling the
 liveness bit off the combiner output instead of the ring, or nothing at all —
 is a decision this document does not make and has no evidence for. It is filed
-as follow-up work in its own right.
+as follow-up work in its own right. Whoever picks it up should size the problem
+from the shipped **3.46×**, not from this document's isolated 19.9×.
 
 ## Caveats
 
@@ -361,3 +430,4 @@ as follow-up work in its own right.
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
 [#82]: https://github.com/2AMLogic/gf180-trng/pull/82
+[#87]: https://github.com/2AMLogic/gf180-trng/issues/87

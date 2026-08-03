@@ -157,12 +157,14 @@ jobs:
       # array_liveness_tap_phase_variants.py --check is issue #87's equivalent
       # guard on the SHIPPED topology -- whether the shipped clk-locked residual
       # comes in below the 19.9x upper bound #76 recorded for it, and whether the
-      # xsb-on-xo path reaches either ring node. It is deliberately NOT on the
-      # list below: its four decks exist but have not been run, so there is no
-      # record for it to read and no recorded verdict for it to gate against
-      # (both RECORDED_* constants are None, and
-      # sim/characterization-shipped-array-tap-phase.md's Results section says
-      # why). Adding the line here belongs to the change that lands the records.
+      # xsb-on-xo path reaches either ring node. It is still deliberately NOT on
+      # the list below, but for a narrower reason than before: the SHIPPED pair
+      # has now been run (3.46x, bound confirmed) and its verdict IS recorded,
+      # while the xsb pair's two decks are still running, so
+      # RECORDED_XSB_VERDICT is None. --check requires BOTH verdicts and exits
+      # non-zero while either is unset, on purpose: a half-armed gate that
+      # passed on the half it cannot see would be worse than no gate. Adding
+      # the line here belongs to the change that lands the xsb records.
       # sampler_bit_bias_variants.py --check is issue #86's guard, one level
       # downstream of #76's: it fails if the sampled bit at the DR-0001 raw tap
       # stops behaving the way sim/characterization-sampler-bit-bias.md says it

@@ -1,16 +1,25 @@
 # What does the `clk`-locked digitizer disturbance cost the array that ships?
 
-Status: **decks built for issue [#87]; not yet run.** The four testbenches
-below, their pairing, their window geometry and the derivation that reads them
-are on file. **No `tt`/27 °C/3.30 V record exists for any of them, so this
-document states no result** — [Results](#results) says exactly what is missing,
-what it costs to produce, and what has stopped it so far.
+Status: **half measured for issue [#87]; two of the four decks run.** The
+shipped pair — `clocked` and its `clk`-parked control, both at `tt`/27 °C/3.30 V
+and both on the same host — is on file, so the first question this document
+exists to answer has an answer:
 
-Nothing here supersedes
-[`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)'s
-**19.9×**, which remains what that document already calls it: an isolated-ring
-measurement recorded as an *upper bound* on the shipped array's residual, not
-as the number the shipped design carries.
+> **The array that ships carries a 3.46× `clk`-locked residual on its ring-1
+> node (5.80× on ring 2), against the 19.9×
+> [`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
+> recorded as an *upper bound* on exactly that number. The bound is confirmed,
+> by 83 %**, and the structural reason #76 gave for calling it a bound — the
+> shipped `ro_buf` output drives `xa1` as well as its own digitizer — is
+> measured rather than argued. The residual is **not** removed: 3.46× is still
+> outside the 3× band a variant reproducing its reference occupies, and the
+> modulation is locked to `clk`.
+
+**The `xsb`-on-`xo` path is still not measured.** Its two decks are built and
+running; until they land, that path is neither shown to reach a ring node nor
+shown unreachable, and nothing here says otherwise. [Results](#results) states
+both halves and says which is which; "What has stopped it so far" and "What the
+runs cost" say why the second half is slow.
 
 **This is an ordinary summary, not evidence.** Every number below cites the
 `sim/records/` stem that produced it — treat this document as a reading guide
@@ -149,22 +158,107 @@ the number it is stated against.
 
 ## Results
 
-**There are none yet, and this section exists to say so rather than to leave
-the omission to be noticed.** No `tt`/27 °C/3.30 V record has been produced for
-any of the four decks, so:
+**The shipped pair has a record each; the `xsb` pair has none.** So this
+section states the shipped ratio — the number issue #87 asks for first — and
+says plainly that the second half is still missing.
 
-- the shipped `σ₁` ratio is **not measured**;
-- it is therefore **not** stated against #76's 19.9× upper bound, in either
-  direction — the bound is neither confirmed nor violated by anything on file;
-- the `xsb`-on-`xo` path is **not measured**, and is neither shown reachable
-  nor shown unreachable;
-- `sim/tools/array_liveness_tap_phase_variants.py`'s two `RECORDED_*_VERDICT`
-  constants are `None`, and its `--check` is deliberately **not** on CI's
-  self-check list. Naming a verdict there before the run would pre-register a
-  conclusion with no evidence behind it, which is what that gate exists to
-  prevent, pointed the wrong way.
+Both decks at `tt`/27 °C/3.30 V over four seeds, **both produced on the same
+host** (`macOS-26.6-arm64`), which "What the runs cost" below explains is a
+requirement here and not a coincidence:
 
-Both remain **open items of issue #87**, which is what that issue asked for.
+| | variant 1 [`…-clocked-01`](records/2026-08-03-array-liveness-tap-phase-clocked-01.md) `clk` running | variant 2 [`…-static-01`](records/2026-08-03-array-liveness-tap-phase-static-01.md) `clk` parked HIGH |
+|---|---|---|
+| `T₀` ring 1 / ring 2 | 6.6702 ns / 6.2344 ns | 6.6739 ns / 6.2378 ns |
+| `σ₁` ring 1 (raw, fixed injected level) | **4.4490 ps** | **1.2864 ps** |
+| `σ₁` ring 2 | 4.0233 ps | 0.6934 ps |
+| accumulation exponent, lags 1…64 | 0.943 | 0.250 |
+| seed-to-seed spread of `σ₁` | 1.37 % | 4.09 % |
+| per-block period swing, 16 blocks | 0.136 % | 0.006 % |
+
+### The shipped `clk`-locked residual is 3.46×, and #76's bound holds
+
+```
+shipped   σ₁(1 clocked) / σ₁(2 static)  =  4.4490 ps / 1.2864 ps  =  3.46×   (ring 1)
+                                                                     5.80×   (ring 2)
+#76's upper bound on that same number                             = 19.90×
+```
+
+**3.46× is 83 % below the 19.90×
+[`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
+recorded as an upper bound on it, so the bound is confirmed** — by a margin far
+outside the 10 % this family requires before calling a direction measured
+rather than coincidental. The reason #76 gave for calling it a bound was
+structural and untested: the shipped `ro_buf` output drives `xa1` as well as
+its own digitizer, so the digitizer's `clk`-modulated capacitance is a smaller
+share of that node's load than in #76's deck, where the buffer drives the
+digitizer alone. That is now measured. Ring 2 — an independent replicate inside
+the same runs, on the `wstv` = 0.240 µm ring — agrees in direction at 5.80×.
+
+**It is not removed**, and it is unmistakably `clk`-locked rather than
+incidental. The clocked deck's sixteen per-block mean periods alternate between
+≈ 6.6740 ns and ≈ 6.6649 ns on a cycle of about six blocks; six blocks is 144
+ring periods, which at 6.6702 ns is 0.96 µs — the 1.0007 µs `clk` period to
+within the block quantisation. The static deck's blocks are flat at 0.006 %.
+The accumulation exponent says the same from the other end: 0.943 with `clk`
+running against 0.250 parked, where a phase random walk accumulates as `L^0.5`
+and #76's quiet decks measured 0.35–0.42. An exponent near 1 is coherent
+accumulation.
+
+**The two diagnostics disagree about the magnitude, and that disagreement is
+part of the result.** `σ₁` at 3.46× is outside the 1×–3× band this repository's
+variant ladders treat as reproducing a reference. The per-block period swing —
+which does not use the `σ` estimator at all — is 0.136 % against this family's
+0.3 % materiality threshold, i.e. *below* it. Both are on file and neither is
+dropped for the other: what the shipped array carries at this corner is large
+enough to move a phase statistic and too small to count as a material period
+modulation. Against #76's isolated buffered deck (0.96 % swing, 19.9×), the
+shipped fan-out cuts the swing ~7× and the `σ₁` ratio ~5.8×.
+
+**One of #76's signatures did not carry over, and is not claimed.** Its
+buffered residual was deterministic on the seed-spread test — 0.12 % against a
+2.69 % reference. The shipped one is 1.37 % against this window's 3.81 %
+reference, *above* the ⅓-of-reference line, so it classifies as "not collapsed"
+rather than deterministic. The weaker claim is the one stated.
+
+Reproduce with `python3 sim/tools/array_liveness_tap_phase_variants.py`, which
+recomputes both the 19.90× bound and the 3.46× ratio from the committed records
+rather than from any literal in this document.
+
+#### Why this ratio is host-sound
+
+"What the runs cost" below records that this experiment's runs have been
+launched on two machines that do not produce bit-identical floating point, and
+draws the rule that follows from it: **a control has to be produced on the same
+host as its numerator**, or the ratio spans two changes and attributes neither.
+Both records above satisfy that — `macOS-26.6-arm64` for numerator and
+denominator alike. #76's buffered pair likewise shares one host with itself
+(`Linux-7.0.0-1009-aws-x86_64`). So each ratio is taken within one host against
+its own control, and the ratio-to-ratio comparison above is sound while no raw
+`σ` is carried across. None is.
+
+### What is still not measured
+
+- **The `xsb`-on-`xo` path.** Variants 3 and 4 have no record at this corner,
+  so that path is **neither shown to reach a ring node nor shown unreachable**.
+  Nothing in the shipped pair bears on it: variants 1 and 2 both have
+  `xsr1`/`xsr2` attached, so their ratio is dominated by the per-ring
+  digitizers and cannot isolate `xsb`'s contribution.
+- **`RECORDED_XSB_VERDICT` is therefore still `None`.** Because `--check`
+  requires *both* verdicts and exits non-zero while either is unset, its CI
+  invocation stays off `.github/workflows/ci.yml`'s self-check list until the
+  `xsb` pair lands — a half-armed gate that passed on the half it cannot see
+  would be worse than no gate. `RECORDED_SHIPPED_VERDICT` *is* set, from what
+  the derivation printed over the two committed records, after the run.
+- `sim/tools/array_liveness_tap_phase_variants.py` no longer refuses to run
+  while the family is incomplete. It tabulates the variants that have records,
+  prints `not run` for those that do not, and reports every ratio needing a
+  missing variant as `NOT MEASURED`. Nothing is estimated in a missing
+  variant's place.
+
+**Two of issue #87's four acceptance criteria are met** (the shipped `σ_acc`
+measurement, and stating it explicitly against the 19.9× bound); the `xsb` one
+is **open**, and the "cite the shipped number" one is done for
+`sim/characterization-liveness-tap-phase-cost.md` and left for DR-0016.
 
 ### What the runs cost
 
@@ -192,17 +286,104 @@ freely adjustable:
   period cannot be shorter than ~1 µs — and the settling periods and the
   measurement window are both counted in ring periods on top of that.
 
+**CPU-hours are not wall-clock hours here, and the gap is large.** The ≈ 23
+CPU-hour figure above silently assumes the batch can have as many cores as it
+has runs. On the **macOS/arm64 host** attempt 4 ran on it cannot. Every
+`ngspice` started from an agent session inherits `nice 10`, and macOS maps that
+to a background QoS class scheduled on the efficiency-core cluster rather than
+across all 28 cores — so the batch's *aggregate* throughput is capped near two
+and a half cores no matter how many runs are in flight. Measured on that host
+during attempt 4, by differencing the runs' summed CPU time over a fixed
+wall-clock window:
+
+| runs in flight | aggregate throughput |
+|---|---|
+| 4 (one deck) | ≈ 2.0 cores |
+| 8 (two decks) | ≈ 2.4 cores |
+| 16 (all four decks) | ≈ 1.8 cores |
+
+Two things follow, and both are scheduling facts about the host rather than
+anything about the circuit. First, **running all sixteen at once is slower in
+aggregate than running eight** — past the E-cluster's width the runs contend
+rather than overlap — so there is no parallelism left to buy: ≈ 23 CPU-hours
+is ≈ 9–11 hours of wall clock however the batch is arranged. Second, the only
+lever that would change this is raising the runs' priority, and `renice`
+downward from `nice 10` requires root, which is an operator action and not an
+agent one.
+
+The practical consequence for whoever runs this next: **run the two decks of
+one pair concurrently and the pairs one after the other**, rather than all
+four decks at once. It costs nothing in total wall clock — the ceiling is the
+same either way — and it lands a *complete, readable pair* (the shipped ratio)
+hours before the batch as a whole finishes, instead of leaving all four decks
+partially done and none readable if the host kills the batch. That is the
+arrangement attempt 4 settled on after measuring the table above, and
+`sim/tools/run_array_liveness_tap_phase.py --decks <a> <b>` is how to express
+it.
+
+**None of that table transfers to the other host these runs get launched on.**
+This repository's records have been produced on two different machines, and
+they are not interchangeable for cost:
+
+| host | as recorded in `platform:` | cores | per-run rate on this deck |
+|---|---|---|---|
+| macOS/arm64 | `macOS-26.6-arm64-arm-64bit-Mach-O` | 28 (P+E) | ≈ 62 ps of transient per second of wall clock, 4 runs in flight |
+| Linux/AWS | `Linux-7.0.0-1009-aws-x86_64-with-glibc2.39` | 8 (Xeon 8488C) | ≈ 8.7 ps per second of wall clock, 8 runs in flight |
+
+The Linux figure is measured from a concurrent launch of the `clocked`/`static`
+pair on that host (see attempt 5 below): 5 h 52 min of wall clock advanced the
+transient to `1.84137e-07` s — **184 ns of the 3.000003 µs deck, 6 %**. That is
+roughly **seven times slower per run** than the macOS host, while *not* being
+starved of CPU: `ps` reported each of the eight `ngspice` processes at ~94 % of
+a core (≈ 7.5 of the 8 cores in aggregate), and a single-threaded control run
+of the identical generated netlist on the same idle-priority host advanced
+7.05 ns in 900 s — **7.8 ps/s**, essentially the same rate as a run inside the
+eight-wide batch. So on the Linux host the ceiling is not scheduling and not
+batch width; one run of this deck simply costs about what eight of them do, and
+the `nice`/E-cluster analysis above does not apply.
+
+The consequence for planning: **≈ 23 CPU-hours is ≈ 9–11 h of wall clock on the
+macOS host and on the order of 100 h on the Linux one.** A batch of these decks
+should be launched on the macOS host; the Linux host cannot finish one deck
+inside the 6 h `--timeout` the drivers default a run to, let alone four.
+
+**And the two hosts must not be mixed inside a pair.** Each pair's ratio is
+only a one-change comparison if `clk` toggling is the *only* difference between
+numerator and denominator. `sigma_1` here is a few picoseconds on a transient
+driven by 22 `trnoise()` sources; x86-64 and arm64 do not produce
+bit-identical floating point (FMA contraction, `libm`, extended-precision
+intermediates), so the two hosts do not walk the same trajectory. The
+`clocked` record on file was produced on macOS/arm64, so **its `static` control
+had to be produced on macOS/arm64 too**, or the published ratio would span two
+changes and attribute neither — the exact failure the pairing discipline in
+"Why the pairs are read inside a topology" exists to prevent. **It was**: both
+records of the shipped pair carry
+`platform: macOS-26.6-arm64-arm-64bit-Mach-O`, so the 3.46× in Results is a
+one-change ratio in this respect as well as in the circuit. The same rule
+binds the `xsb` pair when it is run: both its decks on one host, whichever
+host that is.
+
+This is also worth noting against #76's family, every record of which carries
+the `Linux-…-aws-…` platform: comparing this experiment's *ratio* with #76's
+*ratio* is still sound, because each is dimensionless and taken within one host
+against its own control, but no raw `σ` may be carried across the two. Results
+compares only the ratios, and no raw `σ` from either family appears in the
+other's arithmetic.
+
 ### What has stopped it so far
 
-Three launches of the sixteen runs were killed from outside the harness before
-any of them finished. Recorded here because the next attempt should not
-rediscover them:
+Four launches were killed from outside the harness before any of their runs
+finished — the first three of the full sixteen, and a later concurrent one of
+eight on the other host. Recorded here because the next attempt should not
+rediscover them. Attempt 4 is not in this table: it is the one that survived,
+and it is described below.
 
 | attempt | how far it got | how it died |
 |---|---|---|
 | 1 | ~0.27 µs of the transient | all sixteen `ngspice exit -15` (SIGTERM), when the agent session that launched them ended |
 | 2 | ~1.60 µs, after 4.4 h | all sixteen `ngspice exit -9` (SIGKILL), simultaneously, together with every other `ngspice` process on the host |
 | 3 | ~0.09 µs, after 9 min | the same, ~14 minutes later |
+| 5 (concurrent, Linux host) | 0.184 µs, after 5 h 52 min | all eight `ngspice exit -15` (SIGTERM) at 2026-08-03T20:42:27Z, ~8 min *before* their own `timeout 21600s` deadline; the driver and the second wave it had just launched went with them |
 
 Attempt 1 has a fix that holds: launch the runs from a driver that calls
 `os.setsid()` first, so they are not in the launching session's process group
@@ -219,7 +400,7 @@ driver that re-runs a failed deck (deleting the failed attempt's record and
 raw directory first, so the successful attempt claims a clean stem) is the
 minimum that converges here.
 
-None of the three attempts produced a committable record — every run failed, so
+None of the first three attempts produced a committable record — every run failed, so
 every measurement row read "no data" — and none was committed. `sim/`'s
 append-only rule governs committed evidence; these never became any.
 
@@ -298,59 +479,92 @@ If this attempt also fails to land all four records, the next one should run
 re-deriving which decks are still outstanding by hand — that is exactly what
 the flag is for.
 
+**Attempt 5** ran at the same time as attempt 4, on the *other* host, and is
+the row above. It is recorded because of what it cost and what it shows, not
+because it produced anything: a `clocked` + `static` pair, four seeds each,
+eight `ngspice` in flight, launched 2026-08-03T14:50:40Z from a scratch driver
+inside `.loom/worktrees/issue-87/` on the Linux/AWS host. It ran 5 h 52 min,
+reached 184 ns of the 3.000003 µs transient, and was SIGTERMed — so
+`run_corners.py` wrote both records with every measurement row reading `no
+data (all runs failed to converge)`, and neither was committed. Three things
+it establishes for whoever runs this next:
+
+1. **The Linux host cannot finish this deck**, for the throughput reason
+   tabulated above; at 8.7 ps/s a 3 µs transient needs ~96 h, against the 6 h
+   `timeout` the driver gave it. Attempt 5 was doomed at launch and no kill was
+   needed to make it fail. Launch these decks on the macOS host.
+2. **A `--timeout` that a run cannot finish inside is a silent failure**, not a
+   loud one. `run_corners.py` returned `rc=0` and the driver logged `END … rc=0`
+   for both decks; only the per-point line (`FAIL … ngspice exit -15, no
+   measurements parsed`) and the record's own `no data` rows say otherwise. A
+   driver that gates on the shell exit status of `run_corners.py` will conclude
+   a dead batch succeeded and move on — attempt 5's driver did exactly that,
+   launching its second wave into the same trap.
+3. **Running the batch inside `.loom/worktrees/issue-87/` is still the wrong
+   place**, for the reason attempt 4 already gives above, and attempt 5 is the
+   worked example: its raw output sat untracked inside a Loom-managed worktree
+   for six hours, where any worktree teardown or `git clean` would have taken it.
+   That output is now preserved outside the repository rather than committed —
+   `sim/`'s append-only rule governs evidence, and a record whose every row
+   reads `no data` is not evidence.
+
 ### What is left to do
 
-1. Run the four decks and land their records. The equivalent of the loop
-   below, made resumable and detached, is
-   [`sim/tools/run_array_liveness_tap_phase.py`](tools/run_array_liveness_tap_phase.py)
-   — see "What has stopped it so far" above for why the loop alone was never
-   enough:
+1. **Run the remaining two decks and land their records.** The shipped pair
+   is done (see Results above); the `xsb` pair is not. Run both decks of that
+   pair on the **same host as each other**, for the one-change reason under
+   "What the runs cost" -- a control produced on a different host than its
+   numerator makes the ratio span two changes and attribute neither. The
+   launcher takes a deck subset, and per the throughput table the right unit of
+   work is one *pair* at a time:
 
    ```sh
-   for tb in array-liveness-tap-phase-clocked array-liveness-tap-phase-static \
-             array-liveness-tap-phase-xsb-clocked array-liveness-tap-phase-xsb-static; do
-     python3 sim/run_corners.py "$tb" \
-       --corners tt --temps 27 --supply 3.3 --supply-tol 0 \
-       --seeds 1 2 3 4 -j 4 --timeout 86400
-   done
+   python3 sim/tools/run_array_liveness_tap_phase.py \
+     --decks array-liveness-tap-phase-xsb-clocked array-liveness-tap-phase-xsb-static
+   python3 sim/tools/run_array_liveness_tap_phase.py --status
    ```
 
-   `--timeout` matters: the harness default is 300 s, which every one of these
-   runs exceeds by two orders of magnitude.
+   It skips any deck that already has a clean four-seed record at this corner,
+   so re-running it resumes rather than restarts. `--timeout` defaults to 24 h
+   because the harness default of 300 s is two orders of magnitude short of
+   what one of these runs needs.
 
-2. Fill in a Results table from
-   `python3 sim/tools/array_liveness_tap_phase_variants.py`, and set that
-   script's two `RECORDED_*_VERDICT` constants from what it prints — after the
-   run, never before.
+2. **Fill in the Results table** from
+   `python3 sim/tools/array_liveness_tap_phase_variants.py` and set the
+   matching `RECORDED_*_VERDICT` constant from what it prints -- after the run,
+   never before. `RECORDED_SHIPPED_VERDICT` is set; `RECORDED_XSB_VERDICT` is
+   still `None`.
 
-3. Add `python3 sim/tools/array_liveness_tap_phase_variants.py --check` back to
-   the "Spec arithmetic self-checks" step in `.github/workflows/ci.yml`; the
-   comment block there already describes the guard and says why the line is
-   currently absent.
+3. **Add `python3 sim/tools/array_liveness_tap_phase_variants.py --check` back
+   to the "Spec arithmetic self-checks" step in `.github/workflows/ci.yml`**,
+   once *both* verdicts are recorded. The check deliberately exits non-zero
+   while either is `None`, so adding the line before the `xsb` pair lands would
+   simply turn CI red; the comment block in that workflow says so.
 
-4. Then, and only then, amend
+4. Then, and only then, amend DR-0016's "Phase cost" amendment to cite the
+   shipped number alongside the isolated-ring one.
    [`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
-   and DR-0016's "Phase cost" amendment to cite the shipped number instead of
-   the 19.9× bound. Until the run exists, 19.9× is the best number on file and
-   both documents already describe it correctly, as an isolated-ring
-   measurement used as an upper bound.
+   has already been amended to cite the shipped 3.46x -- that half of the
+   evidence exists -- but the decision record's amendment is a spec artefact
+   and is left for the change that can state the whole experiment at once.
 
-**One thing to watch on the first successful run.** These decks set no
-`.options` overrides, where [`sim/tb/sampler-array-digitize/`](tb/sampler-array-digitize/)
-— the only other deck in this repository carrying this same 22-stage two-ring
-array — documents a bisected `abstol=1e-10` relaxation as the thing that keeps
-its transient from collapsing when an abrupt external edge lands in the same
-matrix as 22 series-starved stages. These decks have an abrupt external edge
-(`clk`) and the same array. If the first run hits `Timestep too small`, that
-precedent is where to look; the relaxation would have to be applied identically
-to both decks of a pair, so that it cannot move a ratio, and stated in the
-caveats rather than absorbed.
+**The `abstol` worry did not materialise, and can be dropped.** This section
+previously flagged that these decks set no `.options` overrides, where
+[`sim/tb/sampler-array-digitize/`](tb/sampler-array-digitize/) -- the only other
+deck in this repository carrying this same 22-stage two-ring array -- needs a
+bisected `abstol=1e-10` relaxation to keep its transient from collapsing when
+an abrupt external edge lands in the same matrix as 22 series-starved stages.
+These decks have an abrupt external edge (`clk`) and the same array, so the
+concern was well founded. It did not happen: all eight runs of the shipped pair
+converged with no override, and the only diagnostic in any of their logs is the
+PDK's routine `m=xx on .subckt line` warning. No deck in this family needs an
+`.options` line the others do not, so no ratio in it can be moved by one.
 
 ## Caveats
 
-These are the method limits the runs *will* carry. They are stated now because
-they are properties of the decks, which exist, rather than of the results,
-which do not.
+These are the method limits this family carries. They are properties of the
+decks, so they apply equally to the shipped pair's results above and to the
+`xsb` pair's runs that are still outstanding.
 
 - **One corner.** `tt`/27 °C/3.30 V only, chosen to be directly comparable with
   #51's ladder and #76's family. Nothing here is claimed at any other process,
