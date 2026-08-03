@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
 supersedes: n/a
 superseded_by: n/a
-related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/"
+related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #76 (the tap's PHASE cost -- measured, see Status/A2 and Consequences), #86 / #87 (the two questions #76 did not settle), DR-0018 (the per-ring output buffer the digitizers now tap), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/"
 ---
 
 # DR-0016: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
@@ -40,6 +40,19 @@ related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1),
     subcircuit port is simply not addressable as an internal node. The
     measured costs tabulated under "Power/area cost" are unaffected and are
     now the cost of something the design contains.
+- 2026-08-03: **Amendment A2 (#76) -- the digitizer's cost to the ring is now
+  measured on a second axis, PHASE, and it is large. No decision, parameter,
+  cutoff or mechanism in this record changed; the record still stands as
+  Proposed.** See "Phase cost on the ring it observes" under Consequences: on
+  the raw ring node the tap modulates the ring's period by 703.51 ps
+  (`sigma_1` 545.7x a matched quiet control), and on the DR-0018-buffered tap
+  the block ships today it still modulates it by 27.46 ps (20.08x). Both are
+  deterministic and phase-locked to `clk` by construction. A2 adds one
+  constraint that did not exist before -- a per-ring `sigma_acc,i` measured
+  with `clk` running is not admissible as DR-0007 §2 evidence -- and files the
+  two questions it does not settle as #86 (does it bias the sampled bit?) and
+  #87 (what is the shipped array's own residual, and what does `xsb` do to
+  `xo`?).
 
 ## Context
 
@@ -274,6 +287,67 @@ binding corner. It does not, by itself, threaten the ratified `< 500 uW`
 row. The RTL and conditioner/interface/health-test digital-logic power this
 repository has never measured (item 1) remains an open, pre-existing gap
 this record does not close and does not worsen.
+
+### Phase cost on the ring it observes -- MEASURED, #76 (Amendment A2)
+
+The section above prices the digitizer's tap in **power**. It says nothing
+about what the tap costs the ring in **phase**, and until #76 nothing in this
+repository did. `layout/floorplan/README.md` raised that gap explicitly, on the
+grounds that the tap is structurally the same arrangement
+`sim/characterization-array-ring-coupling.md` (#51) measured at 28.6x, with
+one aggravating difference: `clk` is coherent with the sampling instant by
+definition, and it is an external pin (DR-0012).
+
+#76 measured it
+([`sim/characterization-ring-liveness-tap-phase.md`](../../sim/characterization-ring-liveness-tap-phase.md),
+six new testbenches, all at `tt`/27 C/3.30 V, 4 seeds each). **The gap was
+real and the effect is large.**
+
+The mechanism is not the one #51 found. `d` on a `sampler_dff` is one terminal
+of a transmission gate, not a gate input: with `clk` low it is transparent and
+the ring node drives the master inverter through it, with `clk` high it is
+opaque. A running clock therefore does not inject a rare impulse -- it
+**modulates the ring's load between two values, at the clock rate**, and the
+modulating waveform *is* `clk`.
+
+| Digitizer tapping | `sigma_1` vs a matched quiet control | period modulation | seed spread | accumulation exponent |
+|---|---|---|---|---|
+| the raw ring node (this record as written, shipped #65 to #82) | **545.7x** | **703.51 ps** (25 % of the period) | 0.01 % | 0.953 |
+| a DR-0018 `ro_buf` output (shipped today) | **20.08x** | **27.46 ps** | 0.17 % | 0.971 |
+
+Both are deterministic (a genuine estimate over this window scatters ~2.7 %
+seed to seed; these scatter 0.01 % and 0.17 %) and both accumulate as `lag^~1`
+rather than the `lag^0.5` of a phase random walk. The clinching evidence is a
+prediction: the two-level modulation between the two *static* operating points
+predicts `sigma_1` to **1.004x** (unbuffered) and **1.000x** (buffered) from
+decks whose clock never moves.
+
+**What this changes in this record:** nothing about the monitor's mechanism,
+`C_LIVE`, detection latency or failure behaviour -- all of that is one level
+above the electrical tap and is untouched. What it adds is a second, larger
+entry in this record's own cost column, and one constraint that did not exist
+before:
+
+> **A per-ring `sigma_acc,i` measured with `clk` running is not admissible as
+> DR-0007 §2 evidence, buffered or not.** Squared, 545.7x is a ~297 800x
+> over-statement of that ring's contribution to `Q_array`, and 20.08x is still
+> a 403x one -- both in the unsafe (undersized-array) direction, exactly as
+> #51's was. This extends `layout/floorplan/README.md`'s adopted measurement
+> rule from "combiner neighbours quiet" to "combiner neighbours quiet **and**
+> `clk` quiet"; it does not relax any part of it.
+
+**What it does not settle**, and what is filed rather than assumed:
+
+- Whether the `clk`-locked frequency modulation biases the **sampled bit**.
+  #76 measured phase, not bits, and declined to make a bit-level claim from a
+  phase measurement. That is #86.
+- The **shipped array's** own residual. #76's buffered decks drive one
+  digitizer where `ro_array_core`'s buffer drives `xa1` and two digitizers, so
+  20.08x is an upper bound on the shipped figure by a capacitance-ratio
+  argument, not a measurement of it. `xsb` on `xo` is likewise unmeasured.
+  Both are #87.
+- Any other corner or clock rate. One corner, one rate (DR-0003's ratified
+  floor, deliberately the most favourable the specification permits).
 
 ### No exposed per-ring tap (DR-0001)
 

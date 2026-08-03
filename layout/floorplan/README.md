@@ -274,12 +274,12 @@ mitigation above misses it.**
 > only the [DR-0007] §6 mitigations is incomplete, and incomplete in the
 > direction that overstates the array.
 
-### The same topology exists a second time, and its jitter cost is unmeasured
+### The same topology exists a second time — measured, and it is the larger of the two ([#76])
 
 The measurement above indicts a specific arrangement: *a ring node driving the
 input gate of a cell whose internal nodes something else is driving*. The
 shipped block contains that arrangement twice more, and the floorplan work is
-where it surfaces:
+where it surfaced:
 
 - `xsr1` / `xsr2`, the DR-0016 per-ring liveness digitizers (#71), put each
   ring node `ro1` / `ro2` on a `sampler_dff` input — a transmission gate whose
@@ -287,18 +287,41 @@ where it surfaces:
 - `xsb` does the same on `xo` with the same clock.
 
 `sim/tb/ring-liveness-tap-power/` measured what those digitizers cost the rings
-in **power** at three PVT points, and DR-0016 §Power/area cost prices it. **No
-testbench in this repository measures what they cost the rings in phase.** The
-mechanism is structurally identical to the one #51 measured, and the aggressor
-is worse in one specific way: `clk` is coherent with the sampling instant by
-definition, so a `clk`-correlated phase disturbance on a ring does **not**
-average away over many samples the way an incommensurate ring-to-ring beat
-does. It is also externally driven (DR-0012), so its rate is an attacker's
-choice rather than a design constant.
+in **power** at three PVT points, and DR-0016 §Power/area cost prices it. This
+section previously recorded that **nothing measured what they cost the rings in
+phase**, and filed that gap as [#76] rather than assuming it away.
 
-This is a plausible mechanism with a measured analogue and **no measurement of
-its own**. It is stated here rather than assumed away, and it is filed as
-follow-up work rather than resolved inside a floorplan document: **[#76]**.
+**[#76] measured it, and the concern was justified**
+([`sim/characterization-ring-liveness-tap-phase.md`](../../sim/characterization-ring-liveness-tap-phase.md),
+six new testbenches at `tt`/27 °C/3.30 V):
+
+| digitizer tapping | `σ₁` vs a matched quiet control | period modulation | seed spread | exponent |
+|---|---|---|---|---|
+| the raw ring node (as shipped #65 → [#82]) | **545.7×** | **703.51 ps** (25 % of the period) | 0.01 % | 0.953 |
+| a `ro_buf` output (as shipped today, [DR-0018]) | **20.08×** | **27.46 ps** | 0.17 % | 0.971 |
+
+The mechanism is not #51's. A `sampler_dff` `d` input is one terminal of a
+transmission gate, so a running `clk` does not inject a rare impulse into the
+ring — it **modulates the ring's load between two values at the clock rate**,
+and the modulating waveform *is* `clk`. The proof is a prediction rather than a
+correlation: the two static operating points (gate shut, gate open), measured
+in decks whose clock never moves, predict the clocked deck's `σ₁` to **1.004×**
+unbuffered and **1.000×** buffered.
+
+The per-ring buffer this section goes on to adopt removes **96.5 %** of it —
+the same buffer, measured on a second consumer — but the residual **20.08×** is
+seven times #75's residual on the combiner path (2.87×), and **403×** rather
+than 8.24× once squared into [DR-0007] §2's sum. **The buffer is not a fix for
+this path**, and the sign of the residual says why: buffered, the modulation
+reaches the ring *backwards* through the buffer's own gate-drain capacitance
+rather than forwards through its input, so more isolation is what would help,
+not a bigger buffer.
+
+Two questions #76 raised and did not settle are filed rather than asserted:
+whether the `clk`-locked modulation biases the **sampled bit** ([#86] — a
+phase measurement may not make a bit-level claim), and what the **shipped
+array's** own residual is, given that its buffer output also drives `xa1`
+([#87], which also covers the unmeasured `xsb`-on-`xo` path).
 
 ### Adopted mitigation: one buffer per ring, ahead of everything
 
@@ -385,10 +408,18 @@ inputs would create exactly the shared node the mitigation exists to remove.
 
 > **Per-ring `σ_acc,i` offered as evidence for [DR-0007] §2 must be measured
 > with that ring's combiner neighbours quiet** — the `ro-array-coupling-xor-static`
-> arrangement, gate load present and neighbour held on a rail — **or with the
+> arrangement, gate load present and neighbour held on a rail — **and with the
+> sample clock quiet** — the `ring-liveness-tap-phase-shut`/`-open`
+> arrangement, digitizer present and `clk` held on a rail — **or with the
 > deterministic component separated out and reported alongside.** A per-ring
-> `σ` taken from a deck in which the neighbours switch is not admissible for
-> §2.
+> `σ` taken from a deck in which the neighbours switch, *or* in which `clk`
+> switches, is not admissible for §2.
+
+The `clk` half of that rule is [#76]'s addition and is the larger of the two
+terms: 545.7× on an unbuffered digitizer tap and 20.08× on the buffered tap the
+block ships, against 27.10× / 2.87× for the combiner path. Both halves are
+about a *shared electrical node*, not a layout adjacency, and neither is
+mitigated by separation.
 
 **`sim/records/2026-08-01-ro-array-sanity-jitter-01.md`'s `σ_r1_*` figures do
 not meet this bar.** They were taken with the combiner neighbours switching,
@@ -405,10 +436,10 @@ checkable rather than asserted: `sim/tools/array_sizing.py` evaluates
 (`ro-array-core-power`, `ro-array-core-pvt-q`) through the jitter-energy law,
 and prints the sanity-jitter record's `κ²` only as a **reported, not enforced**
 comparison. The rule therefore binds future evidence, and #12 inherits it: the
-empirical independence check DR-0007 §6 assigns to #12 must target this path
-specifically — cross-correlation of per-ring crossing residuals against the
-neighbour's phase, not a frequency-ratio or locking check, which this mechanism
-passes.
+empirical independence check DR-0007 §6 assigns to #12 must target **both**
+paths specifically — cross-correlation of per-ring crossing residuals against
+the neighbour's phase *and* against the sample clock — not a frequency-ratio or
+locking check, which both mechanisms pass.
 
 ---
 
@@ -617,8 +648,12 @@ design. This work produced three, all filed against
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
 [#78]: https://github.com/2AMLogic/gf180-trng/issues/78
+[#82]: https://github.com/2AMLogic/gf180-trng/pull/82
+[#86]: https://github.com/2AMLogic/gf180-trng/issues/86
+[#87]: https://github.com/2AMLogic/gf180-trng/issues/87
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
+[DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: ../../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
