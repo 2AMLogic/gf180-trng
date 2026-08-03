@@ -190,16 +190,26 @@ BOUND_MARGIN = 0.10
 #: conclusion rather than quietly leaving a stale one in the characterization
 #: document. Set either to ``None`` to run the classification without gating.
 #:
-#: **Both are ``None``, because the four decks above have not been run yet.**
-#: There is no ``tt``/27 C/3.30 V record for any of them, so there is nothing
-#: for ``--check`` to read and nothing it could honestly gate against; its CI
-#: invocation is correspondingly absent from ``.github/workflows/ci.yml`` (the
-#: comment block there says so). Naming a verdict here before the run would
-#: pre-register a conclusion this repository has no evidence for -- the exact
-#: failure this gate exists to catch, pointed the wrong way. The change that
-#: lands the records is the change that fills these in, from what this script
-#: prints.
-RECORDED_SHIPPED_VERDICT: str | None = None
+#: The shipped pair HAS now been run --
+#: ``2026-08-03-array-liveness-tap-phase-clocked-01`` and
+#: ``-static-01``, four seeds each at ``tt``/27 C/3.30 V -- so
+#: ``RECORDED_SHIPPED_VERDICT`` below is filled in from what this script printed
+#: over those two records, after the run and not before.
+#:
+#: ``RECORDED_XSB_VERDICT`` is still ``None``, because variants 3 and 4 are
+#: still running: each deck costs ~87 CPU-minutes per seed and the batch is
+#: capped near 2.4 cores on the host it runs on (see
+#: ``sim/characterization-shipped-array-tap-phase.md``). Naming a verdict for a
+#: pair with no records would pre-register a conclusion this repository has no
+#: evidence for -- the exact failure this gate exists to catch, pointed the
+#: wrong way.
+#:
+#: Because ``--check`` requires BOTH verdicts before it will gate anything, its
+#: CI invocation stays absent from ``.github/workflows/ci.yml`` until the xsb
+#: pair lands. That is deliberate: a half-armed gate that passes on the half it
+#: cannot see is worse than no gate. The change that lands the xsb records is
+#: the change that fills the second constant in and adds the CI line.
+RECORDED_SHIPPED_VERDICT: str | None = "bound-confirmed-residual-remains"
 RECORDED_XSB_VERDICT: str | None = None
 
 
@@ -249,7 +259,19 @@ class Variant:
         return (max(self.blocks) - min(self.blocks)) / self.period
 
 
-def _load(spec) -> Variant:
+def _load(spec, *, required: bool = True) -> Variant | None:
+    """The latest record for one variant at :data:`CORNER`, or ``None``.
+
+    ``required=False`` returns ``None`` for a variant with no record rather
+    than raising, so a pair whose decks HAVE run can still be read while
+    another pair's are still running. That is the state this experiment is
+    actually in for hours at a time: each of its four decks costs ~87
+    CPU-minutes per seed and they land pair by pair, and a script that
+    refuses to say anything until all four exist would make the half that is
+    measured unreadable. It never invents a variant -- a missing one is
+    reported as missing, and every ratio that would need it is reported as
+    not measured rather than estimated.
+    """
     label, glob, manifest, difference = spec
     matches = []
     for path in sorted(RECORDS.glob(glob)):
@@ -258,6 +280,8 @@ def _load(spec) -> Variant:
             continue
         matches.append(rec)
     if not matches:
+        if not required:
+            return None
         raise RecordError(
             f"variant {label!r}: no sim/records/{glob} record at {CORNER} carries a "
             "sigma_1, so this variant cannot be compared"
@@ -266,8 +290,15 @@ def _load(spec) -> Variant:
     return Variant(label, matches[-1], manifest, difference)
 
 
-def load_variants() -> tuple[list[Variant], list[Variant]]:
-    return [_load(s) for s in VARIANTS], [_load(s) for s in BOUND_VARIANTS]
+def load_variants() -> tuple[list[Variant | None], list[Variant]]:
+    """This experiment's four variants (any of which may be ``None`` if its
+    deck has not been run yet) and #76's two, which are committed evidence and
+    so are required: without them there is no bound to state anything against.
+    """
+    return (
+        [_load(s, required=False) for s in VARIANTS],
+        [_load(s) for s in BOUND_VARIANTS],
+    )
 
 
 def classify_shipped(by_key: dict[str, Variant], bound: float, ref_spread_1: float):
@@ -314,6 +345,27 @@ def classify_shipped(by_key: dict[str, Variant], bound: float, ref_spread_1: flo
             "  clk-locked disturbance to something the estimator cannot separate from a\n"
             "  quiet ring."
         )
+    # The two diagnostics can disagree, and when they do the rationale has to say
+    # so rather than list both as if both pointed the same way. sigma_1 above
+    # NULL_TOLERANCE is what puts this branch here; the per-block swing is an
+    # INDEPENDENT check that does not use the sigma estimator at all, and it can
+    # land under MODULATION_MATERIAL while sigma_1 is still elevated. Reporting a
+    # below-threshold swing as if it corroborated "not removed" would be reading
+    # the evidence backwards.
+    swing_material = swing >= MODULATION_MATERIAL
+    swing_clause = (
+        f"  the per-block period swing is {100 * swing:.3f} % against a "
+        f"{100 * MODULATION_MATERIAL:.1f} % materiality threshold, which\n"
+        "  agrees: the modulation is visible in the diagnostic that does not use the\n"
+        "  sigma estimator at all.\n"
+        if swing_material
+        else f"  the per-block period swing, however, is {100 * swing:.3f} % against a "
+        f"{100 * MODULATION_MATERIAL:.1f} % materiality\n"
+        "  threshold -- BELOW it, so the diagnostic that does not use the sigma estimator\n"
+        "  at all does NOT corroborate the residual, and the two disagree. What the array\n"
+        "  carries is large enough to move a phase statistic and too small to count as a\n"
+        "  material period modulation; neither reading may be dropped for the other.\n"
+    )
     return "bound-confirmed-residual-remains", (
         f"  BOUND CONFIRMED, RESIDUAL REMAINS. The shipped array's lag-1 sigma is {ratio:.2f}x\n"
         f"  its own static reference, against the {bound:.1f}x #76 recorded as an upper bound on\n"
@@ -321,11 +373,11 @@ def classify_shipped(by_key: dict[str, Variant], bound: float, ref_spread_1: flo
         "  buffer output drives xa1 as well as its digitizer, so the clk-modulated share of\n"
         "  its load is smaller) is measured rather than merely argued. It is NOT removed:\n"
         f"  {ratio:.2f}x is still outside the {NULL_TOLERANCE:.0f}x band a variant reproducing its reference\n"
-        f"  occupies, the per-block period swing is {100 * swing:.3f} % against a {100 * MODULATION_MATERIAL:.1f} % materiality\n"
-        "  threshold, and the seed spread is "
+        "  occupies, and the seed spread is "
         + (f"{100 * spread:.2f} %" if spread is not None else "n/a")
         + f" against a {100 * ref_spread_1:.2f} % reference\n"
-        f"  ({'deterministic' if deterministic else 'not collapsed'})."
+        f"  ({'deterministic' if deterministic else 'not collapsed'}).\n"
+        + swing_clause
     )
 
 
@@ -394,9 +446,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    by_key = {v.key: v for v in variants}
+    present = [v for v in variants if v is not None]
+    by_key = {v.key: v for v in present}
     bound_by_key = {v.key: v for v in bound_variants}
-    shipped = by_key["shipped"]
+    missing = [
+        spec[0] for spec, v in zip(VARIANTS, variants, strict=True) if v is None
+    ]
+    shipped = by_key.get("shipped")
 
     print(
         f"issue #87 -- SHIPPED-ARRAY DUT variants at {CORNER} (process/degC/V). Every\n"
@@ -404,6 +460,22 @@ def main(argv: list[str] | None = None) -> int:
         f"whether clk toggles and whether xsr1/xsr2 are present. sigma is RAW at the\n"
         f"fixed injected level and is NOT physical jitter.\n"
     )
+    if missing:
+        print(
+            "  NOT YET RUN, and so absent from every table and ratio below: "
+            + ", ".join(repr(m) for m in missing)
+            + ".\n  Each deck costs ~87 CPU-minutes per seed and they land pair by pair; see\n"
+            "  sim/characterization-shipped-array-tap-phase.md. Nothing here is estimated\n"
+            "  in their place -- a ratio that would need one is reported as not measured.\n"
+        )
+
+    if shipped is None:
+        print(
+            "The shipped deck (variant 1) has no record at this corner, so there is no\n"
+            "window geometry to tabulate the others against and nothing to compare.",
+            file=sys.stderr,
+        )
+        return 2
 
     lags = shipped.lags
     header = (
@@ -417,7 +489,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(header)
     print("-" * len(header))
-    for v in variants:
+    for v in present:
         spread = v.spread_1
         print(
             f"{v.label:<16} {v.difference:<34} {v.period:11.4e} "
@@ -441,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         f"  {'variant':<16} {'T0 ring1':>11} {'T0 ring2':>11} "
         f"{'min block':>11} {'max block':>11} {'swing':>9}"
     )
-    for v in variants:
+    for v in present:
         lo = min(v.blocks) if v.blocks else float("nan")
         hi = max(v.blocks) if v.blocks else float("nan")
         print(
@@ -464,7 +536,10 @@ def main(argv: list[str] | None = None) -> int:
         ("xsb on xo only (no per-ring digitizer)", "xsb", "xsb-static", by_key),
         ("#76's bound (5-stage, one consumer)", "buffered", "buf-static", bound_by_key),
     ):
-        n, d = table[num], table[den]
+        n, d = table.get(num), table.get(den)
+        if n is None or d is None:
+            print(f"  {title:<44} {'not run':>10} {'not run':>10}")
+            continue
         r2 = (
             f"{n.sigma_r2[1] / d.sigma_r2[1]:9.2f}x"
             if n.sigma_r2 and d.sigma_r2
@@ -473,21 +548,41 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {title:<44} {n.sigma[1] / d.sigma[1]:9.2f}x {r2}")
 
     bound = bound_by_key["buffered"].sigma[1] / bound_by_key["buf-static"].sigma[1]
-    ratio = shipped.sigma[1] / by_key["shipped-static"].sigma[1]
-    print(
-        f"\n  #76's upper bound on the shipped number: {bound:.2f}x\n"
-        f"  the shipped number itself:               {ratio:.2f}x"
-        f"   ({'below' if ratio < bound else 'NOT below'} the bound"
-        + (f", by {100 * (1 - ratio / bound):.0f} %)" if ratio < bound else ")")
-    )
+    have_shipped_pair = "shipped-static" in by_key
+    have_xsb_pair = "xsb" in by_key and "xsb-static" in by_key
 
-    verdict, rationale = classify_shipped(by_key, bound, ref_1)
-    print(f"\nshipped-array residual: {verdict.upper()}")
-    print(rationale)
+    if have_shipped_pair:
+        ratio = shipped.sigma[1] / by_key["shipped-static"].sigma[1]
+        print(
+            f"\n  #76's upper bound on the shipped number: {bound:.2f}x\n"
+            f"  the shipped number itself:               {ratio:.2f}x"
+            f"   ({'below' if ratio < bound else 'NOT below'} the bound"
+            + (f", by {100 * (1 - ratio / bound):.0f} %)" if ratio < bound else ")")
+        )
+        verdict, rationale = classify_shipped(by_key, bound, ref_1)
+        print(f"\nshipped-array residual: {verdict.upper()}")
+        print(rationale)
+    else:
+        verdict = None
+        print(
+            f"\n  #76's upper bound on the shipped number: {bound:.2f}x\n"
+            "  the shipped number itself:               NOT MEASURED -- variant 2\n"
+            "  (array-liveness-tap-phase-static) has no record at this corner, and the\n"
+            "  clocked deck alone says nothing: sigma is only readable against the SAME\n"
+            "  topology's own quiet case."
+        )
 
-    xsb_verdict, xsb_rationale = classify_xsb(by_key, ref_1)
-    print(f"\nxsb-on-xo path: {xsb_verdict.upper()}")
-    print(xsb_rationale)
+    if have_xsb_pair:
+        xsb_verdict, xsb_rationale = classify_xsb(by_key, ref_1)
+        print(f"\nxsb-on-xo path: {xsb_verdict.upper()}")
+        print(xsb_rationale)
+    else:
+        xsb_verdict = None
+        print(
+            "\nxsb-on-xo path: NOT MEASURED"
+            "\n  Neither shown to reach a ring node nor shown unreachable. The pair that"
+            "\n  would decide it (variants 3 and 4) has no record at this corner."
+        )
 
     if args.check:
         failed = False
@@ -502,6 +597,16 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 2
+            if got is None:
+                print(
+                    f"\nFAIL: {what} has a recorded conclusion ({recorded!r}) but the "
+                    "records that support it are no longer on file at this corner. A "
+                    "conclusion whose evidence has gone is not a conclusion; restore the "
+                    "records or withdraw it.",
+                    file=sys.stderr,
+                )
+                failed = True
+                continue
             if got != recorded:
                 print(
                     f"\nFAIL: the committed records now classify {what} as {got!r}, but the "

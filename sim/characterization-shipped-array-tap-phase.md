@@ -1,18 +1,25 @@
 # What does the `clk`-locked digitizer disturbance cost the array that ships?
 
-Status: **decks built for issue [#87]; one of the four run.** The four
-testbenches below, their pairing, their window geometry and the derivation that
-reads them are on file, and the `clocked` deck now has a `tt`/27 °C/3.30 V
-record. **Its `clk`-parked control does not, and every question this document
-exists to answer is a ratio against that control — so this document still
-states no result** — [Results](#results) says exactly what is on file, what is
-missing, what it costs to produce, and what has stopped it so far.
+Status: **half measured for issue [#87]; two of the four decks run.** The
+shipped pair — `clocked` and its `clk`-parked control, both at `tt`/27 °C/3.30 V
+and both on the same host — is on file, so the first question this document
+exists to answer has an answer:
 
-Nothing here supersedes
-[`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)'s
-**19.9×**, which remains what that document already calls it: an isolated-ring
-measurement recorded as an *upper bound* on the shipped array's residual, not
-as the number the shipped design carries.
+> **The array that ships carries a 3.46× `clk`-locked residual on its ring-1
+> node (5.80× on ring 2), against the 19.9×
+> [`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
+> recorded as an *upper bound* on exactly that number. The bound is confirmed,
+> by 83 %**, and the structural reason #76 gave for calling it a bound — the
+> shipped `ro_buf` output drives `xa1` as well as its own digitizer — is
+> measured rather than argued. The residual is **not** removed: 3.46× is still
+> outside the 3× band a variant reproducing its reference occupies, and the
+> modulation is locked to `clk`.
+
+**The `xsb`-on-`xo` path is still not measured.** Its two decks are built and
+running; until they land, that path is neither shown to reach a ring node nor
+shown unreachable, and nothing here says otherwise. [Results](#results) states
+both halves and says which is which; "What has stopped it so far" and "What the
+runs cost" say why the second half is slow.
 
 **This is an ordinary summary, not evidence.** Every number below cites the
 `sim/records/` stem that produced it — treat this document as a reading guide
@@ -151,54 +158,107 @@ the number it is stated against.
 
 ## Results
 
-**One of the four decks has a record. No ratio does, so this section still
-states no result** — it exists to say exactly what is and is not on file rather
-than to leave the omission to be noticed.
+**The shipped pair has a record each; the `xsb` pair has none.** So this
+section states the shipped ratio — the number issue #87 asks for first — and
+says plainly that the second half is still missing.
 
-[`2026-08-03-array-liveness-tap-phase-clocked-01`](records/2026-08-03-array-liveness-tap-phase-clocked-01.md)
-is variant 1, the shipped `sampler_core` topology with `clk` running, at
-`tt`/27 °C/3.30 V over four seeds:
+Both decks at `tt`/27 °C/3.30 V over four seeds, **both produced on the same
+host** (`macOS-26.6-arm64`), which "What the runs cost" below explains is a
+requirement here and not a coincidence:
 
-| | ring 1 | ring 2 |
+| | variant 1 [`…-clocked-01`](records/2026-08-03-array-liveness-tap-phase-clocked-01.md) `clk` running | variant 2 [`…-static-01`](records/2026-08-03-array-liveness-tap-phase-static-01.md) `clk` parked HIGH |
 |---|---|---|
-| `T₀` | 6.6702 ns | 6.2344 ns |
-| `σ₁` (raw, fixed injected level) | 4.449 ps | 4.023 ps |
-| accumulation exponent, lags 1…64 | 0.943 | — |
-| seed-to-seed spread of `σ₁` | 1.37 % | 0.50 % |
-| per-block period swing, 16 blocks | 0.136 % | — |
+| `T₀` ring 1 / ring 2 | 6.6702 ns / 6.2344 ns | 6.6739 ns / 6.2378 ns |
+| `σ₁` ring 1 (raw, fixed injected level) | **4.4490 ps** | **1.2864 ps** |
+| `σ₁` ring 2 | 4.0233 ps | 0.6934 ps |
+| accumulation exponent, lags 1…64 | 0.943 | 0.250 |
+| seed-to-seed spread of `σ₁` | 1.37 % | 4.09 % |
+| per-block period swing, 16 blocks | 0.136 % | 0.006 % |
 
-**Its pair does not exist, so the number issue #87 asks for is still not
-measured.** `array-liveness-tap-phase-static` — the same netlist with `clk`
-parked, which is the denominator — has never completed a run. Without it:
+### The shipped `clk`-locked residual is 3.46×, and #76's bound holds
 
-- the shipped `σ₁` **ratio** is **not measured**, and nothing here may be
-  stated against #76's 19.9× upper bound in either direction. A raw `σ₁` of
-  4.449 ps is not comparable with #76's raw `σ₁` (different ring length,
-  different operating point, different window, and — see "What the runs cost"
-  — a different host); only a within-topology ratio is, and that needs the
-  control;
-- the `xsb`-on-`xo` path is **not measured**, and is neither shown reachable
-  nor shown unreachable — neither of its two decks has a record;
-- `sim/tools/array_liveness_tap_phase_variants.py` still exits non-zero with
-  `no … record at tt/27/3.30 carries a sigma_1` for variant 2, both
-  `RECORDED_*_VERDICT` constants remain `None`, and its `--check` remains
-  deliberately **off** CI's self-check list. Naming a verdict before the pair
-  exists would pre-register a conclusion with no evidence behind it, which is
-  what that gate exists to prevent, pointed the wrong way.
+```
+shipped   σ₁(1 clocked) / σ₁(2 static)  =  4.4490 ps / 1.2864 ps  =  3.46×   (ring 1)
+                                                                     5.80×   (ring 2)
+#76's upper bound on that same number                             = 19.90×
+```
 
-What one deck alone does support, stated as a diagnostic rather than a result:
-the clocked shipped array's `σ` accumulates as `L^0.943` over lags 1…64, where
-a phase random walk accumulates as `L^0.5` and #76's quiet decks measured
-0.35–0.42. That is the deterministic-drift signature #76 found on the isolated
-ring, present on the shipped topology too. It is **not** the shipped ratio, it
-is not a magnitude, and it says nothing about how the residual compares with
-19.9×. The seed spread (1.37 % against a 3.81 % reference for this window) sits
-just *above* the ⅓-of-reference threshold this repository's ladders use to call
-a `σ` deterministic, so even that classification is not carried by this record
-on its own.
+**3.46× is 83 % below the 19.90×
+[`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
+recorded as an upper bound on it, so the bound is confirmed** — by a margin far
+outside the 10 % this family requires before calling a direction measured
+rather than coincidental. The reason #76 gave for calling it a bound was
+structural and untested: the shipped `ro_buf` output drives `xa1` as well as
+its own digitizer, so the digitizer's `clk`-modulated capacitance is a smaller
+share of that node's load than in #76's deck, where the buffer drives the
+digitizer alone. That is now measured. Ring 2 — an independent replicate inside
+the same runs, on the `wstv` = 0.240 µm ring — agrees in direction at 5.80×.
 
-All four of issue #87's acceptance criteria therefore remain **open items**,
-which is what that issue asked for.
+**It is not removed**, and it is unmistakably `clk`-locked rather than
+incidental. The clocked deck's sixteen per-block mean periods alternate between
+≈ 6.6740 ns and ≈ 6.6649 ns on a cycle of about six blocks; six blocks is 144
+ring periods, which at 6.6702 ns is 0.96 µs — the 1.0007 µs `clk` period to
+within the block quantisation. The static deck's blocks are flat at 0.006 %.
+The accumulation exponent says the same from the other end: 0.943 with `clk`
+running against 0.250 parked, where a phase random walk accumulates as `L^0.5`
+and #76's quiet decks measured 0.35–0.42. An exponent near 1 is coherent
+accumulation.
+
+**The two diagnostics disagree about the magnitude, and that disagreement is
+part of the result.** `σ₁` at 3.46× is outside the 1×–3× band this repository's
+variant ladders treat as reproducing a reference. The per-block period swing —
+which does not use the `σ` estimator at all — is 0.136 % against this family's
+0.3 % materiality threshold, i.e. *below* it. Both are on file and neither is
+dropped for the other: what the shipped array carries at this corner is large
+enough to move a phase statistic and too small to count as a material period
+modulation. Against #76's isolated buffered deck (0.96 % swing, 19.9×), the
+shipped fan-out cuts the swing ~7× and the `σ₁` ratio ~5.8×.
+
+**One of #76's signatures did not carry over, and is not claimed.** Its
+buffered residual was deterministic on the seed-spread test — 0.12 % against a
+2.69 % reference. The shipped one is 1.37 % against this window's 3.81 %
+reference, *above* the ⅓-of-reference line, so it classifies as "not collapsed"
+rather than deterministic. The weaker claim is the one stated.
+
+Reproduce with `python3 sim/tools/array_liveness_tap_phase_variants.py`, which
+recomputes both the 19.90× bound and the 3.46× ratio from the committed records
+rather than from any literal in this document.
+
+#### Why this ratio is host-sound
+
+"What the runs cost" below records that this experiment's runs have been
+launched on two machines that do not produce bit-identical floating point, and
+draws the rule that follows from it: **a control has to be produced on the same
+host as its numerator**, or the ratio spans two changes and attributes neither.
+Both records above satisfy that — `macOS-26.6-arm64` for numerator and
+denominator alike. #76's buffered pair likewise shares one host with itself
+(`Linux-7.0.0-1009-aws-x86_64`). So each ratio is taken within one host against
+its own control, and the ratio-to-ratio comparison above is sound while no raw
+`σ` is carried across. None is.
+
+### What is still not measured
+
+- **The `xsb`-on-`xo` path.** Variants 3 and 4 have no record at this corner,
+  so that path is **neither shown to reach a ring node nor shown unreachable**.
+  Nothing in the shipped pair bears on it: variants 1 and 2 both have
+  `xsr1`/`xsr2` attached, so their ratio is dominated by the per-ring
+  digitizers and cannot isolate `xsb`'s contribution.
+- **`RECORDED_XSB_VERDICT` is therefore still `None`.** Because `--check`
+  requires *both* verdicts and exits non-zero while either is unset, its CI
+  invocation stays off `.github/workflows/ci.yml`'s self-check list until the
+  `xsb` pair lands — a half-armed gate that passed on the half it cannot see
+  would be worse than no gate. `RECORDED_SHIPPED_VERDICT` *is* set, from what
+  the derivation printed over the two committed records, after the run.
+- `sim/tools/array_liveness_tap_phase_variants.py` no longer refuses to run
+  while the family is incomplete. It tabulates the variants that have records,
+  prints `not run` for those that do not, and reports every ratio needing a
+  missing variant as `NOT MEASURED`. Nothing is estimated in a missing
+  variant's place.
+
+**Two of issue #87's four acceptance criteria are met** (the shipped `σ_acc`
+measurement, and stating it explicitly against the 19.9× bound); the `xsb` one
+is **open**, and the "cite the shipped number" one is done for
+`sim/characterization-liveness-tap-phase-cost.md` and left for DR-0016.
 
 ### What the runs cost
 
@@ -293,14 +353,22 @@ numerator and denominator. `sigma_1` here is a few picoseconds on a transient
 driven by 22 `trnoise()` sources; x86-64 and arm64 do not produce
 bit-identical floating point (FMA contraction, `libm`, extended-precision
 intermediates), so the two hosts do not walk the same trajectory. The
-`clocked` record on file was produced on macOS/arm64. **Its `static` control
-has to be produced on macOS/arm64 too**, or the published ratio spans two
-changes and attributes neither — the exact failure the pairing discipline in
-"Why the pairs are read inside a topology" exists to prevent. This is also
-worth noting against #76's family, every record of which carries the
-`Linux-…-aws-…` platform: comparing this experiment's *ratio* with #76's
+`clocked` record on file was produced on macOS/arm64, so **its `static` control
+had to be produced on macOS/arm64 too**, or the published ratio would span two
+changes and attribute neither — the exact failure the pairing discipline in
+"Why the pairs are read inside a topology" exists to prevent. **It was**: both
+records of the shipped pair carry
+`platform: macOS-26.6-arm64-arm-64bit-Mach-O`, so the 3.46× in Results is a
+one-change ratio in this respect as well as in the circuit. The same rule
+binds the `xsb` pair when it is run: both its decks on one host, whichever
+host that is.
+
+This is also worth noting against #76's family, every record of which carries
+the `Linux-…-aws-…` platform: comparing this experiment's *ratio* with #76's
 *ratio* is still sound, because each is dimensionless and taken within one host
-against its own control, but no raw `σ` may be carried across the two.
+against its own control, but no raw `σ` may be carried across the two. Results
+compares only the ratios, and no raw `σ` from either family appears in the
+other's arithmetic.
 
 ### What has stopped it so far
 
@@ -442,62 +510,61 @@ it establishes for whoever runs this next:
 
 ### What is left to do
 
-1. Run the **three remaining** decks and land their records —
-   `array-liveness-tap-phase-clocked` is done (see Results above), and
-   `array-liveness-tap-phase-static`, the control that makes it readable, is
-   the single highest-value one left. Run it on the **same host** the `clocked`
-   record was produced on (macOS/arm64), for the one-change reason under "What
-   the runs cost". The equivalent of the loop
-   below, made resumable and detached, is
-   [`sim/tools/run_array_liveness_tap_phase.py`](tools/run_array_liveness_tap_phase.py)
-   — see "What has stopped it so far" above for why the loop alone was never
-   enough:
+1. **Run the remaining two decks and land their records.** The shipped pair
+   is done (see Results above); the `xsb` pair is not. Run both decks of that
+   pair on the **same host as each other**, for the one-change reason under
+   "What the runs cost" -- a control produced on a different host than its
+   numerator makes the ratio span two changes and attribute neither. The
+   launcher takes a deck subset, and per the throughput table the right unit of
+   work is one *pair* at a time:
 
    ```sh
-   for tb in array-liveness-tap-phase-clocked array-liveness-tap-phase-static \
-             array-liveness-tap-phase-xsb-clocked array-liveness-tap-phase-xsb-static; do
-     python3 sim/run_corners.py "$tb" \
-       --corners tt --temps 27 --supply 3.3 --supply-tol 0 \
-       --seeds 1 2 3 4 -j 4 --timeout 86400
-   done
+   python3 sim/tools/run_array_liveness_tap_phase.py \
+     --decks array-liveness-tap-phase-xsb-clocked array-liveness-tap-phase-xsb-static
+   python3 sim/tools/run_array_liveness_tap_phase.py --status
    ```
 
-   `--timeout` matters: the harness default is 300 s, which every one of these
-   runs exceeds by two orders of magnitude.
+   It skips any deck that already has a clean four-seed record at this corner,
+   so re-running it resumes rather than restarts. `--timeout` defaults to 24 h
+   because the harness default of 300 s is two orders of magnitude short of
+   what one of these runs needs.
 
-2. Fill in a Results table from
-   `python3 sim/tools/array_liveness_tap_phase_variants.py`, and set that
-   script's two `RECORDED_*_VERDICT` constants from what it prints — after the
-   run, never before.
+2. **Fill in the Results table** from
+   `python3 sim/tools/array_liveness_tap_phase_variants.py` and set the
+   matching `RECORDED_*_VERDICT` constant from what it prints -- after the run,
+   never before. `RECORDED_SHIPPED_VERDICT` is set; `RECORDED_XSB_VERDICT` is
+   still `None`.
 
-3. Add `python3 sim/tools/array_liveness_tap_phase_variants.py --check` back to
-   the "Spec arithmetic self-checks" step in `.github/workflows/ci.yml`; the
-   comment block there already describes the guard and says why the line is
-   currently absent.
+3. **Add `python3 sim/tools/array_liveness_tap_phase_variants.py --check` back
+   to the "Spec arithmetic self-checks" step in `.github/workflows/ci.yml`**,
+   once *both* verdicts are recorded. The check deliberately exits non-zero
+   while either is `None`, so adding the line before the `xsb` pair lands would
+   simply turn CI red; the comment block in that workflow says so.
 
-4. Then, and only then, amend
+4. Then, and only then, amend DR-0016's "Phase cost" amendment to cite the
+   shipped number alongside the isolated-ring one.
    [`sim/characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md)
-   and DR-0016's "Phase cost" amendment to cite the shipped number instead of
-   the 19.9× bound. Until the run exists, 19.9× is the best number on file and
-   both documents already describe it correctly, as an isolated-ring
-   measurement used as an upper bound.
+   has already been amended to cite the shipped 3.46x -- that half of the
+   evidence exists -- but the decision record's amendment is a spec artefact
+   and is left for the change that can state the whole experiment at once.
 
-**One thing to watch on the first successful run.** These decks set no
-`.options` overrides, where [`sim/tb/sampler-array-digitize/`](tb/sampler-array-digitize/)
-— the only other deck in this repository carrying this same 22-stage two-ring
-array — documents a bisected `abstol=1e-10` relaxation as the thing that keeps
-its transient from collapsing when an abrupt external edge lands in the same
-matrix as 22 series-starved stages. These decks have an abrupt external edge
-(`clk`) and the same array. If the first run hits `Timestep too small`, that
-precedent is where to look; the relaxation would have to be applied identically
-to both decks of a pair, so that it cannot move a ratio, and stated in the
-caveats rather than absorbed.
+**The `abstol` worry did not materialise, and can be dropped.** This section
+previously flagged that these decks set no `.options` overrides, where
+[`sim/tb/sampler-array-digitize/`](tb/sampler-array-digitize/) -- the only other
+deck in this repository carrying this same 22-stage two-ring array -- needs a
+bisected `abstol=1e-10` relaxation to keep its transient from collapsing when
+an abrupt external edge lands in the same matrix as 22 series-starved stages.
+These decks have an abrupt external edge (`clk`) and the same array, so the
+concern was well founded. It did not happen: all eight runs of the shipped pair
+converged with no override, and the only diagnostic in any of their logs is the
+PDK's routine `m=xx on .subckt line` warning. No deck in this family needs an
+`.options` line the others do not, so no ratio in it can be moved by one.
 
 ## Caveats
 
-These are the method limits the runs *will* carry. They are stated now because
-they are properties of the decks, which exist, rather than of the results,
-which do not.
+These are the method limits this family carries. They are properties of the
+decks, so they apply equally to the shipped pair's results above and to the
+`xsb` pair's runs that are still outstanding.
 
 - **One corner.** `tt`/27 °C/3.30 V only, chosen to be directly comparable with
   #51's ladder and #76's family. Nothing here is claimed at any other process,
