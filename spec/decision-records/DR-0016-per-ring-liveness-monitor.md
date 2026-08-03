@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
 supersedes: n/a
 superseded_by: n/a
-related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/"
+related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/; #86 (does that phase cost reach the SAMPLED BIT -- delivered, see Status/A3 and 'The bit-level follow-up'), sim/characterization-sampler-bit-bias.md, sim/tb/sampler-bit-bias-{clocked,static}-{integer,generic,clk-floor}/"
 ---
 
 # DR-0016: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
@@ -52,6 +52,19 @@ related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1),
   alternates between them in lockstep with `clk`. Since PR #82 / DR-0018 the
   digitizer taps a buffer output instead, which removes 96.5 % of that; the
   residual is 19.9x and is still `clk`-locked. See "Phase cost" below.
+- 2026-08-03: **Amendment A3 (#86) -- the phase cost A2 records does NOT reach
+  the sampled bit. No decision, parameter, cutoff or mechanism in this record
+  changed, and DR-0007 is unamended; the record still stands as Proposed.** A2
+  measured phase and declined a bit-level claim; #86 earns it. At the same
+  corner, on `sampler_core`'s own wiring and across three `clk` rates including
+  DR-0003's ratified floor, running the digitizers' clock rather than parking
+  it moves the sampled bit's bias by at most 0.82 sigma and its short-lag
+  serial correlation by at most 1.68 sigma of the measurement's own resolution,
+  pulls neither ring towards lock at either of the two near-integer sampling
+  ratios in the sweep, and shifts the ring's mean frequency by the same
+  +0.225 % at every rate -- a static-load signature, not injection pulling.
+  See "The bit-level follow-up" below and
+  `sim/characterization-sampler-bit-bias.md`.
 
 ## Context
 
@@ -334,6 +347,38 @@ and the direction of the finding is that the mitigation the block already
 adopted for a different reason (DR-0018) also happens to remove most of this
 one. What to do about the 19.9x residual is not decided here and has no
 evidence here.
+
+#### The bit-level follow-up (#86, amendment A3)
+
+A2 is a measurement about **phase**, and it deliberately stops there. Whether
+the `clk`-locked modulation it records reaches the **sampled bit** -- and so
+whether DR-0007 §1's "free-running ring oscillators, no phase-locking of any
+kind" needs a term for the sample clock -- was left open, and is answered by
+issue #86 in
+[`sim/characterization-sampler-bit-bias.md`](../../sim/characterization-sampler-bit-bias.md).
+
+Measured at the same corner, on `sampler_core`'s own wiring (both rings, both
+buffers, the XOR, the DR-0001 raw tap and both digitizers), against the same
+circuit with the digitizers' clock parked instead of running, at three `clk`
+rates -- one placed at a near-4:1 ring-to-sample ratio, one deliberately off
+resonance, and DR-0003's ratified floor, which turns out to sit within 0.006 of
+a 352:1 ratio:
+
+- the sampled bit's **bias** differs between the two arrangements by at most
+  **0.82 sigma** of the measurement's own resolution, and its short-lag
+  **serial correlation** by at most **1.68 sigma**, with no trend across the
+  three rates;
+- **neither near-resonant rate locks**: ring 1 stays 81x and 120x the
+  measurement's own seed-to-seed scatter clear of an exact `T_clk/N`;
+- the frequency shift running the digitizers' clock causes is **+0.225 %** and
+  is the **same fraction at every rate** (+0.225 / +0.228 / +0.223 %), which is
+  a static-load offset's signature and not injection pulling's.
+
+**No decision, parameter, cutoff or mechanism in this record changes, and
+DR-0007 is unamended** -- #86's own conclusion is that §1's requirement is met
+and that what is approximate is its premise, whose size is now bounded rather
+than assumed. The residual A2 records is still a real cost of this tap; #86
+adds that, at this corner, it does not arrive at the bit.
 
 ### No exposed per-ring tap (DR-0001)
 
