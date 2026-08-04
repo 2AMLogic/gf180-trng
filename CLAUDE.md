@@ -12,16 +12,16 @@ Canary block: a true random number generator on gf180mcu. Apache-2.0.
 - **Verification is the product**: no claim without a testbench. PVT
   corners on every recorded result. `sim/` results are append-only
   evidence.
-- **Publication**: this repo is prepared to be public (#22) — the
-  visibility flip itself is an operator action, not an agent one. Write
-  every commit message, issue, and document here as if a stranger will
-  read it, because one will. Nothing about business positioning,
-  commercial terms, or the contents of other 2AM Logic repositories
-  belongs in this one.
+- **Publication**: this repo is public (the pre-publication audit, #22,
+  closed 2026-07-31) — the visibility flip was an operator action, not an
+  agent one. Write every commit message, issue, and document here as if a
+  stranger will read it, because one will. Nothing about business
+  positioning, commercial terms, or the contents of other 2AM Logic
+  repositories belongs in this one.
 - Spec changes go through `spec/` with a decision record; agents do not
   relax the ratified spec to make results pass.
-- Harness bootstrap: copy the sim-harness pattern from
-  `2AMLogic/gf180-bandgap` once it lands there rather than reinventing.
+- Harness: `sim/harness/` was bootstrapped from the `gf180-bandgap`
+  sim-harness pattern (#21); extend it in place rather than reinventing.
 
 <!-- BEGIN LOOM ORCHESTRATION -->
 This repository uses [Loom](https://github.com/rjwalters/loom) for AI-powered development orchestration — see the Loom repository for the full guide (roles, labels, worktrees, configuration). When installed, Loom also writes a locally-substituted copy of that guide to `.loom/CLAUDE.md`.

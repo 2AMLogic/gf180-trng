@@ -7,12 +7,15 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, ten decision records, an entropy-source architecture survey, and a
-working PVT corner simulation harness with its first device-characterization
-results. `design/` holds two blocks — the digital conditioner, as a behavioural
-model plus synthesisable RTL, and the analog entropy source, as xschem
-schematics with a deterministic SPICE netlist export — and there is still no
-GDS in `layout/`. The specification table below was
+convention, twenty decision records, an entropy-source architecture survey, and a
+working PVT corner simulation harness with several hundred device-characterization
+results. `design/` holds the analog entropy source — xschem schematics with a
+deterministic SPICE netlist export — plus three digital blocks (conditioner,
+health tests, interface) and their top-level integration, each a behavioural
+model plus synthesisable RTL. `layout/` carries a DRC/LVS-proven verification
+flow (fixture GDS streams) and an entropy-source floorplan abstract with
+empty regions, but still no completed layout of a TRNG cell. The
+specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
 placeholders*, and the table labels which.
@@ -163,7 +166,7 @@ and this repository will not let one be read as the other.
 spec/          spec + decision records
 design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
-layout/        GDS + DRC/LVS reports (klayout-tools driven)   — empty
+layout/        GDS + DRC/LVS reports (klayout-tools driven)   — fixtures/floorplan only, no TRNG cell yet
 measurements/  silicon characterization                       — empty until tape-out
 ```
 
