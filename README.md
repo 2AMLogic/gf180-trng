@@ -146,7 +146,12 @@ DRBG supplies its own and treats this block as the seed source.
 >   miss: one design decision showing up on two rows. It is an inventory
 >   estimate with a stated method — no synthesiser, placer or router has run on
 >   this block — so it is not a measurement, and per `CLAUDE.md` the row is not
->   edited here. Unlike the power miss it has **no decision record yet**.
+>   edited here: the miss goes to [DR-0019] (`Proposed`), which prices the four
+>   available responses and finds that the shared FIFO-depth lever reaches the
+>   two rows very differently — futile on idle current at every depth ([DR-0017]
+>   §B), but worth 269.4 % → 105.8 % of the area row between depth 8 and depth 1.
+>   It therefore holds the row rather than moving it, and sequences the response
+>   behind a `FIFO_DEPTH` decision jointly owned with [DR-0017] and [DR-0013].
 >
 > Note also that rows bind at **different** corners, and none at nominal: rate
 > at the slowest-RO corner, min-entropy per bit at the *least*-jitter
@@ -179,6 +184,7 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0017]: spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0018]: spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
+[DR-0019]: spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
