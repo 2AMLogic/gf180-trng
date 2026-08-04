@@ -492,6 +492,17 @@ this issue owns the entropy source's isolation, not the interface's FIFO depth.
 The number is recorded so the conflict is visible rather than discovered later,
 exactly as [DR-0010] §Consequences recorded the power collision.
 
+The miss itself is now routed by **[DR-0019]** (`Proposed`, from #96), the way
+the idle-current miss is routed by [DR-0017]: it states the row's status against
+this estimate, prices the available responses (reduce the FIFO depth, raise the
+row, hold the row, or split it), and carries the depth sensitivity — 269.4 % at
+depth 8, 129.4 % at depth 2, 105.8 % at depth 1 and 88.5 % with both FIFOs gone,
+all at this floorplan's own 60 % utilisation. Its finding on the shared root
+cause is that the same lever reaches the two rows very differently: [DR-0017]
+rejected a depth reduction because it never gets the idle current under 1 µA at
+any depth, whereas on area it is most of an answer. Until that record is
+ratified the `< 0.05 mm²` row stands as written.
+
 ### What the area model is
 
 A **bottom-up inventory estimate with a stated method**, not a synthesis result
@@ -661,3 +672,4 @@ design. This work produced three, all filed against
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
+[DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
