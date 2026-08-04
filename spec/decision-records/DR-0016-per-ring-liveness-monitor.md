@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
 supersedes: n/a
 superseded_by: n/a
-related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/; #86 (does that phase cost reach the SAMPLED BIT -- delivered, see Status/A3 and 'The bit-level follow-up'), sim/characterization-sampler-bit-bias.md, sim/tb/sampler-bit-bias-{clocked,static}-{integer,generic,clk-floor}/"
+related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/; #86 (does that phase cost reach the SAMPLED BIT -- delivered, see Status/A3 and 'The bit-level follow-up'), sim/characterization-sampler-bit-bias.md, sim/tb/sampler-bit-bias-{clocked,static}-{integer,generic,clk-floor}/; #87 (the SHIPPED array's phase cost, and the xsb-on-xo path A2 left unmeasured -- delivered, see Status/A4 and 'On the shipped array'), sim/characterization-shipped-array-tap-phase.md, sim/tb/array-liveness-tap-phase-{clocked,static,xsb-clocked,xsb-static}/"
 ---
 
 # DR-0016: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
@@ -65,6 +65,24 @@ related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1),
   +0.225 % at every rate -- a static-load signature, not injection pulling.
   See "The bit-level follow-up" below and
   `sim/characterization-sampler-bit-bias.md`.
+- 2026-08-04: **Amendment A4 (#87) -- A2's 19.9x was an UPPER BOUND on the
+  shipped number, not the shipped number; the shipped number is 3.46x. No
+  decision, parameter, cutoff or mechanism in this record changes, and the
+  record still stands as Proposed.** A2 measured an isolated 5-stage ring whose
+  buffer output drives one consumer, and argued -- structurally, without
+  measuring it -- that the shipped array must carry less, because there each
+  buffer output drives the XOR combiner as well as its own digitizer. Issue #87
+  measured it at the same corner on the shipped two-ring `sampler_core`
+  topology: **3.46x** on ring 1 (5.80x on ring 2), **83 % below the bound**, so
+  the bound holds and the argument behind it is measured rather than argued. The
+  residual is not removed and is still `clk`-locked. #87 also closed the second
+  gap A2 left open, the DR-0001 raw-tap digitizer `xsb` on the combiner output
+  `xo`: with the per-ring digitizers removed, so that `xsb` is the only
+  `clk`-driven load downstream of a ring, running `clk` moves ring 1's
+  `sigma_1` to **0.96x** its own parked control (ring 2: 1.00x) and leaves the
+  per-block period swing at 0.006 % -- **unreachable at this corner**, meaning
+  below what the measurement resolves rather than proved zero. See "Phase cost"
+  below and `sim/characterization-shipped-array-tap-phase.md`.
 
 ## Context
 
@@ -319,6 +337,12 @@ issue #51's coupling ladder used, so the two are directly comparable:
 | tap on the ring node, **`clk` running** (the arrangement this record specified) | 3.0444 ns | **541.3x** | **23.11 %** |
 | tap on the **buffer output**, `clk` running (what ships since PR #82 / DR-0018) | 2.8596 ns | **19.9x** | **0.96 %** |
 
+**Every figure in that table is an isolated-ring figure**, on a deck whose
+buffer output drives one consumer. The 19.9x row is an *upper bound* on what
+the shipped array carries, not the shipped number; the shipped number is
+**3.46x**, and it is measured -- see "On the shipped array" below, which
+amendment A4 adds.
+
 Three points, in order of how much they change what this record claims:
 
 1. **The two static endpoints are 25.6 % apart on ring period.** Which rail
@@ -345,8 +369,8 @@ This does not change this record's Decision, its cutoffs, `C_LIVE`, or the
 Power row conclusion above. It records a second measured cost of the same tap,
 and the direction of the finding is that the mitigation the block already
 adopted for a different reason (DR-0018) also happens to remove most of this
-one. What to do about the 19.9x residual is not decided here and has no
-evidence here.
+one. What to do about the residual is not decided here and has no evidence
+here.
 
 #### The bit-level follow-up (#86, amendment A3)
 
@@ -379,6 +403,71 @@ DR-0007 is unamended** -- #86's own conclusion is that §1's requirement is met
 and that what is approximate is its premise, whose size is now bounded rather
 than assumed. The residual A2 records is still a real cost of this tap; #86
 adds that, at this corner, it does not arrive at the bit.
+
+#### On the shipped array it is 3.46x, and `xsb` reaches nothing (#87, amendment A4)
+
+A2's decks are deliberately minimal: **one** ring, and its buffer output drives
+**one** consumer, the digitizer.
+[`design/ro_array_core.spice`](../../design/ro_array_core.spice) is not that
+circuit -- each buffer output there drives the XOR combiner's input as well --
+
+```
+xb1 rn1 ro1 vdd vss ro_buf
+xa1 ro1 ro2 xo  vdd vss xor2              <- ro1's OTHER consumer
+xsr1 ro1 clk rst_n ring_bit1 vdd vss      <- this record's digitizer
+```
+
+-- so the digitizer's `clk`-modulated capacitance is a smaller share of that
+node's load in the shipped array, and A2 recorded its 19.9x as an **upper
+bound** on the shipped residual for exactly that reason, saying so rather than
+claiming it as the shipped number. Issue #87 measured the shipped number, at
+the same corner, on the two-ring `sampler_core` topology device for device
+(both rings, both DR-0018 buffers, the combiner, all four `sampler_dff`), each
+figure a ratio against the identical deck with `clk` parked HIGH and nothing
+else changed --
+[`sim/characterization-shipped-array-tap-phase.md`](../../sim/characterization-shipped-array-tap-phase.md):
+
+| arrangement | `sigma_1` vs its own static reference | per-block period swing |
+|---|---|---|
+| A2's isolated buffered deck (one consumer) -- the **bound** | 19.9x | 0.96 % |
+| the **shipped array**, ring 1 (`xa1` + both digitizers) | **3.46x** | **0.136 %** |
+| the shipped array, ring 2 (same runs, independent replicate) | **5.80x** | — |
+| `xsb` on `xo` alone, per-ring digitizers removed, ring 1 | **0.96x** | **0.006 %** |
+| the same, ring 2 | **1.00x** | — |
+
+Two things follow, and neither changes anything this record decides:
+
+1. **The bound holds, by 83 %, and A2's structural argument is now measured.**
+   Where the question is what the *block* carries, **3.46x** is the number and
+   19.9x is the isolated-ring figure it is bounded by. A2's decks, records and
+   its 96.5 % buffer-attenuation finding are unchanged and nothing was re-run.
+   The residual is still not removed (3.46x is outside the 3x band a variant
+   reproducing its reference occupies) and is still `clk`-locked, but one of
+   A2's signatures did **not** carry over: the shipped residual's seed-to-seed
+   spread is 1.37 % against a 3.81 % reference, so it classifies as "not
+   collapsed" rather than deterministic, and its per-block swing lands *below*
+   its family's 0.3 % materiality threshold where A2's 0.96 % is above. Both
+   readings are on file and the weaker claim is the one stated.
+2. **`xsb` on `xo` -- the DR-0001 raw-tap digitizer, which A2's own acceptance
+   criteria named and its decks never covered -- does not reach a ring node at
+   this corner.** With the two per-ring digitizers removed so that `xsb`'s pass
+   gate is the only `clk`-driven load left downstream of a ring, running `clk`
+   changes nothing the measurement resolves: 0.96x / 1.00x on `sigma_1`, a
+   0.006 % per-block swing (the same as its own parked control), and an
+   accumulation exponent of 0.257 clocked against 0.252 parked. `xo` is two
+   active stages from either ring node -- `xa1`, then that ring's own `ro_buf`.
+   **"Unreachable" means below what this measurement resolves, not zero**: the
+   control's own seed-to-seed spread is 4.42 %, which is the floor any claim
+   here sits on.
+
+The consequence for this record is a smaller number in the same place, not a
+different conclusion. A2's measurement-admissibility point stands and is if
+anything *strengthened*: 3.46x squared is still a ~12x over-statement of a
+ring's contribution to `Q_array`, in the unsafe direction, so a per-ring
+`sigma_acc,i` measured with `clk` toggling remains inadmissible evidence for
+DR-0007 §2's sizing law. **DR-0007 §2 is unamended and this amendment does not
+amend it.** Whoever eventually decides what to do about the residual should
+size the problem from the shipped **3.46x**, not from the isolated 19.9x.
 
 ### No exposed per-ring tap (DR-0001)
 
