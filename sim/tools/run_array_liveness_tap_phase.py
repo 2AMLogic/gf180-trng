@@ -5,11 +5,12 @@
     python3 sim/tools/run_array_liveness_tap_phase.py --status       # check progress
     python3 sim/tools/run_array_liveness_tap_phase.py --foreground   # run inline (debugging)
 
-``sim/characterization-shipped-array-tap-phase.md``'s "What has stopped it so
-far" section records three prior launches of the sixteen runs (four decks x
-four seeds) this experiment needs, none of which produced a committable
-record. Two failure modes are this repository's to fix, and this script is
-the fix:
+``sim/characterization-shipped-array-tap-phase.md``'s "What stopped it, five
+times, and what finally worked" section records six launches of the sixteen
+runs (four decks x four seeds) this experiment needed; four produced nothing
+committable. Three failure modes were this repository's to fix, and this
+script is the fix for all three (the third, oversubscription, is
+``DEFAULT_JOBS`` below):
 
   1. **Attempt 1** died when the agent session that launched
      ``run_corners.py`` ended: ``SIGTERM`` reached every ``ngspice`` under it
@@ -39,11 +40,15 @@ control (every ``ngspice`` on the machine killed at once, coinciding with a
 retry loop above means a recurrence only costs whatever deck was running
 when it happens, and a re-launch resumes from there rather than from zero.
 
-This script does not itself measure anything and writes no conclusion --
-it is infrastructure for producing the sixteen runs
-``sim/characterization-shipped-array-tap-phase.md``'s Results section is
-waiting on. See that document for the method, the per-seed cost estimate,
-and the full history of what has stopped this experiment so far.
+This script does not itself measure anything and writes no conclusion -- it
+is infrastructure for producing the sixteen runs behind
+``sim/characterization-shipped-array-tap-phase.md``'s Results section, all
+sixteen of which are now on file. It is kept rather than retired because it
+is what a re-run at another corner would use, and because its ``--status``
+flag answers "which decks have a clean record at this corner?" from the
+committed records alone. See that document for the method, the measured
+per-seed cost, and the full history of what stopped this experiment five
+times.
 
 Stdlib only; no ngspice or PDK access of its own (it shells out to
 ``sim/run_corners.py``, which needs both -- see its own ``--check-env``).
@@ -75,8 +80,8 @@ WORK_DIR = SIM_DIR / ".work" / "array-liveness-tap-phase-launch"
 DEFAULT_LOG = WORK_DIR / "run.log"
 DEFAULT_PIDFILE = WORK_DIR / "run.pid"
 
-#: The four decks sim/characterization-shipped-array-tap-phase.md's "What is
-#: left to do" step 1 names, in the same order.
+#: The four decks sim/characterization-shipped-array-tap-phase.md's Method
+#: section tabulates, in the same order: two pairs, one change inside each.
 DECKS = [
     "array-liveness-tap-phase-clocked",
     "array-liveness-tap-phase-static",
@@ -117,6 +122,10 @@ CORNER_ARGS = [
 #: The right default is therefore the one that leaves ngspice's own internal
 #: parallelism alone. Raise it only on a host where a single run of this deck
 #: has been MEASURED to leave cores idle.
+#:
+#: With this default the xsb pair (attempt 6) ran to completion on that host in
+#: 2.42 h -- 75.5 min and 70.0 min for the two decks, four sequential seeds
+#: each -- against the ~100 h the -j 4 arrangement had projected for one pair.
 DEFAULT_JOBS = 1
 #: Matches harness.report / starved_cell_jitter_energy.Record.corner's
 #: "<process>/<temp:.0f>/<vdd:.2f>" format exactly, so the string compares
