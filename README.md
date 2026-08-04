@@ -7,12 +7,20 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, ten decision records, an entropy-source architecture survey, and a
-working PVT corner simulation harness with its first device-characterization
-results. `design/` holds two blocks — the digital conditioner, as a behavioural
-model plus synthesisable RTL, and the analog entropy source, as xschem
-schematics with a deterministic SPICE netlist export — and there is still no
-GDS in `layout/`. The specification table below was
+convention, [twenty decision records](spec/decision-records/), an
+entropy-source architecture survey, and a working PVT corner simulation
+harness whose output is ten characterization summaries (`sim/characterization-*.md`)
+resting on 835 append-only evidence records under [`sim/records/`](sim/records/).
+`design/` holds the analog entropy source and sampler as xschem schematics with
+a deterministic SPICE netlist export, plus four digital directories —
+[`conditioner/`](design/conditioner/), [`health_test/`](design/health_test/),
+[`interface/`](design/interface/) and the [`trng_top/`](design/trng_top/)
+integration — each a behavioural model with synthesisable RTL checked against
+it. `layout/` is **no longer empty**, but it does not yet contain the design:
+it holds a working DRC/LVS flow with its committed reports, and the entropy
+source's floorplan abstract. Of the four committed GDS streams, three are flow
+fixtures and the fourth is that floorplan — whose regions are empty. **No cell
+of this design has been drawn.** The specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
 placeholders*, and the table labels which.
@@ -78,13 +86,14 @@ that should be legible too.
 and it defines no seeding or reseeding semantics. An integrator that needs a
 DRBG supplies its own and treats this block as the seed source.
 
-> **Ratified, with three rows explicitly unmeasured.** The table was ratified
+> **Ratified, with four rows explicitly unmeasured.** The table was ratified
 > on 2026-07-31 by engineering (Robb) — see
 > [`spec/ratification-2026-07-31-target-spec.md`](spec/ratification-2026-07-31-target-spec.md)
-> and issue #1 — together with the amendment package in #29. Every row carrying
-> a DR reference is now `Accepted`; a row that cannot be met is a **superseding
-> decision record**, not an edit. What ratification does *not* do is turn
-> placeholders into claims:
+> and issue #1 — together with the amendment package in #29. Every decision
+> record the rows above cite is `Accepted` except [DR-0015] and [DR-0017],
+> both `Proposed`; a row that cannot be met is a **superseding decision record**,
+> not an edit. What ratification does *not* do is turn placeholders into
+> claims:
 >
 > - **Raw min-entropy per bit** is a design target (H₀ = 0.5). The entropy
 >   source is *sized* to hit it ([DR-0007]); the corner it has to hold at is
@@ -123,6 +132,21 @@ DRBG supplies its own and treats this block as the seed source.
 >   evidence. [DR-0007]'s separate conflict — that its first-cut array size
 >   projected far more active power than this row allows — was resolved by
 >   [DR-0010] shrinking the array to N = 2, which is the 415 µW measured above.
+> - **Area: no measurement, and the standing estimate misses by 2.7×.** The
+>   row is `< 0.05 mm²` and no layout exists to measure, but #16's floorplan
+>   work priced the block bottom-up against the PDK's own standard-cell LEF:
+>   **0.1347 mm², 269.4 % of the row**
+>   ([`layout/floorplan/reports/area.json`](layout/floorplan/reports/area.json),
+>   breakdown under *Area against the `< 0.05 mm²` row* in
+>   [`layout/floorplan/README.md`](layout/floorplan/README.md)).
+>   The split matters — the isolated entropy source, samplers, guard rings and
+>   isolation channels together are **4.1 %** of the row, and the whole miss is
+>   the digital section at **251 %**, of which the two 8 × 32-bit output FIFOs
+>   are 69.8 %. That is the same structure [DR-0017] blames for the idle-current
+>   miss: one design decision showing up on two rows. It is an inventory
+>   estimate with a stated method — no synthesiser, placer or router has run on
+>   this block — so it is not a measurement, and per `CLAUDE.md` the row is not
+>   edited here. Unlike the power miss it has **no decision record yet**.
 >
 > Note also that rows bind at **different** corners, and none at nominal: rate
 > at the slowest-RO corner, min-entropy per bit at the *least*-jitter
@@ -134,7 +158,11 @@ DRBG supplies its own and treats this block as the seed source.
 > practically vacuous — the spread across the whole covered grid is 9 ns on
 > 1.281 ms. What does move that row is the **rate**, and the rate row is
 > unsettled: at [DR-0010]'s proposed 500 bps the same 1281 samples take
-> **2.562 s**.
+> **2.562 s**, and at the 2 kbps [DR-0011-rate] re-derived from the shipped
+> starved cell (also `Proposed`, superseding DR-0010 §1's value only) they take
+> **641 ms**. Both sit far below the ratified `> 1 Mbps` row — 2000× and 500×
+> below it respectively — and that gap, not the arithmetic above it, is the
+> open question.
 
 [DR-0001]: spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md
 [DR-0002]: spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
@@ -145,6 +173,7 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0008]: spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0010]: spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
+[DR-0011-rate]: spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 [DR-0012]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
 [DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
@@ -163,8 +192,8 @@ and this repository will not let one be read as the other.
 spec/          spec + decision records
 design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
-layout/        GDS + DRC/LVS reports (klayout-tools driven)   — empty
-measurements/  silicon characterization                       — empty until tape-out
+layout/        DRC/LVS flow + floorplan (klayout-tools driven) — no design cell drawn
+measurements/  silicon characterization                        — empty until tape-out
 ```
 
 `design/` holds the two halves of the block, one on each side of the raw tap.
@@ -187,6 +216,22 @@ evidence record provable rather than asserted. See
 Which parts of the block are simulated at transistor level and which are
 modelled behaviourally is fixed by [DR-0009]: the boundary is the raw tap, and
 every evidence record says which side of it produced the number.
+
+`layout/` holds the verification flow before the layout it will check — the
+same order `sim/` was stood up in, and for the same reason: a flow whose first
+run is on the thing you care about is a flow you cannot distinguish from one
+that always says "clean". [`layout/verify.py`](layout/verify.py) drives `klt`
+DRC, extraction and LVS over three deliberately-chosen fixtures (a known-good
+inverter, a DRC-bad copy, an LVS-bad copy) and compares every report against a
+declared expectation, so the flow is itself a test.
+[`layout/floorplan/`](layout/floorplan/) is the only thing there that is about
+the TRNG: the entropy source's isolation rationale (#16) and the floorplan
+abstract that carries it — four guarded regions, DRC'd as one stream, priced
+against the area row. **Its regions are empty**, so it is a floorplan and not a
+layout, and nothing under `layout/reports/` should be read as a statement about
+this design. [`layout/README.md`](layout/README.md) says exactly what a clean
+report from this flow does and does not mean, and why it is not tapeout
+sign-off.
 
 Two conventions govern what lands in those directories:
 
@@ -256,13 +301,29 @@ sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absen
 ### Checks
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs, on every push and
-pull request, the checks that need no PDK: a Python/shell syntax check, the
-harness unit tests on Python 3.10 and 3.13, the two spec-arithmetic checks that
-are pure derivations over committed records (`sim/tools/jitter_energy_law.py
---check` and `sim/tools/array_sizing.py --check`), the register-map staleness
-guard (`design/interface/regmap.py --check`), and `sim/selftest.sh` — whose
-PDK-dependent stages detect the missing PDK and skip themselves on a hosted
-runner. The same set is `npm run check:ci` locally.
+pull request, every check that needs no PDK, on Python 3.10 and 3.13:
+
+- a Python/shell syntax check and the harness unit tests;
+- **nine spec-arithmetic self-checks** — pure derivations over records already
+  committed under `sim/records/`, so a newly appended record cannot silently
+  move a conclusion a summary document still asserts: `jitter_energy_law.py`,
+  `array_sizing.py`, `array_coupling_variants.py`,
+  `array_coupling_buffer_variant.py`, `liveness_tap_phase_variants.py`,
+  `array_liveness_tap_phase_variants.py`, `sampler_bit_bias_variants.py`,
+  `time_to_first_valid.py` and `power_rollup.py`, each `--check`;
+- `sim/tools/verify_record_checksums.py`, which re-hashes every file each
+  record's `raw.files` cites against `sim/records/raw/` (#60);
+- the register-map staleness guard (`design/interface/regmap.py --check`) and
+  the schematic text-block brace guard (`design/netlist.py --lint`, #61);
+- the layout test-cell staleness guard (`layout/testcells/build.py --check`)
+  and `layout/verify.py`, which self-skips when `klt`/the PDK are absent;
+- `sim/selftest.sh` — whose PDK-dependent stages detect the missing PDK and
+  skip themselves on a hosted runner.
+
+`npm run check:ci` is the local entry point for the same intent, but it is not
+today a byte-for-byte match for the workflow above — the two lists are
+maintained separately and have drifted. `ci.yml` carries the authoritative
+inventory of which self-check runs where, and why.
 
 The smoke run, the corner-sanity check and the schematic-vs-netlist staleness
 guard (`python3 design/netlist.py --check`) are deliberately *not* on the PR
@@ -270,33 +331,42 @@ path: they need ngspice, xschem and a multi-gigabyte PDK, and a pull request
 should not block on provisioning any of them. They run instead on a nightly
 schedule — [`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly.yml)
 builds the pinned ngspice release, installs the gf180mcu PDK at a pinned
-open_pdks commit, and runs both `design/netlist.py --check` and
-`sim/selftest.sh --require-pdk`, the form that fails rather than skips. That job
-writes no evidence records and fails if `sim/records/` changes.
+open_pdks commit, installs `klt`, and runs `design/netlist.py --check`,
+`sim/selftest.sh --require-pdk` and `layout/verify.py --require-tools` — the
+forms that fail rather than skip. That job writes no evidence records and fails
+if `sim/records/` changes.
 
 The nightly run does not replace the local one: run `sim/selftest.sh
 --require-pdk` (or `npm run check:all`) on a machine that has ngspice and the
-PDK before committing an evidence record. `ci.yml` carries the full inventory
-of which self-checks run where, and why.
+PDK before committing an evidence record.
 
-Some testbenches under `sim/tb/` exercise the harness itself rather than the
-TRNG design — they predate any `design/` content and are kept as the harness's
-own regression set: `smoke-op` (trivial op-point smoke test),
+`sim/tb/` holds 64 testbenches. Three of them exercise the harness itself
+rather than the TRNG design — they predate any `design/` content and are kept
+as the harness's own regression set: `smoke-op` (trivial op-point smoke test),
 `corner-sanity-nfet-id` (the automated guardrail behind
 `sim/tools/corner_sanity_check.py`), and `nfet-mismatch-seed` (demonstrates
 per-run seed control and exact reproducibility for stochastic analyses — see
-`sim/README.md`'s "no seed, no evidence" rule). The rest exercise the design:
-`rostage-noise`, `ro-array-core-power` and `ro-array-sanity-jitter` run against
-the netlists exported from `design/xschem/`.
+`sim/README.md`'s "no seed, no evidence" rule). A second group characterizes
+the PDK devices and the noise methodology rather than any cell of this design
+(`device-leakage-03v3`, `noise-floor-resistor`, `inv-stage-noise`,
+`cinv-stage-noise`, `trnoise-calibration`, `jitter-estimator-calibration`). The
+rest exercise the design, running against the netlists exported from
+`design/xschem/`: the ring and its delay cell (`rostage-noise`, `ro-*-jitter`),
+the array and its combiner (`ro-array-core-*`, `ro-array-coupling-*`), the
+sampler (`sampler-dff-*`, `sampler-bit-bias-*`, `sampler-array-digitize`), the
+metastability tap (`meta-arb-regeneration`, `ro-meta-tap-skew`) and the
+DR-0016 liveness tap (`ring-liveness-*`, `array-liveness-*`).
 
-`sim/tb/conditioner-crc32/` is the first **behavioral-level** testbench: it
-has no `tb.json`, is not discovered by `run_corners.py`, and is run directly
-(`python3 sim/tb/conditioner-crc32/run_demo.py`). Its records carry
-`level: behavioral` and no P/V/T corner, and may not be cited for anything
-corner-dependent — see `sim/README.md` §Behavioral-level records and
-[DR-0009]. `sim/tb/interface-regfile/` is the second, and runs both digital
-blocks against each other with the conditioner's `en`/`flush` taken from the
-interface's own outputs — the inter-block contract, not a stand-in for it.
+Five of the 64 are **behavioral-level**: `conditioner-crc32` (the first),
+`interface-regfile`, `health-test-fault-injection`,
+`ring-liveness-fault-injection` and `smoke-trng-top`. They have no `tb.json`,
+are not discovered by `run_corners.py`, and are run directly (e.g. `python3
+sim/tb/conditioner-crc32/run_demo.py`). Their records carry `level: behavioral`
+and no P/V/T corner, and may not be cited for anything corner-dependent — see
+`sim/README.md` §Behavioral-level records and [DR-0009]. `interface-regfile`
+runs two digital blocks against each other with the conditioner's `en`/`flush`
+taken from the interface's own outputs — the inter-block contract, not a
+stand-in for it.
 
 ## License
 
