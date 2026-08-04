@@ -3,7 +3,17 @@ name: CI
 # Runs this repository's existing self-checks on every push to main and every
 # pull request. Everything here is headless and dependency-free: the sim
 # harness is stdlib-only Python 3 (see README.md), so there is no install step
-# beyond provisioning the interpreter.
+# beyond provisioning the interpreter. Node/npm ship preinstalled on
+# actions/runner-images ubuntu-latest, and this repo has no JS dependencies
+# (package.json declares none), so `npm run <script>` needs no setup step
+# either.
+#
+# Every check below that has a `package.json` script runs it via `npm run
+# <script>` rather than re-typing the underlying command: package.json is the
+# one inventory, and this file is a runner over it, not a second list that can
+# say something different (issue #97 -- `npm run check:ci` and this job used
+# to enumerate two different sets of tools; the fix is to stop having two
+# lists rather than to reconcile them once and let them drift again).
 #
 # ---------------------------------------------------------------------------
 # Self-check inventory
@@ -12,7 +22,8 @@ name: CI
 # here with a reason:
 #
 #   sim/tests/*.py (unittest, 71 cases)
-#       RUN on every push/PR, on the oldest and newest supported Python.
+#       RUN on every push/PR, on the oldest and newest supported Python, via
+#       `npm run test`.
 #
 #   sim/selftest.sh stage 1 (harness unit tests)
 #       RUN on every push/PR (via sim/selftest.sh itself).
@@ -27,17 +38,31 @@ name: CI
 #       what stops a record whose provenance is broken (#60: two concurrent
 #       run_corners.py invocations overwriting each other's raw output) from
 #       reaching main, where sim/records/ is append-only and a bad record can
-#       only be superseded, never fixed.
+#       only be superseded, never fixed. Run twice over, deliberately: as its
+#       own step below (the strict form, which also checks git-commit state)
+#       and inside sim/selftest.sh's stage 2 (--no-git, so a freshly minted
+#       but not-yet-`git add`ed record does not fail an otherwise clean tree)
+#       -- npm run check:ci does not call this script directly, only via the
+#       sim/selftest.sh call at the end of its chain, which is why this one
+#       is not itself an `npm run <script>` step.
 #
 #   sim/tools/jitter_energy_law.py --check
+#   sim/tools/starved_cell_jitter_energy.py --check
 #   sim/tools/array_sizing.py --check
-#       RUN on every push/PR. Both are pure derivations over records already
-#       committed under sim/records/ -- stdlib-only, no ngspice, no PDK,
-#       sub-second. They are what keeps DR-0010's premise (the jitter-energy
-#       invariant) and its sizing result (DR-0007 §2's inequality at the
-#       entropy-binding corner) from rotting silently as records are appended:
-#       without them the spec's central arithmetic is only checked by a human
-#       who remembers to run it.
+#   sim/tools/worst_corner_entropy.py --check
+#   sim/tools/array_coupling_variants.py --check
+#   sim/tools/array_coupling_buffer_variant.py --check
+#   sim/tools/liveness_tap_phase_variants.py --check
+#   sim/tools/array_liveness_tap_phase_variants.py --check
+#   sim/tools/sampler_bit_bias_variants.py --check
+#   sim/tools/time_to_first_valid.py --check
+#   sim/tools/power_rollup.py --check
+#       RUN on every push/PR via `npm run check:spec` (package.json is the
+#       single list of all eleven). Every one is a pure derivation over
+#       records already committed under sim/records/ -- stdlib-only, no
+#       ngspice, no PDK, sub-second -- so a newly appended record cannot
+#       silently move a conclusion a summary document still asserts. See the
+#       "Spec arithmetic self-checks" step below for what each one guards.
 #
 #   sim/selftest.sh stage 3 (python3 sim/run_corners.py --check-env)
 #       RUN on every push/PR. On a hosted runner it reports ngspice/PDK
@@ -61,12 +86,12 @@ name: CI
 #       invokes; the nightly job does not replace the local pre-commit run.
 #
 #   design/interface/regmap.py --check (register-map staleness guard)
-#       RUN on every push/PR, twice over: as its own step below, and inside
-#       sim/tests/test_interface.py. It regenerates the interface block's
-#       Verilog header and pinout document from the one normative table and
-#       diffs them against what is committed -- stdlib-only, no external
-#       tool, sub-second. Without it the RTL's addresses and the pinout #16
-#       and #27 consume could drift apart silently.
+#       RUN on every push/PR, twice over: as its own step below (via `npm run
+#       check:regmap`), and inside sim/tests/test_interface.py. It regenerates
+#       the interface block's Verilog header and pinout document from the one
+#       normative table and diffs them against what is committed -- stdlib-
+#       only, no external tool, sub-second. Without it the RTL's addresses and
+#       the pinout #16 and #27 consume could drift apart silently.
 #
 #   design/netlist.py --check (schematic-vs-netlist staleness guard)
 #       RUN on a schedule, not here: it shells out to xschem and resolves the
@@ -74,15 +99,30 @@ name: CI
 #       PR-blocking path provisions -- same exclusion, and the same reason, as
 #       selftest stages 4-5 above. See .github/workflows/pdk-nightly.yml. Its
 #       *syntax* is still compiled here (the compileall step covers design/).
+#       Deliberately absent from `npm run check:ci` too (only `check:all`
+#       calls it, as `check:netlist`) -- adding it there would make the local
+#       pre-push command need the PDK, which is exactly what `check:ci` exists
+#       to avoid.
 #
 #   design/netlist.py --lint (schematic T {...} text-block brace guard)
-#       RUN on every push/PR, as its own step below. Unlike --check above,
-#       this is a pure-Python scan of the schematics' own text for a stray
-#       brace inside a T {...} free-text block -- no xschem, no PDK. A brace
-#       there (even a balanced pair) makes xschem's own parser miscount and
-#       silently corrupt the exported netlist with no error from either tool
-#       (#61), so this catches it at the point a schematic comment is
-#       authored rather than the next scheduled pdk-nightly.yml run.
+#       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
+#       and so into this job's first step. Unlike --check above, this is a
+#       pure-Python scan of the schematics' own text for a stray brace inside
+#       a T {...} free-text block -- no xschem, no PDK. A brace there (even a
+#       balanced pair) makes xschem's own parser miscount and silently corrupt
+#       the exported netlist with no error from either tool (#61), so this
+#       catches it at the point a schematic comment is authored rather than
+#       the next scheduled pdk-nightly.yml run.
+#
+#   layout/testcells/build.py --check (layout test-cell staleness guard)
+#   layout/verify.py (DRC/LVS flow, self-skips without klt/the PDK)
+#   layout/floorplan/floorplan.py (floorplan abstract + area rollup, same
+#       self-skip pattern as layout/verify.py)
+#       RUN on every push/PR via `npm run check:fixtures` / `check:layout` /
+#       `check:floorplan` respectively. None needs the PDK to at least run its
+#       own argument handling, tool probe and skip path -- a skip is not a
+#       pass, so exercising the skip path itself is still worth a green check
+#       here; `npm run check:all` runs the latter two with --require-tools.
 #
 #   sim/run_corners.py evidence runs (sim/records/)
 #       EXCLUDED from both workflows. Recording evidence is a deliberate,
@@ -122,20 +162,34 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Syntax check (Python + shell)
-        run: |
-          python3 -m compileall -q design sim layout
-          bash -n sim/selftest.sh
+      # python3 -m compileall + bash -n sim/selftest.sh, then
+      # design/netlist.py --lint -- a pure-Python scan of every
+      # design/xschem/*.sch's T {...} free-text block for a stray brace, which
+      # xschem's own parser silently mis-handles and turns into a corrupted
+      # netlist (#61). No xschem, no PDK, so it belongs here rather than on
+      # .github/workflows/pdk-nightly.yml with design/netlist.py --check.
+      - name: Lint (syntax check, shell check, schematic brace guard)
+        run: npm run lint
 
       - name: Harness unit tests
-        run: python3 -m unittest discover -s sim/tests -t sim/tests
+        run: npm run test
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
-      # network, nothing written. jitter_energy_law.py --check fails if the
-      # three record families it reads stop agreeing on the invariant DR-0010
-      # calls `a`; array_sizing.py --check fails if the shipped array stops
-      # satisfying DR-0007 §2 at any measured corner at DR-0010's rate, or if
-      # its own copy of `a` has drifted from that derivation.
+      # network, nothing written. Run via `npm run check:spec` -- the full
+      # list of eleven lives in package.json, not here (issue #97).
+      # jitter_energy_law.py --check fails if the three record families it
+      # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
+      # --check fails if the shipped array stops satisfying DR-0007 §2 at any
+      # measured corner at DR-0010's rate, or if its own copy of `a` has
+      # drifted from that derivation.
+      # starved_cell_jitter_energy.py --check is the shipped starved-cell
+      # counterpart of the plain-cell derivation `a` above comes from: it
+      # fails if the shipped ring's own starved-cell records stop agreeing
+      # with the calibration jitter_energy_law.py derives.
+      # worst_corner_entropy.py --check fails if the entropy-binding corner
+      # (issue #13: the minimum-Q corner over the full covered 27-point PVT
+      # grid) stops being the corner array_sizing.py's DR-0007 §2 inequality
+      # actually binds on, or if a newly appended corner record beats it.
       # array_coupling_variants.py --check fails if the four DUT variants of
       # issue #51 stop classifying the way sim/characterization-array-ring-
       # coupling.md says they do -- i.e. if a record moves the conclusion out
@@ -184,24 +238,20 @@ jobs:
       # IS missed, by 4.5x, and that is routed through DR-0017 rather than
       # through a red build. It degrades to the measured-silicon-only view on
       # this runner, which has no PDK and therefore no Liberty library.
-      - name: Spec arithmetic self-checks (jitter-energy law, array sizing, ring coupling, #14 rollups)
-        run: |
-          python3 sim/tools/jitter_energy_law.py --check
-          python3 sim/tools/array_sizing.py --check
-          python3 sim/tools/array_coupling_variants.py --check
-          python3 sim/tools/array_coupling_buffer_variant.py --check
-          python3 sim/tools/liveness_tap_phase_variants.py --check
-          python3 sim/tools/array_liveness_tap_phase_variants.py --check
-          python3 sim/tools/sampler_bit_bias_variants.py --check
-          python3 sim/tools/time_to_first_valid.py --check
-          python3 sim/tools/power_rollup.py --check
+      - name: "Spec arithmetic self-checks (jitter-energy law, array sizing, entropy corner, ring coupling, issue 14 rollups)"
+        run: npm run check:spec
 
       # Ties every record's numbers to the raw ngspice output it cites: each
       # file listed in raw.files is re-hashed against sim/records/raw/, and a
       # mismatch, a missing file, an unlisted file in a raw directory, or raw
       # output that was never committed fails the run. sim/records/ is
       # append-only, so a record with broken provenance that reaches main can
-      # only be superseded -- this is the gate that keeps one out (#60).
+      # only be superseded -- this is the gate that keeps one out (#60). Not
+      # an `npm run <script>` call: `npm run check:ci` only reaches this
+      # script indirectly (via the sim/selftest.sh call at the end of its
+      # chain, in the --no-git form), so this step keeps the stricter,
+      # git-commit-state-checking invocation as a distinct, deliberately
+      # redundant belt-and-suspenders early check.
       - name: Record checksum verification (sim/records/ raw.files)
         run: python3 sim/tools/verify_record_checksums.py --quiet
 
@@ -211,13 +261,7 @@ jobs:
       # Unlike the netlist guard it needs no PDK and no external tool, so it
       # belongs on the PR-blocking path.
       - name: Register-map staleness guard
-        run: python3 design/interface/regmap.py --check
-
-      # Pure-Python, no xschem, no PDK: fails if any design/xschem/*.sch's
-      # T {...} free-text block contains a stray brace, which xschem's own
-      # parser silently mis-handles and turns into a corrupted netlist (#61).
-      - name: Schematic text-block brace guard
-        run: python3 design/netlist.py --lint
+        run: npm run check:regmap
 
       # The layout equivalent of the register-map guard: layout/testcells/*.gds
       # are generated by layout/testcells/build.py and every committed DRC/LVS
@@ -225,7 +269,7 @@ jobs:
       # edit that was not regenerated must fail here. Pure stdlib -- no PDK, no
       # klayout-tools, no network -- so it belongs on the PR-blocking path.
       - name: Layout test-cell staleness guard
-        run: python3 layout/testcells/build.py --check
+        run: npm run check:fixtures
 
       # Runs the DRC/LVS flow when klayout-tools and the PDK are present, and
       # self-skips with exit 0 when they are not (this runner has neither).
@@ -233,7 +277,19 @@ jobs:
       # argument handling, tool probe, and skip path. A skip is not a pass --
       # `npm run check:all` runs it with --require-tools locally.
       - name: Layout DRC/LVS flow (self-skips on a hosted runner)
-        run: python3 layout/verify.py
+        run: npm run check:layout
+
+      # Rebuilds the entropy-source floorplan abstract (one klt gen guard_ring
+      # per isolation region, DRC'd) and holds its area rollup to the
+      # committed artefacts under layout/floorplan/. Same self-skip pattern as
+      # layout/verify.py above -- klt/the PDK are absent on this runner, so
+      # this exercises the driver's own tool probe and skip path rather than
+      # the flow itself; `npm run check:all` runs it with --require-tools
+      # locally. Was previously absent from this workflow with no documented
+      # reason, unlike design/netlist.py --check and selftest.sh stages 4-5
+      # above, which are excluded on purpose (issue #97).
+      - name: Entropy-source floorplan self-check (self-skips on a hosted runner)
+        run: npm run check:floorplan
 
       # sim/selftest.sh re-runs the unit tests and the record-checksum check
       # as its own stages 1-2; the few seconds of overlap buy coverage of the

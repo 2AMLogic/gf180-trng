@@ -307,29 +307,40 @@ sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absen
 ### Checks
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs, on every push and
-pull request, every check that needs no PDK, on Python 3.10 and 3.13:
+pull request, every check that needs no PDK, on Python 3.10 and 3.13, by
+calling `npm run <script>` once per group — `package.json` is the one
+inventory of what each check is, and the workflow is a runner over it rather
+than a second list that can say something different (#97):
 
-- a Python/shell syntax check and the harness unit tests;
-- **nine spec-arithmetic self-checks** — pure derivations over records already
-  committed under `sim/records/`, so a newly appended record cannot silently
-  move a conclusion a summary document still asserts: `jitter_energy_law.py`,
-  `array_sizing.py`, `array_coupling_variants.py`,
+- **`npm run lint`** — a Python/shell syntax check and the schematic
+  text-block brace guard (`design/netlist.py --lint`, #61);
+- **`npm run test`** — the harness unit tests;
+- **`npm run check:spec`**, **eleven spec-arithmetic self-checks** — pure
+  derivations over records already committed under `sim/records/`, so a newly
+  appended record cannot silently move a conclusion a summary document still
+  asserts: `jitter_energy_law.py`, `starved_cell_jitter_energy.py`,
+  `array_sizing.py`, `worst_corner_entropy.py`, `array_coupling_variants.py`,
   `array_coupling_buffer_variant.py`, `liveness_tap_phase_variants.py`,
   `array_liveness_tap_phase_variants.py`, `sampler_bit_bias_variants.py`,
   `time_to_first_valid.py` and `power_rollup.py`, each `--check`;
 - `sim/tools/verify_record_checksums.py`, which re-hashes every file each
-  record's `raw.files` cites against `sim/records/raw/` (#60);
-- the register-map staleness guard (`design/interface/regmap.py --check`) and
-  the schematic text-block brace guard (`design/netlist.py --lint`, #61);
-- the layout test-cell staleness guard (`layout/testcells/build.py --check`)
-  and `layout/verify.py`, which self-skips when `klt`/the PDK are absent;
-- `sim/selftest.sh` — whose PDK-dependent stages detect the missing PDK and
-  skip themselves on a hosted runner.
+  record's `raw.files` cites against `sim/records/raw/` (#60) — run as its own
+  workflow step (the stricter, git-commit-state-checking form) rather than via
+  `npm run`, since `check:ci` only reaches this script indirectly, through the
+  `sim/selftest.sh` call at the end of its chain;
+- **`npm run check:regmap`** — the register-map staleness guard
+  (`design/interface/regmap.py --check`);
+- **`npm run check:fixtures`** — the layout test-cell staleness guard
+  (`layout/testcells/build.py --check`);
+- **`npm run check:layout`** and **`npm run check:floorplan`** —
+  `layout/verify.py` and `layout/floorplan/floorplan.py`, both of which
+  self-skip when `klt`/the PDK are absent;
+- **`sim/selftest.sh`** — whose PDK-dependent stages detect the missing PDK
+  and skip themselves on a hosted runner.
 
-`npm run check:ci` is the local entry point for the same intent, but it is not
-today a byte-for-byte match for the workflow above — the two lists are
-maintained separately and have drifted. `ci.yml` carries the authoritative
-inventory of which self-check runs where, and why.
+`npm run check:ci` runs the same eight steps, in the same order, as the local
+entry point for the same intent — a contributor who runs it before pushing
+exercises exactly what the PR-blocking workflow above will run.
 
 The smoke run, the corner-sanity check and the schematic-vs-netlist staleness
 guard (`python3 design/netlist.py --check`) are deliberately *not* on the PR
