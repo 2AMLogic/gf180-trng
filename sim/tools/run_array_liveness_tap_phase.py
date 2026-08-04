@@ -5,11 +5,12 @@
     python3 sim/tools/run_array_liveness_tap_phase.py --status       # check progress
     python3 sim/tools/run_array_liveness_tap_phase.py --foreground   # run inline (debugging)
 
-``sim/characterization-shipped-array-tap-phase.md``'s "What has stopped it so
-far" section records three prior launches of the sixteen runs (four decks x
-four seeds) this experiment needs, none of which produced a committable
-record. Two failure modes are this repository's to fix, and this script is
-the fix:
+``sim/characterization-shipped-array-tap-phase.md``'s "What stopped it, five
+times, and what finally worked" section records six launches of the sixteen
+runs (four decks x four seeds) this experiment needed; four produced nothing
+committable. Three failure modes were this repository's to fix, and this
+script is the fix for all three (the third, oversubscription, is
+``DEFAULT_JOBS`` below):
 
   1. **Attempt 1** died when the agent session that launched
      ``run_corners.py`` ended: ``SIGTERM`` reached every ``ngspice`` under it
@@ -39,11 +40,15 @@ control (every ``ngspice`` on the machine killed at once, coinciding with a
 retry loop above means a recurrence only costs whatever deck was running
 when it happens, and a re-launch resumes from there rather than from zero.
 
-This script does not itself measure anything and writes no conclusion --
-it is infrastructure for producing the sixteen runs
-``sim/characterization-shipped-array-tap-phase.md``'s Results section is
-waiting on. See that document for the method, the per-seed cost estimate,
-and the full history of what has stopped this experiment so far.
+This script does not itself measure anything and writes no conclusion -- it
+is infrastructure for producing the sixteen runs behind
+``sim/characterization-shipped-array-tap-phase.md``'s Results section, all
+sixteen of which are now on file. It is kept rather than retired because it
+is what a re-run at another corner would use, and because its ``--status``
+flag answers "which decks have a clean record at this corner?" from the
+committed records alone. See that document for the method, the measured
+per-seed cost, and the full history of what stopped this experiment five
+times.
 
 Stdlib only; no ngspice or PDK access of its own (it shells out to
 ``sim/run_corners.py``, which needs both -- see its own ``--check-env``).
@@ -75,8 +80,8 @@ WORK_DIR = SIM_DIR / ".work" / "array-liveness-tap-phase-launch"
 DEFAULT_LOG = WORK_DIR / "run.log"
 DEFAULT_PIDFILE = WORK_DIR / "run.pid"
 
-#: The four decks sim/characterization-shipped-array-tap-phase.md's "What is
-#: left to do" step 1 names, in the same order.
+#: The four decks sim/characterization-shipped-array-tap-phase.md's Method
+#: section tabulates, in the same order: two pairs, one change inside each.
 DECKS = [
     "array-liveness-tap-phase-clocked",
     "array-liveness-tap-phase-static",
@@ -88,18 +93,40 @@ DECKS = [
 #: comparable to issue #51's coupling ladder and issue #76's phase-cost
 #: family. Four independent noise seeds per deck, per sim/README.md.
 SEEDS = (1, 2, 3, 4)
-#: -j 4 matches sim/characterization-shipped-array-tap-phase.md's own "What is
-#: left to do" reproduction command: one deck's four seeds are independent
-#: ngspice processes, so running them concurrently only changes wall clock,
-#: never what is measured.
+#: One deck's four seeds are independent ngspice processes, so how many run at
+#: once only changes wall clock, never what is measured. It changes wall clock
+#: a great deal, though, and not in the direction the naive reading suggests --
+#: see DEFAULT_JOBS.
 CORNER_ARGS = [
     "--corners", "tt",
     "--temps", "27",
     "--supply", "3.3",
     "--supply-tol", "0",
     "--seeds", *[str(s) for s in SEEDS],
-    "-j", "4",
 ]
+#: Seeds run concurrently per deck (``run_corners.py -j``). ONE, not four.
+#:
+#: This was hardcoded to 4 through attempts 4 and 5, on the assumption that a
+#: single ``ngspice`` process is single-threaded and four of them therefore fit
+#: on any multi-core host for free. That assumption is false for ngspice-46 on
+#: this repository's Linux/x86_64 host: one process of THIS deck was measured
+#: at ~7.6 cores of CPU per second of wall clock (123.06 s CPU in 16.26 s wall
+#: for a transient-only 0.05 us copy), i.e. it saturates an 8-core machine by
+#: itself. Running -j 4 or -j 8 on top of that is 30-60 runnable threads on 8
+#: cores, and the measured aggregate throughput COLLAPSES rather than
+#: saturating: 8 concurrent runs managed 69.7 ps of transient per second of
+#: wall clock in attempt 5, against 3560 ps/s for a single run alone -- ~50x
+#: worse in total, not merely no better. See "What the runs cost" in
+#: sim/characterization-shipped-array-tap-phase.md.
+#:
+#: The right default is therefore the one that leaves ngspice's own internal
+#: parallelism alone. Raise it only on a host where a single run of this deck
+#: has been MEASURED to leave cores idle.
+#:
+#: With this default the xsb pair (attempt 6) ran to completion on that host in
+#: 2.42 h -- 75.5 min and 70.0 min for the two decks, four sequential seeds
+#: each -- against the ~100 h the -j 4 arrangement had projected for one pair.
+DEFAULT_JOBS = 1
 #: Matches harness.report / starved_cell_jitter_energy.Record.corner's
 #: "<process>/<temp:.0f>/<vdd:.2f>" format exactly, so the string compares
 #: rather than needing its own parsing of the corner grid.
@@ -189,7 +216,7 @@ def clean_stale(slug: str) -> list[str]:
     return removed
 
 
-def run_deck(slug: str, timeout_s: int) -> int:
+def run_deck(slug: str, timeout_s: int, jobs: int) -> int:
     """Run one deck's four-seed grid point via ``run_corners.py``.
 
     Inherits this process's own stdout/stderr, so in detached mode (where
@@ -199,7 +226,7 @@ def run_deck(slug: str, timeout_s: int) -> int:
     """
     cmd = [
         sys.executable, str(RUN_CORNERS), slug,
-        *CORNER_ARGS, "--timeout", str(timeout_s),
+        *CORNER_ARGS, "-j", str(jobs), "--timeout", str(timeout_s),
     ]
     _log(f"$ {' '.join(cmd)}")
     proc = subprocess.run(cmd, cwd=REPO_ROOT, check=False)
@@ -219,10 +246,10 @@ def check_env() -> bool:
     return True
 
 
-def main_loop(decks: list[str], timeout_s: int, max_attempts: int) -> int:
+def main_loop(decks: list[str], timeout_s: int, max_attempts: int, jobs: int) -> int:
     _log(
         f"issue #87 shipped-array tap-phase launcher starting: decks={decks} "
-        f"corner={CORNER_LABEL} seeds={list(SEEDS)} timeout={timeout_s}s "
+        f"corner={CORNER_LABEL} seeds={list(SEEDS)} jobs={jobs} timeout={timeout_s}s "
         f"max_attempts={max_attempts}"
     )
     if not check_env():
@@ -241,7 +268,7 @@ def main_loop(decks: list[str], timeout_s: int, max_attempts: int) -> int:
                 _log(f"{slug}: removed stale {removed}")
             _log(f"{slug}: attempt {attempt}/{max_attempts} starting")
             t0 = time.time()
-            rc = run_deck(slug, timeout_s)
+            rc = run_deck(slug, timeout_s, jobs)
             elapsed_h = (time.time() - t0) / 3600
             status = deck_status(slug)
             _log(
@@ -291,6 +318,13 @@ def main(argv: list[str] | None = None) -> int:
         "--timeout (default %(default)s)",
     )
     parser.add_argument(
+        "--jobs", "-j", type=int, default=DEFAULT_JOBS,
+        help="seeds run concurrently per deck, passed to run_corners.py -j "
+        "(default %(default)s). One ngspice process of these decks already uses "
+        "~7.6 cores on this repository's Linux host, so raising this oversubscribes "
+        "rather than parallelises -- see DEFAULT_JOBS",
+    )
+    parser.add_argument(
         "--max-attempts", type=int, default=DEFAULT_MAX_ATTEMPTS,
         help="retries per deck before giving up on it and moving to the next "
         "(default %(default)s)",
@@ -323,7 +357,7 @@ def main(argv: list[str] | None = None) -> int:
     args.log.parent.mkdir(parents=True, exist_ok=True)
 
     if args.foreground:
-        return main_loop(args.decks, args.timeout, args.max_attempts)
+        return main_loop(args.decks, args.timeout, args.max_attempts, args.jobs)
 
     # Detached launch: re-invoke this same script with --foreground in its own
     # session (start_new_session=True is subprocess's os.setsid()-in-the-child
@@ -337,6 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.executable, str(Path(__file__).resolve()), "--foreground",
         "--timeout", str(args.timeout),
         "--max-attempts", str(args.max_attempts),
+        "--jobs", str(args.jobs),
         "--log", str(args.log),
         "--decks", *args.decks,
     ]

@@ -190,27 +190,28 @@ BOUND_MARGIN = 0.10
 #: conclusion rather than quietly leaving a stale one in the characterization
 #: document. Set either to ``None`` to run the classification without gating.
 #:
-#: The shipped pair HAS now been run --
-#: ``2026-08-03-array-liveness-tap-phase-clocked-01`` and
-#: ``-static-01``, four seeds each at ``tt``/27 C/3.30 V -- so
-#: ``RECORDED_SHIPPED_VERDICT`` below is filled in from what this script printed
-#: over those two records, after the run and not before.
+#: All four decks have now been run, each pair with both of its records
+#: produced on one host, and both constants below are filled in from what this
+#: script printed over those records -- after the run, never before:
 #:
-#: ``RECORDED_XSB_VERDICT`` is still ``None``, because variants 3 and 4 are
-#: still running: each deck costs ~87 CPU-minutes per seed and the batch is
-#: capped near 2.4 cores on the host it runs on (see
-#: ``sim/characterization-shipped-array-tap-phase.md``). Naming a verdict for a
-#: pair with no records would pre-register a conclusion this repository has no
-#: evidence for -- the exact failure this gate exists to catch, pointed the
-#: wrong way.
+#: * ``2026-08-03-array-liveness-tap-phase-clocked-01`` / ``-static-01``
+#:   (``macOS-26.6-arm64``) give ``RECORDED_SHIPPED_VERDICT``;
+#: * ``2026-08-03-array-liveness-tap-phase-xsb-clocked-01`` / ``-xsb-static-01``
+#:   (``Linux-7.0.0-1009-aws-x86_64``) give ``RECORDED_XSB_VERDICT``.
 #:
-#: Because ``--check`` requires BOTH verdicts before it will gate anything, its
-#: CI invocation stays absent from ``.github/workflows/ci.yml`` until the xsb
-#: pair lands. That is deliberate: a half-armed gate that passes on the half it
-#: cannot see is worse than no gate. The change that lands the xsb records is
-#: the change that fills the second constant in and adds the CI line.
+#: The two pairs come from different machines and that is fine here, because
+#: nothing below crosses them: each verdict is a ratio taken inside one pair
+#: against its own control on its own host. A raw ``sigma`` may not be carried
+#: across the two -- see "Why this ratio is host-sound" in
+#: ``sim/characterization-shipped-array-tap-phase.md`` -- and none is.
+#:
+#: ``--check`` requires BOTH verdicts before it will gate anything and exits
+#: non-zero while either is ``None``, which is why its CI invocation was held
+#: back until the xsb pair landed: a half-armed gate that passes on the half it
+#: cannot see is worse than no gate. Both are set now, so
+#: ``.github/workflows/ci.yml`` runs it.
 RECORDED_SHIPPED_VERDICT: str | None = "bound-confirmed-residual-remains"
-RECORDED_XSB_VERDICT: str | None = None
+RECORDED_XSB_VERDICT: str | None = "unreachable"
 
 
 class Variant:
@@ -611,7 +612,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(
                     f"\nFAIL: the committed records now classify {what} as {got!r}, but the "
                     f"conclusion recorded in "
-                    f"sim/characterization-liveness-tap-phase-cost.md is {recorded!r}. "
+                    f"sim/characterization-shipped-array-tap-phase.md is {recorded!r}. "
                     "Either a record changed or a variant was re-run; update the recorded "
                     "conclusion to match the evidence (and this constant with it) rather "
                     "than leaving a stale one.",
@@ -622,7 +623,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(
             f"\nOK: the committed records still classify as {verdict!r} / {xsb_verdict!r}, "
-            "the conclusions sim/characterization-liveness-tap-phase-cost.md records."
+            "the conclusions sim/characterization-shipped-array-tap-phase.md records."
         )
     return 0
 

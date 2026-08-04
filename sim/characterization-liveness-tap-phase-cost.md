@@ -327,6 +327,19 @@ In particular the measurement-admissibility rule below is *strengthened*, not
 weakened, by the shipped number being smaller: 3.46× squared is still a ~12×
 over-statement of a ring's contribution to `Q_array`, in the unsafe direction.
 
+**#87 also closed the other gap this document left**, which its own acceptance
+criteria named and its decks did not cover: `xsb`, the DR-0001 raw-tap
+digitizer, which puts the same `clk`-driven pass gate on the combiner output
+`xo`. Measured the same way — the shipped array with the two per-ring
+digitizers removed, so `xsb` is the only `clk`-driven load downstream of a
+ring, against the identical deck with `clk` parked — running `clk` moves ring
+1's `σ₁` to **0.96×** its own control (ring 2: **1.00×**) and leaves the
+per-block period swing at **0.006 %**, the control's own value. `xo` is two
+active stages from either ring node (`xa1`, then that ring's own `ro_buf`), and
+that is enough to put the disturbance below what the measurement resolves. It
+is **not** a proof of zero: the control's seed-to-seed spread is 4.42 %, which
+is the floor the claim sits on.
+
 ## What this implies
 
 1. **`DR-0007` §2's measurement rule extends to the sample clock.**
