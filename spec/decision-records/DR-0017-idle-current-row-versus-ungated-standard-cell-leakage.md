@@ -6,7 +6,7 @@ date: 2026-08-02
 deciders: Proposed by #14 (start-up, time-to-first-valid and power characterization). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004 and DR-0007 were.
 supersedes: n/a (on acceptance of option C it would supersede the README `Power` row's idle half only; DR-0007's and DR-0010's active-power reasoning is untouched either way)
 superseded_by: n/a
-related: "#14 (origin — this record's evidence), #32/PR #38 (the first leakage characterization), #26/DR-0013 (the interface and its two 8x32-bit FIFOs), #11/DR-0002 (health-test window sizing), #8/DR-0008 (conditioner K), DR-0004 (claim tiers), DR-0009 (behavioural/transistor split), DR-0010 (the still-Proposed active-power/rate collision), DR-0012 (fixed external sample clock), #15/#17 (layout, which will add to this number and cannot reduce it); README §Target specification — Power"
+related: "#14 (origin — this record's evidence), #32/PR #38 (the first leakage characterization), #26/DR-0013 (the interface and its two 8x32-bit FIFOs), #11/DR-0002 (health-test window sizing), #8/DR-0008 (conditioner K), DR-0004 (claim tiers), DR-0009 (behavioural/transistor split), DR-0010 (the still-Proposed active-power/rate collision), DR-0012 (fixed external sample clock), DR-0020 (the joint FIFO-depth decision, which cites this record's §B figures, sets FIFO_DEPTH = 2 for area and streaming reasons, and leaves this record standing and unsuperseded — 2.04 uA is still a miss on this row), #15/#17 (layout, which will add to this number and cannot reduce it); README §Target specification — Power"
 ---
 
 # DR-0017: Resolve the measured 4.5× miss on the `< 1 µA` idle row, whose cause is ungated standard-cell leakage in the digital section and not the analog block
