@@ -90,8 +90,8 @@ DRBG supplies its own and treats this block as the seed source.
 > on 2026-07-31 by engineering (Robb) — see
 > [`spec/ratification-2026-07-31-target-spec.md`](spec/ratification-2026-07-31-target-spec.md)
 > and issue #1 — together with the amendment package in #29. Every decision
-> record the rows above cite is `Accepted` except [DR-0015], which is
-> `Proposed`; a row that cannot be met is a **superseding decision record**,
+> record the rows above cite is `Accepted` except [DR-0015] and [DR-0017],
+> both `Proposed`; a row that cannot be met is a **superseding decision record**,
 > not an edit. What ratification does *not* do is turn placeholders into
 > claims:
 >
