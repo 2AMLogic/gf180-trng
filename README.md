@@ -7,7 +7,7 @@ xschem for schematics, ngspice for simulation, and
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, [twenty decision records](spec/decision-records/), an
+convention, [twenty-one decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
 harness whose output is ten characterization summaries (`sim/characterization-*.md`)
 resting on 835 append-only evidence records under [`sim/records/`](sim/records/).
