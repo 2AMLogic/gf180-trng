@@ -6,7 +6,7 @@ date: 2026-08-01
 deciders: Builder (issue #26). Delegated implementation of two ratified records — see Status.
 supersedes: n/a
 superseded_by: n/a
-related: "#26 (origin), #8 (conditioner — the block on the other side of `cond_en`/`cond_flush`), #9 (sampler — the raw tap), #11 (health tests — `ht_fail_*`/`ht_startup_pass`), #16 (floorplan — top-level pinout), #27 (trng_top integration), #14; README §Target specification — Interface row; DR-0001 (raw/conditioned paths), DR-0002 (health-test failure behaviour), DR-0003 (raw rate), DR-0008 (conditioner, K = 8), DR-0009 (behavioural/transistor split), DR-0012 (fixed external sample clock)"
+related: "#26 (origin), #8 (conditioner — the block on the other side of `cond_en`/`cond_flush`), #9 (sampler — the raw tap), #11 (health tests — `ht_fail_*`/`ht_startup_pass`), #16 (floorplan — top-level pinout), #27 (trng_top integration), #14; README §Target specification — Interface row; DR-0001 (raw/conditioned paths), DR-0002 (health-test failure behaviour), DR-0003 (raw rate), DR-0008 (conditioner, K = 8), DR-0009 (behavioural/transistor split), DR-0012 (fixed external sample clock), DR-0020 (sets FIFO_DEPTH = 2 and prices this record's `OUT_MODE` drain cost in milliseconds at DR-0010's proposed 500 bps; no clause of this record is superseded by it)"
 ---
 
 # DR-0013: Fix the interface as four registers plus a word-oriented mode-selected streaming port, with two flush scopes so a health-test gate never reaches the raw path
