@@ -234,11 +234,3 @@ def find_all_variant_dirs(variant: str | None = None) -> list[tuple[Path, str]]:
         seen.add(resolved)
         found.append((path, f"search_root:{root}"))
     return found
-
-
-def pdk_available(variant: str | None = None) -> bool:
-    try:
-        find_pdk(variant)
-    except PdkNotFound:
-        return False
-    return True
