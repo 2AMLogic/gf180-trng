@@ -1,0 +1,61 @@
+* ro_nand2 -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* This is transcribed directly from design/xschem/ro_nand2.sch's six
+* devices (design/ro_array_core.spice's `.subckt ro_nand2`), at the
+* schematic's own default parameters `wstv=0.22u lstv=2u` -- ring1's value,
+* the same convention layout/cells/ro_stage/ uses for its own first drawn
+* variant. Independent of the layout in this directory; `klt lvs` is asked
+* to agree the drawn geometry implements it.
+*
+* Device topology:
+*
+*   XMph py vss vddr vddr  pfet L=lstv W=wstv   -- starve, gate=vss
+*   XMpa y  a  py  vddr    pfet L=0.28 W=0.44   -- pull-up, gate=a
+*   XMpb y  en py  vddr    pfet L=0.28 W=0.44   -- pull-up, gate=en (parallel with XMpa)
+*   XMna y  a  nm  vss     nfet L=0.28 W=0.44   -- pull-down, gate=a
+*   XMnb nm en ny  vss     nfet L=0.28 W=0.44   -- pull-down, gate=en (series with XMna)
+*   XMnt ny vddr vss vss   nfet L=lstv W=wstv   -- starve, gate=vddr
+*
+* XMpa/XMpb share both terminals (source=py, drain=y) -- a parallel pull-up
+* pair, either input low pulling y high through the shared starve device
+* XMph. XMna/XMnb are in series (y-nm-ny) -- both a and en must be high to
+* pull y low through the shared starve device XMnt. Together: a plain NAND2
+* (y = NOT(a AND en)), with en low forcing y high regardless of a -- the
+* mechanism the ring uses to stop oscillating. See
+* layout/cells/ro_nand2/build.py's module docstring for the full account,
+* including how the drawn geometry realises the parallel XMpa/XMpb pair
+* (two diffusion islands tied by an explicit metal1 riser, not a shared
+* comp region -- the netlist below can't see that distinction, only that
+* both devices land on the same py/y nets).
+*
+* Device sizes must agree with layout/cells/ro_nand2/build.py's
+* W_STARVE/L_STARVE/W_PARALLEL/L_SWITCH -- `klt lvs` compares W and L as
+* device properties.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see layout/README.md, "What the curated decks do and do not
+* check" -- the same approximation layout/cells/ro_stage/ro_stage.spice
+* already documents):
+*   - NMOS bulk is the deck's substrate global, `vsubs` -- not the `vss`
+*     design/xschem/ro_nand2.sch itself wires XMna/XMnb/XMnt's bulk to.
+*   - PMOS bulk is a floating net: the curated deck does not tie an Nwell to
+*     the tap inside it, so the well is an unnamed net picking up whatever
+*     Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is that net --
+*     not the `vddr` design/xschem/ro_nand2.sch wires XMph/XMpa/XMpb's bulk
+*     to -- and it is deliberately connected to nothing else. All three
+*     PMOS devices here sit inside the *same* drawn Nwell (this cell draws
+*     no well split and no well tap), so they share the one floating net
+*     rather than each getting its own -- `klt extract` confirms this (all
+*     three pfets' `b` terminal lands on the same anonymous net).
+
+.SUBCKT ro_nand2 a en y vddr vss vsubs
+MPH py vss vddr NWELL_FLOAT pfet L=2.0U W=0.22U
+MPA y a py NWELL_FLOAT pfet L=0.28U W=0.44U
+MPB y en py NWELL_FLOAT pfet L=0.28U W=0.44U
+MNA y a nm vsubs nfet L=0.28U W=0.44U
+MNB nm en ny vsubs nfet L=0.28U W=0.44U
+MNT ny vddr vss vsubs nfet L=2.0U W=0.22U
+.ENDS ro_nand2

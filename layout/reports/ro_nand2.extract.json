@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "file": "layout/cells/ro_nand2/ro_nand2.gds",
+  "deck": "gf180mcu",
+  "top": "ro_nand2",
+  "dbu_um": 0.001,
+  "netlist_path": "layout/reports/ro_nand2.extracted.spice",
+  "netlist_sha256": "db751b5d6b37039c5b3bf8b3d1755cc4e5c59d136b4e3bc5b6179b2dd0783e66",
+  "status": "extracted",
+  "device_count": 6,
+  "net_count": 10,
+  "pin_count": 6,
+  "device_counts": {
+    "nfet": 3,
+    "pfet": 3
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "$8",
+        "g": "vddr",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 0.22
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "y",
+        "g": "a",
+        "d": "$7",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 0.44
+      }
+    },
+    {
+      "name": "$3",
+      "class": "nfet",
+      "nets": {
+        "s": "$7",
+        "g": "en",
+        "d": "$8",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 0.44
+      }
+    },
+    {
+      "name": "$4",
+      "class": "pfet",
+      "nets": {
+        "s": "vddr",
+        "g": "vss",
+        "d": "$5",
+        "b": "$9"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 0.22
+      }
+    },
+    {
+      "name": "$5",
+      "class": "pfet",
+      "nets": {
+        "s": "$5",
+        "g": "a",
+        "d": "y",
+        "b": "$9"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 0.44
+      }
+    },
+    {
+      "name": "$6",
+      "class": "pfet",
+      "nets": {
+        "s": "y",
+        "g": "en",
+        "d": "$5",
+        "b": "$9"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 0.44
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$7",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$8",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$9",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "a",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "en",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vddr",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "y",
+      "pin": true,
+      "device_count": 3
+    }
+  ],
+  "warnings": [],
+  "black_box_regions": [],
+  "unmodelled_poly": [],
+  "merged_net_labels": [],
+  "pdk": {
+    "variant": "gf180mcuD",
+    "root": "/Users/rwalters/.volare",
+    "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": {
+      "content_hash": "sha256:a2111232160b15132218785710ac235f209d14633182d68da549c536b4695490"
+    }
+  },
+  "parasitics": null
+}

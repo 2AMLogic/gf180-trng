@@ -13,6 +13,8 @@ honestly-scoped unit rather than claimed across the whole block at once.
 | cell | source | status |
 |---|---|---|
 | [`ro_stage/`](ro_stage/) | `design/ro_array_core.spice`'s `.subckt ro_stage` (`design/xschem/ro_stage.sch`), at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage.*` |
+| [`ro_stage_ring2/`](ro_stage_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_stage`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_stage/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage_ring2.*` |
+| [`ro_nand2/`](ro_nand2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2` (`design/xschem/ro_nand2.sch`) — the ring's one stoppable stage | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2.*` |
 | [`xor2/`](xor2/) | `design/ro_array_core.spice`'s `.subckt xor2` (`design/xschem/xor2.sch`) — the combiner gate | DRC-clean, LVS-match, 0 errors — see `layout/reports/xor2.*` |
 | [`sampler_dff/`](sampler_dff/) | `design/sampler_core.spice`'s `.subckt sampler_dff` (`design/xschem/sampler_dff.sch`) — the sampler's transmission-gate master-slave DFF, instantiated four times unmodified in `sampler_core` | DRC-clean, LVS-match, 0 errors — see `layout/reports/sampler_dff.*` |
 
@@ -24,6 +26,21 @@ it is the block the isolation rationale (`layout/floorplan/README.md`) is
 about — the place a drawn-geometry mistake (an isolation gap, a
 mis-sized starve device) is most likely to degrade entropy quality without
 DRC/LVS ever being able to see it, per issue #106's own framing.
+
+`ro_stage_ring2` and `ro_nand2` ([#108][gf108]) complete the ring's cell set. The
+array uses two different starve widths specifically so ring1 and ring2 are
+*not* frequency-matched (`layout/floorplan/README.md`, "Mechanism 1" — a
+deliberate mismatch load-bearing for the two rings' independence argument),
+so `ro_stage_ring2` is its own drawn geometry at `wstv=0.240u`, not a
+parameter override on `ro_stage/`'s. `ro_nand2` is the ring's one stoppable
+stage: the same series-starved topology as `ro_stage`, plus a parallel
+pull-up pair (`XMpa`/`XMpb`, gated by `a`/`en`) and a series pull-down pair
+(`XMna`/`XMnb`) that make it a 2-input NAND — `en` low forces the ring's
+output high regardless of `a`, stopping oscillation. See
+`layout/cells/ro_nand2/build.py`'s own docstring for the parallel-pull-up
+drawing technique (two diffusion islands tied by a metal1 riser, since
+`XMpa`/`XMpb` share both terminals and cannot be drawn as a simple series
+chain).
 
 `xor2` and `sampler_dff` ([#109][gf109]) are the two cells that make up the
 `combiner_sampler` guarded region's contents: `xor2` combines ring1's and
@@ -59,22 +76,16 @@ today.
 That constraint, plus this issue's own complexity flag (a wrong isolation or
 sizing decision can pass DRC/LVS cleanly and only show up as degraded
 entropy quality once #17's post-layout re-run runs against it), is why this
-directory holds one verified cell rather than a claimed-but-unverified
-full block: each cell here is drawn, DRC'd, and LVS'd against a
+directory grows one verified cell at a time rather than claiming the whole
+block unverified: each cell here is drawn, DRC'd, and LVS'd against a
 hand-written reference netlist (never a copy of `klt extract`'s own output —
-see `ro_stage.spice`'s header) before the next one is started.
+see each cell's own `.spice` header) before the next one is started.
 
 ## What is explicitly *not* here yet
 
 Deferred to follow-up issues, filed against this repository (not against
 klayout-tools — none of the gaps below are tool gaps):
 
-- **`ro_stage` at ring2's sizing** (`wstv=0.240u`) and **`ro_nand2`** (the
-  ring's one stoppable stage) — [#108][gf108]. Only ring1's default
-  `ro_stage` parameterisation is drawn here; the array uses two different
-  starve widths specifically so the rings are *not* frequency-matched
-  (`layout/floorplan/README.md`, "Mechanism 1"), so ring2 needs its own
-  drawn cell, not a copy of this one relabelled.
 - **Assembling ten `ro_stage`s plus one `ro_nand2` into `ro_ring11`**, and
   placing the result — plus the combiner and samplers — inside the #16
   floorplan's guarded regions (`layout/floorplan/trng_floorplan.gds`) —

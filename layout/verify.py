@@ -85,6 +85,12 @@ def _load_build_module(name: str, path: Path):
 ro_stage_cell = _load_build_module(
     "layout_cells_ro_stage_build", CELLS_DIR / "ro_stage" / "build.py"
 )
+ro_stage_ring2_cell = _load_build_module(
+    "layout_cells_ro_stage_ring2_build", CELLS_DIR / "ro_stage_ring2" / "build.py"
+)
+ro_nand2_cell = _load_build_module(
+    "layout_cells_ro_nand2_build", CELLS_DIR / "ro_nand2" / "build.py"
+)
 xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
 sampler_dff_cell = _load_build_module(
     "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
@@ -98,6 +104,8 @@ sampler_dff_cell = _load_build_module(
 _STALENESS_CHECKS = (
     ("layout/testcells", testcells.check_all),
     ("layout/cells/ro_stage", ro_stage_cell.check),
+    ("layout/cells/ro_stage_ring2", ro_stage_ring2_cell.check),
+    ("layout/cells/ro_nand2", ro_nand2_cell.check),
     ("layout/cells/xor2", xor2_cell.check),
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
 )
@@ -215,6 +223,56 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "ro_stage_ring2": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and
+        # layout/cells/ro_stage_ring2/build.py for the geometry and why it
+        # is hand-drawn. `dir`/`top` override the defaults, same as the
+        # `ro_stage` entry above.
+        "why": (
+            "design/ro_array_core.spice's ro_stage at ring2's own sizing "
+            "(wstv=0.240u, distinct drawn geometry from ring1's ro_stage/ "
+            "-- see layout/cells/README.md, 'Mechanism 1') must be "
+            "DRC-clean and LVS-match its hand-written schematic-side "
+            "reference"
+        ),
+        "dir": "layout/cells/ro_stage_ring2",
+        "top": "ro_stage_ring2",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_stage_ring2.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's four devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "ro_nand2": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and layout/cells/ro_nand2/build.py
+        # for the geometry (including the drawn parallel-pull-up technique)
+        # and why it is hand-drawn. `dir`/`top` override the defaults, same
+        # as the `ro_stage` entry above.
+        "why": (
+            "design/ro_array_core.spice's ro_nand2 (the ring's one "
+            "stoppable stage) must be DRC-clean and LVS-match its "
+            "hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/ro_nand2",
+        "top": "ro_nand2",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_nand2.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's six devices are all MOS, so nothing else is declared.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "error_count": 0,
         },
