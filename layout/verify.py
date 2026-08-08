@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Run the gf180mcu DRC + LVS flow over `layout/testcells/` and check it.
+"""Run the gf180mcu DRC + LVS flow over `layout/testcells/` (and any real
+design cell wired in below) and check it.
 
     python3 layout/verify.py                # run the flow, assert expectations
     python3 layout/verify.py --write        # ... and refresh layout/reports/
@@ -10,11 +11,13 @@ This is the layout-side analogue of `sim/selftest.sh`: it exists so that
 "the DRC/LVS flow works" is a claim somebody can re-run in one command
 instead of a claim somebody has to believe.
 
-What it does, per fixture (`layout/testcells/build.py` owns the geometry):
+What it does, per entry in `EXPECTATIONS` (each entry's own `dir`/`build`
+module owns the geometry -- `layout/testcells/build.py` for the flow-bringup
+fixtures, `layout/cells/<cell>/build.py` for a real design cell):
 
-1. `klt drc  <fixture>.gds --deck gf180mcu`
-2. `klt extract <fixture>.gds --deck gf180mcu --pdk <variant>`
-3. `klt lvs  <request>`  -- only for fixtures with an LVS expectation
+1. `klt drc  <stem>.gds --deck gf180mcu`
+2. `klt extract <stem>.gds --deck gf180mcu --pdk <variant>`
+3. `klt lvs  <request>`  -- only for entries with an LVS expectation
 
 ...then compares each result against the expectation declared in
 `EXPECTATIONS` below. **The expectations are the test.** A tool upgrade that
@@ -34,6 +37,7 @@ the flow is the tool's public interface, not a Python API this repo pins.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import shutil
@@ -44,6 +48,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYOUT_DIR = REPO_ROOT / "layout"
 TESTCELL_DIR = LAYOUT_DIR / "testcells"
+CELLS_DIR = LAYOUT_DIR / "cells"
 REPORT_DIR = LAYOUT_DIR / "reports"
 
 #: Scratch space (git-ignored). Every tool that writes a file writes it here
@@ -57,6 +62,39 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTCELL_DIR))
 
 import build as testcells  # noqa: E402  (layout/testcells/build.py)
+
+
+def _load_build_module(name: str, path: Path):
+    """Load a `build.py` under a unique module name.
+
+    Every fixture/cell directory names its geometry module `build.py` (see
+    `layout/README.md`, "Adding a cell to the flow"), so a second plain
+    `import build` would just return the *first* one back out of
+    `sys.modules` under a different local alias -- `layout/testcells/build`
+    and `layout/cells/ro_stage/build` are two different files that happen to
+    share a bare module name, not the same module. Loading each one from its
+    own path, under its own `sys.modules` key, is what keeps them distinct.
+    """
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+ro_stage_cell = _load_build_module(
+    "layout_cells_ro_stage_build", CELLS_DIR / "ro_stage" / "build.py"
+)
+
+#: (relative-to-repo-root fixture/cell dir, its build module) for every
+#: `EXPECTATIONS` entry's `staleness` field -- see "Adding a cell to the
+#: flow" in layout/README.md. Each module owns its own `.gds` and exposes
+#: either `check_all()` (layout/testcells/build.py, several fixtures) or
+#: `check()` (a single-cell module like layout/cells/ro_stage/build.py).
+_STALENESS_CHECKS = (
+    ("layout/testcells", testcells.check_all),
+    ("layout/cells/ro_stage", ro_stage_cell.check),
+)
 
 #: The DRC deck / extraction deck name `klt` knows this PDK family by. Not
 #: the PDK *variant* (gf180mcuA..D) -- klt's curated decks are per-family.
@@ -148,6 +186,31 @@ EXPECTATIONS: dict[str, dict] = {
                 "topology": 1,
             },
             "error_count": 2,
+        },
+    },
+    "ro_stage": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and layout/cells/ro_stage/build.py
+        # for the geometry and why it is hand-drawn. `dir`/`top` override the
+        # `layout/testcells/`-and-`trng_tc_inv` default every other entry
+        # above uses; every stage function below reads them with that
+        # default, per "Adding a cell to the flow" in layout/README.md.
+        "why": (
+            "design/ro_array_core.spice's ro_stage (ring1 sizing): the "
+            "entropy source's repeated ring-stage cell must be DRC-clean "
+            "and LVS-match its hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/ro_stage",
+        "top": "ro_stage",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_stage.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's four devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
         },
     },
 }
@@ -293,32 +356,55 @@ def _run_klt(args: list[str]) -> dict:
     return payload
 
 
-def run_drc(stem: str) -> dict:
+def _fixture_dir(spec: dict) -> str:
+    """Repo-root-relative directory holding one `EXPECTATIONS` entry's `.gds`.
+
+    Defaults to `layout/testcells` (every flow-bringup fixture); a real
+    design cell overrides this with its own `dir`, e.g.
+    `layout/cells/ro_stage` -- see "Adding a cell to the flow" in
+    `layout/README.md`.
+    """
+    return spec.get("dir", "layout/testcells")
+
+
+def _fixture_top(spec: dict) -> str:
+    """The `.gds` top-cell name for one `EXPECTATIONS` entry.
+
+    Defaults to `testcells.TOP_CELL` (`trng_tc_inv`, shared by all three
+    fixtures there -- see `layout/testcells/build.py`'s own docstring on why
+    that name is shared). A real design cell overrides this with its own
+    `top`, matching its `.SUBCKT` name.
+    """
+    return spec.get("top", testcells.TOP_CELL)
+
+
+def run_drc(stem: str, spec: dict) -> dict:
     return _run_klt([
         "drc",
-        f"layout/testcells/{stem}.gds",
+        f"{_fixture_dir(spec)}/{stem}.gds",
         "--deck",
         DECK,
     ])
 
 
-def run_extract(stem: str, pdk_variant: str | None) -> dict:
+def run_extract(stem: str, spec: dict, pdk_variant: str | None) -> dict:
     """Extract into the scratch dir. The netlist is copied/diffed later.
 
     `layout/.work/` sits at the same depth as `layout/reports/`, so the
     relative paths *inside* an emitted artefact (notably the LVS request's
-    `../testcells/...`) mean the same thing from either directory. The one
-    field that does depend on where the file landed is the extract report's
-    own `netlist_path`, which `klt` echoes back from `-o`; `_committed_view`
-    below restates it before the report is written or compared.
+    `../testcells/...` / `../cells/<cell>/...`) mean the same thing from
+    either directory. The one field that does depend on where the file
+    landed is the extract report's own `netlist_path`, which `klt` echoes
+    back from `-o`; `_committed_view` below restates it before the report is
+    written or compared.
     """
     args = [
         "extract",
-        f"layout/testcells/{stem}.gds",
+        f"{_fixture_dir(spec)}/{stem}.gds",
         "--deck",
         DECK,
         "--top",
-        testcells.TOP_CELL,
+        _fixture_top(spec),
         "-o",
         f"layout/.work/{stem}.extracted.spice",
     ]
@@ -327,13 +413,17 @@ def run_extract(stem: str, pdk_variant: str | None) -> dict:
     return _run_klt(args)
 
 
-def lvs_request(stem: str, reference: str) -> dict:
-    """The LVS request document for one fixture.
+def lvs_request(stem: str, spec: dict, reference: str) -> dict:
+    """The LVS request document for one fixture/cell.
 
     Committed under `layout/reports/` so the exact invocation is
     reproducible by hand. Paths are relative to the request file's own
-    directory, which is how `klt lvs` resolves them.
+    directory, which is how `klt lvs` resolves them -- computed here from
+    `_fixture_dir(spec)` rather than hard-coded, so a `dir` override (a real
+    design cell living outside `layout/testcells/`) still resolves.
     """
+    rel_dir = os.path.relpath(str(REPO_ROOT / _fixture_dir(spec)), str(REPORT_DIR))
+    top = _fixture_top(spec)
     return {
         "_comment": (
             "Generated by layout/verify.py. Paths are relative to this file. "
@@ -341,21 +431,21 @@ def lvs_request(stem: str, reference: str) -> dict:
             f"{stem}.lvs-request.json --format json"
         ),
         "layout": {
-            "file": f"../testcells/{stem}.gds",
+            "file": f"{rel_dir}/{stem}.gds",
             "deck": DECK,
-            "top": testcells.TOP_CELL,
+            "top": top,
         },
         "reference": {
-            "netlist": f"../testcells/{reference}",
-            "top": testcells.TOP_CELL,
+            "netlist": f"{rel_dir}/{reference}",
+            "top": top,
         },
     }
 
 
-def run_lvs(stem: str, reference: str) -> dict:
+def run_lvs(stem: str, spec: dict, reference: str) -> dict:
     """Run LVS from a scratch copy of the request and return the report."""
     path = WORK_DIR / f"{stem}.lvs-request.json"
-    path.write_text(json.dumps(lvs_request(stem, reference), indent=2) + "\n")
+    path.write_text(json.dumps(lvs_request(stem, spec, reference), indent=2) + "\n")
     return _run_klt(["lvs", f"layout/.work/{stem}.lvs-request.json"])
 
 
@@ -381,7 +471,7 @@ def verify_fixture(stem: str, spec: dict, pdk_variant: str | None) -> tuple[dict
     print(f"  {stem} -- {spec['why']}")
 
     drc_expect = spec["drc"]
-    drc = run_drc(stem)
+    drc = run_drc(stem, spec)
     results["drc"] = drc
     _check(f"{stem} drc.status", drc_expect["status"], drc.get("status"), failures)
     _check(
@@ -391,7 +481,7 @@ def verify_fixture(stem: str, spec: dict, pdk_variant: str | None) -> tuple[dict
         failures,
     )
 
-    extract = run_extract(stem, pdk_variant)
+    extract = run_extract(stem, spec, pdk_variant)
     results["extract"] = extract
     print(
         f"    ok   {stem} extract: {extract.get('device_count')} devices, "
@@ -400,7 +490,7 @@ def verify_fixture(stem: str, spec: dict, pdk_variant: str | None) -> tuple[dict
 
     lvs_expect = spec.get("lvs")
     if lvs_expect:
-        lvs = run_lvs(stem, lvs_expect["reference"])
+        lvs = run_lvs(stem, spec, lvs_expect["reference"])
         results["lvs"] = lvs
         _check(f"{stem} lvs.status", lvs_expect["status"], lvs.get("status"), failures)
         _check(
@@ -604,11 +694,16 @@ def main(argv: list[str] | None = None) -> int:
     # scratch directory has to exist before the first invocation.
     WORK_DIR.mkdir(parents=True, exist_ok=True)
 
-    # A stale fixture invalidates every report downstream of it, so the
-    # geometry staleness guard runs first and hard-fails.
+    # A stale fixture (or cell) invalidates every report downstream of it,
+    # so the geometry staleness guard runs first, over every directory in
+    # `_STALENESS_CHECKS`, and hard-fails.
     print("== fixtures ==")
-    if testcells.check_all() != 0:
-        print("FAIL: committed .gds fixtures do not match layout/testcells/build.py")
+    stale = False
+    for label, check_fn in _STALENESS_CHECKS:
+        if check_fn() != 0:
+            print(f"FAIL: committed .gds under {label} does not match its build.py")
+            stale = True
+    if stale:
         return EXIT_FAIL
     print()
 
