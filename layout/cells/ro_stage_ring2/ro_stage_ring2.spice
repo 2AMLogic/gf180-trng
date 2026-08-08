@@ -1,0 +1,45 @@
+* ro_stage_ring2 -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* This is transcribed directly from design/xschem/ro_stage.sch's four
+* devices at ring2's own parameterisation, independent of the layout in
+* this directory, and `klt lvs` is asked to agree the drawn geometry
+* implements it.
+*
+* Device topology (design/ro_array_core.spice's `.subckt ro_stage`, at
+* ring2's own instantiation `xr2 ... wstv=0.240u lstv=2u` -- ring1's
+* ro_stage/ro_stage.spice draws the same topology at wstv=0.220u instead):
+*
+*   vddr --[Mph: g=vss, W=wstv, L=lstv]-- py --[Mp: g=a, W=0.44, L=0.28]-- y
+*   y    --[Mn:  g=a,   W=0.22, L=0.28]-- ny --[Mnt: g=vddr, W=wstv, L=lstv]-- vss
+*
+* Mph/Mnt are the always-on series "starve" devices (gate tied to the
+* opposite rail); Mp/Mn are the switching pair. Device sizes must agree
+* with layout/cells/ro_stage_ring2/build.py's W_STARVE/L_STARVE/
+* W_SWITCH_P/W_SWITCH_N/L_SWITCH -- `klt lvs` compares W and L as device
+* properties.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see layout/README.md, "What the curated decks do and do not
+* check" -- the same approximation layout/cells/ro_stage/ro_stage.spice
+* already documents):
+*   - NMOS bulk is the deck's substrate global, `vsubs` -- not the `vss`
+*     design/xschem/ro_stage.sch itself wires Mn/Mnt's bulk to.
+*   - PMOS bulk is a floating net: the curated deck does not tie an Nwell to
+*     the tap inside it, so the well is an unnamed net picking up whatever
+*     Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is that net --
+*     not the `vddr` design/xschem/ro_stage.sch wires Mph/Mp's bulk to -- and
+*     it is deliberately connected to nothing else. Both PMOS devices here
+*     sit inside the *same* drawn Nwell (this cell draws no well split and
+*     no well tap), so they share the one floating net rather than each
+*     getting its own -- `klt extract` confirms this (both pfets' `b`
+*     terminal lands on the same anonymous net).
+
+.SUBCKT ro_stage_ring2 a y vddr vss vsubs
+MPH py vss vddr NWELL_FLOAT pfet L=2.0U W=0.24U
+MP y a py NWELL_FLOAT pfet L=0.28U W=0.44U
+MN y a ny vsubs nfet L=0.28U W=0.22U
+MNT ny vddr vss vsubs nfet L=2.0U W=0.24U
+.ENDS ro_stage_ring2

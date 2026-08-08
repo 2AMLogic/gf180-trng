@@ -1,0 +1,18 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell ro_stage_ring2
+* pin a
+* pin vddr
+* pin vss
+* pin vsubs
+* pin y
+.SUBCKT ro_stage_ring2 a vddr vss vsubs y
+* device instance $1 r0 *1 0.84,0.22 nfet
+X$1 \$5 a y vsubs nfet_03v3 L=0.28U W=0.22U
+* device instance $2 r0 *1 2.38,0.22 nfet
+X$2 vss vddr \$5 vsubs nfet_03v3 L=2U W=0.24U
+* device instance $3 r0 *1 2.38,1.86 pfet
+X$3 vddr vss \$6 \$7 pfet_03v3 L=2U W=0.24U
+* device instance $4 r0 *1 0.84,1.86 pfet
+X$4 \$6 a y \$7 pfet_03v3 L=0.28U W=0.44U
+.ENDS ro_stage_ring2

@@ -128,6 +128,14 @@ layout/
       build.py                 hand-drawn geometry + the geometric reasoning behind it
       ro_stage.gds              the drawn cell (timestamps normalised)
       ro_stage.spice            hand-written LVS reference (schematic side)
+    ro_stage_ring2/
+      build.py                 ring2 sizing (wstv=0.240u) -- independently drawn, see cells/README.md
+      ro_stage_ring2.gds        the drawn cell (timestamps normalised)
+      ro_stage_ring2.spice      hand-written LVS reference (schematic side)
+    ro_nand2/
+      build.py                 the ring's one stoppable stage -- hand-drawn geometry + why
+      ro_nand2.gds              the drawn cell (timestamps normalised)
+      ro_nand2.spice            hand-written LVS reference (schematic side)
   reports/
     environment.json         klt version, PDK provenance, platform
     <fixture>.drc.json       verbatim `klt drc` output
