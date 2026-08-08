@@ -16,11 +16,13 @@ a deterministic SPICE netlist export, plus four digital directories —
 [`conditioner/`](design/conditioner/), [`health_test/`](design/health_test/),
 [`interface/`](design/interface/) and the [`trng_top/`](design/trng_top/)
 integration — each a behavioural model with synthesisable RTL checked against
-it. `layout/` is **no longer empty**, but it does not yet contain the design:
-it holds a working DRC/LVS flow with its committed reports, and the entropy
-source's floorplan abstract. Of the four committed GDS streams, three are flow
-fixtures and the fourth is that floorplan — whose regions are empty. **No cell
-of this design has been drawn.** The specification table below was
+it. `layout/` is **no longer empty**, and it now contains a first piece of the
+design: a working DRC/LVS flow with its committed reports, the entropy
+source's floorplan abstract, and one hand-drawn, DRC-clean, LVS-matching
+design cell — [`ro_stage`](layout/cells/ro_stage/), the entropy source's
+repeated ring-stage. It is one cell of many the design needs, not the block:
+see [`layout/cells/README.md`](layout/cells/README.md) for what is drawn and
+what is explicitly still deferred. The specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
 placeholders*, and the table labels which.
