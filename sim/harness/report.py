@@ -29,6 +29,7 @@ import re
 import statistics
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 from . import runner
 from .corners import PvtPoint
@@ -168,6 +169,41 @@ def reserve_record_stems(records_dir: Path, date: str, slug: str, count: int) ->
             continue  # another invocation owns this one
         stems.append(stem)
     return stems
+
+
+def finalize_record(
+    records_dir: Path,
+    date: str,
+    slug: str,
+    render: Callable[[str, Path], str],
+) -> Path:
+    """Allocate a record stem, hand its raw directory to ``render``, and
+    write the markdown text it returns to ``records/<stem>.md``.
+
+    This is the "allocate -> mkdir -> write artifacts -> guard -> write
+    markdown" skeleton shared by every ``sim/tb/*/run_demo.py`` script:
+    ``render(stem, raw_dir)`` does the testbench-specific work (writing raw
+    artifact files under ``raw_dir``, hashing them into a ``raw_files``
+    list, and rendering the frontmatter/body), and this function owns the
+    bookkeeping around it. Kept separate from ``write_record`` above, which
+    serves the ``build_record``/``render_record`` pipeline used by
+    ``sim/run_corners.py`` and takes an already-built record dict rather
+    than a render callback.
+
+    Raises ``RecordExists`` if ``records/<stem>.md`` already exists --
+    normally prevented by ``allocate_record_stem`` minting an unused stem,
+    but checked explicitly (as every caller did before this helper existed)
+    since ``render`` runs between allocation and the check.
+    """
+    stem = allocate_record_stem(records_dir, date, slug)
+    raw_dir = records_dir / RAW_DIRNAME / stem
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    text = render(stem, raw_dir)
+    path = records_dir / f"{stem}.md"
+    if path.exists():  # pragma: no cover - allocate_record_stem prevents this
+        raise RecordExists(f"{path} already exists")
+    path.write_text(text)
+    return path
 
 
 def _voltage_label(vdd: float, nominal: float) -> str:
