@@ -4,18 +4,23 @@ This directory holds the layout verification flow: [klayout-tools][klt]
 (`klt`) driving gf180mcu DRC and LVS, and the fixtures that prove the flow
 catches what it is supposed to catch.
 
-**There is no design layout here yet.** The only cells in this directory are
-a trivial CMOS inverter and two deliberately broken copies of it. They exist
-to demonstrate the flow, and nothing in `layout/reports/` should be read as
-a statement about the TRNG.
+**The cells in this directory are still overwhelmingly flow bring-up, not
+the design.** `layout/testcells/` is a trivial CMOS inverter and two
+deliberately broken copies of it, drawn to demonstrate the DRC/LVS flow —
+nothing in `layout/reports/` under those three names should be read as a
+statement about the TRNG.
 
-**[`layout/floorplan/`](floorplan/) is the one thing here that is about the
-TRNG** — the entropy source's isolation rationale (#16) and the floorplan
-abstract that carries it: four guarded regions, real generated guard rings,
-DRC'd as one stream, with an area rollup against the `< 0.05 mm²` row. Its
-regions are *empty*, so it is a floorplan and not a layout, and
+**[`layout/floorplan/`](floorplan/) and [`layout/cells/`](cells/) are the
+two things here that are about the TRNG.** `floorplan/` is the entropy
+source's isolation rationale (#16) and the floorplan abstract that carries
+it: four guarded regions, real generated guard rings, DRC'd as one stream,
+with an area rollup against the `< 0.05 mm²` row. Its regions are *empty*,
+so it is a floorplan and not a layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a clean
-DRC result over it does and does not mean.
+DRC result over it does and does not mean. `cells/` (#106) is where drawn
+design cells land, one at a time, each DRC-clean and LVS-matching before the
+next is started — [`cells/README.md`](cells/README.md) says which cells are
+drawn and which of the block's many remaining cells are not.
 
 The flow is stood up before the layout it will check, for the same reason
 `sim/` was stood up before the first result: a verification flow that first
@@ -117,6 +122,12 @@ layout/
     trng_tc_inv_drcbad.gds   ... with two deliberate geometry defects
     trng_tc_inv_lvsbad.gds   ... with a deliberate connectivity defect
     trng_tc_inv.spice        hand-written LVS reference (schematic side)
+  cells/
+    README.md                 scope: which design cells are drawn, which are deferred (#106)
+    ro_stage/
+      build.py                 hand-drawn geometry + the geometric reasoning behind it
+      ro_stage.gds              the drawn cell (timestamps normalised)
+      ro_stage.spice            hand-written LVS reference (schematic side)
   reports/
     environment.json         klt version, PDK provenance, platform
     <fixture>.drc.json       verbatim `klt drc` output
@@ -308,11 +319,16 @@ change. Nothing else in any report is rewritten.
   regenerated fails before anything downstream is trusted. (The GDSII writer
   zeroes every timestamp field for exactly this reason.)
 
-This is a rule for *this* directory's flow fixtures. When a real design cell
-enters the flow (#16, #17) and its DRC/LVS status becomes a claim the spec
-leans on, whether that claim is recorded as an append-only record under
-`sim/records/`'s rules — or something equivalent — is a decision to take
-then, in a decision record, not a default to inherit by accident.
+This is a rule for *this* directory's flow fixtures. A real design cell has
+now entered the flow (`layout/cells/ro_stage/`, #106) — its reports keep the
+same "regenerated, not append-only" convention as everything above, as the
+default this document already inherits, rather than a considered choice for
+a claim the spec leans on. Whether a design cell's DRC/LVS-clean status
+should instead be recorded as an append-only record under `sim/records/`'s
+rules — or something equivalent — is still the open decision this paragraph
+already flagged, now with a live cell to decide it about rather than a
+hypothetical one; it belongs in a decision record, not a default inherited
+by accident.
 
 ---
 
@@ -321,12 +337,18 @@ then, in a decision record, not a default to inherit by accident.
 1. Put the stream under `layout/` and its schematic-side reference netlist
    next to it. Give the layout's **top cell the same name** as the
    reference's `.SUBCKT` (Tool friction #2 — no longer required, still
-   advisable).
+   advisable). A real design cell (as opposed to a flow-bringup fixture)
+   lands under `layout/cells/<cell>/`, not `layout/testcells/` — see
+   [`cells/README.md`](cells/README.md) and `cells/ro_stage/` for a worked
+   example.
 2. Add an entry to `EXPECTATIONS` in `layout/verify.py` saying what the flow
    must report — including, for a design cell, `status: clean`,
    `status: match`, and `error_count: 0`. Run it once to learn which
    deck-level warnings it carries, then pin those counts too rather than
-   ignoring them.
+   ignoring them. An entry outside `layout/testcells/` needs its own `dir`
+   (and, if its top cell is not `trng_tc_inv`, `top`) key — `run_drc`/
+   `run_extract`/`lvs_request` all read those with the testcells-shaped
+   default, so an entry that omits them still behaves exactly as before.
 3. Run `python3 layout/verify.py --write` and commit the reports with the
    layout.
 
