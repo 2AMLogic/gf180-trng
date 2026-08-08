@@ -1,13 +1,13 @@
 ---
-record: 2026-08-01-conditioned-stream-battery-01
-date: 2026-08-01T22:58:28Z
+record: 2026-08-08-conditioned-stream-battery-01
+date: 2026-08-08T14:58:22Z
 status: valid
 
 level: behavioral (see spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md)
 
 testbench:
   path: sim/tb/conditioned-stream-battery/run_battery.py
-  sha: 33b95f37b9eb761069fd50b714b2955c3abc6f1b
+  sha: a276edf489b25ffd1199135b23afaa8e084a4aae
 netlist:
   path: design/conditioner/crc32_conditioner.py
   sha: 3da892d7ebcf65ba703cc8ef55088d3cd9149206
@@ -15,7 +15,7 @@ netlist:
     Behavioral-level record: the DUT is the normative conditioner model
     (input) composed with sim/tools/statistical_battery.py (analysis),
     not a schematic-derived netlist.
-repo_commit: dc8570a59d334bdeec04c2e284ed2dbe14a6e0de-dirty
+repo_commit: dcd5085f281098a2af74461eeb63ca63833b80c3-dirty
 
 pdk: n/a (behavioral-level record -- no device models are instantiated, per DR-0009)
 pdk.models:
@@ -23,9 +23,9 @@ pdk.models:
 
 tool:
   ngspice: "n/a (behavioral-level record -- ngspice is not invoked)"
-  python: "3.14.6 (CPython)"
+  python: "3.12.3 (CPython)"
   statistical_battery_sha: 49b5815c77d00ce5724cfe7ebca0ac2a32d3cba8
-  platform: macOS-26.6-arm64-arm-64bit-Mach-O
+  platform: Linux-7.0.0-1010-aws-x86_64-with-glibc2.39
 
 corner:
   process: n/a (behavioral-level record -- no device models, so no process corner exists; DR-0009 forbids citing this record for any P/V/T-dependent claim)
@@ -59,12 +59,12 @@ battery:
   alpha: 0.01
 
 raw:
-  path: sim/records/raw/2026-08-01-conditioned-stream-battery-01/
+  path: sim/records/raw/2026-08-08-conditioned-stream-battery-01/
   files:
     - raw_bits.bin  sha256:e9344cfaa9aeb015c1a5a504fe701fc43f84c6dd0a8f3eafa72bcfda048fb23f
     - cond_words.hex  sha256:767be8482eb91328fbe4726b3f1a9bfe90b89f73055c5b34d2997349243013ed
-    - summary.json  sha256:a82c247a93419c8bbc042a73a4b4bd60816854576d36713b5c96a14d1352cc60
-wall_time: 1.1s
+    - summary.json  sha256:d506ad7b52a61624d724d42394b0c251ae0df657d64da6957e9b028f5afe70bb
+wall_time: 0.0s
 ---
 
 ## Result
@@ -120,7 +120,7 @@ a re-run mints a new stem, it never overwrites this one.
   uses, at the design's own H0 = 0.5 target, chosen because a transistor-
   derived stream long enough to matter does not exist and is not affordable
   -- `sim/tb/sampler-array-digitize` (issue #9) yields ten raw bits per
-  seed, 1/128 of the 32768 raw bits this run needs, and DR-0009's own
+  seed, 1/3277 of the 32768 raw bits this run needs, and DR-0009's own
   cost table prices one *conditioner block* (256 raw bits) at ~1.9 days of
   ngspice, let alone 32768. See `sim/characterization-raw-min-entropy-
   and-battery.md` for the full accounting. Nothing here is a measurement of

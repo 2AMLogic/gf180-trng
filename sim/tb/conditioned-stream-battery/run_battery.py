@@ -289,7 +289,7 @@ a re-run mints a new stem, it never overwrites this one.
   uses, at the design's own H0 = 0.5 target, chosen because a transistor-
   derived stream long enough to matter does not exist and is not affordable
   -- `sim/tb/sampler-array-digitize` (issue #9) yields ten raw bits per
-  seed, 1/128 of the {RAW_BITS} raw bits this run needs, and DR-0009's own
+  seed, 1/3277 of the {RAW_BITS} raw bits this run needs, and DR-0009's own
   cost table prices one *conditioner block* (256 raw bits) at ~1.9 days of
   ngspice, let alone {RAW_BITS}. See `sim/characterization-raw-min-entropy-
   and-battery.md` for the full accounting. Nothing here is a measurement of

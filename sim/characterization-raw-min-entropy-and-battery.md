@@ -224,7 +224,7 @@ already uses, at the design's own `H0 = 0.5` target, per [DR-0009] rule 4
 block, never about the source"). See
 [`sim/tb/conditioned-stream-battery/`](tb/conditioned-stream-battery/) (new)
 for the testbench and
-[`2026-08-01-conditioned-stream-battery-01`](records/2026-08-01-conditioned-stream-battery-01.md)
+[`2026-08-08-conditioned-stream-battery-01`](records/2026-08-08-conditioned-stream-battery-01.md)
 for the evidence record.
 
 ### Result
