@@ -1,0 +1,76 @@
+* sampler_dff -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* This is transcribed directly from design/sampler_core.spice's
+* `.subckt sampler_dff` (from design/xschem/sampler_dff.sch), independent
+* of the layout in this directory, and `klt lvs` is asked to agree the
+* drawn geometry implements it.
+*
+* Device topology (design/sampler_core.spice's `.subckt sampler_dff`, at
+* that file's own sizing -- every L=0.28u; W=0.22u for the seven
+* clock/data-path NMOS legs listed first below, W=0.44u everywhere else):
+*
+*   MPC/MNC:     clkb = NOT(clk)
+*   MTDP/MTDN:   master transmission gate: d -> m, gated by clk/clkb
+*   MIMPA/MIMPB/MIMNA/MIMNB: master cross-coupled latch (mb = NOT(m));
+*                MIMPB/MIMNB gated by rst_n -- the async set pulling mb
+*                high (DR-0014)
+*   MIM2P/MIM2N: mc = NOT(mb)
+*   MFMP/MFMN:   master feedback transmission gate: mc -> m, gated by
+*                clkb/clk (closes the latch opposite-phase from MTDP/MTDN)
+*   MTSP/MTSN:   slave transmission gate: mb -> s, gated by clkb/clk
+*   MISP/MISN:   q = NOT(s)
+*   MIS2PA/MIS2PB/MIS2NA/MIS2NB: slave cross-coupled latch (qb = NOT(q));
+*                MIS2PB/MIS2NB gated by rst_n -- the async reset's second
+*                stage, holding q low
+*   MFSP/MFSN:   slave feedback transmission gate: qb -> s, gated by
+*                clk/clkb
+*
+* Device sizes must agree with layout/cells/sampler_dff/build.py's
+* NMOS/PMOS device lists -- `klt lvs` compares W and L as device
+* properties, not just topology.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see layout/README.md, "What the curated decks do and do not
+* check", and layout/cells/ro_stage/ro_stage.spice's own header for the
+* full account):
+*   - Every NMOS bulk is the deck's substrate global, `vsubs` -- not the
+*     `vss` design/xschem/sampler_dff.sch itself wires every NMOS's bulk
+*     to.
+*   - Every PMOS bulk is a floating net: the curated deck does not tie an
+*     Nwell to the tap inside it, so the well is an unnamed net picking up
+*     whatever Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is
+*     that net -- not the `vdd` design/xschem/sampler_dff.sch itself wires
+*     every PMOS's bulk to. All eleven PMOS devices here sit inside the
+*     *same* drawn Nwell (layout/cells/_mos_row.py's `build_cell` draws
+*     one Nwell rectangle for the whole PMOS row), so they share the one
+*     floating net rather than each getting its own -- `klt extract`
+*     confirms this (every pfet's `b` terminal lands on the same anonymous
+*     net).
+
+.SUBCKT sampler_dff d clk rst_n q vdd vss vsubs
+MNC clkb clk vss vsubs nfet L=0.28U W=0.22U
+MTDN d clkb m vsubs nfet L=0.28U W=0.22U
+MIM2N mc mb vss vsubs nfet L=0.28U W=0.22U
+MFMN mc clk m vsubs nfet L=0.28U W=0.22U
+MTSN mb clk s vsubs nfet L=0.28U W=0.22U
+MISN q s vss vsubs nfet L=0.28U W=0.22U
+MFSN qb clkb s vsubs nfet L=0.28U W=0.22U
+MIMNA mb m mmid vsubs nfet L=0.28U W=0.44U
+MIMNB mmid rst_n vss vsubs nfet L=0.28U W=0.44U
+MIS2NA qb q s2mid vsubs nfet L=0.28U W=0.44U
+MIS2NB s2mid rst_n vss vsubs nfet L=0.28U W=0.44U
+MPC clkb clk vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MTDP d clk m NWELL_FLOAT pfet L=0.28U W=0.44U
+MIMPA mb m vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MIMPB mb rst_n vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MIM2P mc mb vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MFMP mc clkb m NWELL_FLOAT pfet L=0.28U W=0.44U
+MTSP mb clkb s NWELL_FLOAT pfet L=0.28U W=0.44U
+MISP q s vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MIS2PA qb q vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MIS2PB qb rst_n vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MFSP qb clk s NWELL_FLOAT pfet L=0.28U W=0.44U
+.ENDS sampler_dff

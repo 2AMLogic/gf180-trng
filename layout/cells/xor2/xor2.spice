@@ -1,0 +1,56 @@
+* xor2 -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* This is transcribed directly from design/ro_array_core.spice's
+* `.subckt xor2` (from design/xschem/xor2.sch), independent of the layout
+* in this directory, and `klt lvs` is asked to agree the drawn geometry
+* implements it.
+*
+* Device topology (design/ro_array_core.spice's `.subckt xor2`, at that
+* file's own sizing -- every L=0.28u):
+*
+*   Input inverters:
+*     MPIA/MNIA: an = NOT(a)   (W=0.44/0.22)
+*     MPIB/MNIB: bn = NOT(b)   (W=0.44/0.22)
+*   XOR core:
+*     MP1/MP2:   mid pulled to vdd through a or b        (W=0.88, parallel)
+*     MP3/MP4:   y pulled to mid through an or bn         (W=0.88, parallel)
+*     MN1/MN2:   y pulled to vss through a THEN b         (W=0.44, series)
+*     MN3/MN4:   y pulled to vss through an THEN bn       (W=0.44, series)
+*
+* Device sizes must agree with layout/cells/xor2/build.py's NMOS/PMOS
+* device lists -- `klt lvs` compares W and L as device properties, not
+* just topology.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see layout/README.md, "What the curated decks do and do not
+* check", and layout/cells/ro_stage/ro_stage.spice's own header for the
+* full account):
+*   - Every NMOS bulk is the deck's substrate global, `vsubs` -- not the
+*     `vss` design/xschem/xor2.sch itself wires every NMOS's bulk to.
+*   - Every PMOS bulk is a floating net: the curated deck does not tie an
+*     Nwell to the tap inside it, so the well is an unnamed net picking up
+*     whatever Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is
+*     that net -- not the `vdd` design/xschem/xor2.sch wires every PMOS's
+*     bulk to. All six PMOS devices here sit inside the *same* drawn Nwell
+*     (layout/cells/_mos_row.py's `build_cell` draws one Nwell rectangle
+*     for the whole PMOS row), so they share the one floating net rather
+*     than each getting its own -- `klt extract` confirms this (every
+*     pfet's `b` terminal lands on the same anonymous net).
+
+.SUBCKT xor2 a b y vdd vss vsubs
+MNIA an a vss vsubs nfet L=0.28U W=0.22U
+MNIB bn b vss vsubs nfet L=0.28U W=0.22U
+MN1 y a s1 vsubs nfet L=0.28U W=0.44U
+MN2 s1 b vss vsubs nfet L=0.28U W=0.44U
+MN3 y an s2 vsubs nfet L=0.28U W=0.44U
+MN4 s2 bn vss vsubs nfet L=0.28U W=0.44U
+MPIA an a vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MPIB bn b vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MP1 mid a vdd NWELL_FLOAT pfet L=0.28U W=0.88U
+MP2 mid b vdd NWELL_FLOAT pfet L=0.28U W=0.88U
+MP3 y an mid NWELL_FLOAT pfet L=0.28U W=0.88U
+MP4 y bn mid NWELL_FLOAT pfet L=0.28U W=0.88U
+.ENDS xor2

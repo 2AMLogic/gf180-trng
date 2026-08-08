@@ -85,6 +85,10 @@ def _load_build_module(name: str, path: Path):
 ro_stage_cell = _load_build_module(
     "layout_cells_ro_stage_build", CELLS_DIR / "ro_stage" / "build.py"
 )
+xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
+sampler_dff_cell = _load_build_module(
+    "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
+)
 
 #: (relative-to-repo-root fixture/cell dir, its build module) for every
 #: `EXPECTATIONS` entry's `staleness` field -- see "Adding a cell to the
@@ -94,6 +98,8 @@ ro_stage_cell = _load_build_module(
 _STALENESS_CHECKS = (
     ("layout/testcells", testcells.check_all),
     ("layout/cells/ro_stage", ro_stage_cell.check),
+    ("layout/cells/xor2", xor2_cell.check),
+    ("layout/cells/sampler_dff", sampler_dff_cell.check),
 )
 
 #: The DRC deck / extraction deck name `klt` knows this PDK family by. Not
@@ -209,6 +215,58 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "xor2": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and layout/cells/xor2/build.py
+        # for the geometry and why it is hand-drawn. `dir`/`top` override
+        # the `layout/testcells/`-and-`trng_tc_inv` default, per
+        # "Adding a cell to the flow" in layout/README.md.
+        "why": (
+            "design/ro_array_core.spice's xor2 (the entropy source's "
+            "combiner gate) must be DRC-clean and LVS-match its "
+            "hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/xor2",
+        "top": "xor2",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "xor2.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's twelve devices are all MOS, so nothing else is
+            # declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "sampler_dff": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and
+        # layout/cells/sampler_dff/build.py for the geometry and why it is
+        # hand-drawn. `dir`/`top` override the `layout/testcells/`-and-
+        # `trng_tc_inv` default, per "Adding a cell to the flow" in
+        # layout/README.md.
+        "why": (
+            "design/sampler_core.spice's sampler_dff (the sampler's "
+            "transmission-gate master-slave DFF, instantiated four times "
+            "unmodified in sampler_core) must be DRC-clean and LVS-match "
+            "its hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/sampler_dff",
+        "top": "sampler_dff",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "sampler_dff.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's twenty-two devices are all MOS, so nothing else is
+            # declared.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "error_count": 0,
         },

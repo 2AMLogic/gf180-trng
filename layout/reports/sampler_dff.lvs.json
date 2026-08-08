@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../cells/sampler_dff/sampler_dff.gds",
+  "reference": "../cells/sampler_dff/sampler_dff.spice",
+  "top": "sampler_dff",
+  "status": "match",
+  "mismatch_count": 3,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "topology": 1
+  },
+  "counts": {
+    "nets": {
+      "layout": 16,
+      "reference": 16,
+      "matched": 16
+    },
+    "devices": {
+      "layout": 22,
+      "reference": 22,
+      "matched": 22
+    },
+    "pins": {
+      "layout": 7,
+      "reference": 7,
+      "matched": 7
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "45d8119d2154934be3c90487025e72a83c1e59b1c3a057d874df3136db62e69f",
+    "reference_sha256": "e88b507bfb98cc27b27fb9bec11228b0a1058ad06d66ee0623db7e90c5baad8c",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "11 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "11 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "clk",
+      "reference": "CLK",
+      "pin": true
+    },
+    {
+      "layout": "$4",
+      "reference": "CLKB",
+      "pin": false
+    },
+    {
+      "layout": "d",
+      "reference": "D",
+      "pin": true
+    },
+    {
+      "layout": "$5",
+      "reference": "M",
+      "pin": false
+    },
+    {
+      "layout": "$7",
+      "reference": "MB",
+      "pin": false
+    },
+    {
+      "layout": "$8",
+      "reference": "MC",
+      "pin": false
+    },
+    {
+      "layout": "$12",
+      "reference": "MMID",
+      "pin": false
+    },
+    {
+      "layout": "$15",
+      "reference": "NWELL_FLOAT",
+      "pin": false
+    },
+    {
+      "layout": "q",
+      "reference": "Q",
+      "pin": true
+    },
+    {
+      "layout": "$11",
+      "reference": "QB",
+      "pin": false
+    },
+    {
+      "layout": "rst_n",
+      "reference": "RST_N",
+      "pin": true
+    },
+    {
+      "layout": "$9",
+      "reference": "S",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "S2MID",
+      "pin": false
+    },
+    {
+      "layout": "vdd",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "vss",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "vsubs",
+      "reference": "VSUBS",
+      "pin": true
+    }
+  ]
+}
