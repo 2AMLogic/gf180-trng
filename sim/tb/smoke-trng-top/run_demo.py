@@ -287,20 +287,14 @@ via `supersedes` (see `sim/README.md`).
 
 def write_record(result: dict, records_dir: Path, git: dict) -> Path:
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    stem = report.allocate_record_stem(records_dir, date, SLUG)
-    raw_dir = records_dir / "raw" / stem
-    raw_dir.mkdir(parents=True, exist_ok=True)
 
-    summary = {k: v for k, v in result.items()}
-    (raw_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
+    def render(stem: str, raw_dir: Path) -> str:
+        summary = {k: v for k, v in result.items()}
+        (raw_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
+        raw_files = [(name, report.sha256_file(raw_dir / name)) for name in ("summary.json",)]
+        return _frontmatter(stem, result, git, raw_files) + "\n" + _body(result)
 
-    raw_files = [(name, report.sha256_file(raw_dir / name)) for name in ("summary.json",)]
-
-    path = records_dir / f"{stem}.md"
-    if path.exists():  # pragma: no cover - allocate_record_stem prevents this
-        raise report.RecordExists(f"{path} already exists")
-    path.write_text(_frontmatter(stem, result, git, raw_files) + "\n" + _body(result))
-    return path
+    return report.finalize_record(records_dir, date, SLUG, render)
 
 
 def main(argv=None) -> int:
