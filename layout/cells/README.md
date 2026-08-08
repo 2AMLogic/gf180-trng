@@ -13,6 +13,8 @@ honestly-scoped unit rather than claimed across the whole block at once.
 | cell | source | status |
 |---|---|---|
 | [`ro_stage/`](ro_stage/) | `design/ro_array_core.spice`'s `.subckt ro_stage` (`design/xschem/ro_stage.sch`), at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage.*` |
+| [`xor2/`](xor2/) | `design/ro_array_core.spice`'s `.subckt xor2` (`design/xschem/xor2.sch`) — the combiner gate | DRC-clean, LVS-match, 0 errors — see `layout/reports/xor2.*` |
+| [`sampler_dff/`](sampler_dff/) | `design/sampler_core.spice`'s `.subckt sampler_dff` (`design/xschem/sampler_dff.sch`) — the sampler's transmission-gate master-slave DFF, instantiated four times unmodified in `sampler_core` | DRC-clean, LVS-match, 0 errors — see `layout/reports/sampler_dff.*` |
 
 `ro_stage` is the entropy source's repeated ring-stage: ten instances plus
 one `ro_nand2` make one `ro_ring11`, and two `ro_ring11`s (plus a combiner
@@ -22,6 +24,19 @@ it is the block the isolation rationale (`layout/floorplan/README.md`) is
 about — the place a drawn-geometry mistake (an isolation gap, a
 mis-sized starve device) is most likely to degrade entropy quality without
 DRC/LVS ever being able to see it, per issue #106's own framing.
+
+`xor2` and `sampler_dff` ([#109][gf109]) are the two cells that make up the
+`combiner_sampler` guarded region's contents: `xor2` combines ring1's and
+ring2's buffered outputs into `xo`, and `sampler_dff` (drawn once, reused
+four times unplaced — see "What is explicitly not here yet" below) is the
+sampler's raw-bit/raw-valid/per-ring-liveness flip-flop, DR-0014's async
+reset included. At twelve and twenty-two devices respectively they are
+larger than `ro_stage`'s four, so both share a hand-drawn "gate array"
+layout engine (`layout/cells/_mos_row.py`) instead of each hand-placing its
+own coordinates from scratch — see that module's own docstring for the
+layout technique (an independent-device gate array plus a two-layer
+Manhattan routing grid) and why it generalises `ro_stage`'s dog-boned-pad
+technique rather than replacing it.
 
 ## Why hand-drawn, and why one cell at a time
 
@@ -60,8 +75,6 @@ klayout-tools — none of the gaps below are tool gaps):
   starve widths specifically so the rings are *not* frequency-matched
   (`layout/floorplan/README.md`, "Mechanism 1"), so ring2 needs its own
   drawn cell, not a copy of this one relabelled.
-- **`xor2`** (the combiner) and **`sampler_dff`** (the sampler,
-  instantiated four times in `combiner_sampler`) — [#109][gf109].
 - **Assembling ten `ro_stage`s plus one `ro_nand2` into `ro_ring11`**, and
   placing the result — plus the combiner and samplers — inside the #16
   floorplan's guarded regions (`layout/floorplan/trng_floorplan.gds`) —
