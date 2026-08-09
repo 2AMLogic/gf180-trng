@@ -491,14 +491,6 @@ def _sections(inventory):
         yield counts, overrides
 
 
-def _flatten(inventory) -> dict[str, int]:
-    total: dict[str, int] = {}
-    for counts, _ov in _sections(inventory):
-        for suffix, n in counts.items():
-            total[suffix] = total.get(suffix, 0) + n
-    return total
-
-
 def _clock_pin_cap(cell: LibertyCell) -> float:
     for name, cap in cell.pin_caps.items():
         if name.upper() in ("CLK", "CK", "C"):
