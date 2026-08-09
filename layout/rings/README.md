@@ -21,9 +21,11 @@ translated) plus one more `klt draw` stream carrying the inter-cell
 metal1/metal2 wiring this assembly step adds. See
 [`ro_ring11/build.py`](ro_ring11/build.py)'s own module docstring for the
 full account: why the wiring is hand-routed rather than `gen-compose`'s own
-`connectivity[]` router (same-side-I/O cells the router cannot chain
-without rotation/mirroring support it does not have — filed as
-klayout-tools friction from that module), the two-metal-layer plan (metal1
+`connectivity[]` router (`ro_stage` puts both `a` and `y` on its west side,
+so every chain link is a *same-facing* port pair — the case the router
+detects and rejects but cannot route around, with no orientation, waypoint,
+or routing-channel control to work around it; filed generically as
+[klayout-tools#634][klt634]), the two-metal-layer plan (metal1
 for the ring's own `a`/`y` chain, metal2 + via1 for the `vddr`/`vss`
 rails), and the small maze-routed escape `ro_nand2`'s own dense internal
 metal1 needs.
@@ -64,3 +66,4 @@ metal1 needs.
 
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
+[klt634]: https://github.com/2AMLogic/klayout-tools/issues/634

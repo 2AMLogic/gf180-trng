@@ -53,30 +53,37 @@ Why the wiring is hand-routed, not `gen-compose`'s own `connectivity[]`
 `gen-compose`'s router (`route_two_pin` in klayout-tools' own
 `gen_compose.py`) rejects a route whose backbone would "plow through" a
 block's own interior past a small port-edge margin (`docs/cli/gen-
-compose.md`, "Obstacle-overlap check"). `ro_stage`'s own drawn geometry
-(`layout/cells/ro_stage/build.py`) puts *both* `a` (input) and `y`
-(output) on the cell's west side, with `vddr`/`vss` on the east -- a
-same-side-I/O layout the router has no orientation/mirroring option to
-work around (`gen-compose` does not support rotation or mirroring at all,
-only translation), so a straight chain of these cells is not routable by
-`connectivity[]` regardless of block spacing: escaping from `y`'s own west
-pad and looping back to the next cell's own west-side `a` pad means
-crossing that first cell's own east-side body, exactly the crossing check
-5 forbids. `ro_nand2` compounds this with genuinely dense internal
-metal1 (five separate full-width-ish ties: the `py`/`py2` bridge, the
-`vddr`/`vss` risers) that leaves no straight vertical column clear from its
-`a`/`y` pads out past `Y=3.10` (`ro_nand2`'s own cell top) -- see
+compose.md`, "Obstacle-overlap check", klayout-tools#199). `ro_stage`'s
+own drawn geometry (`layout/cells/ro_stage/build.py`) puts *both* `a`
+(input) and `y` (output) on the cell's west side, with `vddr`/`vss` on the
+east. Every `y -> a` link in the chain is therefore a *same-facing* port
+pair, which is exactly the case that check rejects: both stubs leave
+westward, so `manhattan_backbone`'s midpoint jog -- the only backbone
+shape the router draws -- lands inside the source cell's own bbox. No
+spacing, port ordering, or placement strategy changes that, and the
+documented workaround for the case ("wire `connectivity[]` between
+*opposite*-facing port pairs only") does not apply to a ring whose
+connectivity is fixed by `design/ro_array_core.spice`. `ro_nand2`
+compounds this with genuinely dense internal metal1 (five separate
+full-width-ish ties: the `py`/`py2` bridge, the `vddr`/`vss` risers) that
+leaves no straight vertical column clear from its `a`/`y` pads out past
+`Y=3.10` (`ro_nand2`'s own cell top) -- see
 `_NAND_A_WAYPOINTS`/`_NAND_Y_WAYPOINTS` below.
 
-This is filed as klayout-tools friction (issue linked from
-`layout/rings/README.md`) rather than worked around silently: the general
-capability gap is real (a router with no orientation support cannot chain
-*any* same-side-I/O cell, which is an ordinary minimum-width-cell layout
-choice, not one specific to this repository), and the workaround below
-(hand-computed wiring, drawn with `klt draw`, merged in by `gen-compose`
-placement alone) is the same technique `layout/cells/_mos_row.py` already
-established for `xor2`/`sampler_dff`'s own internal routing -- extended
-here to *inter*-cell routing instead of intra-cell.
+The tool has no next move here: `gen-compose` places by translation only
+(`gen_compose.py`'s own "Orientation (rotation) is out of scope"), so the
+caller cannot re-face a block's ports either, and there is no way to hand
+the router a waypoint or a routing channel above the row even when a clear
+path is known. That gap is filed generically as klayout-tools#634 (the
+routability half klayout-tools#199's detection fix explicitly deferred --
+`docs/cli/gen-compose.md`'s own "full obstacle avoidance ... remains its
+own follow-up"), rather than worked around silently: it applies to *any*
+same-side-I/O cell, an ordinary minimum-width-cell layout choice, not one
+specific to this repository. The workaround below (hand-computed wiring,
+drawn with `klt draw`, merged in by `gen-compose` placement alone) is the
+same technique `layout/cells/_mos_row.py` already established for
+`xor2`/`sampler_dff`'s own internal routing -- extended here to
+*inter*-cell routing instead of intra-cell.
 
 Two metal layers, so the chain-signal wiring and the two supply rails never
 have to cross on the same layer:
