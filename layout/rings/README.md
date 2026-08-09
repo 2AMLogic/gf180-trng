@@ -11,6 +11,7 @@ the assembled result to the same DRC-clean/LVS-matching bar.
 | block | source | status |
 |---|---|---|
 | [`ro_ring11/`](ro_ring11/) | `design/ro_array_core.spice`'s `.subckt ro_ring11` at **ring1's sizing** (`wstv=0.220u`): `xg` (`ro_nand2`) + `x1`..`x10` (`ro_stage`), chained `ro -> n1 -> n2 -> ... -> ro` per the subcircuit's own connectivity | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_ring11.*` |
+| [`ro_ring11_ring2/`](ro_ring11_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_ring11` at **ring2's own sizing** (`wstv=0.240u`): `xg` (`ro_nand2_ring2`) + `x1`..`x10` (`ro_stage_ring2`), same connectivity | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_ring11_ring2.*` |
 
 `ro_ring11` is assembled from `layout/cells/ro_stage/` (ten instances) and
 `layout/cells/ro_nand2/` (one instance, the ring's stoppable stage), placed
@@ -30,16 +31,22 @@ for the ring's own `a`/`y` chain, metal2 + via1 for the `vddr`/`vss`
 rails), and the small maze-routed escape `ro_nand2`'s own dense internal
 metal1 needs.
 
+`ro_ring11_ring2` ([#118][gf118]) closes the gap this directory's own ring1
+assembly work surfaced: `layout/cells/ro_nand2/` was drawn only at ring1's
+sizing, so ring2 had `layout/cells/ro_stage_ring2/` but no matching
+`ro_nand2`. `layout/cells/ro_nand2_ring2/` (independently drawn geometry at
+`wstv=0.240u`, not a relabelled copy of `ro_nand2/`'s) closes that, and this
+directory's ring2 assembly is the identical row-placement and hand-routed-
+wiring technique against that pair of ring2 cells instead — see
+[`ro_ring11_ring2/build.py`](ro_ring11_ring2/build.py)'s own module
+docstring for why the per-cell geometry constants (bounding boxes, pin
+positions, the `ro_nand2` maze-routing waypoints) carry over unchanged from
+`ro_ring11/build.py`'s: verified by diffing each ring2 cell's own Metal1
+output against its ring1 counterpart, not assumed.
+
 ## What is explicitly *not* here yet
 
-- **Ring2's own `ro_ring11`** (`wstv=0.240u`). `layout/cells/ro_stage_ring2/`
-  exists, but no ring2-sized `ro_nand2` does — `layout/cells/ro_nand2/` is
-  drawn only at ring1's sizing, and #108's own acceptance criteria required
-  exactly one `ro_nand2` cell, not one per ring sizing the way `ro_stage`'s
-  criteria explicitly did. That gap was not identified until this
-  directory's own assembly work surfaced it, and is filed separately:
-  [#118][gf118].
-- **Placing this ring (or ring2's, once it exists) inside
+- **Placing either ring's `ro_ring11` inside
   `layout/floorplan/trng_floorplan.gds`'s own guarded `ring1`/`ring2`
   regions**, and placing `xor2` + the four `sampler_dff` instances inside
   `combiner_sampler` — the other half of #110's own scope. This is

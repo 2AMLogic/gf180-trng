@@ -1,0 +1,96 @@
+* ro_ring11_ring2 -- LVS reference (schematic-side) netlist, ring2 sizing.
+*
+* Hand-derived, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* Same technique as layout/rings/ro_ring11/ro_ring11.spice's own header
+* describes: *mechanically expanded* by hand (eleven lines of
+* substitution) from layout/cells/ro_stage_ring2/ro_stage_ring2.spice and
+* layout/cells/ro_nand2_ring2/ro_nand2_ring2.spice -- each already
+* independently hand-transcribed from its own xschem schematic -- following
+* exactly the connectivity design/ro_array_core.spice's own `.subckt
+* ro_ring11` declares, at ring2's own instantiation (`xr2 ... ro_ring11
+* wstv=0.240u lstv=2u ...`):
+*
+*   xg  ro en n1  vddr vss ro_nand2   (a=ro en=en y=n1)
+*   x1  n1    n2  vddr vss ro_stage   (a=n1 y=n2)
+*   x2  n2    n3  vddr vss ro_stage
+*   ...
+*   x10 n10   ro  vddr vss ro_stage   (a=n10 y=ro, closing the loop)
+*
+* This still satisfies "independent of the layout": neither this file nor
+* its two source references were ever derived from this cell's own drawn
+* geometry or from `klt extract`'s output on it -- ro_stage_ring2.spice and
+* ro_nand2_ring2.spice are each independently hand-transcribed from their
+* own schematic, and the chain above is the *design*'s own declared
+* netlist (design/ro_array_core.spice), not this layout's.
+*
+* Each instance keeps its own internal nodes (`py`/`ny`/`nm` -- the
+* series-starve/internal nodes neither ro_stage_ring2.spice nor
+* ro_nand2_ring2.spice exposes as a pin) suffixed by instance name
+* (`py_X1`, `ny_XG`, ...) so eleven separately-drawn cells' internal nodes
+* are never accidentally tied together by a shared name; same for each
+* instance's own floating Nwell net (`NWELL_FLOAT_X1`, ... -- see
+* ro_stage_ring2.spice's own header for why that net is deliberately
+* unnamed-and-per-instance, not `vddr`).
+*
+* Device sizes must agree with layout/cells/ro_stage_ring2/build.py's and
+* layout/cells/ro_nand2_ring2/build.py's own W/L constants (ring2 sizing,
+* `wstv=0.24u` on every starve device, `wstv` unaffected on the switching
+* pairs) -- `klt lvs` compares W and L as device properties, the same rule
+* every other reference in this repository follows.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* approximation (see layout/README.md, "What the curated decks do and do
+* not check", and ro_stage_ring2.spice's own header for the full account):
+* NMOS bulk is the deck's `vsubs` substrate global; PMOS bulk is each
+* instance's own anonymous floating-well net.
+
+.SUBCKT ro_ring11_ring2 en ro vddr vss vsubs
+MMPH_XG py_XG vss vddr NWELL_FLOAT_XG pfet L=2.0U W=0.24U
+MMPA_XG n1 ro py_XG NWELL_FLOAT_XG pfet L=0.28U W=0.44U
+MMPB_XG n1 en py_XG NWELL_FLOAT_XG pfet L=0.28U W=0.44U
+MMNA_XG n1 ro nm_XG vsubs nfet L=0.28U W=0.44U
+MMNB_XG nm_XG en ny_XG vsubs nfet L=0.28U W=0.44U
+MMNT_XG ny_XG vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X1 py_X1 vss vddr NWELL_FLOAT_X1 pfet L=2.0U W=0.24U
+MMP_X1 n2 n1 py_X1 NWELL_FLOAT_X1 pfet L=0.28U W=0.44U
+MMN_X1 n2 n1 ny_X1 vsubs nfet L=0.28U W=0.22U
+MMNT_X1 ny_X1 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X2 py_X2 vss vddr NWELL_FLOAT_X2 pfet L=2.0U W=0.24U
+MMP_X2 n3 n2 py_X2 NWELL_FLOAT_X2 pfet L=0.28U W=0.44U
+MMN_X2 n3 n2 ny_X2 vsubs nfet L=0.28U W=0.22U
+MMNT_X2 ny_X2 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X3 py_X3 vss vddr NWELL_FLOAT_X3 pfet L=2.0U W=0.24U
+MMP_X3 n4 n3 py_X3 NWELL_FLOAT_X3 pfet L=0.28U W=0.44U
+MMN_X3 n4 n3 ny_X3 vsubs nfet L=0.28U W=0.22U
+MMNT_X3 ny_X3 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X4 py_X4 vss vddr NWELL_FLOAT_X4 pfet L=2.0U W=0.24U
+MMP_X4 n5 n4 py_X4 NWELL_FLOAT_X4 pfet L=0.28U W=0.44U
+MMN_X4 n5 n4 ny_X4 vsubs nfet L=0.28U W=0.22U
+MMNT_X4 ny_X4 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X5 py_X5 vss vddr NWELL_FLOAT_X5 pfet L=2.0U W=0.24U
+MMP_X5 n6 n5 py_X5 NWELL_FLOAT_X5 pfet L=0.28U W=0.44U
+MMN_X5 n6 n5 ny_X5 vsubs nfet L=0.28U W=0.22U
+MMNT_X5 ny_X5 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X6 py_X6 vss vddr NWELL_FLOAT_X6 pfet L=2.0U W=0.24U
+MMP_X6 n7 n6 py_X6 NWELL_FLOAT_X6 pfet L=0.28U W=0.44U
+MMN_X6 n7 n6 ny_X6 vsubs nfet L=0.28U W=0.22U
+MMNT_X6 ny_X6 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X7 py_X7 vss vddr NWELL_FLOAT_X7 pfet L=2.0U W=0.24U
+MMP_X7 n8 n7 py_X7 NWELL_FLOAT_X7 pfet L=0.28U W=0.44U
+MMN_X7 n8 n7 ny_X7 vsubs nfet L=0.28U W=0.22U
+MMNT_X7 ny_X7 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X8 py_X8 vss vddr NWELL_FLOAT_X8 pfet L=2.0U W=0.24U
+MMP_X8 n9 n8 py_X8 NWELL_FLOAT_X8 pfet L=0.28U W=0.44U
+MMN_X8 n9 n8 ny_X8 vsubs nfet L=0.28U W=0.22U
+MMNT_X8 ny_X8 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X9 py_X9 vss vddr NWELL_FLOAT_X9 pfet L=2.0U W=0.24U
+MMP_X9 n10 n9 py_X9 NWELL_FLOAT_X9 pfet L=0.28U W=0.44U
+MMN_X9 n10 n9 ny_X9 vsubs nfet L=0.28U W=0.22U
+MMNT_X9 ny_X9 vddr vss vsubs nfet L=2.0U W=0.24U
+MMPH_X10 py_X10 vss vddr NWELL_FLOAT_X10 pfet L=2.0U W=0.24U
+MMP_X10 ro n10 py_X10 NWELL_FLOAT_X10 pfet L=0.28U W=0.44U
+MMN_X10 ro n10 ny_X10 vsubs nfet L=0.28U W=0.22U
+MMNT_X10 ny_X10 vddr vss vsubs nfet L=2.0U W=0.24U
+.ENDS ro_ring11_ring2

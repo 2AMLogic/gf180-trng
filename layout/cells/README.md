@@ -14,7 +14,8 @@ honestly-scoped unit rather than claimed across the whole block at once.
 |---|---|---|
 | [`ro_stage/`](ro_stage/) | `design/ro_array_core.spice`'s `.subckt ro_stage` (`design/xschem/ro_stage.sch`), at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage.*` |
 | [`ro_stage_ring2/`](ro_stage_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_stage`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_stage/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage_ring2.*` |
-| [`ro_nand2/`](ro_nand2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2` (`design/xschem/ro_nand2.sch`) — the ring's one stoppable stage | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2.*` |
+| [`ro_nand2/`](ro_nand2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2` (`design/xschem/ro_nand2.sch`) — the ring's one stoppable stage, at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2.*` |
+| [`ro_nand2_ring2/`](ro_nand2_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_nand2/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2_ring2.*` |
 | [`xor2/`](xor2/) | `design/ro_array_core.spice`'s `.subckt xor2` (`design/xschem/xor2.sch`) — the combiner gate | DRC-clean, LVS-match, 0 errors — see `layout/reports/xor2.*` |
 | [`sampler_dff/`](sampler_dff/) | `design/sampler_core.spice`'s `.subckt sampler_dff` (`design/xschem/sampler_dff.sch`) — the sampler's transmission-gate master-slave DFF, instantiated four times unmodified in `sampler_core` | DRC-clean, LVS-match, 0 errors — see `layout/reports/sampler_dff.*` |
 
@@ -27,7 +28,7 @@ about — the place a drawn-geometry mistake (an isolation gap, a
 mis-sized starve device) is most likely to degrade entropy quality without
 DRC/LVS ever being able to see it, per issue #106's own framing.
 
-`ro_stage_ring2` and `ro_nand2` ([#108][gf108]) complete the ring's cell set. The
+`ro_stage_ring2` and `ro_nand2` ([#108][gf108]) complete ring1's cell set. The
 array uses two different starve widths specifically so ring1 and ring2 are
 *not* frequency-matched (`layout/floorplan/README.md`, "Mechanism 1" — a
 deliberate mismatch load-bearing for the two rings' independence argument),
@@ -40,7 +41,12 @@ output high regardless of `a`, stopping oscillation. See
 `layout/cells/ro_nand2/build.py`'s own docstring for the parallel-pull-up
 drawing technique (two diffusion islands tied by a metal1 riser, since
 `XMpa`/`XMpb` share both terminals and cannot be drawn as a simple series
-chain).
+chain). `ro_nand2_ring2` ([#118][gf118]) closes the gap #108 left open: it
+is `ro_nand2`'s same six-device topology, independently redrawn at ring2's
+own `wstv=0.240u`, the same convention `ro_stage_ring2` already established
+relative to `ro_stage`. With `ro_stage_ring2` and `ro_nand2_ring2` both
+drawn, ring2's cell set is complete too — `layout/rings/ro_ring11_ring2/`
+assembles them the same way `layout/rings/ro_ring11/` assembles ring1's.
 
 `xor2` and `sampler_dff` ([#109][gf109]) are the two cells that make up the
 `combiner_sampler` guarded region's contents: `xor2` combines ring1's and
@@ -86,15 +92,15 @@ see each cell's own `.spice` header) before the next one is started.
 Deferred to follow-up issues, filed against this repository (not against
 klayout-tools — none of the gaps below are tool gaps):
 
-- **Assembling ten `ro_stage`s plus one `ro_nand2` into `ro_ring11`, and
-  placing the result — plus the combiner and samplers — inside the #16
-  floorplan's guarded regions** ([#110][gf110]). Ring1's own `ro_ring11` is
-  now assembled and DRC/LVS-clean under [`layout/rings/`](../rings/) — see
-  [`rings/README.md`](../rings/README.md) for what that covers and for the
-  two gaps it surfaced along the way (ring2's own `ro_nand2`, [#118][gf118];
-  and a discovered size mismatch between the assembled row and the
-  floorplan's own guarded-region footprint, [#119][gf119]). Nothing is
-  placed inside a guarded region yet.
+- **Placing either ring's assembled `ro_ring11` — plus the combiner and
+  samplers — inside the #16 floorplan's guarded regions** ([#110][gf110]).
+  Both rings' own `ro_ring11` (ring1 at `wstv=0.220u`, ring2 at
+  `wstv=0.240u`) are now assembled and DRC/LVS-clean under
+  [`layout/rings/`](../rings/) — see [`rings/README.md`](../rings/README.md)
+  for what that covers and for the discovered size mismatch between the
+  assembled row and the floorplan's own guarded-region footprint that
+  blocks this step, [#119][gf119]. Nothing is placed inside a guarded
+  region yet.
 - **The digital section** (conditioner, health tests, interface — 1655
   standard cells per `layout/floorplan/README.md`'s own inventory) —
   [#111][gf111]. This is a placement-and-routing problem, not a
