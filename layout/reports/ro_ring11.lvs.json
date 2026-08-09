@@ -1,0 +1,341 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../rings/ro_ring11/ro_ring11.gds",
+  "reference": "../rings/ro_ring11/ro_ring11.spice",
+  "top": "ro_ring11",
+  "status": "match",
+  "mismatch_count": 3,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "topology": 1
+  },
+  "counts": {
+    "nets": {
+      "layout": 49,
+      "reference": 49,
+      "matched": 49
+    },
+    "devices": {
+      "layout": 46,
+      "reference": 46,
+      "matched": 46
+    },
+    "pins": {
+      "layout": 15,
+      "reference": 5,
+      "matched": 15
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "20c1f3cc6bd2d3811c5ab7bbd3f55a61a57d11ebccc72a750fa7ec2c5b305389",
+    "reference_sha256": "623aee287b5bbc21e3f51167b26313263f59b06d09e9b2fa2f0140018098d235",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "23 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "23 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "en",
+      "reference": "EN",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N1",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N10",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N2",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N3",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N4",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N5",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N6",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N7",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N8",
+      "pin": true
+    },
+    {
+      "layout": "a,y",
+      "reference": "N9",
+      "pin": true
+    },
+    {
+      "layout": "$13",
+      "reference": "NM_XG",
+      "pin": false
+    },
+    {
+      "layout": "$30",
+      "reference": "NWELL_FLOAT_X1",
+      "pin": false
+    },
+    {
+      "layout": "$48",
+      "reference": "NWELL_FLOAT_X10",
+      "pin": false
+    },
+    {
+      "layout": "$32",
+      "reference": "NWELL_FLOAT_X2",
+      "pin": false
+    },
+    {
+      "layout": "$34",
+      "reference": "NWELL_FLOAT_X3",
+      "pin": false
+    },
+    {
+      "layout": "$36",
+      "reference": "NWELL_FLOAT_X4",
+      "pin": false
+    },
+    {
+      "layout": "$38",
+      "reference": "NWELL_FLOAT_X5",
+      "pin": false
+    },
+    {
+      "layout": "$40",
+      "reference": "NWELL_FLOAT_X6",
+      "pin": false
+    },
+    {
+      "layout": "$42",
+      "reference": "NWELL_FLOAT_X7",
+      "pin": false
+    },
+    {
+      "layout": "$44",
+      "reference": "NWELL_FLOAT_X8",
+      "pin": false
+    },
+    {
+      "layout": "$46",
+      "reference": "NWELL_FLOAT_X9",
+      "pin": false
+    },
+    {
+      "layout": "$28",
+      "reference": "NWELL_FLOAT_XG",
+      "pin": false
+    },
+    {
+      "layout": "$15",
+      "reference": "NY_X1",
+      "pin": false
+    },
+    {
+      "layout": "$16",
+      "reference": "NY_X10",
+      "pin": false
+    },
+    {
+      "layout": "$17",
+      "reference": "NY_X2",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "NY_X3",
+      "pin": false
+    },
+    {
+      "layout": "$20",
+      "reference": "NY_X4",
+      "pin": false
+    },
+    {
+      "layout": "$21",
+      "reference": "NY_X5",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "NY_X6",
+      "pin": false
+    },
+    {
+      "layout": "$24",
+      "reference": "NY_X7",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "NY_X8",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "NY_X9",
+      "pin": false
+    },
+    {
+      "layout": "$14",
+      "reference": "NY_XG",
+      "pin": false
+    },
+    {
+      "layout": "$29",
+      "reference": "PY_X1",
+      "pin": false
+    },
+    {
+      "layout": "$47",
+      "reference": "PY_X10",
+      "pin": false
+    },
+    {
+      "layout": "$31",
+      "reference": "PY_X2",
+      "pin": false
+    },
+    {
+      "layout": "$33",
+      "reference": "PY_X3",
+      "pin": false
+    },
+    {
+      "layout": "$35",
+      "reference": "PY_X4",
+      "pin": false
+    },
+    {
+      "layout": "$37",
+      "reference": "PY_X5",
+      "pin": false
+    },
+    {
+      "layout": "$39",
+      "reference": "PY_X6",
+      "pin": false
+    },
+    {
+      "layout": "$41",
+      "reference": "PY_X7",
+      "pin": false
+    },
+    {
+      "layout": "$43",
+      "reference": "PY_X8",
+      "pin": false
+    },
+    {
+      "layout": "$45",
+      "reference": "PY_X9",
+      "pin": false
+    },
+    {
+      "layout": "$27",
+      "reference": "PY_XG",
+      "pin": false
+    },
+    {
+      "layout": "a,y",
+      "reference": "RO",
+      "pin": true
+    },
+    {
+      "layout": "vddr",
+      "reference": "VDDR",
+      "pin": true
+    },
+    {
+      "layout": "vss",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "vsubs",
+      "reference": "VSUBS",
+      "pin": true
+    }
+  ]
+}
