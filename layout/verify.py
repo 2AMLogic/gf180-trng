@@ -93,12 +93,18 @@ ro_stage_ring2_cell = _load_build_module(
 ro_nand2_cell = _load_build_module(
     "layout_cells_ro_nand2_build", CELLS_DIR / "ro_nand2" / "build.py"
 )
+ro_nand2_ring2_cell = _load_build_module(
+    "layout_cells_ro_nand2_ring2_build", CELLS_DIR / "ro_nand2_ring2" / "build.py"
+)
 xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
 sampler_dff_cell = _load_build_module(
     "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
 )
 ro_ring11_cell = _load_build_module(
     "layout_rings_ro_ring11_build", RINGS_DIR / "ro_ring11" / "build.py"
+)
+ro_ring11_ring2_cell = _load_build_module(
+    "layout_rings_ro_ring11_ring2_build", RINGS_DIR / "ro_ring11_ring2" / "build.py"
 )
 
 #: (relative-to-repo-root fixture/cell dir, its build module) for every
@@ -111,9 +117,11 @@ _STALENESS_CHECKS = (
     ("layout/cells/ro_stage", ro_stage_cell.check),
     ("layout/cells/ro_stage_ring2", ro_stage_ring2_cell.check),
     ("layout/cells/ro_nand2", ro_nand2_cell.check),
+    ("layout/cells/ro_nand2_ring2", ro_nand2_ring2_cell.check),
     ("layout/cells/xor2", xor2_cell.check),
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
     ("layout/rings/ro_ring11", ro_ring11_cell.check),
+    ("layout/rings/ro_ring11_ring2", ro_ring11_ring2_cell.check),
 )
 
 #: The DRC deck / extraction deck name `klt` knows this PDK family by. Not
@@ -283,6 +291,33 @@ EXPECTATIONS: dict[str, dict] = {
             "error_count": 0,
         },
     },
+    "ro_nand2_ring2": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and
+        # layout/cells/ro_nand2_ring2/build.py for the geometry (the same
+        # drawn parallel-pull-up technique as ro_nand2/, at ring2's own
+        # starve width) and why it is hand-drawn. `dir`/`top` override the
+        # defaults, same as the `ro_stage_ring2` entry above.
+        "why": (
+            "design/ro_array_core.spice's ro_nand2 at ring2's own sizing "
+            "(wstv=0.240u, distinct drawn geometry from ring1's ro_nand2/ "
+            "-- see layout/cells/README.md, 'Mechanism 1') must be "
+            "DRC-clean and LVS-match its hand-written schematic-side "
+            "reference"
+        ),
+        "dir": "layout/cells/ro_nand2_ring2",
+        "top": "ro_nand2_ring2",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_nand2_ring2.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's six devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
     "xor2": {
         # A real design cell, not a flow-bringup fixture -- see
         # layout/cells/README.md for scope and layout/cells/xor2/build.py
@@ -354,6 +389,34 @@ EXPECTATIONS: dict[str, dict] = {
         "drc": {"status": "clean", "rule_counts": {}},
         "lvs": {
             "reference": "ro_ring11.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- all
+            # forty-six devices here are MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "ro_ring11_ring2": {
+        # An assembled block, not a hand-drawn single cell -- see
+        # layout/rings/README.md for scope and
+        # layout/rings/ro_ring11_ring2/build.py for how ten already-verified
+        # `ro_stage_ring2` instances plus one `ro_nand2_ring2` are placed
+        # into a row and wired, the same technique `ro_ring11/build.py`
+        # (ring1 sizing) uses (issue #118). `dir`/`top` override the
+        # defaults, same as every other real-design entry above.
+        "why": (
+            "design/ro_array_core.spice's ro_ring11 (ring2 sizing, "
+            "wstv=0.240u): the assembled entropy-source ring must be "
+            "DRC-clean and LVS-match a reference netlist mechanically "
+            "expanded from ro_stage_ring2.spice/ro_nand2_ring2.spice per "
+            "the ring's own declared connectivity"
+        ),
+        "dir": "layout/rings/ro_ring11_ring2",
+        "top": "ro_ring11_ring2",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_ring11_ring2.spice",
             "status": "match",
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
