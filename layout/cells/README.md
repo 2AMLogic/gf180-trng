@@ -86,11 +86,15 @@ see each cell's own `.spice` header) before the next one is started.
 Deferred to follow-up issues, filed against this repository (not against
 klayout-tools — none of the gaps below are tool gaps):
 
-- **Assembling ten `ro_stage`s plus one `ro_nand2` into `ro_ring11`**, and
+- **Assembling ten `ro_stage`s plus one `ro_nand2` into `ro_ring11`, and
   placing the result — plus the combiner and samplers — inside the #16
-  floorplan's guarded regions (`layout/floorplan/trng_floorplan.gds`) —
-  [#110][gf110]. Nothing here is placed inside a guarded region yet; each
-  cell so far is verified standalone.
+  floorplan's guarded regions** ([#110][gf110]). Ring1's own `ro_ring11` is
+  now assembled and DRC/LVS-clean under [`layout/rings/`](../rings/) — see
+  [`rings/README.md`](../rings/README.md) for what that covers and for the
+  two gaps it surfaced along the way (ring2's own `ro_nand2`, [#118][gf118];
+  and a discovered size mismatch between the assembled row and the
+  floorplan's own guarded-region footprint, [#119][gf119]). Nothing is
+  placed inside a guarded region yet.
 - **The digital section** (conditioner, health tests, interface — 1655
   standard cells per `layout/floorplan/README.md`'s own inventory) —
   [#111][gf111]. This is a placement-and-routing problem, not a
@@ -108,3 +112,5 @@ klayout-tools — none of the gaps below are tool gaps):
 [gf109]: https://github.com/2AMLogic/gf180-trng/issues/109
 [gf110]: https://github.com/2AMLogic/gf180-trng/issues/110
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
+[gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
+[gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
