@@ -686,9 +686,12 @@ and the same PDK resolver `layout/verify.py` uses. Verbatim output in
 
 **Since issue #110, `ring1`/`ring2` carry their own real, placed content —
 not an empty guard ring.** `combiner_sampler` and `digital` are still empty
-(neither is assembled yet). The composed abstract's own raw DRC therefore now
-surfaces whatever `ring1`/`ring2`'s own committed geometry already reports
-standalone:
+*in this composed abstract*: `combiner_sampler`'s own contents are now
+assembled and DRC/LVS-clean standalone (`layout/blocks/combiner_sampler/`,
+issue #134), but not yet placed here (blocked on the size mismatch issue
+#135 tracks); nothing in the digital section is assembled at all. The
+composed abstract's own raw DRC therefore still only surfaces whatever
+`ring1`/`ring2`'s own committed geometry already reports standalone:
 
 ```
 composed abstract: status "violations", violation_count 98,
@@ -776,9 +779,16 @@ Stated as a list because an unstated limit is a defect.
    reserved, the structure is not designed.
 9. **No full layout, still.** `ring1`/`ring2` now carry real, placed,
    DRC/LVS-verified content ([Placement](#placement--issue-110), issue
-   #110); `combiner_sampler` and `digital` are still empty guard rings — no
-   combiner, no sampler, and no standard cell in the digital section has
-   been placed.
+   #110); `combiner_sampler` and `digital` are still empty guard rings in
+   this composed abstract — no combiner, no sampler, and no standard cell
+   in the digital section has been placed. `combiner_sampler`'s own
+   contents (`xor2` + 4x `sampler_dff`) are now assembled and DRC/LVS-clean
+   as a standalone block (`layout/blocks/combiner_sampler/`, [#134][gf134]),
+   but that block's own real footprint (278.90 x 15.64 um) does not fit
+   this region's own guarded footprint (25.27 x 25.27 um, still sized from
+   the area/utilisation estimate below) — the same kind of size mismatch
+   issue #119 resolved for `ring1`/`ring2`, filed for `combiner_sampler` as
+   [#135][gf135] rather than forced through.
 
 None of these is a reason to withhold the floorplan. All of them are reasons
 not to read a clean DRC result as an independence argument.
@@ -876,6 +886,8 @@ separate question.
 [#82]: https://github.com/2AMLogic/gf180-trng/pull/82
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf120]: https://github.com/2AMLogic/gf180-trng/pull/120
+[gf134]: https://github.com/2AMLogic/gf180-trng/issues/134
+[gf135]: https://github.com/2AMLogic/gf180-trng/issues/135
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md

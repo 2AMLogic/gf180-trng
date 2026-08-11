@@ -83,6 +83,7 @@ def _load_build_module(name: str, path: Path):
 
 
 RINGS_DIR = LAYOUT_DIR / "rings"
+BLOCKS_DIR = LAYOUT_DIR / "blocks"
 
 ro_stage_cell = _load_build_module(
     "layout_cells_ro_stage_build", CELLS_DIR / "ro_stage" / "build.py"
@@ -106,6 +107,9 @@ ro_ring11_cell = _load_build_module(
 ro_ring11_ring2_cell = _load_build_module(
     "layout_rings_ro_ring11_ring2_build", RINGS_DIR / "ro_ring11_ring2" / "build.py"
 )
+combiner_sampler_block = _load_build_module(
+    "layout_blocks_combiner_sampler_build", BLOCKS_DIR / "combiner_sampler" / "build.py"
+)
 
 #: (relative-to-repo-root fixture/cell dir, its build module) for every
 #: `EXPECTATIONS` entry's `staleness` field -- see "Adding a cell to the
@@ -122,6 +126,7 @@ _STALENESS_CHECKS = (
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
     ("layout/rings/ro_ring11", ro_ring11_cell.check),
     ("layout/rings/ro_ring11_ring2", ro_ring11_ring2_cell.check),
+    ("layout/blocks/combiner_sampler", combiner_sampler_block.check),
 )
 
 #: The DRC deck / extraction deck name `klt` knows this PDK family by. Not
@@ -421,6 +426,40 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # forty-six devices here are MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "combiner_sampler": {
+        # An assembled block, not a hand-drawn single cell -- see
+        # layout/blocks/README.md for scope and layout/blocks/
+        # combiner_sampler/build.py for how one already-verified `xor2`
+        # instance plus four already-verified `sampler_dff` instances are
+        # placed into a row and wired (issue #134). `dir`/`top` override
+        # the defaults, same as every other real-design entry above.
+        #
+        # Not yet placed inside layout/floorplan/'s own `combiner_sampler`
+        # guarded region -- see that block's own build.py module docstring
+        # for the discovered size mismatch (mirroring issue #119's own
+        # history for ring1/ring2) and the follow-up issue it is filed
+        # against.
+        "why": (
+            "design/sampler_core.spice's combiner_sampler (xa1/xsb/xsv/"
+            "xsr1/xsr2): the assembled combiner+sampler block must be "
+            "DRC-clean and LVS-match a reference netlist mechanically "
+            "expanded from xor2.spice/sampler_dff.spice per the block's "
+            "own declared connectivity"
+        ),
+        "dir": "layout/blocks/combiner_sampler",
+        "top": "combiner_sampler",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "combiner_sampler.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- all
+            # one hundred devices here are MOS, so nothing else is
+            # declared.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "error_count": 0,
         },

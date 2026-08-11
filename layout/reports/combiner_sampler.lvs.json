@@ -1,0 +1,366 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../blocks/combiner_sampler/combiner_sampler.gds",
+  "reference": "../blocks/combiner_sampler/combiner_sampler.spice",
+  "top": "combiner_sampler",
+  "status": "match",
+  "mismatch_count": 3,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "topology": 1
+  },
+  "counts": {
+    "nets": {
+      "layout": 54,
+      "reference": 54,
+      "matched": 54
+    },
+    "devices": {
+      "layout": 100,
+      "reference": 100,
+      "matched": 100
+    },
+    "pins": {
+      "layout": 12,
+      "reference": 11,
+      "matched": 12
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "5b1c7a2c770d98207824d52e0f40c88a70e961549715a94814310220b3a3940d",
+    "reference_sha256": "a8b2d28272b2133482ca94c19afe4361759ab9e84b5cd373c7d8ce85affdd325",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "50 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "50 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "$3",
+      "reference": "AN_XA1",
+      "pin": false
+    },
+    {
+      "layout": "$4",
+      "reference": "BN_XA1",
+      "pin": false
+    },
+    {
+      "layout": "clk",
+      "reference": "CLK",
+      "pin": true
+    },
+    {
+      "layout": "$11",
+      "reference": "CLKB_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$30",
+      "reference": "CLKB_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$38",
+      "reference": "CLKB_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$21",
+      "reference": "CLKB_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "MB_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$47",
+      "reference": "MB_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$48",
+      "reference": "MB_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "MB_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$14",
+      "reference": "MC_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$32",
+      "reference": "MC_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$40",
+      "reference": "MC_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$24",
+      "reference": "MC_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$8",
+      "reference": "MID_XA1",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "MMID_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$36",
+      "reference": "MMID_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$44",
+      "reference": "MMID_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$28",
+      "reference": "MMID_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$12",
+      "reference": "M_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$31",
+      "reference": "M_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$39",
+      "reference": "M_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "M_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$49",
+      "reference": "NWELL_FLOAT_XA1",
+      "pin": false
+    },
+    {
+      "layout": "$50",
+      "reference": "NWELL_FLOAT_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$52",
+      "reference": "NWELL_FLOAT_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$53",
+      "reference": "NWELL_FLOAT_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$51",
+      "reference": "NWELL_FLOAT_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$17",
+      "reference": "QB_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$35",
+      "reference": "QB_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$43",
+      "reference": "QB_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$27",
+      "reference": "QB_XSV",
+      "pin": false
+    },
+    {
+      "layout": "q",
+      "reference": "RAW_BIT",
+      "pin": true
+    },
+    {
+      "layout": "q",
+      "reference": "RAW_VALID",
+      "pin": true
+    },
+    {
+      "layout": "q",
+      "reference": "RING_BIT1",
+      "pin": true
+    },
+    {
+      "layout": "q",
+      "reference": "RING_BIT2",
+      "pin": true
+    },
+    {
+      "layout": "a,d",
+      "reference": "RO1",
+      "pin": true
+    },
+    {
+      "layout": "b,d",
+      "reference": "RO2",
+      "pin": true
+    },
+    {
+      "layout": "rst_n",
+      "reference": "RST_N",
+      "pin": true
+    },
+    {
+      "layout": "$5",
+      "reference": "S1_XA1",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "S2MID_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$37",
+      "reference": "S2MID_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$45",
+      "reference": "S2MID_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$29",
+      "reference": "S2MID_XSV",
+      "pin": false
+    },
+    {
+      "layout": "$7",
+      "reference": "S2_XA1",
+      "pin": false
+    },
+    {
+      "layout": "$15",
+      "reference": "S_XSB",
+      "pin": false
+    },
+    {
+      "layout": "$33",
+      "reference": "S_XSR1",
+      "pin": false
+    },
+    {
+      "layout": "$41",
+      "reference": "S_XSR2",
+      "pin": false
+    },
+    {
+      "layout": "$25",
+      "reference": "S_XSV",
+      "pin": false
+    },
+    {
+      "layout": "d,vdd",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "vss",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "vsubs",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "d,y",
+      "reference": "XO",
+      "pin": true
+    }
+  ]
+}
