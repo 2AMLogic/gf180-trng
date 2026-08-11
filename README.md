@@ -142,12 +142,12 @@ DRBG supplies its own and treats this block as the seed source.
 > - **Area: no measurement, and the standing estimate misses by 2.7×.** The
 >   row is `< 0.05 mm²` and no layout exists to measure, but #16's floorplan
 >   work priced the block bottom-up against the PDK's own standard-cell LEF:
->   **0.1347 mm², 269.4 % of the row**
+>   **0.1350 mm², 270.0 % of the row**
 >   ([`layout/floorplan/reports/area.json`](layout/floorplan/reports/area.json),
 >   breakdown under *Area against the `< 0.05 mm²` row* in
 >   [`layout/floorplan/README.md`](layout/floorplan/README.md)).
 >   The split matters — the isolated entropy source, samplers, guard rings and
->   isolation channels together are **4.1 %** of the row, and the whole miss is
+>   isolation channels together are **4.7 %** of the row, and the whole miss is
 >   the digital section at **251 %**, of which the two 8 × 32-bit output FIFOs
 >   are 69.8 %. That is the same structure [DR-0017] blames for the idle-current
 >   miss: one design decision showing up on two rows. It is an inventory
