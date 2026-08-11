@@ -143,6 +143,8 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
+from layout._klt import _run_klt, resolve_pdk  # noqa: E402
+
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers. Metal3/Via2 for the block-level routing
 # (see module docstring for why this level uses Metal3/Via2 rather than
@@ -267,38 +269,6 @@ GAP_SLOT_PITCH_UM = 0.65
 DECK = "gf180mcu"
 EXIT_OK = 0
 EXIT_FAIL = 1
-
-
-class FlowError(Exception):
-    """A `klt` invocation could not produce a verdict at all."""
-
-
-def _run_klt(args: list[str]) -> dict:
-    argv = ["klt", *args, "--format", "json"]
-    done = subprocess.run(
-        argv, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=600
-    )
-    raw = done.stdout.strip() or done.stderr.strip()
-    if not raw:
-        raise FlowError(f"`{' '.join(argv)}` produced no output (exit {done.returncode})")
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise FlowError(f"`{' '.join(argv)}` emitted unparseable JSON: {exc}") from exc
-    if "error" in payload:
-        raise FlowError(f"`{' '.join(argv)}` failed: {payload['error'].get('message')}")
-    return payload
-
-
-def resolve_pdk():
-    try:
-        from sim.harness import pdk as pdk_mod
-    except ImportError:  # pragma: no cover - repo layout guarantees this
-        return None
-    try:
-        return pdk_mod.find_pdk()
-    except Exception:
-        return None
 
 
 def klt_version() -> str | None:
