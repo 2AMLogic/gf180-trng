@@ -13,7 +13,12 @@
       "30/0",
       "33/0",
       "34/0",
+      "35/0",
       "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
+      "41/0",
       "42/0",
       "46/0",
       "53/0",
@@ -29,30 +34,52 @@
     "layers_in_stream_without_rules": [],
     "rules_skipped": [
       "bjt.separation.comp.1",
+      "metal1.enclosing.via1.1",
+      "metal2.enclosing.via1.1",
+      "metal2.enclosing.via2.1",
       "metal2.space.1",
       "metal2.width.1",
+      "metal3.enclosing.via2.1",
+      "metal3.enclosing.via3.1",
       "metal3.space.1",
       "metal3.width.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal5.enclosing.via4.1",
       "metal5.space.1",
       "metal5.width.1",
       "metaltop.space.1",
       "metaltop.width.1",
       "mim.enclosing.fusetop.1",
+      "mim.enclosing.via4.1",
       "mim.space.1",
       "nwell.enclosing.comp.1",
       "nwell.space.1",
+      "pad.enclosing.metal5.1",
       "poly2.enclosing.contact.1",
       "poly2.space.1",
-      "poly2.width.1"
-    ]
+      "poly2.width.1",
+      "via1.space.1",
+      "via1.width.1",
+      "via2.space.1",
+      "via2.width.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "voltage_domain_warnings": []
   },
   "provenance": {
-    "klt_version": "0.1.0",
+    "klt_version": "0.2.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8"
+      "content_hash": "sha256:e8c427d731a0b57711a097cad8b4fc0197f660376e0c524b13092f6f9a217ded"
+    },
+    "input": {
+      "content_hash": "sha256:644f5d379e9207b7e9136673d4c629b09dd9eedf25f6a58d404b50f3f267d7e1"
     }
   }
 }

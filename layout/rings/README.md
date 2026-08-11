@@ -49,27 +49,32 @@ output against its ring1 counterpart, not assumed.
 - **Placing either ring's `ro_ring11` inside
   `layout/floorplan/trng_floorplan.gds`'s own guarded `ring1`/`ring2`
   regions**, and placing `xor2` + the four `sampler_dff` instances inside
-  `combiner_sampler` — the other half of #110's own scope. This is
+  `combiner_sampler` — the other half of #110's own scope. This was
   **blocked by a discovered size mismatch, not merely unattempted**:
   `ro_ring11`'s real, DRC-clean assembled geometry is a single row
   measuring **~78.9 µm × ~4.75 µm** (`layout/.work/ro_ring11_gr_wire.json`'s
   own `bbox_um` at build time, `klt gen-compose`'s only placement
   strategies being a 1-D row or an explicit per-block translation of
   already-drawn geometry — klayout-tools#321, no 2-D packing exists to
-  arrange this more compactly). `layout/floorplan/trng_floorplan.gds`'s
-  own `ring1`/`ring2` guard rings are **already drawn, real geometry**,
-  sized from `layout/floorplan/reports/area.json`'s bottom-up *area*
-  estimate at a 15.1×15.1 µm inner / 17.1×17.1 µm guarded **square**
-  footprint — roughly a quarter of this row's own width. The assembled
-  ring does not fit inside the region its own floorplan reserved for it,
-  and forcing it in would mean violating the guard ring's own DRC geometry
-  or spilling into the neighbouring isolation channel — exactly what
-  `layout/floorplan/README.md`'s "Mechanism 1" (individually guarded,
-  unmatched blocks, no shared dummy row or well) exists to prevent between
-  the two rings. Resolving this needs an explicit decision (resize the
-  floorplan's guarded regions to the real assembled footprint, or lay the
-  ring out compactly instead of as a row) that is out of scope for a
-  single assembly step — filed separately: [#119][gf119].
+  arrange this more compactly), and `layout/floorplan/trng_floorplan.gds`'s
+  own `ring1`/`ring2` guard rings were originally sized from
+  `layout/floorplan/reports/area.json`'s bottom-up *area* estimate at a
+  15.1×15.1 µm inner / 17.1×17.1 µm guarded **square** footprint — roughly a
+  quarter of this row's own width, which the assembled ring did not fit
+  inside.
+  **[#119][gf119] resolved the mismatch** (Option A of the two it posed):
+  `layout/floorplan/floorplan.py` now derives `ring1`/`ring2`'s guarded
+  footprint from each ring's own committed GDS bounding box instead of the
+  area estimate (**78.9 × 4.75 µm inner, 80.9 × 6.75 µm guarded**, per
+  ring — see `layout/floorplan/README.md`'s "What the area model is"), and
+  a new check in that same script composes each region's guard ring with
+  the real ring geometry and runs `klt drc` over the pair to confirm the fit
+  is clean (`layout/floorplan/reports/ring_fit.json`). `combiner_sampler`
+  keeps the area-estimate square, since it is still unassembled (no
+  committed GDS exists to size it from). **Actually placing either ring's
+  `ro_ring11` inside its now-correctly-sized region remains #110's own,
+  still-open scope** — #119 only fixed the region each ring would be placed
+  into, not the placement itself.
 
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119

@@ -26,9 +26,17 @@ What it produces, in order:
    two long-channel starve devices per ring stage, which no standard cell
    represents. See `AREA MODEL` below for what that does and does not mean.
 3. **A DRC-clean floorplan abstract**: one `klt gen guard_ring` per region,
-   sized to that region's placed area, composed into a single stream by
-   `klt gen-compose` with a declared isolation channel between neighbours, and
-   run through `klt drc` with the same deck `layout/verify.py` uses.
+   sized to that region's placed area -- or, for a region with a real
+   committed assembly (`ring1`/`ring2` as of issue #119, see
+   `ASSEMBLED_RING_GDS`), to that assembly's own bounding box instead --
+   composed into a single stream by `klt gen-compose` with a declared
+   isolation channel between neighbours, and run through `klt drc` with the
+   same deck `layout/verify.py` uses.
+3b. **A ring-fit check** (issue #119) for every region sized from a real
+   assembly: composes that region's own guard ring with the real ring GDS,
+   aligned to the tightest legal placement, and runs `klt drc` over the pair
+   (`check_ring_fit`) -- confirming the assembled geometry actually fits
+   where the floorplan reserves it, which nothing checked before this.
 4. **An area rollup against the README `Area` row** (< 0.05 mm^2).
 
 AREA MODEL -- what this is and is not
@@ -118,6 +126,24 @@ ISOLATION_CHANNEL_UM = 20.0
 #: on a solid contact row.
 GUARD_RING_WIDTH_UM = 1.0
 GUARD_CONTACT_PITCH_UM = 2.0
+
+#: Committed, real, DRC-clean assembled-ring geometry that sizes `ring1`'s
+#: and `ring2`'s guarded-region footprint below, instead of the area/
+#: utilisation estimate's sqrt(area) square (issue #119, Option A). Both
+#: rings share the same cell inventory and the same row layout
+#: (`layout/rings/ro_ring11/build.py`), so both bounding boxes happen to be
+#: identical, but each is read from its own committed stream rather than
+#: assumed equal.
+#:
+#: `combiner_sampler` (`xor2` + 4x `sampler_dff`) has no entry here: it is
+#: not assembled yet (issue #110's own Dependencies), so it keeps the area
+#: estimate's square footprint until a committed GDS exists for it -- adding
+#: it here, once it does, is the natural follow-up this issue's own Scope
+#: section calls out rather than a new decision.
+ASSEMBLED_RING_GDS: dict[str, Path] = {
+    "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
+    "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",
+}
 
 #: `klt gen mos_array` refuses w_um below this. The gf180mcu 3.3 V core
 #: devices go to 0.22 um, and the curated DRC deck's own Comp minimum is
@@ -343,6 +369,28 @@ def _run_klt(args: list[str]) -> dict:
     return payload
 
 
+def read_gds_bbox(gds_path: Path) -> dict:
+    """The real bounding box of a committed GDS's own top cell, in um.
+
+    Reads it through `klt stats`, never `klayout.db` directly -- the same
+    rule every other tool interaction in this module follows. Returns
+    ``{"x0", "y0", "x1", "y1", "cell_name"}``; `klt stats`'s own
+    `bbox_um` uses `left`/`bottom`/`right`/`top` keys, translated here to
+    this module's `x0`/`y0`/`x1`/`y1` convention (the same one `klt gen`'s
+    responses already use, which is what `gen_guard_ring` and `compose`
+    below expect).
+    """
+    response = _run_klt(["stats", str(gds_path.relative_to(REPO_ROOT))])
+    box = response["bbox_um"]
+    return {
+        "x0": box["left"],
+        "y0": box["bottom"],
+        "x1": box["right"],
+        "y1": box["top"],
+        "cell_name": response["top_cell"],
+    }
+
+
 def gen_mos(flavor: str, w_um: float, l_um: float, variant: str, stem: str) -> dict:
     """One isolated device, so its drawn footprint can be measured."""
     params = {
@@ -364,8 +412,21 @@ def gen_mos(flavor: str, w_um: float, l_um: float, variant: str, stem: str) -> d
 
 
 def gen_guard_ring(region_id: str, w_um: float, h_um: float, variant: str) -> dict:
-    """A substrate-tap guard ring sized to enclose one region."""
-    per_side = max(4, int(round(max(w_um, h_um) / GUARD_CONTACT_PITCH_UM)))
+    """A substrate-tap guard ring sized to enclose one region.
+
+    `contacts_per_side` is derived from the region's *shorter* side, not the
+    longer one. `klt gen guard_ring` applies one `contacts_per_side` count to
+    every side, so deriving it from the longer side -- fine when every
+    region was a square, which is all this ever priced before issue #119 --
+    asks for more contacts than a short side can physically hold once a
+    region is elongated, which `ring1`/`ring2`'s real assembled-row
+    footprint (~78.9 x 4.75 um) now is. The generator refuses that request
+    outright rather than drawing invalid geometry (`contacts_per_side=N does
+    not fit along inner_height_um=...um without overlapping contacts`), so
+    getting this wrong is a hard failure here, not a silent DRC surprise
+    later.
+    """
+    per_side = max(4, int(round(min(w_um, h_um) / GUARD_CONTACT_PITCH_UM)))
     params = {
         "inner_width_um": round(w_um, 3),
         "inner_height_um": round(h_um, 3),
@@ -427,6 +488,102 @@ def compose(order: list[str], variant: str) -> dict:
 
 def run_drc(gds: str) -> dict:
     return _run_klt(["drc", gds, "--deck", DECK])
+
+
+def _drc_summary(response: dict) -> dict:
+    return {
+        "status": response.get("status"),
+        "violation_count": response.get("violation_count"),
+        "rule_counts": response.get("rule_counts"),
+    }
+
+
+def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
+    """Compose one region's own guard ring with its real assembled ring GDS,
+    aligned so the ring's own bbox exactly fills the guard ring's declared
+    inner cavity, and run `klt drc` over the pair -- the check issue #119
+    itself named as missing: nothing before this confirmed the assembled
+    geometry the floorplan reserves a region for actually *fits* inside it.
+
+    `klt drc` is run twice: once on the composed pair, once on the ring GDS
+    alone. A rule violated in both is already present in the committed ring
+    geometry on its own and has nothing to do with this region's sizing or
+    placement; a rule violated only in the composed run is new, introduced
+    by the fit itself, and is what this check exists to catch. Only the
+    latter is treated as this function's own pass/fail signal -- the former
+    is reported for visibility but is a different question (whether
+    `ring_gds` is DRC-clean by itself), out of this issue's scope.
+
+    Placement uses `placement.strategy: "explicit"` (#321) with the ring's
+    own reported bbox translated so its low corner lands at
+    `(GUARD_RING_WIDTH_UM, GUARD_RING_WIDTH_UM)` -- the guard ring's own
+    inner-cavity corner, since `gen_guard_ring`'s bbox always starts at
+    `(0, 0)`. That is the tightest legal placement (zero clearance between
+    the ring's own drawn edge and the region's guard ring) and so the
+    hardest case for this check to pass, not an arbitrary one.
+    """
+    rid = region["id"]
+    source = region["footprint_source"]
+    bbox = source["bbox_um"]
+
+    ring_report = {
+        "generator": "committed_ring_geometry",
+        "cell_name": source["cell_name"],
+        "gds_path": str(gds_path.relative_to(REPO_ROOT)),
+        "bbox_um": bbox,
+    }
+    (WORK_DIR / f"fp_ring_fit_{rid}_ring.json").write_text(
+        json.dumps(ring_report, indent=2) + "\n"
+    )
+
+    origin_x = round(GUARD_RING_WIDTH_UM - bbox["x0"], 3)
+    origin_y = round(GUARD_RING_WIDTH_UM - bbox["y0"], 3)
+    request = {
+        "_comment": (
+            "Generated by layout/floorplan/floorplan.py's ring-fit check "
+            f"(issue #119) for region '{rid}'. Re-run by hand with: "
+            "klt gen-compose <this file's path> (from the repo root)."
+        ),
+        "blocks": [
+            {"id": "guard", "generator_report": f"fp_guard_{rid}.json"},
+            {"id": "ring", "generator_report": f"fp_ring_fit_{rid}_ring.json"},
+        ],
+        "placement": {
+            "strategy": "explicit",
+            "order": ["guard", "ring"],
+            "origins_um": {
+                "guard": {"x": 0.0, "y": 0.0},
+                "ring": {"x": origin_x, "y": origin_y},
+            },
+        },
+        "pdk": {"variant": variant},
+        "options": {
+            "cell_name": f"fp_ring_fit_{rid}",
+            "output": f"layout/.work/fp_ring_fit_{rid}.gds",
+        },
+    }
+    request_path = WORK_DIR / f"fp_ring_fit_{rid}_request.json"
+    request_path.write_text(json.dumps(request, indent=2) + "\n")
+
+    _run_klt(["gen-compose", str(request_path.relative_to(REPO_ROOT))])
+    composed_drc = run_drc(f"layout/.work/fp_ring_fit_{rid}.gds")
+    ring_drc = run_drc(str(gds_path.relative_to(REPO_ROOT)))
+
+    composed_rules = Counter(composed_drc.get("rule_counts") or {})
+    ring_rules = Counter(ring_drc.get("rule_counts") or {})
+    new_rules = {rule: count for rule, count in (composed_rules - ring_rules).items()}
+
+    return {
+        "region": rid,
+        "ring_gds": str(gds_path.relative_to(REPO_ROOT)),
+        "ring_bbox_um": bbox,
+        "guard_inner_um": {"w_um": region["inner_w_um"], "h_um": region["inner_h_um"]},
+        "fit_offset_um": {"x": origin_x, "y": origin_y},
+        "composed": _drc_summary(composed_drc),
+        "ring_standalone": _drc_summary(ring_drc),
+        "new_violation_rule_counts_from_fit": new_rules,
+        "new_violations_from_fit": sum(new_rules.values()),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -630,7 +787,48 @@ def build(pdk) -> dict:
             cell_count = sum(inventories[rid].values())
 
         placed = {f"{int(u * 100)}pct": cell_area / u for u in UTILISATION}
-        side = math.sqrt(cell_area / GEOMETRY_UTILISATION)
+        side = round(math.sqrt(cell_area / GEOMETRY_UTILISATION), 2)
+
+        # The guarded-region footprint below: real assembled geometry where
+        # it exists (issue #119, Option A), the area/utilisation estimate's
+        # sqrt(area) square everywhere else (`combiner_sampler`, `digital`,
+        # not yet assembled). Either way this is what `gen_guard_ring` below
+        # actually encloses -- `footprint_source` records which one, and why.
+        if rid in ASSEMBLED_RING_GDS:
+            gds_path = ASSEMBLED_RING_GDS[rid]
+            bbox = read_gds_bbox(gds_path)
+            inner_w_um = round(bbox["x1"] - bbox["x0"], 3)
+            inner_h_um = round(bbox["y1"] - bbox["y0"], 3)
+            footprint_source = {
+                "kind": "assembled_gds",
+                "note": (
+                    "sized from the committed, DRC/LVS-clean assembled "
+                    "row's own bounding box (issue #119), not from the "
+                    "area/utilisation estimate's sqrt(cell_area_um2 / "
+                    "geometry_utilisation) square -- see this region's own "
+                    "cell_area_um2/placed_area_um2 above for what that "
+                    f"estimate alone would have given ({side:.2f} x "
+                    f"{side:.2f} um)"
+                ),
+                "gds": str(gds_path.relative_to(REPO_ROOT)),
+                "cell_name": bbox["cell_name"],
+                "bbox_um": {
+                    "x0": bbox["x0"], "y0": bbox["y0"],
+                    "x1": bbox["x1"], "y1": bbox["y1"],
+                },
+            }
+        else:
+            inner_w_um = inner_h_um = side
+            footprint_source = {
+                "kind": "area_estimate",
+                "note": (
+                    "sqrt(cell_area_um2 / geometry_utilisation) -- see this "
+                    "module's own AREA MODEL docstring. Not yet assembled, "
+                    "so no committed GDS exists to size this region from "
+                    "instead (issue #119's own Scope note)."
+                ),
+            }
+
         regions.append({
             **{k: v for k, v in spec.items() if k != "source"},
             "contents": contents,
@@ -638,8 +836,9 @@ def build(pdk) -> dict:
             "breakdown": breakdown,
             "cell_area_um2": round(cell_area, 2),
             "placed_area_um2": {k: round(v, 2) for k, v in placed.items()},
-            "inner_w_um": round(side, 2),
-            "inner_h_um": round(side, 2),
+            "footprint_source": footprint_source,
+            "inner_w_um": inner_w_um,
+            "inner_h_um": inner_h_um,
         })
 
     # --- 4. guard rings, composition, DRC ---------------------------------
@@ -662,6 +861,30 @@ def build(pdk) -> dict:
             f"  {region['id']:<18} inner {region['inner_w_um']:8.2f} x "
             f"{region['inner_h_um']:8.2f} -> guarded {region['guarded_w_um']:8.2f} x "
             f"{region['guarded_h_um']:8.2f} um ({region['guard_taps']} taps)"
+        )
+    print()
+
+    # --- 4b. ring fit -- does the real geometry fit where it's reserved? --
+    # The area/utilisation estimate never checked that the geometry it
+    # priced actually fits where the floorplan reserves it for -- that gap
+    # is what issue #119 opened. For every region whose guarded footprint
+    # above came from a real assembled GDS (`ASSEMBLED_RING_GDS`), compose
+    # that region's own guard ring with the real ring geometry and run
+    # `klt drc` over the pair (`check_ring_fit`).
+    print("== ring fit (issue #119) ==")
+    ring_fit: dict[str, dict] = {}
+    for region in regions:
+        rid = region["id"]
+        if rid not in ASSEMBLED_RING_GDS:
+            continue
+        fit = check_ring_fit(region, ASSEMBLED_RING_GDS[rid], variant)
+        ring_fit[rid] = fit
+        print(
+            f"  {rid:<10} composed drc {fit['composed']['status']} "
+            f"({fit['composed']['violation_count']} violations), "
+            f"{fit['new_violations_from_fit']} introduced by the fit "
+            f"(ring alone: {fit['ring_standalone']['status']}, "
+            f"{fit['ring_standalone']['violation_count']})"
         )
     print()
 
@@ -786,6 +1009,7 @@ def build(pdk) -> dict:
             "gds_sha256_timestamp_normalised": hashlib.sha256(gds).hexdigest(),
         },
         "drc": drc,
+        "ring_fit": ring_fit,
     }
 
 
@@ -838,6 +1062,15 @@ def print_report(report: dict) -> None:
     print(f"  excluded: DR-0016 ring-liveness monitor, {excluded['cells']} cells, "
           f"{excluded['cell_area_um2']:.1f} um^2 cell area")
     print()
+    for rid, fit in report.get("ring_fit", {}).items():
+        print(
+            f"  ring fit {rid:<10}: composed drc {fit['composed']['status']}, "
+            f"{fit['new_violations_from_fit']} new violation(s) from the fit "
+            f"(ring alone: {fit['ring_standalone']['status']}, "
+            f"{fit['ring_standalone']['violation_count']} pre-existing)"
+        )
+    if report.get("ring_fit"):
+        print()
 
 
 def print_table() -> None:
@@ -882,6 +1115,10 @@ ARTEFACTS = {
     },
     "compose.json": lambda report: report["composition"],
     "floorplan.drc.json": lambda report: report["drc"],
+    # Issue #119's own check: does the real, committed ring geometry
+    # actually fit inside the region its own guarded footprint reserves?
+    # One entry per region in `ASSEMBLED_RING_GDS`.
+    "ring_fit.json": lambda report: report["ring_fit"],
 }
 
 _REGENERATE = "-- re-run `python3 layout/floorplan/floorplan.py --write`"
@@ -975,6 +1212,22 @@ def main(argv: list[str] | None = None) -> int:
             f"floorplan DRC is {report['drc'].get('status')}, expected clean: "
             f"{report['drc'].get('rule_counts')}"
         )
+
+    # The pass/fail signal from issue #119's ring-fit check is specifically
+    # "did the fit introduce a new violation", not "is the committed ring
+    # GDS itself DRC-clean against whatever deck this run happens to
+    # resolve" -- that is a question about `ring_gds`, not about this
+    # region's sizing, and `ring_standalone` is reported (not enforced) so
+    # it stays visible without conflating the two.
+    for rid, fit in report.get("ring_fit", {}).items():
+        if fit["new_violations_from_fit"]:
+            failures.append(
+                f"region '{rid}': composing it with its real assembled ring "
+                f"geometry ({fit['ring_gds']}) introduces "
+                f"{fit['new_violations_from_fit']} new DRC violation(s) not "
+                f"present in the ring GDS alone: "
+                f"{fit['new_violation_rule_counts_from_fit']}"
+            )
 
     if args.write:
         written = write_artefacts(report)
