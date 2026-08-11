@@ -46,11 +46,15 @@ output against its ring1 counterpart, not assumed.
 
 ## What is explicitly *not* here yet
 
-- **Placing `xor2` + the four `sampler_dff` instances inside
-  `layout/floorplan/trng_floorplan.gds`'s own guarded `combiner_sampler`
-  region.** Neither is assembled into a block the way `ro_ring11` is here,
-  so there is no committed GDS to place. Out of scope for this directory
-  either way — `layout/floorplan/` is where placement happens, not here.
+- **Assembling and placing `xor2` + the four `sampler_dff` instances.**
+  That block is not a ring, so it is assembled under
+  [`layout/blocks/combiner_sampler/`](../blocks/combiner_sampler/) instead
+  (#134) — see [`layout/blocks/README.md`](../blocks/README.md) for scope.
+  Placing it inside `layout/floorplan/trng_floorplan.gds`'s own guarded
+  `combiner_sampler` region is blocked on a discovered size mismatch (#135,
+  the same kind of gap this directory's own ring1/ring2 history below
+  describes) — out of scope for this directory either way, `layout/
+  floorplan/` is where placement happens, not here.
 
 ## Placing `ro_ring11`/`ro_ring11_ring2` inside the floorplan (#110)
 

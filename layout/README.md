@@ -10,25 +10,31 @@ deliberately broken copies of it, drawn to demonstrate the DRC/LVS flow —
 nothing in `layout/reports/` under those three names should be read as a
 statement about the TRNG.
 
-**[`layout/floorplan/`](floorplan/), [`layout/cells/`](cells/) and
-[`layout/rings/`](rings/) are the three things here that are about the
-TRNG.** `floorplan/` is the entropy source's isolation rationale (#16) and
-the floorplan abstract that carries it: four guarded regions, real
-generated guard rings, DRC'd as one stream, with an area rollup against the
-`< 0.05 mm²` row. As of #110, `ring1`/`ring2` carry real, placed,
-DRC/LVS-verified content; `combiner_sampler` and `digital` are still
-*empty*, so it remains a floorplan and not a full layout, and
+**[`layout/floorplan/`](floorplan/), [`layout/cells/`](cells/),
+[`layout/rings/`](rings/) and [`layout/blocks/`](blocks/) are the four
+things here that are about the TRNG.** `floorplan/` is the entropy source's
+isolation rationale (#16) and the floorplan abstract that carries it: four
+guarded regions, real generated guard rings, DRC'd as one stream, with an
+area rollup against the `< 0.05 mm²` row. As of #110, `ring1`/`ring2` carry
+real, placed, DRC/LVS-verified content; `combiner_sampler` and `digital` are
+still *empty* (`combiner_sampler` now has a real, DRC-clean, LVS-matching
+assembled block committed under `blocks/` — #134 — but it does not yet fit
+the region's own guarded footprint, #135, so it is not placed there), so
+`floorplan/` remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
 `cells/` (#106) is where drawn design cells land, one at a time, each
 DRC-clean and LVS-matching before the next is started —
 [`cells/README.md`](cells/README.md) says which cells are drawn and which of
-the block's many remaining cells are not. `rings/` (#110) is where those
-individually-verified cells get *assembled* — ten `ro_stage` plus one
-`ro_nand2`, wired into one DRC-clean, LVS-matching `ro_ring11`, at both ring
-sizings — see [`rings/README.md`](rings/README.md) for scope, and
+the block's many remaining cells are not. `rings/` (#110) and `blocks/`
+(#134) are where those individually-verified cells get *assembled*: `rings/`
+holds `ro_ring11` (ten `ro_stage` plus one `ro_nand2`, at both ring
+sizings), `blocks/` holds `combiner_sampler` (one `xor2` plus four
+`sampler_dff`) — see [`rings/README.md`](rings/README.md) and
+[`blocks/README.md`](blocks/README.md) for scope, and
 [`floorplan/README.md`](floorplan/README.md#placement--issue-110) for how
-that assembled block is placed inside `floorplan/`'s own guarded regions.
+`ring1`/`ring2`'s own assembled blocks are placed inside `floorplan/`'s own
+guarded regions (`combiner_sampler`'s own placement is blocked on #135).
 
 The flow is stood up before the layout it will check, for the same reason
 `sim/` was stood up before the first result: a verification flow that first
@@ -150,6 +156,12 @@ layout/
       build.py                 assembles ro_ring11 (ring1 sizing) from drawn cells + hand-routed wiring
       ro_ring11.gds              the assembled block (timestamps normalised)
       ro_ring11.spice            hand-written LVS reference (mechanically expanded, see the file's own header)
+  blocks/
+    README.md                 scope: which non-ring blocks are assembled (#134)
+    combiner_sampler/
+      build.py                 assembles combiner_sampler (xor2 + 4x sampler_dff) from drawn cells + hand-routed wiring
+      combiner_sampler.gds       the assembled block (timestamps normalised)
+      combiner_sampler.spice     hand-written LVS reference (mechanically expanded, see the file's own header)
   reports/
     environment.json         klt version, PDK provenance, platform
     <fixture>.drc.json       verbatim `klt drc` output

@@ -136,11 +136,16 @@ GUARD_CONTACT_PITCH_UM = 2.0
 #: identical, but each is read from its own committed stream rather than
 #: assumed equal.
 #:
-#: `combiner_sampler` (`xor2` + 4x `sampler_dff`) has no entry here: it is
-#: not assembled yet (issue #110's own Dependencies), so it keeps the area
-#: estimate's square footprint until a committed GDS exists for it -- adding
-#: it here, once it does, is the natural follow-up this issue's own Scope
-#: section calls out rather than a new decision.
+#: `combiner_sampler` (`xor2` + 4x `sampler_dff`) has no entry here even
+#: though a committed, DRC-clean, LVS-matching assembled GDS now exists
+#: (`layout/blocks/combiner_sampler/combiner_sampler.gds`, issue #134): its
+#: own real bounding box (278.90 x 15.64 um) is roughly 11x the width of
+#: this region's own guarded footprint (25.27 x 25.27 um, still the area/
+#: utilisation estimate's square below) -- the same kind of size mismatch
+#: issue #119 found and resolved for `ring1`/`ring2`, filed for
+#: `combiner_sampler` as issue #135 rather than forced through here. Adding
+#: an entry here is that issue's own natural follow-up, once the region is
+#: resized to fit.
 ASSEMBLED_RING_GDS: dict[str, Path] = {
     "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
     "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",

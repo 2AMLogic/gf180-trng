@@ -92,14 +92,19 @@ see each cell's own `.spice` header) before the next one is started.
 Deferred to follow-up issues, filed against this repository (not against
 klayout-tools — none of the gaps below are tool gaps):
 
-- **Placing either ring's assembled `ro_ring11` — plus the combiner and
-  samplers — inside the #16 floorplan's guarded regions** ([#110][gf110]).
-  Both rings' own `ro_ring11` (ring1 at `wstv=0.220u`, ring2 at
-  `wstv=0.240u`) are now assembled and DRC/LVS-clean under
-  [`layout/rings/`](../rings/) — see [`rings/README.md`](../rings/README.md)
-  for what that covers and for the discovered size mismatch between the
-  assembled row and the floorplan's own guarded-region footprint that
-  blocks this step, [#119][gf119]. Nothing is placed inside a guarded
+- **Placing either ring's assembled `ro_ring11`, or the assembled
+  `combiner_sampler` block, inside the #16 floorplan's guarded regions**
+  ([#110][gf110], [#134][gf134]). Both rings' own `ro_ring11` (ring1 at
+  `wstv=0.220u`, ring2 at `wstv=0.240u`) are assembled and DRC/LVS-clean
+  under [`layout/rings/`](../rings/) — see
+  [`rings/README.md`](../rings/README.md) for what that covers. `xor2` plus
+  the four `sampler_dff` instances are likewise now assembled and
+  DRC/LVS-clean under [`layout/blocks/combiner_sampler/`](../blocks/)
+  ([#134][gf134]) — see [`blocks/README.md`](../blocks/README.md). Placing
+  `ring1`/`ring2` inside their own guarded regions is done ([#110][gf110],
+  after resolving the size mismatch [#119][gf119] found); placing
+  `combiner_sampler` is blocked on the same kind of size mismatch, filed as
+  [#135][gf135]. Nothing in the digital section is placed inside a guarded
   region yet.
 - **The digital section** (conditioner, health tests, interface — 1655
   standard cells per `layout/floorplan/README.md`'s own inventory) —
@@ -117,6 +122,8 @@ klayout-tools — none of the gaps below are tool gaps):
 [gf108]: https://github.com/2AMLogic/gf180-trng/issues/108
 [gf109]: https://github.com/2AMLogic/gf180-trng/issues/109
 [gf110]: https://github.com/2AMLogic/gf180-trng/issues/110
+[gf134]: https://github.com/2AMLogic/gf180-trng/issues/134
+[gf135]: https://github.com/2AMLogic/gf180-trng/issues/135
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
