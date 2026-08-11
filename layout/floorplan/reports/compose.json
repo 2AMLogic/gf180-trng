@@ -25,6 +25,10 @@
       {
         "id": "ring2_ring",
         "generator_report": "fp_ring_content_ring2.json"
+      },
+      {
+        "id": "combiner_sampler_ring",
+        "generator_report": "fp_ring_content_combiner_sampler.json"
       }
     ],
     "placement": {
@@ -35,7 +39,8 @@
         "combiner_sampler",
         "digital",
         "ring1_ring",
-        "ring2_ring"
+        "ring2_ring",
+        "combiner_sampler_ring"
       ],
       "origins_um": {
         "ring1": {
@@ -51,7 +56,7 @@
           "y": 0.0
         },
         "digital": {
-          "x": 247.09,
+          "x": 502.72,
           "y": 0.0
         },
         "ring1_ring": {
@@ -61,6 +66,10 @@
         "ring2_ring": {
           "x": 105.96,
           "y": 1.55
+        },
+        "combiner_sampler_ring": {
+          "x": 203.04,
+          "y": 0.69
         }
       }
     },
@@ -83,7 +92,7 @@
     "bbox_um": {
       "x0": 0.0,
       "y0": 0.0,
-      "x1": 601.4300000000001,
+      "x1": 857.0600000000001,
       "y1": 354.34000000000003
     },
     "blocks": [
@@ -125,21 +134,21 @@
         "bbox_um": {
           "x0": 201.82,
           "y0": 0.0,
-          "x1": 227.09,
-          "y1": 25.27
+          "x1": 482.72,
+          "y1": 17.64
         }
       },
       {
         "id": "digital",
         "generator": "guard_ring",
         "offset_um": {
-          "x": 247.09,
+          "x": 502.72,
           "y": 0.0
         },
         "bbox_um": {
-          "x0": 247.09,
+          "x0": 502.72,
           "y0": 0.0,
-          "x1": 601.4300000000001,
+          "x1": 857.0600000000001,
           "y1": 354.34000000000003
         }
       },
@@ -170,6 +179,20 @@
           "x1": 180.82,
           "y1": 5.75
         }
+      },
+      {
+        "id": "combiner_sampler_ring",
+        "generator": "committed_ring_geometry",
+        "offset_um": {
+          "x": 203.04,
+          "y": 0.69
+        },
+        "bbox_um": {
+          "x0": 202.82,
+          "y0": 1.0,
+          "x1": 481.72,
+          "y1": 16.64
+        }
       }
     ],
     "nets": [],
@@ -182,5 +205,5 @@
     },
     "warnings": []
   },
-  "gds_sha256_timestamp_normalised": "6a717bdde8f7cf8f89e347d86a8f4d9b39a8f98ed4f28c485923906adac46a61"
+  "gds_sha256_timestamp_normalised": "28635e2767422e4b19b8ebb727e1467fb43be39cbb4ca458a492a291cec1cf6d"
 }

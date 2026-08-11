@@ -457,36 +457,56 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 |---|---:|---:|---:|---:|
 | Entropy ring 1 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
 | Entropy ring 2 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
-| XOR combiner + 4 samplers | 5 | 324.9 µm² | 541.5 µm² | 638.6 µm² |
+| XOR combiner + 4 samplers | 5 | 324.9 µm² | 541.5 µm² | 4 955.1 µm² |
 | Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 125 556.8 µm² |
-| **total** | | **75 139.0 µm²** | **125 231.7 µm²** | **127 287.7 µm²** |
+| **total** | | **75 139.0 µm²** | **125 231.7 µm²** | **131 604.2 µm²** |
 
-`ring1`/`ring2`'s own `cell area`/`placed @ 60 %` columns above are still the
-area/utilisation estimate (unchanged in method by this section); only their
-**guarded footprint** is sized differently, and only for those two rows — see
-[What the area model is](#what-the-area-model-is) below.
+`ring1`/`ring2`/`combiner_sampler`'s own `cell area`/`placed @ 60 %` columns
+above are still the area/utilisation estimate (unchanged in method by this
+section); only their **guarded footprint** is sized differently, and only for
+those three rows (`ring1`/`ring2` since issue #119, `combiner_sampler` since
+issue #135) — see [What the area model is](#what-the-area-model-is) below.
 
-Isolation channels (20 µm × the taller neighbour): 135.0 + 505.4 + 7 086.8 =
-**7 727.2 µm²**.
+Isolation channels (20 µm × the taller neighbour): 135.0 + 352.8 + 7 086.8 =
+**7 574.6 µm²** — the `ring2`|`combiner_sampler` channel *shrank* from
+505.4 to 352.8 µm² even though `combiner_sampler`'s own region grew hugely,
+because the channel is charged at 20 µm × the taller neighbour's height and
+the real assembled row (15.64 µm tall, 17.64 µm guarded) is *shorter* than
+the area-estimate square it replaced (23.27 µm tall, 25.27 µm guarded) —
+`combiner_sampler`'s footprint got much wider and somewhat shorter, not
+uniformly bigger.
 
 | | area | share of the `< 0.05 mm²` row |
 |---|---:|---:|
-| **Entropy source + samplers + all isolation structures** | **2 371.2 µm²** | **4.74 %** |
+| **Entropy source + samplers + all isolation structures** | **6 535.2 µm²** | **13.07 %** |
 | Digital section | 125 556.8 µm² | 251.1 % |
-| **Floorplan total** | **135 014.9 µm²** = 0.1350 mm² | **270.0 %** |
+| **Floorplan total** | **139 178.8 µm²** = 0.13918 mm² | **278.4 %** |
 
 Two findings, and they point in opposite directions.
 
-**Isolation is cheap.** The entire isolated entropy source — both rings, the
-combiner, all four samplers, four guard rings and every isolation channel
-between them — is **4.7 % of the area row**. The guard rings and channels cost
-≈**1 281.8 µm²** of that, i.e. **≈2.6 % of the row for the whole isolation
-structure** — both figures are up from the pre-#119 estimate (4.1 %, 2.1 %)
-because `ring1`/`ring2`'s guarded footprint below is now sized from the real
-assembled row rather than a compact square, not because either ring grew.
-Nothing in this document's mitigations is area-constrained, and the proposed
-buffer mitigation adds 0.06 % more. *The isolation argument does not have to
-trade against the area budget, and it should not be allowed to.*
+**Isolation is cheap, but no longer negligible.** The entire isolated entropy
+source — both rings, the combiner, all four samplers, four guard rings and
+every isolation channel between them — is **13.1 % of the area row**. The
+guard rings and channels cost ≈**5 445.7 µm²** of that, i.e. **≈10.9 % of the
+row for the whole isolation structure** — both figures are up sharply from
+the pre-#135 estimate (4.74 %, 2.56 %) because `combiner_sampler`'s guarded
+footprint is now sized from its real assembled row (278.90 × 15.64 µm)
+instead of the compact area/utilisation-estimate square it previously used
+(23.27 × 23.27 µm), the same kind of resize issue #119 already did for
+`ring1`/`ring2` — see [What the area model is](#what-the-area-model-is) and
+issue #135. Nothing in `combiner_sampler`'s own cell content changed; only
+how its region is sized did. This is a much bigger proportional jump than
+issue #119's own ring resize (~+1 percentage point) because
+`combiner_sampler`'s row is long and thin (278.9 µm) rather than a shorter
+elongated ring geometry. In absolute terms it remains small next to the
+budget miss below: the digital section alone is already 125 556.8 µm²
+(251.1 % of the row, tracked separately by DR-0019), and this resize's own
++4 163.9 µm² floorplan-total increase is only ~5.5 % of the digital
+section's own overage (125 556.8 − 50 000 µm² = 75 556.8 µm² over the
+row). Nothing in this document's mitigations is
+area-constrained, and the proposed buffer mitigation adds 0.06 % more.
+*The isolation argument does not have to trade against the area budget, and
+it should not be allowed to — but it is no longer a rounding error either.*
 
 **The digital section misses the area row on standard-cell area alone** —
 74 485 µm², i.e. **1.49× the whole row before any placement at all**, and
@@ -506,10 +526,11 @@ this estimate, prices the available responses (reduce the FIFO depth, raise the
 row, hold the row, or split it), and carries the depth sensitivity — 269.4 % at
 depth 8, 129.4 % at depth 2, 105.8 % at depth 1 and 88.5 % with both FIFOs gone,
 all at this floorplan's own 60 % utilisation *as it stood when DR-0019 was
-written*, before issue #119's region resize above (the floorplan total is now
-**270.0 %**, not 269.4 %, entirely from `ring1`/`ring2`'s guarded-footprint
-change — the digital section DR-0019's own table turns on is untouched by
-#119). Re-deriving DR-0019's depth-sensitivity table against the new total is
+written*, before issue #119's and issue #135's own region resizes above (the
+floorplan total is now **278.4 %**, not 269.4 %, entirely from `ring1`/
+`ring2`'s (#119) and `combiner_sampler`'s (#135) guarded-footprint changes —
+the digital section DR-0019's own table turns on is untouched by either).
+Re-deriving DR-0019's depth-sensitivity table against the new total is
 that record's own follow-up, not repeated here. Its finding on the shared root
 cause is that the same lever reaches the two rows very differently: [DR-0017]
 rejected a depth reduction because it never gets the idle current under 1 µA at
@@ -541,41 +562,55 @@ and none of the analog cells has been drawn.
   in the repository, already guarded by `sim/tests/test_power_rollups.py`.
 - Placement utilisation is reported at both 60 % and 80 %, per [DR-0008]'s
   convention; the floorplan geometry is built at 60 %.
-- **`ring1`/`ring2`'s guarded footprint is not from this model.** Every other
-  region's guarded footprint is sized from this section's own
-  sqrt(cell_area / utilisation) square, same as always — `ring1`/`ring2` are
-  the exception (issue #119): once `layout/rings/ro_ring11/` (#110/#120) and
-  `layout/rings/ro_ring11_ring2/` (#118) existed as committed, DRC-clean,
-  LVS-matching assembled geometry, their real bounding box (read from that
-  committed GDS via `klt stats`, **78.9 × 4.75 µm** each) replaced the square
-  estimate for those two regions only — the estimate would have given
-  16.55 × 16.55 µm each, a footprint the real row does not remotely fit
-  inside (see `region.footprint_source` in
-  [`reports/area.json`](reports/area.json) for the exact numbers and which
-  regions use which method). Each region's *guarded* (outer) footprint is
-  still sized from that same **78.9 × 4.75 µm** ring bbox (**80.9 × 6.75 µm**
-  guarded, `GUARD_RING_WIDTH_UM` = 1.0 µm in on every side) — issue #110's
-  own placement clearance (below) only changes how that 1.0 µm is split
-  between guard-ring material and clear silicon, not the region's own outer
-  size, so `region.inner_w_um`/`inner_h_um` in `reports/area.json` now read
-  **79.71 × 5.55 µm** (ring bbox **+ 2 ×** `RING_PLACEMENT_CLEARANCE_UM`)
-  while `guarded_w_um`/`guarded_h_um` are unchanged. `combiner_sampler` is
-  not assembled yet, so it still uses the square estimate, same as `digital`
-  always will (no synthesis/placement step is in scope to replace it).
+- **`ring1`/`ring2`/`combiner_sampler`'s guarded footprint is not from this
+  model.** Every other region's guarded footprint is sized from this
+  section's own sqrt(cell_area / utilisation) square, same as always —
+  `ring1`/`ring2` (issue #119) and `combiner_sampler` (issue #135) are the
+  exceptions: once each had committed, DRC-clean, LVS-matching assembled
+  geometry, its real bounding box (read from the committed GDS via
+  `klt stats`) replaced the square estimate for that region only.
+    - `ring1`/`ring2`: `layout/rings/ro_ring11/` (#110/#120) and
+      `layout/rings/ro_ring11_ring2/` (#118), real bbox **78.9 × 4.75 µm**
+      each — the estimate would have given 16.55 × 16.55 µm each, a
+      footprint the real row does not remotely fit inside.
+    - `combiner_sampler`: `layout/blocks/combiner_sampler/` (#134), real
+      bbox **278.90 × 15.64 µm** — the estimate would have given
+      23.27 × 23.27 µm, roughly 11× narrower than the real assembled row.
+
+  (See `region.footprint_source` in [`reports/area.json`](reports/area.json)
+  for the exact numbers and which regions use which method.) Each region's
+  *guarded* (outer) footprint is still sized from that same real bbox
+  (**80.9 × 6.75 µm** guarded for each ring, **280.9 × 17.64 µm** guarded for
+  `combiner_sampler`, `GUARD_RING_WIDTH_UM` = 1.0 µm in on every side) —
+  issue #110's own placement clearance (below), extended to `combiner_sampler`
+  by issue #135, only changes how that 1.0 µm is split between guard-ring
+  material and clear silicon, not the region's own outer size, so
+  `region.inner_w_um`/`inner_h_um` in `reports/area.json` now read
+  **79.71 × 5.55 µm** (each ring) / **279.70 × 16.44 µm**
+  (`combiner_sampler`) — real bbox **+ 2 ×** `RING_PLACEMENT_CLEARANCE_UM` —
+  while `guarded_w_um`/`guarded_h_um` are unchanged by that split. `digital`
+  still uses the square estimate and always will (no synthesis/placement
+  step is in scope to replace it).
 - `layout/floorplan/floorplan.py` also checks that the real assembled
   geometry actually *fits* inside the region it now sizes: it composes each
-  such region's guard ring with the real ring GDS and runs `klt drc` **and**
-  `klt lvs` over the pair, comparing the DRC result against the ring GDS's
-  own standalone DRC so a violation introduced by the fit is distinguishable
-  from one already present in the ring on its own. Both rings fit
+  such region's guard ring with the real assembled GDS and runs `klt drc`
+  **and** `klt lvs` over the pair, comparing the DRC result against that
+  GDS's own standalone DRC so a violation introduced by the fit is
+  distinguishable from one already present in the assembled geometry on its
+  own. All three regions (`ring1`, `ring2`, `combiner_sampler`) fit
   DRC-clean-relative-to-baseline and LVS-match today — see
-  [`reports/ring_fit.json`](reports/ring_fit.json) and
+  [`reports/ring_fit.json`](reports/ring_fit.json),
   [Placement](#placement--issue-110) below for why this is no longer a
-  *zero*-clearance fit and what changed. (Both rings' *own* standalone DRC
-  currently reports 49 pre-existing violations against the `klt`/deck build
-  this script last ran against, unrelated to placement or to this issue —
-  see [Tool friction](#tool-friction).)
-- The composed abstract's row bounding box is **601.4 × 354.3 µm**. That is the
+  *zero*-clearance fit and what changed, and
+  [Placement — issue #135](#placement--issue-135-combiner_sampler) for
+  `combiner_sampler`'s own placement. (This regeneration's own standalone DRC
+  for all three is clean — 0 violations — not the 49-per-ring pre-existing
+  count issue #110 recorded: see [Tool friction](#tool-friction) for why
+  that count is gone.)
+- The composed abstract's row bounding box is **857.1 × 354.3 µm** (up from
+  601.4 × 354.3 µm before issue #135's `combiner_sampler` resize — almost
+  entirely the width of `combiner_sampler`'s own now much wider region).
+  That is the
   tool's one-dimensional arrangement, not a packing proposal — the composer
   supports row placement only. The area figures above are region footprints
   plus channels, which do not depend on that arrangement.
@@ -643,17 +678,19 @@ results: [`reports/ring_fit.json`](reports/ring_fit.json).
 `compose()` uses `placement.strategy: "explicit"` (#330) for every block —
 `ring1`/`ring2`/`combiner_sampler`/`digital`'s own guard rings at the same
 absolute origins `strategy: "row"` used to compute (so every region and
-channel lands exactly where issue #119's own committed numbers already put
+channel lands exactly where each region's own committed numbers already put
 it), plus one more block each for `ring1`/`ring2`: the real assembled
 `ro_ring11`/`ro_ring11_ring2` geometry, translated to
 `(region's row offset + GUARD_RING_WIDTH_UM − ring bbox x0/y0)` — the same
 "flush against the guard ring's own declared inner corner" formula
 `check_ring_fit` already verifies clean, since `ring_band_width_um +
 RING_PLACEMENT_CLEARANCE_UM == GUARD_RING_WIDTH_UM` makes that absolute
-position independent of the clearance/band-width split. `combiner_sampler`
-and `digital` stay empty guard rings — neither is assembled yet (`xor2` +
-`sampler_dff` placement, and any digital-section placement, are out of this
-issue's own scope).
+position independent of the clearance/band-width split. Issue #135 gives
+`combiner_sampler` the same treatment, its own real assembled
+`combiner_sampler.gds` content placed the same way — see
+[Placement — issue #135](#placement--issue-135-combiner_sampler) below.
+`digital` alone stays an empty guard ring — no digital-section placement is
+in scope for either issue.
 
 **No common-centroid pairing, verified, not just avoided by construction.**
 `layout/floorplan/README.md`'s own [Mechanism 1](#mechanism-1--mutual-injection-locking-between-the-rings)
@@ -677,6 +714,63 @@ produces) — no net, and no device, spans both rings' own structures.
 
 ---
 
+## Placement — issue #135 (`combiner_sampler`)
+
+`layout/blocks/combiner_sampler/` (issue #134) assembled `xor2` + 4 ×
+`sampler_dff` into a single, DRC-clean, LVS-matching row — but, unlike
+`ring1`/`ring2`, that row is not two roughly-square rings; it is a single
+5-cell row measuring **278.90 × 15.64 µm**, about 11× the width of the
+region's prior area/utilisation-estimate square (23.27 × 23.27 µm). The
+mismatch is exactly the same shape #119 found for `ring1`/`ring2` — an area
+*estimate*, written before any cell existed to place, versus the real
+geometry a hand-drawn, row-assembled block actually has once it exists — so
+issue #135 resolved it the same way: `combiner_sampler` was added to
+`floorplan.py`'s `ASSEMBLED_RING_GDS`/`RING_LVS_REFERENCE` machinery (issue
+#110's own generalisation of `check_ring_fit`/`compose` to a non-ring
+assembled block, anticipated but not exercised until now), sizing the
+region's guarded footprint from `combiner_sampler.gds`'s own real bounding
+box instead of the estimate.
+
+**Same clearance mechanism, same result.** `RING_PLACEMENT_CLEARANCE_UM`
+(0.4 µm) applies to `combiner_sampler` exactly as it does to `ring1`/`ring2`
+— carved out of the guard ring's own band width, not added on top of the
+region's reserved outer footprint (**280.90 × 17.64 µm** guarded, real bbox
+**+ 2 ×** `GUARD_RING_WIDTH_UM`) — because the same zero-clearance short
+issue #110 found for the rings' own metal1 chain wiring is a generic risk of
+placing any real geometry flush against a guard ring's p+ tap diffusion, not
+something specific to `ro_ring11`'s own layout. At that clearance,
+`combiner_sampler` composes DRC-clean-relative-to-baseline (0 new violations
+against its own standalone DRC) **and** `klt lvs`-matches
+`RING_LVS_REFERENCE`'s `combiner_sampler.spice` reference — the same
+reference `layout/verify.py` already uses for this block standalone, modulo
+only the same two deck-level disclosures (`device.body_unverified`,
+`topology`) every other entry in this repository already carries. Verbatim
+result: [`reports/ring_fit.json`](reports/ring_fit.json)'s own
+`combiner_sampler` entry (3 mismatches, all in the allowed categories, 100
+devices and 54 nets all matched).
+
+**The row reshapes, not just one region's square.** `combiner_sampler` sits
+between `ring2` and `digital` in the composed row (see
+[The regions](#the-regions) above), so widening it by roughly 255 µm moves
+`digital`'s own row offset by the same amount and grows the composed
+abstract's own row bounding box from 601.4 × 354.3 µm to
+**857.1 × 354.3 µm**. The `ring2`|`combiner_sampler` channel's own area
+*shrinks* (505.4 → 352.8 µm²) because the real row is shorter
+(15.64 µm) than the estimate square was tall (23.27 µm), even though the
+region widened enormously — a channel is priced by height, not width, so a
+region that gets wider but shorter can cost *less* channel area even while
+its own guarded footprint grows by more than 4 000 µm². See
+[Area against the `< 0.05 mm²` row](#area-against-the--005-mm-row) above for
+the full before/after area rollup this resize produces.
+
+**What this does not do.** It does not place anything inside the `digital`
+region, and it does not change `combiner_sampler`'s own internal
+connectivity or cell content (`layout/blocks/combiner_sampler/build.py` is
+untouched by this issue) — only where the floorplan reserves space for the
+block it already assembled.
+
+---
+
 ## DRC: what actually ran
 
 `klt drc` was run — by this script, not by hand — on every generated device
@@ -684,33 +778,41 @@ footprint and on the composed floorplan abstract, with the same `gf180mcu` deck
 and the same PDK resolver `layout/verify.py` uses. Verbatim output in
 [`reports/floorplan.drc.json`](reports/floorplan.drc.json).
 
-**Since issue #110, `ring1`/`ring2` carry their own real, placed content —
-not an empty guard ring.** `combiner_sampler` and `digital` are still empty
-*in this composed abstract*: `combiner_sampler`'s own contents are now
-assembled and DRC/LVS-clean standalone (`layout/blocks/combiner_sampler/`,
-issue #134), but not yet placed here (blocked on the size mismatch issue
-#135 tracks); nothing in the digital section is assembled at all. The
-composed abstract's own raw DRC therefore still only surfaces whatever
-`ring1`/`ring2`'s own committed geometry already reports standalone:
+**Since issue #110, `ring1`/`ring2` carry their own real, placed content;
+since issue #135, so does `combiner_sampler`.** `digital` alone is still
+empty *in this composed abstract* — nothing in the digital section is
+assembled at all. This regeneration's own composed abstract is fully clean:
 
 ```
-composed abstract: status "violations", violation_count 98,
-  rule_counts {metal1.enclosing.contact.1: 10, via1.width.1: 88}
+composed abstract: status "clean", violation_count 0, rule_counts {}
 new violations introduced by composing the regions together: 0
 ```
 
-That 98 is exactly twice each ring's own standalone 49 (`layout/reports/
-ro_ring11*.drc.json`) — a pre-existing deck-drift gap
-([klayout-tools#623][kt623], already discussed below), not anything this
-placement introduced. `floorplan.py`'s own pass/fail signal is therefore
-**not** "is the composed abstract's raw violation count zero" any more —
-that stopped being true the moment real content entered the picture — but
-"does composing the regions together, and placing each ring inside its own
-guard ring, introduce anything beyond what that ring's own committed GDS
-already reports on its own" (`reports/floorplan.drc.json`'s own
-`new_violations_from_composition` key, and `reports/ring_fit.json`'s own
-`new_violations_from_fit`, for the same question asked pairwise per region).
-Both report 0.
+That is a change from what issue #110's own regeneration recorded here
+(`status "violations", violation_count 98`, `rule_counts
+{metal1.enclosing.contact.1: 10, via1.width.1: 88}` — exactly twice each
+ring's own standalone 49). That 98 was a pre-existing deck-drift gap
+([klayout-tools#623][kt623], discussed below) between the `klt` build that
+produced `layout/reports/ro_ring11*.drc.json`'s own committed `clean`
+verdict and the `klt` build issue #110's own regeneration ran against; this
+regeneration's `ring_fit.json` shows `ring1`/`ring2`'s own standalone DRC is
+*also* clean now (`reports/ring_fit.json`'s own `ring_standalone` entries),
+so whatever `klt` build this run resolved on `PATH` evidently carries the
+fix for that drift too — see [Tool friction](#tool-friction) for the detail.
+Nothing about `combiner_sampler`'s own placement caused this; it is a
+byproduct of re-running the whole flow against a newer `klt` build,
+surfaced because this issue's own test plan required a full regeneration.
+
+`floorplan.py`'s own pass/fail signal remains **not** "is the composed
+abstract's raw violation count zero", because that is not guaranteed to stay
+true as more regions gain real content or as the resolved `klt` build
+drifts again — it is "does composing the regions together, and placing each
+region's own real content inside its own guard ring, introduce anything
+beyond what that region's own committed GDS already reports on its own"
+(`reports/floorplan.drc.json`'s own `new_violations_from_composition` key,
+and `reports/ring_fit.json`'s own `new_violations_from_fit`, for the same
+question asked pairwise per region). Both report 0 — which, this run,
+happens to coincide with the raw count also being 0.
 
 **Read the scope off the report, not off this sentence.** The abstract draws
 Comp, Contact and Metal1 only, so the deck checked **three layers** and
@@ -723,25 +825,31 @@ block.
 - It **does** mean the isolation structures are legal geometry at these
   dimensions: four guard rings with those tap widths and contact pitches, at
   those sizes, with 20 µm between them, violate no rule in the curated deck —
-  and that placing `ring1`/`ring2`'s own real content inside its own guard
-  ring, at the clearance `RING_PLACEMENT_CLEARANCE_UM` establishes (below),
-  introduces no *new* rule violation over what that ring's own committed GDS
-  already has.
-- It does **not** mean the block is DRC-clean, full stop. `combiner_sampler`
-  and `digital` are still empty — no combiner, no sampler and no standard
-  cell has been drawn — and `ring1`/`ring2`'s own 49 pre-existing violations
-  each are real (tracked, not fixed, by this issue). A DRC run over a
+  and that placing `ring1`/`ring2`'s and `combiner_sampler`'s own real
+  content inside its own guard ring, at the clearance
+  `RING_PLACEMENT_CLEARANCE_UM` establishes (below), introduces no *new*
+  rule violation over what that region's own committed GDS already has.
+- It does **not** mean the block is DRC-clean, full stop, as a general
+  property of this check. `digital` is still an empty guard ring — no
+  standard cell in that section has been placed — and a DRC run over a
   floorplan abstract can only check what the floorplan abstract actually
-  contains.
+  contains: three layers (below), not the full deck. That this
+  particular regeneration's own raw violation count happens to be zero too
+  is a fact about this run, not a guarantee `floorplan.py` makes going
+  forward.
 - It is **not tapeout sign-off**, for all the reasons
   [`layout/README.md`](../README.md) already states: `klt`'s decks are a
   curated subset, not the PDK's own sign-off deck.
 
-The generated streams also cannot be identified to a `klt` build by anything
-`klt` reports (`klt --version` reads `0.1.0` for every build to date —
-[klayout-tools#306]); `layout/reports/environment.json` records the `klt_origin`
-commit for the same install this flow ran on, and every report here carries
-`klt`'s own `provenance` block including a content hash of the deck.
+The generated streams also cannot be identified to a `klt` build by its own
+version string alone (`klt --version` read `0.1.0` for every build through
+issue #119 — [klayout-tools#306], closed; this regeneration's own
+`klt --version` reads `0.2.0`, and `reports/*.json`'s own
+`provenance.klt_version` field confirms it); `layout/reports/
+environment.json` records the `klt_origin` commit for the same install this
+flow ran on, and every report here carries `klt`'s own `provenance` block
+including a content hash of the deck — the content hash, not the version
+string, is what this document actually relies on for reproducibility.
 
 ---
 
@@ -779,16 +887,15 @@ Stated as a list because an unstated limit is a defect.
    reserved, the structure is not designed.
 9. **No full layout, still.** `ring1`/`ring2` now carry real, placed,
    DRC/LVS-verified content ([Placement](#placement--issue-110), issue
-   #110); `combiner_sampler` and `digital` are still empty guard rings in
-   this composed abstract — no combiner, no sampler, and no standard cell
-   in the digital section has been placed. `combiner_sampler`'s own
-   contents (`xor2` + 4x `sampler_dff`) are now assembled and DRC/LVS-clean
-   as a standalone block (`layout/blocks/combiner_sampler/`, [#134][gf134]),
-   but that block's own real footprint (278.90 x 15.64 um) does not fit
-   this region's own guarded footprint (25.27 x 25.27 um, still sized from
-   the area/utilisation estimate below) — the same kind of size mismatch
-   issue #119 resolved for `ring1`/`ring2`, filed for `combiner_sampler` as
-   [#135][gf135] rather than forced through.
+   #110); `combiner_sampler`'s own contents (`xor2` + 4x `sampler_dff`,
+   [#134][gf134]) are now placed too
+   ([Placement — issue #135](#placement--issue-135-combiner_sampler)),
+   its region resized to the block's own real footprint
+   (278.90 × 15.64 µm) rather than the area/utilisation estimate that
+   previously did not fit it — the same kind of resize issue #119 did for
+   `ring1`/`ring2`, resolved for `combiner_sampler` by [#135][gf135]. Only
+   `digital` remains an empty guard ring in this composed abstract — no
+   standard cell in the digital section has been placed.
 
 None of these is a reason to withhold the floorplan. All of them are reasons
 not to read a clean DRC result as an independence argument.
@@ -855,21 +962,28 @@ design. This work produced four, all filed against
    trusting a fixed number, but nothing in `gen-compose`'s own contract
    prompts a caller to do so.
 
-Not new friction, but worth recording alongside the above: this run's ring-fit
-check (issue #119) found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
-`ro_ring11_ring2.gds`'s own standalone `klt drc` result no longer reproduces
+Not new friction, but worth recording alongside the above: issue #110's own
+regeneration found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
+`ro_ring11_ring2.gds`'s own standalone `klt drc` result no longer reproduced
 the `clean` verdict committed in `layout/reports/ro_ring11*.drc.json` (#120,
 #118) — same input content hash, but a different `provenance.deck.content_hash`
 than the one that produced the committed report, because a different `klt`
-build resolved on `PATH` when this script ran. That is exactly the gap
+build resolved on `PATH` when that regeneration ran. That was exactly the gap
 [klayout-tools#623][kt623] (closed) already describes: no way to pin or
 reproduce a specific historical rule-deck revision once a newer `klt` build
-shadows it. Nothing here re-verifies `ro_ring11`'s own DRC status — that is a
-`layout/rings/` concern, not a floorplan-region-sizing one, and this script's
-own ring-fit check already separates "violations already present in the ring
-GDS alone" from "violations introduced by fitting it into its region" (0 of
-the latter for both rings) precisely so this drift does not block that
-separate question.
+shadows it. **Issue #135's own regeneration (this document's current numbers)
+no longer reproduces that drift**: `reports/ring_fit.json`'s own
+`ring_standalone` entries for `ring1`/`ring2`/`combiner_sampler` are all
+`clean` again, matching the originally-committed verdict, which is consistent
+with `#623` genuinely being fixed in whatever `klt` build (`0.2.0`, per this
+run's own `klt --version` and `provenance.klt_version`) resolved on `PATH`
+this time. Nothing here re-verifies `ro_ring11`'s own DRC status as a
+standalone-block concern — that is still a `layout/rings/` question, not a
+floorplan-region-sizing one — and this script's own ring-fit check already
+separates "violations already present in the assembled GDS alone" from
+"violations introduced by fitting it into its region" (0 of the latter for
+all three regions this run) precisely so a future recurrence of this drift
+would not block that separate question.
 
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
