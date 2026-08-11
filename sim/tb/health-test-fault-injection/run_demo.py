@@ -23,7 +23,6 @@ line so that "re-run the demonstration" means exactly one thing.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import platform
 import sys
