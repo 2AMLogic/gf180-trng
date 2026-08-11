@@ -1,0 +1,74 @@
+{
+  "ring1": {
+    "region": "ring1",
+    "ring_gds": "layout/rings/ro_ring11/ro_ring11.gds",
+    "ring_bbox_um": {
+      "x0": -4.05,
+      "y0": -0.55,
+      "x1": 74.86,
+      "y1": 4.2
+    },
+    "guard_inner_um": {
+      "w_um": 78.91,
+      "h_um": 4.75
+    },
+    "fit_offset_um": {
+      "x": 5.05,
+      "y": 1.55
+    },
+    "composed": {
+      "status": "violations",
+      "violation_count": 49,
+      "rule_counts": {
+        "metal1.enclosing.contact.1": 5,
+        "via1.width.1": 44
+      }
+    },
+    "ring_standalone": {
+      "status": "violations",
+      "violation_count": 49,
+      "rule_counts": {
+        "metal1.enclosing.contact.1": 5,
+        "via1.width.1": 44
+      }
+    },
+    "new_violation_rule_counts_from_fit": {},
+    "new_violations_from_fit": 0
+  },
+  "ring2": {
+    "region": "ring2",
+    "ring_gds": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+    "ring_bbox_um": {
+      "x0": -4.05,
+      "y0": -0.55,
+      "x1": 74.86,
+      "y1": 4.2
+    },
+    "guard_inner_um": {
+      "w_um": 78.91,
+      "h_um": 4.75
+    },
+    "fit_offset_um": {
+      "x": 5.05,
+      "y": 1.55
+    },
+    "composed": {
+      "status": "violations",
+      "violation_count": 49,
+      "rule_counts": {
+        "metal1.enclosing.contact.1": 5,
+        "via1.width.1": 44
+      }
+    },
+    "ring_standalone": {
+      "status": "violations",
+      "violation_count": 49,
+      "rule_counts": {
+        "metal1.enclosing.contact.1": 5,
+        "via1.width.1": 44
+      }
+    },
+    "new_violation_rule_counts_from_fit": {},
+    "new_violations_from_fit": 0
+  }
+}

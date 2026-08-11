@@ -455,27 +455,35 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 
 | region | cells | cell area | placed @ 60 % | guarded footprint |
 |---|---:|---:|---:|---:|
-| Entropy ring 1 | 11 | 136.8 µm² | 228.0 µm² | 292.4 µm² |
-| Entropy ring 2 | 11 | 136.8 µm² | 228.0 µm² | 292.4 µm² |
+| Entropy ring 1 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
+| Entropy ring 2 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
 | XOR combiner + 4 samplers | 5 | 324.9 µm² | 541.5 µm² | 638.6 µm² |
 | Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 125 556.8 µm² |
-| **total** | | **75 083.8 µm²** | **125 139.6 µm²** | **126 780.2 µm²** |
+| **total** | | **75 139.0 µm²** | **125 231.7 µm²** | **127 287.7 µm²** |
 
-Isolation channels (20 µm × the taller neighbour): 342.0 + 505.4 + 7 086.8 =
-**7 934.2 µm²**.
+`ring1`/`ring2`'s own `cell area`/`placed @ 60 %` columns above are still the
+area/utilisation estimate (unchanged in method by this section); only their
+**guarded footprint** is sized differently, and only for those two rows — see
+[What the area model is](#what-the-area-model-is) below.
+
+Isolation channels (20 µm × the taller neighbour): 135.0 + 505.4 + 7 086.8 =
+**7 727.2 µm²**.
 
 | | area | share of the `< 0.05 mm²` row |
 |---|---:|---:|
-| **Entropy source + samplers + all isolation structures** | **2 070.8 µm²** | **4.14 %** |
+| **Entropy source + samplers + all isolation structures** | **2 371.2 µm²** | **4.74 %** |
 | Digital section | 125 556.8 µm² | 251.1 % |
-| **Floorplan total** | **134 714.4 µm²** = 0.1347 mm² | **269.4 %** |
+| **Floorplan total** | **135 014.9 µm²** = 0.1350 mm² | **270.0 %** |
 
 Two findings, and they point in opposite directions.
 
 **Isolation is cheap.** The entire isolated entropy source — both rings, the
 combiner, all four samplers, four guard rings and every isolation channel
-between them — is **4.1 % of the area row**. The guard rings and channels cost
-1 070 µm² of that, i.e. **2.1 % of the row for the whole isolation structure**.
+between them — is **4.7 % of the area row**. The guard rings and channels cost
+≈**1 281.8 µm²** of that, i.e. **≈2.6 % of the row for the whole isolation
+structure** — both figures are up from the pre-#119 estimate (4.1 %, 2.1 %)
+because `ring1`/`ring2`'s guarded footprint below is now sized from the real
+assembled row rather than a compact square, not because either ring grew.
 Nothing in this document's mitigations is area-constrained, and the proposed
 buffer mitigation adds 0.06 % more. *The isolation argument does not have to
 trade against the area budget, and it should not be allowed to.*
@@ -497,7 +505,12 @@ the idle-current miss is routed by [DR-0017]: it states the row's status against
 this estimate, prices the available responses (reduce the FIFO depth, raise the
 row, hold the row, or split it), and carries the depth sensitivity — 269.4 % at
 depth 8, 129.4 % at depth 2, 105.8 % at depth 1 and 88.5 % with both FIFOs gone,
-all at this floorplan's own 60 % utilisation. Its finding on the shared root
+all at this floorplan's own 60 % utilisation *as it stood when DR-0019 was
+written*, before issue #119's region resize above (the floorplan total is now
+**270.0 %**, not 269.4 %, entirely from `ring1`/`ring2`'s guarded-footprint
+change — the digital section DR-0019's own table turns on is untouched by
+#119). Re-deriving DR-0019's depth-sensitivity table against the new total is
+that record's own follow-up, not repeated here. Its finding on the shared root
 cause is that the same lever reaches the two rows very differently: [DR-0017]
 rejected a depth reduction because it never gets the idle current under 1 µA at
 any depth, whereas on area it is most of an answer. Until that record is
@@ -517,16 +530,44 @@ and none of the analog cells has been drawn.
   the analog side: the conservative direction.
 - The series starve devices (`L` = 2 µm) have no standard-cell analogue and are
   priced at a real generated footprint from `klt gen mos_array`, DRC-checked in
-  the same run (1.193 µm² n, 2.261 µm² p). They are generated at `W` = 0.42 µm
-  rather than their drawn 0.220 / 0.240 µm because the generator will not go
-  narrower (see [Tool friction](#tool-friction)), which over-estimates them
-  too.
+  the same run (2.386 µm² n, 3.580 µm² p — up from 1.193/2.261 µm² in an
+  earlier run of this script against an older `klt` build; this generator's
+  own output is not pinned to a `klt` version, see
+  [klayout-tools#623][kt623]). They are generated at `W` = 0.42 µm rather than
+  their drawn 0.220 / 0.240 µm because the generator will not go narrower (see
+  [Tool friction](#tool-friction)), which over-estimates them too.
 - The digital side reuses the cell inventories
   `design/digital_power_estimate.py` already maintains — one copy of that list
   in the repository, already guarded by `sim/tests/test_power_rollups.py`.
 - Placement utilisation is reported at both 60 % and 80 %, per [DR-0008]'s
   convention; the floorplan geometry is built at 60 %.
-- The composed abstract's row bounding box is **473.8 × 354.3 µm**. That is the
+- **`ring1`/`ring2`'s guarded footprint is not from this model.** Every other
+  region's guarded footprint is sized from this section's own
+  sqrt(cell_area / utilisation) square, same as always — `ring1`/`ring2` are
+  the exception (issue #119): once `layout/rings/ro_ring11/` (#110/#120) and
+  `layout/rings/ro_ring11_ring2/` (#118) existed as committed, DRC-clean,
+  LVS-matching assembled geometry, their real bounding box (read from that
+  committed GDS via `klt stats`, **78.9 × 4.75 µm** each) replaced the square
+  estimate for those two regions only — the estimate would have given
+  16.55 × 16.55 µm each, a footprint the real row does not remotely fit
+  inside (see `region.footprint_source` in
+  [`reports/area.json`](reports/area.json) for the exact numbers and which
+  regions use which method). `combiner_sampler` is not assembled yet, so it
+  still uses the square estimate, same as `digital` always will (no
+  synthesis/placement step is in scope to replace it).
+- `layout/floorplan/floorplan.py` also checks that the real assembled
+  geometry actually *fits* inside the region it now sizes: it composes each
+  such region's guard ring with the real ring GDS (aligned to the tightest
+  legal placement, zero clearance) and runs `klt drc` over the pair,
+  comparing the result against the ring GDS's own standalone DRC so a
+  violation introduced by the fit is distinguishable from one already
+  present in the ring on its own. Both rings fit clean today (0 new
+  violations from the fit) — see
+  [`reports/ring_fit.json`](reports/ring_fit.json). (Both rings' *own*
+  standalone DRC currently reports 49 pre-existing violations against the
+  `klt`/deck build this script last ran against, unrelated to placement or
+  to this issue — see [Tool friction](#tool-friction).)
+- The composed abstract's row bounding box is **601.4 × 354.3 µm**. That is the
   tool's one-dimensional arrangement, not a packing proposal — the composer
   supports row placement only. The area figures above are region footprints
   plus channels, which do not depend on that arrangement.
@@ -631,14 +672,20 @@ design. This work produced three, all filed against
    `floorplan.py` zeroes those fields on the way in (`normalise_gds`), which is
    the same thing this repository's own writer `layout/testcells/gdsii.py`
    already does for the same reason.
-2. **[klayout-tools#321][kt321]** — `klt gen-compose` supports only
-   `placement.strategy: "row"`. A floorplan is two-dimensional by nature and
-   needs explicit per-block x/y placement with declared separations; a single
-   row with one `spacing_um` is what this abstract had to be built as. (Two
-   smaller things noted there have since been fixed upstream by
-   [klayout-tools#328][kt328]: `blocks[].generator_report` paths now resolve
-   against the request file's own directory rather than the working
-   directory — matching `klt lvs`'s convention all along — and an
+2. **[klayout-tools#321][kt321]** — `klt gen-compose` supported only
+   `placement.strategy: "row"` when this was filed. A floorplan is
+   two-dimensional by nature and needs explicit per-block x/y placement with
+   declared separations; a single row with one `spacing_um` is what this
+   abstract's own four regions are still built as (no 2-D grid/auto-packing
+   exists yet). `placement.strategy: "explicit"` (a caller-declared `{x, y}`
+   origin per block, #321) has since shipped, and issue #119's own ring-fit
+   check (see [What the area model is](#what-the-area-model-is)) uses exactly
+   that to place a region's real ring geometry inside its guard ring's inner
+   cavity — `layout/rings/ro_ring11/build.py` uses the same strategy to
+   assemble the ring itself. (Two smaller things noted there have since been
+   fixed upstream by [klayout-tools#328][kt328]: `blocks[].generator_report`
+   paths now resolve against the request file's own directory rather than the
+   working directory — matching `klt lvs`'s convention all along — and an
    unrecognised `pdk` key is now an application error instead of a silent
    fallback to the family default. `floorplan.py` was updated to the new
    `generator_report` resolution rule (gf180-trng#79); note that
@@ -654,11 +701,28 @@ design. This work produced three, all filed against
    generated at all, so the starve-device footprints here are measured at the
    floor and are over-estimates.
 
+Not new friction, but worth recording alongside the above: this run's ring-fit
+check (issue #119) found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
+`ro_ring11_ring2.gds`'s own standalone `klt drc` result no longer reproduces
+the `clean` verdict committed in `layout/reports/ro_ring11*.drc.json` (#120,
+#118) — same input content hash, but a different `provenance.deck.content_hash`
+than the one that produced the committed report, because a different `klt`
+build resolved on `PATH` when this script ran. That is exactly the gap
+[klayout-tools#623][kt623] (closed) already describes: no way to pin or
+reproduce a specific historical rule-deck revision once a newer `klt` build
+shadows it. Nothing here re-verifies `ro_ring11`'s own DRC status — that is a
+`layout/rings/` concern, not a floorplan-region-sizing one, and this script's
+own ring-fit check already separates "violations already present in the ring
+GDS alone" from "violations introduced by fitting it into its region" (0 of
+the latter for both rings) precisely so this drift does not block that
+separate question.
+
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
 [kt321]: https://github.com/2AMLogic/klayout-tools/issues/321
 [kt322]: https://github.com/2AMLogic/klayout-tools/issues/322
 [kt328]: https://github.com/2AMLogic/klayout-tools/issues/328
+[kt623]: https://github.com/2AMLogic/klayout-tools/issues/623
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
