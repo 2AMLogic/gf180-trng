@@ -67,7 +67,6 @@ jitter and no entropy claim may be built on them (DR-0004 tiering).
 from __future__ import annotations
 
 import argparse
-import math
 import re
 import sys
 from pathlib import Path
