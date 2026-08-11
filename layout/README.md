@@ -15,17 +15,20 @@ statement about the TRNG.
 TRNG.** `floorplan/` is the entropy source's isolation rationale (#16) and
 the floorplan abstract that carries it: four guarded regions, real
 generated guard rings, DRC'd as one stream, with an area rollup against the
-`< 0.05 mm²` row. Its regions are *empty*, so it is a floorplan and not a
-layout, and [`floorplan/README.md`](floorplan/README.md) is explicit about
-what a clean DRC result over it does and does not mean. `cells/` (#106) is
-where drawn design cells land, one at a time, each DRC-clean and
-LVS-matching before the next is started — [`cells/README.md`](cells/README.md)
-says which cells are drawn and which of the block's many remaining cells
-are not. `rings/` (#110) is where those individually-verified cells get
-*assembled* — ten `ro_stage` plus one `ro_nand2`, wired into one DRC-clean,
-LVS-matching `ro_ring11` — see [`rings/README.md`](rings/README.md) for
-scope and for why that assembled block is not yet placed inside
-`floorplan/`'s own guarded regions.
+`< 0.05 mm²` row. As of #110, `ring1`/`ring2` carry real, placed,
+DRC/LVS-verified content; `combiner_sampler` and `digital` are still
+*empty*, so it remains a floorplan and not a full layout, and
+[`floorplan/README.md`](floorplan/README.md) is explicit about what a
+clean-relative-to-baseline DRC result over it does and does not mean.
+`cells/` (#106) is where drawn design cells land, one at a time, each
+DRC-clean and LVS-matching before the next is started —
+[`cells/README.md`](cells/README.md) says which cells are drawn and which of
+the block's many remaining cells are not. `rings/` (#110) is where those
+individually-verified cells get *assembled* — ten `ro_stage` plus one
+`ro_nand2`, wired into one DRC-clean, LVS-matching `ro_ring11`, at both ring
+sizings — see [`rings/README.md`](rings/README.md) for scope, and
+[`floorplan/README.md`](floorplan/README.md#placement--issue-110) for how
+that assembled block is placed inside `floorplan/`'s own guarded regions.
 
 The flow is stood up before the layout it will check, for the same reason
 `sim/` was stood up before the first result: a verification flow that first

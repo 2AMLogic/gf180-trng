@@ -1,85 +1,3623 @@
 {
-  "schema_version": 1,
-  "deck": "gf180mcu",
-  "dbu_um": 0.001,
-  "status": "clean",
-  "violation_count": 0,
-  "rule_counts": {},
-  "violations": [],
-  "coverage": {
-    "deck_layers": [
-      "21/0",
-      "22/0",
-      "30/0",
-      "33/0",
-      "34/0",
-      "35/0",
-      "36/0",
-      "37/0",
-      "38/0",
-      "40/0",
-      "41/0",
-      "42/0",
-      "46/0",
-      "53/0",
-      "75/0",
-      "81/0",
-      "127/5"
-    ],
-    "layers_checked": [
-      "22/0",
-      "33/0",
-      "34/0"
-    ],
-    "layers_in_stream_without_rules": [],
-    "rules_skipped": [
-      "bjt.separation.comp.1",
-      "metal1.enclosing.via1.1",
-      "metal2.enclosing.via1.1",
-      "metal2.enclosing.via2.1",
-      "metal2.space.1",
-      "metal2.width.1",
-      "metal3.enclosing.via2.1",
-      "metal3.enclosing.via3.1",
-      "metal3.space.1",
-      "metal3.width.1",
-      "metal4.enclosing.via3.1",
-      "metal4.enclosing.via4.1",
-      "metal5.enclosing.via4.1",
-      "metal5.space.1",
-      "metal5.width.1",
-      "metaltop.space.1",
-      "metaltop.width.1",
-      "mim.enclosing.fusetop.1",
-      "mim.enclosing.via4.1",
-      "mim.space.1",
-      "nwell.enclosing.comp.1",
-      "nwell.space.1",
-      "pad.enclosing.metal5.1",
-      "poly2.enclosing.contact.1",
-      "poly2.space.1",
-      "poly2.width.1",
-      "via1.space.1",
-      "via1.width.1",
-      "via2.space.1",
-      "via2.width.1",
-      "via3.space.1",
-      "via3.width.1",
-      "via4.space.1",
-      "via4.width.1"
-    ],
-    "voltage_domain_warnings": []
-  },
-  "provenance": {
-    "klt_version": "0.2.0",
-    "klayout_version": "0.30.10",
-    "pdk": null,
-    "deck": {
-      "name": "gf180mcu",
-      "content_hash": "sha256:e8c427d731a0b57711a097cad8b4fc0197f660376e0c524b13092f6f9a217ded"
+  "drc": {
+    "schema_version": 1,
+    "deck": "gf180mcu",
+    "dbu_um": 0.001,
+    "status": "violations",
+    "violation_count": 98,
+    "rule_counts": {
+      "metal1.enclosing.contact.1": 10,
+      "via1.width.1": 88
     },
-    "input": {
-      "content_hash": "sha256:644f5d379e9207b7e9136673d4c629b09dd9eedf25f6a58d404b50f3f267d7e1"
+    "violations": [
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 2445,
+          "bottom": 3300,
+          "right": 2675,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            2445,
+            3300
+          ],
+          [
+            2675,
+            3300
+          ],
+          [
+            2450,
+            3300
+          ],
+          [
+            2670,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 3805,
+          "bottom": 3170,
+          "right": 4035,
+          "top": 3170
+        },
+        "polygon": [
+          [
+            3805,
+            3170
+          ],
+          [
+            4030,
+            3170
+          ],
+          [
+            3810,
+            3170
+          ],
+          [
+            4035,
+            3170
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 5225,
+          "bottom": 3300,
+          "right": 5455,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            5225,
+            3300
+          ],
+          [
+            5455,
+            3300
+          ],
+          [
+            5230,
+            3300
+          ],
+          [
+            5450,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 7385,
+          "bottom": 3300,
+          "right": 7615,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            7385,
+            3300
+          ],
+          [
+            7615,
+            3300
+          ],
+          [
+            7390,
+            3300
+          ],
+          [
+            7610,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 8795,
+          "bottom": 2250,
+          "right": 9025,
+          "top": 2250
+        },
+        "polygon": [
+          [
+            8795,
+            2250
+          ],
+          [
+            9025,
+            2250
+          ],
+          [
+            8800,
+            2250
+          ],
+          [
+            9020,
+            2250
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 103355,
+          "bottom": 3300,
+          "right": 103585,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            103355,
+            3300
+          ],
+          [
+            103585,
+            3300
+          ],
+          [
+            103360,
+            3300
+          ],
+          [
+            103580,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 104715,
+          "bottom": 3170,
+          "right": 104945,
+          "top": 3170
+        },
+        "polygon": [
+          [
+            104715,
+            3170
+          ],
+          [
+            104940,
+            3170
+          ],
+          [
+            104720,
+            3170
+          ],
+          [
+            104945,
+            3170
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 106135,
+          "bottom": 3300,
+          "right": 106365,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            106135,
+            3300
+          ],
+          [
+            106365,
+            3300
+          ],
+          [
+            106140,
+            3300
+          ],
+          [
+            106360,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 108295,
+          "bottom": 3300,
+          "right": 108525,
+          "top": 3300
+        },
+        "polygon": [
+          [
+            108295,
+            3300
+          ],
+          [
+            108525,
+            3300
+          ],
+          [
+            108300,
+            3300
+          ],
+          [
+            108520,
+            3300
+          ]
+        ]
+      },
+      {
+        "rule": "metal1.enclosing.contact.1",
+        "description": "minimum metal1 overlap of contact",
+        "check": "enclosing",
+        "layer": "Metal1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 109705,
+          "bottom": 2250,
+          "right": 109935,
+          "top": 2250
+        },
+        "polygon": [
+          [
+            109705,
+            2250
+          ],
+          [
+            109935,
+            2250
+          ],
+          [
+            109710,
+            2250
+          ],
+          [
+            109930,
+            2250
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 2450,
+          "bottom": 3340,
+          "right": 2670,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            2450,
+            3340
+          ],
+          [
+            2450,
+            3560
+          ],
+          [
+            2670,
+            3560
+          ],
+          [
+            2670,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 2450,
+          "bottom": 3340,
+          "right": 2670,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            2450,
+            3340
+          ],
+          [
+            2450,
+            3560
+          ],
+          [
+            2670,
+            3560
+          ],
+          [
+            2670,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 10150,
+          "bottom": 1640,
+          "right": 10370,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            10150,
+            1640
+          ],
+          [
+            10150,
+            1860
+          ],
+          [
+            10370,
+            1860
+          ],
+          [
+            10370,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "xg__ro_nand2"
+        ],
+        "bbox": {
+          "left": 10150,
+          "bottom": 1640,
+          "right": 10370,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            10150,
+            1640
+          ],
+          [
+            10150,
+            1860
+          ],
+          [
+            10370,
+            1860
+          ],
+          [
+            10370,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x1__ro_stage"
+        ],
+        "bbox": {
+          "left": 16730,
+          "bottom": 1640,
+          "right": 16950,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            16730,
+            1640
+          ],
+          [
+            16730,
+            1860
+          ],
+          [
+            16950,
+            1860
+          ],
+          [
+            16950,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x1__ro_stage"
+        ],
+        "bbox": {
+          "left": 16730,
+          "bottom": 1640,
+          "right": 16950,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            16730,
+            1640
+          ],
+          [
+            16730,
+            1860
+          ],
+          [
+            16950,
+            1860
+          ],
+          [
+            16950,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x1__ro_stage"
+        ],
+        "bbox": {
+          "left": 16730,
+          "bottom": 3340,
+          "right": 16950,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            16730,
+            3340
+          ],
+          [
+            16730,
+            3560
+          ],
+          [
+            16950,
+            3560
+          ],
+          [
+            16950,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x1__ro_stage"
+        ],
+        "bbox": {
+          "left": 16730,
+          "bottom": 3340,
+          "right": 16950,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            16730,
+            3340
+          ],
+          [
+            16730,
+            3560
+          ],
+          [
+            16950,
+            3560
+          ],
+          [
+            16950,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x2__ro_stage"
+        ],
+        "bbox": {
+          "left": 23560,
+          "bottom": 1640,
+          "right": 23780,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            23560,
+            1640
+          ],
+          [
+            23560,
+            1860
+          ],
+          [
+            23780,
+            1860
+          ],
+          [
+            23780,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x2__ro_stage"
+        ],
+        "bbox": {
+          "left": 23560,
+          "bottom": 1640,
+          "right": 23780,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            23560,
+            1640
+          ],
+          [
+            23560,
+            1860
+          ],
+          [
+            23780,
+            1860
+          ],
+          [
+            23780,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x2__ro_stage"
+        ],
+        "bbox": {
+          "left": 23560,
+          "bottom": 3340,
+          "right": 23780,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            23560,
+            3340
+          ],
+          [
+            23560,
+            3560
+          ],
+          [
+            23780,
+            3560
+          ],
+          [
+            23780,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x2__ro_stage"
+        ],
+        "bbox": {
+          "left": 23560,
+          "bottom": 3340,
+          "right": 23780,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            23560,
+            3340
+          ],
+          [
+            23560,
+            3560
+          ],
+          [
+            23780,
+            3560
+          ],
+          [
+            23780,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x3__ro_stage"
+        ],
+        "bbox": {
+          "left": 30390,
+          "bottom": 1640,
+          "right": 30610,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            30390,
+            1640
+          ],
+          [
+            30390,
+            1860
+          ],
+          [
+            30610,
+            1860
+          ],
+          [
+            30610,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x3__ro_stage"
+        ],
+        "bbox": {
+          "left": 30390,
+          "bottom": 1640,
+          "right": 30610,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            30390,
+            1640
+          ],
+          [
+            30390,
+            1860
+          ],
+          [
+            30610,
+            1860
+          ],
+          [
+            30610,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x3__ro_stage"
+        ],
+        "bbox": {
+          "left": 30390,
+          "bottom": 3340,
+          "right": 30610,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            30390,
+            3340
+          ],
+          [
+            30390,
+            3560
+          ],
+          [
+            30610,
+            3560
+          ],
+          [
+            30610,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x3__ro_stage"
+        ],
+        "bbox": {
+          "left": 30390,
+          "bottom": 3340,
+          "right": 30610,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            30390,
+            3340
+          ],
+          [
+            30390,
+            3560
+          ],
+          [
+            30610,
+            3560
+          ],
+          [
+            30610,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x4__ro_stage"
+        ],
+        "bbox": {
+          "left": 37220,
+          "bottom": 1640,
+          "right": 37440,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            37220,
+            1640
+          ],
+          [
+            37220,
+            1860
+          ],
+          [
+            37440,
+            1860
+          ],
+          [
+            37440,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x4__ro_stage"
+        ],
+        "bbox": {
+          "left": 37220,
+          "bottom": 1640,
+          "right": 37440,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            37220,
+            1640
+          ],
+          [
+            37220,
+            1860
+          ],
+          [
+            37440,
+            1860
+          ],
+          [
+            37440,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x4__ro_stage"
+        ],
+        "bbox": {
+          "left": 37220,
+          "bottom": 3340,
+          "right": 37440,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            37220,
+            3340
+          ],
+          [
+            37220,
+            3560
+          ],
+          [
+            37440,
+            3560
+          ],
+          [
+            37440,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x4__ro_stage"
+        ],
+        "bbox": {
+          "left": 37220,
+          "bottom": 3340,
+          "right": 37440,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            37220,
+            3340
+          ],
+          [
+            37220,
+            3560
+          ],
+          [
+            37440,
+            3560
+          ],
+          [
+            37440,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x5__ro_stage"
+        ],
+        "bbox": {
+          "left": 44050,
+          "bottom": 1640,
+          "right": 44270,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            44050,
+            1640
+          ],
+          [
+            44050,
+            1860
+          ],
+          [
+            44270,
+            1860
+          ],
+          [
+            44270,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x5__ro_stage"
+        ],
+        "bbox": {
+          "left": 44050,
+          "bottom": 1640,
+          "right": 44270,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            44050,
+            1640
+          ],
+          [
+            44050,
+            1860
+          ],
+          [
+            44270,
+            1860
+          ],
+          [
+            44270,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x5__ro_stage"
+        ],
+        "bbox": {
+          "left": 44050,
+          "bottom": 3340,
+          "right": 44270,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            44050,
+            3340
+          ],
+          [
+            44050,
+            3560
+          ],
+          [
+            44270,
+            3560
+          ],
+          [
+            44270,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x5__ro_stage"
+        ],
+        "bbox": {
+          "left": 44050,
+          "bottom": 3340,
+          "right": 44270,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            44050,
+            3340
+          ],
+          [
+            44050,
+            3560
+          ],
+          [
+            44270,
+            3560
+          ],
+          [
+            44270,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x6__ro_stage"
+        ],
+        "bbox": {
+          "left": 50880,
+          "bottom": 1640,
+          "right": 51100,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            50880,
+            1640
+          ],
+          [
+            50880,
+            1860
+          ],
+          [
+            51100,
+            1860
+          ],
+          [
+            51100,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x6__ro_stage"
+        ],
+        "bbox": {
+          "left": 50880,
+          "bottom": 1640,
+          "right": 51100,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            50880,
+            1640
+          ],
+          [
+            50880,
+            1860
+          ],
+          [
+            51100,
+            1860
+          ],
+          [
+            51100,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x6__ro_stage"
+        ],
+        "bbox": {
+          "left": 50880,
+          "bottom": 3340,
+          "right": 51100,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            50880,
+            3340
+          ],
+          [
+            50880,
+            3560
+          ],
+          [
+            51100,
+            3560
+          ],
+          [
+            51100,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x6__ro_stage"
+        ],
+        "bbox": {
+          "left": 50880,
+          "bottom": 3340,
+          "right": 51100,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            50880,
+            3340
+          ],
+          [
+            50880,
+            3560
+          ],
+          [
+            51100,
+            3560
+          ],
+          [
+            51100,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x7__ro_stage"
+        ],
+        "bbox": {
+          "left": 57710,
+          "bottom": 1640,
+          "right": 57930,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            57710,
+            1640
+          ],
+          [
+            57710,
+            1860
+          ],
+          [
+            57930,
+            1860
+          ],
+          [
+            57930,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x7__ro_stage"
+        ],
+        "bbox": {
+          "left": 57710,
+          "bottom": 1640,
+          "right": 57930,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            57710,
+            1640
+          ],
+          [
+            57710,
+            1860
+          ],
+          [
+            57930,
+            1860
+          ],
+          [
+            57930,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x7__ro_stage"
+        ],
+        "bbox": {
+          "left": 57710,
+          "bottom": 3340,
+          "right": 57930,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            57710,
+            3340
+          ],
+          [
+            57710,
+            3560
+          ],
+          [
+            57930,
+            3560
+          ],
+          [
+            57930,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x7__ro_stage"
+        ],
+        "bbox": {
+          "left": 57710,
+          "bottom": 3340,
+          "right": 57930,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            57710,
+            3340
+          ],
+          [
+            57710,
+            3560
+          ],
+          [
+            57930,
+            3560
+          ],
+          [
+            57930,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x8__ro_stage"
+        ],
+        "bbox": {
+          "left": 64540,
+          "bottom": 1640,
+          "right": 64760,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            64540,
+            1640
+          ],
+          [
+            64540,
+            1860
+          ],
+          [
+            64760,
+            1860
+          ],
+          [
+            64760,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x8__ro_stage"
+        ],
+        "bbox": {
+          "left": 64540,
+          "bottom": 1640,
+          "right": 64760,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            64540,
+            1640
+          ],
+          [
+            64540,
+            1860
+          ],
+          [
+            64760,
+            1860
+          ],
+          [
+            64760,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x8__ro_stage"
+        ],
+        "bbox": {
+          "left": 64540,
+          "bottom": 3340,
+          "right": 64760,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            64540,
+            3340
+          ],
+          [
+            64540,
+            3560
+          ],
+          [
+            64760,
+            3560
+          ],
+          [
+            64760,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x8__ro_stage"
+        ],
+        "bbox": {
+          "left": 64540,
+          "bottom": 3340,
+          "right": 64760,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            64540,
+            3340
+          ],
+          [
+            64540,
+            3560
+          ],
+          [
+            64760,
+            3560
+          ],
+          [
+            64760,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x9__ro_stage"
+        ],
+        "bbox": {
+          "left": 71370,
+          "bottom": 1640,
+          "right": 71590,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            71370,
+            1640
+          ],
+          [
+            71370,
+            1860
+          ],
+          [
+            71590,
+            1860
+          ],
+          [
+            71590,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x9__ro_stage"
+        ],
+        "bbox": {
+          "left": 71370,
+          "bottom": 1640,
+          "right": 71590,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            71370,
+            1640
+          ],
+          [
+            71370,
+            1860
+          ],
+          [
+            71590,
+            1860
+          ],
+          [
+            71590,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x9__ro_stage"
+        ],
+        "bbox": {
+          "left": 71370,
+          "bottom": 3340,
+          "right": 71590,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            71370,
+            3340
+          ],
+          [
+            71370,
+            3560
+          ],
+          [
+            71590,
+            3560
+          ],
+          [
+            71590,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x9__ro_stage"
+        ],
+        "bbox": {
+          "left": 71370,
+          "bottom": 3340,
+          "right": 71590,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            71370,
+            3340
+          ],
+          [
+            71370,
+            3560
+          ],
+          [
+            71590,
+            3560
+          ],
+          [
+            71590,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x10__ro_stage"
+        ],
+        "bbox": {
+          "left": 78200,
+          "bottom": 1640,
+          "right": 78420,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            78200,
+            1640
+          ],
+          [
+            78200,
+            1860
+          ],
+          [
+            78420,
+            1860
+          ],
+          [
+            78420,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x10__ro_stage"
+        ],
+        "bbox": {
+          "left": 78200,
+          "bottom": 1640,
+          "right": 78420,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            78200,
+            1640
+          ],
+          [
+            78200,
+            1860
+          ],
+          [
+            78420,
+            1860
+          ],
+          [
+            78420,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x10__ro_stage"
+        ],
+        "bbox": {
+          "left": 78200,
+          "bottom": 3340,
+          "right": 78420,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            78200,
+            3340
+          ],
+          [
+            78200,
+            3560
+          ],
+          [
+            78420,
+            3560
+          ],
+          [
+            78420,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage",
+        "source_path": [
+          "ring1_ring__ro_ring11",
+          "x10__ro_stage"
+        ],
+        "bbox": {
+          "left": 78200,
+          "bottom": 3340,
+          "right": 78420,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            78200,
+            3340
+          ],
+          [
+            78200,
+            3560
+          ],
+          [
+            78420,
+            3560
+          ],
+          [
+            78420,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 103360,
+          "bottom": 3340,
+          "right": 103580,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            103360,
+            3340
+          ],
+          [
+            103360,
+            3560
+          ],
+          [
+            103580,
+            3560
+          ],
+          [
+            103580,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 103360,
+          "bottom": 3340,
+          "right": 103580,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            103360,
+            3340
+          ],
+          [
+            103360,
+            3560
+          ],
+          [
+            103580,
+            3560
+          ],
+          [
+            103580,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 111060,
+          "bottom": 1640,
+          "right": 111280,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            111060,
+            1640
+          ],
+          [
+            111060,
+            1860
+          ],
+          [
+            111280,
+            1860
+          ],
+          [
+            111280,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "xg__ro_nand2_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "xg__ro_nand2_ring2"
+        ],
+        "bbox": {
+          "left": 111060,
+          "bottom": 1640,
+          "right": 111280,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            111060,
+            1640
+          ],
+          [
+            111060,
+            1860
+          ],
+          [
+            111280,
+            1860
+          ],
+          [
+            111280,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x1__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 117640,
+          "bottom": 1640,
+          "right": 117860,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            117640,
+            1640
+          ],
+          [
+            117640,
+            1860
+          ],
+          [
+            117860,
+            1860
+          ],
+          [
+            117860,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x1__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 117640,
+          "bottom": 1640,
+          "right": 117860,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            117640,
+            1640
+          ],
+          [
+            117640,
+            1860
+          ],
+          [
+            117860,
+            1860
+          ],
+          [
+            117860,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x1__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 117640,
+          "bottom": 3340,
+          "right": 117860,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            117640,
+            3340
+          ],
+          [
+            117640,
+            3560
+          ],
+          [
+            117860,
+            3560
+          ],
+          [
+            117860,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x1__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x1__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 117640,
+          "bottom": 3340,
+          "right": 117860,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            117640,
+            3340
+          ],
+          [
+            117640,
+            3560
+          ],
+          [
+            117860,
+            3560
+          ],
+          [
+            117860,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x2__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 124470,
+          "bottom": 1640,
+          "right": 124690,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            124470,
+            1640
+          ],
+          [
+            124470,
+            1860
+          ],
+          [
+            124690,
+            1860
+          ],
+          [
+            124690,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x2__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 124470,
+          "bottom": 1640,
+          "right": 124690,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            124470,
+            1640
+          ],
+          [
+            124470,
+            1860
+          ],
+          [
+            124690,
+            1860
+          ],
+          [
+            124690,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x2__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 124470,
+          "bottom": 3340,
+          "right": 124690,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            124470,
+            3340
+          ],
+          [
+            124470,
+            3560
+          ],
+          [
+            124690,
+            3560
+          ],
+          [
+            124690,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x2__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x2__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 124470,
+          "bottom": 3340,
+          "right": 124690,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            124470,
+            3340
+          ],
+          [
+            124470,
+            3560
+          ],
+          [
+            124690,
+            3560
+          ],
+          [
+            124690,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x3__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 131300,
+          "bottom": 1640,
+          "right": 131520,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            131300,
+            1640
+          ],
+          [
+            131300,
+            1860
+          ],
+          [
+            131520,
+            1860
+          ],
+          [
+            131520,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x3__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 131300,
+          "bottom": 1640,
+          "right": 131520,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            131300,
+            1640
+          ],
+          [
+            131300,
+            1860
+          ],
+          [
+            131520,
+            1860
+          ],
+          [
+            131520,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x3__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 131300,
+          "bottom": 3340,
+          "right": 131520,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            131300,
+            3340
+          ],
+          [
+            131300,
+            3560
+          ],
+          [
+            131520,
+            3560
+          ],
+          [
+            131520,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x3__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x3__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 131300,
+          "bottom": 3340,
+          "right": 131520,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            131300,
+            3340
+          ],
+          [
+            131300,
+            3560
+          ],
+          [
+            131520,
+            3560
+          ],
+          [
+            131520,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x4__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 138130,
+          "bottom": 1640,
+          "right": 138350,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            138130,
+            1640
+          ],
+          [
+            138130,
+            1860
+          ],
+          [
+            138350,
+            1860
+          ],
+          [
+            138350,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x4__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 138130,
+          "bottom": 1640,
+          "right": 138350,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            138130,
+            1640
+          ],
+          [
+            138130,
+            1860
+          ],
+          [
+            138350,
+            1860
+          ],
+          [
+            138350,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x4__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 138130,
+          "bottom": 3340,
+          "right": 138350,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            138130,
+            3340
+          ],
+          [
+            138130,
+            3560
+          ],
+          [
+            138350,
+            3560
+          ],
+          [
+            138350,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x4__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x4__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 138130,
+          "bottom": 3340,
+          "right": 138350,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            138130,
+            3340
+          ],
+          [
+            138130,
+            3560
+          ],
+          [
+            138350,
+            3560
+          ],
+          [
+            138350,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x5__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 144960,
+          "bottom": 1640,
+          "right": 145180,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            144960,
+            1640
+          ],
+          [
+            144960,
+            1860
+          ],
+          [
+            145180,
+            1860
+          ],
+          [
+            145180,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x5__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 144960,
+          "bottom": 1640,
+          "right": 145180,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            144960,
+            1640
+          ],
+          [
+            144960,
+            1860
+          ],
+          [
+            145180,
+            1860
+          ],
+          [
+            145180,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x5__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 144960,
+          "bottom": 3340,
+          "right": 145180,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            144960,
+            3340
+          ],
+          [
+            144960,
+            3560
+          ],
+          [
+            145180,
+            3560
+          ],
+          [
+            145180,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x5__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x5__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 144960,
+          "bottom": 3340,
+          "right": 145180,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            144960,
+            3340
+          ],
+          [
+            144960,
+            3560
+          ],
+          [
+            145180,
+            3560
+          ],
+          [
+            145180,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x6__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 151790,
+          "bottom": 1640,
+          "right": 152010,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            151790,
+            1640
+          ],
+          [
+            151790,
+            1860
+          ],
+          [
+            152010,
+            1860
+          ],
+          [
+            152010,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x6__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 151790,
+          "bottom": 1640,
+          "right": 152010,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            151790,
+            1640
+          ],
+          [
+            151790,
+            1860
+          ],
+          [
+            152010,
+            1860
+          ],
+          [
+            152010,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x6__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 151790,
+          "bottom": 3340,
+          "right": 152010,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            151790,
+            3340
+          ],
+          [
+            151790,
+            3560
+          ],
+          [
+            152010,
+            3560
+          ],
+          [
+            152010,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x6__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x6__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 151790,
+          "bottom": 3340,
+          "right": 152010,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            151790,
+            3340
+          ],
+          [
+            151790,
+            3560
+          ],
+          [
+            152010,
+            3560
+          ],
+          [
+            152010,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x7__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 158620,
+          "bottom": 1640,
+          "right": 158840,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            158620,
+            1640
+          ],
+          [
+            158620,
+            1860
+          ],
+          [
+            158840,
+            1860
+          ],
+          [
+            158840,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x7__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 158620,
+          "bottom": 1640,
+          "right": 158840,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            158620,
+            1640
+          ],
+          [
+            158620,
+            1860
+          ],
+          [
+            158840,
+            1860
+          ],
+          [
+            158840,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x7__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 158620,
+          "bottom": 3340,
+          "right": 158840,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            158620,
+            3340
+          ],
+          [
+            158620,
+            3560
+          ],
+          [
+            158840,
+            3560
+          ],
+          [
+            158840,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x7__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x7__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 158620,
+          "bottom": 3340,
+          "right": 158840,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            158620,
+            3340
+          ],
+          [
+            158620,
+            3560
+          ],
+          [
+            158840,
+            3560
+          ],
+          [
+            158840,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x8__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 165450,
+          "bottom": 1640,
+          "right": 165670,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            165450,
+            1640
+          ],
+          [
+            165450,
+            1860
+          ],
+          [
+            165670,
+            1860
+          ],
+          [
+            165670,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x8__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 165450,
+          "bottom": 1640,
+          "right": 165670,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            165450,
+            1640
+          ],
+          [
+            165450,
+            1860
+          ],
+          [
+            165670,
+            1860
+          ],
+          [
+            165670,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x8__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 165450,
+          "bottom": 3340,
+          "right": 165670,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            165450,
+            3340
+          ],
+          [
+            165450,
+            3560
+          ],
+          [
+            165670,
+            3560
+          ],
+          [
+            165670,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x8__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x8__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 165450,
+          "bottom": 3340,
+          "right": 165670,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            165450,
+            3340
+          ],
+          [
+            165450,
+            3560
+          ],
+          [
+            165670,
+            3560
+          ],
+          [
+            165670,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x9__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 172280,
+          "bottom": 1640,
+          "right": 172500,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            172280,
+            1640
+          ],
+          [
+            172280,
+            1860
+          ],
+          [
+            172500,
+            1860
+          ],
+          [
+            172500,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x9__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 172280,
+          "bottom": 1640,
+          "right": 172500,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            172280,
+            1640
+          ],
+          [
+            172280,
+            1860
+          ],
+          [
+            172500,
+            1860
+          ],
+          [
+            172500,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x9__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 172280,
+          "bottom": 3340,
+          "right": 172500,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            172280,
+            3340
+          ],
+          [
+            172280,
+            3560
+          ],
+          [
+            172500,
+            3560
+          ],
+          [
+            172500,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x9__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x9__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 172280,
+          "bottom": 3340,
+          "right": 172500,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            172280,
+            3340
+          ],
+          [
+            172280,
+            3560
+          ],
+          [
+            172500,
+            3560
+          ],
+          [
+            172500,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x10__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 179110,
+          "bottom": 1640,
+          "right": 179330,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            179110,
+            1640
+          ],
+          [
+            179110,
+            1860
+          ],
+          [
+            179330,
+            1860
+          ],
+          [
+            179330,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x10__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 179110,
+          "bottom": 1640,
+          "right": 179330,
+          "top": 1860
+        },
+        "polygon": [
+          [
+            179110,
+            1640
+          ],
+          [
+            179110,
+            1860
+          ],
+          [
+            179330,
+            1860
+          ],
+          [
+            179330,
+            1640
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x10__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 179110,
+          "bottom": 3340,
+          "right": 179330,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            179110,
+            3340
+          ],
+          [
+            179110,
+            3560
+          ],
+          [
+            179330,
+            3560
+          ],
+          [
+            179330,
+            3340
+          ]
+        ]
+      },
+      {
+        "rule": "via1.width.1",
+        "description": "minimum via1 size (approximates official min/max size rule)",
+        "check": "width",
+        "layer": "Via1",
+        "cell": "trng_floorplan",
+        "source_cell": "x10__ro_stage_ring2",
+        "source_path": [
+          "ring2_ring__ro_ring11_ring2",
+          "x10__ro_stage_ring2"
+        ],
+        "bbox": {
+          "left": 179110,
+          "bottom": 3340,
+          "right": 179330,
+          "top": 3560
+        },
+        "polygon": [
+          [
+            179110,
+            3340
+          ],
+          [
+            179110,
+            3560
+          ],
+          [
+            179330,
+            3560
+          ],
+          [
+            179330,
+            3340
+          ]
+        ]
+      }
+    ],
+    "coverage": {
+      "deck_layers": [
+        "21/0",
+        "22/0",
+        "30/0",
+        "33/0",
+        "34/0",
+        "35/0",
+        "36/0",
+        "37/0",
+        "38/0",
+        "40/0",
+        "41/0",
+        "42/0",
+        "46/0",
+        "53/0",
+        "75/0",
+        "81/0",
+        "127/5"
+      ],
+      "layers_checked": [
+        "21/0",
+        "22/0",
+        "30/0",
+        "33/0",
+        "34/0",
+        "35/0",
+        "36/0"
+      ],
+      "layers_in_stream_without_rules": [
+        "34/10"
+      ],
+      "rules_skipped": [
+        "bjt.separation.comp.1",
+        "metal2.enclosing.via2.1",
+        "metal3.enclosing.via2.1",
+        "metal3.enclosing.via3.1",
+        "metal3.space.1",
+        "metal3.width.1",
+        "metal4.enclosing.via3.1",
+        "metal4.enclosing.via4.1",
+        "metal5.enclosing.via4.1",
+        "metal5.space.1",
+        "metal5.width.1",
+        "metaltop.space.1",
+        "metaltop.width.1",
+        "mim.enclosing.fusetop.1",
+        "mim.enclosing.via4.1",
+        "mim.space.1",
+        "pad.enclosing.metal5.1",
+        "via2.space.1",
+        "via2.width.1",
+        "via3.space.1",
+        "via3.width.1",
+        "via4.space.1",
+        "via4.width.1"
+      ],
+      "voltage_domain_warnings": []
+    },
+    "provenance": {
+      "klt_version": "0.2.0",
+      "klayout_version": "0.30.10",
+      "pdk": null,
+      "deck": {
+        "name": "gf180mcu",
+        "content_hash": "sha256:e8c427d731a0b57711a097cad8b4fc0197f660376e0c524b13092f6f9a217ded"
+      },
+      "input": {
+        "content_hash": "sha256:6a717bdde8f7cf8f89e347d86a8f4d9b39a8f98ed4f28c485923906adac46a61"
+      }
     }
+  },
+  "new_violations_from_composition": {
+    "rule_counts": {},
+    "count": 0,
+    "baseline_rule_counts": {
+      "metal1.enclosing.contact.1": 10,
+      "via1.width.1": 88
+    },
+    "note": "the composed abstract's own DRC minus each assembled ring's own standalone DRC (issue #110) -- see the comment above where this is computed in build()"
   }
 }

@@ -9,9 +9,10 @@
       "y1": 4.2
     },
     "guard_inner_um": {
-      "w_um": 78.91,
-      "h_um": 4.75
+      "w_um": 79.71,
+      "h_um": 5.55
     },
+    "ring_placement_clearance_um": 0.4,
     "fit_offset_um": {
       "x": 5.05,
       "y": 1.55
@@ -33,7 +34,33 @@
       }
     },
     "new_violation_rule_counts_from_fit": {},
-    "new_violations_from_fit": 0
+    "new_violations_from_fit": 0,
+    "lvs": {
+      "status": "match",
+      "mismatch_count": 3,
+      "category_counts": {
+        "device.body_unverified": 2,
+        "topology": 1
+      },
+      "counts": {
+        "nets": {
+          "layout": 49,
+          "reference": 49,
+          "matched": 49
+        },
+        "devices": {
+          "layout": 46,
+          "reference": 46,
+          "matched": 46
+        },
+        "pins": {
+          "layout": 15,
+          "reference": 5,
+          "matched": 15
+        }
+      }
+    },
+    "lvs_unexpected_categories": []
   },
   "ring2": {
     "region": "ring2",
@@ -45,9 +72,10 @@
       "y1": 4.2
     },
     "guard_inner_um": {
-      "w_um": 78.91,
-      "h_um": 4.75
+      "w_um": 79.71,
+      "h_um": 5.55
     },
+    "ring_placement_clearance_um": 0.4,
     "fit_offset_um": {
       "x": 5.05,
       "y": 1.55
@@ -69,6 +97,32 @@
       }
     },
     "new_violation_rule_counts_from_fit": {},
-    "new_violations_from_fit": 0
+    "new_violations_from_fit": 0,
+    "lvs": {
+      "status": "match",
+      "mismatch_count": 3,
+      "category_counts": {
+        "device.body_unverified": 2,
+        "topology": 1
+      },
+      "counts": {
+        "nets": {
+          "layout": 49,
+          "reference": 49,
+          "matched": 49
+        },
+        "devices": {
+          "layout": 46,
+          "reference": 46,
+          "matched": 46
+        },
+        "pins": {
+          "layout": 15,
+          "reference": 5,
+          "matched": 15
+        }
+      }
+    },
+    "lvs_unexpected_categories": []
   }
 }

@@ -88,12 +88,21 @@
           "y1": 4.2
         }
       },
-      "inner_w_um": 78.91,
-      "inner_h_um": 4.75,
+      "inner_w_um": 79.71,
+      "inner_h_um": 5.55,
+      "ring_placement_clearance_um": 0.4,
+      "ring_band_width_um": 0.6,
       "guarded_w_um": 80.91,
       "guarded_h_um": 6.75,
       "guarded_area_um2": 546.14,
-      "guard_taps": 16
+      "guard_taps": 16,
+      "ring_content_report": "fp_ring_content_ring1.json",
+      "ring_content_bbox_um": {
+        "x0": -4.05,
+        "y0": -0.55,
+        "x1": 74.86,
+        "y1": 4.2
+      }
     },
     {
       "id": "ring2",
@@ -137,12 +146,21 @@
           "y1": 4.2
         }
       },
-      "inner_w_um": 78.91,
-      "inner_h_um": 4.75,
+      "inner_w_um": 79.71,
+      "inner_h_um": 5.55,
+      "ring_placement_clearance_um": 0.4,
+      "ring_band_width_um": 0.6,
       "guarded_w_um": 80.91,
       "guarded_h_um": 6.75,
       "guarded_area_um2": 546.14,
-      "guard_taps": 16
+      "guard_taps": 16,
+      "ring_content_report": "fp_ring_content_ring2.json",
+      "ring_content_bbox_um": {
+        "x0": -4.05,
+        "y0": -0.55,
+        "x1": 74.86,
+        "y1": 4.2
+      }
     },
     {
       "id": "combiner_sampler",
