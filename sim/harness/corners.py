@@ -163,15 +163,6 @@ class PvtPoint:
         """The ``<process>_<temp>c_<supply>v`` id used for raw filenames."""
         return f"{self.corner.name}_{self.temp_c:g}c_{self.vdd:.2f}v"
 
-    def as_dict(self) -> dict:
-        return {
-            "corner": self.corner.name,
-            "corner_sections": list(self.corner.sections),
-            "temp_c": self.temp_c,
-            "vdd": self.vdd,
-            "corner_id": self.corner_id,
-        }
-
 
 def build_grid(
     corners: list[Corner],

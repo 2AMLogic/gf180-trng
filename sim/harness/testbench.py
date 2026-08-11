@@ -20,7 +20,6 @@ testbenches) the seed injected via ``.option seed=<value>``.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -92,16 +91,8 @@ class Testbench:
         return self.design_netlist or self.netlist
 
     @property
-    def netlist_sha256(self) -> str:
-        return hashlib.sha256(self.netlist.read_bytes()).hexdigest()
-
-    @property
     def manifest_path(self) -> Path:
         return self.directory / MANIFEST_NAME
-
-    @property
-    def manifest_sha256(self) -> str:
-        return hashlib.sha256(self.manifest_path.read_bytes()).hexdigest()
 
 
 def _require(manifest: dict, key: str, path: Path):
