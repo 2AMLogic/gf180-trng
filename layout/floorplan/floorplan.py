@@ -27,11 +27,11 @@ What it produces, in order:
    represents. See `AREA MODEL` below for what that does and does not mean.
 3. **A DRC-clean floorplan abstract**: one `klt gen guard_ring` per region,
    sized to that region's placed area -- or, for a region with a real
-   committed assembly (`ring1`/`ring2` as of issue #119, see
-   `ASSEMBLED_RING_GDS`), to that assembly's own bounding box instead --
-   composed into a single stream by `klt gen-compose` with a declared
-   isolation channel between neighbours, and run through `klt drc` with the
-   same deck `layout/verify.py` uses.
+   committed assembly (`ring1`/`ring2` as of issue #119, `combiner_sampler`
+   as of issue #135, see `ASSEMBLED_RING_GDS`), to that assembly's own
+   bounding box instead -- composed into a single stream by `klt gen-compose`
+   with a declared isolation channel between neighbours, and run through
+   `klt drc` with the same deck `layout/verify.py` uses.
 3b. **A ring-fit check** (issue #119) for every region sized from a real
    assembly: composes that region's own guard ring with the real ring GDS,
    aligned to the tightest legal placement, and runs `klt drc` over the pair
@@ -130,41 +130,48 @@ ISOLATION_CHANNEL_UM = 20.0
 GUARD_RING_WIDTH_UM = 1.0
 GUARD_CONTACT_PITCH_UM = 2.0
 
-#: Committed, real, DRC-clean assembled-ring geometry that sizes `ring1`'s
-#: and `ring2`'s guarded-region footprint below, instead of the area/
-#: utilisation estimate's sqrt(area) square (issue #119, Option A). Both
-#: rings share the same cell inventory and the same row layout
-#: (`layout/rings/ro_ring11/build.py`), so both bounding boxes happen to be
-#: identical, but each is read from its own committed stream rather than
-#: assumed equal.
+#: Committed, real, DRC-clean assembled geometry that sizes a region's
+#: guarded footprint below, instead of the area/utilisation estimate's
+#: sqrt(area) square (issue #119, Option A for `ring1`/`ring2`; issue #135,
+#: Option A for `combiner_sampler`). `ring1` and `ring2` share the same cell
+#: inventory and the same row layout (`layout/rings/ro_ring11/build.py`), so
+#: both bounding boxes happen to be identical, but each is read from its own
+#: committed stream rather than assumed equal.
 #:
-#: `combiner_sampler` (`xor2` + 4x `sampler_dff`) has no entry here even
-#: though a committed, DRC-clean, LVS-matching assembled GDS now exists
-#: (`layout/blocks/combiner_sampler/combiner_sampler.gds`, issue #134): its
-#: own real bounding box (278.90 x 15.64 um) is roughly 11x the width of
-#: this region's own guarded footprint (25.27 x 25.27 um, still the area/
-#: utilisation estimate's square below) -- the same kind of size mismatch
-#: issue #119 found and resolved for `ring1`/`ring2`, filed for
-#: `combiner_sampler` as issue #135 rather than forced through here. Adding
-#: an entry here is that issue's own natural follow-up, once the region is
-#: resized to fit.
+#: `combiner_sampler` (`xor2` + 4x `sampler_dff`, `layout/blocks/
+#: combiner_sampler/combiner_sampler.gds`, issue #134) is the same kind of
+#: size mismatch issue #119 found and resolved for `ring1`/`ring2`: its own
+#: real bounding box (278.90 x 15.64 um) was roughly 11x the width of the
+#: region's prior area/utilisation-estimate square (25.27 x 25.27 um).
+#: Issue #135 resolved it the same way -- sizing this region from the real
+#: assembled row instead of the estimate, which is what reshapes the row
+#: layout in `reports/area.json`/`trng_floorplan.gds` (issue #135).
 ASSEMBLED_RING_GDS: dict[str, Path] = {
     "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
     "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",
+    "combiner_sampler": (
+        LAYOUT_DIR / "blocks" / "combiner_sampler" / "combiner_sampler.gds"
+    ),
 }
 
 #: The reference netlist (and its own `.SUBCKT` name) each `ASSEMBLED_RING_GDS`
 #: entry's real placement is checked against -- the same reference
-#: `layout/verify.py`'s own `ro_ring11`/`ro_ring11_ring2` entries already use
-#: standalone. Issue #110's own placement LVS (`check_ring_fit`, below) reuses
-#: it rather than inventing a second reference: placement is a translation of
-#: already-verified geometry, not a connectivity change, so nothing about the
-#: reference itself needs to differ from the standalone check.
+#: `layout/verify.py`'s own `ro_ring11`/`ro_ring11_ring2`/`combiner_sampler`
+#: entries already use standalone. Issue #110's own placement LVS
+#: (`check_ring_fit`, below) reuses it rather than inventing a second
+#: reference: placement is a translation of already-verified geometry, not a
+#: connectivity change, so nothing about the reference itself needs to
+#: differ from the standalone check. Issue #135 extends the same reuse to
+#: `combiner_sampler`.
 RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
     "ring1": (LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.spice", "ro_ring11"),
     "ring2": (
         LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.spice",
         "ro_ring11_ring2",
+    ),
+    "combiner_sampler": (
+        LAYOUT_DIR / "blocks" / "combiner_sampler" / "combiner_sampler.spice",
+        "combiner_sampler",
     ),
 }
 
@@ -179,9 +186,12 @@ RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
 #: this placement must not introduce.
 ALLOWED_LVS_CATEGORIES = {"device.body_unverified", "topology"}
 
-#: Clearance, in um, between an assembled ring's own drawn bbox edge and its
-#: guard ring's inner wall, for `ring1`/`ring2` only (issue #110's own
-#: placement step). **Not a stylistic choice**: issue #119 sized `ring1`/
+#: Clearance, in um, between an assembled region's own drawn bbox edge and
+#: its guard ring's inner wall -- originally for `ring1`/`ring2` only
+#: (issue #110's own placement step), and applied by `build()` below to
+#: every region in `ASSEMBLED_RING_GDS` since (issue #135 extends it to
+#: `combiner_sampler` for the same short-prevention reason described here).
+#: **Not a stylistic choice**: issue #119 sized `ring1`/
 #: `ring2`'s guarded-region inner cavity to *exactly* each ring's own real
 #: bbox (Option A, zero margin by construction), and `check_ring_fit`'s own
 #: DRC-only stress test deliberately places the ring flush against the guard
@@ -981,10 +991,12 @@ def build(pdk) -> dict:
         side = round(math.sqrt(cell_area / GEOMETRY_UTILISATION), 2)
 
         # The guarded-region footprint below: real assembled geometry where
-        # it exists (issue #119, Option A), the area/utilisation estimate's
-        # sqrt(area) square everywhere else (`combiner_sampler`, `digital`,
-        # not yet assembled). Either way this is what `gen_guard_ring` below
-        # actually encloses -- `footprint_source` records which one, and why.
+        # it exists (`ASSEMBLED_RING_GDS` -- issue #119, Option A for
+        # `ring1`/`ring2`; issue #135, Option A for `combiner_sampler`), the
+        # area/utilisation estimate's sqrt(area) square everywhere else
+        # (`digital`, not yet assembled). Either way this is what
+        # `gen_guard_ring` below actually encloses -- `footprint_source`
+        # records which one, and why.
         if rid in ASSEMBLED_RING_GDS:
             gds_path = ASSEMBLED_RING_GDS[rid]
             bbox = read_gds_bbox(gds_path)
@@ -1141,20 +1153,23 @@ def build(pdk) -> dict:
     drc = run_drc("layout/.work/trng_floorplan.gds")
 
     # The composed abstract was DRC-clean by construction before issue #110
-    # (empty guard rings only). Now that `ring1`/`ring2` carry their own real
-    # assembled content, the composed abstract's own DRC surfaces whatever
-    # that content's *standalone* DRC already reports -- and, per
-    # `layout/floorplan/README.md`'s own "Tool friction" note, both
-    # committed rings currently report 49 pre-existing violations against
-    # whatever `klt` build resolves on `PATH` here (a deck-drift gap tracked
-    # upstream, klayout-tools#623 -- unrelated to this placement). Composing
-    # them into the floorplan does not introduce anything beyond that: the
-    # baseline below is each ring's own `ring_standalone` DRC
-    # (`check_ring_fit`, above), and this run's own pass/fail signal is
-    # whether the *composed* abstract's rule counts exceed that baseline --
-    # the same "new violations only" principle issue #119's own
-    # `check_ring_fit` already established for the pairwise fit, applied
-    # here to the full multi-region composition.
+    # (empty guard rings only). Now that `ring1`/`ring2` (and, since issue
+    # #135, `combiner_sampler`) carry their own real assembled content, the
+    # composed abstract's own DRC surfaces whatever that content's
+    # *standalone* DRC already reports -- and, per `layout/floorplan/
+    # README.md`'s own "Tool friction" note, both committed rings currently
+    # report 49 pre-existing violations against whatever `klt` build
+    # resolves on `PATH` here (a deck-drift gap tracked upstream,
+    # klayout-tools#623 -- unrelated to this placement); `combiner_sampler`'s
+    # own standalone DRC is clean (`layout/verify.py`'s own fixture), so it
+    # contributes nothing to this baseline. Composing them into the
+    # floorplan does not introduce anything beyond that: the baseline below
+    # is each assembled region's own `ring_standalone` DRC (`check_ring_fit`,
+    # above), and this run's own pass/fail signal is whether the *composed*
+    # abstract's rule counts exceed that baseline -- the same "new
+    # violations only" principle issue #119's own `check_ring_fit` already
+    # established for the pairwise fit, applied here to the full
+    # multi-region composition.
     baseline_rules: Counter = Counter()
     for rid in ASSEMBLED_RING_GDS:
         baseline_rules.update(Counter(ring_fit[rid]["ring_standalone"]["rule_counts"] or {}))
@@ -1165,8 +1180,8 @@ def build(pdk) -> dict:
 
     print(
         f"  drc {drc.get('status')} ({drc.get('violation_count')} violations, "
-        f"{sum(new_from_composition.values())} not already present in "
-        "ring1/ring2's own standalone DRC)"
+        f"{sum(new_from_composition.values())} not already present in each "
+        "assembled region's own standalone DRC)"
     )
     print()
 
@@ -1338,7 +1353,8 @@ def print_report(report: dict) -> None:
     new_drc = report["drc_new_violations_from_composition"]
     print(f"  composed row bbox          : {rollup['row_bbox_um']['w']:.1f} x "
           f"{rollup['row_bbox_um']['h']:.1f} um (DRC {report['drc'].get('status')}, "
-          f"{new_drc['count']} new vs. ring1/ring2's own standalone DRC)")
+          f"{new_drc['count']} new vs. each assembled region's own "
+          "standalone DRC)")
     excluded = rollup["excluded"]["ring_liveness_monitor_DR0016"]
     print(f"  excluded: DR-0016 ring-liveness monitor, {excluded['cells']} cells, "
           f"{excluded['cell_area_um2']:.1f} um^2 cell area")
@@ -1499,7 +1515,7 @@ def main(argv: list[str] | None = None) -> int:
     if new_drc["count"]:
         failures.append(
             f"floorplan DRC introduces {new_drc['count']} violation(s) not "
-            f"already present in ring1/ring2's own standalone DRC: "
+            f"already present in each assembled region's own standalone DRC: "
             f"{new_drc['rule_counts']}"
         )
 

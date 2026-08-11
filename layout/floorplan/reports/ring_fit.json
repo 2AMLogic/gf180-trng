@@ -18,20 +18,14 @@
       "y": 1.55
     },
     "composed": {
-      "status": "violations",
-      "violation_count": 49,
-      "rule_counts": {
-        "metal1.enclosing.contact.1": 5,
-        "via1.width.1": 44
-      }
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
     },
     "ring_standalone": {
-      "status": "violations",
-      "violation_count": 49,
-      "rule_counts": {
-        "metal1.enclosing.contact.1": 5,
-        "via1.width.1": 44
-      }
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
     },
     "new_violation_rule_counts_from_fit": {},
     "new_violations_from_fit": 0,
@@ -81,20 +75,14 @@
       "y": 1.55
     },
     "composed": {
-      "status": "violations",
-      "violation_count": 49,
-      "rule_counts": {
-        "metal1.enclosing.contact.1": 5,
-        "via1.width.1": 44
-      }
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
     },
     "ring_standalone": {
-      "status": "violations",
-      "violation_count": 49,
-      "rule_counts": {
-        "metal1.enclosing.contact.1": 5,
-        "via1.width.1": 44
-      }
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
     },
     "new_violation_rule_counts_from_fit": {},
     "new_violations_from_fit": 0,
@@ -120,6 +108,63 @@
           "layout": 15,
           "reference": 5,
           "matched": 15
+        }
+      }
+    },
+    "lvs_unexpected_categories": []
+  },
+  "combiner_sampler": {
+    "region": "combiner_sampler",
+    "ring_gds": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+    "ring_bbox_um": {
+      "x0": -0.22,
+      "y0": 0.31,
+      "x1": 278.68,
+      "y1": 15.950000000000001
+    },
+    "guard_inner_um": {
+      "w_um": 279.7,
+      "h_um": 16.44
+    },
+    "ring_placement_clearance_um": 0.4,
+    "fit_offset_um": {
+      "x": 1.22,
+      "y": 0.69
+    },
+    "composed": {
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
+    },
+    "ring_standalone": {
+      "status": "clean",
+      "violation_count": 0,
+      "rule_counts": {}
+    },
+    "new_violation_rule_counts_from_fit": {},
+    "new_violations_from_fit": 0,
+    "lvs": {
+      "status": "match",
+      "mismatch_count": 3,
+      "category_counts": {
+        "device.body_unverified": 2,
+        "topology": 1
+      },
+      "counts": {
+        "nets": {
+          "layout": 54,
+          "reference": 54,
+          "matched": 54
+        },
+        "devices": {
+          "layout": 100,
+          "reference": 100,
+          "matched": 100
+        },
+        "pins": {
+          "layout": 12,
+          "reference": 11,
+          "matched": 12
         }
       }
     },
