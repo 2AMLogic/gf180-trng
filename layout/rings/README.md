@@ -46,36 +46,49 @@ output against its ring1 counterpart, not assumed.
 
 ## What is explicitly *not* here yet
 
-- **Placing either ring's `ro_ring11` inside
-  `layout/floorplan/trng_floorplan.gds`'s own guarded `ring1`/`ring2`
-  regions**, and placing `xor2` + the four `sampler_dff` instances inside
-  `combiner_sampler` — the other half of #110's own scope. This was
-  **blocked by a discovered size mismatch, not merely unattempted**:
-  `ro_ring11`'s real, DRC-clean assembled geometry is a single row
-  measuring **~78.9 µm × ~4.75 µm** (`layout/.work/ro_ring11_gr_wire.json`'s
-  own `bbox_um` at build time, `klt gen-compose`'s only placement
-  strategies being a 1-D row or an explicit per-block translation of
-  already-drawn geometry — klayout-tools#321, no 2-D packing exists to
-  arrange this more compactly), and `layout/floorplan/trng_floorplan.gds`'s
-  own `ring1`/`ring2` guard rings were originally sized from
-  `layout/floorplan/reports/area.json`'s bottom-up *area* estimate at a
-  15.1×15.1 µm inner / 17.1×17.1 µm guarded **square** footprint — roughly a
-  quarter of this row's own width, which the assembled ring did not fit
-  inside.
-  **[#119][gf119] resolved the mismatch** (Option A of the two it posed):
-  `layout/floorplan/floorplan.py` now derives `ring1`/`ring2`'s guarded
-  footprint from each ring's own committed GDS bounding box instead of the
-  area estimate (**78.9 × 4.75 µm inner, 80.9 × 6.75 µm guarded**, per
-  ring — see `layout/floorplan/README.md`'s "What the area model is"), and
-  a new check in that same script composes each region's guard ring with
-  the real ring geometry and runs `klt drc` over the pair to confirm the fit
-  is clean (`layout/floorplan/reports/ring_fit.json`). `combiner_sampler`
-  keeps the area-estimate square, since it is still unassembled (no
-  committed GDS exists to size it from). **Actually placing either ring's
-  `ro_ring11` inside its now-correctly-sized region remains #110's own,
-  still-open scope** — #119 only fixed the region each ring would be placed
-  into, not the placement itself.
+- **Placing `xor2` + the four `sampler_dff` instances inside
+  `layout/floorplan/trng_floorplan.gds`'s own guarded `combiner_sampler`
+  region.** Neither is assembled into a block the way `ro_ring11` is here,
+  so there is no committed GDS to place. Out of scope for this directory
+  either way — `layout/floorplan/` is where placement happens, not here.
 
+## Placing `ro_ring11`/`ro_ring11_ring2` inside the floorplan (#110)
+
+This was blocked for a while by a discovered size mismatch, not merely
+unattempted: `ro_ring11`'s real, DRC-clean assembled geometry is a single row
+measuring **~78.9 µm × ~4.75 µm**
+(`layout/.work/ro_ring11_gr_wire.json`'s own `bbox_um` at build time), and
+`layout/floorplan/trng_floorplan.gds`'s own `ring1`/`ring2` guard rings were
+originally sized from `layout/floorplan/reports/area.json`'s bottom-up *area*
+estimate at a 15.1×15.1 µm inner / 17.1×17.1 µm guarded **square**
+footprint — roughly a quarter of this row's own width, which the assembled
+ring did not fit inside.
+
+**[#119][gf119] resolved the size mismatch** (Option A of the two it posed):
+`layout/floorplan/floorplan.py` derives `ring1`/`ring2`'s guarded *outer*
+footprint from each ring's own committed GDS bounding box instead of the area
+estimate (**80.9 × 6.75 µm guarded**, per ring), and a check in that same
+script composes each region's guard ring with the real ring geometry and runs
+`klt drc` over the pair to confirm the fit is clean
+(`layout/floorplan/reports/ring_fit.json`). `combiner_sampler` keeps the
+area-estimate square, since it is still unassembled.
+
+**[#110][gf110] placed both rings inside those regions.** The naive
+placement — the ring's own bbox flush against the guard ring's inner wall,
+since the guarded region's inner cavity is sized to exactly that bbox —
+turned out to be DRC-clean but not connectivity-clean: `klt lvs` found it
+shorts the ring's own signal wiring to `vss` (see
+`layout/floorplan/README.md`'s own
+["Placement — issue #110"](../floorplan/README.md#placement--issue-110)
+section for the full account, and [klayout-tools#692][kt692] for the tool
+gap it surfaced). `layout/floorplan/floorplan.py` now places both rings with
+a small clearance instead, carved out of the guard ring's own band width so
+the region's committed *outer* footprint is unchanged, and both placements
+are DRC-clean-relative-to-baseline and `klt lvs`-match. `combiner_sampler`
+and the digital section remain unplaced — out of #110's own scope.
+
+[gf110]: https://github.com/2AMLogic/gf180-trng/issues/110
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
 [klt634]: https://github.com/2AMLogic/klayout-tools/issues/634
+[kt692]: https://github.com/2AMLogic/klayout-tools/issues/692

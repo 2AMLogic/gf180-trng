@@ -552,21 +552,29 @@ and none of the analog cells has been drawn.
   16.55 × 16.55 µm each, a footprint the real row does not remotely fit
   inside (see `region.footprint_source` in
   [`reports/area.json`](reports/area.json) for the exact numbers and which
-  regions use which method). `combiner_sampler` is not assembled yet, so it
-  still uses the square estimate, same as `digital` always will (no
-  synthesis/placement step is in scope to replace it).
+  regions use which method). Each region's *guarded* (outer) footprint is
+  still sized from that same **78.9 × 4.75 µm** ring bbox (**80.9 × 6.75 µm**
+  guarded, `GUARD_RING_WIDTH_UM` = 1.0 µm in on every side) — issue #110's
+  own placement clearance (below) only changes how that 1.0 µm is split
+  between guard-ring material and clear silicon, not the region's own outer
+  size, so `region.inner_w_um`/`inner_h_um` in `reports/area.json` now read
+  **79.71 × 5.55 µm** (ring bbox **+ 2 ×** `RING_PLACEMENT_CLEARANCE_UM`)
+  while `guarded_w_um`/`guarded_h_um` are unchanged. `combiner_sampler` is
+  not assembled yet, so it still uses the square estimate, same as `digital`
+  always will (no synthesis/placement step is in scope to replace it).
 - `layout/floorplan/floorplan.py` also checks that the real assembled
   geometry actually *fits* inside the region it now sizes: it composes each
-  such region's guard ring with the real ring GDS (aligned to the tightest
-  legal placement, zero clearance) and runs `klt drc` over the pair,
-  comparing the result against the ring GDS's own standalone DRC so a
-  violation introduced by the fit is distinguishable from one already
-  present in the ring on its own. Both rings fit clean today (0 new
-  violations from the fit) — see
-  [`reports/ring_fit.json`](reports/ring_fit.json). (Both rings' *own*
-  standalone DRC currently reports 49 pre-existing violations against the
-  `klt`/deck build this script last ran against, unrelated to placement or
-  to this issue — see [Tool friction](#tool-friction).)
+  such region's guard ring with the real ring GDS and runs `klt drc` **and**
+  `klt lvs` over the pair, comparing the DRC result against the ring GDS's
+  own standalone DRC so a violation introduced by the fit is distinguishable
+  from one already present in the ring on its own. Both rings fit
+  DRC-clean-relative-to-baseline and LVS-match today — see
+  [`reports/ring_fit.json`](reports/ring_fit.json) and
+  [Placement](#placement--issue-110) below for why this is no longer a
+  *zero*-clearance fit and what changed. (Both rings' *own* standalone DRC
+  currently reports 49 pre-existing violations against the `klt`/deck build
+  this script last ran against, unrelated to placement or to this issue —
+  see [Tool friction](#tool-friction).)
 - The composed abstract's row bounding box is **601.4 × 354.3 µm**. That is the
   tool's one-dimensional arrangement, not a packing proposal — the composer
   supports row placement only. The area figures above are region footprints
@@ -581,6 +589,94 @@ belongs with whoever owns that inventory.
 
 ---
 
+## Placement — issue #110
+
+`layout/rings/` ([#120][gf120], [#118][gf118]) assembled `ro_ring11` at both
+sizings; issue #119 sized `ring1`/`ring2`'s guarded regions to those real,
+committed bounding boxes instead of an area estimate. **What #119 explicitly
+left open is what this section is about: actually placing the assembled ring
+inside the region #119 sized for it.**
+
+**The naive placement is a short, not just a stress test.** `ring1`/`ring2`'s
+guarded-region inner cavity is sized to *exactly* each ring's own bbox
+(#119), so the tightest — and, before this issue, only — placement puts the
+ring's own drawn edge flush against the guard ring's inner wall on every
+side, zero clearance. `layout/floorplan/floorplan.py`'s own `check_ring_fit`
+already exercised exactly that placement as a DRC-only stress test for #119,
+and it passed (0 new DRC violations). Extending the same check to `klt lvs`
+— this issue's own test-plan requirement — found that DRC-clean is not the
+same claim as connectivity-clean: `klt extract`'s own `merged_net_labels`
+diagnostic reports the ring's own metal1 chain-signal wiring (which runs
+right up to the row's own bbox edge — `layout/rings/ro_ring11/build.py`'s
+`WRAP_TRACK`) shorting to `vss` once the guard ring's own p-substrate tap
+diffusion sits flush against it. Two conductors on the same layer with zero
+space between them are one net to a polygon-based extractor, guard ring or
+not — the curated DRC deck simply has no rule that catches "this spacing is
+zero" as a violation in a composed stream the way it would inside a single
+generator's own output. `klt gen guard_ring`'s own response already names
+the number that would have caught it: `drc_hints.min_spacing_um` is 0.4 µm
+for this deck regardless of `ring_width_um` — `gen-compose` does not consult
+it, which is filed generically against the tool as
+[klayout-tools#692][kt692].
+
+**The fix keeps the region's own committed outer footprint unchanged.**
+`RING_PLACEMENT_CLEARANCE_UM` (0.4 µm, cross-checked at run time against
+`gen_guard_ring`'s own reported `drc_hints.min_spacing_um` rather than
+trusted blind) is carved *out of* the guard ring's own band width, not added
+on top of the region's reserved area: the guard ring's inner cavity grows by
+`2 × RING_PLACEMENT_CLEARANCE_UM` and its own `ring_width_um` shrinks by
+`RING_PLACEMENT_CLEARANCE_UM` on each side, and the two exactly cancel
+(`ring_band_width_um + RING_PLACEMENT_CLEARANCE_UM == GUARD_RING_WIDTH_UM`,
+always) — `ring1`/`ring2`'s `guarded_w_um`/`guarded_h_um` in
+[`reports/area.json`](reports/area.json) are byte-identical to what issue
+#119 already committed. Only `inner_w_um`/`inner_h_um` (the cavity) and the
+new `ring_band_width_um`/`ring_placement_clearance_um` fields change. At
+that clearance, both rings compose DRC-clean-relative-to-baseline (0 new
+violations vs. each ring's own standalone DRC) **and** `klt lvs`-match
+`RING_LVS_REFERENCE` — the same reference netlist
+[`layout/verify.py`](../verify.py) already uses for each ring standalone,
+modulo only the same two deck-level disclosures (`device.body_unverified`,
+`topology`) every other entry in this repository already carries. Verbatim
+results: [`reports/ring_fit.json`](reports/ring_fit.json).
+
+**The composed abstract now places real content, not just guard rings.**
+`compose()` uses `placement.strategy: "explicit"` (#330) for every block —
+`ring1`/`ring2`/`combiner_sampler`/`digital`'s own guard rings at the same
+absolute origins `strategy: "row"` used to compute (so every region and
+channel lands exactly where issue #119's own committed numbers already put
+it), plus one more block each for `ring1`/`ring2`: the real assembled
+`ro_ring11`/`ro_ring11_ring2` geometry, translated to
+`(region's row offset + GUARD_RING_WIDTH_UM − ring bbox x0/y0)` — the same
+"flush against the guard ring's own declared inner corner" formula
+`check_ring_fit` already verifies clean, since `ring_band_width_um +
+RING_PLACEMENT_CLEARANCE_UM == GUARD_RING_WIDTH_UM` makes that absolute
+position independent of the clearance/band-width split. `combiner_sampler`
+and `digital` stay empty guard rings — neither is assembled yet (`xor2` +
+`sampler_dff` placement, and any digital-section placement, are out of this
+issue's own scope).
+
+**No common-centroid pairing, verified, not just avoided by construction.**
+`layout/floorplan/README.md`'s own [Mechanism 1](#mechanism-1--mutual-injection-locking-between-the-rings)
+requires `ring1`/`ring2` to stay two separate, unmatched, individually
+guarded blocks — no shared dummy row, no shared well, no interdigitation.
+Nothing in this placement path is capable of doing any of those things:
+`klt gen guard_ring` has no `topology` parameter to default away from (that
+risk is specific to `klt gen`'s matched-pair generators, `diff_pair`/
+`mos_array`, neither of which this placement calls), each ring gets its own
+independent `gen_guard_ring` invocation (visible in the composed stream's
+own structure names — four distinct `guard_ring`/`guard_ring$1`/
+`guard_ring$2`/`guard_ring$3` instances, one per region, never reused across
+regions), and each ring's own content is a separate top-level block with its
+own row offset, 100.91 µm apart, comfortably outside the 20 µm channel.
+Checked, not just argued: `klt extract` over the full composed
+`trng_floorplan.gds` reports exactly 92 devices (46 + 46, one ring's own
+device count each) and 97 nets, with `merged_net_labels` showing only the
+expected within-ring `a,y` chain merges (nine per ring, the same "`y`→`a`"
+same-net-label pattern `layout/rings/ro_ring11/build.py`'s own wiring
+produces) — no net, and no device, spans both rings' own structures.
+
+---
+
 ## DRC: what actually ran
 
 `klt drc` was run — by this script, not by hand — on every generated device
@@ -588,9 +684,30 @@ footprint and on the composed floorplan abstract, with the same `gf180mcu` deck
 and the same PDK resolver `layout/verify.py` uses. Verbatim output in
 [`reports/floorplan.drc.json`](reports/floorplan.drc.json).
 
+**Since issue #110, `ring1`/`ring2` carry their own real, placed content —
+not an empty guard ring.** `combiner_sampler` and `digital` are still empty
+(neither is assembled yet). The composed abstract's own raw DRC therefore now
+surfaces whatever `ring1`/`ring2`'s own committed geometry already reports
+standalone:
+
 ```
-composed abstract: status "clean", violation_count 0, rule_counts {}
+composed abstract: status "violations", violation_count 98,
+  rule_counts {metal1.enclosing.contact.1: 10, via1.width.1: 88}
+new violations introduced by composing the regions together: 0
 ```
+
+That 98 is exactly twice each ring's own standalone 49 (`layout/reports/
+ro_ring11*.drc.json`) — a pre-existing deck-drift gap
+([klayout-tools#623][kt623], already discussed below), not anything this
+placement introduced. `floorplan.py`'s own pass/fail signal is therefore
+**not** "is the composed abstract's raw violation count zero" any more —
+that stopped being true the moment real content entered the picture — but
+"does composing the regions together, and placing each ring inside its own
+guard ring, introduce anything beyond what that ring's own committed GDS
+already reports on its own" (`reports/floorplan.drc.json`'s own
+`new_violations_from_composition` key, and `reports/ring_fit.json`'s own
+`new_violations_from_fit`, for the same question asked pairwise per region).
+Both report 0.
 
 **Read the scope off the report, not off this sentence.** The abstract draws
 Comp, Contact and Metal1 only, so the deck checked **three layers** and
@@ -598,14 +715,21 @@ Comp, Contact and Metal1 only, so the deck checked **three layers** and
 metal, MiM, BJT, poly and n-well). That is in the report's own `coverage`
 block.
 
-**What a clean result here does and does not mean:**
+**What a clean-relative-to-baseline result here does and does not mean:**
 
 - It **does** mean the isolation structures are legal geometry at these
   dimensions: four guard rings with those tap widths and contact pitches, at
-  those sizes, with 20 µm between them, violate no rule in the curated deck.
-- It does **not** mean the block is DRC-clean. **The regions are empty.** No
-  ring, no combiner, no sampler and no standard cell has been drawn. A DRC run
-  over a floorplan abstract can only check the floorplan abstract.
+  those sizes, with 20 µm between them, violate no rule in the curated deck —
+  and that placing `ring1`/`ring2`'s own real content inside its own guard
+  ring, at the clearance `RING_PLACEMENT_CLEARANCE_UM` establishes (below),
+  introduces no *new* rule violation over what that ring's own committed GDS
+  already has.
+- It does **not** mean the block is DRC-clean, full stop. `combiner_sampler`
+  and `digital` are still empty — no combiner, no sampler and no standard
+  cell has been drawn — and `ring1`/`ring2`'s own 49 pre-existing violations
+  each are real (tracked, not fixed, by this issue). A DRC run over a
+  floorplan abstract can only check what the floorplan abstract actually
+  contains.
 - It is **not tapeout sign-off**, for all the reasons
   [`layout/README.md`](../README.md) already states: `klt`'s decks are a
   curated subset, not the PDK's own sign-off deck.
@@ -650,7 +774,11 @@ Stated as a list because an unstated limit is a defect.
    this document only sharpens what it has to target.
 8. **No decoupling capacitor sizing** for the entropy domains — the channel is
    reserved, the structure is not designed.
-9. **No layout.** This is a floorplan abstract with empty regions.
+9. **No full layout, still.** `ring1`/`ring2` now carry real, placed,
+   DRC/LVS-verified content ([Placement](#placement--issue-110), issue
+   #110); `combiner_sampler` and `digital` are still empty guard rings — no
+   combiner, no sampler, and no standard cell in the digital section has
+   been placed.
 
 None of these is a reason to withhold the floorplan. All of them are reasons
 not to read a clean DRC result as an independence argument.
@@ -661,7 +789,7 @@ not to read a clean DRC result as an independence argument.
 
 Per [CLAUDE.md](../../CLAUDE.md), friction found while using klayout-tools is
 filed generically against the tool — the tool gap, never this repository's
-design. This work produced three, all filed against
+design. This work produced four, all filed against
 [klayout-tools][klt] and all worked around in
 [`floorplan.py`](floorplan.py) rather than silently absorbed:
 
@@ -700,6 +828,22 @@ design. This work produced three, all filed against
    passes it). A minimum-width digital-style device therefore cannot be
    generated at all, so the starve-device footprints here are measured at the
    floor and are over-estimates.
+4. **[klayout-tools#692][kt692]** — `klt gen-compose`'s `strategy: "explicit"`
+   does not consult a neighbouring `guard_ring` generator's own reported
+   `drc_hints.min_spacing_um` at all, so it will happily compose a block
+   flush (zero clearance) against a guard ring even though the generator's
+   own response already names the minimum spacing that avoids a short. Found
+   placing `ring1`/`ring2`'s real assembled content (issue #110,
+   [Placement](#placement--issue-110) above): the zero-clearance placement
+   `check_ring_fit` already exercised as a DRC-only stress test for issue
+   #119 passes `klt drc` clean against the curated deck, and still shorts
+   the ring's own signal wiring to `vss` once `klt lvs` is run over the same
+   composed pair — `klt extract`'s own `merged_net_labels` names it
+   directly. `floorplan.py` works around this by deriving its own placement
+   clearance from the generator's `drc_hints.min_spacing_um` and
+   cross-checking it at run time (`RING_PLACEMENT_CLEARANCE_UM`) rather than
+   trusting a fixed number, but nothing in `gen-compose`'s own contract
+   prompts a caller to do so.
 
 Not new friction, but worth recording alongside the above: this run's ring-fit
 check (issue #119) found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
@@ -723,12 +867,15 @@ separate question.
 [kt322]: https://github.com/2AMLogic/klayout-tools/issues/322
 [kt328]: https://github.com/2AMLogic/klayout-tools/issues/328
 [kt623]: https://github.com/2AMLogic/klayout-tools/issues/623
+[kt692]: https://github.com/2AMLogic/klayout-tools/issues/692
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
 [#78]: https://github.com/2AMLogic/gf180-trng/issues/78
 [#82]: https://github.com/2AMLogic/gf180-trng/pull/82
+[gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
+[gf120]: https://github.com/2AMLogic/gf180-trng/pull/120
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md

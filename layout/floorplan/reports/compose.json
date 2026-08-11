@@ -17,17 +17,52 @@
       {
         "id": "digital",
         "generator_report": "fp_guard_digital.json"
+      },
+      {
+        "id": "ring1_ring",
+        "generator_report": "fp_ring_content_ring1.json"
+      },
+      {
+        "id": "ring2_ring",
+        "generator_report": "fp_ring_content_ring2.json"
       }
     ],
     "placement": {
-      "strategy": "row",
+      "strategy": "explicit",
       "order": [
         "ring1",
         "ring2",
         "combiner_sampler",
-        "digital"
+        "digital",
+        "ring1_ring",
+        "ring2_ring"
       ],
-      "spacing_um": 20.0
+      "origins_um": {
+        "ring1": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "ring2": {
+          "x": 100.91,
+          "y": 0.0
+        },
+        "combiner_sampler": {
+          "x": 201.82,
+          "y": 0.0
+        },
+        "digital": {
+          "x": 247.09,
+          "y": 0.0
+        },
+        "ring1_ring": {
+          "x": 5.05,
+          "y": 1.55
+        },
+        "ring2_ring": {
+          "x": 105.96,
+          "y": 1.55
+        }
+      }
     },
     "pdk": {
       "variant": "gf180mcuD"
@@ -107,6 +142,34 @@
           "x1": 601.4300000000001,
           "y1": 354.34000000000003
         }
+      },
+      {
+        "id": "ring1_ring",
+        "generator": "committed_ring_geometry",
+        "offset_um": {
+          "x": 5.05,
+          "y": 1.55
+        },
+        "bbox_um": {
+          "x0": 1.0,
+          "y0": 1.0,
+          "x1": 79.91,
+          "y1": 5.75
+        }
+      },
+      {
+        "id": "ring2_ring",
+        "generator": "committed_ring_geometry",
+        "offset_um": {
+          "x": 105.96,
+          "y": 1.55
+        },
+        "bbox_um": {
+          "x0": 101.91,
+          "y0": 1.0,
+          "x1": 180.82,
+          "y1": 5.75
+        }
       }
     ],
     "nets": [],
@@ -119,5 +182,5 @@
     },
     "warnings": []
   },
-  "gds_sha256_timestamp_normalised": "644f5d379e9207b7e9136673d4c629b09dd9eedf25f6a58d404b50f3f267d7e1"
+  "gds_sha256_timestamp_normalised": "6a717bdde8f7cf8f89e347d86a8f4d9b39a8f98ed4f28c485923906adac46a61"
 }

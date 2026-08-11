@@ -72,6 +72,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
 import shutil
 import struct
@@ -144,6 +145,68 @@ ASSEMBLED_RING_GDS: dict[str, Path] = {
     "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
     "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",
 }
+
+#: The reference netlist (and its own `.SUBCKT` name) each `ASSEMBLED_RING_GDS`
+#: entry's real placement is checked against -- the same reference
+#: `layout/verify.py`'s own `ro_ring11`/`ro_ring11_ring2` entries already use
+#: standalone. Issue #110's own placement LVS (`check_ring_fit`, below) reuses
+#: it rather than inventing a second reference: placement is a translation of
+#: already-verified geometry, not a connectivity change, so nothing about the
+#: reference itself needs to differ from the standalone check.
+RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
+    "ring1": (LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.spice", "ro_ring11"),
+    "ring2": (
+        LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.spice",
+        "ro_ring11_ring2",
+    ),
+}
+
+#: LVS mismatch categories a placement is still allowed to report -- the same
+#: two deck-level disclosures every standalone cell/ring entry in
+#: `layout/verify.py`'s own `EXPECTATIONS` already carries (`device.
+#: body_unverified`: the curated deck has no distinct well-tap layer, so PMOS
+#: body nets are left floating rather than tied to a real net; `topology`: an
+#: empty device class reported on one side only, not a real mismatch -- see
+#: `layout/verify.py`'s own `EXPECTATIONS` comment for both). Anything else
+#: (a `device.unmatched`, `net.merged`, ...) is a real connectivity problem
+#: this placement must not introduce.
+ALLOWED_LVS_CATEGORIES = {"device.body_unverified", "topology"}
+
+#: Clearance, in um, between an assembled ring's own drawn bbox edge and its
+#: guard ring's inner wall, for `ring1`/`ring2` only (issue #110's own
+#: placement step). **Not a stylistic choice**: issue #119 sized `ring1`/
+#: `ring2`'s guarded-region inner cavity to *exactly* each ring's own real
+#: bbox (Option A, zero margin by construction), and `check_ring_fit`'s own
+#: DRC-only stress test deliberately places the ring flush against the guard
+#: ring at that zero clearance. Extending that same check to `klt lvs`
+#: (issue #110's own test-plan requirement) finds that zero clearance is not
+#: merely a DRC corner case: `klt extract`'s own `merged_net_labels` reports
+#: the ring's own metal1 chain-signal wiring (which runs right up to the
+#: row's own bbox edge -- `layout/rings/ro_ring11/build.py`'s `WRAP_TRACK`)
+#: shorting to `vss` once the guard ring's own p+ tap diffusion sits flush
+#: against it with no gap: two conductors on the same layer with zero space
+#: between them are one net, not two, to any polygon-based extractor. `klt
+#: gen guard_ring`'s own response already names the fix: its `drc_hints.
+#: min_spacing_um` is 0.4 um for this deck regardless of `ring_width_um` --
+#: `build()` cross-checks that against this constant at run time rather than
+#: trusting it silently, so a future deck/tool change that raises the
+#: reported minimum fails loudly instead of shipping a short.
+#:
+#: This clearance is carved out of the guard ring's own band width, not
+#: added on top of it: `ring1`/`ring2`'s *outer* guarded footprint --
+#: `GUARD_RING_WIDTH_UM` in from the region's declared edge, same as every
+#: other region -- is unchanged from issue #119's own committed
+#: `reports/area.json` numbers (`guarded_w_um`/`guarded_h_um`), so this is a
+#: placement refinement, not a re-derivation of the reserved area those
+#: numbers already priced. The inner cavity grows by `2 *
+#: RING_PLACEMENT_CLEARANCE_UM` and the guard band supplying it shrinks by
+#: `RING_PLACEMENT_CLEARANCE_UM` on each side -- the two exactly cancel
+#: (`ring_band_width_um + RING_PLACEMENT_CLEARANCE_UM == GUARD_RING_WIDTH_UM`
+#: always), which is also why the ring content's own placement origin below
+#: keeps using `GUARD_RING_WIDTH_UM` unmodified: the *absolute* position
+#: where the content starts does not move, only how that same offset is
+#: split between "guard ring material" and "clear silicon" does.
+RING_PLACEMENT_CLEARANCE_UM = 0.4
 
 #: `klt gen mos_array` refuses w_um below this. The gf180mcu 3.3 V core
 #: devices go to 0.22 um, and the curated DRC deck's own Comp minimum is
@@ -411,7 +474,13 @@ def gen_mos(flavor: str, w_um: float, l_um: float, variant: str, stem: str) -> d
     ])
 
 
-def gen_guard_ring(region_id: str, w_um: float, h_um: float, variant: str) -> dict:
+def gen_guard_ring(
+    region_id: str,
+    w_um: float,
+    h_um: float,
+    variant: str,
+    ring_width_um: float = GUARD_RING_WIDTH_UM,
+) -> dict:
     """A substrate-tap guard ring sized to enclose one region.
 
     `contacts_per_side` is derived from the region's *shorter* side, not the
@@ -425,12 +494,17 @@ def gen_guard_ring(region_id: str, w_um: float, h_um: float, variant: str) -> di
     not fit along inner_height_um=...um without overlapping contacts`), so
     getting this wrong is a hard failure here, not a silent DRC surprise
     later.
+
+    `ring_width_um` defaults to the module-wide `GUARD_RING_WIDTH_UM`, and is
+    only ever overridden for `ring1`/`ring2` (issue #110's own
+    `RING_PLACEMENT_CLEARANCE_UM`, see that constant's own docstring) --
+    every other region keeps the uniform band width every prior run used.
     """
     per_side = max(4, int(round(min(w_um, h_um) / GUARD_CONTACT_PITCH_UM)))
     params = {
         "inner_width_um": round(w_um, 3),
         "inner_height_um": round(h_um, 3),
-        "ring_width_um": GUARD_RING_WIDTH_UM,
+        "ring_width_um": ring_width_um,
         "contacts_per_side": per_side,
         # A p-substrate tap ring tied to the region's own vss. `add_well`
         # would make it an n-well tie instead, which is a different structure
@@ -446,20 +520,108 @@ def gen_guard_ring(region_id: str, w_um: float, h_um: float, variant: str) -> di
     ])
 
 
-def compose(order: list[str], variant: str) -> dict:
+def write_ring_content_report(region: dict) -> tuple[str, dict]:
+    """Write the hand-crafted `generator_report` describing one assembled
+    ring's own real geometry, for `gen-compose`'s `strategy: "explicit"` --
+    shared by `check_ring_fit` (the DRC/LVS placement check) and `compose`
+    (the real floorplan's own placement), issue #110, so the two never
+    describe the same geometry two different ways.
+
+    Reuses `region["footprint_source"]`'s own `cell_name`/`bbox_um` (already
+    read from the committed GDS via `read_gds_bbox` when the region's
+    guarded footprint was sized, issue #119) rather than re-reading the GDS a
+    second time.
+    """
+    rid = region["id"]
+    source = region["footprint_source"]
+    report = {
+        "generator": "committed_ring_geometry",
+        "cell_name": source["cell_name"],
+        "gds_path": source["gds"],
+        "bbox_um": source["bbox_um"],
+    }
+    name = f"fp_ring_content_{rid}.json"
+    (WORK_DIR / name).write_text(json.dumps(report, indent=2) + "\n")
+    return name, source["bbox_um"]
+
+
+def _row_offsets(regions: list[dict]) -> dict[str, float]:
+    """Left-to-right row offsets, `ISOLATION_CHANNEL_UM` apart -- the same
+    arithmetic `klt gen-compose`'s own `placement.strategy: "row"` used here
+    until issue #110 (and the same arithmetic `layout/rings/ro_ring11/
+    build.py`'s own `row_offsets()` documents against `gen_compose.py`'s
+    `compute_row_offsets`).
+
+    Computed here, in plain Python, rather than read back from a `strategy:
+    "row"` response, because `compose()` below now needs to place each
+    guarded region's own real ring content at an explicit position relative
+    to that region's row offset (issue #110) -- `strategy: "explicit"` needs
+    every block's own absolute origin up front, guard rings and ring content
+    alike, so the guard rings must be explicitly placed too, not just the
+    content added on top of a `"row"` composition. Every guard-ring
+    generator response's own bbox starts at `(0, 0)` (`gen_guard_ring`'s own
+    contract, unchanged by issue #110), which is what makes this the same
+    arithmetic `"row"` always used.
+    """
+    offsets: dict[str, float] = {}
+    cursor_x1: float | None = None
+    for region in regions:
+        rid = region["id"]
+        offset = 0.0 if cursor_x1 is None else cursor_x1 + ISOLATION_CHANNEL_UM
+        offsets[rid] = offset
+        cursor_x1 = offset + region["guarded_w_um"]
+    return offsets
+
+
+def compose(regions: list[dict], variant: str) -> tuple[dict, dict]:
     # `blocks[].generator_report` resolves against the *request file's own
     # directory* (klayout-tools#328), the same rule a `klt lvs` request
     # already followed -- so that path is written relative to wherever this
     # request document itself ends up, not to the repo root or the invoking
     # working directory. The request is always written to `WORK_DIR`,
-    # alongside the `fp_guard_*.json` generator reports it references, so
-    # plain filenames are correct and self-consistent here.
+    # alongside the `fp_guard_*.json`/`fp_ring_content_*.json` generator
+    # reports it references, so plain filenames are correct and
+    # self-consistent here.
     #
     # `options.output` is unaffected by `request_dir`: gen-compose resolves
     # it against the process's current working directory regardless of where
     # the request document lives (`gen_compose.compose`'s docstring says so
     # explicitly). This flow always runs `klt` with `cwd=REPO_ROOT`, so that
     # path stays repo-root-relative.
+    #
+    # `strategy: "explicit"` (issue #110), not `"row"`: every guard-ring
+    # block is given the same absolute origin `"row"` would have computed
+    # (`_row_offsets`, above) -- so every region and channel lands exactly
+    # where the pre-#110 `"row"` composition put it, still checkable against
+    # issue #119's own committed `reports/area.json` -- and `ring1`/`ring2`
+    # additionally get one more block each, the real assembled `ro_ring11`/
+    # `ro_ring11_ring2` geometry, translated to
+    # `(region's own row offset + GUARD_RING_WIDTH_UM - ring bbox x0/y0)`:
+    # the same "flush against the guard ring's own declared inner corner"
+    # placement `check_ring_fit` already verifies DRC/LVS-clean for
+    # (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring explains why that
+    # constant, not zero clearance, is what keeps this placement LVS-clean).
+    offsets = _row_offsets(regions)
+    order = [region["id"] for region in regions]
+    blocks = [
+        {"id": rid, "generator_report": f"fp_guard_{rid}.json"} for rid in order
+    ]
+    origins = {rid: {"x": round(offsets[rid], 3), "y": 0.0} for rid in order}
+
+    content_ids: list[str] = []
+    for region in regions:
+        rid = region["id"]
+        if rid not in ASSEMBLED_RING_GDS:
+            continue
+        content_id = f"{rid}_ring"
+        bbox = region["ring_content_bbox_um"]
+        blocks.append({"id": content_id, "generator_report": region["ring_content_report"]})
+        origins[content_id] = {
+            "x": round(offsets[rid] + GUARD_RING_WIDTH_UM - bbox["x0"], 3),
+            "y": round(GUARD_RING_WIDTH_UM - bbox["y0"], 3),
+        }
+        content_ids.append(content_id)
+
     path = WORK_DIR / "compose-request.json"
     request = {
         "_comment": (
@@ -467,14 +629,11 @@ def compose(order: list[str], variant: str) -> dict:
             f"klt gen-compose {path.relative_to(REPO_ROOT)} (from the repo root, "
             "so options.output lands at layout/.work/trng_floorplan.gds)"
         ),
-        "blocks": [
-            {"id": rid, "generator_report": f"fp_guard_{rid}.json"}
-            for rid in order
-        ],
+        "blocks": blocks,
         "placement": {
-            "strategy": "row",
-            "order": order,
-            "spacing_um": ISOLATION_CHANNEL_UM,
+            "strategy": "explicit",
+            "order": order + content_ids,
+            "origins_um": origins,
         },
         "pdk": {"variant": variant},
         "options": {
@@ -498,55 +657,90 @@ def _drc_summary(response: dict) -> dict:
     }
 
 
+def run_lvs(gds_relname: str, gds_top: str, reference: Path, reference_top: str, tag: str) -> dict:
+    """Run `klt lvs` for one placement check, writing its own request under
+    `WORK_DIR` (issue #110). `gds_relname` is a filename already inside
+    `WORK_DIR` (no directory component -- every composed check artefact this
+    module writes lands there); `reference` is resolved relative to
+    `WORK_DIR` too (klayout-tools#328's "resolves against the request file's
+    own directory" rule, the same one every other request this module writes
+    already follows).
+    """
+    request = {
+        "layout": {"file": gds_relname, "deck": DECK, "top": gds_top},
+        "reference": {
+            "netlist": os.path.relpath(reference, WORK_DIR),
+            "top": reference_top,
+        },
+    }
+    request_path = WORK_DIR / f"{tag}-lvs-request.json"
+    request_path.write_text(json.dumps(request, indent=2) + "\n")
+    return _run_klt(["lvs", str(request_path.relative_to(REPO_ROOT))])
+
+
+def _lvs_summary(response: dict) -> dict:
+    return {
+        "status": response.get("status"),
+        "mismatch_count": response.get("mismatch_count"),
+        "category_counts": response.get("category_counts"),
+        "counts": response.get("counts"),
+    }
+
+
 def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
     """Compose one region's own guard ring with its real assembled ring GDS,
-    aligned so the ring's own bbox exactly fills the guard ring's declared
-    inner cavity, and run `klt drc` over the pair -- the check issue #119
-    itself named as missing: nothing before this confirmed the assembled
-    geometry the floorplan reserves a region for actually *fits* inside it.
+    aligned so the ring's own bbox fills the guard ring's declared inner
+    cavity (with `RING_PLACEMENT_CLEARANCE_UM` of clearance -- see that
+    constant's own docstring), and run `klt drc` **and** `klt lvs` over the
+    pair -- `klt drc` is the check issue #119 itself named as missing
+    (nothing before it confirmed the assembled geometry a region reserves
+    space for actually *fits* inside it); `klt lvs` is issue #110's own
+    test-plan requirement, added once `klt drc`-clean alone turned out not
+    to be sufficient (a DRC-clean placement can still short two nets if
+    they're closer than `klt drc`'s curated deck happens to check for, see
+    `RING_PLACEMENT_CLEARANCE_UM`'s own docstring for what this project
+    found).
 
     `klt drc` is run twice: once on the composed pair, once on the ring GDS
     alone. A rule violated in both is already present in the committed ring
     geometry on its own and has nothing to do with this region's sizing or
     placement; a rule violated only in the composed run is new, introduced
     by the fit itself, and is what this check exists to catch. Only the
-    latter is treated as this function's own pass/fail signal -- the former
-    is reported for visibility but is a different question (whether
+    latter is treated as this function's own DRC pass/fail signal -- the
+    former is reported for visibility but is a different question (whether
     `ring_gds` is DRC-clean by itself), out of this issue's scope.
+
+    `klt lvs` compares the composed pair's own top cell (guard ring *and*
+    ring content together, so a short introduced by their adjacency is
+    something this run can actually see) against the ring's own reference
+    netlist (`RING_LVS_REFERENCE`) -- the same reference `layout/verify.py`
+    already uses for this ring standalone, since placement only translates
+    already-verified geometry and does not change what it should match. A
+    mismatch category outside `ALLOWED_LVS_CATEGORIES` fails this check.
 
     Placement uses `placement.strategy: "explicit"` (#321) with the ring's
     own reported bbox translated so its low corner lands at
     `(GUARD_RING_WIDTH_UM, GUARD_RING_WIDTH_UM)` -- the guard ring's own
-    inner-cavity corner, since `gen_guard_ring`'s bbox always starts at
-    `(0, 0)`. That is the tightest legal placement (zero clearance between
-    the ring's own drawn edge and the region's guard ring) and so the
-    hardest case for this check to pass, not an arbitrary one.
+    declared inner-cavity corner *before* this region's own band-width/
+    clearance split (`RING_PLACEMENT_CLEARANCE_UM`), since `gen_guard_ring`'s
+    bbox always starts at `(0, 0)` and that split cancels back to
+    `GUARD_RING_WIDTH_UM` exactly (see that constant's own docstring).
     """
     rid = region["id"]
-    source = region["footprint_source"]
-    bbox = source["bbox_um"]
-
-    ring_report = {
-        "generator": "committed_ring_geometry",
-        "cell_name": source["cell_name"],
-        "gds_path": str(gds_path.relative_to(REPO_ROOT)),
-        "bbox_um": bbox,
-    }
-    (WORK_DIR / f"fp_ring_fit_{rid}_ring.json").write_text(
-        json.dumps(ring_report, indent=2) + "\n"
-    )
+    bbox = region["ring_content_bbox_um"]
 
     origin_x = round(GUARD_RING_WIDTH_UM - bbox["x0"], 3)
     origin_y = round(GUARD_RING_WIDTH_UM - bbox["y0"], 3)
     request = {
         "_comment": (
             "Generated by layout/floorplan/floorplan.py's ring-fit check "
-            f"(issue #119) for region '{rid}'. Re-run by hand with: "
-            "klt gen-compose <this file's path> (from the repo root)."
+            f"(issue #119, extended by #110 to also run klt lvs) for region "
+            f"'{rid}'. Re-run by hand with: klt gen-compose <this file's "
+            "path> (from the repo root)."
         ),
         "blocks": [
             {"id": "guard", "generator_report": f"fp_guard_{rid}.json"},
-            {"id": "ring", "generator_report": f"fp_ring_fit_{rid}_ring.json"},
+            {"id": "ring", "generator_report": region["ring_content_report"]},
         ],
         "placement": {
             "strategy": "explicit",
@@ -573,16 +767,27 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
     ring_rules = Counter(ring_drc.get("rule_counts") or {})
     new_rules = {rule: count for rule, count in (composed_rules - ring_rules).items()}
 
+    ref_path, ref_top = RING_LVS_REFERENCE[rid]
+    lvs = run_lvs(
+        f"fp_ring_fit_{rid}.gds", f"fp_ring_fit_{rid}", ref_path, ref_top,
+        f"fp_ring_fit_{rid}",
+    )
+    lvs_categories = set((lvs.get("category_counts") or {}).keys())
+    lvs_bad_categories = sorted(lvs_categories - ALLOWED_LVS_CATEGORIES)
+
     return {
         "region": rid,
         "ring_gds": str(gds_path.relative_to(REPO_ROOT)),
         "ring_bbox_um": bbox,
         "guard_inner_um": {"w_um": region["inner_w_um"], "h_um": region["inner_h_um"]},
+        "ring_placement_clearance_um": region.get("ring_placement_clearance_um"),
         "fit_offset_um": {"x": origin_x, "y": origin_y},
         "composed": _drc_summary(composed_drc),
         "ring_standalone": _drc_summary(ring_drc),
         "new_violation_rule_counts_from_fit": new_rules,
         "new_violations_from_fit": sum(new_rules.values()),
+        "lvs": _lvs_summary(lvs),
+        "lvs_unexpected_categories": lvs_bad_categories,
     }
 
 
@@ -844,9 +1049,43 @@ def build(pdk) -> dict:
     # --- 4. guard rings, composition, DRC ---------------------------------
     print("== guard rings ==")
     for region in regions:
-        response = gen_guard_ring(
-            region["id"], region["inner_w_um"], region["inner_h_um"], variant
-        )
+        rid = region["id"]
+        # `ring1`/`ring2` reserve `RING_PLACEMENT_CLEARANCE_UM` of clearance
+        # between the guard ring's own inner wall and the real ring content
+        # placed inside it (below) by growing the guard ring's *inner*
+        # cavity and shrinking its own band width by the same amount -- the
+        # two cancel, so the *outer* (guarded) footprint stays exactly what
+        # issue #119 already committed (see that constant's own docstring).
+        # Every other region is unaffected: `ring_width_um` defaults to
+        # `GUARD_RING_WIDTH_UM` and `inner_w_um`/`inner_h_um` are unchanged.
+        if rid in ASSEMBLED_RING_GDS:
+            clearance = RING_PLACEMENT_CLEARANCE_UM
+            ring_band_um = round(GUARD_RING_WIDTH_UM - clearance, 3)
+            gen_inner_w = round(region["inner_w_um"] + 2 * clearance, 3)
+            gen_inner_h = round(region["inner_h_um"] + 2 * clearance, 3)
+        else:
+            clearance = None
+            ring_band_um = GUARD_RING_WIDTH_UM
+            gen_inner_w = region["inner_w_um"]
+            gen_inner_h = region["inner_h_um"]
+
+        response = gen_guard_ring(rid, gen_inner_w, gen_inner_h, variant, ring_band_um)
+
+        if clearance is not None:
+            reported_min = (response.get("drc_hints") or {}).get("min_spacing_um")
+            if reported_min is not None and reported_min > clearance:
+                raise FlowError(
+                    f"region '{rid}': klt gen guard_ring's own "
+                    f"drc_hints.min_spacing_um ({reported_min} um) exceeds "
+                    f"this module's RING_PLACEMENT_CLEARANCE_UM "
+                    f"({clearance} um) -- see that constant's own docstring "
+                    "for why this must not be silently ignored"
+                )
+            region["ring_placement_clearance_um"] = clearance
+            region["ring_band_width_um"] = ring_band_um
+            region["inner_w_um"] = gen_inner_w
+            region["inner_h_um"] = gen_inner_h
+
         box = response["bbox_um"]
         region["guarded_w_um"] = round(box["x1"] - box["x0"], 3)
         region["guarded_h_um"] = round(box["y1"] - box["y0"], 3)
@@ -857,6 +1096,12 @@ def build(pdk) -> dict:
         (WORK_DIR / f"fp_guard_{region['id']}.json").write_text(
             json.dumps(response, indent=2) + "\n"
         )
+
+        if rid in ASSEMBLED_RING_GDS:
+            report_name, content_bbox = write_ring_content_report(region)
+            region["ring_content_report"] = report_name
+            region["ring_content_bbox_um"] = content_bbox
+
         print(
             f"  {region['id']:<18} inner {region['inner_w_um']:8.2f} x "
             f"{region['inner_h_um']:8.2f} -> guarded {region['guarded_w_um']:8.2f} x "
@@ -864,14 +1109,17 @@ def build(pdk) -> dict:
         )
     print()
 
-    # --- 4b. ring fit -- does the real geometry fit where it's reserved? --
-    # The area/utilisation estimate never checked that the geometry it
-    # priced actually fits where the floorplan reserves it for -- that gap
-    # is what issue #119 opened. For every region whose guarded footprint
-    # above came from a real assembled GDS (`ASSEMBLED_RING_GDS`), compose
-    # that region's own guard ring with the real ring geometry and run
-    # `klt drc` over the pair (`check_ring_fit`).
-    print("== ring fit (issue #119) ==")
+    # --- 4b. ring fit -- does the real geometry fit where it's reserved,
+    # DRC- and LVS-clean? The area/utilisation estimate never checked that
+    # the geometry it priced actually fits where the floorplan reserves it
+    # for -- that gap is what issue #119 opened (DRC only); issue #110 (the
+    # actual placement) extends the same check to `klt lvs`, since a
+    # DRC-clean fit turned out not to be a connectivity-clean one at zero
+    # clearance (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring). For every
+    # region whose guarded footprint above came from a real assembled GDS
+    # (`ASSEMBLED_RING_GDS`), compose that region's own guard ring with the
+    # real ring geometry and run both (`check_ring_fit`).
+    print("== ring fit (issue #119, DRC; issue #110, + LVS) ==")
     ring_fit: dict[str, dict] = {}
     for region in regions:
         rid = region["id"]
@@ -884,13 +1132,20 @@ def build(pdk) -> dict:
             f"({fit['composed']['violation_count']} violations), "
             f"{fit['new_violations_from_fit']} introduced by the fit "
             f"(ring alone: {fit['ring_standalone']['status']}, "
-            f"{fit['ring_standalone']['violation_count']})"
+            f"{fit['ring_standalone']['violation_count']}); "
+            f"lvs {fit['lvs']['status']} "
+            f"({fit['lvs']['mismatch_count']} mismatches, "
+            f"unexpected categories: {fit['lvs_unexpected_categories'] or 'none'})"
         )
     print()
 
+    # --- 4c. composition -- place every region's guard ring, and (for
+    # ring1/ring2) its own real assembled content, into one stream
+    # (issue #110: the "place ... inside the guarded regions" half of this
+    # block's own scope; issue #16's floorplan abstract only ever placed
+    # empty guard rings before this).
     print("== composition ==")
-    order = [region["id"] for region in regions]
-    request, composed = compose(order, variant)
+    request, composed = compose(regions, variant)
     box = composed["bbox_um"]
     print(
         f"  row bbox {box['x1'] - box['x0']:.2f} x {box['y1'] - box['y0']:.2f} um, "
@@ -898,7 +1153,35 @@ def build(pdk) -> dict:
     )
 
     drc = run_drc("layout/.work/trng_floorplan.gds")
-    print(f"  drc {drc.get('status')} ({drc.get('violation_count')} violations)")
+
+    # The composed abstract was DRC-clean by construction before issue #110
+    # (empty guard rings only). Now that `ring1`/`ring2` carry their own real
+    # assembled content, the composed abstract's own DRC surfaces whatever
+    # that content's *standalone* DRC already reports -- and, per
+    # `layout/floorplan/README.md`'s own "Tool friction" note, both
+    # committed rings currently report 49 pre-existing violations against
+    # whatever `klt` build resolves on `PATH` here (a deck-drift gap tracked
+    # upstream, klayout-tools#623 -- unrelated to this placement). Composing
+    # them into the floorplan does not introduce anything beyond that: the
+    # baseline below is each ring's own `ring_standalone` DRC
+    # (`check_ring_fit`, above), and this run's own pass/fail signal is
+    # whether the *composed* abstract's rule counts exceed that baseline --
+    # the same "new violations only" principle issue #119's own
+    # `check_ring_fit` already established for the pairwise fit, applied
+    # here to the full multi-region composition.
+    baseline_rules: Counter = Counter()
+    for rid in ASSEMBLED_RING_GDS:
+        baseline_rules.update(Counter(ring_fit[rid]["ring_standalone"]["rule_counts"] or {}))
+    composed_rules = Counter(drc.get("rule_counts") or {})
+    new_from_composition = {
+        rule: count for rule, count in (composed_rules - baseline_rules).items()
+    }
+
+    print(
+        f"  drc {drc.get('status')} ({drc.get('violation_count')} violations, "
+        f"{sum(new_from_composition.values())} not already present in "
+        "ring1/ring2's own standalone DRC)"
+    )
     print()
 
     # --- 5. the rollup ----------------------------------------------------
@@ -1009,6 +1292,16 @@ def build(pdk) -> dict:
             "gds_sha256_timestamp_normalised": hashlib.sha256(gds).hexdigest(),
         },
         "drc": drc,
+        "drc_new_violations_from_composition": {
+            "rule_counts": new_from_composition,
+            "count": sum(new_from_composition.values()),
+            "baseline_rule_counts": dict(baseline_rules),
+            "note": (
+                "the composed abstract's own DRC minus each assembled "
+                "ring's own standalone DRC (issue #110) -- see the comment "
+                "above where this is computed in build()"
+            ),
+        },
         "ring_fit": ring_fit,
     }
 
@@ -1056,8 +1349,10 @@ def print_report(report: dict) -> None:
           f"= {rollup['floorplan_area_um2'] / 1e6:.5f} mm^2 "
           f"= {rollup['share_of_budget_pct']:.1f}% of the "
           f"{rollup['budget_um2'] / 1e6:.3f} mm^2 row")
+    new_drc = report["drc_new_violations_from_composition"]
     print(f"  composed row bbox          : {rollup['row_bbox_um']['w']:.1f} x "
-          f"{rollup['row_bbox_um']['h']:.1f} um (DRC {report['drc'].get('status')})")
+          f"{rollup['row_bbox_um']['h']:.1f} um (DRC {report['drc'].get('status')}, "
+          f"{new_drc['count']} new vs. ring1/ring2's own standalone DRC)")
     excluded = rollup["excluded"]["ring_liveness_monitor_DR0016"]
     print(f"  excluded: DR-0016 ring-liveness monitor, {excluded['cells']} cells, "
           f"{excluded['cell_area_um2']:.1f} um^2 cell area")
@@ -1067,7 +1362,10 @@ def print_report(report: dict) -> None:
             f"  ring fit {rid:<10}: composed drc {fit['composed']['status']}, "
             f"{fit['new_violations_from_fit']} new violation(s) from the fit "
             f"(ring alone: {fit['ring_standalone']['status']}, "
-            f"{fit['ring_standalone']['violation_count']} pre-existing)"
+            f"{fit['ring_standalone']['violation_count']} pre-existing); "
+            f"lvs {fit['lvs']['status']} ({fit['lvs']['mismatch_count']} "
+            f"mismatches, unexpected categories: "
+            f"{fit['lvs_unexpected_categories'] or 'none'})"
         )
     if report.get("ring_fit"):
         print()
@@ -1114,10 +1412,14 @@ ARTEFACTS = {
                     "geometry_utilisation", "device_footprints", "regions", "rollup")
     },
     "compose.json": lambda report: report["composition"],
-    "floorplan.drc.json": lambda report: report["drc"],
+    "floorplan.drc.json": lambda report: {
+        "drc": report["drc"],
+        "new_violations_from_composition": report["drc_new_violations_from_composition"],
+    },
     # Issue #119's own check: does the real, committed ring geometry
-    # actually fit inside the region its own guarded footprint reserves?
-    # One entry per region in `ASSEMBLED_RING_GDS`.
+    # actually fit inside the region its own guarded footprint reserves,
+    # DRC-clean? Issue #110 extends it to `klt lvs` too. One entry per
+    # region in `ASSEMBLED_RING_GDS`.
     "ring_fit.json": lambda report: report["ring_fit"],
 }
 
@@ -1207,10 +1509,12 @@ def main(argv: list[str] | None = None) -> int:
     print_report(report)
 
     failures: list[str] = []
-    if report["drc"].get("status") != "clean":
+    new_drc = report["drc_new_violations_from_composition"]
+    if new_drc["count"]:
         failures.append(
-            f"floorplan DRC is {report['drc'].get('status')}, expected clean: "
-            f"{report['drc'].get('rule_counts')}"
+            f"floorplan DRC introduces {new_drc['count']} violation(s) not "
+            f"already present in ring1/ring2's own standalone DRC: "
+            f"{new_drc['rule_counts']}"
         )
 
     # The pass/fail signal from issue #119's ring-fit check is specifically
@@ -1227,6 +1531,20 @@ def main(argv: list[str] | None = None) -> int:
                 f"{fit['new_violations_from_fit']} new DRC violation(s) not "
                 f"present in the ring GDS alone: "
                 f"{fit['new_violation_rule_counts_from_fit']}"
+            )
+        # Issue #110's own LVS requirement: the placed ring (guard ring and
+        # real ring content composed together) must still match
+        # `RING_LVS_REFERENCE`'s netlist, modulo only the two deck-level
+        # disclosures every standalone entry in this repository already
+        # carries (`ALLOWED_LVS_CATEGORIES`) -- anything else is a real
+        # connectivity problem the placement introduced.
+        if fit["lvs"]["status"] != "match" or fit["lvs_unexpected_categories"]:
+            failures.append(
+                f"region '{rid}': placed-ring LVS is "
+                f"{fit['lvs']['status']} against {fit['lvs']['mismatch_count']} "
+                f"mismatch(es); unexpected categories "
+                f"{fit['lvs_unexpected_categories']} (allowed: "
+                f"{sorted(ALLOWED_LVS_CATEGORIES)})"
             )
 
     if args.write:
