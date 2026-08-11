@@ -62,6 +62,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTCELL_DIR))
 
 import build as testcells  # noqa: E402  (layout/testcells/build.py)
+from layout._klt import FlowError, _run_klt, resolve_pdk  # noqa: E402
 
 
 def _load_build_module(name: str, path: Path):
@@ -467,10 +468,6 @@ EXPECTATIONS: dict[str, dict] = {
 }
 
 
-class FlowError(Exception):
-    """A tool invocation could not produce a verdict at all."""
-
-
 # --------------------------------------------------------------------------- #
 # Environment
 # --------------------------------------------------------------------------- #
@@ -543,25 +540,6 @@ def klt_origin() -> dict | None:
     }
 
 
-def resolve_pdk():
-    """Resolve the gf180mcu install through the repo's one PDK resolver.
-
-    `sim/harness/pdk.py` is that resolver (its own docstring: "No PDK path is
-    ever hardcoded ... Everything resolves through this module"), so the
-    layout flow uses it rather than re-implementing discovery and risking a
-    DRC/LVS run against a different PDK install than the simulations cite.
-    Returns None when no install is found.
-    """
-    try:
-        from sim.harness import pdk as pdk_mod
-    except ImportError:  # pragma: no cover - repo layout guarantees this
-        return None
-    try:
-        return pdk_mod.find_pdk()
-    except Exception:
-        return None
-
-
 def environment_report() -> dict:
     version = klt_version()
     pdk = resolve_pdk()
@@ -577,34 +555,6 @@ def environment_report() -> dict:
 # --------------------------------------------------------------------------- #
 # klt invocations
 # --------------------------------------------------------------------------- #
-
-
-def _run_klt(args: list[str]) -> dict:
-    """Run `klt <args> --format json` from the repo root and parse stdout.
-
-    Every path handed to `klt` is repo-root-relative and the working
-    directory is the repo root, so the paths echoed back into the reports
-    are stable across machines.
-    """
-    argv = ["klt", *args, "--format", "json"]
-    done = subprocess.run(
-        argv, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=600
-    )
-    # klt writes its success payload to stdout and its `{"error": ...}`
-    # payload to stderr, so both streams have to be considered before
-    # concluding a run produced nothing at all.
-    raw = done.stdout.strip() or done.stderr.strip()
-    if not raw:
-        raise FlowError(
-            f"`{' '.join(argv)}` produced no output (exit {done.returncode})"
-        )
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise FlowError(f"`{' '.join(argv)}` emitted unparseable JSON: {exc}") from exc
-    if "error" in payload:
-        raise FlowError(f"`{' '.join(argv)}` failed: {payload['error'].get('message')}")
-    return payload
 
 
 def _fixture_dir(spec: dict) -> str:

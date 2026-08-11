@@ -98,6 +98,8 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 
 import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
+from layout._klt import FlowError, resolve_pdk  # noqa: E402
+from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 
 #: The DRC deck name `klt` knows this PDK family by -- per-family, not
 #: per-variant. Same value layout/verify.py uses, for the same reason.
@@ -293,10 +295,6 @@ REGIONS = [
 ]
 
 
-class FlowError(Exception):
-    """A tool invocation could not produce a verdict at all."""
-
-
 # --------------------------------------------------------------------------- #
 # Netlist reading -- the analog inventory comes from the committed netlist
 # --------------------------------------------------------------------------- #
@@ -421,20 +419,14 @@ def starve_geometry(subckts: dict[str, list[str]], parent: str, instance: str) -
 
 
 def _run_klt(args: list[str]) -> dict:
-    argv = ["klt", *args, "--format", "json"]
-    done = subprocess.run(
-        argv, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=900
-    )
-    raw = done.stdout.strip() or done.stderr.strip()
-    if not raw:
-        raise FlowError(f"`{' '.join(argv)}` produced no output (exit {done.returncode})")
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise FlowError(f"`{' '.join(argv)}` emitted unparseable JSON: {exc}") from exc
-    if "error" in payload:
-        raise FlowError(f"`{' '.join(argv)}` failed: {payload['error'].get('message')}")
-    return payload
+    """`layout._klt._run_klt` at this module's own 900s timeout.
+
+    Every other `klt` caller under `layout/` uses the shared 600s default;
+    this module's own `gen-compose` invocations run over more geometry than
+    a single cell/block/ring build, so it keeps its longer, explicit budget
+    (see `layout/_klt.py`'s own docstring).
+    """
+    return _shared_run_klt(args, timeout_s=900)
 
 
 def read_gds_bbox(gds_path: Path) -> dict:
@@ -878,17 +870,6 @@ def klt_version() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
     return (done.stdout or done.stderr).strip() or None
-
-
-def resolve_pdk():
-    try:
-        from sim.harness import pdk as pdk_mod
-    except ImportError:  # pragma: no cover
-        return None
-    try:
-        return pdk_mod.find_pdk()
-    except Exception:
-        return None
 
 
 # --------------------------------------------------------------------------- #
