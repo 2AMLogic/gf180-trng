@@ -16,6 +16,7 @@ honestly-scoped unit rather than claimed across the whole block at once.
 | [`ro_stage_ring2/`](ro_stage_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_stage`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_stage/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage_ring2.*` |
 | [`ro_nand2/`](ro_nand2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2` (`design/xschem/ro_nand2.sch`) — the ring's one stoppable stage, at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2.*` |
 | [`ro_nand2_ring2/`](ro_nand2_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_nand2/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2_ring2.*` |
+| [`ro_buf/`](ro_buf/) | the `.subckt ro_buf` `design/netlist.py` flattens into `design/trng_top.spice` (and `ro_array_core.spice`/`ro_array_core_meta.spice`/`sampler_core.spice` — four identical copies, `design/xschem/ro_buf.sch`) — DR-0018's per-ring output buffer, one drawn cell for both `xb1`/`xb2` instances | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_buf.*` |
 | [`xor2/`](xor2/) | `design/ro_array_core.spice`'s `.subckt xor2` (`design/xschem/xor2.sch`) — the combiner gate | DRC-clean, LVS-match, 0 errors — see `layout/reports/xor2.*` |
 | [`sampler_dff/`](sampler_dff/) | `design/sampler_core.spice`'s `.subckt sampler_dff` (`design/xschem/sampler_dff.sch`) — the sampler's transmission-gate master-slave DFF, instantiated four times unmodified in `sampler_core` | DRC-clean, LVS-match, 0 errors — see `layout/reports/sampler_dff.*` |
 
@@ -47,6 +48,24 @@ own `wstv=0.240u`, the same convention `ro_stage_ring2` already established
 relative to `ro_stage`. With `ro_stage_ring2` and `ro_nand2_ring2` both
 drawn, ring2's cell set is complete too — `layout/rings/ro_ring11_ring2/`
 assembles them the same way `layout/rings/ro_ring11/` assembles ring1's.
+
+`ro_buf` ([#144][gf144]) is the last device in the shipped top-level netlist
+that had no drawn cell. It is [`DR-0018`][dr18]'s per-ring output buffer: one
+unstarved minimum-width CMOS inverter (`pfet W=0.44u` / `nfet W=0.22u`, both
+`L=0.28u`) placed between each ring node and *every* consumer, which takes
+the measured XOR-combiner back-coupling from 27.10× to 2.87×. Two points
+worth stating, because they are the two ways this cell is easy to get wrong:
+
+- **One drawn cell, two instances — not a ring1/ring2 pair.** `xb1` and `xb2`
+  (`design/ro_array_core.spice` lines 17–18) both instantiate the bare
+  subcircuit with no parameter override, unlike `xr1`/`xr2`, which pass
+  different `wstv=` starve widths into `ro_ring11` and are therefore drawn
+  twice. There is exactly one `ro_buf` geometry.
+- **Its supply pin is `vdd`, not `vddr`.** DR-0018 runs both buffers off the
+  block supply deliberately: folding a buffer's switching current into a
+  ring's own `vddr1`/`vddr2` branch would corrupt the per-ring supply
+  signature that DR-0007's independence argument and DR-0016's liveness
+  monitor both read.
 
 `xor2` and `sampler_dff` ([#109][gf109]) are the two cells that make up the
 `combiner_sampler` guarded region's contents: `xor2` combines ring1's and
@@ -106,6 +125,24 @@ klayout-tools — none of the gaps below are tool gaps):
   `combiner_sampler` is blocked on the same kind of size mismatch, filed as
   [#135][gf135]. Nothing in the digital section is placed inside a guarded
   region yet.
+- **Drawing the two `ro_buf` instances into an assembled block.** The cell
+  itself is here, DRC-clean and LVS-matching ([#144][gf144]), and
+  `layout/floorplan/`'s `combiner_sampler` region now *prices* both instances
+  (they are `vdd`-supplied, so that is the region they belong to). What does
+  not exist yet is an assembled block containing them: `layout/blocks/
+  combiner_sampler/` assembles exactly `design/sampler_core.spice`'s own
+  `.subckt combiner_sampler` (`xa1` + four `sampler_dff`) and is LVS'd
+  against that subcircuit, so adding two buffers to it would report them as
+  `device.unmatched` against a reference that does not declare them. Drawing
+  them in needs a block with its own reference netlist — the same
+  `layout/blocks/`-shaped increment [#134][gf134] was — and is filed as
+  [#151][gf151]. Until then the region is *budgeted* for the buffers and not
+  yet *drawn with* them, which `layout/floorplan/reports/area.json` records
+  per region under `footprint_source.inventoried_but_not_in_assembly`.
+- **The metastability-hybrid tap** (`ro_meta_tap`, `meta_arb`, `meta_inv`,
+  `meta_nand2`). Deliberately out of scope, not overlooked — see
+  [`layout/README.md`](../README.md#what-has-layout-and-what-does-not) for
+  the citation and the evidence.
 - **The digital section** (conditioner, health tests, interface — 1655
   standard cells per `layout/floorplan/README.md`'s own inventory) —
   [#111][gf111]. This is a placement-and-routing problem, not a
@@ -127,3 +164,6 @@ klayout-tools — none of the gaps below are tool gaps):
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf118]: https://github.com/2AMLogic/gf180-trng/issues/118
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
+[gf144]: https://github.com/2AMLogic/gf180-trng/issues/144
+[gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
+[dr18]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md

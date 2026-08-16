@@ -92,7 +92,7 @@ between neighbours:
 |---|---|---|---|
 | `ring1` | `ro_ring11` (1 × `ro_nand2` + 10 × `ro_stage`), `wstv` = 0.220 µm | `vddr1` | entropy |
 | `ring2` | `ro_ring11`, `wstv` = 0.240 µm | `vddr2` | entropy |
-| `combiner_sampler` | `xor2` + 4 × `sampler_dff` | `vdd` | boundary — carries `clk` |
+| `combiner_sampler` | `xor2` + 2 × `ro_buf` ([DR-0018][DR-0018]) + 4 × `sampler_dff` | `vdd` | boundary — carries `clk` |
 | `digital` | conditioner + health tests + interface | `vddd` | deterministic aggressor |
 
 The ordering is the argument: the **only** region that touches both the
@@ -457,9 +457,23 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 |---|---:|---:|---:|---:|
 | Entropy ring 1 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
 | Entropy ring 2 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
-| XOR combiner + 4 samplers | 5 | 324.9 µm² | 541.5 µm² | 4 955.1 µm² |
+| XOR combiner + 2 buffers + 4 samplers | 7 | 342.4 µm² | 570.8 µm² | 4 955.1 µm² |
 | Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 125 556.8 µm² |
-| **total** | | **75 139.0 µm²** | **125 231.7 µm²** | **131 604.2 µm²** |
+| **total** | | **75 156.6 µm²** | **125 261.0 µm²** | **131 604.2 µm²** |
+
+The two [`DR-0018`][DR-0018] output buffers (`xb1`/`xb2`) joined this table in
+issue [#144]. They are inventoried in `combiner_sampler` rather than in the
+ring each one buffers, because DR-0018 runs both off the block supply `vdd` —
+deliberately, so that neither ring's own `vddr1`/`vddr2` branch carries the
+buffer's switching current. Priced at one `inv_1` each they add **17.6 µm²** of
+cell area (**29.3 µm²** placed at 60 %, i.e. **0.06 %** of the `< 0.05 mm²`
+row — the figure DR-0018 itself projected). No **guarded footprint** moves:
+`combiner_sampler`'s is measured from the assembled row's own bbox, not from
+this estimate, so every share-of-row figure below is unchanged. That is also
+the caveat: the assembled row does not contain the buffers, so this region is
+budgeted for them and not yet drawn with them ([#151]) — `reports/area.json`
+records it per region under
+`footprint_source.inventoried_but_not_in_assembly`.
 
 `ring1`/`ring2`/`combiner_sampler`'s own `cell area`/`placed @ 60 %` columns
 above are still the area/utilisation estimate (unchanged in method by this
@@ -504,7 +518,9 @@ budget miss below: the digital section alone is already 125 556.8 µm²
 +4 163.9 µm² floorplan-total increase is only ~5.5 % of the digital
 section's own overage (125 556.8 − 50 000 µm² = 75 556.8 µm² over the
 row). Nothing in this document's mitigations is
-area-constrained, and the proposed buffer mitigation adds 0.06 % more.
+area-constrained, and the buffer mitigation this document proposed and
+[DR-0018][DR-0018] adopted costs the 0.06 % it was projected to — now
+counted in the table above rather than pending (issue [#144]).
 *The isolation argument does not have to trade against the area budget, and
 it should not be allowed to — but it is no longer a rounding error either.*
 
@@ -1002,6 +1018,8 @@ would not block that separate question.
 [gf120]: https://github.com/2AMLogic/gf180-trng/pull/120
 [gf134]: https://github.com/2AMLogic/gf180-trng/issues/134
 [gf135]: https://github.com/2AMLogic/gf180-trng/issues/135
+[#144]: https://github.com/2AMLogic/gf180-trng/issues/144
+[#151]: https://github.com/2AMLogic/gf180-trng/issues/151
 
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md

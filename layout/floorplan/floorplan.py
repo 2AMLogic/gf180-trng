@@ -154,6 +154,35 @@ ASSEMBLED_RING_GDS: dict[str, Path] = {
     ),
 }
 
+#: Cells a region's inventory prices but its committed assembly
+#: (`ASSEMBLED_RING_GDS`) does not yet contain -- so a reader can tell, from
+#: the committed `reports/area.json` alone, that the region's *guarded*
+#: footprint was measured from geometry that is missing those cells.
+#:
+#: `combiner_sampler` / `ro_buf` (issue #144): both DR-0018 output buffers are
+#: `vdd`-supplied, so they are inventoried in this region (see `REGIONS`), and
+#: `layout/cells/ro_buf/` is drawn, DRC-clean and LVS-matching. They are not in
+#: `layout/blocks/combiner_sampler/combiner_sampler.gds`, which assembles
+#: exactly `design/sampler_core.spice`'s own `.subckt combiner_sampler`
+#: (`xa1` + four `sampler_dff`) and is LVS'd against that subcircuit by both
+#: `layout/verify.py` and `check_ring_fit` below. Adding two buffers to that
+#: composed cell would report them as `device.unmatched` against a reference
+#: that does not declare them, so drawing them into the region needs a new
+#: assembled block with its own reference netlist -- the same
+#: `layout/blocks/`-shaped increment #134 was for the combiner and samplers,
+#: filed separately rather than smuggled in here. Until then the two buffers
+#: are budgeted but not placed, which is what this table records.
+#:
+#: Headroom, so "budgeted but not placed" is not a hidden overflow: each
+#: buffer is priced at one `inv_1` (~5.9 um^2), and this region's guarded
+#: footprint is sized from a 278.90 x 15.64 um assembled row -- roughly an
+#: order of magnitude more silicon than its own 60 %-utilisation placed-area
+#: estimate needs. The region's own `cell_area_um2`/`placed_area_um2` fields
+#: below carry the exact numbers.
+ASSEMBLY_INVENTORY_GAP: dict[str, tuple[str, ...]] = {
+    "combiner_sampler": ("ro_buf",),
+}
+
 #: The reference netlist (and its own `.SUBCKT` name) each `ASSEMBLED_RING_GDS`
 #: entry's real placement is checked against -- the same reference
 #: `layout/verify.py`'s own `ro_ring11`/`ro_ring11_ring2`/`combiner_sampler`
@@ -259,6 +288,18 @@ CELL_MODEL: dict[str, dict] = {
         "starve": [],
         "note": "the combining gate -- static CMOS, minimum width",
     },
+    "ro_buf": {
+        "stdcell": "inv_1",
+        "starve": [],
+        "note": (
+            "DR-0018's per-ring output buffer: one unstarved minimum-width "
+            "inverter (pfet W=0.44u / nfet W=0.22u, both L=0.28u), "
+            "instantiated twice (xb1/xb2) and run off the block supply vdd "
+            "-- never off either ring's vddr, which is why it is inventoried "
+            "with the vdd-supplied combiner_sampler region and not with the "
+            "ring that feeds it"
+        ),
+    },
     "sampler_dff": {
         "stdcell": "dffrnq_1",
         "starve": [],
@@ -289,9 +330,22 @@ REGIONS = [
         "role": "entropy",
     },
     {
+        # The two DR-0018 output buffers (`xb1`/`xb2`) are inventoried here
+        # rather than with the ring each one buffers: DR-0018 runs both off
+        # the block supply `vdd` -- deliberately, so that neither ring's own
+        # `vddr1`/`vddr2` branch carries the buffer's switching current --
+        # and this is the `vdd` region. See `build()`'s own note on what
+        # this does and does not mean for the region's *guarded* footprint,
+        # which is sized from the assembled `combiner_sampler` GDS and does
+        # not yet contain them.
         "id": "combiner_sampler",
-        "title": "XOR combiner + samplers",
-        "source": ("netlist+", ("ro_array_core", "xa1"), ("sampler_core", "sampler_dff")),
+        "title": "XOR combiner + buffers + samplers",
+        "source": (
+            "netlist+",
+            ("ro_array_core", "xa1"),
+            ("ro_array_core", "ro_buf"),
+            ("sampler_core", "sampler_dff"),
+        ),
         "supply": "vdd",
         "role": "boundary",
     },
@@ -899,8 +953,15 @@ def build(pdk) -> dict:
     inventories: dict[str, Counter] = {
         "ring1": instance_counts(core, "ro_array_core", "xr1"),
         "ring2": instance_counts(core, "ro_array_core", "xr2"),
+        # `ro_buf` (issue #144): `design/ro_array_core.spice`'s `xb1`/`xb2`
+        # are `vdd`-supplied per DR-0018, so they are inventoried in this
+        # region and not in `ring1`/`ring2`. Read from the netlist by cell
+        # name -- `all_instances_of` -- rather than by instance name, so a
+        # third buffer appearing in a future export is counted without an
+        # edit here.
         "combiner_sampler": (
             instance_counts(core, "ro_array_core", "xa1")
+            + all_instances_of(core, "ro_array_core", "ro_buf")
             + all_instances_of(sampler, "sampler_core", "sampler_dff")
         ),
     }
@@ -1020,6 +1081,29 @@ def build(pdk) -> dict:
                     "x1": bbox["x1"], "y1": bbox["y1"],
                 },
             }
+            # Disclose, in the committed artefact itself, any cell this
+            # region's inventory prices that the assembly the footprint was
+            # measured from does not contain (issue #144) -- see
+            # `ASSEMBLY_INVENTORY_GAP`'s own docstring.
+            missing = tuple(
+                cell
+                for cell in ASSEMBLY_INVENTORY_GAP.get(rid, ())
+                if cell in inventories[rid]
+            )
+            if missing:
+                footprint_source["inventoried_but_not_in_assembly"] = {
+                    "cells": {cell: inventories[rid][cell] for cell in missing},
+                    "note": (
+                        "these cells are counted in this region's cell/placed "
+                        "area above and are drawn and verified standalone "
+                        "under layout/cells/, but they are NOT present in the "
+                        "assembled GDS this region's guarded footprint was "
+                        "measured from -- so the region is budgeted for them, "
+                        "not yet drawn with them. See layout/floorplan/"
+                        "floorplan.py's ASSEMBLY_INVENTORY_GAP for why, and "
+                        "layout/README.md for the standing inventory."
+                    ),
+                }
         else:
             inner_w_um = inner_h_um = side
             footprint_source = {
