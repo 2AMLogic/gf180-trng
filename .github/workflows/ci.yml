@@ -25,6 +25,20 @@ name: CI
 #       RUN on every push/PR, on the oldest and newest supported Python, via
 #       `npm run test`.
 #
+#   layout/tests/*.py (unittest, 20 cases)
+#       RUN on every push/PR, on the oldest and newest supported Python, via
+#       `npm run test:layout`. Currently one file, test_verify.py: it holds
+#       layout/verify.py's freshness-gate comparison (`_stable()` /
+#       `compare_reports()`, issue #148) to its own documented contract, with
+#       synthetic report payloads -- no klt, no PDK, sub-second. Every
+#       machine-local field `_stable()` claims to drop gets a case proving a
+#       payload that differs only there still compares equal; every
+#       content-bearing field it claims to keep (a verdict, a rule/error
+#       count, every content hash, the PDK variant actually targeted) gets a
+#       case proving a payload that differs there still compares unequal --
+#       so a future edit that widens the drop-list too far, turning the gate
+#       into a no-op, fails here before it can ship.
+#
 #   sim/selftest.sh stage 1 (harness unit tests)
 #       RUN on every push/PR (via sim/selftest.sh itself).
 #
@@ -173,6 +187,12 @@ jobs:
 
       - name: Harness unit tests
         run: npm run test
+
+      # layout/verify.py's freshness-gate comparison logic, exercised with
+      # synthetic report payloads -- no klt, no PDK, no network. See the
+      # `layout/tests/*.py` entry in the self-check inventory above.
+      - name: Layout unit tests
+        run: npm run test:layout
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. Run via `npm run check:spec` -- the full

@@ -127,6 +127,23 @@ checks and a richer report envelope, and nothing recorded here could say so
   KLayout `engine_version`, so "did the tool move under me?" is answerable
   from a plain run.
 
+**The flip side of "compare content, not the machine" is that the machine
+itself must not count as content.** Two developers (or a developer and CI)
+running the identical committed `.gds` through the identical `klt` build can
+still get PDK install paths that disagree by construction —
+`/Users/<you>/.volare` locally, `~/.ciel` in `pdk-nightly.yml` — with nothing
+about the DRC/LVS *result* having moved. `layout/verify.py`'s `_stable()`
+(the function `compare_reports()` runs both sides through before diffing)
+drops exactly the fields that record *where a PDK install happened to sit on
+this filesystem* — `pdk.root`, `provenance.pdk.source`, and the pre-existing
+`environment.engine_version` — and nothing else; every content hash, verdict,
+count, and the PDK `variant`/`version` actually targeted stay in the
+comparison. See `_stable()`'s own docstring for the full, field-by-field
+rationale and `layout/tests/test_verify.py` for the regression coverage (a
+case per dropped field proving it doesn't matter, and a case per kept field
+proving it still does) — issue #148, filed after the nightly job's freshness
+check spent eight straight days red on exactly this false positive.
+
 To reproduce a committed report exactly, install the commit
 `environment.json` names:
 
@@ -143,6 +160,8 @@ uv tool install --force \
 layout/
   README.md                  this document
   verify.py                  the flow driver + the expectations that make it a test
+  tests/
+    test_verify.py            unit tests for verify.py's freshness-gate comparison (#148); no klt/PDK needed
   floorplan/
     README.md                the entropy-source isolation rationale (#16)
     floorplan.py             builds the floorplan abstract, DRCs it, prices it

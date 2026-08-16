@@ -5,7 +5,7 @@
   "top": "combiner_sampler",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/combiner_sampler.extracted.spice",
-  "netlist_sha256": "b9c202ee03c8ecb3db59e38d367471b621928f4d578aa13dea9647d6d24a75aa",
+  "netlist_sha256": "6c979cdfe3f26cf402c522f7329b61ee24d02981cd8b4aca3de4765605395e70",
   "status": "extracted",
   "device_count": 100,
   "net_count": 54,
@@ -56,9 +56,9 @@
       "name": "$100",
       "class": "pfet",
       "nets": {
-        "s": "$41",
+        "s": "$42",
         "g": "clk",
-        "d": "$43",
+        "d": "$44",
         "b": "$53"
       },
       "params": {
@@ -98,9 +98,9 @@
       "name": "$13",
       "class": "nfet",
       "nets": {
-        "s": "$36",
+        "s": "$37",
         "g": "$31",
-        "d": "$47",
+        "d": "$32",
         "b": "vsubs"
       },
       "params": {
@@ -114,7 +114,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$36",
+        "d": "$37",
         "b": "vsubs"
       },
       "params": {
@@ -126,9 +126,9 @@
       "name": "$15",
       "class": "nfet",
       "nets": {
-        "s": "$37",
+        "s": "$38",
         "g": "q",
-        "d": "$35",
+        "d": "$36",
         "b": "vsubs"
       },
       "params": {
@@ -142,7 +142,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$37",
+        "d": "$38",
         "b": "vsubs"
       },
       "params": {
@@ -154,8 +154,8 @@
       "name": "$17",
       "class": "nfet",
       "nets": {
-        "s": "$44",
-        "g": "$39",
+        "s": "$45",
+        "g": "$40",
         "d": "$48",
         "b": "vsubs"
       },
@@ -170,7 +170,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$44",
+        "d": "$45",
         "b": "vsubs"
       },
       "params": {
@@ -182,9 +182,9 @@
       "name": "$19",
       "class": "nfet",
       "nets": {
-        "s": "$45",
+        "s": "$46",
         "g": "q",
-        "d": "$43",
+        "d": "$44",
         "b": "vsubs"
       },
       "params": {
@@ -212,7 +212,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$45",
+        "d": "$46",
         "b": "vsubs"
       },
       "params": {
@@ -226,7 +226,7 @@
       "nets": {
         "s": "vss",
         "g": "a,d",
-        "d": "$3",
+        "d": "$2",
         "b": "vsubs"
       },
       "params": {
@@ -351,7 +351,7 @@
       "class": "nfet",
       "nets": {
         "s": "$7",
-        "g": "$3",
+        "g": "$2",
         "d": "d,y",
         "b": "vsubs"
       },
@@ -491,8 +491,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$47",
-        "d": "$32",
+        "g": "$32",
+        "d": "$33",
         "b": "vsubs"
       },
       "params": {
@@ -520,7 +520,7 @@
       "nets": {
         "s": "$31",
         "g": "clk",
-        "d": "$32",
+        "d": "$33",
         "b": "vsubs"
       },
       "params": {
@@ -532,9 +532,9 @@
       "name": "$41",
       "class": "nfet",
       "nets": {
-        "s": "$33",
+        "s": "$34",
         "g": "clk",
-        "d": "$47",
+        "d": "$32",
         "b": "vsubs"
       },
       "params": {
@@ -547,7 +547,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$33",
+        "g": "$34",
         "d": "q",
         "b": "vsubs"
       },
@@ -560,9 +560,9 @@
       "name": "$43",
       "class": "nfet",
       "nets": {
-        "s": "$33",
+        "s": "$34",
         "g": "$30",
-        "d": "$35",
+        "d": "$36",
         "b": "vsubs"
       },
       "params": {
@@ -576,7 +576,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$38",
+        "d": "$39",
         "b": "vsubs"
       },
       "params": {
@@ -588,8 +588,8 @@
       "name": "$45",
       "class": "nfet",
       "nets": {
-        "s": "$39",
-        "g": "$38",
+        "s": "$40",
+        "g": "$39",
         "d": "b,d",
         "b": "vsubs"
       },
@@ -604,7 +604,7 @@
       "nets": {
         "s": "vss",
         "g": "$48",
-        "d": "$40",
+        "d": "$41",
         "b": "vsubs"
       },
       "params": {
@@ -616,9 +616,9 @@
       "name": "$47",
       "class": "nfet",
       "nets": {
-        "s": "$39",
+        "s": "$40",
         "g": "clk",
-        "d": "$40",
+        "d": "$41",
         "b": "vsubs"
       },
       "params": {
@@ -630,7 +630,7 @@
       "name": "$48",
       "class": "nfet",
       "nets": {
-        "s": "$41",
+        "s": "$42",
         "g": "clk",
         "d": "$48",
         "b": "vsubs"
@@ -645,7 +645,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$41",
+        "g": "$42",
         "d": "q",
         "b": "vsubs"
       },
@@ -672,9 +672,9 @@
       "name": "$50",
       "class": "nfet",
       "nets": {
-        "s": "$41",
-        "g": "$38",
-        "d": "$43",
+        "s": "$42",
+        "g": "$39",
+        "d": "$44",
         "b": "vsubs"
       },
       "params": {
@@ -715,7 +715,7 @@
       "class": "pfet",
       "nets": {
         "s": "$8",
-        "g": "$3",
+        "g": "$2",
         "d": "d,y",
         "b": "$49"
       },
@@ -744,7 +744,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "a,d",
-        "d": "$3",
+        "d": "$2",
         "b": "$49"
       },
       "params": {
@@ -1150,7 +1150,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "$31",
-        "d": "$47",
+        "d": "$32",
         "b": "$52"
       },
       "params": {
@@ -1164,7 +1164,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "rst_n",
-        "d": "$47",
+        "d": "$32",
         "b": "$52"
       },
       "params": {
@@ -1177,8 +1177,8 @@
       "class": "pfet",
       "nets": {
         "s": "d,vdd",
-        "g": "$47",
-        "d": "$32",
+        "g": "$32",
+        "d": "$33",
         "b": "$52"
       },
       "params": {
@@ -1192,7 +1192,7 @@
       "nets": {
         "s": "$31",
         "g": "$30",
-        "d": "$32",
+        "d": "$33",
         "b": "$52"
       },
       "params": {
@@ -1204,9 +1204,9 @@
       "name": "$85",
       "class": "pfet",
       "nets": {
-        "s": "$33",
+        "s": "$34",
         "g": "$30",
-        "d": "$47",
+        "d": "$32",
         "b": "$52"
       },
       "params": {
@@ -1219,7 +1219,7 @@
       "class": "pfet",
       "nets": {
         "s": "d,vdd",
-        "g": "$33",
+        "g": "$34",
         "d": "q",
         "b": "$52"
       },
@@ -1234,7 +1234,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "q",
-        "d": "$35",
+        "d": "$36",
         "b": "$52"
       },
       "params": {
@@ -1248,7 +1248,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "rst_n",
-        "d": "$35",
+        "d": "$36",
         "b": "$52"
       },
       "params": {
@@ -1260,9 +1260,9 @@
       "name": "$89",
       "class": "pfet",
       "nets": {
-        "s": "$33",
+        "s": "$34",
         "g": "clk",
-        "d": "$35",
+        "d": "$36",
         "b": "$52"
       },
       "params": {
@@ -1290,7 +1290,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "clk",
-        "d": "$38",
+        "d": "$39",
         "b": "$53"
       },
       "params": {
@@ -1302,7 +1302,7 @@
       "name": "$91",
       "class": "pfet",
       "nets": {
-        "s": "$39",
+        "s": "$40",
         "g": "clk",
         "d": "b,d",
         "b": "$53"
@@ -1317,7 +1317,7 @@
       "class": "pfet",
       "nets": {
         "s": "d,vdd",
-        "g": "$39",
+        "g": "$40",
         "d": "$48",
         "b": "$53"
       },
@@ -1346,7 +1346,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "$48",
-        "d": "$40",
+        "d": "$41",
         "b": "$53"
       },
       "params": {
@@ -1358,9 +1358,9 @@
       "name": "$95",
       "class": "pfet",
       "nets": {
-        "s": "$39",
-        "g": "$38",
-        "d": "$40",
+        "s": "$40",
+        "g": "$39",
+        "d": "$41",
         "b": "$53"
       },
       "params": {
@@ -1372,8 +1372,8 @@
       "name": "$96",
       "class": "pfet",
       "nets": {
-        "s": "$41",
-        "g": "$38",
+        "s": "$42",
+        "g": "$39",
         "d": "$48",
         "b": "$53"
       },
@@ -1387,7 +1387,7 @@
       "class": "pfet",
       "nets": {
         "s": "d,vdd",
-        "g": "$41",
+        "g": "$42",
         "d": "q",
         "b": "$53"
       },
@@ -1402,7 +1402,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "q",
-        "d": "$43",
+        "d": "$44",
         "b": "$53"
       },
       "params": {
@@ -1416,7 +1416,7 @@
       "nets": {
         "s": "d,vdd",
         "g": "rst_n",
-        "d": "$43",
+        "d": "$44",
         "b": "$53"
       },
       "params": {
@@ -1467,6 +1467,11 @@
       "device_count": 2
     },
     {
+      "name": "$2",
+      "pin": false,
+      "device_count": 4
+    },
+    {
       "name": "$21",
       "pin": false,
       "device_count": 6
@@ -1507,11 +1512,6 @@
       "device_count": 2
     },
     {
-      "name": "$3",
-      "pin": false,
-      "device_count": 4
-    },
-    {
       "name": "$30",
       "pin": false,
       "device_count": 6
@@ -1524,22 +1524,22 @@
     {
       "name": "$32",
       "pin": false,
-      "device_count": 4
+      "device_count": 7
     },
     {
       "name": "$33",
       "pin": false,
-      "device_count": 6
+      "device_count": 4
     },
     {
-      "name": "$35",
+      "name": "$34",
       "pin": false,
-      "device_count": 5
+      "device_count": 6
     },
     {
       "name": "$36",
       "pin": false,
-      "device_count": 2
+      "device_count": 5
     },
     {
       "name": "$37",
@@ -1549,7 +1549,7 @@
     {
       "name": "$38",
       "pin": false,
-      "device_count": 6
+      "device_count": 2
     },
     {
       "name": "$39",
@@ -1564,22 +1564,22 @@
     {
       "name": "$40",
       "pin": false,
-      "device_count": 4
+      "device_count": 6
     },
     {
       "name": "$41",
       "pin": false,
-      "device_count": 6
+      "device_count": 4
     },
     {
-      "name": "$43",
+      "name": "$42",
       "pin": false,
-      "device_count": 5
+      "device_count": 6
     },
     {
       "name": "$44",
       "pin": false,
-      "device_count": 2
+      "device_count": 5
     },
     {
       "name": "$45",
@@ -1587,9 +1587,9 @@
       "device_count": 2
     },
     {
-      "name": "$47",
+      "name": "$46",
       "pin": false,
-      "device_count": 7
+      "device_count": 2
     },
     {
       "name": "$48",
@@ -1738,7 +1738,7 @@
   ],
   "pdk": {
     "variant": "gf180mcuD",
-    "root": "/home/ubuntu/.volare",
+    "root": "/Users/rwalters/.volare",
     "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
   },
   "provenance": {
