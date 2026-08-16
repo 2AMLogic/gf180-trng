@@ -164,12 +164,20 @@
     },
     {
       "id": "combiner_sampler",
-      "title": "XOR combiner + samplers",
+      "title": "XOR combiner + buffers + samplers",
       "supply": "vdd",
       "role": "boundary",
-      "contents": "4x sampler_dff + 1x xor2",
-      "cell_count": 5,
+      "contents": "2x ro_buf + 4x sampler_dff + 1x xor2",
+      "cell_count": 7,
       "breakdown": [
+        {
+          "cell": "ro_buf",
+          "count": 2,
+          "priced_as": "inv_1",
+          "unit_um2": 8.781,
+          "area_um2": 17.56,
+          "shipped": true
+        },
         {
           "cell": "sampler_dff",
           "count": 4,
@@ -187,14 +195,14 @@
           "shipped": true
         }
       ],
-      "cell_area_um2": 324.89,
+      "cell_area_um2": 342.45,
       "placed_area_um2": {
-        "60pct": 541.48,
-        "80pct": 406.11
+        "60pct": 570.75,
+        "80pct": 428.06
       },
       "footprint_source": {
         "kind": "assembled_gds",
-        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (23.27 x 23.27 um)",
+        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (23.89 x 23.89 um)",
         "gds": "layout/blocks/combiner_sampler/combiner_sampler.gds",
         "cell_name": "combiner_sampler",
         "bbox_um": {
@@ -202,6 +210,12 @@
           "y0": 0.31,
           "x1": 278.68,
           "y1": 15.950000000000001
+        },
+        "inventoried_but_not_in_assembly": {
+          "cells": {
+            "ro_buf": 2
+          },
+          "note": "these cells are counted in this region's cell/placed area above and are drawn and verified standalone under layout/cells/, but they are NOT present in the assembled GDS this region's guarded footprint was measured from -- so the region is budgeted for them, not yet drawn with them. See layout/floorplan/floorplan.py's ASSEMBLY_INVENTORY_GAP for why, and layout/README.md for the standing inventory."
         }
       },
       "inner_w_um": 279.7,
@@ -272,7 +286,7 @@
   ],
   "rollup": {
     "budget_um2": 50000.0,
-    "cell_area_um2": 75139.02,
+    "cell_area_um2": 75156.58,
     "isolation_channel_um": 20.0,
     "channels": [
       {
@@ -311,8 +325,8 @@
       "h": 354.34
     },
     "placed_area_um2": {
-      "60pct": 125231.7,
-      "80pct": 93923.77
+      "60pct": 125260.97,
+      "80pct": 93945.72
     },
     "subtotals": {
       "analog": {
@@ -321,7 +335,7 @@
           "ring1",
           "ring2"
         ],
-        "cell_area_um2": 653.69,
+        "cell_area_um2": 671.25,
         "guarded_area_um2": 6047.36,
         "isolation_channel_area_um2": 487.8,
         "area_um2": 6535.16,

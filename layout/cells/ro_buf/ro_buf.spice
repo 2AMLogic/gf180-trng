@@ -1,0 +1,46 @@
+* ro_buf -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* This is transcribed directly from the `.subckt ro_buf` body that
+* design/netlist.py flattens into design/trng_top.spice (lines 170-180),
+* design/ro_array_core.spice, design/ro_array_core_meta.spice and
+* design/sampler_core.spice -- four identical copies, all exported from
+* design/xschem/ro_buf.sch. (There is deliberately no standalone
+* design/ro_buf.spice to read; the subcircuit only ever appears inline.)
+* It is independent of the layout in this directory, and `klt lvs` is asked
+* to agree the drawn geometry implements it.
+*
+* Device topology:
+*
+*   vdd --[XMp: g=a, W=0.44, L=0.28]-- y --[XMn: g=a, W=0.22, L=0.28]-- vss
+*
+* One unstarved minimum-width CMOS inverter -- the per-ring output buffer
+* DR-0018 adopted, instantiated twice in design/ro_array_core.spice
+* (`xb1 rn1 ro1 vdd vss ro_buf`, `xb2 rn2 ro2 vdd vss ro_buf`). Both
+* instances take the bare subcircuit with no parameter override, so one
+* drawn cell covers both -- unlike ro_stage/ro_stage_ring2 and
+* ro_nand2/ro_nand2_ring2, which differ by ring in their `wstv=` starve
+* width. Per DR-0018 the supply pin is the block supply `vdd`, never either
+* ring's `vddr1`/`vddr2`.
+*
+* Device sizes must agree with layout/cells/ro_buf/build.py's W_P/W_N/
+* L_GATE -- `klt lvs` compares W and L as device properties.
+*
+* Bulk terminals follow the gf180mcu curated extraction deck's documented
+* behaviour (see layout/README.md, "What the curated decks do and do not
+* check" -- the same approximation every other cell here already documents):
+*   - NMOS bulk is the deck's substrate global, `vsubs` -- not the `vss`
+*     design/xschem/ro_buf.sch itself wires XMn's bulk to.
+*   - PMOS bulk is a floating net: the curated deck does not tie an Nwell to
+*     the tap inside it, so the well is an unnamed net picking up whatever
+*     Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is that net --
+*     not the `vdd` design/xschem/ro_buf.sch wires XMp's bulk to -- and it is
+*     deliberately connected to nothing else. This cell draws no well tap and
+*     no well split, so its one PMOS is the well's only occupant.
+
+.SUBCKT ro_buf a y vdd vss vsubs
+MP y a vdd NWELL_FLOAT pfet L=0.28U W=0.44U
+MN y a vss vsubs nfet L=0.28U W=0.22U
+.ENDS ro_buf

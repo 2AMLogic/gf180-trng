@@ -98,6 +98,9 @@ ro_nand2_cell = _load_build_module(
 ro_nand2_ring2_cell = _load_build_module(
     "layout_cells_ro_nand2_ring2_build", CELLS_DIR / "ro_nand2_ring2" / "build.py"
 )
+ro_buf_cell = _load_build_module(
+    "layout_cells_ro_buf_build", CELLS_DIR / "ro_buf" / "build.py"
+)
 xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
 sampler_dff_cell = _load_build_module(
     "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
@@ -123,6 +126,7 @@ _STALENESS_CHECKS = (
     ("layout/cells/ro_stage_ring2", ro_stage_ring2_cell.check),
     ("layout/cells/ro_nand2", ro_nand2_cell.check),
     ("layout/cells/ro_nand2_ring2", ro_nand2_ring2_cell.check),
+    ("layout/cells/ro_buf", ro_buf_cell.check),
     ("layout/cells/xor2", xor2_cell.check),
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
     ("layout/rings/ro_ring11", ro_ring11_cell.check),
@@ -320,6 +324,35 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
+            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "error_count": 0,
+        },
+    },
+    "ro_buf": {
+        # A real design cell, not a flow-bringup fixture -- see
+        # layout/cells/README.md for scope and layout/cells/ro_buf/build.py
+        # for the geometry and why it is hand-drawn. `dir`/`top` override
+        # the defaults, same as the `ro_stage` entry above.
+        #
+        # One drawn cell, two instances: design/ro_array_core.spice's `xb1`
+        # and `xb2` both take the bare `ro_buf` subcircuit with no parameter
+        # override, so there is no ring1/ring2 split here of the kind
+        # ro_stage/ro_stage_ring2 and ro_nand2/ro_nand2_ring2 need.
+        "why": (
+            "design/trng_top.spice's ro_buf (the per-ring output buffer "
+            "DR-0018 adopted, instantiated twice in ro_array_core as "
+            "xb1/xb2) must be DRC-clean and LVS-match its hand-written "
+            "schematic-side reference"
+        ),
+        "dir": "layout/cells/ro_buf",
+        "top": "ro_buf",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "ro_buf.spice",
+            "status": "match",
+            # Same two deck-level disclosures every fixture above carries
+            # (see the module-level comment above `EXPECTATIONS`) -- this
+            # cell's two devices are both MOS, so nothing else is declared.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "error_count": 0,
         },

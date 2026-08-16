@@ -26,7 +26,10 @@ clean-relative-to-baseline DRC result over it does and does not mean.
 `cells/` (#106) is where drawn design cells land, one at a time, each
 DRC-clean and LVS-matching before the next is started —
 [`cells/README.md`](cells/README.md) says which cells are drawn and which of
-the block's many remaining cells are not. `rings/` (#110) and `blocks/`
+the block's many remaining cells are not, and
+["What has layout, and what does not"](#what-has-layout-and-what-does-not)
+below is the one-table version of the same answer, indexed by netlist
+subcircuit. `rings/` (#110) and `blocks/`
 (#134) are where those individually-verified cells get *assembled*: `rings/`
 holds `ro_ring11` (ten `ro_stage` plus one `ro_nand2`, at both ring
 sizings), `blocks/` holds `combiner_sampler` (one `xor2` plus four
@@ -80,10 +83,28 @@ so the variant selects the install, not the rules.
 
 ### Pinning the tool
 
-**`klt --version` does not identify a `klt` build.** It has read `0.1.0` for
-every build of klayout-tools so far, including installs taken straight off
-the tip of its main branch — which is what both commands above give you.
-Two installs reporting `0.1.0` can be months of development apart.
+**`klt --version` does not identify a `klt` build.** It read `0.1.0` for every
+build of klayout-tools for a long time, including installs taken straight off
+the tip of its main branch — which is what both commands above give you. Two
+installs reporting the same string can be months of development apart.
+
+**Releasing `0.2.0` did not fix that.** Verified on 2026-08-16, on one
+machine, on the same day: a `pip install klayout-tools==0.2.0` and a
+`uv tool install` from `git+…@373181f` both report `klt 0.2.0` from
+`klt --version` *and* from `provenance.klt_version`, yet disagree on
+`provenance.deck.content_hash` (`sha256:1256c45b…` vs `sha256:457480f1…`) and
+on the verdict for one unchanged committed stream —
+`layout/cells/ro_nand2/ro_nand2.gds` is `clean` under the released deck and
+reports five `metal1.enclosing.contact.1` violations under the git build's
+stricter one. The git build's extra rules are legitimate; the problem is that
+nothing in the version string says which deck generation ran. Re-filed as
+fresh evidence on [klayout-tools#306][kt306]. **Consequence for anyone
+reproducing this directory's reports:** `.github/workflows/pdk-nightly.yml`
+installs `klayout-tools` from PyPI, so the released build is the reference
+this directory's committed reports are written against —
+`layout/cells/ro_buf/`'s were (#144). A locally-installed git build may be
+strictly stricter and disagree; check `provenance.deck.content_hash` before
+concluding the geometry moved.
 
 This is not hypothetical. On 2026-08-02 the reports committed here stopped
 matching a fresh run on the same machine, with `klt --version` and the
@@ -150,6 +171,10 @@ layout/
       build.py                 the ring's one stoppable stage -- hand-drawn geometry + why
       ro_nand2.gds              the drawn cell (timestamps normalised)
       ro_nand2.spice            hand-written LVS reference (schematic side)
+    ro_buf/
+      build.py                 DR-0018's per-ring output buffer -- hand-drawn geometry + why
+      ro_buf.gds                the drawn cell (timestamps normalised)
+      ro_buf.spice              hand-written LVS reference (schematic side)
   rings/
     README.md                 scope: which blocks are assembled, which are deferred (#110)
     ro_ring11/
@@ -170,6 +195,68 @@ layout/
     <fixture>.lvs-request.json  the exact request `klt lvs` was handed
     <fixture>.lvs.json       verbatim `klt lvs` output
 ```
+
+---
+
+## What has layout, and what does not
+
+The table below is the standing answer to "which of the design's devices are
+drawn?", so that a reader does not have to reconstruct it from four
+directories. **The reference is the shipped top-level netlist,
+`design/trng_top.spice`** — a subcircuit that is not instantiated there is not
+part of what this block ships, whatever else exists for it in `design/`.
+
+| netlist subcircuit | in shipped `trng_top.spice`? | drawn cell | assembled into |
+|---|---|---|---|
+| `ro_stage`, `ro_nand2` (ring1 sizing) | yes | [`cells/ro_stage/`](cells/ro_stage/), [`cells/ro_nand2/`](cells/ro_nand2/) | [`rings/ro_ring11/`](rings/ro_ring11/), placed in `floorplan/`'s `ring1` region (#110) |
+| `ro_stage`, `ro_nand2` (ring2 sizing) | yes | [`cells/ro_stage_ring2/`](cells/ro_stage_ring2/), [`cells/ro_nand2_ring2/`](cells/ro_nand2_ring2/) | [`rings/ro_ring11_ring2/`](rings/ro_ring11_ring2/), placed in `floorplan/`'s `ring2` region (#110) |
+| `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
+| `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | **not yet** — budgeted into the `combiner_sampler` region, not drawn into its assembly ([#151][gf151], and see below) |
+| `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
+| the digital section (1655 standard cells) | yes | none — a P&R problem, not a hand-drawn-cell one ([#111][gf111]) | n/a |
+
+### `ro_buf`: drawn, budgeted, not yet placed
+
+`ro_buf` is drawn and verified as a cell, and both of its instances are priced
+into `layout/floorplan/`'s `combiner_sampler` region — that region rather than
+either ring's, because DR-0018 runs both buffers off the block supply `vdd`
+and never off a ring's own `vddr`. They are not yet inside any *assembled*
+geometry: `blocks/combiner_sampler/` assembles exactly
+`design/sampler_core.spice`'s own `.subckt combiner_sampler` and is LVS'd
+against that subcircuit, so two extra buffers in the same composed cell would
+be reported as `device.unmatched` against a reference that does not declare
+them. Drawing them in needs a block with its own reference netlist, filed as
+[#151][gf151]. `layout/floorplan/reports/area.json` states this per region
+under `footprint_source.inventoried_but_not_in_assembly`, so the gap is
+readable off the committed artefact and not only out of this paragraph.
+
+### The metastability-hybrid tap is deliberately not drawn
+
+`ro_meta_tap`, `meta_arb`, `meta_inv` and `meta_nand2` have no layout here,
+and that is a scope decision rather than an omission. Two reasons, both
+checkable:
+
+1. **They are not in the shipped top-level netlist.** The four subcircuits
+   appear only in `design/ro_array_core_meta.spice`; `grep` finds zero
+   occurrences of any of them in `design/trng_top.spice`,
+   `design/ro_array_core.spice` or `design/sampler_core.spice` (verified
+   against `main` @ `b8e3825`). Drawing a cell that the block does not
+   instantiate would add DRC/LVS evidence about geometry that ships in
+   nothing.
+2. **[`DR-0011`][dr11] (Accepted) scopes the tap as a stretch item.** Its own
+   words: a self-timed metastability hybrid "layered onto the RO core, never a
+   free-standing source, and never gating the core's own output", carried with
+   "no entropy, histogram, or calibration-viability claim", and explicitly
+   *not* a rate-row contributor. DR-0011 further records that promoting the
+   tap out of stretch status "requires reconciling +187 µW" against the
+   `Power` row. A layout claim is a claim about what the block ships; making
+   one for a stretch hook would overstate the tap's status in exactly the
+   direction DR-0011 exists to prevent.
+
+If the tap is ever promoted out of stretch status — which is a decision-record
+change, not a layout decision — drawing these four cells to the same bar as
+everything in [`cells/`](cells/) becomes in scope, and this section is the
+thing to delete.
 
 ---
 
@@ -449,6 +536,9 @@ two-dimensional floorplan cannot be composed) and
 [klayout-tools#322][kt322] (`gen mos_array` rejects widths the tool's own
 gf180mcu DRC deck accepts).
 
+[dr11]: ../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
+[gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
+[gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173
 [kt230]: https://github.com/2AMLogic/klayout-tools/issues/230
