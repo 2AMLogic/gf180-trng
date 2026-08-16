@@ -14,7 +14,11 @@
       "30/0",
       "33/0",
       "34/0",
+      "35/0",
       "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
       "41/0",
       "42/0",
       "46/0",
@@ -35,17 +39,47 @@
     ],
     "rules_skipped": [
       "bjt.separation.comp.1",
+      "metal1.enclosing.via1.1",
+      "metal2.enclosing.via1.1",
+      "metal2.enclosing.via2.1",
       "metal2.space.1",
       "metal2.width.1",
+      "metal3.enclosing.via2.1",
+      "metal3.enclosing.via3.1",
       "metal3.space.1",
       "metal3.width.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal5.enclosing.via4.1",
       "metal5.space.1",
       "metal5.width.1",
       "metaltop.space.1",
       "metaltop.width.1",
       "mim.enclosing.fusetop.1",
       "mim.enclosing.via4.1",
-      "mim.space.1"
+      "mim.space.1",
+      "pad.enclosing.metal5.1",
+      "via1.space.1",
+      "via1.width.1",
+      "via2.space.1",
+      "via2.width.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "voltage_domain_warnings": [],
+    "deck_scope": [
+      "10.4.2 MIM Option B",
+      "10.7 DRC_BJT Mark Layer",
+      "7.12 Contact",
+      "7.13 Metaln",
+      "7.14 Vian",
+      "7.15 MetalTop",
+      "7.4 Nwell",
+      "7.5 Comp",
+      "7.7 Poly2",
+      "9.1 Bond Pad"
     ]
   },
   "provenance": {
@@ -54,7 +88,7 @@
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
       "content_hash": "sha256:c0f0fe1a7fb3c4050bfecb7399da8349c42dd6e23ee6b8836ef4a0465105e42d"

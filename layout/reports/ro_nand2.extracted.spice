@@ -9,15 +9,19 @@
 * pin y
 .SUBCKT ro_nand2 a en vddr vss vsubs y
 * device instance $1 r0 *1 3.86,0.22 nfet
-X$1 vss vddr \$8 vsubs nfet_03v3 L=2U W=0.22U
+X$1 vss vddr \$8 vsubs nfet_03v3 L=2U W=0.22U AS=0.176P AD=0.308P PS=1.24U
++ PD=2.28U
 * device instance $2 r0 *1 0.84,0.22 nfet
-X$2 \$7 a y vsubs nfet_03v3 L=0.28U W=0.44U
+X$2 \$7 a y vsubs nfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.176P PS=2.28U
++ PD=1.24U
 * device instance $3 r0 *1 1.92,0.22 nfet
-X$3 \$8 en \$7 vsubs nfet_03v3 L=0.28U W=0.44U
+X$3 \$8 en \$7 vsubs nfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.176P PS=1.24U
++ PD=1.24U
 * device instance $4 r0 *1 -1.1,1.86 pfet
-X$4 \$5 vss vddr \$9 pfet_03v3 L=2U W=0.22U
+X$4 \$5 vss vddr \$9 pfet_03v3 L=2U W=0.22U AS=0.308P AD=0.176P PS=2.28U
++ PD=1.24U
 * device instance $5 r0 *1 0.84,1.86 pfet
-X$5 y a \$5 \$9 pfet_03v3 L=0.28U W=0.44U
+X$5 y a \$5 \$9 pfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.176P PS=1.24U PD=1.24U
 * device instance $6 r0 *1 1.92,1.86 pfet
-X$6 \$5 en y \$9 pfet_03v3 L=0.28U W=0.44U
+X$6 \$5 en y \$9 pfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.352P PS=1.24U PD=2.48U
 .ENDS ro_nand2

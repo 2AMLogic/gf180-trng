@@ -1,11 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "file": "layout/blocks/combiner_sampler/combiner_sampler.gds",
   "deck": "gf180mcu",
   "top": "combiner_sampler",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/combiner_sampler.extracted.spice",
-  "netlist_sha256": "1efb08f42df6d77a1073f64f2f2d327f7be96b3ce56610063799a91b66c8e888",
+  "netlist_sha256": "e389356f6d1ad1a1962da5dd06611770d843274804ded782457a6bd1dae97219",
   "status": "extracted",
   "device_count": 104,
   "net_count": 58,
@@ -16,26 +16,33 @@
   },
   "dummy_devices_dropped": 0,
   "ignored_layers": [],
+  "device_recognition_only_layers": [],
   "device_classes": [
     "nfet",
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
-    "resistor"
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
   ],
   "devices": [
     {
       "name": "$1",
       "class": "nfet",
       "nets": {
-        "s": "a,d,y",
+        "s": "a|d|y",
         "g": "a",
         "d": "vss",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.308,
+        "ad_um2": 0.308,
+        "ps_um": 2.28,
+        "pd_um": 2.28
       }
     },
     {
@@ -49,35 +56,47 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$100",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "q",
         "d": "$46",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$101",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$46",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -91,35 +110,47 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$103",
       "class": "pfet",
       "nets": {
-        "s": "a,d,y",
+        "s": "a|d|y",
         "g": "a",
-        "d": "d,vdd",
+        "d": "d|vdd",
         "b": "$51"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.308,
+        "ad_um2": 0.308,
+        "ps_um": 2.28,
+        "pd_um": 2.28
       }
     },
     {
       "name": "$104",
       "class": "pfet",
       "nets": {
-        "s": "b,d,y",
+        "s": "b|d|y",
         "g": "a",
-        "d": "d,vdd",
+        "d": "d|vdd",
         "b": "$52"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.308,
+        "ad_um2": 0.308,
+        "ps_um": 2.28,
+        "pd_um": 2.28
       }
     },
     {
@@ -133,7 +164,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -147,7 +182,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -161,7 +200,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -175,7 +218,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -189,7 +236,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -203,7 +254,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -217,7 +272,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -231,7 +290,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -245,21 +308,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$2",
       "class": "nfet",
       "nets": {
-        "s": "b,d,y",
+        "s": "b|d|y",
         "g": "a",
         "d": "vss",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.308,
+        "ad_um2": 0.308,
+        "ps_um": 2.28,
+        "pd_um": 2.28
       }
     },
     {
@@ -273,7 +344,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -287,7 +362,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -301,7 +380,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -309,13 +392,17 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "a,d,y",
+        "g": "a|d|y",
         "d": "$5",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -323,13 +410,17 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "b,d,y",
+        "g": "b|d|y",
         "d": "$7",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -343,7 +434,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -352,12 +447,16 @@
       "nets": {
         "s": "$15",
         "g": "$14",
-        "d": "d,y",
+        "d": "d|y",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -371,7 +470,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -385,7 +488,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -399,7 +506,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -407,13 +518,17 @@
       "class": "nfet",
       "nets": {
         "s": "$8",
-        "g": "a,d,y",
-        "d": "d,y",
+        "g": "a|d|y",
+        "d": "d|y",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -427,7 +542,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -441,7 +560,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -455,7 +578,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -464,12 +591,16 @@
       "nets": {
         "s": "$24",
         "g": "$23",
-        "d": "d,vdd",
+        "d": "d|vdd",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -483,7 +614,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -497,7 +632,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -511,7 +650,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -525,7 +668,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -539,7 +686,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -553,7 +704,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -561,13 +716,17 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "b,d,y",
+        "g": "b|d|y",
         "d": "$8",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -576,12 +735,16 @@
       "nets": {
         "s": "$32",
         "g": "$31",
-        "d": "a,d,y",
+        "d": "a|d|y",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -595,7 +758,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -609,7 +776,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -623,7 +794,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -637,7 +812,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -651,7 +830,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -665,7 +848,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -674,12 +861,16 @@
       "nets": {
         "s": "$41",
         "g": "$40",
-        "d": "b,d,y",
+        "d": "b|d|y",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -693,7 +884,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -707,7 +902,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -716,12 +915,16 @@
       "nets": {
         "s": "$10",
         "g": "$5",
-        "d": "d,y",
+        "d": "d|y",
         "b": "vsubs"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -735,7 +938,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -749,7 +956,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -763,35 +974,47 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.22
+        "w_um": 0.22,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$53",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
-        "g": "a,d,y",
+        "s": "d|vdd",
+        "g": "a|d|y",
         "d": "$12",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.88
+        "w_um": 0.88,
+        "as_um2": 0.7744,
+        "ad_um2": 0.7744,
+        "ps_um": 3.52,
+        "pd_um": 3.52
       }
     },
     {
       "name": "$54",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
-        "g": "b,d,y",
+        "s": "d|vdd",
+        "g": "b|d|y",
         "d": "$12",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.88
+        "w_um": 0.88,
+        "as_um2": 0.7744,
+        "ad_um2": 0.7744,
+        "ps_um": 3.52,
+        "pd_um": 3.52
       }
     },
     {
@@ -800,12 +1023,16 @@
       "nets": {
         "s": "$12",
         "g": "$5",
-        "d": "d,y",
+        "d": "d|y",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.88
+        "w_um": 0.88,
+        "as_um2": 0.7744,
+        "ad_um2": 0.7744,
+        "ps_um": 3.52,
+        "pd_um": 3.52
       }
     },
     {
@@ -814,54 +1041,70 @@
       "nets": {
         "s": "$12",
         "g": "$7",
-        "d": "d,y",
+        "d": "d|y",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.88
+        "w_um": 0.88,
+        "as_um2": 0.7744,
+        "ad_um2": 0.7744,
+        "ps_um": 3.52,
+        "pd_um": 3.52
       }
     },
     {
       "name": "$57",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
-        "g": "a,d,y",
+        "s": "d|vdd",
+        "g": "a|d|y",
         "d": "$5",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$58",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
-        "g": "b,d,y",
+        "s": "d|vdd",
+        "g": "b|d|y",
         "d": "$7",
         "b": "$53"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$59",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "clk",
         "d": "$14",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -875,7 +1118,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -884,54 +1131,70 @@
       "nets": {
         "s": "$15",
         "g": "clk",
-        "d": "d,y",
+        "d": "d|y",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$61",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$15",
         "d": "$16",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$62",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$16",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$63",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$16",
         "d": "$17",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -945,7 +1208,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -959,49 +1226,65 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$66",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$18",
         "d": "q",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$67",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "q",
         "d": "$20",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$68",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$20",
         "b": "$54"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1015,7 +1298,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1029,21 +1316,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$70",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "clk",
         "d": "$23",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1052,54 +1347,70 @@
       "nets": {
         "s": "$24",
         "g": "clk",
-        "d": "d,vdd",
+        "d": "d|vdd",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$72",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$24",
         "d": "$50",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$73",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$50",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$74",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$50",
         "d": "$25",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1113,7 +1424,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1127,49 +1442,65 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$77",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$26",
         "d": "q",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$78",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "q",
         "d": "$28",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$79",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$28",
         "b": "$55"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1183,7 +1514,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1197,21 +1532,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$81",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "clk",
         "d": "$31",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1220,54 +1563,70 @@
       "nets": {
         "s": "$32",
         "g": "clk",
-        "d": "a,d,y",
+        "d": "a|d|y",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$83",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$32",
         "d": "$33",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$84",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$33",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$85",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$33",
         "d": "$34",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1281,7 +1640,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1295,35 +1658,47 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$88",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$35",
         "d": "q",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$89",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "q",
         "d": "$37",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1337,21 +1712,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$90",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$37",
         "b": "$56"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1365,21 +1748,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$92",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "clk",
         "d": "$40",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1388,54 +1779,70 @@
       "nets": {
         "s": "$41",
         "g": "clk",
-        "d": "b,d,y",
+        "d": "b|d|y",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$94",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$41",
         "d": "$42",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$95",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "rst_n",
         "d": "$42",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$96",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$42",
         "d": "$43",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1449,7 +1856,11 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
@@ -1463,21 +1874,29 @@
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     },
     {
       "name": "$99",
       "class": "pfet",
       "nets": {
-        "s": "d,vdd",
+        "s": "d|vdd",
         "g": "$44",
         "d": "q",
         "b": "$57"
       },
       "params": {
         "l_um": 0.28,
-        "w_um": 0.44
+        "w_um": 0.44,
+        "as_um2": 0.3872,
+        "ad_um2": 0.3872,
+        "ps_um": 2.64,
+        "pd_um": 2.64
       }
     }
   ],
@@ -1713,12 +2132,12 @@
       "device_count": 2
     },
     {
-      "name": "a,d,y",
+      "name": "a|d|y",
       "pin": true,
       "device_count": 8
     },
     {
-      "name": "b,d,y",
+      "name": "b|d|y",
       "pin": true,
       "device_count": 8
     },
@@ -1728,12 +2147,12 @@
       "device_count": 24
     },
     {
-      "name": "d,vdd",
+      "name": "d|vdd",
       "pin": true,
       "device_count": 36
     },
     {
-      "name": "d,y",
+      "name": "d|y",
       "pin": true,
       "device_count": 6
     },
@@ -1775,16 +2194,19 @@
   ],
   "warnings": [
     "promoted 5 net(s) to top-level pins from label(s) found only below the top cell (inside instanced sub-cells): a, clk, q, rst_n, vss -- these are internal nodes once instanced; pass top_cell_pins_only (--top-cell-pins) to keep them internal (issue #291)",
-    "net 'a,d,y' merges 3 distinct labels (a, d, y) onto one net -- KLayout joins multiple labels found on the same electrical net with ',' in Net.expanded_name(); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
-    "net 'b,d,y' merges 3 distinct labels (b, d, y) onto one net -- KLayout joins multiple labels found on the same electrical net with ',' in Net.expanded_name(); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
-    "net 'd,vdd' merges 2 distinct labels (d, vdd) onto one net -- KLayout joins multiple labels found on the same electrical net with ',' in Net.expanded_name(); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
-    "net 'd,y' merges 2 distinct labels (d, y) onto one net -- KLayout joins multiple labels found on the same electrical net with ',' in Net.expanded_name(); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section."
+    "net 'a|d|y' merges 3 distinct labels (a, d, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
+    "net 'b|d|y' merges 3 distinct labels (b, d, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
+    "net 'd|vdd' merges 2 distinct labels (d, vdd) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
+    "net 'd|y' merges 2 distinct labels (d, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
+    "52 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has no distinct well-tie/tap layer for this PMOS body, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section.",
+    "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent, not a gate -- and are not a declared pin; this can be a legitimate single-terminal tie (e.g. an intentionally unterminated dummy's diffusion tie), but confirm these nets have no other intended connectivity -- see single_terminal_nets[] for the full list."
   ],
   "black_box_regions": [],
+  "abstracted_cells": [],
   "unmodelled_poly": [],
   "merged_net_labels": [
     {
-      "net": "a,d,y",
+      "net": "a|d|y",
       "labels": [
         "a",
         "d",
@@ -1792,7 +2214,7 @@
       ]
     },
     {
-      "net": "b,d,y",
+      "net": "b|d|y",
       "labels": [
         "b",
         "d",
@@ -1800,20 +2222,247 @@
       ]
     },
     {
-      "net": "d,vdd",
+      "net": "d|vdd",
       "labels": [
         "d",
         "vdd"
       ]
     },
     {
-      "net": "d,y",
+      "net": "d|y",
       "labels": [
         "d",
         "y"
       ]
     }
   ],
+  "voltage_domain_warnings": [],
+  "unbiased_pmos_body_nets": [
+    {
+      "device": "$100",
+      "net": "$57"
+    },
+    {
+      "device": "$101",
+      "net": "$57"
+    },
+    {
+      "device": "$102",
+      "net": "$57"
+    },
+    {
+      "device": "$103",
+      "net": "$51"
+    },
+    {
+      "device": "$104",
+      "net": "$52"
+    },
+    {
+      "device": "$53",
+      "net": "$53"
+    },
+    {
+      "device": "$54",
+      "net": "$53"
+    },
+    {
+      "device": "$55",
+      "net": "$53"
+    },
+    {
+      "device": "$56",
+      "net": "$53"
+    },
+    {
+      "device": "$57",
+      "net": "$53"
+    },
+    {
+      "device": "$58",
+      "net": "$53"
+    },
+    {
+      "device": "$59",
+      "net": "$54"
+    },
+    {
+      "device": "$60",
+      "net": "$54"
+    },
+    {
+      "device": "$61",
+      "net": "$54"
+    },
+    {
+      "device": "$62",
+      "net": "$54"
+    },
+    {
+      "device": "$63",
+      "net": "$54"
+    },
+    {
+      "device": "$64",
+      "net": "$54"
+    },
+    {
+      "device": "$65",
+      "net": "$54"
+    },
+    {
+      "device": "$66",
+      "net": "$54"
+    },
+    {
+      "device": "$67",
+      "net": "$54"
+    },
+    {
+      "device": "$68",
+      "net": "$54"
+    },
+    {
+      "device": "$69",
+      "net": "$54"
+    },
+    {
+      "device": "$70",
+      "net": "$55"
+    },
+    {
+      "device": "$71",
+      "net": "$55"
+    },
+    {
+      "device": "$72",
+      "net": "$55"
+    },
+    {
+      "device": "$73",
+      "net": "$55"
+    },
+    {
+      "device": "$74",
+      "net": "$55"
+    },
+    {
+      "device": "$75",
+      "net": "$55"
+    },
+    {
+      "device": "$76",
+      "net": "$55"
+    },
+    {
+      "device": "$77",
+      "net": "$55"
+    },
+    {
+      "device": "$78",
+      "net": "$55"
+    },
+    {
+      "device": "$79",
+      "net": "$55"
+    },
+    {
+      "device": "$80",
+      "net": "$55"
+    },
+    {
+      "device": "$81",
+      "net": "$56"
+    },
+    {
+      "device": "$82",
+      "net": "$56"
+    },
+    {
+      "device": "$83",
+      "net": "$56"
+    },
+    {
+      "device": "$84",
+      "net": "$56"
+    },
+    {
+      "device": "$85",
+      "net": "$56"
+    },
+    {
+      "device": "$86",
+      "net": "$56"
+    },
+    {
+      "device": "$87",
+      "net": "$56"
+    },
+    {
+      "device": "$88",
+      "net": "$56"
+    },
+    {
+      "device": "$89",
+      "net": "$56"
+    },
+    {
+      "device": "$90",
+      "net": "$56"
+    },
+    {
+      "device": "$91",
+      "net": "$56"
+    },
+    {
+      "device": "$92",
+      "net": "$57"
+    },
+    {
+      "device": "$93",
+      "net": "$57"
+    },
+    {
+      "device": "$94",
+      "net": "$57"
+    },
+    {
+      "device": "$95",
+      "net": "$57"
+    },
+    {
+      "device": "$96",
+      "net": "$57"
+    },
+    {
+      "device": "$97",
+      "net": "$57"
+    },
+    {
+      "device": "$98",
+      "net": "$57"
+    },
+    {
+      "device": "$99",
+      "net": "$57"
+    }
+  ],
+  "single_terminal_nets": [
+    {
+      "net": "$51",
+      "device": "$103",
+      "terminal": "b",
+      "terminal_kind": "body"
+    },
+    {
+      "net": "$52",
+      "device": "$104",
+      "terminal": "b",
+      "terminal_kind": "body"
+    }
+  ],
+  "dead_metal": [],
+  "matched_device_groups": [],
   "pdk": {
     "variant": "gf180mcuD",
     "root": "/Users/rwalters/.volare",
@@ -1829,11 +2478,12 @@
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
       "content_hash": "sha256:06b9389ffa8861fcd0b6f136b0b188fab9e0b9690666ed64f164b90649b725f6"
     }
   },
-  "parasitics": null
+  "parasitics": null,
+  "spef_path": null
 }

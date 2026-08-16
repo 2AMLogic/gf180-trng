@@ -203,7 +203,11 @@
       "matched_groups": [],
       "notes": []
     },
-    "warnings": []
+    "warnings": [
+      "block 'ring1_ring' is placed 0.00um from block 'ring1' (strategy: explicit), closer than ring1's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'ring2_ring' is placed 0.00um from block 'ring2' (strategy: explicit), closer than ring2's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'combiner_sampler_ring' is placed 0.00um from block 'combiner_sampler' (strategy: explicit), closer than combiner_sampler's own declared drc_hints.min_spacing_um of 0.40um"
+    ]
   },
   "gds_sha256_timestamp_normalised": "57c857dfa8e233cbfd4c7b071ad51b31a0ded4f74d323ce5b3fb4f99296ad081"
 }

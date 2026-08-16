@@ -3,10 +3,10180 @@
   "file": "layout/cells/xor2/xor2.gds",
   "deck": "gf180mcu",
   "dbu_um": 0.001,
-  "status": "clean",
-  "violation_count": 0,
-  "rule_counts": {},
-  "violations": [],
+  "status": "violations",
+  "violation_count": 308,
+  "rule_counts": {
+    "metal2.enclosing.via2.1": 20,
+    "metal3.enclosing.via2.1": 72,
+    "via1.width.1": 72,
+    "via2.width.1": 144
+  },
+  "violations": [
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 5080,
+        "right": 0,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          -110,
+          5080
+        ],
+        [
+          -110,
+          5300
+        ],
+        [
+          0,
+          5300
+        ],
+        [
+          0,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 2480,
+        "right": 800,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          690,
+          2480
+        ],
+        [
+          690,
+          2700
+        ],
+        [
+          800,
+          2700
+        ],
+        [
+          800,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 5730,
+        "right": 1600,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          1490,
+          5730
+        ],
+        [
+          1490,
+          5950
+        ],
+        [
+          1600,
+          5950
+        ],
+        [
+          1600,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 3130,
+        "right": 3200,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          3090,
+          3130
+        ],
+        [
+          3090,
+          3350
+        ],
+        [
+          3200,
+          3350
+        ],
+        [
+          3200,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 6380,
+        "right": 4000,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          3890,
+          6380
+        ],
+        [
+          3890,
+          6600
+        ],
+        [
+          4000,
+          6600
+        ],
+        [
+          4000,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 7680,
+        "right": 4800,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          4690,
+          7680
+        ],
+        [
+          4690,
+          7900
+        ],
+        [
+          4800,
+          7900
+        ],
+        [
+          4800,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 3780,
+        "right": 6400,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          6290,
+          3780
+        ],
+        [
+          6290,
+          4000
+        ],
+        [
+          6400,
+          4000
+        ],
+        [
+          6400,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8800,
+        "bottom": 7680,
+        "right": 8910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          8800,
+          7680
+        ],
+        [
+          8800,
+          7900
+        ],
+        [
+          8910,
+          7900
+        ],
+        [
+          8910,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 8330,
+        "right": 9600,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          9490,
+          8330
+        ],
+        [
+          9490,
+          8550
+        ],
+        [
+          9600,
+          8550
+        ],
+        [
+          9600,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12000,
+        "bottom": 5080,
+        "right": 12110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          12000,
+          5080
+        ],
+        [
+          12000,
+          5300
+        ],
+        [
+          12110,
+          5300
+        ],
+        [
+          12110,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13600,
+        "bottom": 8330,
+        "right": 13710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          13600,
+          8330
+        ],
+        [
+          13600,
+          8550
+        ],
+        [
+          13710,
+          8550
+        ],
+        [
+          13710,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 4430,
+        "right": 16600,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          16490,
+          4430
+        ],
+        [
+          16490,
+          4650
+        ],
+        [
+          16600,
+          4650
+        ],
+        [
+          16600,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22200,
+        "bottom": 2480,
+        "right": 22310,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          22200,
+          2480
+        ],
+        [
+          22200,
+          2700
+        ],
+        [
+          22310,
+          2700
+        ],
+        [
+          22310,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 7030,
+        "right": 23000,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          22890,
+          7030
+        ],
+        [
+          22890,
+          7250
+        ],
+        [
+          23000,
+          7250
+        ],
+        [
+          23000,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23800,
+        "bottom": 4430,
+        "right": 23910,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          23800,
+          4430
+        ],
+        [
+          23800,
+          4650
+        ],
+        [
+          23910,
+          4650
+        ],
+        [
+          23910,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24600,
+        "bottom": 3130,
+        "right": 24710,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          24600,
+          3130
+        ],
+        [
+          24600,
+          3350
+        ],
+        [
+          24710,
+          3350
+        ],
+        [
+          24710,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27000,
+        "bottom": 5730,
+        "right": 27110,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          27000,
+          5730
+        ],
+        [
+          27000,
+          5950
+        ],
+        [
+          27110,
+          5950
+        ],
+        [
+          27110,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28600,
+        "bottom": 7030,
+        "right": 28710,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          28600,
+          7030
+        ],
+        [
+          28600,
+          7250
+        ],
+        [
+          28710,
+          7250
+        ],
+        [
+          28710,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29400,
+        "bottom": 6380,
+        "right": 29510,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          29400,
+          6380
+        ],
+        [
+          29400,
+          6600
+        ],
+        [
+          29510,
+          6600
+        ],
+        [
+          29510,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "metal2.enclosing.via2.1",
+      "description": "minimum metal2 overlap of via2 (the conductor below the cut)",
+      "check": "enclosing",
+      "layer": "Metal2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30200,
+        "bottom": 3780,
+        "right": 30310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          30200,
+          3780
+        ],
+        [
+          30200,
+          4000
+        ],
+        [
+          30310,
+          4000
+        ],
+        [
+          30310,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 890,
+        "right": 110,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          -110,
+          890
+        ],
+        [
+          -110,
+          1000
+        ],
+        [
+          110,
+          1000
+        ],
+        [
+          110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 5190,
+        "right": 110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          -110,
+          5190
+        ],
+        [
+          -110,
+          5300
+        ],
+        [
+          110,
+          5300
+        ],
+        [
+          110,
+          5190
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 1610,
+        "right": 910,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          690,
+          1610
+        ],
+        [
+          690,
+          1720
+        ],
+        [
+          910,
+          1720
+        ],
+        [
+          910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 2590,
+        "right": 910,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          690,
+          2590
+        ],
+        [
+          690,
+          2700
+        ],
+        [
+          910,
+          2700
+        ],
+        [
+          910,
+          2590
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 890,
+        "right": 1710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          1490,
+          890
+        ],
+        [
+          1490,
+          1000
+        ],
+        [
+          1710,
+          1000
+        ],
+        [
+          1710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 5840,
+        "right": 1710,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          1490,
+          5840
+        ],
+        [
+          1490,
+          5950
+        ],
+        [
+          1710,
+          5950
+        ],
+        [
+          1710,
+          5840
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 890,
+        "right": 2510,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          2290,
+          890
+        ],
+        [
+          2290,
+          1000
+        ],
+        [
+          2510,
+          1000
+        ],
+        [
+          2510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 5190,
+        "right": 2510,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          2290,
+          5190
+        ],
+        [
+          2290,
+          5300
+        ],
+        [
+          2510,
+          5300
+        ],
+        [
+          2510,
+          5190
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 1610,
+        "right": 3310,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          3090,
+          1610
+        ],
+        [
+          3090,
+          1720
+        ],
+        [
+          3310,
+          1720
+        ],
+        [
+          3310,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 3240,
+        "right": 3310,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          3090,
+          3240
+        ],
+        [
+          3090,
+          3350
+        ],
+        [
+          3310,
+          3350
+        ],
+        [
+          3310,
+          3240
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 890,
+        "right": 4110,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          3890,
+          890
+        ],
+        [
+          3890,
+          1000
+        ],
+        [
+          4110,
+          1000
+        ],
+        [
+          4110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 6490,
+        "right": 4110,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          3890,
+          6490
+        ],
+        [
+          3890,
+          6600
+        ],
+        [
+          4110,
+          6600
+        ],
+        [
+          4110,
+          6490
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 890,
+        "right": 4910,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          4690,
+          890
+        ],
+        [
+          4690,
+          1000
+        ],
+        [
+          4910,
+          1000
+        ],
+        [
+          4910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 7790,
+        "right": 4910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          4690,
+          7790
+        ],
+        [
+          4690,
+          7900
+        ],
+        [
+          4910,
+          7900
+        ],
+        [
+          4910,
+          7790
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 1610,
+        "right": 5710,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          5490,
+          1610
+        ],
+        [
+          5490,
+          1720
+        ],
+        [
+          5710,
+          1720
+        ],
+        [
+          5710,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 2590,
+        "right": 5710,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          5490,
+          2590
+        ],
+        [
+          5490,
+          2700
+        ],
+        [
+          5710,
+          2700
+        ],
+        [
+          5710,
+          2590
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 890,
+        "right": 6510,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          6290,
+          890
+        ],
+        [
+          6290,
+          1000
+        ],
+        [
+          6510,
+          1000
+        ],
+        [
+          6510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 3890,
+        "right": 6510,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          6290,
+          3890
+        ],
+        [
+          6290,
+          4000
+        ],
+        [
+          6510,
+          4000
+        ],
+        [
+          6510,
+          3890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 890,
+        "right": 7310,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          7090,
+          890
+        ],
+        [
+          7090,
+          1000
+        ],
+        [
+          7310,
+          1000
+        ],
+        [
+          7310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 5190,
+        "right": 7310,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          7090,
+          5190
+        ],
+        [
+          7090,
+          5300
+        ],
+        [
+          7310,
+          5300
+        ],
+        [
+          7310,
+          5190
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 1610,
+        "right": 8110,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          7890,
+          1610
+        ],
+        [
+          7890,
+          1720
+        ],
+        [
+          8110,
+          1720
+        ],
+        [
+          8110,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 3240,
+        "right": 8110,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          7890,
+          3240
+        ],
+        [
+          7890,
+          3350
+        ],
+        [
+          8110,
+          3350
+        ],
+        [
+          8110,
+          3240
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 890,
+        "right": 8910,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          8690,
+          890
+        ],
+        [
+          8690,
+          1000
+        ],
+        [
+          8910,
+          1000
+        ],
+        [
+          8910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 7790,
+        "right": 8910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          8690,
+          7790
+        ],
+        [
+          8690,
+          7900
+        ],
+        [
+          8910,
+          7900
+        ],
+        [
+          8910,
+          7790
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 890,
+        "right": 9710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          9490,
+          890
+        ],
+        [
+          9490,
+          1000
+        ],
+        [
+          9710,
+          1000
+        ],
+        [
+          9710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 8440,
+        "right": 9710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          9490,
+          8440
+        ],
+        [
+          9490,
+          8550
+        ],
+        [
+          9710,
+          8550
+        ],
+        [
+          9710,
+          8440
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 1610,
+        "right": 10510,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          10290,
+          1610
+        ],
+        [
+          10290,
+          1720
+        ],
+        [
+          10510,
+          1720
+        ],
+        [
+          10510,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 5840,
+        "right": 10510,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          10290,
+          5840
+        ],
+        [
+          10290,
+          5950
+        ],
+        [
+          10510,
+          5950
+        ],
+        [
+          10510,
+          5840
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 890,
+        "right": 11310,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          11090,
+          890
+        ],
+        [
+          11090,
+          1000
+        ],
+        [
+          11310,
+          1000
+        ],
+        [
+          11310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 3890,
+        "right": 11310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          11090,
+          3890
+        ],
+        [
+          11090,
+          4000
+        ],
+        [
+          11310,
+          4000
+        ],
+        [
+          11310,
+          3890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 890,
+        "right": 12110,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          11890,
+          890
+        ],
+        [
+          11890,
+          1000
+        ],
+        [
+          12110,
+          1000
+        ],
+        [
+          12110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 5190,
+        "right": 12110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          11890,
+          5190
+        ],
+        [
+          11890,
+          5300
+        ],
+        [
+          12110,
+          5300
+        ],
+        [
+          12110,
+          5190
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 1610,
+        "right": 12910,
+        "top": 1720
+      },
+      "polygon": [
+        [
+          12690,
+          1610
+        ],
+        [
+          12690,
+          1720
+        ],
+        [
+          12910,
+          1720
+        ],
+        [
+          12910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 6490,
+        "right": 12910,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          12690,
+          6490
+        ],
+        [
+          12690,
+          6600
+        ],
+        [
+          12910,
+          6600
+        ],
+        [
+          12910,
+          6490
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 890,
+        "right": 13710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          13490,
+          890
+        ],
+        [
+          13490,
+          1000
+        ],
+        [
+          13710,
+          1000
+        ],
+        [
+          13710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 8440,
+        "right": 13710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          13490,
+          8440
+        ],
+        [
+          13490,
+          8550
+        ],
+        [
+          13710,
+          8550
+        ],
+        [
+          13710,
+          8440
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 890,
+        "right": 16710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          16490,
+          890
+        ],
+        [
+          16490,
+          1000
+        ],
+        [
+          16710,
+          1000
+        ],
+        [
+          16710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 4540,
+        "right": 16710,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          16490,
+          4540
+        ],
+        [
+          16490,
+          4650
+        ],
+        [
+          16710,
+          4650
+        ],
+        [
+          16710,
+          4540
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 1830,
+        "right": 17510,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          17290,
+          1830
+        ],
+        [
+          17290,
+          1940
+        ],
+        [
+          17510,
+          1940
+        ],
+        [
+          17510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 2590,
+        "right": 17510,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          17290,
+          2590
+        ],
+        [
+          17290,
+          2700
+        ],
+        [
+          17510,
+          2700
+        ],
+        [
+          17510,
+          2590
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 890,
+        "right": 18310,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          18090,
+          890
+        ],
+        [
+          18090,
+          1000
+        ],
+        [
+          18310,
+          1000
+        ],
+        [
+          18310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 5840,
+        "right": 18310,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          18090,
+          5840
+        ],
+        [
+          18090,
+          5950
+        ],
+        [
+          18310,
+          5950
+        ],
+        [
+          18310,
+          5840
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 890,
+        "right": 19110,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          18890,
+          890
+        ],
+        [
+          18890,
+          1000
+        ],
+        [
+          19110,
+          1000
+        ],
+        [
+          19110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 4540,
+        "right": 19110,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          18890,
+          4540
+        ],
+        [
+          18890,
+          4650
+        ],
+        [
+          19110,
+          4650
+        ],
+        [
+          19110,
+          4540
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 1830,
+        "right": 19910,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          19690,
+          1830
+        ],
+        [
+          19690,
+          1940
+        ],
+        [
+          19910,
+          1940
+        ],
+        [
+          19910,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 3240,
+        "right": 19910,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          19690,
+          3240
+        ],
+        [
+          19690,
+          3350
+        ],
+        [
+          19910,
+          3350
+        ],
+        [
+          19910,
+          3240
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 890,
+        "right": 20710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          20490,
+          890
+        ],
+        [
+          20490,
+          1000
+        ],
+        [
+          20710,
+          1000
+        ],
+        [
+          20710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 6490,
+        "right": 20710,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          20490,
+          6490
+        ],
+        [
+          20490,
+          6600
+        ],
+        [
+          20710,
+          6600
+        ],
+        [
+          20710,
+          6490
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 890,
+        "right": 21510,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          21290,
+          890
+        ],
+        [
+          21290,
+          1000
+        ],
+        [
+          21510,
+          1000
+        ],
+        [
+          21510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 4540,
+        "right": 21510,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          21290,
+          4540
+        ],
+        [
+          21290,
+          4650
+        ],
+        [
+          21510,
+          4650
+        ],
+        [
+          21510,
+          4540
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 1830,
+        "right": 22310,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          22090,
+          1830
+        ],
+        [
+          22090,
+          1940
+        ],
+        [
+          22310,
+          1940
+        ],
+        [
+          22310,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 2590,
+        "right": 22310,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          22090,
+          2590
+        ],
+        [
+          22090,
+          2700
+        ],
+        [
+          22310,
+          2700
+        ],
+        [
+          22310,
+          2590
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 890,
+        "right": 23110,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          22890,
+          890
+        ],
+        [
+          22890,
+          1000
+        ],
+        [
+          23110,
+          1000
+        ],
+        [
+          23110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 7140,
+        "right": 23110,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          22890,
+          7140
+        ],
+        [
+          22890,
+          7250
+        ],
+        [
+          23110,
+          7250
+        ],
+        [
+          23110,
+          7140
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 890,
+        "right": 23910,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          23690,
+          890
+        ],
+        [
+          23690,
+          1000
+        ],
+        [
+          23910,
+          1000
+        ],
+        [
+          23910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 4540,
+        "right": 23910,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          23690,
+          4540
+        ],
+        [
+          23690,
+          4650
+        ],
+        [
+          23910,
+          4650
+        ],
+        [
+          23910,
+          4540
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 1830,
+        "right": 24710,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          24490,
+          1830
+        ],
+        [
+          24490,
+          1940
+        ],
+        [
+          24710,
+          1940
+        ],
+        [
+          24710,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 3240,
+        "right": 24710,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          24490,
+          3240
+        ],
+        [
+          24490,
+          3350
+        ],
+        [
+          24710,
+          3350
+        ],
+        [
+          24710,
+          3240
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 890,
+        "right": 25510,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          25290,
+          890
+        ],
+        [
+          25290,
+          1000
+        ],
+        [
+          25510,
+          1000
+        ],
+        [
+          25510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 7140,
+        "right": 25510,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          25290,
+          7140
+        ],
+        [
+          25290,
+          7250
+        ],
+        [
+          25510,
+          7250
+        ],
+        [
+          25510,
+          7140
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 890,
+        "right": 26310,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          26090,
+          890
+        ],
+        [
+          26090,
+          1000
+        ],
+        [
+          26310,
+          1000
+        ],
+        [
+          26310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 7140,
+        "right": 26310,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          26090,
+          7140
+        ],
+        [
+          26090,
+          7250
+        ],
+        [
+          26310,
+          7250
+        ],
+        [
+          26310,
+          7140
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 1830,
+        "right": 27110,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          26890,
+          1830
+        ],
+        [
+          26890,
+          1940
+        ],
+        [
+          27110,
+          1940
+        ],
+        [
+          27110,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 5840,
+        "right": 27110,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          26890,
+          5840
+        ],
+        [
+          26890,
+          5950
+        ],
+        [
+          27110,
+          5950
+        ],
+        [
+          27110,
+          5840
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 890,
+        "right": 27910,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          27690,
+          890
+        ],
+        [
+          27690,
+          1000
+        ],
+        [
+          27910,
+          1000
+        ],
+        [
+          27910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 3890,
+        "right": 27910,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          27690,
+          3890
+        ],
+        [
+          27690,
+          4000
+        ],
+        [
+          27910,
+          4000
+        ],
+        [
+          27910,
+          3890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 890,
+        "right": 28710,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          28490,
+          890
+        ],
+        [
+          28490,
+          1000
+        ],
+        [
+          28710,
+          1000
+        ],
+        [
+          28710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 7140,
+        "right": 28710,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          28490,
+          7140
+        ],
+        [
+          28490,
+          7250
+        ],
+        [
+          28710,
+          7250
+        ],
+        [
+          28710,
+          7140
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 1830,
+        "right": 29510,
+        "top": 1940
+      },
+      "polygon": [
+        [
+          29290,
+          1830
+        ],
+        [
+          29290,
+          1940
+        ],
+        [
+          29510,
+          1940
+        ],
+        [
+          29510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 6490,
+        "right": 29510,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          29290,
+          6490
+        ],
+        [
+          29290,
+          6600
+        ],
+        [
+          29510,
+          6600
+        ],
+        [
+          29510,
+          6490
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 890,
+        "right": 30310,
+        "top": 1000
+      },
+      "polygon": [
+        [
+          30090,
+          890
+        ],
+        [
+          30090,
+          1000
+        ],
+        [
+          30310,
+          1000
+        ],
+        [
+          30310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "metal3.enclosing.via2.1",
+      "description": "minimum metal3 overlap of via2 (the conductor above the cut)",
+      "check": "enclosing",
+      "layer": "Metal3",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 3890,
+        "right": 30310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          30090,
+          3890
+        ],
+        [
+          30090,
+          4000
+        ],
+        [
+          30310,
+          4000
+        ],
+        [
+          30310,
+          3890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 890,
+        "right": 110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          -110,
+          890
+        ],
+        [
+          -110,
+          1110
+        ],
+        [
+          110,
+          1110
+        ],
+        [
+          110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 890,
+        "right": 110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          -110,
+          890
+        ],
+        [
+          -110,
+          1110
+        ],
+        [
+          110,
+          1110
+        ],
+        [
+          110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 1610,
+        "right": 910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          690,
+          1610
+        ],
+        [
+          690,
+          1830
+        ],
+        [
+          910,
+          1830
+        ],
+        [
+          910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 1610,
+        "right": 910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          690,
+          1610
+        ],
+        [
+          690,
+          1830
+        ],
+        [
+          910,
+          1830
+        ],
+        [
+          910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 890,
+        "right": 1710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          1490,
+          890
+        ],
+        [
+          1490,
+          1110
+        ],
+        [
+          1710,
+          1110
+        ],
+        [
+          1710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 890,
+        "right": 1710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          1490,
+          890
+        ],
+        [
+          1490,
+          1110
+        ],
+        [
+          1710,
+          1110
+        ],
+        [
+          1710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 890,
+        "right": 2510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          2290,
+          890
+        ],
+        [
+          2290,
+          1110
+        ],
+        [
+          2510,
+          1110
+        ],
+        [
+          2510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 890,
+        "right": 2510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          2290,
+          890
+        ],
+        [
+          2290,
+          1110
+        ],
+        [
+          2510,
+          1110
+        ],
+        [
+          2510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 1610,
+        "right": 3310,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          3090,
+          1610
+        ],
+        [
+          3090,
+          1830
+        ],
+        [
+          3310,
+          1830
+        ],
+        [
+          3310,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 1610,
+        "right": 3310,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          3090,
+          1610
+        ],
+        [
+          3090,
+          1830
+        ],
+        [
+          3310,
+          1830
+        ],
+        [
+          3310,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 890,
+        "right": 4110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          3890,
+          890
+        ],
+        [
+          3890,
+          1110
+        ],
+        [
+          4110,
+          1110
+        ],
+        [
+          4110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 890,
+        "right": 4110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          3890,
+          890
+        ],
+        [
+          3890,
+          1110
+        ],
+        [
+          4110,
+          1110
+        ],
+        [
+          4110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 890,
+        "right": 4910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          4690,
+          890
+        ],
+        [
+          4690,
+          1110
+        ],
+        [
+          4910,
+          1110
+        ],
+        [
+          4910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 890,
+        "right": 4910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          4690,
+          890
+        ],
+        [
+          4690,
+          1110
+        ],
+        [
+          4910,
+          1110
+        ],
+        [
+          4910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 1610,
+        "right": 5710,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          5490,
+          1610
+        ],
+        [
+          5490,
+          1830
+        ],
+        [
+          5710,
+          1830
+        ],
+        [
+          5710,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 1610,
+        "right": 5710,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          5490,
+          1610
+        ],
+        [
+          5490,
+          1830
+        ],
+        [
+          5710,
+          1830
+        ],
+        [
+          5710,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 890,
+        "right": 6510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          6290,
+          890
+        ],
+        [
+          6290,
+          1110
+        ],
+        [
+          6510,
+          1110
+        ],
+        [
+          6510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 890,
+        "right": 6510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          6290,
+          890
+        ],
+        [
+          6290,
+          1110
+        ],
+        [
+          6510,
+          1110
+        ],
+        [
+          6510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 890,
+        "right": 7310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          7090,
+          890
+        ],
+        [
+          7090,
+          1110
+        ],
+        [
+          7310,
+          1110
+        ],
+        [
+          7310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 890,
+        "right": 7310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          7090,
+          890
+        ],
+        [
+          7090,
+          1110
+        ],
+        [
+          7310,
+          1110
+        ],
+        [
+          7310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 1610,
+        "right": 8110,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          7890,
+          1610
+        ],
+        [
+          7890,
+          1830
+        ],
+        [
+          8110,
+          1830
+        ],
+        [
+          8110,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 1610,
+        "right": 8110,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          7890,
+          1610
+        ],
+        [
+          7890,
+          1830
+        ],
+        [
+          8110,
+          1830
+        ],
+        [
+          8110,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 890,
+        "right": 8910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          8690,
+          890
+        ],
+        [
+          8690,
+          1110
+        ],
+        [
+          8910,
+          1110
+        ],
+        [
+          8910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 890,
+        "right": 8910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          8690,
+          890
+        ],
+        [
+          8690,
+          1110
+        ],
+        [
+          8910,
+          1110
+        ],
+        [
+          8910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 890,
+        "right": 9710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          9490,
+          890
+        ],
+        [
+          9490,
+          1110
+        ],
+        [
+          9710,
+          1110
+        ],
+        [
+          9710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 890,
+        "right": 9710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          9490,
+          890
+        ],
+        [
+          9490,
+          1110
+        ],
+        [
+          9710,
+          1110
+        ],
+        [
+          9710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 1610,
+        "right": 10510,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          10290,
+          1610
+        ],
+        [
+          10290,
+          1830
+        ],
+        [
+          10510,
+          1830
+        ],
+        [
+          10510,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 1610,
+        "right": 10510,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          10290,
+          1610
+        ],
+        [
+          10290,
+          1830
+        ],
+        [
+          10510,
+          1830
+        ],
+        [
+          10510,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 890,
+        "right": 11310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11090,
+          890
+        ],
+        [
+          11090,
+          1110
+        ],
+        [
+          11310,
+          1110
+        ],
+        [
+          11310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 890,
+        "right": 11310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11090,
+          890
+        ],
+        [
+          11090,
+          1110
+        ],
+        [
+          11310,
+          1110
+        ],
+        [
+          11310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 890,
+        "right": 12110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11890,
+          890
+        ],
+        [
+          11890,
+          1110
+        ],
+        [
+          12110,
+          1110
+        ],
+        [
+          12110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 890,
+        "right": 12110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11890,
+          890
+        ],
+        [
+          11890,
+          1110
+        ],
+        [
+          12110,
+          1110
+        ],
+        [
+          12110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 1610,
+        "right": 12910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          12690,
+          1610
+        ],
+        [
+          12690,
+          1830
+        ],
+        [
+          12910,
+          1830
+        ],
+        [
+          12910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 1610,
+        "right": 12910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          12690,
+          1610
+        ],
+        [
+          12690,
+          1830
+        ],
+        [
+          12910,
+          1830
+        ],
+        [
+          12910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 890,
+        "right": 13710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          13490,
+          890
+        ],
+        [
+          13490,
+          1110
+        ],
+        [
+          13710,
+          1110
+        ],
+        [
+          13710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 890,
+        "right": 13710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          13490,
+          890
+        ],
+        [
+          13490,
+          1110
+        ],
+        [
+          13710,
+          1110
+        ],
+        [
+          13710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 890,
+        "right": 16710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          16490,
+          890
+        ],
+        [
+          16490,
+          1110
+        ],
+        [
+          16710,
+          1110
+        ],
+        [
+          16710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 890,
+        "right": 16710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          16490,
+          890
+        ],
+        [
+          16490,
+          1110
+        ],
+        [
+          16710,
+          1110
+        ],
+        [
+          16710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 1830,
+        "right": 17510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          17290,
+          1830
+        ],
+        [
+          17290,
+          2050
+        ],
+        [
+          17510,
+          2050
+        ],
+        [
+          17510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 1830,
+        "right": 17510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          17290,
+          1830
+        ],
+        [
+          17290,
+          2050
+        ],
+        [
+          17510,
+          2050
+        ],
+        [
+          17510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 890,
+        "right": 18310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18090,
+          890
+        ],
+        [
+          18090,
+          1110
+        ],
+        [
+          18310,
+          1110
+        ],
+        [
+          18310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 890,
+        "right": 18310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18090,
+          890
+        ],
+        [
+          18090,
+          1110
+        ],
+        [
+          18310,
+          1110
+        ],
+        [
+          18310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 890,
+        "right": 19110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18890,
+          890
+        ],
+        [
+          18890,
+          1110
+        ],
+        [
+          19110,
+          1110
+        ],
+        [
+          19110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 890,
+        "right": 19110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18890,
+          890
+        ],
+        [
+          18890,
+          1110
+        ],
+        [
+          19110,
+          1110
+        ],
+        [
+          19110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 1830,
+        "right": 19910,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          19690,
+          1830
+        ],
+        [
+          19690,
+          2050
+        ],
+        [
+          19910,
+          2050
+        ],
+        [
+          19910,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 1830,
+        "right": 19910,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          19690,
+          1830
+        ],
+        [
+          19690,
+          2050
+        ],
+        [
+          19910,
+          2050
+        ],
+        [
+          19910,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 890,
+        "right": 20710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          20490,
+          890
+        ],
+        [
+          20490,
+          1110
+        ],
+        [
+          20710,
+          1110
+        ],
+        [
+          20710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 890,
+        "right": 20710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          20490,
+          890
+        ],
+        [
+          20490,
+          1110
+        ],
+        [
+          20710,
+          1110
+        ],
+        [
+          20710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 890,
+        "right": 21510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          21290,
+          890
+        ],
+        [
+          21290,
+          1110
+        ],
+        [
+          21510,
+          1110
+        ],
+        [
+          21510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 890,
+        "right": 21510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          21290,
+          890
+        ],
+        [
+          21290,
+          1110
+        ],
+        [
+          21510,
+          1110
+        ],
+        [
+          21510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 1830,
+        "right": 22310,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          22090,
+          1830
+        ],
+        [
+          22090,
+          2050
+        ],
+        [
+          22310,
+          2050
+        ],
+        [
+          22310,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 1830,
+        "right": 22310,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          22090,
+          1830
+        ],
+        [
+          22090,
+          2050
+        ],
+        [
+          22310,
+          2050
+        ],
+        [
+          22310,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 890,
+        "right": 23110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          22890,
+          890
+        ],
+        [
+          22890,
+          1110
+        ],
+        [
+          23110,
+          1110
+        ],
+        [
+          23110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 890,
+        "right": 23110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          22890,
+          890
+        ],
+        [
+          22890,
+          1110
+        ],
+        [
+          23110,
+          1110
+        ],
+        [
+          23110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 890,
+        "right": 23910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          23690,
+          890
+        ],
+        [
+          23690,
+          1110
+        ],
+        [
+          23910,
+          1110
+        ],
+        [
+          23910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 890,
+        "right": 23910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          23690,
+          890
+        ],
+        [
+          23690,
+          1110
+        ],
+        [
+          23910,
+          1110
+        ],
+        [
+          23910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 1830,
+        "right": 24710,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          24490,
+          1830
+        ],
+        [
+          24490,
+          2050
+        ],
+        [
+          24710,
+          2050
+        ],
+        [
+          24710,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 1830,
+        "right": 24710,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          24490,
+          1830
+        ],
+        [
+          24490,
+          2050
+        ],
+        [
+          24710,
+          2050
+        ],
+        [
+          24710,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 890,
+        "right": 25510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          25290,
+          890
+        ],
+        [
+          25290,
+          1110
+        ],
+        [
+          25510,
+          1110
+        ],
+        [
+          25510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 890,
+        "right": 25510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          25290,
+          890
+        ],
+        [
+          25290,
+          1110
+        ],
+        [
+          25510,
+          1110
+        ],
+        [
+          25510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 890,
+        "right": 26310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          26090,
+          890
+        ],
+        [
+          26090,
+          1110
+        ],
+        [
+          26310,
+          1110
+        ],
+        [
+          26310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 890,
+        "right": 26310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          26090,
+          890
+        ],
+        [
+          26090,
+          1110
+        ],
+        [
+          26310,
+          1110
+        ],
+        [
+          26310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 1830,
+        "right": 27110,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          26890,
+          1830
+        ],
+        [
+          26890,
+          2050
+        ],
+        [
+          27110,
+          2050
+        ],
+        [
+          27110,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 1830,
+        "right": 27110,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          26890,
+          1830
+        ],
+        [
+          26890,
+          2050
+        ],
+        [
+          27110,
+          2050
+        ],
+        [
+          27110,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 890,
+        "right": 27910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          27690,
+          890
+        ],
+        [
+          27690,
+          1110
+        ],
+        [
+          27910,
+          1110
+        ],
+        [
+          27910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 890,
+        "right": 27910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          27690,
+          890
+        ],
+        [
+          27690,
+          1110
+        ],
+        [
+          27910,
+          1110
+        ],
+        [
+          27910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 890,
+        "right": 28710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          28490,
+          890
+        ],
+        [
+          28490,
+          1110
+        ],
+        [
+          28710,
+          1110
+        ],
+        [
+          28710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 890,
+        "right": 28710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          28490,
+          890
+        ],
+        [
+          28490,
+          1110
+        ],
+        [
+          28710,
+          1110
+        ],
+        [
+          28710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 1830,
+        "right": 29510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          29290,
+          1830
+        ],
+        [
+          29290,
+          2050
+        ],
+        [
+          29510,
+          2050
+        ],
+        [
+          29510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 1830,
+        "right": 29510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          29290,
+          1830
+        ],
+        [
+          29290,
+          2050
+        ],
+        [
+          29510,
+          2050
+        ],
+        [
+          29510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 890,
+        "right": 30310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          30090,
+          890
+        ],
+        [
+          30090,
+          1110
+        ],
+        [
+          30310,
+          1110
+        ],
+        [
+          30310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 890,
+        "right": 30310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          30090,
+          890
+        ],
+        [
+          30090,
+          1110
+        ],
+        [
+          30310,
+          1110
+        ],
+        [
+          30310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 890,
+        "right": 110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          -110,
+          890
+        ],
+        [
+          -110,
+          1110
+        ],
+        [
+          110,
+          1110
+        ],
+        [
+          110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 890,
+        "right": 110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          -110,
+          890
+        ],
+        [
+          -110,
+          1110
+        ],
+        [
+          110,
+          1110
+        ],
+        [
+          110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 5080,
+        "right": 110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          -110,
+          5080
+        ],
+        [
+          -110,
+          5300
+        ],
+        [
+          110,
+          5300
+        ],
+        [
+          110,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -110,
+        "bottom": 5080,
+        "right": 110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          -110,
+          5080
+        ],
+        [
+          -110,
+          5300
+        ],
+        [
+          110,
+          5300
+        ],
+        [
+          110,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 1610,
+        "right": 910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          690,
+          1610
+        ],
+        [
+          690,
+          1830
+        ],
+        [
+          910,
+          1830
+        ],
+        [
+          910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 1610,
+        "right": 910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          690,
+          1610
+        ],
+        [
+          690,
+          1830
+        ],
+        [
+          910,
+          1830
+        ],
+        [
+          910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 2480,
+        "right": 910,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          690,
+          2480
+        ],
+        [
+          690,
+          2700
+        ],
+        [
+          910,
+          2700
+        ],
+        [
+          910,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 690,
+        "bottom": 2480,
+        "right": 910,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          690,
+          2480
+        ],
+        [
+          690,
+          2700
+        ],
+        [
+          910,
+          2700
+        ],
+        [
+          910,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 890,
+        "right": 1710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          1490,
+          890
+        ],
+        [
+          1490,
+          1110
+        ],
+        [
+          1710,
+          1110
+        ],
+        [
+          1710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 890,
+        "right": 1710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          1490,
+          890
+        ],
+        [
+          1490,
+          1110
+        ],
+        [
+          1710,
+          1110
+        ],
+        [
+          1710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 5730,
+        "right": 1710,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          1490,
+          5730
+        ],
+        [
+          1490,
+          5950
+        ],
+        [
+          1710,
+          5950
+        ],
+        [
+          1710,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 1490,
+        "bottom": 5730,
+        "right": 1710,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          1490,
+          5730
+        ],
+        [
+          1490,
+          5950
+        ],
+        [
+          1710,
+          5950
+        ],
+        [
+          1710,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 890,
+        "right": 2510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          2290,
+          890
+        ],
+        [
+          2290,
+          1110
+        ],
+        [
+          2510,
+          1110
+        ],
+        [
+          2510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 890,
+        "right": 2510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          2290,
+          890
+        ],
+        [
+          2290,
+          1110
+        ],
+        [
+          2510,
+          1110
+        ],
+        [
+          2510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 5080,
+        "right": 2510,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          2290,
+          5080
+        ],
+        [
+          2290,
+          5300
+        ],
+        [
+          2510,
+          5300
+        ],
+        [
+          2510,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2290,
+        "bottom": 5080,
+        "right": 2510,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          2290,
+          5080
+        ],
+        [
+          2290,
+          5300
+        ],
+        [
+          2510,
+          5300
+        ],
+        [
+          2510,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 1610,
+        "right": 3310,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          3090,
+          1610
+        ],
+        [
+          3090,
+          1830
+        ],
+        [
+          3310,
+          1830
+        ],
+        [
+          3310,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 1610,
+        "right": 3310,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          3090,
+          1610
+        ],
+        [
+          3090,
+          1830
+        ],
+        [
+          3310,
+          1830
+        ],
+        [
+          3310,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 3130,
+        "right": 3310,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          3090,
+          3130
+        ],
+        [
+          3090,
+          3350
+        ],
+        [
+          3310,
+          3350
+        ],
+        [
+          3310,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3090,
+        "bottom": 3130,
+        "right": 3310,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          3090,
+          3130
+        ],
+        [
+          3090,
+          3350
+        ],
+        [
+          3310,
+          3350
+        ],
+        [
+          3310,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 890,
+        "right": 4110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          3890,
+          890
+        ],
+        [
+          3890,
+          1110
+        ],
+        [
+          4110,
+          1110
+        ],
+        [
+          4110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 890,
+        "right": 4110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          3890,
+          890
+        ],
+        [
+          3890,
+          1110
+        ],
+        [
+          4110,
+          1110
+        ],
+        [
+          4110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 6380,
+        "right": 4110,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          3890,
+          6380
+        ],
+        [
+          3890,
+          6600
+        ],
+        [
+          4110,
+          6600
+        ],
+        [
+          4110,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3890,
+        "bottom": 6380,
+        "right": 4110,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          3890,
+          6380
+        ],
+        [
+          3890,
+          6600
+        ],
+        [
+          4110,
+          6600
+        ],
+        [
+          4110,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 890,
+        "right": 4910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          4690,
+          890
+        ],
+        [
+          4690,
+          1110
+        ],
+        [
+          4910,
+          1110
+        ],
+        [
+          4910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 890,
+        "right": 4910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          4690,
+          890
+        ],
+        [
+          4690,
+          1110
+        ],
+        [
+          4910,
+          1110
+        ],
+        [
+          4910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 7680,
+        "right": 4910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          4690,
+          7680
+        ],
+        [
+          4690,
+          7900
+        ],
+        [
+          4910,
+          7900
+        ],
+        [
+          4910,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 4690,
+        "bottom": 7680,
+        "right": 4910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          4690,
+          7680
+        ],
+        [
+          4690,
+          7900
+        ],
+        [
+          4910,
+          7900
+        ],
+        [
+          4910,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 1610,
+        "right": 5710,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          5490,
+          1610
+        ],
+        [
+          5490,
+          1830
+        ],
+        [
+          5710,
+          1830
+        ],
+        [
+          5710,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 1610,
+        "right": 5710,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          5490,
+          1610
+        ],
+        [
+          5490,
+          1830
+        ],
+        [
+          5710,
+          1830
+        ],
+        [
+          5710,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 2480,
+        "right": 5710,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          5490,
+          2480
+        ],
+        [
+          5490,
+          2700
+        ],
+        [
+          5710,
+          2700
+        ],
+        [
+          5710,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 5490,
+        "bottom": 2480,
+        "right": 5710,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          5490,
+          2480
+        ],
+        [
+          5490,
+          2700
+        ],
+        [
+          5710,
+          2700
+        ],
+        [
+          5710,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 890,
+        "right": 6510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          6290,
+          890
+        ],
+        [
+          6290,
+          1110
+        ],
+        [
+          6510,
+          1110
+        ],
+        [
+          6510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 890,
+        "right": 6510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          6290,
+          890
+        ],
+        [
+          6290,
+          1110
+        ],
+        [
+          6510,
+          1110
+        ],
+        [
+          6510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 3780,
+        "right": 6510,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          6290,
+          3780
+        ],
+        [
+          6290,
+          4000
+        ],
+        [
+          6510,
+          4000
+        ],
+        [
+          6510,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 6290,
+        "bottom": 3780,
+        "right": 6510,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          6290,
+          3780
+        ],
+        [
+          6290,
+          4000
+        ],
+        [
+          6510,
+          4000
+        ],
+        [
+          6510,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 890,
+        "right": 7310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          7090,
+          890
+        ],
+        [
+          7090,
+          1110
+        ],
+        [
+          7310,
+          1110
+        ],
+        [
+          7310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 890,
+        "right": 7310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          7090,
+          890
+        ],
+        [
+          7090,
+          1110
+        ],
+        [
+          7310,
+          1110
+        ],
+        [
+          7310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 5080,
+        "right": 7310,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          7090,
+          5080
+        ],
+        [
+          7090,
+          5300
+        ],
+        [
+          7310,
+          5300
+        ],
+        [
+          7310,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7090,
+        "bottom": 5080,
+        "right": 7310,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          7090,
+          5080
+        ],
+        [
+          7090,
+          5300
+        ],
+        [
+          7310,
+          5300
+        ],
+        [
+          7310,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 1610,
+        "right": 8110,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          7890,
+          1610
+        ],
+        [
+          7890,
+          1830
+        ],
+        [
+          8110,
+          1830
+        ],
+        [
+          8110,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 1610,
+        "right": 8110,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          7890,
+          1610
+        ],
+        [
+          7890,
+          1830
+        ],
+        [
+          8110,
+          1830
+        ],
+        [
+          8110,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 3130,
+        "right": 8110,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          7890,
+          3130
+        ],
+        [
+          7890,
+          3350
+        ],
+        [
+          8110,
+          3350
+        ],
+        [
+          8110,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 7890,
+        "bottom": 3130,
+        "right": 8110,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          7890,
+          3130
+        ],
+        [
+          7890,
+          3350
+        ],
+        [
+          8110,
+          3350
+        ],
+        [
+          8110,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 890,
+        "right": 8910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          8690,
+          890
+        ],
+        [
+          8690,
+          1110
+        ],
+        [
+          8910,
+          1110
+        ],
+        [
+          8910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 890,
+        "right": 8910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          8690,
+          890
+        ],
+        [
+          8690,
+          1110
+        ],
+        [
+          8910,
+          1110
+        ],
+        [
+          8910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 7680,
+        "right": 8910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          8690,
+          7680
+        ],
+        [
+          8690,
+          7900
+        ],
+        [
+          8910,
+          7900
+        ],
+        [
+          8910,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 8690,
+        "bottom": 7680,
+        "right": 8910,
+        "top": 7900
+      },
+      "polygon": [
+        [
+          8690,
+          7680
+        ],
+        [
+          8690,
+          7900
+        ],
+        [
+          8910,
+          7900
+        ],
+        [
+          8910,
+          7680
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 890,
+        "right": 9710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          9490,
+          890
+        ],
+        [
+          9490,
+          1110
+        ],
+        [
+          9710,
+          1110
+        ],
+        [
+          9710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 890,
+        "right": 9710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          9490,
+          890
+        ],
+        [
+          9490,
+          1110
+        ],
+        [
+          9710,
+          1110
+        ],
+        [
+          9710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 8330,
+        "right": 9710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          9490,
+          8330
+        ],
+        [
+          9490,
+          8550
+        ],
+        [
+          9710,
+          8550
+        ],
+        [
+          9710,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 9490,
+        "bottom": 8330,
+        "right": 9710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          9490,
+          8330
+        ],
+        [
+          9490,
+          8550
+        ],
+        [
+          9710,
+          8550
+        ],
+        [
+          9710,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 1610,
+        "right": 10510,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          10290,
+          1610
+        ],
+        [
+          10290,
+          1830
+        ],
+        [
+          10510,
+          1830
+        ],
+        [
+          10510,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 1610,
+        "right": 10510,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          10290,
+          1610
+        ],
+        [
+          10290,
+          1830
+        ],
+        [
+          10510,
+          1830
+        ],
+        [
+          10510,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 5730,
+        "right": 10510,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          10290,
+          5730
+        ],
+        [
+          10290,
+          5950
+        ],
+        [
+          10510,
+          5950
+        ],
+        [
+          10510,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 10290,
+        "bottom": 5730,
+        "right": 10510,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          10290,
+          5730
+        ],
+        [
+          10290,
+          5950
+        ],
+        [
+          10510,
+          5950
+        ],
+        [
+          10510,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 890,
+        "right": 11310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11090,
+          890
+        ],
+        [
+          11090,
+          1110
+        ],
+        [
+          11310,
+          1110
+        ],
+        [
+          11310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 890,
+        "right": 11310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11090,
+          890
+        ],
+        [
+          11090,
+          1110
+        ],
+        [
+          11310,
+          1110
+        ],
+        [
+          11310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 3780,
+        "right": 11310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          11090,
+          3780
+        ],
+        [
+          11090,
+          4000
+        ],
+        [
+          11310,
+          4000
+        ],
+        [
+          11310,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11090,
+        "bottom": 3780,
+        "right": 11310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          11090,
+          3780
+        ],
+        [
+          11090,
+          4000
+        ],
+        [
+          11310,
+          4000
+        ],
+        [
+          11310,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 890,
+        "right": 12110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11890,
+          890
+        ],
+        [
+          11890,
+          1110
+        ],
+        [
+          12110,
+          1110
+        ],
+        [
+          12110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 890,
+        "right": 12110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          11890,
+          890
+        ],
+        [
+          11890,
+          1110
+        ],
+        [
+          12110,
+          1110
+        ],
+        [
+          12110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 5080,
+        "right": 12110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          11890,
+          5080
+        ],
+        [
+          11890,
+          5300
+        ],
+        [
+          12110,
+          5300
+        ],
+        [
+          12110,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 11890,
+        "bottom": 5080,
+        "right": 12110,
+        "top": 5300
+      },
+      "polygon": [
+        [
+          11890,
+          5080
+        ],
+        [
+          11890,
+          5300
+        ],
+        [
+          12110,
+          5300
+        ],
+        [
+          12110,
+          5080
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 1610,
+        "right": 12910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          12690,
+          1610
+        ],
+        [
+          12690,
+          1830
+        ],
+        [
+          12910,
+          1830
+        ],
+        [
+          12910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 1610,
+        "right": 12910,
+        "top": 1830
+      },
+      "polygon": [
+        [
+          12690,
+          1610
+        ],
+        [
+          12690,
+          1830
+        ],
+        [
+          12910,
+          1830
+        ],
+        [
+          12910,
+          1610
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 6380,
+        "right": 12910,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          12690,
+          6380
+        ],
+        [
+          12690,
+          6600
+        ],
+        [
+          12910,
+          6600
+        ],
+        [
+          12910,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 12690,
+        "bottom": 6380,
+        "right": 12910,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          12690,
+          6380
+        ],
+        [
+          12690,
+          6600
+        ],
+        [
+          12910,
+          6600
+        ],
+        [
+          12910,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 890,
+        "right": 13710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          13490,
+          890
+        ],
+        [
+          13490,
+          1110
+        ],
+        [
+          13710,
+          1110
+        ],
+        [
+          13710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 890,
+        "right": 13710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          13490,
+          890
+        ],
+        [
+          13490,
+          1110
+        ],
+        [
+          13710,
+          1110
+        ],
+        [
+          13710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 8330,
+        "right": 13710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          13490,
+          8330
+        ],
+        [
+          13490,
+          8550
+        ],
+        [
+          13710,
+          8550
+        ],
+        [
+          13710,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 13490,
+        "bottom": 8330,
+        "right": 13710,
+        "top": 8550
+      },
+      "polygon": [
+        [
+          13490,
+          8330
+        ],
+        [
+          13490,
+          8550
+        ],
+        [
+          13710,
+          8550
+        ],
+        [
+          13710,
+          8330
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 890,
+        "right": 16710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          16490,
+          890
+        ],
+        [
+          16490,
+          1110
+        ],
+        [
+          16710,
+          1110
+        ],
+        [
+          16710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 890,
+        "right": 16710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          16490,
+          890
+        ],
+        [
+          16490,
+          1110
+        ],
+        [
+          16710,
+          1110
+        ],
+        [
+          16710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 4430,
+        "right": 16710,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          16490,
+          4430
+        ],
+        [
+          16490,
+          4650
+        ],
+        [
+          16710,
+          4650
+        ],
+        [
+          16710,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 16490,
+        "bottom": 4430,
+        "right": 16710,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          16490,
+          4430
+        ],
+        [
+          16490,
+          4650
+        ],
+        [
+          16710,
+          4650
+        ],
+        [
+          16710,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 1830,
+        "right": 17510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          17290,
+          1830
+        ],
+        [
+          17290,
+          2050
+        ],
+        [
+          17510,
+          2050
+        ],
+        [
+          17510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 1830,
+        "right": 17510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          17290,
+          1830
+        ],
+        [
+          17290,
+          2050
+        ],
+        [
+          17510,
+          2050
+        ],
+        [
+          17510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 2480,
+        "right": 17510,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          17290,
+          2480
+        ],
+        [
+          17290,
+          2700
+        ],
+        [
+          17510,
+          2700
+        ],
+        [
+          17510,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17290,
+        "bottom": 2480,
+        "right": 17510,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          17290,
+          2480
+        ],
+        [
+          17290,
+          2700
+        ],
+        [
+          17510,
+          2700
+        ],
+        [
+          17510,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 890,
+        "right": 18310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18090,
+          890
+        ],
+        [
+          18090,
+          1110
+        ],
+        [
+          18310,
+          1110
+        ],
+        [
+          18310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 890,
+        "right": 18310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18090,
+          890
+        ],
+        [
+          18090,
+          1110
+        ],
+        [
+          18310,
+          1110
+        ],
+        [
+          18310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 5730,
+        "right": 18310,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          18090,
+          5730
+        ],
+        [
+          18090,
+          5950
+        ],
+        [
+          18310,
+          5950
+        ],
+        [
+          18310,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18090,
+        "bottom": 5730,
+        "right": 18310,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          18090,
+          5730
+        ],
+        [
+          18090,
+          5950
+        ],
+        [
+          18310,
+          5950
+        ],
+        [
+          18310,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 890,
+        "right": 19110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18890,
+          890
+        ],
+        [
+          18890,
+          1110
+        ],
+        [
+          19110,
+          1110
+        ],
+        [
+          19110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 890,
+        "right": 19110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          18890,
+          890
+        ],
+        [
+          18890,
+          1110
+        ],
+        [
+          19110,
+          1110
+        ],
+        [
+          19110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 4430,
+        "right": 19110,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          18890,
+          4430
+        ],
+        [
+          18890,
+          4650
+        ],
+        [
+          19110,
+          4650
+        ],
+        [
+          19110,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 18890,
+        "bottom": 4430,
+        "right": 19110,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          18890,
+          4430
+        ],
+        [
+          18890,
+          4650
+        ],
+        [
+          19110,
+          4650
+        ],
+        [
+          19110,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 1830,
+        "right": 19910,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          19690,
+          1830
+        ],
+        [
+          19690,
+          2050
+        ],
+        [
+          19910,
+          2050
+        ],
+        [
+          19910,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 1830,
+        "right": 19910,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          19690,
+          1830
+        ],
+        [
+          19690,
+          2050
+        ],
+        [
+          19910,
+          2050
+        ],
+        [
+          19910,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 3130,
+        "right": 19910,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          19690,
+          3130
+        ],
+        [
+          19690,
+          3350
+        ],
+        [
+          19910,
+          3350
+        ],
+        [
+          19910,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19690,
+        "bottom": 3130,
+        "right": 19910,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          19690,
+          3130
+        ],
+        [
+          19690,
+          3350
+        ],
+        [
+          19910,
+          3350
+        ],
+        [
+          19910,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 890,
+        "right": 20710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          20490,
+          890
+        ],
+        [
+          20490,
+          1110
+        ],
+        [
+          20710,
+          1110
+        ],
+        [
+          20710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 890,
+        "right": 20710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          20490,
+          890
+        ],
+        [
+          20490,
+          1110
+        ],
+        [
+          20710,
+          1110
+        ],
+        [
+          20710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 6380,
+        "right": 20710,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          20490,
+          6380
+        ],
+        [
+          20490,
+          6600
+        ],
+        [
+          20710,
+          6600
+        ],
+        [
+          20710,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20490,
+        "bottom": 6380,
+        "right": 20710,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          20490,
+          6380
+        ],
+        [
+          20490,
+          6600
+        ],
+        [
+          20710,
+          6600
+        ],
+        [
+          20710,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 890,
+        "right": 21510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          21290,
+          890
+        ],
+        [
+          21290,
+          1110
+        ],
+        [
+          21510,
+          1110
+        ],
+        [
+          21510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 890,
+        "right": 21510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          21290,
+          890
+        ],
+        [
+          21290,
+          1110
+        ],
+        [
+          21510,
+          1110
+        ],
+        [
+          21510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 4430,
+        "right": 21510,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          21290,
+          4430
+        ],
+        [
+          21290,
+          4650
+        ],
+        [
+          21510,
+          4650
+        ],
+        [
+          21510,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 21290,
+        "bottom": 4430,
+        "right": 21510,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          21290,
+          4430
+        ],
+        [
+          21290,
+          4650
+        ],
+        [
+          21510,
+          4650
+        ],
+        [
+          21510,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 1830,
+        "right": 22310,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          22090,
+          1830
+        ],
+        [
+          22090,
+          2050
+        ],
+        [
+          22310,
+          2050
+        ],
+        [
+          22310,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 1830,
+        "right": 22310,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          22090,
+          1830
+        ],
+        [
+          22090,
+          2050
+        ],
+        [
+          22310,
+          2050
+        ],
+        [
+          22310,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 2480,
+        "right": 22310,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          22090,
+          2480
+        ],
+        [
+          22090,
+          2700
+        ],
+        [
+          22310,
+          2700
+        ],
+        [
+          22310,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22090,
+        "bottom": 2480,
+        "right": 22310,
+        "top": 2700
+      },
+      "polygon": [
+        [
+          22090,
+          2480
+        ],
+        [
+          22090,
+          2700
+        ],
+        [
+          22310,
+          2700
+        ],
+        [
+          22310,
+          2480
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 890,
+        "right": 23110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          22890,
+          890
+        ],
+        [
+          22890,
+          1110
+        ],
+        [
+          23110,
+          1110
+        ],
+        [
+          23110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 890,
+        "right": 23110,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          22890,
+          890
+        ],
+        [
+          22890,
+          1110
+        ],
+        [
+          23110,
+          1110
+        ],
+        [
+          23110,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 7030,
+        "right": 23110,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          22890,
+          7030
+        ],
+        [
+          22890,
+          7250
+        ],
+        [
+          23110,
+          7250
+        ],
+        [
+          23110,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 22890,
+        "bottom": 7030,
+        "right": 23110,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          22890,
+          7030
+        ],
+        [
+          22890,
+          7250
+        ],
+        [
+          23110,
+          7250
+        ],
+        [
+          23110,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 890,
+        "right": 23910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          23690,
+          890
+        ],
+        [
+          23690,
+          1110
+        ],
+        [
+          23910,
+          1110
+        ],
+        [
+          23910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 890,
+        "right": 23910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          23690,
+          890
+        ],
+        [
+          23690,
+          1110
+        ],
+        [
+          23910,
+          1110
+        ],
+        [
+          23910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 4430,
+        "right": 23910,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          23690,
+          4430
+        ],
+        [
+          23690,
+          4650
+        ],
+        [
+          23910,
+          4650
+        ],
+        [
+          23910,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 23690,
+        "bottom": 4430,
+        "right": 23910,
+        "top": 4650
+      },
+      "polygon": [
+        [
+          23690,
+          4430
+        ],
+        [
+          23690,
+          4650
+        ],
+        [
+          23910,
+          4650
+        ],
+        [
+          23910,
+          4430
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 1830,
+        "right": 24710,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          24490,
+          1830
+        ],
+        [
+          24490,
+          2050
+        ],
+        [
+          24710,
+          2050
+        ],
+        [
+          24710,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 1830,
+        "right": 24710,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          24490,
+          1830
+        ],
+        [
+          24490,
+          2050
+        ],
+        [
+          24710,
+          2050
+        ],
+        [
+          24710,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 3130,
+        "right": 24710,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          24490,
+          3130
+        ],
+        [
+          24490,
+          3350
+        ],
+        [
+          24710,
+          3350
+        ],
+        [
+          24710,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 24490,
+        "bottom": 3130,
+        "right": 24710,
+        "top": 3350
+      },
+      "polygon": [
+        [
+          24490,
+          3130
+        ],
+        [
+          24490,
+          3350
+        ],
+        [
+          24710,
+          3350
+        ],
+        [
+          24710,
+          3130
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 890,
+        "right": 25510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          25290,
+          890
+        ],
+        [
+          25290,
+          1110
+        ],
+        [
+          25510,
+          1110
+        ],
+        [
+          25510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 890,
+        "right": 25510,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          25290,
+          890
+        ],
+        [
+          25290,
+          1110
+        ],
+        [
+          25510,
+          1110
+        ],
+        [
+          25510,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 7030,
+        "right": 25510,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          25290,
+          7030
+        ],
+        [
+          25290,
+          7250
+        ],
+        [
+          25510,
+          7250
+        ],
+        [
+          25510,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 25290,
+        "bottom": 7030,
+        "right": 25510,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          25290,
+          7030
+        ],
+        [
+          25290,
+          7250
+        ],
+        [
+          25510,
+          7250
+        ],
+        [
+          25510,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 890,
+        "right": 26310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          26090,
+          890
+        ],
+        [
+          26090,
+          1110
+        ],
+        [
+          26310,
+          1110
+        ],
+        [
+          26310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 890,
+        "right": 26310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          26090,
+          890
+        ],
+        [
+          26090,
+          1110
+        ],
+        [
+          26310,
+          1110
+        ],
+        [
+          26310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 7030,
+        "right": 26310,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          26090,
+          7030
+        ],
+        [
+          26090,
+          7250
+        ],
+        [
+          26310,
+          7250
+        ],
+        [
+          26310,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26090,
+        "bottom": 7030,
+        "right": 26310,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          26090,
+          7030
+        ],
+        [
+          26090,
+          7250
+        ],
+        [
+          26310,
+          7250
+        ],
+        [
+          26310,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 1830,
+        "right": 27110,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          26890,
+          1830
+        ],
+        [
+          26890,
+          2050
+        ],
+        [
+          27110,
+          2050
+        ],
+        [
+          27110,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 1830,
+        "right": 27110,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          26890,
+          1830
+        ],
+        [
+          26890,
+          2050
+        ],
+        [
+          27110,
+          2050
+        ],
+        [
+          27110,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 5730,
+        "right": 27110,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          26890,
+          5730
+        ],
+        [
+          26890,
+          5950
+        ],
+        [
+          27110,
+          5950
+        ],
+        [
+          27110,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 26890,
+        "bottom": 5730,
+        "right": 27110,
+        "top": 5950
+      },
+      "polygon": [
+        [
+          26890,
+          5730
+        ],
+        [
+          26890,
+          5950
+        ],
+        [
+          27110,
+          5950
+        ],
+        [
+          27110,
+          5730
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 890,
+        "right": 27910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          27690,
+          890
+        ],
+        [
+          27690,
+          1110
+        ],
+        [
+          27910,
+          1110
+        ],
+        [
+          27910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 890,
+        "right": 27910,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          27690,
+          890
+        ],
+        [
+          27690,
+          1110
+        ],
+        [
+          27910,
+          1110
+        ],
+        [
+          27910,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 3780,
+        "right": 27910,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          27690,
+          3780
+        ],
+        [
+          27690,
+          4000
+        ],
+        [
+          27910,
+          4000
+        ],
+        [
+          27910,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 27690,
+        "bottom": 3780,
+        "right": 27910,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          27690,
+          3780
+        ],
+        [
+          27690,
+          4000
+        ],
+        [
+          27910,
+          4000
+        ],
+        [
+          27910,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 890,
+        "right": 28710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          28490,
+          890
+        ],
+        [
+          28490,
+          1110
+        ],
+        [
+          28710,
+          1110
+        ],
+        [
+          28710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 890,
+        "right": 28710,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          28490,
+          890
+        ],
+        [
+          28490,
+          1110
+        ],
+        [
+          28710,
+          1110
+        ],
+        [
+          28710,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 7030,
+        "right": 28710,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          28490,
+          7030
+        ],
+        [
+          28490,
+          7250
+        ],
+        [
+          28710,
+          7250
+        ],
+        [
+          28710,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 28490,
+        "bottom": 7030,
+        "right": 28710,
+        "top": 7250
+      },
+      "polygon": [
+        [
+          28490,
+          7030
+        ],
+        [
+          28490,
+          7250
+        ],
+        [
+          28710,
+          7250
+        ],
+        [
+          28710,
+          7030
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 1830,
+        "right": 29510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          29290,
+          1830
+        ],
+        [
+          29290,
+          2050
+        ],
+        [
+          29510,
+          2050
+        ],
+        [
+          29510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 1830,
+        "right": 29510,
+        "top": 2050
+      },
+      "polygon": [
+        [
+          29290,
+          1830
+        ],
+        [
+          29290,
+          2050
+        ],
+        [
+          29510,
+          2050
+        ],
+        [
+          29510,
+          1830
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 6380,
+        "right": 29510,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          29290,
+          6380
+        ],
+        [
+          29290,
+          6600
+        ],
+        [
+          29510,
+          6600
+        ],
+        [
+          29510,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 29290,
+        "bottom": 6380,
+        "right": 29510,
+        "top": 6600
+      },
+      "polygon": [
+        [
+          29290,
+          6380
+        ],
+        [
+          29290,
+          6600
+        ],
+        [
+          29510,
+          6600
+        ],
+        [
+          29510,
+          6380
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 890,
+        "right": 30310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          30090,
+          890
+        ],
+        [
+          30090,
+          1110
+        ],
+        [
+          30310,
+          1110
+        ],
+        [
+          30310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 890,
+        "right": 30310,
+        "top": 1110
+      },
+      "polygon": [
+        [
+          30090,
+          890
+        ],
+        [
+          30090,
+          1110
+        ],
+        [
+          30310,
+          1110
+        ],
+        [
+          30310,
+          890
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 3780,
+        "right": 30310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          30090,
+          3780
+        ],
+        [
+          30090,
+          4000
+        ],
+        [
+          30310,
+          4000
+        ],
+        [
+          30310,
+          3780
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "xor2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 30090,
+        "bottom": 3780,
+        "right": 30310,
+        "top": 4000
+      },
+      "polygon": [
+        [
+          30090,
+          3780
+        ],
+        [
+          30090,
+          4000
+        ],
+        [
+          30310,
+          4000
+        ],
+        [
+          30310,
+          3780
+        ]
+      ]
+    }
+  ],
   "coverage": {
     "deck_layers": [
       "21/0",
@@ -14,7 +10184,11 @@
       "30/0",
       "33/0",
       "34/0",
+      "35/0",
       "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
       "41/0",
       "42/0",
       "46/0",
@@ -29,23 +10203,45 @@
       "30/0",
       "33/0",
       "34/0",
+      "35/0",
       "36/0",
+      "38/0",
       "42/0"
     ],
     "layers_in_stream_without_rules": [
-      "35/0",
-      "36/10",
-      "38/0"
+      "36/10"
     ],
     "rules_skipped": [
       "bjt.separation.comp.1",
+      "metal3.enclosing.via3.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal5.enclosing.via4.1",
       "metal5.space.1",
       "metal5.width.1",
       "metaltop.space.1",
       "metaltop.width.1",
       "mim.enclosing.fusetop.1",
       "mim.enclosing.via4.1",
-      "mim.space.1"
+      "mim.space.1",
+      "pad.enclosing.metal5.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "voltage_domain_warnings": [],
+    "deck_scope": [
+      "10.4.2 MIM Option B",
+      "10.7 DRC_BJT Mark Layer",
+      "7.12 Contact",
+      "7.13 Metaln",
+      "7.14 Vian",
+      "7.15 MetalTop",
+      "7.4 Nwell",
+      "7.5 Comp",
+      "7.7 Poly2",
+      "9.1 Bond Pad"
     ]
   },
   "provenance": {
@@ -54,7 +10250,7 @@
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
       "content_hash": "sha256:d23add5f70080e329c855785079388b0e61404dcc19ae43b7c71a55275e15cbf"

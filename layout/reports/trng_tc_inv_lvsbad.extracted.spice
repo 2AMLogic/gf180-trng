@@ -8,7 +8,8 @@
 * pin vsubs
 .SUBCKT trng_tc_inv A VDD VSS ZN vsubs
 * device instance $1 r0 *1 0.8,0.4 nfet
-X$1 ZN A VSS vsubs nfet_03v3 L=0.28U W=0.8U
+X$1 ZN A VSS vsubs nfet_03v3 L=0.28U W=0.8U AS=0.528P AD=0.528P PS=2.92U
++ PD=2.92U
 * device instance $2 r0 *1 0.8,2.4 pfet
-X$2 \$5 A VDD \$6 pfet_03v3 L=0.28U W=0.8U
+X$2 \$5 A VDD \$6 pfet_03v3 L=0.28U W=0.8U AS=0.528P AD=0.528P PS=2.92U PD=2.92U
 .ENDS trng_tc_inv

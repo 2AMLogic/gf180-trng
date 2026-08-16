@@ -4,6 +4,7 @@
   "layout": "../blocks/combiner_sampler/combiner_sampler.gds",
   "reference": "../blocks/combiner_sampler/combiner_sampler.spice",
   "top": "combiner_sampler",
+  "parameter_tolerance": null,
   "status": "match",
   "mismatch_count": 3,
   "category_counts": {
@@ -32,7 +33,9 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
-    "resistor"
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
   ],
   "environment": {
     "engine": "klayout",
@@ -47,7 +50,7 @@
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": null
   },
@@ -55,7 +58,7 @@
     {
       "category": "device.body_unverified",
       "severity": "warning",
-      "description": "52 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "description": "52 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
       "side": "layout",
       "net": null,
       "device": {
@@ -298,12 +301,12 @@
       "pin": true
     },
     {
-      "layout": "a,d,y",
+      "layout": "a|d|y",
       "reference": "RO1",
       "pin": true
     },
     {
-      "layout": "b,d,y",
+      "layout": "b|d|y",
       "reference": "RO2",
       "pin": true
     },
@@ -363,7 +366,7 @@
       "pin": false
     },
     {
-      "layout": "d,vdd",
+      "layout": "d|vdd",
       "reference": "VDD",
       "pin": true
     },
@@ -378,7 +381,7 @@
       "pin": true
     },
     {
-      "layout": "d,y",
+      "layout": "d|y",
       "reference": "XO",
       "pin": true
     }

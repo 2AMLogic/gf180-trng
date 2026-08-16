@@ -3,10 +3,178 @@
   "file": "layout/cells/ro_nand2/ro_nand2.gds",
   "deck": "gf180mcu",
   "dbu_um": 0.001,
-  "status": "clean",
-  "violation_count": 0,
-  "rule_counts": {},
-  "violations": [],
+  "status": "violations",
+  "violation_count": 5,
+  "rule_counts": {
+    "metal1.enclosing.contact.1": 5
+  },
+  "violations": [
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "ro_nand2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -2605,
+        "bottom": 1750,
+        "right": -2375,
+        "top": 1750
+      },
+      "polygon": [
+        [
+          -2605,
+          1750
+        ],
+        [
+          -2375,
+          1750
+        ],
+        [
+          -2600,
+          1750
+        ],
+        [
+          -2380,
+          1750
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "ro_nand2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": -1245,
+        "bottom": 1620,
+        "right": -1015,
+        "top": 1620
+      },
+      "polygon": [
+        [
+          -1245,
+          1620
+        ],
+        [
+          -1020,
+          1620
+        ],
+        [
+          -1240,
+          1620
+        ],
+        [
+          -1015,
+          1620
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "ro_nand2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 175,
+        "bottom": 1750,
+        "right": 405,
+        "top": 1750
+      },
+      "polygon": [
+        [
+          175,
+          1750
+        ],
+        [
+          405,
+          1750
+        ],
+        [
+          180,
+          1750
+        ],
+        [
+          400,
+          1750
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "ro_nand2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 2335,
+        "bottom": 1750,
+        "right": 2565,
+        "top": 1750
+      },
+      "polygon": [
+        [
+          2335,
+          1750
+        ],
+        [
+          2565,
+          1750
+        ],
+        [
+          2340,
+          1750
+        ],
+        [
+          2560,
+          1750
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "ro_nand2",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 3745,
+        "bottom": 700,
+        "right": 3975,
+        "top": 700
+      },
+      "polygon": [
+        [
+          3745,
+          700
+        ],
+        [
+          3975,
+          700
+        ],
+        [
+          3750,
+          700
+        ],
+        [
+          3970,
+          700
+        ]
+      ]
+    }
+  ],
   "coverage": {
     "deck_layers": [
       "21/0",
@@ -14,7 +182,11 @@
       "30/0",
       "33/0",
       "34/0",
+      "35/0",
       "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
       "41/0",
       "42/0",
       "46/0",
@@ -35,17 +207,47 @@
     ],
     "rules_skipped": [
       "bjt.separation.comp.1",
+      "metal1.enclosing.via1.1",
+      "metal2.enclosing.via1.1",
+      "metal2.enclosing.via2.1",
       "metal2.space.1",
       "metal2.width.1",
+      "metal3.enclosing.via2.1",
+      "metal3.enclosing.via3.1",
       "metal3.space.1",
       "metal3.width.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal5.enclosing.via4.1",
       "metal5.space.1",
       "metal5.width.1",
       "metaltop.space.1",
       "metaltop.width.1",
       "mim.enclosing.fusetop.1",
       "mim.enclosing.via4.1",
-      "mim.space.1"
+      "mim.space.1",
+      "pad.enclosing.metal5.1",
+      "via1.space.1",
+      "via1.width.1",
+      "via2.space.1",
+      "via2.width.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "voltage_domain_warnings": [],
+    "deck_scope": [
+      "10.4.2 MIM Option B",
+      "10.7 DRC_BJT Mark Layer",
+      "7.12 Contact",
+      "7.13 Metaln",
+      "7.14 Vian",
+      "7.15 MetalTop",
+      "7.4 Nwell",
+      "7.5 Comp",
+      "7.7 Poly2",
+      "9.1 Bond Pad"
     ]
   },
   "provenance": {
@@ -54,7 +256,7 @@
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
       "content_hash": "sha256:a2111232160b15132218785710ac235f209d14633182d68da549c536b4695490"
