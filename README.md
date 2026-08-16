@@ -18,11 +18,20 @@ a deterministic SPICE netlist export, plus four digital directories —
 integration — each a behavioural model with synthesisable RTL checked against
 it. `layout/` is **no longer empty**, and it now contains a first piece of the
 design: a working DRC/LVS flow with its committed reports, the entropy
-source's floorplan abstract, and one hand-drawn, DRC-clean, LVS-matching
-design cell — [`ro_stage`](layout/cells/ro_stage/), the entropy source's
-repeated ring-stage. It is one cell of many the design needs, not the block:
-see [`layout/cells/README.md`](layout/cells/README.md) for what is drawn and
-what is explicitly still deferred. The specification table below was
+source's floorplan abstract, and seven hand-drawn, DRC-clean, LVS-matching
+design cells — [`ro_stage`, `ro_stage_ring2`, `ro_nand2`, `ro_nand2_ring2`,
+`ro_buf`, `xor2` and `sampler_dff`](layout/cells/README.md) — assembled into
+two rings, [`ro_ring11` and `ro_ring11_ring2`](layout/rings/README.md), and
+one non-ring block, [`combiner_sampler`](layout/blocks/README.md), all
+DRC-clean and LVS-matching per [`layout/reports/`](layout/reports/), with
+`ring1`, `ring2` and `combiner_sampler` placed inside the entropy source's
+own guarded regions in the floorplan. It is layout for the entropy source
+and sampler, not the whole block: the digital section (conditioner, health
+tests, interface) has no layout at all, and `layout/floorplan/` is still a
+floorplan, not a full layout — see
+[`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
+inventory and what is explicitly still deferred. The specification table
+below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
 binding on the design — but several of its rows are explicitly *unmeasured
 placeholders*, and the table labels which.
