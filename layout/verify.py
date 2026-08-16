@@ -62,7 +62,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTCELL_DIR))
 
 import build as testcells  # noqa: E402  (layout/testcells/build.py)
-from layout._klt import FlowError, _run_klt, resolve_pdk  # noqa: E402
+from layout._klt import FlowError, _run_klt, klt_version, resolve_pdk  # noqa: E402
 
 
 def _load_build_module(name: str, path: Path):
@@ -504,19 +504,6 @@ EXPECTATIONS: dict[str, dict] = {
 # --------------------------------------------------------------------------- #
 # Environment
 # --------------------------------------------------------------------------- #
-
-
-def klt_version() -> str | None:
-    """Return the installed `klt --version` string, or None if absent."""
-    if shutil.which("klt") is None:
-        return None
-    try:
-        done = subprocess.run(
-            ["klt", "--version"], capture_output=True, text=True, timeout=60
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return (done.stdout or done.stderr).strip() or None
 
 
 #: Asks the `klt` venv's own interpreter what it installed. `importlib.metadata`

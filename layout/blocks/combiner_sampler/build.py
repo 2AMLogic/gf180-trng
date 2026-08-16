@@ -128,7 +128,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -143,7 +142,7 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import _run_klt, resolve_pdk  # noqa: E402
+from layout._klt import _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers. Metal3/Via2 for the block-level routing
@@ -271,18 +270,6 @@ EXIT_OK = 0
 EXIT_FAIL = 1
 
 
-def klt_version() -> str | None:
-    import shutil
-
-    if shutil.which("klt") is None:
-        return None
-    try:
-        done = subprocess.run(["klt", "--version"], capture_output=True, text=True, timeout=60)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return (done.stdout or done.stderr).strip() or None
-
-
 # --------------------------------------------------------------------------- #
 # Row placement
 # --------------------------------------------------------------------------- #
@@ -377,29 +364,6 @@ def _wiring_shapes(offsets: dict[str, float]) -> list[dict]:
         shapes.append(_rect(METAL2, x0, track_y - TRACK_H / 2, x1, track_y + TRACK_H / 2))
 
     return shapes
-
-
-# --------------------------------------------------------------------------- #
-# GDSII timestamp normalisation -- same reason and technique
-# layout/rings/ro_ring11/build.py's own normalise_gds documents
-# (klayout-tools#320).
-# --------------------------------------------------------------------------- #
-_BGNLIB = 0x0102
-_BGNSTR = 0x0502
-
-
-def normalise_gds(raw: bytes) -> bytes:
-    out = bytearray(raw)
-    offset = 0
-    while offset + 4 <= len(out):
-        length, record = struct.unpack_from(">HH", out, offset)
-        if length < 4:
-            break
-        if record in (_BGNLIB, _BGNSTR):
-            for index in range(offset + 4, offset + length):
-                out[index] = 0
-        offset += length
-    return bytes(out)
 
 
 # --------------------------------------------------------------------------- #
