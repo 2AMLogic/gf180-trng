@@ -467,22 +467,23 @@ EXPECTATIONS: dict[str, dict] = {
     "combiner_sampler": {
         # An assembled block, not a hand-drawn single cell -- see
         # layout/blocks/README.md for scope and layout/blocks/
-        # combiner_sampler/build.py for how one already-verified `xor2`
-        # instance plus four already-verified `sampler_dff` instances are
-        # placed into a row and wired (issue #134). `dir`/`top` override
-        # the defaults, same as every other real-design entry above.
+        # combiner_sampler/build.py for how two already-verified `ro_buf`
+        # instances, one already-verified `xor2` instance and four
+        # already-verified `sampler_dff` instances are placed into a row
+        # and wired (issues #134 and #151). `dir`/`top` override the
+        # defaults, same as every other real-design entry above.
         #
-        # Not yet placed inside layout/floorplan/'s own `combiner_sampler`
-        # guarded region -- see that block's own build.py module docstring
-        # for the discovered size mismatch (mirroring issue #119's own
-        # history for ring1/ring2) and the follow-up issue it is filed
-        # against.
+        # Placed inside layout/floorplan/'s own `combiner_sampler` guarded
+        # region -- that region is sized from this block's own real bbox
+        # (issue #135) and fit-checked against it (`check_ring_fit`,
+        # layout/floorplan/floorplan.py).
         "why": (
-            "design/sampler_core.spice's combiner_sampler (xa1/xsb/xsv/"
-            "xsr1/xsr2): the assembled combiner+sampler block must be "
+            "design/ro_array_core.spice's xb1/xb2 (ro_buf) plus design/"
+            "sampler_core.spice's combiner_sampler (xa1/xsb/xsv/xsr1/"
+            "xsr2): the assembled buffer+combiner+sampler block must be "
             "DRC-clean and LVS-match a reference netlist mechanically "
-            "expanded from xor2.spice/sampler_dff.spice per the block's "
-            "own declared connectivity"
+            "expanded from ro_buf.spice/xor2.spice/sampler_dff.spice per "
+            "the block's own declared connectivity"
         ),
         "dir": "layout/blocks/combiner_sampler",
         "top": "combiner_sampler",
@@ -492,7 +493,7 @@ EXPECTATIONS: dict[str, dict] = {
             "status": "match",
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
-            # one hundred devices here are MOS, so nothing else is
+            # one hundred and four devices here are MOS, so nothing else is
             # declared.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "error_count": 0,

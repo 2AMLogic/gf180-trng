@@ -3,14 +3,17 @@
 * Hand-derived, NOT a copy of `klt extract` output -- see
 * layout/testcells/trng_tc_inv.spice for why that distinction matters (an
 * LVS run whose reference is the extractor's own output proves nothing).
-* Unlike layout/cells/*/xor2.spice / sampler_dff.spice (each hand-written
-* directly from its own xschem schematic), this one is *mechanically
-* expanded* by a small script (kept in this file's own commit message, not
-* committed as a tool -- the same convention layout/rings/ro_ring11/
-* ro_ring11.spice's own header describes) from those two already-independent
-* references, following exactly the connectivity design/sampler_core.spice's
-* own instances declare:
+* Unlike layout/cells/*/xor2.spice / sampler_dff.spice / ro_buf.spice (each
+* hand-written directly from its own xschem schematic), this one is
+* *mechanically expanded* by a small script (kept in this file's own commit
+* message, not committed as a tool -- the same convention layout/rings/
+* ro_ring11/ro_ring11.spice's own header describes) from those three
+* already-independent references, following exactly the connectivity
+* design/ro_array_core.spice's own `xb1`/`xb2` instances (lines 17-18) and
+* design/sampler_core.spice's own instances declare:
 *
+*   xb1  rn1              ro1                     vdd vss   ro_buf
+*   xb2  rn2              ro2                     vdd vss   ro_buf
 *   xa1  ro1 ro2 xo         vdd vss   xor2
 *   xsb  xo  clk rst_n raw_bit     vdd vss   sampler_dff
 *   xsv  vdd clk rst_n raw_valid   vdd vss   sampler_dff  (d tied to vdd)
@@ -18,32 +21,42 @@
 *   xsr2 ro2 clk rst_n ring_bit2   vdd vss   sampler_dff
 *
 * This still satisfies "independent of the layout": neither this file nor
-* its two source references were ever derived from this block's own drawn
-* geometry or from `klt extract`'s output on it -- xor2.spice and
-* sampler_dff.spice are each independently hand-transcribed from their own
-* schematic, and the instance table above is the *design*'s own declared
-* netlist (design/sampler_core.spice), not this layout's.
+* its three source references were ever derived from this block's own drawn
+* geometry or from `klt extract`'s output on it -- xor2.spice, sampler_dff.
+* spice and ro_buf.spice are each independently hand-transcribed from their
+* own schematic, and the instance table above is the *design*'s own
+* declared netlist (design/ro_array_core.spice's `xb1`/`xb2`, design/
+* sampler_core.spice's `xa1`/`xsb`/`xsv`/`xsr1`/`xsr2`), not this layout's.
 *
 * Each instance keeps its own internal nodes (`an`/`bn`/`s1`/`s2`/`mid` for
-* xor2; `clkb`/`m`/`mc`/`mb`/`mmid`/`s`/`qb`/`s2mid` for sampler_dff --
-* neither xor2.spice nor sampler_dff.spice exposes these as a pin) suffixed
-* by instance name (`an_XA1`, `m_XSB`, ...) so five separately-drawn cells'
-* internal nodes are never accidentally tied together by a shared name;
-* same for each instance's own floating Nwell net (`NWELL_FLOAT_XA1`, ...
-* -- see xor2.spice's/sampler_dff.spice's own headers for why that net is
-* deliberately unnamed-and-per-instance, not `vdd`).
+* xor2; `clkb`/`m`/`mc`/`mb`/`mmid`/`s`/`qb`/`s2mid` for sampler_dff; none
+* for ro_buf, a two-device inverter with no internal node -- neither
+* xor2.spice nor sampler_dff.spice exposes its own internal nodes as a pin)
+* suffixed by instance name (`an_XA1`, `m_XSB`, ...) so seven separately-
+* drawn cells' internal nodes are never accidentally tied together by a
+* shared name; same for each instance's own floating Nwell net
+* (`NWELL_FLOAT_XA1`, ... -- see xor2.spice's/sampler_dff.spice's/
+* ro_buf.spice's own headers for why that net is deliberately
+* unnamed-and-per-instance, not `vdd`).
 *
-* `ro1`/`ro2` (design/ro_array_core.spice's `xb1`/`xb2` buffered outputs)
-* and `raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2` (this block's own
-* outputs) are left as this SUBCKT's own top-level pins, not internal
-* nodes -- design/sampler_core.spice declares them at its own boundary, and
-* this reference does the same, the same convention ro_ring11.spice's own
-* `en`/`ro` pins follow.
+* `ro1`/`ro2` are `xb1`/`xb2`'s own buffered outputs, now internal to this
+* block (each has exactly two other terminals inside this SUBCKT: `xa1`'s
+* own `a`/`b` input and `xsr1`'s/`xsr2`'s own `d` input) -- unlike the
+* combiner-only version of this reference (issue #134), which took `ro1`/
+* `ro2` as its own top-level pins because the buffers were not assembled
+* yet. `rn1`/`rn2` (design/ro_array_core.spice's own ring1/ring2 node
+* names, each ring's own un-buffered output) take their place as this
+* SUBCKT's own top-level pins instead -- issue #151's own scope, adding the
+* two DR-0018 buffers this block was missing. `raw_bit`/`raw_valid`/
+* `ring_bit1`/`ring_bit2` (this block's own outputs) stay top-level pins,
+* unchanged -- design/sampler_core.spice declares them at its own boundary,
+* and this reference does the same, the same convention ro_ring11.spice's
+* own `en`/`ro` pins follow.
 *
-* Device sizes must agree with layout/cells/xor2/build.py's and
-* layout/cells/sampler_dff/build.py's own W/L constants -- `klt lvs`
-* compares W and L as device properties, the same rule every other
-* reference in this repository follows.
+* Device sizes must agree with layout/cells/xor2/build.py's,
+* layout/cells/sampler_dff/build.py's and layout/cells/ro_buf/build.py's
+* own W/L constants -- `klt lvs` compares W and L as device properties, the
+* same rule every other reference in this repository follows.
 *
 * Bulk terminals follow the gf180mcu curated extraction deck's documented
 * approximation (see layout/README.md, "What the curated decks do and do
@@ -51,7 +64,11 @@
 * the full account): NMOS bulk is the deck's `vsubs` substrate global;
 * PMOS bulk is each instance's own anonymous floating-well net.
 
-.SUBCKT combiner_sampler ro1 ro2 clk rst_n vdd vss raw_bit raw_valid ring_bit1 ring_bit2 vsubs
+.SUBCKT combiner_sampler rn1 rn2 clk rst_n vdd vss raw_bit raw_valid ring_bit1 ring_bit2 vsubs
+MP_XB1 ro1 rn1 vdd NWELL_FLOAT_XB1 pfet L=0.28U W=0.44U
+MN_XB1 ro1 rn1 vss vsubs nfet L=0.28U W=0.22U
+MP_XB2 ro2 rn2 vdd NWELL_FLOAT_XB2 pfet L=0.28U W=0.44U
+MN_XB2 ro2 rn2 vss vsubs nfet L=0.28U W=0.22U
 MNIA_XA1 an_XA1 ro1 vss vsubs nfet L=0.28U W=0.22U
 MNIB_XA1 bn_XA1 ro2 vss vsubs nfet L=0.28U W=0.22U
 MN1_XA1 xo ro1 s1_XA1 vsubs nfet L=0.28U W=0.44U

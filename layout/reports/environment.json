@@ -1,9 +1,6 @@
 {
   "klt": "klt 0.2.0",
-  "klt_origin": {
-    "url": "https://github.com/2AMLogic/klayout-tools",
-    "commit": "c8e4f8cd77a563cc6f612877f48c1148a556b25c"
-  },
+  "klt_origin": null,
   "deck": "gf180mcu",
   "pdk": {
     "path": "/Users/rwalters/.volare/gf180mcuD",

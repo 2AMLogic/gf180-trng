@@ -206,31 +206,25 @@
         "gds": "layout/blocks/combiner_sampler/combiner_sampler.gds",
         "cell_name": "combiner_sampler",
         "bbox_um": {
-          "x0": -0.22,
-          "y0": 0.31,
-          "x1": 278.68,
+          "x0": -0.5,
+          "y0": -0.3,
+          "x1": 295.26,
           "y1": 15.950000000000001
-        },
-        "inventoried_but_not_in_assembly": {
-          "cells": {
-            "ro_buf": 2
-          },
-          "note": "these cells are counted in this region's cell/placed area above and are drawn and verified standalone under layout/cells/, but they are NOT present in the assembled GDS this region's guarded footprint was measured from -- so the region is budgeted for them, not yet drawn with them. See layout/floorplan/floorplan.py's ASSEMBLY_INVENTORY_GAP for why, and layout/README.md for the standing inventory."
         }
       },
-      "inner_w_um": 279.7,
-      "inner_h_um": 16.44,
+      "inner_w_um": 296.56,
+      "inner_h_um": 17.05,
       "ring_placement_clearance_um": 0.4,
       "ring_band_width_um": 0.6,
-      "guarded_w_um": 280.9,
-      "guarded_h_um": 17.64,
-      "guarded_area_um2": 4955.08,
-      "guard_taps": 32,
+      "guarded_w_um": 297.76,
+      "guarded_h_um": 18.25,
+      "guarded_area_um2": 5434.12,
+      "guard_taps": 36,
       "ring_content_report": "fp_ring_content_combiner_sampler.json",
       "ring_content_bbox_um": {
-        "x0": -0.22,
-        "y0": 0.31,
-        "x1": 278.68,
+        "x0": -0.5,
+        "y0": -0.3,
+        "x1": 295.26,
         "y1": 15.950000000000001
       }
     },
@@ -304,8 +298,8 @@
           "combiner_sampler"
         ],
         "width_um": 20.0,
-        "span_um": 17.64,
-        "area_um2": 352.8
+        "span_um": 18.25,
+        "area_um2": 365.0
       },
       {
         "between": [
@@ -317,11 +311,11 @@
         "area_um2": 7086.8
       }
     ],
-    "guarded_region_area_um2": 131604.2,
-    "isolation_channel_area_um2": 7574.6,
-    "floorplan_area_um2": 139178.8,
+    "guarded_region_area_um2": 132083.24,
+    "isolation_channel_area_um2": 7586.8,
+    "floorplan_area_um2": 139670.04,
     "row_bbox_um": {
-      "w": 857.06,
+      "w": 873.92,
       "h": 354.34
     },
     "placed_area_um2": {
@@ -336,10 +330,10 @@
           "ring2"
         ],
         "cell_area_um2": 671.25,
-        "guarded_area_um2": 6047.36,
-        "isolation_channel_area_um2": 487.8,
-        "area_um2": 6535.16,
-        "share_of_budget_pct": 13.07
+        "guarded_area_um2": 6526.4,
+        "isolation_channel_area_um2": 500.0,
+        "area_um2": 7026.4,
+        "share_of_budget_pct": 14.05
       },
       "digital": {
         "regions": [
@@ -352,7 +346,7 @@
         "share_of_budget_pct": 251.11
       }
     },
-    "share_of_budget_pct": 278.4,
+    "share_of_budget_pct": 279.3,
     "excluded": {
       "ring_liveness_monitor_DR0016": {
         "cells": 85,
