@@ -117,19 +117,19 @@
     "region": "combiner_sampler",
     "ring_gds": "layout/blocks/combiner_sampler/combiner_sampler.gds",
     "ring_bbox_um": {
-      "x0": -0.22,
-      "y0": 0.31,
-      "x1": 278.68,
+      "x0": -0.5,
+      "y0": -0.3,
+      "x1": 295.26,
       "y1": 15.950000000000001
     },
     "guard_inner_um": {
-      "w_um": 279.7,
-      "h_um": 16.44
+      "w_um": 296.56,
+      "h_um": 17.05
     },
     "ring_placement_clearance_um": 0.4,
     "fit_offset_um": {
-      "x": 1.22,
-      "y": 0.69
+      "x": 1.5,
+      "y": 1.3
     },
     "composed": {
       "status": "clean",
@@ -152,19 +152,19 @@
       },
       "counts": {
         "nets": {
-          "layout": 54,
-          "reference": 54,
-          "matched": 54
+          "layout": 58,
+          "reference": 58,
+          "matched": 58
         },
         "devices": {
-          "layout": 100,
-          "reference": 100,
-          "matched": 100
+          "layout": 104,
+          "reference": 104,
+          "matched": 104
         },
         "pins": {
-          "layout": 12,
+          "layout": 14,
           "reference": 11,
-          "matched": 12
+          "matched": 14
         }
       }
     },

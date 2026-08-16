@@ -136,14 +136,18 @@ GUARD_CONTACT_PITCH_UM = 2.0
 #: both bounding boxes happen to be identical, but each is read from its own
 #: committed stream rather than assumed equal.
 #:
-#: `combiner_sampler` (`xor2` + 4x `sampler_dff`, `layout/blocks/
-#: combiner_sampler/combiner_sampler.gds`, issue #134) is the same kind of
-#: size mismatch issue #119 found and resolved for `ring1`/`ring2`: its own
-#: real bounding box (278.90 x 15.64 um) was roughly 11x the width of the
-#: region's prior area/utilisation-estimate square (25.27 x 25.27 um).
-#: Issue #135 resolved it the same way -- sizing this region from the real
-#: assembled row instead of the estimate, which is what reshapes the row
-#: layout in `reports/area.json`/`trng_floorplan.gds` (issue #135).
+#: `combiner_sampler` (2x `ro_buf` + `xor2` + 4x `sampler_dff`, `layout/
+#: blocks/combiner_sampler/combiner_sampler.gds`, issues #134 and #151) is
+#: the same kind of size mismatch issue #119 found and resolved for
+#: `ring1`/`ring2`: its own real bounding box (295.76 x 16.25 um, since
+#: issue #151 added the two DR-0018 buffers this row was still missing --
+#: 278.90 x 15.64 um beforehand, issue #134) was and remains roughly an
+#: order of magnitude wider than the region's prior area/utilisation-
+#: estimate square (25.27 x 25.27 um). Issue #135 resolved it by sizing this
+#: region from the real assembled row instead of the estimate, which is
+#: what reshapes the row layout in `reports/area.json`/`trng_floorplan.gds`
+#: -- unchanged in mechanism by #151, since this table always reads the
+#: assembled GDS's own bbox at run time rather than a cached value.
 ASSEMBLED_RING_GDS: dict[str, Path] = {
     "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
     "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",
@@ -157,29 +161,17 @@ ASSEMBLED_RING_GDS: dict[str, Path] = {
 #: the committed `reports/area.json` alone, that the region's *guarded*
 #: footprint was measured from geometry that is missing those cells.
 #:
-#: `combiner_sampler` / `ro_buf` (issue #144): both DR-0018 output buffers are
-#: `vdd`-supplied, so they are inventoried in this region (see `REGIONS`), and
-#: `layout/cells/ro_buf/` is drawn, DRC-clean and LVS-matching. They are not in
-#: `layout/blocks/combiner_sampler/combiner_sampler.gds`, which assembles
-#: exactly `design/sampler_core.spice`'s own `.subckt combiner_sampler`
-#: (`xa1` + four `sampler_dff`) and is LVS'd against that subcircuit by both
-#: `layout/verify.py` and `check_ring_fit` below. Adding two buffers to that
-#: composed cell would report them as `device.unmatched` against a reference
-#: that does not declare them, so drawing them into the region needs a new
-#: assembled block with its own reference netlist -- the same
-#: `layout/blocks/`-shaped increment #134 was for the combiner and samplers,
-#: filed separately rather than smuggled in here. Until then the two buffers
-#: are budgeted but not placed, which is what this table records.
-#:
-#: Headroom, so "budgeted but not placed" is not a hidden overflow: each
-#: buffer is priced at one `inv_1` (~5.9 um^2), and this region's guarded
-#: footprint is sized from a 278.90 x 15.64 um assembled row -- roughly an
-#: order of magnitude more silicon than its own 60 %-utilisation placed-area
-#: estimate needs. The region's own `cell_area_um2`/`placed_area_um2` fields
-#: below carry the exact numbers.
-ASSEMBLY_INVENTORY_GAP: dict[str, tuple[str, ...]] = {
-    "combiner_sampler": ("ro_buf",),
-}
+#: Empty as of issue #151: `combiner_sampler`'s own gap (`ro_buf`, issue
+#: #144) is closed -- both DR-0018 output buffers (`xb1`/`xb2`) are now
+#: placed and wired inside `layout/blocks/combiner_sampler/
+#: combiner_sampler.gds` itself (`layout/blocks/combiner_sampler/build.py`),
+#: and that assembly's own reference netlist declares them, so they are no
+#: longer `device.unmatched` candidates. Kept as an empty table rather than
+#: removed outright, since `build()` below still reads
+#: `ASSEMBLY_INVENTORY_GAP.get(rid, ())` unconditionally for every region in
+#: `ASSEMBLED_RING_GDS`, and a future region could reintroduce a genuine gap
+#: the same way this one existed from issue #144 to #151.
+ASSEMBLY_INVENTORY_GAP: dict[str, tuple[str, ...]] = {}
 
 #: The reference netlist (and its own `.SUBCKT` name) each `ASSEMBLED_RING_GDS`
 #: entry's real placement is checked against -- the same reference
@@ -332,10 +324,11 @@ REGIONS = [
         # rather than with the ring each one buffers: DR-0018 runs both off
         # the block supply `vdd` -- deliberately, so that neither ring's own
         # `vddr1`/`vddr2` branch carries the buffer's switching current --
-        # and this is the `vdd` region. See `build()`'s own note on what
-        # this does and does not mean for the region's *guarded* footprint,
-        # which is sized from the assembled `combiner_sampler` GDS and does
-        # not yet contain them.
+        # and this is the `vdd` region. The region's *guarded* footprint is
+        # sized from the assembled `combiner_sampler` GDS (`build()`'s own
+        # note), and, as of issue #151, that assembly places and wires both
+        # buffers too -- see `ASSEMBLY_INVENTORY_GAP`'s own docstring for
+        # the gap this closed.
         "id": "combiner_sampler",
         "title": "XOR combiner + buffers + samplers",
         "source": (

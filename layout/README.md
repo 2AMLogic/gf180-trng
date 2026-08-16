@@ -18,10 +18,12 @@ guarded regions, real generated guard rings, DRC'd as one stream, with an
 area rollup against the `< 0.05 mm²` row. As of #110 and #135,
 `ring1`/`ring2` and `combiner_sampler` all carry real, placed,
 DRC/LVS-verified content (`combiner_sampler`'s real, DRC-clean,
-LVS-matching assembled block landed under `blocks/` in #134, and #135 —
-resolved by PR #139 — resized its guarded region to that block's own real
-bounding box and placed it there); `digital` is still *empty*, so
-`floorplan/` remains a floorplan and not a full layout, and
+LVS-matching assembled block landed under `blocks/` in #134 — extended to
+include both `ro_buf` instances by #151 — and #135, resolved by PR #139,
+sized its guarded region from that block's own real bounding box and placed
+it there, re-measured from the assembled geometry on every run); `digital`
+is still *empty* — nothing places content inside its own guarded region yet
+— so `floorplan/` remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
 `cells/` (#106) is where drawn design cells land, one at a time, each
@@ -31,10 +33,10 @@ the block's many remaining cells are not, and
 ["What has layout, and what does not"](#what-has-layout-and-what-does-not)
 below is the one-table version of the same answer, indexed by netlist
 subcircuit. `rings/` (#110) and `blocks/`
-(#134) are where those individually-verified cells get *assembled*: `rings/`
-holds `ro_ring11` (ten `ro_stage` plus one `ro_nand2`, at both ring
-sizings), `blocks/` holds `combiner_sampler` (one `xor2` plus four
-`sampler_dff`) — see [`rings/README.md`](rings/README.md) and
+(#134, #151) are where those individually-verified cells get *assembled*:
+`rings/` holds `ro_ring11` (ten `ro_stage` plus one `ro_nand2`, at both ring
+sizings), `blocks/` holds `combiner_sampler` (two `ro_buf` plus one `xor2`
+plus four `sampler_dff`) — see [`rings/README.md`](rings/README.md) and
 [`blocks/README.md`](blocks/README.md) for scope, and
 [`floorplan/README.md`](floorplan/README.md#placement--issue-110) for how
 `ring1`/`ring2`'s own assembled blocks are placed inside `floorplan/`'s own
@@ -206,7 +208,7 @@ layout/
   blocks/
     README.md                 scope: which non-ring blocks are assembled (#134)
     combiner_sampler/
-      build.py                 assembles combiner_sampler (xor2 + 4x sampler_dff) from drawn cells + hand-routed wiring
+      build.py                 assembles combiner_sampler (2x ro_buf + xor2 + 4x sampler_dff) from drawn cells + hand-routed wiring
       combiner_sampler.gds       the assembled block (timestamps normalised)
       combiner_sampler.spice     hand-written LVS reference (mechanically expanded, see the file's own header)
   reports/
@@ -233,24 +235,25 @@ part of what this block ships, whatever else exists for it in `design/`.
 | `ro_stage`, `ro_nand2` (ring1 sizing) | yes | [`cells/ro_stage/`](cells/ro_stage/), [`cells/ro_nand2/`](cells/ro_nand2/) | [`rings/ro_ring11/`](rings/ro_ring11/), placed in `floorplan/`'s `ring1` region (#110) |
 | `ro_stage`, `ro_nand2` (ring2 sizing) | yes | [`cells/ro_stage_ring2/`](cells/ro_stage_ring2/), [`cells/ro_nand2_ring2/`](cells/ro_nand2_ring2/) | [`rings/ro_ring11_ring2/`](rings/ro_ring11_ring2/), placed in `floorplan/`'s `ring2` region (#110) |
 | `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
-| `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | **not yet** — budgeted into the `combiner_sampler` region, not drawn into its assembly ([#151][gf151], and see below) |
+| `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/) ([#151][gf151], and see below), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
 | the digital section (1655 standard cells) | yes | none — a P&R problem, not a hand-drawn-cell one ([#111][gf111]) | n/a |
 
-### `ro_buf`: drawn, budgeted, not yet placed
+### `ro_buf`: drawn, assembled, and placed
 
 `ro_buf` is drawn and verified as a cell, and both of its instances are priced
 into `layout/floorplan/`'s `combiner_sampler` region — that region rather than
 either ring's, because DR-0018 runs both buffers off the block supply `vdd`
-and never off a ring's own `vddr`. They are not yet inside any *assembled*
-geometry: `blocks/combiner_sampler/` assembles exactly
-`design/sampler_core.spice`'s own `.subckt combiner_sampler` and is LVS'd
-against that subcircuit, so two extra buffers in the same composed cell would
-be reported as `device.unmatched` against a reference that does not declare
-them. Drawing them in needs a block with its own reference netlist, filed as
-[#151][gf151]. `layout/floorplan/reports/area.json` states this per region
-under `footprint_source.inventoried_but_not_in_assembly`, so the gap is
-readable off the committed artefact and not only out of this paragraph.
+and never off a ring's own `vddr`. As of [#151][gf151], both instances
+(`xb1`/`xb2`) are also placed and wired inside `blocks/combiner_sampler/`,
+alongside the combiner and samplers that block already assembled: the
+block's own reference netlist (`combiner_sampler.spice`) now declares them,
+so they no longer report as `device.unmatched`. `layout/floorplan/
+reports/area.json`'s `combiner_sampler` region no longer carries a
+`footprint_source.inventoried_but_not_in_assembly` entry for `ro_buf` —
+both instances are `shipped: true`, and the region's own guarded footprint
+is sized from (and fit-checked against, #135) the assembled block's real
+bbox, which now contains them.
 
 ### The metastability-hybrid tap is deliberately not drawn
 

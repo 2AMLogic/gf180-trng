@@ -116,30 +116,28 @@ klayout-tools — none of the gaps below are tool gaps):
   ([#110][gf110], [#134][gf134]). Both rings' own `ro_ring11` (ring1 at
   `wstv=0.220u`, ring2 at `wstv=0.240u`) are assembled and DRC/LVS-clean
   under [`layout/rings/`](../rings/) — see
-  [`rings/README.md`](../rings/README.md) for what that covers. `xor2` plus
-  the four `sampler_dff` instances are likewise now assembled and
-  DRC/LVS-clean under [`layout/blocks/combiner_sampler/`](../blocks/)
-  ([#134][gf134]) — see [`blocks/README.md`](../blocks/README.md). Placing
+  [`rings/README.md`](../rings/README.md) for what that covers. Both
+  `ro_buf` instances, `xor2`, and the four `sampler_dff` instances are
+  likewise now assembled and DRC/LVS-clean under
+  [`layout/blocks/combiner_sampler/`](../blocks/) ([#134][gf134],
+  [#151][gf151]) — see [`blocks/README.md`](../blocks/README.md). Placing
   `ring1`/`ring2` inside their own guarded regions is done ([#110][gf110],
   after resolving the size mismatch [#119][gf119] found); `combiner_sampler`
   is now placed too — [#135][gf135] hit the same kind of size mismatch and
   was resolved the same way, resizing its guarded region to the real
-  assembled block's bounding box (PR #139). Nothing in the digital section
-  is placed inside a guarded region yet.
-- **Drawing the two `ro_buf` instances into an assembled block.** The cell
-  itself is here, DRC-clean and LVS-matching ([#144][gf144]), and
-  `layout/floorplan/`'s `combiner_sampler` region now *prices* both instances
-  (they are `vdd`-supplied, so that is the region they belong to). What does
-  not exist yet is an assembled block containing them: `layout/blocks/
-  combiner_sampler/` assembles exactly `design/sampler_core.spice`'s own
-  `.subckt combiner_sampler` (`xa1` + four `sampler_dff`) and is LVS'd
-  against that subcircuit, so adding two buffers to it would report them as
-  `device.unmatched` against a reference that does not declare them. Drawing
-  them in needs a block with its own reference netlist — the same
-  `layout/blocks/`-shaped increment [#134][gf134] was — and is filed as
-  [#151][gf151]. Until then the region is *budgeted* for the buffers and not
-  yet *drawn with* them, which `layout/floorplan/reports/area.json` records
-  per region under `footprint_source.inventoried_but_not_in_assembly`.
+  assembled block's bounding box (PR #139), which stays correctly sized as
+  that block's own bbox grows (`layout/floorplan/floorplan.py` reads it at
+  run time rather than caching it). Nothing in the digital section is
+  placed inside a guarded region yet.
+- **Drawing the two `ro_buf` instances into an assembled block** — done.
+  The cell itself was drawn, DRC-clean and LVS-matching, by [#144][gf144];
+  [#151][gf151] placed both instances (`xb1`/`xb2`) inside
+  `layout/blocks/combiner_sampler/`, alongside the combiner and samplers
+  that block already assembled, with its own reference netlist extended to
+  declare them (`layout/blocks/combiner_sampler/combiner_sampler.spice`).
+  `layout/floorplan/reports/area.json`'s `combiner_sampler` region no
+  longer carries a `footprint_source.inventoried_but_not_in_assembly` entry
+  for `ro_buf` — both instances are `shipped: true`.
 - **The metastability-hybrid tap** (`ro_meta_tap`, `meta_arb`, `meta_inv`,
   `meta_nand2`). Deliberately out of scope, not overlooked — see
   [`layout/README.md`](../README.md#what-has-layout-and-what-does-not) for
