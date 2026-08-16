@@ -42,13 +42,14 @@
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.1.0",
+    "klt_version": "0.2.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8"
-    }
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": null
   },
   "mismatches": [
     {
@@ -62,7 +63,8 @@
         "reference": null,
         "class": "nfet"
       },
-      "property": null
+      "property": null,
+      "details": null
     },
     {
       "category": "device.body_unverified",
@@ -75,7 +77,8 @@
         "reference": null,
         "class": "pfet"
       },
-      "property": null
+      "property": null,
+      "details": null
     },
     {
       "category": "topology",
@@ -84,7 +87,40 @@
       "side": "layout",
       "net": null,
       "device": null,
-      "property": null
+      "property": null,
+      "details": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "A",
+      "reference": "A",
+      "pin": true
+    },
+    {
+      "layout": "$5",
+      "reference": "NWELL_FLOAT",
+      "pin": false
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "vsubs",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "ZN",
+      "reference": "ZN",
+      "pin": true
     }
   ]
 }

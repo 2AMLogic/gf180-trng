@@ -93,7 +93,7 @@
   ],
   "net_correspondence": [
     {
-      "layout": "$3",
+      "layout": "$2",
       "reference": "AN_XA1",
       "pin": false
     },
@@ -118,7 +118,7 @@
       "pin": false
     },
     {
-      "layout": "$38",
+      "layout": "$39",
       "reference": "CLKB_XSR2",
       "pin": false
     },
@@ -133,7 +133,7 @@
       "pin": false
     },
     {
-      "layout": "$47",
+      "layout": "$32",
       "reference": "MB_XSR1",
       "pin": false
     },
@@ -153,12 +153,12 @@
       "pin": false
     },
     {
-      "layout": "$32",
+      "layout": "$33",
       "reference": "MC_XSR1",
       "pin": false
     },
     {
-      "layout": "$40",
+      "layout": "$41",
       "reference": "MC_XSR2",
       "pin": false
     },
@@ -178,12 +178,12 @@
       "pin": false
     },
     {
-      "layout": "$36",
+      "layout": "$37",
       "reference": "MMID_XSR1",
       "pin": false
     },
     {
-      "layout": "$44",
+      "layout": "$45",
       "reference": "MMID_XSR2",
       "pin": false
     },
@@ -203,7 +203,7 @@
       "pin": false
     },
     {
-      "layout": "$39",
+      "layout": "$40",
       "reference": "M_XSR2",
       "pin": false
     },
@@ -243,12 +243,12 @@
       "pin": false
     },
     {
-      "layout": "$35",
+      "layout": "$36",
       "reference": "QB_XSR1",
       "pin": false
     },
     {
-      "layout": "$43",
+      "layout": "$44",
       "reference": "QB_XSR2",
       "pin": false
     },
@@ -303,12 +303,12 @@
       "pin": false
     },
     {
-      "layout": "$37",
+      "layout": "$38",
       "reference": "S2MID_XSR1",
       "pin": false
     },
     {
-      "layout": "$45",
+      "layout": "$46",
       "reference": "S2MID_XSR2",
       "pin": false
     },
@@ -328,12 +328,12 @@
       "pin": false
     },
     {
-      "layout": "$33",
+      "layout": "$34",
       "reference": "S_XSR1",
       "pin": false
     },
     {
-      "layout": "$41",
+      "layout": "$42",
       "reference": "S_XSR2",
       "pin": false
     },

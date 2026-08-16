@@ -16,6 +16,8 @@
       "check": "space",
       "layer": "Metal1",
       "cell": "trng_tc_inv",
+      "source_cell": null,
+      "source_path": null,
       "bbox": {
         "left": 440,
         "bottom": 2220,
@@ -47,6 +49,8 @@
       "check": "width",
       "layer": "Metal1",
       "cell": "trng_tc_inv",
+      "source_cell": null,
+      "source_path": null,
       "bbox": {
         "left": 200,
         "bottom": 580,
@@ -81,6 +85,7 @@
       "33/0",
       "34/0",
       "36/0",
+      "41/0",
       "42/0",
       "46/0",
       "53/0",
@@ -109,16 +114,20 @@
       "metaltop.space.1",
       "metaltop.width.1",
       "mim.enclosing.fusetop.1",
+      "mim.enclosing.via4.1",
       "mim.space.1"
     ]
   },
   "provenance": {
-    "klt_version": "0.1.0",
+    "klt_version": "0.2.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8"
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": {
+      "content_hash": "sha256:db7fb788a5e28ff5184ecc7dc61a3c6318b2cbaef3369bde367df1544c4f69c6"
     }
   }
 }

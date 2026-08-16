@@ -801,24 +801,81 @@ def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
 
 
 def _stable(payload: dict) -> dict:
-    """Strip the one field that legitimately moves between machines.
+    """Strip the fields that legitimately move between machines.
 
-    `klt lvs` echoes an `environment` block carrying the KLayout engine
-    version; an engine upgrade changes it without changing any verdict, so
-    `engine_version` is dropped before the comparison.
+    Exactly three fields are dropped, each because it records *where this
+    machine happened to find something*, not *what was verified*. Every
+    field beside these three -- including every content hash, every verdict,
+    every count, and the PDK's own `variant`/`version` -- stays in the
+    comparison, so a real change still trips the gate:
 
-    Nothing else is. The rest of that block is `layout_sha256` /
-    `reference_sha256` -- content hashes of the exact bytes LVS compared,
-    which are a function of the committed fixtures and not of the machine.
-    Dropping the whole block, as this did before #73, discarded those two
-    alongside the version for no reason.
+    - `environment.engine_version` (`klt lvs` reports): an engine upgrade
+      changes this without changing any verdict. The rest of that block --
+      `layout_sha256` / `reference_sha256`, content hashes of the exact
+      bytes LVS compared -- is a function of the committed fixtures, not the
+      machine, and stays. Dropping the whole block, as this did before #73,
+      discarded those two alongside the version for no reason.
+
+    - `pdk.root` (`klt extract` reports, top-level `pdk` block): the
+      absolute filesystem path to wherever *this run's* PDK install happens
+      to live -- `/Users/<you>/.volare`, `/home/ubuntu/.volare`, CI's
+      `~/.ciel`, or an explicit `--pdk-root`. Two machines with the same PDK
+      release mounted at different paths must compare equal; `pdk.variant`
+      (which PDK) and `pdk.version` (which open_pdks commit) are what was
+      actually verified against, and both stay.
+
+    - `provenance.pdk.source` (`klt extract` reports, nested one level under
+      `provenance.pdk`): the same idea one level down -- klt's own record of
+      *how* it resolved the PDK for this invocation (a search root, an env
+      var, an explicit `--pdk-root` flag), which describes the invocation's
+      environment, not the PDK. `provenance.pdk.name`/`.version` stay, for
+      the same reason `pdk.variant`/`.version` do above.
+
+    Verified empirically (issue #148): running `klt extract` twice over the
+    same `.gds`, identical in every argument except `--pdk-root` pointed at
+    two different filesystem locations for the same PDK release, produced
+    reports differing in exactly these two keys (`pdk.root` and
+    `provenance.pdk.source`) -- nothing else moved, including the extracted
+    device list and its `netlist_sha256`. `discovered_via` (the equivalent
+    field `sim/harness/pdk.py`'s own `Pdk.provenance()` writes into
+    `layout/reports/environment.json`) never appears in the *per-fixture*
+    reports this function is applied to -- `environment.json` is written by
+    `--write` but is not part of `compare_reports`'s diff at all, so nothing
+    there needs stripping.
+
+    DRC reports never carry a `pdk`/`provenance.pdk` block (DRC's curated
+    deck does not resolve one), so this is a no-op for them. `klt_version`
+    and `provenance.klayout_version` are deliberately NOT stripped: per
+    `.github/workflows/pdk-nightly.yml`'s own comment, a tool upgrade that
+    changes a verdict, a rule id, or the shape of a report is meant to turn
+    this gate red so `layout/reports/` gets regenerated -- that is a real
+    signal, not machine-local noise, and collapsing it away would be exactly
+    the "no-op gate" this fix exists to avoid.
     """
     trimmed = dict(payload)
+
     environment = trimmed.get("environment")
     if isinstance(environment, dict):
         environment = dict(environment)
         environment.pop("engine_version", None)
         trimmed["environment"] = environment
+
+    pdk = trimmed.get("pdk")
+    if isinstance(pdk, dict):
+        pdk = dict(pdk)
+        pdk.pop("root", None)
+        trimmed["pdk"] = pdk
+
+    provenance = trimmed.get("provenance")
+    if isinstance(provenance, dict):
+        provenance = dict(provenance)
+        provenance_pdk = provenance.get("pdk")
+        if isinstance(provenance_pdk, dict):
+            provenance_pdk = dict(provenance_pdk)
+            provenance_pdk.pop("source", None)
+            provenance["pdk"] = provenance_pdk
+        trimmed["provenance"] = provenance
+
     return trimmed
 
 
@@ -826,7 +883,21 @@ _REGENERATE = "-- re-run `python3 layout/verify.py --write`"
 
 
 def compare_reports(stem: str, spec: dict, results: dict) -> list[str]:
-    """Diff live results against the committed reports (stable fields only)."""
+    """Diff live results against the committed reports (stable fields only).
+
+    The JSON reports go through `_stable()` first, for the machine-local
+    fields documented there. The text artifacts below it -- the extracted
+    `.spice` netlist and the `.lvs-request.json` invocation -- get no such
+    treatment, but not because they were overlooked: neither format has
+    anywhere to put a machine-local value in the first place.
+    `.extracted.spice` is a bare SPICE device/connectivity listing (no
+    embedded paths -- verified empirically alongside `_stable()`, #148: the
+    same `--pdk-root` A/B run that moved `pdk.root` left the netlist
+    byte-identical); `.lvs-request.json` is generated by `lvs_request()`
+    above from repo-root-relative paths only. So the byte-for-byte compare
+    here is already exactly as strict as `_stable()` makes the JSON compare
+    -- both check content, neither checks a filesystem location.
+    """
     drift: list[str] = []
     for stage, payload in results.items():
         path = REPORT_DIR / f"{stem}.{stage}.json"
