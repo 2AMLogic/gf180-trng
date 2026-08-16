@@ -121,10 +121,11 @@ klayout-tools — none of the gaps below are tool gaps):
   DRC/LVS-clean under [`layout/blocks/combiner_sampler/`](../blocks/)
   ([#134][gf134]) — see [`blocks/README.md`](../blocks/README.md). Placing
   `ring1`/`ring2` inside their own guarded regions is done ([#110][gf110],
-  after resolving the size mismatch [#119][gf119] found); placing
-  `combiner_sampler` is blocked on the same kind of size mismatch, filed as
-  [#135][gf135]. Nothing in the digital section is placed inside a guarded
-  region yet.
+  after resolving the size mismatch [#119][gf119] found); `combiner_sampler`
+  is now placed too — [#135][gf135] hit the same kind of size mismatch and
+  was resolved the same way, resizing its guarded region to the real
+  assembled block's bounding box (PR #139). Nothing in the digital section
+  is placed inside a guarded region yet.
 - **Drawing the two `ro_buf` instances into an assembled block.** The cell
   itself is here, DRC-clean and LVS-matching ([#144][gf144]), and
   `layout/floorplan/`'s `combiner_sampler` region now *prices* both instances
