@@ -37,19 +37,18 @@ plan should avoid by construction instead of by search).
 
 ## What is explicitly *not* here yet
 
-- **Placing `combiner_sampler` inside `layout/floorplan/trng_floorplan.gds`'s
-  own guarded `combiner_sampler` region.** The assembled block's own real
-  bounding box (278.90 × 15.64 µm) is roughly 11× the width of the region's
-  own guarded footprint (25.27 × 25.27 µm, sized from `layout/floorplan/
-  reports/area.json`'s bottom-up area estimate, not from real geometry) —
-  the same kind of mismatch issue #119 found and resolved for `ring1`/
-  `ring2`, discovered again here because `combiner_sampler` was still
-  unassembled at #119's own time. Filed as [#135][gf135], mirroring #119's
-  own precedent, rather than forced through the issue that discovered it
-  (#134). `layout/floorplan/` is where placement happens, not here — same
-  division `layout/rings/README.md` draws for `ring1`/`ring2`.
 - **The digital section** — see `layout/cells/README.md`'s own account
   ([#111][gf111]); unrelated to this directory either way.
+
+`combiner_sampler`'s placement inside `layout/floorplan/trng_floorplan.gds`'s
+own guarded `combiner_sampler` region is done: [#135][gf135] (resolved by
+PR #139) resized the region's guarded footprint from the prior
+area/utilisation-estimate square (25.27 × 25.27 µm) to the assembled
+block's own real bounding box (278.90 × 15.64 µm), the same kind of resize
+issue #119 already did for `ring1`/`ring2`. `layout/floorplan/` is where
+placement happens, not here — same division `layout/rings/README.md` draws
+for `ring1`/`ring2`; see `layout/floorplan/README.md`'s own account, §
+"Placement — issue #135 (`combiner_sampler`)", for the full writeup.
 
 [gf109]: https://github.com/2AMLogic/gf180-trng/issues/109
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
