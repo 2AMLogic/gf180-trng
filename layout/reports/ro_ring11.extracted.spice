@@ -19,95 +19,141 @@
 .SUBCKT ro_ring11 a|y a|y$1 a|y$2 a|y$3 a|y$4 a|y$5 a|y$6 a|y$7 a|y$8 a|y$9
 + a|y$10 en vddr vss vsubs
 * device instance $1 r0 *1 8.9,0.22 nfet
-X$1 \$15 a|y a|y$1 vsubs nfet_03v3 L=0.28U W=0.22U
+X$1 \$15 a|y a|y$1 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $2 r0 *1 10.44,0.22 nfet
-X$2 \$15 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$2 \$15 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $3 r0 *1 15.73,0.22 nfet
-X$3 \$17 a|y$1 a|y$2 vsubs nfet_03v3 L=0.28U W=0.22U
+X$3 \$17 a|y$1 a|y$2 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $4 r0 *1 17.27,0.22 nfet
-X$4 \$17 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$4 \$17 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $5 r0 *1 22.56,0.22 nfet
-X$5 \$18 a|y$2 a|y$3 vsubs nfet_03v3 L=0.28U W=0.22U
+X$5 \$18 a|y$2 a|y$3 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $6 r0 *1 24.1,0.22 nfet
-X$6 \$18 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$6 \$18 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $7 r0 *1 29.39,0.22 nfet
-X$7 \$20 a|y$3 a|y$4 vsubs nfet_03v3 L=0.28U W=0.22U
+X$7 \$20 a|y$3 a|y$4 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $8 r0 *1 30.93,0.22 nfet
-X$8 \$20 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$8 \$20 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $9 r0 *1 36.22,0.22 nfet
-X$9 \$21 a|y$4 a|y$5 vsubs nfet_03v3 L=0.28U W=0.22U
+X$9 \$21 a|y$4 a|y$5 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $10 r0 *1 37.76,0.22 nfet
-X$10 \$21 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$10 \$21 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $11 r0 *1 43.05,0.22 nfet
-X$11 \$22 a|y$5 a|y$6 vsubs nfet_03v3 L=0.28U W=0.22U
+X$11 \$22 a|y$5 a|y$6 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $12 r0 *1 44.59,0.22 nfet
-X$12 \$22 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$12 \$22 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $13 r0 *1 49.88,0.22 nfet
-X$13 \$24 a|y$6 a|y$7 vsubs nfet_03v3 L=0.28U W=0.22U
+X$13 \$24 a|y$6 a|y$7 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $14 r0 *1 51.42,0.22 nfet
-X$14 \$24 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$14 \$24 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $15 r0 *1 56.71,0.22 nfet
-X$15 \$23 a|y$7 a|y$8 vsubs nfet_03v3 L=0.28U W=0.22U
+X$15 \$23 a|y$7 a|y$8 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $16 r0 *1 58.25,0.22 nfet
-X$16 \$23 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$16 \$23 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $17 r0 *1 63.54,0.22 nfet
-X$17 \$19 a|y$8 a|y$9 vsubs nfet_03v3 L=0.28U W=0.22U
+X$17 \$19 a|y$8 a|y$9 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $18 r0 *1 65.08,0.22 nfet
-X$18 \$19 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$18 \$19 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $19 r0 *1 70.37,0.22 nfet
-X$19 \$16 a|y$9 a|y$10 vsubs nfet_03v3 L=0.28U W=0.22U
+X$19 \$16 a|y$9 a|y$10 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.044P
++ PS=2.28U PD=0.62U
 * device instance $20 r0 *1 71.91,0.22 nfet
-X$20 \$16 vddr vss vsubs nfet_03v3 L=2U W=0.22U
+X$20 \$16 vddr vss vsubs nfet_03v3 L=2U W=0.22U AS=0.308P AD=0.044P PS=2.28U
++ PD=0.62U
 * device instance $21 r0 *1 3.86,0.22 nfet
-X$21 vss vddr \$14 vsubs nfet_03v3 L=2U W=0.22U
+X$21 vss vddr \$14 vsubs nfet_03v3 L=2U W=0.22U AS=0.176P AD=0.308P PS=1.24U
++ PD=2.28U
 * device instance $22 r0 *1 0.84,0.22 nfet
-X$22 \$13 a|y$10 a|y vsubs nfet_03v3 L=0.28U W=0.44U
+X$22 \$13 a|y$10 a|y vsubs nfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.176P
++ PS=2.28U PD=1.24U
 * device instance $23 r0 *1 1.92,0.22 nfet
-X$23 \$14 en \$13 vsubs nfet_03v3 L=0.28U W=0.44U
+X$23 \$14 en \$13 vsubs nfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.176P PS=1.24U
++ PD=1.24U
 * device instance $24 r0 *1 -1.1,1.86 pfet
-X$24 \$27 vss vddr \$28 pfet_03v3 L=2U W=0.22U
+X$24 \$27 vss vddr \$28 pfet_03v3 L=2U W=0.22U AS=0.308P AD=0.176P PS=2.28U
++ PD=1.24U
 * device instance $25 r0 *1 0.84,1.86 pfet
-X$25 a|y a|y$10 \$27 \$28 pfet_03v3 L=0.28U W=0.44U
+X$25 a|y a|y$10 \$27 \$28 pfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.176P
++ PS=1.24U PD=1.24U
 * device instance $26 r0 *1 1.92,1.86 pfet
-X$26 \$27 en a|y \$28 pfet_03v3 L=0.28U W=0.44U
+X$26 \$27 en a|y \$28 pfet_03v3 L=0.28U W=0.44U AS=0.176P AD=0.352P PS=1.24U
++ PD=2.48U
 * device instance $27 r0 *1 10.44,1.86 pfet
-X$27 vddr vss \$29 \$30 pfet_03v3 L=2U W=0.22U
+X$27 vddr vss \$29 \$30 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $28 r0 *1 8.9,1.86 pfet
-X$28 \$29 a|y a|y$1 \$30 pfet_03v3 L=0.28U W=0.44U
+X$28 \$29 a|y a|y$1 \$30 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P PS=2.28U
++ PD=0.84U
 * device instance $29 r0 *1 17.27,1.86 pfet
-X$29 vddr vss \$31 \$32 pfet_03v3 L=2U W=0.22U
+X$29 vddr vss \$31 \$32 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $30 r0 *1 15.73,1.86 pfet
-X$30 \$31 a|y$1 a|y$2 \$32 pfet_03v3 L=0.28U W=0.44U
+X$30 \$31 a|y$1 a|y$2 \$32 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $31 r0 *1 24.1,1.86 pfet
-X$31 vddr vss \$33 \$34 pfet_03v3 L=2U W=0.22U
+X$31 vddr vss \$33 \$34 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $32 r0 *1 22.56,1.86 pfet
-X$32 \$33 a|y$2 a|y$3 \$34 pfet_03v3 L=0.28U W=0.44U
+X$32 \$33 a|y$2 a|y$3 \$34 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $33 r0 *1 30.93,1.86 pfet
-X$33 vddr vss \$35 \$36 pfet_03v3 L=2U W=0.22U
+X$33 vddr vss \$35 \$36 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $34 r0 *1 29.39,1.86 pfet
-X$34 \$35 a|y$3 a|y$4 \$36 pfet_03v3 L=0.28U W=0.44U
+X$34 \$35 a|y$3 a|y$4 \$36 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $35 r0 *1 37.76,1.86 pfet
-X$35 vddr vss \$37 \$38 pfet_03v3 L=2U W=0.22U
+X$35 vddr vss \$37 \$38 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $36 r0 *1 36.22,1.86 pfet
-X$36 \$37 a|y$4 a|y$5 \$38 pfet_03v3 L=0.28U W=0.44U
+X$36 \$37 a|y$4 a|y$5 \$38 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $37 r0 *1 44.59,1.86 pfet
-X$37 vddr vss \$39 \$40 pfet_03v3 L=2U W=0.22U
+X$37 vddr vss \$39 \$40 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $38 r0 *1 43.05,1.86 pfet
-X$38 \$39 a|y$5 a|y$6 \$40 pfet_03v3 L=0.28U W=0.44U
+X$38 \$39 a|y$5 a|y$6 \$40 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $39 r0 *1 51.42,1.86 pfet
-X$39 vddr vss \$41 \$42 pfet_03v3 L=2U W=0.22U
+X$39 vddr vss \$41 \$42 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $40 r0 *1 49.88,1.86 pfet
-X$40 \$41 a|y$6 a|y$7 \$42 pfet_03v3 L=0.28U W=0.44U
+X$40 \$41 a|y$6 a|y$7 \$42 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $41 r0 *1 58.25,1.86 pfet
-X$41 vddr vss \$43 \$44 pfet_03v3 L=2U W=0.22U
+X$41 vddr vss \$43 \$44 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $42 r0 *1 56.71,1.86 pfet
-X$42 \$43 a|y$7 a|y$8 \$44 pfet_03v3 L=0.28U W=0.44U
+X$42 \$43 a|y$7 a|y$8 \$44 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $43 r0 *1 65.08,1.86 pfet
-X$43 vddr vss \$45 \$46 pfet_03v3 L=2U W=0.22U
+X$43 vddr vss \$45 \$46 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $44 r0 *1 63.54,1.86 pfet
-X$44 \$45 a|y$8 a|y$9 \$46 pfet_03v3 L=0.28U W=0.44U
+X$44 \$45 a|y$8 a|y$9 \$46 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 * device instance $45 r0 *1 71.91,1.86 pfet
-X$45 vddr vss \$47 \$48 pfet_03v3 L=2U W=0.22U
+X$45 vddr vss \$47 \$48 pfet_03v3 L=2U W=0.22U AS=0.088P AD=0.308P PS=0.84U
++ PD=2.28U
 * device instance $46 r0 *1 70.37,1.86 pfet
-X$46 \$47 a|y$9 a|y$10 \$48 pfet_03v3 L=0.28U W=0.44U
+X$46 \$47 a|y$9 a|y$10 \$48 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.088P
++ PS=2.28U PD=0.84U
 .ENDS ro_ring11

@@ -191,10 +191,19 @@ jobs:
       # changes a verdict, a rule id, or the shape of a report, this goes red
       # and layout/reports/ needs regenerating with `layout/verify.py --write`.
       # That is the point of committing the reports.
+      #
+      # Pinned to an explicit git ref/SHA rather than a PyPI release: the
+      # latest published release (v0.2.0, 2026-08-04) predates the gf180mcu
+      # digital synthesize/place-and-route flow, `klt pex`, and `klt yield`
+      # (#142). `klt --version` alone cannot distinguish this build from the
+      # PyPI one -- see layout/README.md's "Pinning the tool" section --
+      # which is why the ref is spelled out here instead of floating on
+      # `main`/`--upgrade`.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
-          python3 -m pip install --upgrade klayout-tools
+          python3 -m pip install --upgrade \
+            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623"
           klt --version
 
       - name: Layout DRC/LVS flow including the PDK-dependent stages

@@ -17,17 +17,27 @@ isolation rationale (#16) and the floorplan abstract that carries it: four
 guarded regions, real generated guard rings, DRC'd as one stream, with an
 area rollup against the `< 0.05 mm²` row. As of #110 and #135,
 `ring1`/`ring2` and `combiner_sampler` all carry real, placed,
-DRC/LVS-verified content (`combiner_sampler`'s real, DRC-clean,
-LVS-matching assembled block landed under `blocks/` in #134 — extended to
-include both `ro_buf` instances by #151 — and #135, resolved by PR #139,
-sized its guarded region from that block's own real bounding box and placed
-it there, re-measured from the assembled geometry on every run); `digital`
-is still *empty* — nothing places content inside its own guarded region yet
-— so `floorplan/` remains a floorplan and not a full layout, and
+LVS-verified content (`combiner_sampler`'s real, LVS-matching assembled
+block landed under `blocks/` in #134 — extended to include both `ro_buf`
+instances by #151 — and #135, resolved by PR #139, sized its guarded region
+from that block's own real bounding box and placed it there, re-measured
+from the assembled geometry on every run); `digital` is still *empty* —
+nothing places content inside its own guarded region yet — so `floorplan/`
+remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
+**"DRC-clean" is no longer true of every cell here as of #142**: pinning
+`klt` to a build with the gf180mcu digital flow, `klt pex`, and `klt yield`
+also pulled in a more complete gf180mcu DRC deck (Via1-Via4 width/space
+rules among others), which now flags real violations on `ro_nand2`,
+`ro_nand2_ring2`, `xor2`, `sampler_dff`, `ro_ring11`, `ro_ring11_ring2`, and
+`combiner_sampler` that the previously-pinned PyPI release's deck never
+checked for — see #162 for the per-cell counts and disposition; `ro_stage`,
+`ro_stage_ring2`, and `ro_buf` remain DRC-clean. LVS match/mismatch verdicts
+are unaffected on every cell.
 `cells/` (#106) is where drawn design cells land, one at a time, each
-DRC-clean and LVS-matching before the next is started —
+DRC-clean (**as of #142**, no longer true of every landed cell — see above)
+and LVS-matching before the next is started —
 [`cells/README.md`](cells/README.md) says which cells are drawn and which of
 the block's many remaining cells are not, and
 ["What has layout, and what does not"](#what-has-layout-and-what-does-not)
@@ -79,7 +89,7 @@ check:all` runs the demanding form.
 
 | | |
 |---|---|
-| `klt` | [klayout-tools][klt] on `PATH`. `pipx install klayout-tools` / `uv tool install klayout-tools`. Brings its own KLayout Python module — no GUI, no Qt, no standalone `klayout` binary. |
+| `klt` | [klayout-tools][klt] on `PATH`, pinned to the git ref CI installs — see ["Pinning the tool"](#pinning-the-tool) below. `pipx install klayout-tools` / `uv tool install klayout-tools` installs the latest PyPI release instead, which as of `v0.2.0` lacks the gf180mcu digital synthesize/place-and-route flow, `klt pex`, and `klt yield` (#142). Brings its own KLayout Python module — no GUI, no Qt, no standalone `klayout` binary. |
 | PDK | A gf180mcu install, found through **`sim/harness/pdk.py`** — the same resolver the simulations use, so a DRC run and a SPICE run cannot silently disagree about which PDK is installed. Run `python3 sim/run_corners.py --check-env` for install instructions. |
 
 The PDK variant is whatever `sim/pdk.json` pins (`gf180mcuD` today).
@@ -105,11 +115,14 @@ stricter one. The git build's extra rules are legitimate; the problem is that
 nothing in the version string says which deck generation ran. Re-filed as
 fresh evidence on [klayout-tools#306][kt306]. **Consequence for anyone
 reproducing this directory's reports:** `.github/workflows/pdk-nightly.yml`
-installs `klayout-tools` from PyPI, so the released build is the reference
-this directory's committed reports are written against —
-`layout/cells/ro_buf/`'s were (#144). A locally-installed git build may be
-strictly stricter and disagree; check `provenance.deck.content_hash` before
-concluding the geometry moved.
+pins `klayout-tools` to an explicit git ref/SHA rather than a PyPI release —
+the latest release, `v0.2.0` (2026-08-04), predates the gf180mcu digital
+synthesize/place-and-route flow, `klt pex`, and `klt yield` (#142) — so that
+pinned commit, not any released wheel, is the reference this directory's
+committed reports are written against. A locally-installed build from a
+different commit (including a future PyPI release, once one is cut past
+`v0.2.0`) may resolve a different deck; check `provenance.deck.content_hash`
+before concluding the geometry moved.
 
 This is not hypothetical. On 2026-08-02 the reports committed here stopped
 matching a fresh run on the same machine, with `klt --version` and the
