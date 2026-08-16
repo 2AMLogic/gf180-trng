@@ -15,11 +15,12 @@ statement about the TRNG.
 things here that are about the TRNG.** `floorplan/` is the entropy source's
 isolation rationale (#16) and the floorplan abstract that carries it: four
 guarded regions, real generated guard rings, DRC'd as one stream, with an
-area rollup against the `< 0.05 mm²` row. As of #110, `ring1`/`ring2` carry
-real, placed, DRC/LVS-verified content; `combiner_sampler` and `digital` are
-still *empty* (`combiner_sampler` now has a real, DRC-clean, LVS-matching
-assembled block committed under `blocks/` — #134 — but it does not yet fit
-the region's own guarded footprint, #135, so it is not placed there), so
+area rollup against the `< 0.05 mm²` row. As of #110 and #135,
+`ring1`/`ring2` and `combiner_sampler` all carry real, placed,
+DRC/LVS-verified content (`combiner_sampler`'s real, DRC-clean,
+LVS-matching assembled block landed under `blocks/` in #134, and #135 —
+resolved by PR #139 — resized its guarded region to that block's own real
+bounding box and placed it there); `digital` is still *empty*, so
 `floorplan/` remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
@@ -37,7 +38,9 @@ sizings), `blocks/` holds `combiner_sampler` (one `xor2` plus four
 [`blocks/README.md`](blocks/README.md) for scope, and
 [`floorplan/README.md`](floorplan/README.md#placement--issue-110) for how
 `ring1`/`ring2`'s own assembled blocks are placed inside `floorplan/`'s own
-guarded regions (`combiner_sampler`'s own placement is blocked on #135).
+guarded regions, and
+[the same file's #135 section](floorplan/README.md#placement--issue-135-combiner_sampler)
+for `combiner_sampler`'s own placement, done the same way.
 
 The flow is stood up before the layout it will check, for the same reason
 `sim/` was stood up before the first result: a verification flow that first
