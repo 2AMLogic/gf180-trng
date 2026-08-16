@@ -74,8 +74,6 @@ import json
 import math
 import os
 import re
-import shutil
-import struct
 import subprocess
 import sys
 from collections import Counter
@@ -98,7 +96,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 
 import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
-from layout._klt import FlowError, resolve_pdk  # noqa: E402
+from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 
 #: The DRC deck name `klt` knows this PDK family by -- per-family, not
@@ -853,36 +851,6 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# GDSII timestamp normalisation
-# --------------------------------------------------------------------------- #
-#
-# `klt gen` / `klt gen-compose` stamp wall-clock time into the GDSII BGNLIB
-# and BGNSTR records, so two runs of the same generator on the same inputs
-# produce different bytes. A golden-artefact flow cannot byte-compare that, and
-# this repository's own writer (`layout/testcells/gdsii.py`) zeroes the same
-# fields for the same reason -- see layout/README.md. Filed upstream; until it
-# lands, the streams committed here are normalised on the way in.
-
-_BGNLIB = 0x0102
-_BGNSTR = 0x0502
-
-
-def normalise_gds(raw: bytes) -> bytes:
-    """Return `raw` with every BGNLIB/BGNSTR timestamp field zeroed."""
-    out = bytearray(raw)
-    offset = 0
-    while offset + 4 <= len(out):
-        length, record = struct.unpack_from(">HH", out, offset)
-        if length < 4:
-            break
-        if record in (_BGNLIB, _BGNSTR):
-            for index in range(offset + 4, offset + length):
-                out[index] = 0
-        offset += length
-    return bytes(out)
-
-
-# --------------------------------------------------------------------------- #
 # Area model
 # --------------------------------------------------------------------------- #
 
@@ -919,21 +887,6 @@ def digital_inventory() -> tuple[Counter, list[tuple[str, Counter, bool]]]:
         if is_shipped:
             shipped.update(counts)
     return shipped, per_block
-
-
-# --------------------------------------------------------------------------- #
-# Environment
-# --------------------------------------------------------------------------- #
-
-
-def klt_version() -> str | None:
-    if shutil.which("klt") is None:
-        return None
-    try:
-        done = subprocess.run(["klt", "--version"], capture_output=True, text=True, timeout=60)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return (done.stdout or done.stderr).strip() or None
 
 
 # --------------------------------------------------------------------------- #
