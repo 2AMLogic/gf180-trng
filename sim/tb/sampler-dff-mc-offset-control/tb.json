@@ -1,0 +1,26 @@
+{
+  "name": "sampler-dff-mc-offset-control",
+  "description": "Deterministic negative control for sim/tb/sampler-dff-mc-offset/: identical DUT and measurement, device mismatch disabled (sw_stat_mismatch=0). Issue #146's Leg 2 -- demonstrates the mismatch-enabled record's seed-to-seed spread collapses to (numerically) zero when the switch that produces it is off.",
+  "netlist": "tb_sampler_dff_mc_offset_control.sp",
+  "design_netlist": "design/sampler_core.spice",
+  "analysis_type": "mc",
+  "corners": ["tt", "ss"],
+  "temperatures_c": [27, 125],
+  "design_params": {
+    "sw_stat_mismatch": 0
+  },
+  "default_runs": 3,
+  "analyses": [
+    "dc vd 0 {vdd_val} 0.0066",
+    "meas dc dtrip when v(xdut.mb)={vdd_half} fall=1"
+  ],
+  "measure": {
+    "dtrip_v": "dtrip"
+  },
+  "caveats": [
+    "Same two PVT points as sim/tb/sampler-dff-mc-offset/ (tt/27C/3.30V paired, ss/125C/3.63V paired -- not a 2x2 grid), for direct comparison against that record's spread.",
+    "sw_stat_mismatch=0 makes every device's local mismatch offset multiply to exactly zero regardless of the ngspice `.option seed` in force, so this run is deterministic: the same corner produces bit-identical dtrip_v across every seed. 3 seeds are run (not 30, matching the mismatch-enabled record's count) purely to demonstrate that invariance empirically -- a single seed would already be sufficient given the mechanism, but seeing several distinct seeds collapse to the same number is more convincing evidence than asserting it from the mechanism alone.",
+    "This is a mechanism check, not an independent measurement: it shares its DUT, corner points and measurement expressions with sim/tb/sampler-dff-mc-offset/ by construction, so it cannot show anything sim/tb/sampler-dff-setup-hold/ (this cell's deterministic characterization) does not already show about the mean device. Its only purpose is to demonstrate the MC record's spread is attributable to sw_stat_mismatch and not to some other source of run-to-run variation.",
+    "Measures the MASTER LATCH's own decision threshold (node xdut.mb) with clk held at 0 throughout, not a full clocked capture -- see sim/tb/sampler-dff-mc-offset/'s tb.json for the same caveat restated in full."
+  ]
+}

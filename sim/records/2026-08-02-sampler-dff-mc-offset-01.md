@@ -1,7 +1,8 @@
 ---
 record: 2026-08-02-sampler-dff-mc-offset-01
 date: 2026-08-02T02:12:54Z
-status: valid
+status: superseded
+superseded_by: 2026-08-17-sampler-dff-mc-offset-03
 supersedes: 2026-08-01-sampler-dff-mc-offset-01 -- the DUT changed under it: #59 (DR-0014-sampler-reset-gated-into-the-storage-loops) replaced sampler_dff's reset structure, so the master latch's first inversion is now a reset-gated NAND2 with a width-compensated NMOS stack rather than a plain 0.44u/0.22u inverter. Same testbench, same 30 seeds, re-run against the shipped netlist (design/sampler_core.spice, sha 50bc082).
 
 testbench:

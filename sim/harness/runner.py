@@ -120,6 +120,34 @@ def ngspice_version() -> str:
     return out.strip().splitlines()[0] if out.strip() else "unknown"
 
 
+def _analysis_context(tb: Testbench, point: PvtPoint) -> dict[str, float]:
+    """Python-side substitution values for ``tb.json``'s ``analyses`` lines.
+
+    ``compose_deck`` inserts each ``analyses`` entry as an *interactive*
+    control-block command (``dc``/``meas``/...), not a native ``.dc``/
+    ``.meas`` card -- and ngspice's interactive commands do not evaluate
+    ``.param``-defined symbols in a numeric-argument position: ``dc vd 0
+    vdd_val 0.01`` and ``dc vd 0 {vdd_val} 0.01`` (curly-brace and bare-token
+    substitution both tried) fail identically with ``Error: Bad syntax!``
+    against ngspice-47. A testbench whose sweep bounds or comparison
+    thresholds must track the PVT point's own supply -- anything voltage-swept
+    beyond a single hardcoded nominal point -- has no ngspice-side way to
+    reference ``vdd_val`` in these lines. This substitutes the numbers in
+    Python instead, before the deck is written, via ``str.format(**context)``
+    on each ``analyses`` entry: an entry containing e.g. ``{vdd_val}`` gets the
+    literal numeric value substituted textually, so ngspice only ever sees a
+    plain number. ``vdd_val``/``vdd_nom``/``temp_c`` mirror the ``.param``
+    values set above; ``vdd_half`` covers the common mid-supply comparison
+    point (e.g. a CMOS inverter/gate switching threshold measurement).
+    """
+    return {
+        "vdd_val": point.vdd,
+        "vdd_nom": tb.nominal_supply_v,
+        "vdd_half": point.vdd / 2.0,
+        "temp_c": point.temp_c,
+    }
+
+
 def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint, seed: int | None = None) -> str:
     """Build the complete, self-contained ngspice deck for one PVT point.
 
@@ -191,7 +219,8 @@ def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint, seed: int | None = No
         "set numdgt=10",
         "set noaskquit",
     ]
-    lines += [f"  {analysis}" for analysis in tb.analyses]
+    analysis_context = _analysis_context(tb, point)
+    lines += [f"  {analysis.format(**analysis_context)}" for analysis in tb.analyses]
     for name, expr in tb.measure.items():
         lines.append(f"  let m_{name} = {expr}")
     for name in tb.measure:

@@ -1,7 +1,8 @@
 ---
 record: 2026-08-01-ro-array-core-mc-freq-01
 date: 2026-08-01T23:46:53Z
-status: valid
+status: superseded
+superseded_by: 2026-08-17-ro-array-core-mc-freq-01
 
 testbench:
   path: sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq.sp

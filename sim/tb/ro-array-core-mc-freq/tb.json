@@ -1,15 +1,14 @@
 {
   "name": "ro-array-core-mc-freq",
-  "description": "Monte Carlo device mismatch on the shipped 2-ring x 11-stage entropy-source array (design/ro_array_core.spice): per-ring period/current spread across virtual chip samples, at the nominal corner. Issue #13's RO-frequency-spread MC run.",
+  "description": "Monte Carlo device mismatch on the shipped 2-ring x 11-stage entropy-source array (design/ro_array_core.spice): per-ring period/current spread across virtual chip samples, at the nominal corner and DR-0015's measured worst (entropy-binding) corner. Issue #13's RO-frequency-spread MC run; issue #146 combined the mismatch draw with process/temperature/supply corners.",
   "netlist": "tb_ro_array_core_mc_freq.sp",
   "design_netlist": "design/ro_array_core.spice",
   "analysis_type": "mc",
-  "corners": ["tt"],
-  "temperatures_c": [27],
+  "corners": ["tt", "ss"],
+  "temperatures_c": [27, 125],
   "design_params": {
     "sw_stat_mismatch": 1
   },
-  "extra_lib_sections": ["statistical"],
   "default_runs": 8,
   "tstop": "100n",
   "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
@@ -35,8 +34,10 @@
     "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)"
   },
   "caveats": [
-    "Nominal corner only (tt/27C/3.30V). gf180mcu's `statistical` library section supplies intra-die mismatch on top of whichever corner's devices are loaded; this run does not repeat the mismatch draw at ff/ss or at temperature/supply extremes, so it says nothing about whether mismatch spread widens or narrows at those corners.",
+    "Issue #146: two PVT points, not a full corner sweep. tt/27C/3.30V (the pre-existing nominal record) paired with ss/125C/3.63V, DR-0015's own measured entropy-binding worst corner over the array's full covered PVT grid -- a justified subset, not the harness's full `mos` corner set (tt/ff/ss/fs/sf) x 3 temperatures x 3 supplies (45 points), which at this testbench's ~30s/seed x 8 seeds/point cost would be affordable in wall-clock terms but was not run: the two points chosen are the ones a reader most needs (the pre-existing baseline, and the corner DR-0015 already flags as worst for this array's entropy-relevant metric). `corners`/`temperatures_c` above list the two VALUES exercised (tt paired with 27C/3.30V, ss paired with 125C/3.63V) -- they are not independently swept, so do not read this as a 2x2 grid.",
+    "Until issue #146, `corner.process` was bookkeeping only for this testbench: `extra_lib_sections: [\"statistical\"]` unconditionally replaced whichever corner's own per-family sections would otherwise load (see sim/harness/runner.py's compose_deck), so every `corners` entry other than `tt` was silently a no-op -- the 2026-08-01 tt-only record's own caveat said as much. #146 removed `extra_lib_sections`: every gf180mcu per-corner device library (nfet_03v3_t/_f/_s/_fs/_sf and their pfet counterparts) already implements the identical `sw_stat_mismatch`-gated local (Pelgrom) mismatch model the `statistical` section used, so dropping `extra_lib_sections` and keeping `sw_stat_mismatch=1` lets the harness's normal per-corner `.lib` selection combine with mismatch directly -- verified empirically (composed decks differ by corner, and seeded re-runs at a fixed corner still diverge) and numerically (tt/27C spread magnitude is consistent between the two mechanisms to within the seed-to-seed noise floor) before this manifest changed.",
     "8 mismatch seeds is enough to characterize the spread's rough magnitude, not to bound a tail probability -- a claim about the FRACTION of parts that would violate the non-integer-ratio requirement needs many more samples than this record provides.",
-    "Each seed is an independent full-array mismatch draw (both rings, the XOR gate, everything in design/ro_array_core.spice redrawn together), which is the physically correct picture for one chip -- but it means the two rings' mismatch draws are correlated only through whatever global (not per-device) variation `sw_stat_global` would add, which this testbench leaves off (sw_stat_mismatch=1, sw_stat_global=0 default): local/intra-die mismatch only, no die-to-die global corner spread on top of the tt corner already selected."
+    "Each seed is an independent full-array mismatch draw (both rings, the XOR gate, everything in design/ro_array_core.spice redrawn together), which is the physically correct picture for one chip -- but it means the two rings' mismatch draws are correlated only through whatever global (not per-device) variation `sw_stat_global` would add, which this testbench leaves off (sw_stat_mismatch=1, sw_stat_global=0 default): local/intra-die mismatch only, no die-to-die global corner spread on top of whichever corner is already selected.",
+    "The deterministic negative control (mismatch disabled, sw_stat_mismatch=0) is a separate testbench, sim/tb/ro-array-core-mc-freq-control/ -- tb.json's design_params are fixed per testbench, so there is no CLI flag to flip sw_stat_mismatch for a single run of this manifest."
   ]
 }

@@ -1,28 +1,29 @@
 {
   "name": "sampler-dff-mc-offset",
-  "description": "Monte Carlo device mismatch on sampler_dff's master-latch decision threshold (design/sampler_core.spice), at the nominal corner. Issue #13's sampler offset/asymmetry MC run.",
+  "description": "Monte Carlo device mismatch on sampler_dff's master-latch decision threshold (design/sampler_core.spice), at the nominal corner and DR-0015's measured worst (entropy-binding) corner. Issue #13's sampler offset/asymmetry MC run; issue #146 combined the mismatch draw with process/temperature/supply corners.",
   "netlist": "tb_sampler_dff_mc_offset.sp",
   "design_netlist": "design/sampler_core.spice",
   "analysis_type": "mc",
-  "corners": ["tt"],
-  "temperatures_c": [27],
+  "corners": ["tt", "ss"],
+  "temperatures_c": [27, 125],
   "design_params": {
     "sw_stat_mismatch": 1
   },
-  "extra_lib_sections": ["statistical"],
   "default_runs": 30,
   "analyses": [
-    "dc vd 0 3.3 0.0066",
-    "meas dc dtrip when v(xdut.mb)=1.65 fall=1"
+    "dc vd 0 {vdd_val} 0.0066",
+    "meas dc dtrip when v(xdut.mb)={vdd_half} fall=1"
   ],
   "measure": {
     "dtrip_v": "dtrip"
   },
   "caveats": [
-    "Nominal corner only (tt/27C/3.30V) -- see this testbench's own header for why, and sim/tb/ro-array-core-mc-freq/'s header for the identical rationale restated in the RO context.",
-    "The dc sweep bounds (0-3.3V) and the mid-supply comparison value (1.65) in this manifest's `analyses`/`measure` are hardcoded numeric literals, not vdd_val-parameterized expressions: ngspice's control-block `dc`/`meas dc` commands rejected a parenthesized `vdd_val`-derived increment during this testbench's bring-up. Harmless only because this testbench is pinned to the single 3.30 V nominal point above -- re-parameterize before ever sweeping this testbench's voltage axis.",
+    "Issue #146: two PVT points, not a full corner sweep. tt/27C/3.30V (the pre-existing nominal record) paired with ss/125C/3.63V, DR-0015's own measured entropy-binding worst corner over the array's full covered PVT grid -- see sim/tb/ro-array-core-mc-freq/'s tb.json for the identical justification (this manifest's `corners`/`temperatures_c` list the two VALUES exercised, paired, not independently swept -- not a 2x2 grid).",
+    "The dc sweep bounds and the mid-supply comparison value are `{vdd_val}`/`{vdd_half}` format fields, substituted by sim/harness/runner.py's compose_deck (Python str.format, before ngspice ever sees the line) rather than left as ngspice-side `.param` references: ngspice's control-block `dc`/`meas dc` commands do not evaluate `.param` symbols (or curly-brace-substituted ones) in a numeric-argument position -- confirmed empirically against ngspice-47 (`Error: Bad syntax!` either way) during issue #146's bring-up of the second (ss/125C/3.63V) PVT point, which needs a sweep bound and comparison value that track vdd_val instead of the single hardcoded 3.30V/1.65V pair this manifest carried before #146.",
+    "Until issue #146, `corner.process` was bookkeeping only for this testbench: `extra_lib_sections: [\"statistical\"]` unconditionally replaced whichever corner's own per-family sections would otherwise load (see sim/harness/runner.py's compose_deck), so every `corners` entry other than `tt` was silently a no-op. #146 removed `extra_lib_sections`: every gf180mcu per-corner device library already implements the identical `sw_stat_mismatch`-gated local (Pelgrom) mismatch model the `statistical` section used, so dropping `extra_lib_sections` and keeping `sw_stat_mismatch=1` lets the harness's normal per-corner `.lib` selection combine with mismatch directly.",
     "Measures the MASTER LATCH's own decision threshold (node xdut.mb) with clk held at 0 throughout, not a full clocked capture. It says nothing about clk-to-Q delay, setup/hold margin or metastable resolution time -- those are sim/tb/sampler-dff-setup-hold/'s job, unchanged by this run.",
     "The .dc sweep is quasi-static (no dV/dt): it measures the offset of the STATIC switching threshold, not a dynamic one. Converting it to a raw-bit-probability bias (issue #13's own analysis) additionally assumes the real XOR node's crossing is fast enough, and its slew rate near mid-supply steady enough, that the static and dynamic thresholds coincide to first order -- a modeling assumption stated once here rather than re-derived per record.",
-    "30 mismatch seeds characterizes the offset distribution's rough mean and spread, not a tail probability."
+    "30 mismatch seeds characterizes the offset distribution's rough mean and spread, not a tail probability.",
+    "The deterministic negative control (mismatch disabled, sw_stat_mismatch=0) is a separate testbench, sim/tb/sampler-dff-mc-offset-control/ -- tb.json's design_params are fixed per testbench, so there is no CLI flag to flip sw_stat_mismatch for a single run of this manifest."
   ]
 }
