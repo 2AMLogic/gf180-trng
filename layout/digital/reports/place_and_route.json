@@ -8,25 +8,25 @@
   "seed": 1,
   "die_area_um2": 301198,
   "core_area_um2": 277092,
-  "utilization_pct": 40.8124,
-  "wirelength_um": 163650,
-  "worst_slack_ns": 27.7354,
+  "utilization_pct": 41.8636,
+  "wirelength_um": 165732,
+  "worst_slack_ns": 27.7656,
   "total_negative_slack_ns": 0,
-  "fmax_mhz": 44.9144,
+  "fmax_mhz": 44.9753,
   "setup_violation_count": 0,
   "hold_violation_count": 0,
   "antenna_violation_count": 0,
   "route_drc_violation_count": 0,
-  "estimated_power_mw": 6.3833,
-  "clock_skew_ns": 0.4026,
-  "worst_setup_slack_ns": -28.7535,
-  "worst_hold_slack_ns": 0.51699,
+  "estimated_power_mw": 6.4281,
+  "clock_skew_ns": 0.34933,
+  "worst_setup_slack_ns": -29.1896,
+  "worst_hold_slack_ns": 0.51809,
   "stages": [
     {
       "name": "floorplan",
       "die_area_um2": 301198,
       "core_area_um2": 277092,
-      "utilization_pct": 40.3683,
+      "utilization_pct": 41.3319,
       "worst_slack_ns": 34.0711,
       "total_negative_slack_ns": 0
     },
@@ -34,12 +34,12 @@
       "name": "place",
       "die_area_um2": 301198,
       "core_area_um2": 277092,
-      "utilization_pct": 39.747,
-      "worst_slack_ns": 27.11,
+      "utilization_pct": 40.7635,
+      "worst_slack_ns": 26.9063,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 103807,
-      "fmax_mhz": 43.6872,
-      "estimated_power_mw": 4.691,
+      "wirelength_um": 105647,
+      "fmax_mhz": 43.3019,
+      "estimated_power_mw": 4.7001,
       "setup_violation_count": 0,
       "hold_violation_count": 0
     },
@@ -47,13 +47,13 @@
       "name": "cts",
       "die_area_um2": 301198,
       "core_area_um2": 277092,
-      "utilization_pct": 40.8124,
-      "worst_slack_ns": 26.8492,
+      "utilization_pct": 41.8636,
+      "worst_slack_ns": 26.754,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 111790,
-      "fmax_mhz": 43.195,
-      "estimated_power_mw": 6.3536,
-      "clock_skew_ns": 0.08678,
+      "wirelength_um": 113487,
+      "fmax_mhz": 43.0182,
+      "estimated_power_mw": 6.394,
+      "clock_skew_ns": 0.06344,
       "setup_violation_count": 0,
       "hold_violation_count": 0
     },
@@ -61,19 +61,19 @@
       "name": "route",
       "die_area_um2": 301198,
       "core_area_um2": 277092,
-      "utilization_pct": 40.8124,
-      "worst_slack_ns": 27.7354,
+      "utilization_pct": 41.8636,
+      "worst_slack_ns": 27.7656,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 163650,
-      "fmax_mhz": 44.9144,
-      "estimated_power_mw": 6.3833,
-      "clock_skew_ns": 0.4026,
+      "wirelength_um": 165732,
+      "fmax_mhz": 44.9753,
+      "estimated_power_mw": 6.4281,
+      "clock_skew_ns": 0.34933,
       "setup_violation_count": 0,
       "hold_violation_count": 0,
       "antenna_violation_count": 0,
       "route_drc_violation_count": 0,
-      "worst_setup_slack_ns": -28.7535,
-      "worst_hold_slack_ns": 0.51699
+      "worst_setup_slack_ns": -29.1896,
+      "worst_hold_slack_ns": 0.51809
     }
   ],
   "macros": [],
@@ -84,16 +84,33 @@
   },
   "verilog_path": "layout/digital/trng_top.pnr.v",
   "spef_sta": null,
+  "power": {
+    "pdn": true,
+    "global_connect": true,
+    "power_net": "vddd",
+    "ground_net": "vss",
+    "tapcell_master": "gf180mcu_fd_sc_mcu9t5v0__filltie",
+    "endcap_master": "gf180mcu_fd_sc_mcu9t5v0__endcap",
+    "filler_masters": [
+      "gf180mcu_fd_sc_mcu9t5v0__fill_64",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_32",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_16",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_8",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_4",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_2",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_1"
+    ]
+  },
   "provenance": {
     "klt_version": "0.2.0",
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
     },
     "deck": {
       "name": "gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00",
-      "content_hash": "sha256:d83917f827021eadb159f6011905bf20de632533b2953abba89266a88c2b24af"
+      "content_hash": "sha256:c31d836785af6af4502aadaaf7cc0f604119d38fd66b8ee32733510eabdad6d2"
     },
     "input": {
       "content_hash": "sha256:ee105f2e9bd5935dd9aa1c369b7f7f4123e23672eb3503b0052dcaaae7ce939f"
@@ -115,6 +132,30 @@
       "layer_h": "Metal3",
       "layer_v": "Metal4"
     },
+    "power": {
+      "power_net": "vddd",
+      "ground_net": "vss",
+      "straps": [
+        {
+          "layer": "Metal1",
+          "width_um": 0.9,
+          "pitch_um": 5.04,
+          "followpins": true
+        },
+        {
+          "layer": "Metal4",
+          "width_um": 4.48,
+          "pitch_um": 44.8,
+          "offset_um": 22.4
+        },
+        {
+          "layer": "Metal5",
+          "width_um": 4.48,
+          "pitch_um": 89.6,
+          "offset_um": 44.8
+        }
+      ]
+    },
     "constraints": {
       "clock_port": "clk",
       "clock_period_ns": 50.0
@@ -125,17 +166,48 @@
   "checks": {
     "def": {
       "database_units_per_um": 2000,
-      "component_count": 2499,
+      "component_count": 8638,
       "die_width_um": 548.815,
       "die_height_um": 548.815,
-      "special_nets": false
+      "special_nets": true
     },
     "components": {
       "status": "ok",
-      "placed": 2499,
-      "as_built_netlist": 2499,
+      "placed": 8638,
+      "physical_only_instance_count": 6136,
+      "physical_only_by_master": {
+        "gf180mcu_fd_sc_mcu9t5v0__filltie": 265,
+        "gf180mcu_fd_sc_mcu9t5v0__endcap": 208,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_64": 312,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_32": 325,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_16": 725,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_8": 919,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_4": 1072,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_2": 1158,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_1": 1152
+      },
+      "logical_placed": 2502,
+      "as_built_netlist": 2502,
       "synthesized": 2505,
-      "delta_vs_synthesized": -6
+      "delta_vs_synthesized": -3
+    },
+    "power_isolation": {
+      "status": "ok",
+      "constraint": "layout/floorplan/README.md mitigation 2: the digital domain (vddd) never shares a strap segment with an entropy domain (vddr1/vddr2/vdd)",
+      "expected_nets": [
+        "vddd",
+        "vss"
+      ],
+      "found_nets": [
+        "vddd",
+        "vss"
+      ],
+      "entropy_supply_nets_checked": [
+        "vddr1",
+        "vddr2",
+        "vdd"
+      ],
+      "entropy_supply_nets_present": []
     },
     "gds_geometry": {
       "status": "ok",
@@ -155,11 +227,9 @@
     }
   },
   "drc": {
-    "status": "violations",
+    "status": "clean",
     "deck": "gf180mcu",
-    "violation_count": 149,
-    "rule_counts": {
-      "nwell.space.1": 149
-    }
+    "violation_count": 0,
+    "rule_counts": {}
   }
 }

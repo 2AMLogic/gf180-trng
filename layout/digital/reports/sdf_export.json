@@ -24,6 +24,6 @@
     "icarus_unsupported_cells_dropped_entirely": 46,
     "top_level_interconnect_block_dropped": true
   },
-  "sdf_sha256": "ae77633baa9dc59afa7da3e1fa5f78de83f8c13b034888b36e3417a48c500a88",
-  "sdf_content_sha256": "c35889d6de97677be092c44a6a0ba96cf8fe49a0eae54be7b36735a1b0f57b03"
+  "sdf_sha256": "c61b5d5e037b6439efadc2fb7929f982fa6fe78d287b425e507f756e4aa980e1",
+  "sdf_content_sha256": "a6cdf5b862ba53ff1bdca7c6b616f8ad839c6d936322730f058fe07ddc84bb2e"
 }

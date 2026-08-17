@@ -19,12 +19,16 @@ What is committed, and what is gated behind a check
 `klt place-and-route` returns three artefacts. This script commits all three,
 the third only when `_gds_geometry_check` below passes:
 
-- **`trng_top.def`** -- the routed DEF, OpenROAD's own output. Committed.
+- **`trng_top.def`** -- the routed DEF, OpenROAD's own output, carrying both
+  signal routing and (since #171) a `SPECIALNETS` power grid. Committed.
 - **`trng_top.pnr.v`** -- the *as-built* gate-level netlist (`write_verilog`
   after CTS, resizing and antenna-diode insertion), which is what a
   post-route gate-level simulation (#147) or a golden-reference LVS run has
   to use as its reference rather than `klt synthesize`'s pre-CTS netlist.
-  Committed.
+  The tapcell/endcap/filler instances #171 inserts are deliberately *not* in
+  it (`write_verilog -remove_cells`) -- they carry no logical function, and
+  `_component_check` below subtracts them from the DEF side before comparing
+  the two. Committed.
 - **`trng_top.gds`** -- the DEF merged with the standard cells' own GDS
   views. `_gds_geometry_check` below compares the merged stream's own extent
   against the DEF's own `DIEAREA`, and only commits the GDS (plus runs `klt
@@ -72,10 +76,18 @@ Not signoff timing and not a finished physical implementation.
 `worst_slack_ns`/`fmax_mhz` are OpenROAD's own pre-signoff STA over an
 ideal, SDC-only clock with global-routing-estimated parasitics -- no
 extraction, no SPEF. `floorplan.utilization_pct` and `clock_period_ns` below
-are this run's own inputs, not ratified spec targets. The flow builds **no
-power distribution network**: it never runs `global_connect`/`pdngen`, so
-the standard cells' `VDD`/`VSS` pins belong to no net, the DEF carries no
-`SPECIALNETS` section, and nothing here connects a rail to a supply pin.
+are this run's own inputs, not ratified spec targets. The flow does now
+build a real power distribution network (`POWER` below, #171): `tapcell`,
+`add_global_connection`/`global_connect`, `pdngen` and a post-route
+`filler_placement` all run, so the standard cells' `VDD`/`VSS` pins are
+wired to named `vddd`/`vss` nets, the DEF carries a `SPECIALNETS` section
+with real rail and strap geometry, and row gaps are filled. What that is
+still not is a *system*-level PDN: this is a standalone place-and-route of
+the digital section alone, whose netlist contains no entropy-ring instance,
+port or supply net of any kind, so composing this block's own supply pin
+onto the chip's star point -- `layout/floorplan/README.md`'s mitigation 2 --
+remains that floorplan's job and not this script's. `_power_isolation_check`
+below is what this script can check from here, and says so precisely.
 Corner characterization (Fmax/area/power across the corner set) is #145's
 job, not this script's; a post-route gate-level functional re-run is #147's.
 `layout/digital/README.md` states all of this at length, including what a
@@ -180,6 +192,52 @@ FLOORPLAN = {
     "site": "GF018hv5v_green_sc9",
 }
 IO = {"layer_h": "Metal3", "layer_v": "Metal4"}
+
+#: Power delivery for this run -- `klt place-and-route`'s optional
+#: `request.power` block (klayout-tools#1091, shipped as
+#: klayout-tools#1120, which this repository's own `klt` pin moves to in
+#: #171). Before it existed, this flow's generated Tcl never called
+#: `global_connect`/`pdngen` and inserted no tapcells, endcaps or filler
+#: cells: the routed DEF carried no `SPECIALNETS` section at all, recorded
+#: in the committed report as `checks.def.special_nets: false` (see
+#: `layout/digital/README.md`'s "Two defects this bring-up found" #2).
+#:
+#: - `power_net`/`ground_net`: `vddd`/`vss`, deliberately **not** `klt`'s
+#:   own `VDD`/`VSS` defaults. `vddd` is the digital domain's supply name
+#:   everywhere else in this repository -- `layout/floorplan/floorplan.py`'s
+#:   own region table and `layout/floorplan/README.md`'s four-domain star --
+#:   and a routed DEF whose `SPECIALNETS` said `VDD` would be a block that
+#:   cannot be composed onto that star without a rename. This does not
+#:   rename the *cells'* pins: the standard cells' LEF power/ground pins
+#:   stay `VDD`/`VSS`, and `add_global_connection -pin_pattern` maps from
+#:   those fixed pin names onto whichever net name this request asks for.
+#: - `straps`: this platform's own production PDN grid, copied
+#:   layer-for-layer (net names aside) from
+#:   `The-OpenROAD-Project/OpenROAD-flow-scripts` @ `master`,
+#:   `flow/platforms/gf180/openROAD/pdn/pdn_grid_strategy_9t_6M.cfg`
+#:   (read 2026-08-17) -- the `9t`/6-metal strategy matching this run's own
+#:   `site: "GF018hv5v_green_sc9"` (9-track) and the `Metal2`-`Metal5`
+#:   routing range `klt` resolves for this cell library. Bottom to top:
+#:   `Metal1` follows the standard-cell rows (`followpins`) at the site's
+#:   own 5.04 um rail pitch; `Metal4`/`Metal5` are the upper-metal strap
+#:   grid. Two deviations from that config, both because `klt`'s
+#:   `straps[]` does not expose the fields: its `Metal4` stripe also sets
+#:   `-spacing 0.56` (a paired-stripe spacing), and its two
+#:   `add_pdn_connect` calls carry `-max_columns`/`-ongrid`/`-split_cuts`
+#:   via tuning. `klt` emits plain `add_pdn_connect` between each
+#:   consecutive strap pair instead. The resulting geometry is checked, not
+#:   assumed: `klt drc` over the merged GDS is run below and its verdict
+#:   committed to `reports/drc.json`.
+POWER = {
+    "power_net": "vddd",
+    "ground_net": "vss",
+    "straps": [
+        {"layer": "Metal1", "width_um": 0.9, "pitch_um": 5.04, "followpins": True},
+        {"layer": "Metal4", "width_um": 4.48, "pitch_um": 44.8, "offset_um": 22.4},
+        {"layer": "Metal5", "width_um": 4.48, "pitch_um": 89.6, "offset_um": 44.8},
+    ],
+}
+
 CONSTRAINTS = {"clock_port": "clk", "clock_period_ns": 50.0}
 SEED = 1
 TARGET_STAGE = "route"
@@ -261,6 +319,11 @@ def _write_request(request_path: Path) -> None:
         "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
         "floorplan": dict(FLOORPLAN),
         "io": dict(IO),
+        "power": {
+            "power_net": POWER["power_net"],
+            "ground_net": POWER["ground_net"],
+            "straps": [dict(strap) for strap in POWER["straps"]],
+        },
         "constraints": dict(CONSTRAINTS),
         "seed": SEED,
         "target_stage": TARGET_STAGE,
@@ -279,9 +342,22 @@ _DIEAREA_RE = re.compile(
 _UNITS_RE = re.compile(r"^UNITS\s+DISTANCE\s+MICRONS\s+(\d+)\s*;", re.M)
 _COMPONENTS_RE = re.compile(r"^COMPONENTS\s+(\d+)\s*;", re.M)
 #: A `SPECIALNETS` section is how a DEF carries power/ground geometry. Its
-#: *absence* is the recorded evidence that this flow builds no power
-#: delivery at all (klayout-tools#1091) -- see `layout/digital/README.md`.
+#: *absence* was the recorded evidence, from #111 until #171, that this flow
+#: built no power delivery at all (klayout-tools#1091) -- see
+#: `layout/digital/README.md`.
 _SPECIALNETS_RE = re.compile(r"^SPECIALNETS\s+\d+\s*;", re.M)
+#: Each `SPECIALNETS` entry opens with a `- <net-name>` line, and each
+#: `COMPONENTS` entry with a `- <instance> <master>` line. `_specialnet_names`
+#: and `_def_component_counts_by_master` below read the DEF's own sections
+#: through these rather than trusting the request that produced it.
+_SPECIALNET_NAME_RE = re.compile(r"^\s*-\s+(\S+)", re.M)
+_COMPONENT_ENTRY_RE = re.compile(r"^\s*-\s+\S+\s+(\S+)", re.M)
+
+#: The three supplies `layout/floorplan/README.md`'s mitigation 2 requires
+#: the digital domain to stay off: the two ring supplies and the combiner/
+#: sampler supply. `_power_isolation_check` asserts none of them appears in
+#: this block's own `SPECIALNETS` section.
+_ENTROPY_SUPPLY_NETS = ("vddr1", "vddr2", "vdd")
 
 
 def _def_summary(def_path: Path) -> dict:
@@ -306,6 +382,89 @@ def _def_summary(def_path: Path) -> dict:
         summary["die_width_um"] = round((x1 - x0) / dbu_per_um, 4)
         summary["die_height_um"] = round((y1 - y0) / dbu_per_um, 4)
     return summary
+
+
+def _def_section(def_text: str, name: str) -> str | None:
+    """The body of the DEF's `<name> ... END <name>` section, or `None`.
+
+    DEF sections are line-oriented and never nested, so locating the header
+    and the matching `END` line is enough -- and is what keeps the two
+    section readers below from mistaking a `NETS` entry for a `SPECIALNETS`
+    one (both open their entries with the same `- <name>` syntax).
+    """
+    start = def_text.find(f"\n{name} ")
+    if start == -1:
+        return None
+    end = def_text.find(f"\nEND {name}", start)
+    return None if end == -1 else def_text[start:end]
+
+
+def _specialnet_names(def_text: str) -> list[str]:
+    """Every net that actually carries geometry in the DEF's `SPECIALNETS`
+    section -- read from the DEF itself, not from the request that asked for
+    it."""
+    body = _def_section(def_text, "SPECIALNETS")
+    return [] if body is None else sorted(set(_SPECIALNET_NAME_RE.findall(body)))
+
+
+def _power_isolation_check(def_path: Path, def_summary: dict) -> dict:
+    """Does this routed DEF's power geometry stay on this block's own
+    supplies, and off the entropy source's?
+
+    **What the constraint is.** `layout/floorplan/README.md`'s mitigation 2
+    ("Star routing from a single point") requires four supply domains --
+    `vddr1`, `vddr2`, `vdd` (combiner + samplers) and `vddd` (digital) --
+    to be separate branches from one star point at the block's supply pad,
+    with no shared series impedance between the entropy branches and the
+    digital branch, and states the layout-side half of it explicitly: *"the
+    digital domain never shares a strap segment with an entropy domain."*
+    The digital section is the aggressor that requirement exists for (708
+    flip-flops on one external `clk`), so a PDN built here without it in
+    mind would undo that mitigation while looking entirely ordinary and
+    passing DRC.
+
+    **What this check can and cannot establish.** This script runs a
+    *standalone* place-and-route of the digital section: its input netlist
+    (`design/trng_top/trng_top.synth.v`) has no ring instance, no ring port
+    and no entropy supply net anywhere in it, so the composition this
+    constraint ultimately governs -- where `vddd` meets `vddr1`/`vddr2`/
+    `vdd`, and through how much shared metal -- happens in
+    `layout/floorplan/`, not here, and cannot be verified from this DEF. What
+    *can* be verified from this DEF, and is the specific way this run could
+    silently violate the constraint, is that the geometry `pdngen` built
+    belongs to exactly this block's own two supplies: a `power_net`/
+    `ground_net` regression here (or an upstream defect pulling an
+    unexpected net into the grid) would show up as a `SPECIALNETS` section
+    naming something other than `{vddd, vss}`, and a strap on a net named
+    `vddr1`/`vddr2`/`vdd` is precisely the shared segment the floorplan
+    forbids. So this asserts set equality against the requested pair --
+    no more and no less -- and separately reports any entropy-supply name
+    found, rather than asserting compliance in prose.
+
+    Recorded verbatim in the committed report as `checks.power_isolation`.
+    """
+    if not def_summary.get("special_nets"):
+        return {"status": "skipped", "reason": "no SPECIALNETS section in the DEF"}
+    found = _specialnet_names(def_path.read_text(errors="replace"))
+    if not found:
+        return {
+            "status": "skipped",
+            "reason": "SPECIALNETS header present but its section body was not readable",
+        }
+    expected = sorted({POWER["power_net"], POWER["ground_net"]})
+    entropy = [net for net in _ENTROPY_SUPPLY_NETS if net in found]
+    return {
+        "status": "ok" if found == expected and not entropy else "mismatch",
+        "constraint": (
+            "layout/floorplan/README.md mitigation 2: the digital domain "
+            "(vddd) never shares a strap segment with an entropy domain "
+            "(vddr1/vddr2/vdd)"
+        ),
+        "expected_nets": expected,
+        "found_nets": found,
+        "entropy_supply_nets_checked": list(_ENTROPY_SUPPLY_NETS),
+        "entropy_supply_nets_present": entropy,
+    }
 
 
 def _gds_extent_um(gds_path: Path) -> tuple[float, float]:
@@ -372,8 +531,44 @@ def _netlist_instance_count(netlist_path: Path) -> int | None:
     return len(pattern.findall(netlist_path.read_text(errors="replace")))
 
 
-def _component_check(def_summary: dict) -> dict:
-    """Do the DEF and the as-built netlist describe the same instance set?
+def _physical_only_masters(power: dict | None) -> tuple[str, ...]:
+    """The tapcell/endcap/filler masters this run inserted, named by `klt
+    place-and-route`'s own response.
+
+    These are physical-only cells: they carry no logical function, and the
+    `"route"` stage's `write_verilog` deliberately strips them from the
+    as-built netlist (`-remove_cells`, so `trng_top.pnr.v` stays diffable
+    against `klt synthesize`'s own netlist, which never contained them --
+    klayout-tools' "Power delivery" docs). They are therefore present in the
+    DEF's `COMPONENTS` count and absent from the netlist by design, which
+    `_component_check` has to subtract before comparing the two.
+    """
+    if not power:
+        return ()
+    named = [power.get("tapcell_master"), power.get("endcap_master")]
+    named += list(power.get("filler_masters") or ())
+    return tuple(name for name in named if name)
+
+
+def _def_component_counts_by_master(
+    def_text: str, masters: tuple[str, ...]
+) -> dict[str, int]:
+    """How many `COMPONENTS` entries instantiate each of `masters`."""
+    body = _def_section(def_text, "COMPONENTS")
+    if body is None or not masters:
+        return {}
+    counts = dict.fromkeys(masters, 0)
+    for master in _COMPONENT_ENTRY_RE.findall(body):
+        if master in counts:
+            counts[master] += 1
+    return counts
+
+
+def _component_check(
+    def_path: Path, def_summary: dict, physical_only_masters: tuple[str, ...]
+) -> dict:
+    """Do the DEF and the as-built netlist describe the same *logical*
+    instance set?
 
     That is the invariant worth checking, and it is not the same as "the DEF
     has at least as many components as the synthesized netlist had
@@ -383,8 +578,11 @@ def _component_check(def_summary: dict) -> dict:
     hold is that `write_def` and `write_verilog` -- the two artefacts this
     script commits, which downstream consumers (#145's STA, #147's
     gate-level re-run) have to be able to use together -- agree with each
-    other. The delta against the synthesized input is recorded alongside as
-    information, not as a verdict.
+    other, once the tapcell/endcap/filler instances `write_verilog` strips by
+    design (`_physical_only_masters`, #171) are subtracted from the DEF side
+    too. Without that subtraction a PDN doing exactly what it is supposed to
+    do would report a `"mismatch"` on every run. The delta against the
+    synthesized input is recorded alongside as information, not as a verdict.
     """
     placed = def_summary.get("component_count")
     as_built = _netlist_instance_count(PNR_NETLIST_PATH)
@@ -403,13 +601,21 @@ def _component_check(def_summary: dict) -> dict:
             "as_built_netlist": as_built,
             "synthesized": synthesized,
         }
+    physical_only = _def_component_counts_by_master(
+        def_path.read_text(errors="replace"), physical_only_masters
+    )
+    physical_only_total = sum(physical_only.values())
+    logical_placed = placed - physical_only_total
     return {
-        "status": "ok" if placed == as_built else "mismatch",
+        "status": "ok" if logical_placed == as_built else "mismatch",
         "placed": placed,
+        "physical_only_instance_count": physical_only_total,
+        "physical_only_by_master": physical_only or None,
+        "logical_placed": logical_placed,
         "as_built_netlist": as_built,
         "synthesized": synthesized,
         "delta_vs_synthesized": (
-            placed - synthesized if synthesized is not None else None
+            logical_placed - synthesized if synthesized is not None else None
         ),
     }
 
@@ -468,6 +674,7 @@ def _committed_view(payload: dict) -> dict:
         "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
         "floorplan": FLOORPLAN,
         "io": IO,
+        "power": POWER,
         "constraints": CONSTRAINTS,
         "seed": SEED,
         "target_stage": TARGET_STAGE,
@@ -543,17 +750,37 @@ def build() -> int:
         written.append(DEF_PATH)
         def_summary = _def_summary(DEF_PATH)
         checks["def"] = def_summary
-        checks["components"] = _component_check(def_summary)
+        checks["components"] = _component_check(
+            DEF_PATH, def_summary, _physical_only_masters(report.get("power"))
+        )
         if checks["components"]["status"] == "mismatch":
             warnings.append(
-                "the routed DEF and the as-built netlist disagree on instance "
-                f"count ({checks['components']['placed']} vs "
-                f"{checks['components']['as_built_netlist']})"
+                "the routed DEF and the as-built netlist disagree on logical "
+                f"instance count ({checks['components']['logical_placed']} vs "
+                f"{checks['components']['as_built_netlist']}, after excluding "
+                f"{checks['components']['physical_only_instance_count']} "
+                "physical-only tapcell/endcap/filler instances)"
+            )
+        checks["power_isolation"] = _power_isolation_check(DEF_PATH, def_summary)
+        if checks["power_isolation"]["status"] == "mismatch":
+            warnings.append(
+                "the routed DEF's SPECIALNETS section does not carry exactly "
+                f"{checks['power_isolation']['expected_nets']} "
+                f"(found {checks['power_isolation']['found_nets']}; "
+                "entropy-source supplies present: "
+                f"{checks['power_isolation']['entropy_supply_nets_present']}) "
+                "-- see layout/floorplan/README.md's mitigation 2"
+            )
+        if not def_summary.get("special_nets"):
+            warnings.append(
+                "the routed DEF carries no SPECIALNETS section -- this run "
+                "built no power delivery network (#171)"
             )
     else:
         def_summary = {}
         checks["def"] = {"status": "skipped", "reason": "no DEF returned"}
         checks["components"] = {"status": "skipped", "reason": "no DEF returned"}
+        checks["power_isolation"] = {"status": "skipped", "reason": "no DEF returned"}
 
     drc: dict | None = None
     if gds_path is not None and gds_path.is_file():
@@ -601,6 +828,13 @@ def build() -> int:
     print(f"klt:  {klt_version()}" + (f" (built from {commit})" if commit else ""))
     print(f"corner:        {CELL_LIBRARY}__{CORNER}")
     print(f"stage_reached: {report.get('stage_reached')}")
+    power_isolation = checks.get("power_isolation") or {}
+    print(
+        f"power:         SPECIALNETS "
+        f"{'present' if checks.get('def', {}).get('special_nets') else 'ABSENT'}, "
+        f"nets {power_isolation.get('found_nets')}, "
+        f"isolation {power_isolation.get('status')}"
+    )
     print(f"worst_slack:   {report.get('worst_slack_ns')} ns @ {CORNER}")
     print(
         f"swept setup/hold: {report.get('worst_setup_slack_ns')} / "
