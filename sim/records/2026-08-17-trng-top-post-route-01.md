@@ -1,17 +1,17 @@
 ---
 record: 2026-08-17-trng-top-post-route-01
-date: 2026-08-17T16:22:23Z
+date: 2026-08-17T16:46:32Z
 status: valid
 
-level: post-route-gate (see sim/README.md's 'Post-route gate-level records') -- a gate-level simulation of the as-built post-route netlist with SDF cell delays back-annotated, checked against a zero-delay RTL run of the same stimulus and against the behavioural model. Not `behavioral` (there is a netlist, a cell library and a liberty corner in the loop) and not `transistor` (no device model is instantiated and ngspice is never invoked)
+level: gate-simulation (DR-0022, sibling of DR-0021's `level: gate`) -- a DYNAMIC simulation of the as-built post-route netlist with SDF cell delays back-annotated, compared cycle by cycle against a zero-delay RTL run of the same stimulus and against the behavioural model. Not `behavioral` (there is a netlist, a cell library and a liberty corner in the loop), not `transistor` (no device model is instantiated and ngspice is never invoked), and not `gate` (that level is static analysis and MAY be cited for timing closure; this one may not -- see Caveats)
 
 testbench:
   path: sim/tb/trng-top-post-route/run_demo.py
-  sha: 7f259fb648fb9c6b2c22dc4ec4f565941f63f85d
+  sha: 2548567e33451557b9bbd22e8a26c96aa5bc7247
   cocotb_module: sim/tb/trng-top-post-route/post_route_tb.py
   cocotb_module_sha: b7e7bb66f3bfc350b7c9d33deaf46e00e7d181e2
   stimulus: sim/tb/trng-top-post-route/scenarios.py
-  stimulus_sha: 8fd448ae7025d95f77acba384e75c2e9e97b23b6
+  stimulus_sha: e39c6e048af2fdbfcd847b15570c8491a5f0c650
 netlist:
   path: layout/digital/trng_top.pnr.v
   sha: ecdfebe92bb2f5d01c5fb542c177ae7a66e251b8
@@ -31,14 +31,14 @@ reference_leg:
     in the RTL; one that shows up only in the netlist was introduced
     by synthesis, CTS, resizing or routing.
   sources:
-    - design/trng_top/trng_top.v  sha:80dfc85d0d2a898eecaf56dcf1aa512d20d5beb4
+    - design/trng_top/trng_top.v  sha:6acd09579c5d69834bb593dffd87ede94dbf1592
     - design/conditioner/crc32_conditioner.v  sha:f46c1ebfb3aea8c9272e7bab4dab03c78563d48d
     - design/health_test/rct_apt.v  sha:4a324ebee1fd07c507e7ae080514ea850303275f
     - design/health_test/ring_liveness.v  sha:79cad3e871a261498e8318e9659c7fe83d19f95d
     - design/interface/trng_interface.v  sha:6105517e57270655b23cd96cf6f27c7d3df552d1
 reference_model:
   path: design/trng_top/trng_top.py
-  sha: 6c9f2965aeef135c8a35165d51d03c36db4c370d
+  sha: 5c05845e77ed3e92227f54a3f807ac555c463277
   note: >-
     The behavioural model both legs are compared against every cycle:
     the same model the five `level: behavioral` records this re-runs
@@ -68,7 +68,7 @@ timing_annotation:
     no parasitic coupling, no IR drop, no on-chip variation, single
     corner. Enumerated in full under Caveats.
 
-repo_commit: e413a4d0c7003e269af26f80bf668a542f2d4834-dirty
+repo_commit: 439e0389665167bb2eaf4184db3e2ef713467e3a-dirty
 
 pdk: gf180mcuD @ open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b
 pdk.models:
@@ -88,9 +88,11 @@ tool:
   platform: macOS-26.6.1-arm64-arm-64bit-Mach-O
 
 corner:
-  process: ss (from the liberty deck gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00.lib, not an ngspice model card)
+  process: ss (from the liberty deck's own operating conditions, per DR-0021's rule for a gate-level corner -- not an ngspice model card)
   voltage: 3.00 V (nominal 3.3 V, -10%; DR-0003's binding supply)
   temperature: 125
+  liberty: gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00.lib
+  interconnect: n/a -- no parasitics are extracted or annotated at all (see timing_annotation.omits), so there is no interconnect corner to name. DR-0021's `level: gate` records DO have one; this run's delays are cell-only.
   note: >-
     One corner, and it is the corner layout/digital/build.py placed and
     routed against (layout/digital/README.md's 'Corners'). A
@@ -101,7 +103,7 @@ corner:
 
 analysis:
   type: post-route-gate-level-equivalence
-  tstop: 219824.1ns simulated in the post-route leg across 8 scenarios (4346 clock cycles at 50 ns)
+  tstop: 219974.1ns simulated in the post-route leg across 8 scenarios (4349 clock cycles at 50 ns)
   tstep: n/a (event-driven digital simulation)
   tmax: n/a (event-driven)
   noise_params: n/a (no device noise in a gate-level run)
@@ -126,16 +128,16 @@ raw:
   path: sim/records/raw/2026-08-17-trng-top-post-route-01/
   files:
     - environment.json  sha256:aa11ac73577ce80d3ba56def4e8724614200b27632f58125be691c27433176e6
-    - gate_comparison.json  sha256:45045a9e6f65f3adc5983f047ad1af83c669cee4dbb924e31d16f0d177a8318d
-    - gate_klt_response.json  sha256:2bf53c852e4296d8d40e54b863dcef4cea9f91241b4be3f17d1c5f22a89f7ce2
+    - gate_comparison.json  sha256:dcc3b79c3a6a2b7fe315e2384a9628f23ea2b9291bd2ab4b308247103d81e43b
+    - gate_klt_response.json  sha256:338ff2e83e93ff0edb1e9697baf8cf1286da69e6f2b00a1c6bc3cae6db3179fb
     - gate_request.json  sha256:71d39ed363d44583352348c5eb5c001b20e72a4b7df05232b3267f44bc97d667
-    - gate_transcript_digest.json  sha256:9a695a9e3e4b6d414f54f70ad0d7f795eceba0583fd483c80bd0d2c6fea640f1
-    - rtl_comparison.json  sha256:24fcf9d4973ce05dd88d3d0faa659156dffd9d53a912cd00abeab2c038aedb4b
-    - rtl_klt_response.json  sha256:0dd75126e3d221231ce9affb001a8360bdc5d616b9a398936b695c01559293e3
+    - gate_transcript_digest.json  sha256:6cd4c86fd50e1b59252bad8fabbc20ffbd50a539d60545da7e382dbc53044b7e
+    - rtl_comparison.json  sha256:acaf73b4eb709f3109d8d4a8a9da9ac846b06d0c57e106645019c20c0e2976c2
+    - rtl_klt_response.json  sha256:e1ebd3be742bcd6c246505d3f6cc4e766efa500662f21799c99db46b3265173f
     - rtl_request.json  sha256:92a39be2271a873e3fb4b321828ef66c31e78c09fcbe0d77d020db7b60aea3be
-    - rtl_transcript_digest.json  sha256:fb0c4c3cb61d26bc7058b696b36209f5d5a1b86530994aa2feefead7dd7e1c3d
-    - verdict.json  sha256:159f71df647555509cc148a0258b53601f9ff4aae6a4810810f18208d39336ae
-wall_time: 0.7m
+    - rtl_transcript_digest.json  sha256:fde2206a714d6bd61de02bc49d0e0b1e5540a627f4156f2e693be44af6ab1bec
+    - verdict.json  sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9
+wall_time: 0.5m
 ---
 
 ## Result
@@ -147,8 +149,8 @@ cell delays of the corner it was routed at?**
 | Scenario | Behavioural counterpart | Cycles | Post-route netlist vs. RTL | Post-route netlist vs. behavioural model |
 |---|---|---|---|---|
 | `smoke` | sim/tb/smoke-trng-top | 11 | identical | identical, every cycle |
-| `startup-and-regfile` | sim/tb/interface-regfile | 1067 | identical | differs on 1 cycle (RTL leg: 1) |
-| `conditioner-blocks` | sim/tb/conditioner-crc32 | 1552 | identical | differs on 269 cycles (RTL leg: 269) |
+| `startup-and-regfile` | sim/tb/interface-regfile | 1070 | identical | identical, every cycle |
+| `conditioner-blocks` | sim/tb/conditioner-crc32 | 1552 | identical | identical, every cycle |
 | `rct-stuck-output` | sim/tb/health-test-fault-injection | 322 | identical | identical, every cycle |
 | `ring1-stuck` | sim/tb/ring-liveness-fault-injection | 242 | identical | identical, every cycle |
 | `reg-read-walk` | n/a (post-route-level only) | 96 | identical | identical, every cycle |
@@ -166,7 +168,8 @@ Every one of the checks this run derives from its own artefacts:
 | sdf annotation applied | yes |
 | annotation control fired | yes |
 | model divergence is pre existing | yes |
-| registered handoffs explain every divergence | yes |
+| netlist matches behavioural model | yes |
+| handoff skew would be detected | yes |
 
 `klt functional-verification` reported `status: pass` for the
 post-route leg (8 passed,
@@ -183,14 +186,12 @@ model:
 | `ht_alarm` rise after ring 1 freezes (onset cycle 120, C_LIVE = 81) | cycle 201 | cycle 201 |
 
 The conditioned words the `conditioner-blocks` scenario read back through
-`DATA` were `0x64dcc17c`, `0xe1704bb4` on the netlist — **bit-identical to the RTL's**, which
-is the claim that matters for DR-0007's conditioner: mapping, CTS buffering,
-cell resizing and routing did not change a single bit of the word the RTL
-computes. They are *not* the behavioural model's words (`0x38638752`, `0x19919129`), for
-the documented reason in the next section and not because the CRC-32
-arithmetic differs: the model un-gates the conditioned path one raw sample
-earlier than the hardware, so its first 256-bit block starts one bit earlier
-and every word after it is a different (correct-for-that-input) CRC.
+`DATA` were `0x64dcc17c`, `0xe1704bb4` on the netlist, **bit-identical to both the RTL's and
+the behavioural model's** (`0x64dcc17c`, `0xe1704bb4`). That is the claim that matters for
+DR-0007's conditioner: mapping, CTS buffering, cell resizing and routing did
+not change a single bit of the word the RTL computes, and the CRC-32 arithmetic
+the behavioural records verified is the arithmetic the placed-and-routed gates
+perform.
 
 ### The annotation is in the loop (control)
 
@@ -236,62 +237,47 @@ real path is slower than this by whatever its routing contributes.
 
 ## Pre/post comparison: did any behavioural conclusion change?
 
-**No behavioural-level conclusion was invalidated. A divergence between the
-behavioural top-level model and the implementation was found, it is not a P&R
-defect, and it was already there in the RTL.**
+**No behavioural-level conclusion was invalidated.** All three descriptions of
+the digital partition — the post-route netlist under annotated delay, the RTL
+it was synthesized from, and the behavioural model the five
+`level: behavioral` records were produced from — agree cycle for cycle on
+every one of the 5 suite scenarios, 3197 cycles, with
+0 cycles differing.
 
-- **Synthesis, CTS, resizing and routing changed nothing.** For all
-  5 suite scenarios the post-route netlist's complete output trace
-  (SHA-256 over every compared port on every cycle) is *identical* to the
-  RTL's. That is the item-7 verdict, and it is exact over all
-  3194 cycles rather than over a sampled subset.
-- **The behavioural model and the implementation diverge on
-  270 of 3194 cycles**, and by identical counts in
-  both legs — so the divergence is a property of the RTL, present before any
-  layout step ran.
-- **Root cause, measured rather than argued.** `trng_top.py`'s `TopLevel.step`
-  passes two cross-block signals combinationally within one cycle that the
-  RTL registers:
-
-  1. `ht_startup_pass`. `TopLevel.step` hands the interface *last* cycle's
-     `ht_fail_rct` / `ht_fail_apt` / `ring_stuck_any` (its `_last_*` fields,
-     matching `rct_apt.v`'s and `ring_liveness.v`'s `output reg` ports) but
-     *this* cycle's `ht_startup_pass` — even though `rct_apt.v` registers that
-     signal exactly like the other three.
-  2. `cond_word` / `cond_valid`. `crc32_conditioner.v` declares both `output
-     reg`, so the interface sees a conditioned word the cycle *after* the
-     sample that completed the block; `TopLevel.step` hands it over in the
-     same cycle.
-
-  Re-running the identical comparison against a model with exactly those two
-  handoffs registered (`post_route_tb.py`'s `_registered_handoff_model`, which
-  *wraps* the block models rather than reimplementing the step function)
-  leaves **zero** diverging cycles, in both legs — the
-  `registered_handoffs_explain_every_divergence` check above. Skew (1) is what
-  makes the difference large rather than cosmetic: un-gating the conditioned
-  path one raw sample early shifts the first 256-bit block by one bit and so
-  changes the conditioned word itself, which then differs for every cycle it
-  is presented on.
-- **Which conclusions this does and does not touch.** The five behavioural
-  records' own claims are about their *blocks* — the conditioner's CRC-32
-  arithmetic over a given 256-bit block, the RCT/APT cutoffs and latencies,
-  the register map's semantics, the per-ring watchdog — and every one of them
-  reproduces on the netlist. What the two skews affect is only the top-level
-  model's *assembly* timing, which no existing test covers:
-  `sim/tests/test_trng_top.py` checks that `trng_top.v` elaborates and that
-  the pin names line up, and `sim/tb/conditioner-crc32/tb_rtl_equivalence.v`
-  compares the *sequence* of conditioned words rather than the cycle each
-  appears on — so neither can see a one-cycle handoff skew. That is why this
-  went unnoticed until a top-level cycle-by-cycle simulation existed.
-  **No record is superseded by this one**, and the fix belongs in
-  `design/trng_top/trng_top.py` (or in its docstring's claim of RTL
-  equivalence) — filed as **#176** rather than smuggled into a verification
-  change, because silently editing the model this run verifies against would
-  have destroyed the finding.
+- **Synthesis, CTS, resizing and routing changed nothing.** The netlist's
+  complete output trace (SHA-256 over every compared port on every cycle) is
+  *identical* to the RTL's. That is the item-7 verdict, and it is exact over
+  all 3197 cycles rather than over a sampled subset.
+- **The behavioural conclusions transfer.** The conditioner's CRC-32
+  arithmetic, the DR-0002 latch/gate/flush behaviour, the register map's
+  read/write semantics, the RCT stuck-source detection latency and the
+  DR-0016 per-ring watchdog all reproduce bit-exactly on the as-built netlist.
+  Nothing needed a correction and **no record is superseded by this one**:
+  they remain valid at their own level, and this is a second, independent
+  level of evidence for the same behaviour.
+- **Extended, not changed.** Two detection latencies the behavioural records
+  could only state in *samples of the model* are now also measured in *clock
+  cycles of the netlist*, and agree (the table above).
+- **This agreement is not free, and it is one commit old.** The first run of
+  this testbench found the netlist and the RTL agreeing with each other and
+  **both disagreeing with the behavioural model** on 270 of 3197
+  cycles — because `trng_top.py`'s `TopLevel.step` passed two cross-block
+  handoffs (`ht_startup_pass`, and `cond_word`/`cond_valid`) combinationally
+  where `rct_apt.v` and `crc32_conditioner.v` register them, un-gating the
+  conditioned path one raw sample early and so shifting the first 256-bit
+  conditioner block by one bit. Identical counts in both legs is what
+  attributed it to the RTL rather than to layout; a probe that registered
+  exactly those two handoffs and nothing else brought the divergence to zero,
+  which identified the cause. Filed as **#176** and fixed in **#178** before
+  this record was written, so the numbers above are against the corrected
+  model. The probe survives in `model_probe.py` as a *sensitivity* check
+  (`handoff_skew_would_be_detected` above): applying it now double-delays
+  those handoffs and must break the match, which is what proves this
+  comparison can still see a cycle of skew on them.
 - **What the netlist shows that the model cannot.** 512 of the netlist's 708
   flops (the two 8x32-bit FIFO memories) have no reset port and hold `x` out
   of reset, where the model starts every field at 0. Zero of the
-  3194 compared cycles saw an `x` reach a pin — the design's own
+  3197 compared cycles saw an `x` reach a pin — the design's own
   `cond_avail ? cond_mem[head] : 32'd0` gating doing its job, which is a
   property the behavioural model *cannot* check because it has no
   uninitialised state to gate.

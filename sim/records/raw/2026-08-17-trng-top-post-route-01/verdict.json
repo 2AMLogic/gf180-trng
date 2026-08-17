@@ -2,24 +2,25 @@
   "checks": {
     "annotation_control_fired": true,
     "every_scenario_ran": true,
+    "handoff_skew_would_be_detected": true,
     "identical_stimulus_both_legs": true,
     "model_divergence_is_pre_existing": true,
+    "netlist_matches_behavioural_model": true,
     "no_x_reached_a_pin": true,
     "pnr_preserved_behaviour": true,
-    "registered_handoffs_explain_every_divergence": true,
     "sdf_annotation_applied": true
   },
   "facts": {
     "conditioner-blocks": {
       "cycles": 1552,
       "gate_unresolved": 0,
-      "gate_vs_model": 269,
-      "gate_vs_probe": 0,
+      "gate_vs_model": 0,
+      "gate_vs_probe": 267,
       "kind": "match",
       "preserved_by_pnr": true,
       "rtl_unresolved": 0,
-      "rtl_vs_model": 269,
-      "rtl_vs_probe": 0,
+      "rtl_vs_model": 0,
+      "rtl_vs_probe": 267,
       "same_stimulus": true
     },
     "rct-stuck-output": {
@@ -86,15 +87,15 @@
       "same_stimulus": true
     },
     "startup-and-regfile": {
-      "cycles": 1067,
+      "cycles": 1070,
       "gate_unresolved": 0,
-      "gate_vs_model": 1,
-      "gate_vs_probe": 0,
+      "gate_vs_model": 0,
+      "gate_vs_probe": 1,
       "kind": "match",
       "preserved_by_pnr": true,
       "rtl_unresolved": 0,
-      "rtl_vs_model": 1,
-      "rtl_vs_probe": 0,
+      "rtl_vs_model": 0,
+      "rtl_vs_probe": 1,
       "same_stimulus": true
     }
   },

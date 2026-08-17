@@ -115,6 +115,15 @@ asks for — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
 deliverable, and it is #145 that gets to state them.
 
+**It has**: [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
+re-times this directory's committed DEF at fifteen corners (five 3.3 V liberty
+decks × three interconnect decks) with OpenRCX-extracted parasitics and a
+*propagated* clock, and reports an Fmax floor of **37.04 MHz** at
+`ss_125C_3v00` with `max` interconnect, positive setup and hold slack and zero
+TNS at every corner. It also reconciles the +27.7 ns above with its own
++23.8 ns at the same liberty corner: 3.83 ns of that is extraction versus the
+global-routing estimate, 0.145 ns is the real clock tree.
+
 ## Corners
 
 The request names its liberty corner explicitly:
@@ -188,14 +197,27 @@ itself). What can be said here: real synthesis and placement land the digital
 section's cell area ~1.5× above the inventory estimate, and the estimate was
 already 2.5× the whole-block budget.
 
+**#145 has since done that reconciliation**
+([`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
+§3): the placed cell area is **113 087.9 µm²**, ×1.518 the inventory estimate,
+splitting into ×1.209 from cell count/mix and ×1.256 from 9-track rather than
+7-track rows. The area row itself is still [#150][gf150]'s.
+
 ## Power
 
 `estimated_power_mw: 6.4` — OpenROAD's own `report_power` at
 `ss_125C_3v00` with estimated (not extracted) parasitics and no activity
 annotation beyond its defaults. It is recorded because the tool reports it;
 it is **not** a power result, it does not supersede
-`design/digital_power_estimate.py`, and it is not a corner sweep. #145 owns
-that comparison.
+`design/digital_power_estimate.py`, and it is not a corner sweep.
+
+**#145 has since done that comparison** —
+[`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md),
+from this directory's own committed DEF re-timed at fifteen corners with
+extracted parasitics: 8.45 mW at this corner at 20 MHz and 424 µW at
+DR-0003's ratified 1 MHz raw rate, under a declared 0.25 transitions/net/cycle
+activity, against the library-based estimate's 16.7 µW. The delta and its
+causes are that document's §4; nothing in this directory is edited by it.
 
 ## Two defects this bring-up found
 

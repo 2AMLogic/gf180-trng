@@ -587,15 +587,30 @@ def verdict(legs: dict[str, dict]) -> dict:
             legs["gate"]["klt_response"]["environment"]["sdf"]["annotated"]
         ),
         "annotation_control_fired": legs["gate"]["klt_response"]["status"] == "pass",
+        # Any model divergence must appear identically in both legs -- that is
+        # what makes it attributable to the RTL rather than to layout. Holds
+        # trivially (0 == 0) when the three agree, which is the state since
+        # #176 was fixed; it is the check that would catch a regression
+        # introduced by a *future* re-place-and-route.
         "model_divergence_is_pre_existing": all(
             facts[n]["gate_vs_model"] == facts[n]["rtl_vs_model"]
             for n in suite
             if "gate_vs_model" in facts[n]
         ),
-        "registered_handoffs_explain_every_divergence": all(
-            facts[n]["gate_vs_probe"] == 0 and facts[n]["rtl_vs_probe"] == 0
+        "netlist_matches_behavioural_model": all(
+            facts[n]["gate_vs_model"] == 0
             for n in suite
-            if facts[n].get("gate_vs_probe") is not None
+            if "gate_vs_model" in facts[n]
+        ),
+        # The registered-handoff probe delays `ht_startup_pass` and
+        # `cond_word`/`cond_valid` by a cycle on top of whatever the committed
+        # model already does. Since #176 the model registers both, so the probe
+        # now double-delays them and MUST break the match on at least one
+        # scenario. If it did not, the match above would be insensitive to a
+        # cycle of skew on those handoffs -- i.e. this whole comparison would
+        # not be able to see the defect #176 was.
+        "handoff_skew_would_be_detected": any(
+            facts[n].get("gate_vs_probe") for n in suite
         ),
     }
     return {"checks": checks, "pass": all(checks.values()), "facts": facts}
@@ -648,13 +663,15 @@ def _frontmatter(stem: str, env: dict, legs: dict, git: dict, raw_files,
         f"date: {now}",
         "status: valid",
         "",
-        "level: post-route-gate (see sim/README.md's 'Post-route gate-level "
-        "records') -- a gate-level simulation of the as-built post-route "
-        "netlist with SDF cell delays back-annotated, checked against a "
+        "level: gate-simulation (DR-0022, sibling of DR-0021's `level: gate`) "
+        "-- a DYNAMIC simulation of the as-built post-route netlist with SDF "
+        "cell delays back-annotated, compared cycle by cycle against a "
         "zero-delay RTL run of the same stimulus and against the behavioural "
         "model. Not `behavioral` (there is a netlist, a cell library and a "
-        "liberty corner in the loop) and not `transistor` (no device model is "
-        "instantiated and ngspice is never invoked)",
+        "liberty corner in the loop), not `transistor` (no device model is "
+        "instantiated and ngspice is never invoked), and not `gate` (that "
+        "level is static analysis and MAY be cited for timing closure; this "
+        "one may not -- see Caveats)",
         "",
         "testbench:",
         f"  path: sim/tb/{SLUG}/run_demo.py",
@@ -755,11 +772,17 @@ def _frontmatter(stem: str, env: dict, legs: dict, git: dict, raw_files,
         f"  platform: {env['platform']}",
         "",
         "corner:",
-        f"  process: {corner.split('_')[0]} (from the liberty deck "
-        f"{CELL_LIBRARY}__{corner}.lib, not an ngspice model card)",
+        f"  process: {corner.split('_')[0]} (from the liberty deck's own "
+        "operating conditions, per DR-0021's rule for a gate-level corner -- "
+        "not an ngspice model card)",
         f"  voltage: {corner.split('_')[2].replace('v', '.')} V (nominal 3.3 V, "
         "-10%; DR-0003's binding supply)",
         f"  temperature: {corner.split('_')[1].rstrip('C')}",
+        f"  liberty: {CELL_LIBRARY}__{corner}.lib",
+        "  interconnect: n/a -- no parasitics are extracted or annotated at "
+        "all (see timing_annotation.omits), so there is no interconnect corner "
+        "to name. DR-0021's `level: gate` records DO have one; this run's "
+        "delays are cell-only.",
         "  note: >-",
         "    One corner, and it is the corner layout/digital/build.py placed and",
         "    routed against (layout/digital/README.md's 'Corners'). A",
@@ -907,14 +930,12 @@ model:
 | `ht_alarm` rise after ring 1 freezes (onset cycle {scenarios.RING_ONSET_CYCLE}, C_LIVE = {scenarios.C_LIVE}) | cycle {ring.get('dut_first_alarm_cycle')} | cycle {ring.get('model_first_alarm_cycle')} |
 
 The conditioned words the `conditioner-blocks` scenario read back through
-`DATA` were {cond_words} on the netlist — **bit-identical to the RTL's**, which
-is the claim that matters for DR-0007's conditioner: mapping, CTS buffering,
-cell resizing and routing did not change a single bit of the word the RTL
-computes. They are *not* the behavioural model's words ({model_words}), for
-the documented reason in the next section and not because the CRC-32
-arithmetic differs: the model un-gates the conditioned path one raw sample
-earlier than the hardware, so its first 256-bit block starts one bit earlier
-and every word after it is a different (correct-for-that-input) CRC.
+`DATA` were {cond_words} on the netlist, **bit-identical to both the RTL's and
+the behavioural model's** ({model_words}). That is the claim that matters for
+DR-0007's conditioner: mapping, CTS buffering, cell resizing and routing did
+not change a single bit of the word the RTL computes, and the CRC-32 arithmetic
+the behavioural records verified is the arithmetic the placed-and-routed gates
+perform.
 
 ### The annotation is in the loop (control)
 
@@ -951,58 +972,43 @@ real path is slower than this by whatever its routing contributes.
 
 ## Pre/post comparison: did any behavioural conclusion change?
 
-**No behavioural-level conclusion was invalidated. A divergence between the
-behavioural top-level model and the implementation was found, it is not a P&R
-defect, and it was already there in the RTL.**
+**No behavioural-level conclusion was invalidated.** All three descriptions of
+the digital partition — the post-route netlist under annotated delay, the RTL
+it was synthesized from, and the behavioural model the five
+`level: behavioral` records were produced from — agree cycle for cycle on
+every one of the {len(suite)} suite scenarios, {suite_cycles} cycles, with
+{suite_diverging} cycles differing.
 
-- **Synthesis, CTS, resizing and routing changed nothing.** For all
-  {len(suite)} suite scenarios the post-route netlist's complete output trace
-  (SHA-256 over every compared port on every cycle) is *identical* to the
-  RTL's. That is the item-7 verdict, and it is exact over all
-  {suite_cycles} cycles rather than over a sampled subset.
-- **The behavioural model and the implementation diverge on
-  {suite_diverging} of {suite_cycles} cycles**, and by identical counts in
-  both legs — so the divergence is a property of the RTL, present before any
-  layout step ran.
-- **Root cause, measured rather than argued.** `trng_top.py`'s `TopLevel.step`
-  passes two cross-block signals combinationally within one cycle that the
-  RTL registers:
-
-  1. `ht_startup_pass`. `TopLevel.step` hands the interface *last* cycle's
-     `ht_fail_rct` / `ht_fail_apt` / `ring_stuck_any` (its `_last_*` fields,
-     matching `rct_apt.v`'s and `ring_liveness.v`'s `output reg` ports) but
-     *this* cycle's `ht_startup_pass` — even though `rct_apt.v` registers that
-     signal exactly like the other three.
-  2. `cond_word` / `cond_valid`. `crc32_conditioner.v` declares both `output
-     reg`, so the interface sees a conditioned word the cycle *after* the
-     sample that completed the block; `TopLevel.step` hands it over in the
-     same cycle.
-
-  Re-running the identical comparison against a model with exactly those two
-  handoffs registered (`post_route_tb.py`'s `_registered_handoff_model`, which
-  *wraps* the block models rather than reimplementing the step function)
-  leaves **zero** diverging cycles, in both legs — the
-  `registered_handoffs_explain_every_divergence` check above. Skew (1) is what
-  makes the difference large rather than cosmetic: un-gating the conditioned
-  path one raw sample early shifts the first 256-bit block by one bit and so
-  changes the conditioned word itself, which then differs for every cycle it
-  is presented on.
-- **Which conclusions this does and does not touch.** The five behavioural
-  records' own claims are about their *blocks* — the conditioner's CRC-32
-  arithmetic over a given 256-bit block, the RCT/APT cutoffs and latencies,
-  the register map's semantics, the per-ring watchdog — and every one of them
-  reproduces on the netlist. What the two skews affect is only the top-level
-  model's *assembly* timing, which no existing test covers:
-  `sim/tests/test_trng_top.py` checks that `trng_top.v` elaborates and that
-  the pin names line up, and `sim/tb/conditioner-crc32/tb_rtl_equivalence.v`
-  compares the *sequence* of conditioned words rather than the cycle each
-  appears on — so neither can see a one-cycle handoff skew. That is why this
-  went unnoticed until a top-level cycle-by-cycle simulation existed.
-  **No record is superseded by this one**, and the fix belongs in
-  `design/trng_top/trng_top.py` (or in its docstring's claim of RTL
-  equivalence) — filed as **#176** rather than smuggled into a verification
-  change, because silently editing the model this run verifies against would
-  have destroyed the finding.
+- **Synthesis, CTS, resizing and routing changed nothing.** The netlist's
+  complete output trace (SHA-256 over every compared port on every cycle) is
+  *identical* to the RTL's. That is the item-7 verdict, and it is exact over
+  all {suite_cycles} cycles rather than over a sampled subset.
+- **The behavioural conclusions transfer.** The conditioner's CRC-32
+  arithmetic, the DR-0002 latch/gate/flush behaviour, the register map's
+  read/write semantics, the RCT stuck-source detection latency and the
+  DR-0016 per-ring watchdog all reproduce bit-exactly on the as-built netlist.
+  Nothing needed a correction and **no record is superseded by this one**:
+  they remain valid at their own level, and this is a second, independent
+  level of evidence for the same behaviour.
+- **Extended, not changed.** Two detection latencies the behavioural records
+  could only state in *samples of the model* are now also measured in *clock
+  cycles of the netlist*, and agree (the table above).
+- **This agreement is not free, and it is one commit old.** The first run of
+  this testbench found the netlist and the RTL agreeing with each other and
+  **both disagreeing with the behavioural model** on 270 of {suite_cycles}
+  cycles — because `trng_top.py`'s `TopLevel.step` passed two cross-block
+  handoffs (`ht_startup_pass`, and `cond_word`/`cond_valid`) combinationally
+  where `rct_apt.v` and `crc32_conditioner.v` register them, un-gating the
+  conditioned path one raw sample early and so shifting the first 256-bit
+  conditioner block by one bit. Identical counts in both legs is what
+  attributed it to the RTL rather than to layout; a probe that registered
+  exactly those two handoffs and nothing else brought the divergence to zero,
+  which identified the cause. Filed as **#176** and fixed in **#178** before
+  this record was written, so the numbers above are against the corrected
+  model. The probe survives in `model_probe.py` as a *sensitivity* check
+  (`handoff_skew_would_be_detected` above): applying it now double-delays
+  those handoffs and must break the match, which is what proves this
+  comparison can still see a cycle of skew on them.
 - **What the netlist shows that the model cannot.** 512 of the netlist's 708
   flops (the two 8x32-bit FIFO memories) have no reset port and hold `x` out
   of reset, where the model starts every field at 0. Zero of the

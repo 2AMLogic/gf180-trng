@@ -23,14 +23,16 @@ is **pure Python**, which is more than it sounds:
    equivalent of; leaving them idle raises `ht_alarm` at C_LIVE and gates the
    conditioned path. That is asserted directly, so the reason the stimulus
    drives healthy ring taps cannot be lost to a later "simplification".
-4. **The #176 finding, pinned without a simulator.** The gate-level run showed
-   that the post-route netlist and the RTL agree exactly and that both differ
-   from the behavioural model on 259 cycles, all explained by two cross-block
-   handoffs the RTL registers and the model does not. Because the probe model
-   (`model_probe.registered_handoff_model`) is what agrees with the hardware,
-   the *count* is computable in pure Python -- so these tests hold the
-   published number to the model, and will fail the day #176 is fixed, which
-   is exactly when the record's prose needs revisiting.
+4. **That the comparison can still see the defect it was built to find.** The
+   first run of this testbench found the netlist and the RTL agreeing and both
+   disagreeing with the behavioural model, because `TopLevel.step` passed two
+   cross-block handoffs combinationally where the RTL registers them (#176,
+   fixed in #178). The model now agrees, which raises the obvious question: is
+   the agreement real, or has the stimulus stopped being sensitive to that
+   kind of skew? `model_probe` answers it in pure Python -- delaying those two
+   handoffs a *second* time must still change the outputs. A comparison that
+   could not see the defect it was built to find is not evidence that the
+   defect is absent.
 """
 
 from __future__ import annotations
@@ -51,13 +53,19 @@ import model_probe  # noqa: E402
 import scenarios  # noqa: E402
 import trng_top as top  # noqa: E402
 
-#: The published per-scenario divergence between the behavioural model and the
-#: implementation (RTL and post-route netlist alike), from the #147 record.
-#: Every other scenario must be zero. Update these two numbers only alongside
-#: the record and #176 -- they are a published result, not a fixture.
-PUBLISHED_MODEL_DIVERGENCE = {
+#: Scenarios whose stimulus must be **sensitive** to a one-cycle skew on the
+#: two cross-block handoffs #176/#178 were about: delaying them again (the
+#: `model_probe` wrappers, on top of the committed model which already delays
+#: them) has to change at least this many cycles of output. These are lower
+#: bounds, deliberately loose -- the exact counts move with any change to the
+#: stimulus, but "the stimulus can see the skew at all" must not.
+#:
+#: `smoke` (11 cycles, no start-up window, no conditioner block) is absent on
+#: purpose: nothing in it reaches either handoff, so it cannot be sensitive to
+#: them, and asserting otherwise would be asserting a coincidence.
+SKEW_SENSITIVE_SCENARIOS = {
     "startup-and-regfile": 1,
-    "conditioner-blocks": 269,
+    "conditioner-blocks": 1,
 }
 
 INPUT_KEYS = {
@@ -127,23 +135,30 @@ class StimulusShapeTests(unittest.TestCase):
                     f"{name} names a counterpart that does not exist: {counterpart}",
                 )
 
-    def test_the_five_member_suite_is_still_five_members(self):
-        """`sim/tb/*/tb_rtl_equivalence.v` plus `smoke-trng-top` is the digital
-        functional suite this re-runs. A sixth would need its own scenario, so
-        it fails here rather than being silently uncovered."""
-        equivalence = sorted(
+    def test_the_digital_suite_has_not_grown_a_member_without_a_scenario(self):
+        """Every RTL-equivalence testbench under `sim/tb/` is either re-run by a
+        scenario here or explicitly accounted for.
+
+        A sixth digital testbench appearing with no scenario and no entry below
+        would be silently uncovered by the post-route re-run, so it fails here
+        instead. `trng-top-crosscheck` (#178) is the one deliberate exception:
+        it is an assembled-RTL-vs-model check, which is exactly what this
+        testbench's own `rtl` leg does over the same stimulus, so re-running it
+        as a scenario would duplicate rather than add coverage.
+        """
+        per_block = {
+            "conditioner-crc32",
+            "health-test-fault-injection",
+            "interface-regfile",
+            "ring-liveness-fault-injection",
+        }
+        covered_elsewhere = {"trng-top-crosscheck"}
+        found = {
             p.parent.name for p in (SIM_DIR / "tb").glob("*/tb_rtl_equivalence.v")
-        )
-        self.assertEqual(
-            equivalence,
-            [
-                "conditioner-crc32",
-                "health-test-fault-injection",
-                "interface-regfile",
-                "ring-liveness-fault-injection",
-            ],
-        )
-        self.assertEqual(len(scenarios.SUITE_SCENARIOS), len(equivalence) + 1)
+        }
+        self.assertEqual(found, per_block | covered_elsewhere)
+        # One scenario per per-block testbench, plus smoke-trng-top's.
+        self.assertEqual(len(scenarios.SUITE_SCENARIOS), len(per_block) + 1)
 
 
 class MechanismCoverageTests(unittest.TestCase):
@@ -263,31 +278,36 @@ class RingLivenessTrapTests(unittest.TestCase):
                     )
 
 
-class RegisteredHandoffFindingTests(unittest.TestCase):
-    """#176, pinned in pure Python.
+class RegisteredHandoffSensitivityTests(unittest.TestCase):
+    """The comparison can still see the defect it was built to find.
 
-    The gate-level run established that the probe model agrees with both the
-    RTL and the post-route netlist exactly. So the number of cycles on which
-    the as-committed model differs from the probe *is* the number of cycles on
-    which it differs from the hardware -- computable here, with no simulator.
+    #176 (fixed in #178) was a one-cycle skew on two cross-block handoffs that
+    made the behavioural model disagree with both the RTL and the post-route
+    netlist. The model now agrees -- so the question these tests answer is
+    whether that agreement is *informative*: delaying those two handoffs again
+    must still change the outputs. If it did not, the gate-level run's
+    model-agreement would be compatible with the skew being back, and the
+    record's "all three agree" would be worth nothing.
+
+    Pure Python: no simulator, so it holds on the PR-blocking CI path.
     """
 
-    def test_published_divergence_counts_still_hold(self):
-        for name in scenarios.SUITE_SCENARIOS:
+    def test_the_stimulus_is_sensitive_to_a_one_cycle_handoff_skew(self):
+        for name, minimum in SKEW_SENSITIVE_SCENARIOS.items():
             rows = scenarios.SCENARIOS[name].build()
-            expected = PUBLISHED_MODEL_DIVERGENCE.get(name, 0)
             with self.subTest(scenario=name):
-                self.assertEqual(
-                    len(model_probe.diverging_cycles(rows)), expected,
-                    "the model-vs-implementation divergence #147's record "
-                    "publishes has changed. If #176 was fixed, expect 0 here "
-                    "and update the record's prose; if not, something else "
-                    "moved and the record is now wrong",
+                self.assertGreaterEqual(
+                    len(model_probe.diverging_cycles(rows)), minimum,
+                    f"{name} no longer notices a one-cycle skew on "
+                    "ht_startup_pass / cond_word / cond_valid. The gate-level "
+                    "run's model-agreement is therefore not evidence that the "
+                    "#176 skew is absent -- fix the stimulus, do not relax "
+                    "this bound",
                 )
 
     def test_the_probe_only_delays_two_signals(self):
-        """The probe must be a *minimal* hypothesis: wrappers around two block
-        outputs, nothing else re-implemented."""
+        """The probe must stay a *minimal* perturbation: wrappers around two
+        block outputs, nothing else re-implemented."""
         model = model_probe.registered_handoff_model()
         self.assertIsInstance(model.health, model_probe.RegisteredHealthStartup)
         self.assertIsInstance(model.cond, model_probe.RegisteredConditionerOutput)
@@ -298,10 +318,11 @@ class RegisteredHandoffFindingTests(unittest.TestCase):
             model.health.c_rct, model_probe.as_committed_model().health.c_rct
         )
 
-    def test_the_divergence_is_not_an_artefact_of_the_probe_alone(self):
-        """A scenario with no conditioned word and no start-up pass must be
-        unaffected by either delay -- otherwise the probe is changing more than
-        the two handoffs it claims to."""
+    def test_scenarios_that_cannot_reach_either_handoff_are_unaffected(self):
+        """A scenario with no start-up pass and no conditioned word must be
+        untouched by either delay -- otherwise the probe is perturbing more
+        than the two handoffs it claims to, and the test above would be
+        measuring the wrong thing."""
         for name in ("smoke", "ring1-stuck", "rct-stuck-output"):
             with self.subTest(scenario=name):
                 rows = scenarios.SCENARIOS[name].build()

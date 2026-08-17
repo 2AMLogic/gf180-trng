@@ -24,49 +24,49 @@
   "tests": [
     {
       "name": "smoke",
-      "real_time_s": 1.3682019710540771,
+      "real_time_s": 0.7655560970306396,
       "sim_time_ns": 695.0,
       "status": "passed"
     },
     {
       "name": "startup_and_regfile",
-      "real_time_s": 7.167954921722412,
-      "sim_time_ns": 53495.0,
+      "real_time_s": 3.9698293209075928,
+      "sim_time_ns": 53645.0,
       "status": "passed"
     },
     {
       "name": "conditioner_blocks",
-      "real_time_s": 8.826069116592407,
+      "real_time_s": 6.748872995376587,
       "sim_time_ns": 77745.0,
       "status": "passed"
     },
     {
       "name": "rct_stuck_output",
-      "real_time_s": 1.577502965927124,
+      "real_time_s": 1.6335151195526123,
       "sim_time_ns": 16245.0,
       "status": "passed"
     },
     {
       "name": "ring1_stuck",
-      "real_time_s": 1.446364164352417,
+      "real_time_s": 0.9948427677154541,
       "sim_time_ns": 12245.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk",
-      "real_time_s": 0.4680619239807129,
+      "real_time_s": 0.5207738876342773,
       "sim_time_ns": 4945.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_early_sample",
-      "real_time_s": 0.5629048347473145,
+      "real_time_s": 0.4021918773651123,
       "sim_time_ns": 4905.100000000006,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_settle_sweep",
-      "real_time_s": 3.5731399059295654,
+      "real_time_s": 3.9910290241241455,
       "sim_time_ns": 49549.0,
       "status": "passed"
     }

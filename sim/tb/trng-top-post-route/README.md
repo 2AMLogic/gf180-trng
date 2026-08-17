@@ -49,7 +49,8 @@ mechanically instead of by argument.
 | File | What it is |
 |---|---|
 | `scenarios.py` | The per-cycle stimulus. One scenario per behavioural suite member, reusing that testbench's **own** source model at the same label and seed, plus three scenarios that only exist at this level. No simulator, no netlist — importable and cheap. |
-| `post_route_tb.py` | The cocotb regression `klt functional-verification` imports: drives the DUT, steps the model, compares, hashes, writes `comparison.json`. Also carries `_registered_handoff_model`, the probe that turns "probably this is why the model differs" into a number. |
+| `post_route_tb.py` | The cocotb regression `klt functional-verification` imports: drives the DUT, steps the model, compares, hashes, writes `comparison.json`. |
+| `model_probe.py` | The registered-handoff probe — importable without cocotb, so `sim/tests/` can use it too. It found #176; it now guards the comparison's sensitivity to that class of defect. |
 | `run_demo.py` | Environment checks, the two `klt` requests, the pass/fail derivation, and the append-only evidence record. |
 
 ## The five suite members, re-expressed at the top level
@@ -153,7 +154,7 @@ strengths P&R resized to.
   this stimulus is not detected here.
 
 **The behavioural records keep their level.** This directory adds a level
-(`level: post-route-gate`, see [`sim/README.md`](../../README.md)); it does not
+(`level: gate-simulation`, see [`sim/README.md`](../../README.md)); it does not
 reclassify the existing `level: behavioral` records, which remain citable
 exactly as far as DR-0009 rule 3 allows.
 
@@ -172,14 +173,19 @@ documents them.
    that does not (`smoke`, 11 cycles, faithful to its counterpart) is shorter
    than the cutoff. This is DR-0016 behaving as ratified — worth knowing if you
    are an integrator about to tie `ring_bit` to a constant.
-2. **The behavioural top-level model and the RTL disagree by one cycle on two
-   cross-block handoffs** (`ht_startup_pass`, and `cond_word`/`cond_valid`),
-   which the RTL registers and `trng_top.py`'s `TopLevel.step` passes
-   combinationally. The netlist and the RTL agree exactly; both differ from the
-   model, by identical counts, and a probe that registers exactly those two
-   signals brings the difference to zero. Filed as [#176][gf176] — **not**
-   fixed here, because editing the model a verification change is checking
-   against would destroy the finding.
+2. **A one-cycle skew between the behavioural top-level model and the RTL, on
+   two cross-block handoffs** (`ht_startup_pass`, and `cond_word`/`cond_valid`)
+   which the RTL registers and `trng_top.py`'s `TopLevel.step` passed
+   combinationally. The first run of this testbench found the netlist and the
+   RTL agreeing exactly and **both** differing from the model, by identical
+   counts — which is what attributed it to the RTL rather than to layout — and
+   `model_probe.py`, registering exactly those two signals, brought the
+   difference to zero and so identified the cause. Filed as [#176][gf176] and
+   fixed in #178 (which also added `sim/tb/trng-top-crosscheck/`, a
+   CI-affordable RTL-only version of the same cycle-by-cycle check). All three
+   descriptions now agree, and `model_probe.py` stays as the *sensitivity*
+   check: delaying those handoffs again must still break the match, or this
+   comparison's agreement would not be evidence that the skew is gone.
 
 ## Environment
 

@@ -272,10 +272,17 @@ def _startup_and_regfile() -> list[dict]:
             rows.append(cycle(raw_bit=bit, raw_valid=True))
 
     tail = bits[STARTUP_SAMPLES:]
-    # Post-start-up: STATUS (STARTUP clear, COND_READY set), a DATA read, a
-    # sticky-overflow clear, an OUT_MODE switch to raw and back (each of
-    # which flushes, DR-0001 §2), and a streaming-port handshake.
-    rows.append(cycle(reg_sel=True, reg_addr=STATUS))
+    # Post-start-up: STATUS on FOUR consecutive cycles, so the exact cycle on
+    # which STARTUP clears and COND_READY sets is observable rather than
+    # sampled once and hoped for. That is deliberate: #176 was a one-cycle
+    # skew on precisely the `ht_startup_pass` handoff that drives this
+    # transition, and a scenario that reads STATUS once cannot tell a
+    # correctly-timed assertion from one a cycle late.
+    # `sim/tests/test_post_route_scenarios.py`'s
+    # `test_the_stimulus_is_sensitive_to_a_one_cycle_handoff_skew` holds this
+    # property, so it cannot be lost to a later tidy-up.
+    for _ in range(4):
+        rows.append(cycle(reg_sel=True, reg_addr=STATUS))
     rows.append(cycle(reg_sel=True, reg_addr=DATA))
     rows.append(cycle(reg_sel=True, reg_addr=RAW_DATA))
     rows.append(
