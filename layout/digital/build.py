@@ -131,17 +131,18 @@ CELL_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
 #:
 #: This library is characterised at three separate supplies (1.8 V, 3.3 V
 #: and 5.0 V, 15 `.lib` files in all), and `klt`'s nominal pick is
-#: documented to return the **lowest** of them -- `tt_025C_1v80`, which is
-#: the deck `design/synth.py` (#143) mapped this netlist against. This block
+#: documented to return the **lowest** of them -- `tt_025C_1v80`. This block
 #: does not run at 1.8 V: `design/README.md` calls 3.3 V "the block's
 #: ratified supply", and the raw-rate row's own binding corner
 #: ([DR-0003](../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md))
 #: is `ss` / -10 % supply / +125 degC. `ss_125C_3v00` is this library's
 #: closest shipped deck to exactly that corner (slow process, 3.00 V =
 #: 3.3 V - 10 %, 125 degC), so it is the corner this run implements and
-#: reports against. That the netlist itself was *mapped* at 1.8 V is a
-#: separate, documented inconsistency this script does not paper over --
-#: see `layout/digital/README.md`'s "Corners" section.
+#: reports against. `design/synth.py` (#143, #169) pins its own liberty
+#: corner explicitly too -- `tt_025C_3v30`, deliberately *not* this corner;
+#: see `layout/digital/README.md`'s "Corners" section for why a pre-place
+#: synthesis mapping step and this timing-closing P&R run land on different
+#: decks on purpose.
 CORNER = "ss_125C_3v00"
 
 #: Floorplan/IO/constraint inputs for this run. None of these is a ratified

@@ -66,13 +66,13 @@ extraction, no SPEF, no back-annotation:
 
 | | |
 |---|---|
-| Worst slack at `ss_125C_3v00`, 50 ns period | **+23.8 ns** |
+| Worst slack at `ss_125C_3v00`, 50 ns period | **+27.7 ns** |
 | Total negative slack | 0 ns |
-| `fmax_mhz` (OpenROAD's own report) | 38.2 MHz |
+| `fmax_mhz` (OpenROAD's own report) | 44.9 MHz |
 | Setup / hold violations at that corner | 0 / 0 |
-| Clock skew after CTS | 0.16 ns |
+| Clock skew after CTS | 0.40 ns |
 | Swept worst **hold** slack, all 15 shipped `.lib` corners | **+0.52 ns** |
-| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−37.4 ns** |
+| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−28.8 ns** |
 
 The last two rows are the ones that need reading carefully, because a
 positive worst slack sitting next to a strongly negative *swept* setup slack
@@ -92,12 +92,12 @@ point this block is specified for. The 1.62 / 1.80 / 1.98 V decks are also
 the slowest the library ships — `ss_125C_1v62`'s own `inv_1` `cell_fall`
 table starts at 0.154 ns against `ss_125C_3v00`'s 0.073 ns at the same
 slew/load index point, 2.1× before the extra interconnect delay a weaker
-driver pays — so the −37.4 ns is very probably theirs. "Very probably" is as
+driver pays — so the −28.8 ns is very probably theirs. "Very probably" is as
 far as the recorded evidence goes: `klt` returns one number for the whole
 sweep and never names the corner that produced it, filed generically upstream
 as [klayout-tools#1092][klt1092]. What the recorded evidence does say
 outright is that it is *not* the corner this block is implemented and
-specified at, which closes with +23.8 ns.
+specified at, which closes with +27.7 ns.
 
 What the sweep *does* establish outright is the hold result: **+0.52 ns worst
 hold slack across all 15 decks**, including the fastest ones — and the fast
@@ -109,7 +109,7 @@ this run's own input, not a spec row: no issue in this repository has set a
 digital-section Fmax requirement. The ratified requirement the clock rate
 has to satisfy is the raw-rate row (`README.md`, [DR-0003][dr3]): > 1 Mbps
 sustained at the sampler output, one raw bit per `clk` edge, so > 1 MHz, with
-the stretch row at > 4 MHz. This run closes at 20 MHz with 23.8 ns of slack
+the stretch row at > 4 MHz. This run closes at 20 MHz with 27.7 ns of slack
 at a slow-process/hot/−10 %-supply corner, which is 5–20× the rate the spec
 asks for — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
@@ -133,25 +133,44 @@ of them (`tt_025C_1v80`). Two reasons to override it here:
    ships. Implementing *at* the binding corner is what makes the slack figure
    above mean something.
 
-**One inconsistency this does not paper over**: the netlist itself was
-*mapped* against `tt_025C_1v80` — `design/synth.py` (#143) took `klt`'s
-nominal pick, so ABC's delay-driven cell/drive-strength choices came from the
-1.8 V timing model even though this P&R re-times all of them at 3.00 V. Cell
-*availability* is identical across decks, so the netlist is valid either way,
-but the mapping is not the one a 3.3 V target would have produced. Filed as
-[#169][gf169] rather than fixed here: it changes a committed artefact of a
-closed issue and belongs with the characterization work, not with this
-bring-up.
+**The synthesis/P&R corner mismatch is resolved ([#169][gf169]).**
+`design/synth.py` used to take `klt`'s nominal-corner pick (`tt_025C_1v80`)
+for the netlist this run consumes, so ABC's delay-driven cell/drive-strength
+choices came from a 1.8 V timing model even though this P&R re-times
+everything at 3.00 V. `design/synth.py` now pins its own liberty corner
+explicitly too — **`tt_025C_3v30`**, not `ss_125C_3v00` — and the two scripts
+deliberately land on *different* decks for different reasons:
+
+- This P&R run implements *at* the ratified binding corner
+  (`ss_125C_3v00`), because that is what makes its own slack figures mean
+  something.
+- `design/synth.py`'s ABC mapping is a pre-place step with no timing closure
+  of its own (`klt synthesize` "does not perform signoff timing analysis");
+  mapping it against the same worst-case corner would only bias cell
+  selection toward larger-than-typical drive strengths before this script's
+  own placement/CTS resizing gets a chance to size anything. `tt_025C_3v30`
+  — typical process, the block's real 3.3 V supply — is the conventional
+  synthesis target for exactly that reason, and it replaces the old 1.8 V
+  pick with the right voltage family either way.
+
+Re-running both scripts against the re-mapped netlist moved the input this
+run consumes: `design/trng_top/trng_top.synth.json`'s reported area grew
+~0.9 % (110 892 → 111 857 µm², same 2505-instance count, different
+cell/drive-strength mix) and its ABC-estimated critical path fell from
+16 967 ps to 6 443 ps (an artefact of timing at 3.3 V instead of 1.8 V, not a
+signoff number either way — see that report's own `timing` field caveats).
+This run's own figures above and in [Area](#area) are from that re-mapped
+netlist.
 
 ## Area
 
 | | |
 |---|---|
-| Die (from the request's own 40 % utilization target) | 546.5 × 546.5 µm = **298 690 µm²** |
-| Core | 275 918 µm² |
-| Achieved utilization | 40.7 % |
+| Die (from the request's own 40 % utilization target) | 548.8 × 548.8 µm = **301 198 µm²** |
+| Core | 277 092 µm² |
+| Achieved utilization | 40.8 % |
 | Standard-cell area inside the core | ≈ 112 000 µm² |
-| Routed wirelength | 162 072 µm |
+| Routed wirelength | 163 650 µm |
 
 **The die figure is an input, not a result.** It follows arithmetically from
 the 40 % utilization this run asked for, chosen to leave routing headroom on
@@ -160,9 +179,10 @@ compare it against the `< 0.05 mm²` README row; the number to compare is the
 cell area, and even that comparison has caveats:
 [`layout/floorplan/README.md`](../floorplan/README.md)'s bottom-up inventory
 estimate prices the digital region at 74 485 µm² of cell area from **1655
-cells in the 7-track library**, while this run places **2490 instances of
-9-track cells** — taller rows, and a different (post-synthesis, real) cell
-count. The two numbers are not like-for-like, and reconciling them against
+cells in the 7-track library**, while this run places **2499 instances of
+9-track cells** (`checks.components`, 2505 synthesized minus 6 optimized
+away during placement/CTS) — taller rows, and a different (post-synthesis,
+real) cell count. The two numbers are not like-for-like, and reconciling them against
 the ratified area row is #145's job (with [#150][gf150] owning the row
 itself). What can be said here: real synthesis and placement land the digital
 section's cell area ~1.5× above the inventory estimate, and the estimate was

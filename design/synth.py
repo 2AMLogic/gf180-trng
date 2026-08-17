@@ -76,6 +76,40 @@ Fmax or any other timing claim from this field.** Digital timing closure is
 DR-0009 rule 6's still-open item and a future characterization issue's job
 (#145), not this script's.
 
+Liberty corner
+--------------
+`CORNER` below pins the mapping deck explicitly, rather than trusting `klt`'s
+own nominal-corner resolution (`klt pdk cells`'s documented "lowest of the
+characterised supplies" pick, `tt_025C_1v80` for this library) the way this
+script used to. This block does not run at 1.8 V: `design/README.md` calls
+3.3 V "the block's ratified supply", and DR-0003's raw-rate row binds at
+`ss` / −10 % supply / +125 degC (3.3 V − 10 % = 2.97 V), for which this
+library's closest shipped deck is `ss_125C_3v00`. That is exactly the
+reasoning `layout/digital/build.py`'s own `CORNER` constant uses to pin its
+P&R run — but this script pins a **different** deck, `tt_025C_3v30`, and the
+difference is deliberate, not an oversight:
+
+`klt synthesize`'s ABC step performs *delay-driven mapping*: it picks cells
+and drive strengths to meet a timing estimate at whichever corner the request
+names, and it does not do signoff timing analysis or any form of timing
+closure (see "What `klt synthesize` is, and is not" below) — that is
+`layout/digital/build.py`'s job, which re-optimizes (resizes cells during
+CTS/placement) against `ss_125C_3v00`, the ratified binding corner, on
+*this* script's output. Mapping the initial netlist against the same
+worst-case slow/hot/low-voltage corner would only bias ABC toward
+larger-than-typical drive strengths before P&R gets a chance to size
+anything itself, inflating the pre-place netlist's area without changing
+what actually gets signed off. `tt_025C_3v30` — typical process, 25 degC,
+3.30 V — is the conventional synthesis target for exactly this reason: a
+balanced starting point at the block's real operating voltage (3.3 V, unlike
+the old 1.8 V pick), leaving corner-specific timing closure to the P&R stage
+that is actually equipped to perform it. `layout/digital/README.md`'s
+"Corners" section reasons through this same `tt_025C_3v30`-vs-`ss_125C_3v00`
+question for the P&R step and reaches the opposite answer for a P&R-specific
+reason (implementing *at* the binding corner is what makes P&R's own slack
+figure meaningful) — that reasoning is P&R-specific and does not transfer to
+a pre-place, non-closing synthesis mapping step.
+
 Provenance
 ----------
 The committed `design/trng_top/trng_top.synth.json` report carries, inside
@@ -83,15 +117,13 @@ its `provenance` block (from `klayout_tools._provenance.build_provenance`,
 the same helper `klt drc`/`klt lvs`/`klt extract` use): the installed `klt`
 version, the KLayout engine build, the resolved PDK variant + open_pdks
 version, and the liberty deck's own name + content hash (`<cell_library>__
-<corner>`, e.g. `gf180mcu_fd_sc_mcu9t5v0__tt_025C_1v80` — `klt`'s own
-nominal-corner resolution for this library, per `klt pdk cells`, left
-unpinned here for the same reason: a future nominal-corner change is
-something this report should visibly pick up, not silently miss). On top of
-that this script adds its own `rtl_sources` array — one `{path,
-content_hash}` entry per source file — because `provenance.input` alone only
-carries one combined, order-independent hash across all five sources
-(`klayout_tools.synthesize._combined_content_hash`), which cannot say *which*
-file changed. `rtl_sources` can.
+<corner>`, i.e. `gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30` per `CORNER` above —
+no longer `klt`'s own nominal-corner resolution; see "Liberty corner" above
+for why it is now pinned). On top of that this script adds its own
+`rtl_sources` array — one `{path, content_hash}` entry per source file —
+because `provenance.input` alone only carries one combined, order-independent
+hash across all five sources (`klayout_tools.synthesize._combined_content_hash`),
+which cannot say *which* file changed. `rtl_sources` can.
 
 Determinism
 -----------
@@ -148,6 +180,13 @@ SOURCES = (
 #: The gf180mcu digital standard-cell library -- NOT sky130 (klayout-tools#629,
 #: resolved upstream via klayout-tools#631; see layout/cells/README.md).
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
+
+#: The liberty corner `klt synthesize`'s ABC step maps against, named
+#: explicitly rather than left to `klt`'s own nominal-corner resolution --
+#: see the module docstring's "Liberty corner" section for the full
+#: reasoning, including why this deliberately differs from
+#: `layout/digital/build.py`'s `ss_125C_3v00` P&R corner.
+CORNER = "tt_025C_3v30"
 
 NETLIST_PATH = TRNG_TOP_DIR / f"{TOP}.synth.v"
 REPORT_PATH = TRNG_TOP_DIR / f"{TOP}.synth.json"
@@ -207,7 +246,7 @@ def _write_request(request_path: Path) -> None:
     request = {
         "sources": [str(REPO_ROOT / src) for src in SOURCES],
         "hdl_toplevel": TOP,
-        "pdk": {"cell_library": CELL_LIBRARY},
+        "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
     }
     request_path.write_text(json.dumps(request, indent=2) + "\n")
 
