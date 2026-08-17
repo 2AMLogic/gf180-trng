@@ -38,16 +38,24 @@ Registered vs. combinational: the load-bearing detail
 ``ht_startup_pass``) are ``output reg`` -- registered, so they are stable
 for the whole cycle *after* the edge that computed them, and
 ``ring_liveness.v``'s ``ring_stuck``/``ring_stuck_any`` are registered the
-same way, so ``ht_fail_ring`` follows the identical one-cycle rule below. ``trng_interface.v``'s
-``cond_en``/``cond_flush``/``startup_req`` are ``output wire`` -- purely
-combinational on this cycle's inputs, exactly as
+same way, so ``ht_fail_ring`` follows the identical one-cycle rule.
+``crc32_conditioner.v``'s ``cond_word``/``cond_valid`` are *also*
+``output reg`` -- the same one-cycle rule applies to the word the
+conditioner hands the interface, not just to the health-test flags.
+``trng_interface.v``'s ``cond_en``/``cond_flush``/``startup_req`` are
+``output wire`` -- purely combinational on this cycle's inputs, exactly as
 ``design/interface/README.md`` documents for the conditioner's ``en``/
 ``flush``. Wired directly (as ``trng_top.v`` does, and as real synchronous
 RTL always does), the natural signal flow is: the health test's *previous*
 edge's registered failure flags are what the interface combinationally acts
 on *this* cycle, and the ``startup_req``/``cond_en``/``cond_flush`` that
 produces is what the conditioner and the health test consume as **this**
-cycle's control inputs.
+cycle's control inputs. The interface's own registers, in turn, sample the
+conditioner's and the health test's outputs at the same setup-time instant
+peek_control's combinational logic used -- i.e. the value each `output reg`
+held *before* this edge, set by the *previous* edge -- so ``cond_word``,
+``cond_valid`` and ``ht_startup_pass`` are exactly as delayed as
+``ht_fail_rct``/``ht_fail_apt``/``ht_fail_ring`` are, with no exception.
 
 :meth:`TopLevel.step` reproduces that ordering explicitly, because a
 sequence of plain Python method calls has no equivalent of "stable for the
@@ -58,7 +66,11 @@ cycle" unless the caller imposes it:
    response to the *previous* edge's latched health-test and liveness flags
    plus this cycle's register-bus stimulus.
 2. ``cond.step(..., en=cond_en, flush=cond_flush)`` -- the conditioner sees
-   this cycle's ``en``/``flush``, per its own documented contract.
+   this cycle's ``en``/``flush``, per its own documented contract, and
+   produces the ``cond_word``/``cond_valid`` that will be registered *for*
+   this edge (i.e. visible to the interface starting *next* cycle) --
+   exactly the same "computed now, consumed next cycle" rule step 3 states
+   for the health-test flags below.
 3. ``health.step(..., startup_req=startup_req)`` -- the health test sees
    this cycle's ``startup_req`` and evaluates ``raw_bit`` against its
    internal state, producing the flags that will be registered *for* this
@@ -67,21 +79,29 @@ cycle" unless the caller imposes it:
    same reason: its pulse is registered on this edge, so the interface sees
    it from the next cycle on. It takes no ``startup_req`` -- DR-0016 gives
    the monitor no window to restart, only a per-ring run counter.
-4. ``iface.step(..., ht_fail_rct=<last>, ht_fail_apt=<last>, ht_startup_pass=...)``
-   -- the same *previous*-cycle failure flags step 1 used (so the interface's
-   internal state update is self-consistent with what it just told the
-   conditioner and health test), plus this cycle's fresh
-   ``ht_startup_pass`` pulse (which, unlike the two failure flags, has
-   nowhere upstream of the interface that needs it a cycle earlier).
-5. The health test's *this*-cycle flags become "last" for the next call.
+4. ``iface.step(..., cond_word=<last>, cond_valid=<last>, ht_fail_rct=<last>,
+   ht_fail_apt=<last>, ht_startup_pass=<last>)`` -- the same *previous*-cycle
+   values steps 1-3 produced one call ago, so the interface's internal state
+   update is self-consistent with what it just told the conditioner and
+   health test. Unlike ``ht_fail_rct``/``ht_fail_apt``, ``cond_word``/
+   ``cond_valid``/``ht_startup_pass`` are not consumed by
+   ``iface.peek_control`` -- only by ``iface.step`` -- but they are
+   ``output reg`` on the RTL side exactly the same way, so the same
+   one-cycle delay applies to them too.
+5. This cycle's freshly computed ``cond_word``/``cond_valid``,
+   ``ht_startup_pass`` and health-test failure flags all become "last" for
+   the next call.
 
 Getting this backwards -- feeding the interface *this* cycle's still-being-
-computed failure flags, or feeding the health test *this* cycle's not-yet-
-computed ``startup_req`` -- is exactly the kind of same-cycle wiring mistake
-the RTL cannot express (a wire cannot depend on its own value) but a
-hand-sequenced behavioural model can get wrong silently. That is why this
-ordering is stated here rather than left to be reconstructed from the call
-sequence.
+computed failure flags or conditioned word, or feeding the health test *this*
+cycle's not-yet-computed ``startup_req`` -- is exactly the kind of same-cycle
+wiring mistake the RTL cannot express (a wire cannot depend on its own
+value) but a hand-sequenced behavioural model can get wrong silently. That
+is why this ordering is stated here rather than left to be reconstructed
+from the call sequence. (This module's own history is the cautionary
+example: ``ht_startup_pass`` and ``cond_word``/``cond_valid`` were passed
+combinationally, same-cycle, for a period before this fix -- see #176 --
+which is exactly the mistake this paragraph now warns against.)
 
 DR-0009 rules that apply to every record produced from this module: no
 corner (rule 2), no P/V/T-dependent claim (rule 3), and every record must
@@ -143,6 +163,15 @@ class TopLevel:
     _last_ht_fail_apt: bool = field(default=False, init=False)
     _last_ring_stuck_any: bool = field(default=False, init=False)
 
+    #: The health test's ``ht_startup_pass`` pulse and the conditioner's
+    #: ``cond_word``/``cond_valid``, as the interface would see them at the
+    #: start of this cycle -- ``rct_apt.v`` and ``crc32_conditioner.v`` both
+    #: declare these ``output reg``, so they are delayed by one cycle exactly
+    #: like the three failure flags above (see the module docstring).
+    _last_ht_startup_pass: bool = field(default=False, init=False)
+    _last_cond_word: int = field(default=0, init=False)
+    _last_cond_valid: bool = field(default=False, init=False)
+
     #: Lifetime counters -- model bookkeeping, not hardware.
     cycles: int = field(default=0, init=False)
     raw_samples: int = field(default=0, init=False)
@@ -191,19 +220,26 @@ class TopLevel:
             raw_bit=raw_bit, raw_valid=raw_valid, startup_req=startup_req
         )
         _ring_stuck, ring_stuck_any = self.liveness.step(ring_bit)
+        # cond_word/cond_valid and ht_startup_pass, like ht_fail_rct/
+        # ht_fail_apt/ring_stuck_any, are `output reg` in the RTL (see the
+        # module docstring): the interface's own registers sample the value
+        # each held BEFORE this edge -- i.e. what the *previous* call to
+        # step() just computed -- not the value this call just computed.
         out = self.iface.step(
             raw_bit=raw_bit,
             raw_valid=raw_valid,
-            cond_word=cond_word,
-            cond_valid=cond_valid,
+            cond_word=self._last_cond_word,
+            cond_valid=self._last_cond_valid,
             ht_fail_rct=self._last_ht_fail_rct,
             ht_fail_apt=self._last_ht_fail_apt,
             ht_fail_ring=self._last_ring_stuck_any,
-            ht_startup_pass=ht_startup_pass,
+            ht_startup_pass=self._last_ht_startup_pass,
             **bus,
         )
         self._last_ht_fail_rct, self._last_ht_fail_apt = ht_fail_rct, ht_fail_apt
         self._last_ring_stuck_any = ring_stuck_any
+        self._last_ht_startup_pass = ht_startup_pass
+        self._last_cond_word, self._last_cond_valid = cond_word, cond_valid
         return out
 
 

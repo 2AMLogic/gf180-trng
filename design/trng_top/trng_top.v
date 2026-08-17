@@ -8,12 +8,17 @@
 // four instantiated modules' own ports, so the registered-vs-combinational
 // sequencing trng_top.py's module docstring works out by hand is exactly
 // what plain Verilog signal flow already does -- rct_apt.v's
-// ht_fail_rct/ht_fail_apt/ht_startup_pass and ring_liveness.v's
-// ring_stuck/ring_stuck_any are `output reg` (registered, stable for the
-// cycle after the edge that set them) and trng_interface.v's
-// cond_en/cond_flush/startup_req are `output wire` (combinational on this
-// cycle's inputs), so wiring the modules directly reproduces the one-cycle
-// relationship trng_top.py's TopLevel.step imposes explicitly.
+// ht_fail_rct/ht_fail_apt/ht_startup_pass, crc32_conditioner.v's
+// cond_word/cond_valid, and ring_liveness.v's ring_stuck/ring_stuck_any are
+// all `output reg` (registered, stable for the cycle after the edge that
+// set them) and trng_interface.v's cond_en/cond_flush/startup_req are
+// `output wire` (combinational on this cycle's inputs), so wiring the
+// modules directly reproduces the one-cycle relationship trng_top.py's
+// TopLevel.step imposes explicitly on every one of those `output reg`
+// signals, cond_word/cond_valid and ht_startup_pass included (#176 -- an
+// earlier revision of trng_top.py handed those two off combinationally,
+// same-cycle, which sim/tests/test_trng_top.py's
+// AssembledCrossCheckTests now catches).
 //
 // The liveness monitor (DR-0016) is wired here and nowhere else: its
 // ring_stuck_any is the interface's ht_fail_ring, i.e. a THIRD source of the

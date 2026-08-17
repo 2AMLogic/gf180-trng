@@ -26,6 +26,7 @@ Three groups:
 
 from __future__ import annotations
 
+import random
 import re
 import shutil
 import subprocess
@@ -57,6 +58,7 @@ HEALTH_TEST_V = DESIGN_DIR / "health_test" / "rct_apt.v"
 RING_LIVENESS_V = DESIGN_DIR / "health_test" / "ring_liveness.v"
 INTERFACE_V = IFACE_DIR / "trng_interface.v"
 TOP_V = TOP_DIR / "trng_top.v"
+CROSSCHECK_TB = SIM_DIR / "tb" / "trng-top-crosscheck" / "tb_rtl_equivalence.v"
 
 #: The DR-0001 raw tap, and the block's shared clock/reset -- the four
 #: signals that cross the DR-0009 analog/digital boundary.
@@ -366,6 +368,158 @@ class RtlWiringTests(unittest.TestCase):
                 ["vvp", str(vvp)], check=True, capture_output=True, text=True,
             )
             self.assertNotIn("FATAL", proc.stdout, proc.stdout)
+
+
+def _pack_stim_word(vector) -> int:
+    """One 41-bit stimulus word -- see tb_rtl_equivalence.v's bit layout."""
+    raw_bit, raw_valid, ring_bit, reg_sel, reg_write, reg_addr, reg_wdata, str_ready = vector
+    return (
+        (raw_bit & 1)
+        | ((raw_valid & 1) << 1)
+        | ((ring_bit[0] & 1) << 2)
+        | ((ring_bit[1] & 1) << 3)
+        | ((reg_sel & 1) << 4)
+        | ((reg_write & 1) << 5)
+        | ((reg_addr & 0x3) << 6)
+        | ((reg_wdata & 0xFFFFFFFF) << 8)
+        | ((str_ready & 1) << 40)
+    )
+
+
+def _stimulus_hex(vectors) -> str:
+    return "".join(f"{_pack_stim_word(v):011x}\n" for v in vectors)
+
+
+def _model_trace(vectors):
+    """Runs ``vectors`` through the assembled behavioural model, one
+    ``TopLevel.step`` call per vector, and returns the same
+    ``(reg_rdata, str_data, str_valid, ht_alarm)`` tuple per cycle that
+    ``tb_rtl_equivalence.v`` dumps for the RTL side."""
+    t = top.TopLevel()
+    trace = []
+    for raw_bit, raw_valid, ring_bit, reg_sel, reg_write, reg_addr, reg_wdata, str_ready in vectors:
+        out = t.step(
+            raw_bit=raw_bit,
+            raw_valid=bool(raw_valid),
+            ring_bit=ring_bit,
+            reg_sel=bool(reg_sel),
+            reg_write=bool(reg_write),
+            reg_addr=reg_addr,
+            reg_wdata=reg_wdata,
+            str_ready=bool(str_ready),
+        )
+        trace.append((out.reg_rdata, out.str_data, bool(out.str_valid), bool(out.ht_alarm)))
+    return trace
+
+
+def _mixed_vectors(seed: int, n_cycles: int, rct_fail_at: int | None = None, restart_write_at: int | None = None):
+    """A per-cycle stimulus mixing plain raw samples (both rings toggling so
+    ring-liveness never trips on its own), periodic STATUS/DATA/RAW_DATA
+    register reads, a varying ``str_ready``, and -- if requested -- a
+    deliberately triggered RCT failure (a forced run of identical raw
+    samples, long enough to guarantee the RCT cutoff is crossed regardless
+    of what came before it) followed by the DR-0002 write-1-to-clear
+    restart.
+    """
+    rng = random.Random(seed)
+    status_ht_fail_rct_lsb = next(f for f in regmap.STATUS.fields if f.name == "HT_FAIL_RCT").lsb
+    vectors = []
+    for i in range(n_cycles):
+        if rct_fail_at is not None and rct_fail_at <= i < rct_fail_at + 90:
+            raw_bit = 1  # a run this long always crosses C_RCT=81, from any prior state
+        else:
+            raw_bit = rng.randint(0, 1)
+        ring_bit = (i % 2, (i + 1) % 2)  # both rings alive, never stuck
+
+        reg_sel = reg_write = reg_wdata = 0
+        reg_addr = regmap.STATUS.index
+        if restart_write_at is not None and i == restart_write_at:
+            reg_sel, reg_write = 1, 1
+            reg_wdata = 1 << status_ht_fail_rct_lsb
+        elif i % 37 == 0:
+            reg_sel, reg_addr = 1, regmap.STATUS.index
+        elif i % 53 == 0:
+            reg_sel, reg_addr = 1, regmap.DATA.index
+        elif i % 71 == 0:
+            reg_sel, reg_addr = 1, regmap.RAW_DATA.index
+
+        str_ready = 0 if (i % 3 == 0) else 1
+        vectors.append((raw_bit, 1, ring_bit, reg_sel, reg_write, reg_addr, reg_wdata, str_ready))
+    return vectors
+
+
+@unittest.skipUnless(
+    shutil.which("iverilog") and shutil.which("vvp"),
+    "Icarus Verilog not installed -- the assembled RTL/model cross-check is "
+    "not run here",
+)
+class AssembledCrossCheckTests(unittest.TestCase):
+    """The assembled RTL (``trng_top.v``) and the assembled behavioural model
+    (``trng_top.TopLevel``) must produce IDENTICAL per-cycle outputs -- not
+    just the same final state, and not just the same sequence of conditioned
+    words (a sequence comparison is blind to a one-cycle timing skew; see
+    ``sim/tb/trng-top-crosscheck/README.md``).
+
+    This is the regression #176 asked for: before that issue's fix,
+    ``TopLevel.step`` handed ``ht_startup_pass`` and
+    ``cond_word``/``cond_valid`` to the interface combinationally, in the
+    same model cycle they were computed, while ``rct_apt.v`` and
+    ``crc32_conditioner.v`` both register them (``output reg``) and
+    ``trng_top.v`` wires them straight through with no extra delay --
+    a same-cycle-vs-next-cycle skew neither ``PinoutCrossCheckTests`` nor
+    ``RtlWiringTests`` above can see, because neither one compares a
+    per-cycle trace.
+    """
+
+    def _run_rtl(self, vectors):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            stim = tmp / "stim.mem"
+            out = tmp / "out.txt"
+            vvp = tmp / "sim.vvp"
+            stim.write_text(_stimulus_hex(vectors))
+            subprocess.run(
+                [
+                    "iverilog", "-g2012", "-I", str(IFACE_DIR), "-o", str(vvp),
+                    str(TOP_V), str(CONDITIONER_V), str(HEALTH_TEST_V),
+                    str(RING_LIVENESS_V), str(INTERFACE_V), str(CROSSCHECK_TB),
+                ],
+                check=True, capture_output=True, text=True,
+            )
+            proc = subprocess.run(
+                ["vvp", str(vvp), f"+stim={stim}", f"+out={out}", f"+nvec={len(vectors)}"],
+                check=True, capture_output=True, text=True,
+            )
+            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
+            trace = []
+            for line in out.read_text().splitlines():
+                rdata_hex, sdata_hex, flags = line.split()
+                trace.append((int(rdata_hex, 16), int(sdata_hex, 16), flags[0] == "1", flags[1] == "1"))
+            return trace
+
+    def test_rtl_matches_model_cycle_by_cycle_through_startup_and_multiple_conditioner_blocks(self):
+        # 1900 cycles clears the 1024-sample start-up window plus several
+        # 256-sample conditioner blocks, with register-bus reads and a
+        # varying str_ready interleaved throughout.
+        vectors = _mixed_vectors(seed=176, n_cycles=1900)
+        rtl_trace = self._run_rtl(vectors)
+        model_trace = _model_trace(vectors)
+        self.assertEqual(len(rtl_trace), len(vectors))
+        self.assertEqual(rtl_trace, model_trace)
+        # Not a vacuous pass: confirm this run actually reached start-up
+        # completion and emitted conditioned words, so the two handoffs
+        # #176 fixed (ht_startup_pass, cond_word/cond_valid) were both
+        # exercised, not just the always-registered failure flags.
+        cond_ready_lsb = next(f for f in regmap.STATUS.fields if f.name == "COND_READY").lsb
+        self.assertTrue(any((rdata >> cond_ready_lsb) & 1 for rdata, _, _, _ in rtl_trace if rdata))
+
+    def test_rtl_matches_model_cycle_by_cycle_through_a_health_test_failure_and_restart(self):
+        # A forced RCT failure, the write-1-to-clear restart DR-0002
+        # requires, and enough cycles afterward for a fresh start-up pass
+        # and further conditioned blocks -- exercising the alarm-latch path
+        # and the recovery path in the same run.
+        vectors = _mixed_vectors(seed=177, n_cycles=2400, rct_fail_at=300, restart_write_at=450)
+        self.assertEqual(self._run_rtl(vectors), _model_trace(vectors))
 
 
 if __name__ == "__main__":
