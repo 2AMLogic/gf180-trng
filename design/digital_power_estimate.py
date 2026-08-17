@@ -45,6 +45,40 @@ The library is characterised at 3.60 V and the envelope's upper rail is
 3.63 V (3.3 V + 10 %). That 0.8 % voltage gap is not corrected for; it is
 noted in the output, and it is far below the estimate's own uncertainty.
 
+This estimate has since been measured against (issue #145)
+---------------------------------------------------------
+`design/trng_top/trng_top.synth.v` (#143) and `layout/digital/trng_top.def`
+(#111) did not exist when this script was written; they do now, and
+``sim/characterization-digital-sta-area-power.md`` reports the same quantity
+measured from the placed netlist across the corner set, at the same 1 MHz raw
+rate and the same switching-activity assumption. Headline: **measured dynamic
+power is 10-14x this estimate**, while **measured leakage lands within
+0.63-1.32x of it** -- i.e. item 2 above (characterised library data, no
+modelling freedom) held up, and item 3 did not.
+
+Two of this script's assumptions the netlist falsifies outright, both recorded
+here rather than silently corrected, because this script's value is now as the
+*pre-synthesis prediction* that comparison is made against:
+
+1. **The clock gating this script's headline assumes was never synthesized.**
+   The ``clock_duty`` overrides below credit the two output FIFOs with gating
+   at 1/256 and 1/2048; the as-built netlist contains **no integrated clock
+   gates at all** (Yosys mapped the write enables to 553 ``mux2`` cells
+   instead). The ``interface_mux_feedback`` variant this script already
+   computes is therefore the like-for-like row, not the headline.
+2. **A flip-flop's clock-edge internal energy is priced at the *data*
+   activity** (``p_internal += n * sec_activity * mean_int * freq``). A flop
+   pays that energy on every clock edge regardless of D: the library's own
+   ``dffq_1`` CLK table is 0.278 pJ per cycle unconditional, so the netlist's
+   706 flops cost ~196 uW at 1 MHz before anything toggles -- 5x this script's
+   entire ungated active figure. This is the single largest term in the gap.
+
+Nothing here is changed to chase those, and ``sim/tools/power_rollup.py`` still
+uses this script for its digital term: substituting a 10-14x larger number
+changes a README-row verdict, which is an operator decision and not this
+script's to make. That decision is issue #174; see the characterization
+document's section 4.4 for what it turns on.
+
 Why CI does not run this
 ------------------------
 It needs ``libs.ref/gf180mcu_fd_sc_mcu7t5v0``, and the PDK nightly provisions

@@ -526,7 +526,11 @@ it should not be allowed to — but it is no longer a rounding error either.*
 
 **The digital section misses the area row on standard-cell area alone** —
 74 485 µm², i.e. **1.49× the whole row before any placement at all**, and
-2.5× once placed at 60 % utilisation. The two 8 × 32-bit output FIFOs are
+2.5× once placed at 60 % utilisation. (Real synthesis and placement have since
+put that figure at **113 088 µm², 2.26× the row on cell area alone** — see
+[The digital region has since been synthesized, placed and
+measured](#the-digital-region-has-since-been-synthesized-placed-and-measured)
+below. The estimate is left as written; the miss is larger, not smaller.) The two 8 × 32-bit output FIFOs are
 **69.8 %** of it (512 `dffrnq_1` + 448 `mux2_1` + 16 `icgtp_1` =
 51 982 µm²). This is the
 same structure, in the same block, that [DR-0017] identifies as the reason the
@@ -553,11 +557,47 @@ rejected a depth reduction because it never gets the idle current under 1 µA at
 any depth, whereas on area it is most of an answer. Until that record is
 ratified the `< 0.05 mm²` row stands as written.
 
+### The digital region has since been synthesized, placed and measured
+
+**The `digital` row above is superseded as a prediction, and kept as one.**
+Issues [#143] and [#111] synthesized and placed-and-routed that region for
+real, and [#145] measured what came out (`sim/characterization-digital-sta-area-power.md`,
+records `sim/records/2026-08-17-digital-sta-power-*`):
+
+| | cell area | cells | library |
+|---|---:|---:|---|
+| This table's estimate | 74 485.3 µm² | 1655 inventoried | `mcu7t5v0` (7-track) |
+| Measured, placed ([#111]) | **113 087.9 µm²** | 2499 placed instances | `mcu9t5v0` (9-track) |
+| | **×1.518** | ×1.510 | |
+
+Pricing the *same as-built netlist* against the 7-track library separates the
+two axes that moved at once: **×1.209 from cell count and mix** (real
+synthesis needs 51 % more instances, averaging 36.04 µm² rather than the
+inventory's assumed 45.01 µm²) and **×1.256 from 9-track rather than 7-track
+rows**. The inventory got the block's shape right and its cell count wrong,
+which is the error a bottom-up count from RTL `reg` declarations is structurally
+exposed to.
+
+Nothing in this document is edited to match. The numbers here remain what this
+script produces and what [DR-0019] was written against; the measured figure is
+larger, is recorded where it was measured, and is what any future re-derivation
+of DR-0019's depth-sensitivity table should use. This section exists so that a
+reader of the table above cannot mistake a pre-synthesis estimate for the
+current state of knowledge.
+
+The other three regions are unaffected: they are analog cells with no
+synthesis path, drawn by hand, and `ring1`/`ring2`/`combiner_sampler` already
+take their guarded footprints from committed assembled geometry rather than
+from this estimate.
+
 ### What the area model is
 
 A **bottom-up inventory estimate with a stated method**, not a synthesis result
-and not a layout. No synthesiser, placer or router has been run on this block,
-and none of the analog cells has been drawn.
+and not a layout. No synthesiser, placer or router has been run on **the analog
+cells** in this block, and none of them has been drawn from this model; the
+digital region *has* been synthesized and placed since this model was written
+(see the section above), and this model's own digital row is retained as the
+pre-synthesis prediction it was.
 
 - Gate-shaped cells (`ro_stage`'s core inverter, `ro_nand2`, `xor2`,
   `sampler_dff`) are priced at their nearest `gf180mcu_fd_sc_mcu7t5v0`
@@ -1028,3 +1068,6 @@ would not block that separate question.
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
+[#111]: https://github.com/2AMLogic/gf180-trng/issues/111
+[#143]: https://github.com/2AMLogic/gf180-trng/issues/143
+[#145]: https://github.com/2AMLogic/gf180-trng/issues/145
