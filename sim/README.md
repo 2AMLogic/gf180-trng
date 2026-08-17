@@ -93,7 +93,7 @@ re-parsing prose.
 | `record` | The record's own filename stem. Self-identifying. |
 | `date` | UTC date/time the run completed, ISO 8601 (`2026-08-14T09:12:00Z`). |
 | `status` | `valid`, or `superseded` (see [Superseding](#superseding-a-record)). |
-| `level` | `transistor` or `behavioral` — which side of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary produced this. Absent means `transistor` (records predating DR-0009); new records state it. |
+| `level` | `transistor`, `behavioral` or `gate` — what produced this. The first two are the two sides of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary; `gate` is static analysis of a synthesized/placed netlist against the PDK's characterised libraries ([DR-0021](../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md)), which is neither. Absent means `transistor` (records predating DR-0009); new records state it. |
 | `testbench.path` | Repo-relative path to the testbench entry point. |
 | `testbench.sha` | `git rev-parse HEAD:<path>` — blob SHA of the testbench at run time. |
 | `netlist.path` | Repo-relative path to the DUT netlist/schematic-derived netlist. |
@@ -167,8 +167,49 @@ first one.
 This is the one bounded exception to CLAUDE.md's "PVT corners on every
 recorded result". The rule is unchanged for every claim that *has* a corner.
 
+---
+
+## Gate-level records
+
+[DR-0021] adds a third `level:` value for a kind of evidence neither of the
+other two describes: **static analysis of a synthesized or placed-and-routed
+gate-level netlist against the PDK's own characterised standard-cell
+libraries** — static timing analysis, liberty-table power, and geometry read
+from a placed/routed database. No device model is instantiated and ngspice is
+never invoked, but a liberty deck *is* a process/voltage/temperature point, so
+unlike a behavioral record a gate record **has a corner and states it**. In
+this format:
+
+- `level: gate`.
+- `corner.process`, `corner.voltage` and `corner.temperature` are filled in
+  from the liberty deck's own operating conditions — never `n/a` — alongside
+  two fields only this level has: `corner.liberty` (the deck, since P/V/T
+  alone does not say which library or which characterisation) and
+  `corner.interconnect` (the parasitic corner, which moves independently of
+  the device corner for a routed block).
+- `pdk.models` lists the liberty deck, both LEFs and the extraction rule deck,
+  each content-hashed — the gate-level equivalent of a transistor record
+  naming its model sections.
+- `tool.ngspice` is `n/a` **with the reason**, and the tool that did produce
+  the numbers is named with its version.
+- A gate record may be cited for timing closure, Fmax, standard-cell area and
+  liberty-model power at the corner it names — as a property of *that*
+  implementation. It may **not** be cited as a measured supply current, for
+  anything the library itself is the source of truth for, for any raw-tap
+  claim (entropy, jitter, metastability), or as signoff. [DR-0021] §3 is the
+  full rule; each record restates it in its own Caveats.
+
+[DR-0005]'s one-record-per-corner rule is unchanged: a 5-liberty × 3-interconnect
+sweep is fifteen records. Like behavioral testbenches, a gate-level testbench
+carries **no `tb.json`** — `sim/run_corners.py` must not sweep it across the
+analog P/V/T grid, because a liberty deck is a characterised bundle rather
+than a free choice of the three axes. See `sim/tb/digital-sta-power/` for the
+first one.
+
 [DR-0001]: ../spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md
+[DR-0005]: ../spec/decision-records/DR-0005-sim-harness-record-granularity.md
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
+[DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 
 ---
 
@@ -235,7 +276,9 @@ Mechanical; run through it before committing any record.
 - [ ] `tool.ngspice` is the verbatim version string, not "latest".
 - [ ] Corner is a single P/V/T point, and it is stated explicitly — or the
       record is `level: behavioral` and every device-model field carries
-      `n/a` plus a reason, and the input source is named.
+      `n/a` plus a reason, and the input source is named. A `level: gate`
+      record states its corner like a transistor one, and additionally names
+      its liberty deck and its interconnect corner (DR-0021).
 - [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed —
       `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.
