@@ -145,16 +145,24 @@ klayout-tools — none of the gaps below are tool gaps):
 - **The digital section** (conditioner, health tests, interface — 1655
   standard cells per `layout/floorplan/README.md`'s own inventory) —
   [#111][gf111]. This is a placement-and-routing problem, not a
-  hand-drawn-cell problem at this scale, and `klt synthesize`/
-  `klt place-and-route` both resolve a sky130-only standard-cell deck with
-  no path for any other installed PDK (`klt place-and-route --help`, as of
-  this writing; filed as [klayout-tools#629][kt629]) — gf180mcu digital P&R
-  is a distinct, larger, tool-level gap than anything `layout/cells/`
+  hand-drawn-cell problem at this scale, and (as of this writing) `klt
+  place-and-route` still resolves a sky130-only standard-cell deck, with no
+  path for any other installed PDK — filed as [klayout-tools#629][kt629].
+  **`klt synthesize`'s own half of that gap is resolved**: klayout-tools#629
+  closed via [klayout-tools#631][kt631], which added a verified
+  `gf180mcu_fd_sc_mcu9t5v0` path to `klt synthesize` (`--pdk`/`--pdk-root`),
+  and `design/synth.py` ([#143][gf143]) now drives it end to end, committing
+  `design/trng_top/trng_top.synth.v` — see
+  [`design/README.md`'s "Digital synthesis" section](../../design/README.md#digital-synthesis).
+  `klt place-and-route` is the half that remains open: gf180mcu digital P&R
+  is still a distinct, larger, tool-level gap than anything `layout/cells/`
   addresses, and #111 is filed undecided on direction rather than
   prescribing one.
 
 [kt322]: https://github.com/2AMLogic/klayout-tools/issues/322
 [kt629]: https://github.com/2AMLogic/klayout-tools/issues/629
+[kt631]: https://github.com/2AMLogic/klayout-tools/pull/631
+[gf143]: https://github.com/2AMLogic/gf180-trng/issues/143
 [gf108]: https://github.com/2AMLogic/gf180-trng/issues/108
 [gf109]: https://github.com/2AMLogic/gf180-trng/issues/109
 [gf110]: https://github.com/2AMLogic/gf180-trng/issues/110

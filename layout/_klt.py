@@ -15,6 +15,15 @@ golden artefacts are byte-comparable across runs -- see
 `layout/README.md` and klayout-tools#320); those moved in here too
 (issue #156), for the same reason `_run_klt`/`FlowError`/`resolve_pdk` did.
 
+`klt_origin()` (what commit a `klt` install was built from -- `klt --version`
+alone cannot tell two builds apart, see its own docstring) is added here
+rather than only living in `layout/verify.py`'s own copy (issue #143):
+`design/synth.py` needs the identical provenance record
+`layout/reports/environment.json` already carries, and this module is where
+that kind of shared plumbing belongs. `layout/verify.py` keeps its own
+existing copy for now -- consolidating that one is unrelated cleanup, not
+this issue's scope.
+
 Not a package member of anything else under `layout/` -- it computes its own
 `REPO_ROOT` from its own location (`layout/_klt.py` sits directly under
 `layout/`, so one `.parent` up is the repo root) rather than importing a
@@ -36,6 +45,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 #: gen`/`klt gen-compose` stamp wall-clock time into.
 _BGNLIB = 0x0102
 _BGNSTR = 0x0502
+
+#: Asks the `klt` venv's own interpreter what it installed. `importlib.metadata`
+#: only sees distributions on the interpreter running it, and `klt` lives in its
+#: own pipx/uv venv, so the question has to be asked over there.
+_KLT_ORIGIN_PROBE = (
+    "import importlib.metadata as m;"
+    "print(m.distribution('klayout-tools').read_text('direct_url.json') or '')"
+)
 
 
 class FlowError(Exception):
@@ -103,6 +120,51 @@ def klt_version() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
     return (done.stdout or done.stderr).strip() or None
+
+
+def klt_origin() -> dict | None:
+    """Return what a `klt` install was built from, or None if unknowable.
+
+    `klt --version` reports `0.1.0` for every build of klayout-tools to date,
+    including installs straight off the tip of its main branch -- which is
+    what `pipx install klayout-tools` / `uv tool install klayout-tools` from
+    the repository URL gives you. So the version string does not identify a
+    build, and on 2026-08-02 two `0.1.0` installs produced different LVS
+    reports for the same fixture (#73). The commit does identify it.
+
+    Best effort by construction: an install from a wheel has no upstream
+    commit to report, and a layout this does not recognise reports nothing
+    rather than guessing. A None here means "not recorded", never "the same
+    as last time".
+    """
+    executable = shutil.which("klt")
+    if executable is None:
+        return None
+    try:
+        # The console script's shebang names the interpreter of the venv the
+        # distribution is installed into -- the one that can answer.
+        script = Path(executable).resolve().read_text(errors="replace")
+    except OSError:
+        return None
+    shebang = script.split("\n", 1)[0]
+    if not shebang.startswith("#!"):
+        return None
+    try:
+        done = subprocess.run(
+            [shebang[2:].strip(), "-c", _KLT_ORIGIN_PROBE],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        record = json.loads(done.stdout.strip())
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    return {
+        "url": record.get("url"),
+        "commit": (record.get("vcs_info") or {}).get("commit_id"),
+    }
 
 
 def normalise_gds(raw: bytes) -> bytes:

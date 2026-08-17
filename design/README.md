@@ -13,7 +13,8 @@ model plus synthesisable RTL with its own README:
 [`design/health_test/`](health_test/) (the on-die RCT/APT health tests and
 the start-up test, #11), and
 [`design/interface/`](interface/) (the register file, output FIFOs,
-`OUT_MODE` mux and gate/flush machine). None has a schematic or a netlist,
+`OUT_MODE` mux and gate/flush machine), wired together in
+[`design/trng_top/`](trng_top/). None has a schematic or an analog netlist,
 so `design/netlist.py` neither reads nor checks them; the boundary between the
 analog and digital halves is the raw tap, per
 [`DR-0009`](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md).
@@ -25,7 +26,9 @@ block's register map lives in one normative table
 and the integrator-facing pinout document, with
 `python3 design/interface/regmap.py --check` as the staleness guard. Unlike
 `netlist.py --check` it needs no PDK and no external tool, so it runs inside
-the PR-blocking unit-test set rather than nightly.
+the PR-blocking unit-test set rather than nightly. The whole digital wiring
+also has a **synthesized gate-level netlist**, `design/synth.py`'s own
+committed output — see [Digital synthesis](#digital-synthesis) below.
 
 ```sh
 python3 design/netlist.py            # (re-)export every top cell
@@ -50,6 +53,76 @@ xschem and failed on the other, with nothing having changed. Since SPICE joins
 carries no information, so `netlist.py` now discards xschem's choice and applies
 its own. Content changes still fail `--check` loudly, which is the part worth
 being loud about.
+
+---
+
+## Digital synthesis
+
+`design/synth.py` is the digital half's analogue of `netlist.py` above: a
+committed, regenerable artefact instead of a number typed into a PR
+description, this time for the whole digital wiring (#143) rather than the
+analog schematics.
+
+```sh
+python3 design/synth.py            # (re-)synthesize, write netlist + report
+python3 design/synth.py --check    # fail if the committed result is stale
+```
+
+It runs `klt synthesize` (klayout-tools; Yosys + bundled ABC under the hood)
+against **`gf180mcu_fd_sc_mcu9t5v0`** — the gf180mcu digital standard-cell
+library, not sky130 (klayout-tools#629, resolved upstream via
+klayout-tools#631; see [`layout/cells/README.md`](../layout/cells/README.md))
+— over `design/trng_top/trng_top.v` and the three modules it instantiates
+(`design/conditioner/crc32_conditioner.v`, `design/health_test/rct_apt.v`,
+`design/health_test/ring_liveness.v`, `design/interface/trng_interface.v`),
+with `hdl_toplevel=trng_top`. **One netlist for the whole digital wiring**,
+not one per sub-block: the target is scoped to what consumes a gate-level
+netlist. Place-and-route (#111) places one flattened top-level design, and
+digital STA/characterization (#145) times the assembled partition including
+the paths that cross between sub-blocks — so a per-block split would only
+have to be re-stitched into exactly this before either could run.
+
+This is a different rationale from the analog side's per-block split below
+(which follows DR-0009's transistor-level testbenches under `sim/tb/`). The
+digital sub-blocks *do* each have standalone coverage of their own — an
+RTL-vs-behavioral-model equivalence testbench per block
+(`sim/tb/conditioner-crc32/`, `sim/tb/health-test-fault-injection/`,
+`sim/tb/ring-liveness-fault-injection/`, `sim/tb/interface-regfile/`, each
+`tb_rtl_equivalence.v`) — but none of those reads a gate-level netlist, so
+none of them would gain anything from a per-block synthesis target. See the
+script's own module docstring for the full "why one netlist, not five"
+argument.
+
+Requires `klt`, `yosys`, and a gf180mcu PDK install carrying the
+`gf180mcu_fd_sc_mcu9t5v0` library (`ciel enable --pdk-family gf180mcu
+-l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu9t5v0 <version>` — see
+`sim/harness/pdk.py`'s own install hint for the primitive-only form most
+testbenches need; digital synthesis is the one thing in this repo that also
+needs the standard-cell library). `.github/workflows/pdk-nightly.yml`
+provisions both and runs `design/synth.py --check` nightly, the same way it
+already runs `design/netlist.py --check`; `npm run check:digital-netlist`
+(part of `check:all`) runs it locally.
+
+The committed output:
+
+- **`design/trng_top/trng_top.synth.v`** — the mapped gate-level netlist
+  (`write_verilog -noattr`), 2505 standard-cell instances as of this
+  writing.
+- **`design/trng_top/trng_top.synth.json`** — `klt synthesize`'s own report
+  (instance count, area, per-cell-type breakdown), plus its `provenance`
+  block (`klt` version, KLayout engine build, PDK variant + open_pdks
+  version, the liberty deck's name + content hash) and this script's own
+  `rtl_sources` array — one `{path, content_hash}` entry per RTL source file,
+  so a stale report names *which* file moved rather than just that one did.
+
+**No Fmax or other timing claim is made anywhere from this output.** The
+report's `timing` field is ABC's own pre-layout, wire-free critical-path
+estimate over the mapped netlist (`wire_load: null`) — real output, so it is
+committed verbatim, but explicitly not signoff timing (no wire delay, no
+parasitics, no SDC); `sta` is `null` here (the optional whole-netlist static
+timer is not part of this run). Digital timing closure is DR-0009 rule 6's
+still-open item, for a separate characterization issue (#145) to establish —
+not this one.
 
 ---
 
