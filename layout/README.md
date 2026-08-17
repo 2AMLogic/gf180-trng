@@ -11,8 +11,16 @@ nothing in `layout/reports/` under those three names should be read as a
 statement about the TRNG.
 
 **[`layout/floorplan/`](floorplan/), [`layout/cells/`](cells/),
-[`layout/rings/`](rings/) and [`layout/blocks/`](blocks/) are the four
-things here that are about the TRNG.** `floorplan/` is the entropy source's
+[`layout/rings/`](rings/), [`layout/blocks/`](blocks/) and
+[`layout/digital/`](digital/) are the five things here that are about the
+TRNG.** The first four draw the entropy source's analog and mixed-signal
+cells by hand, one at a time; `digital/` is the other kind of layout
+problem entirely — the conditioner, health tests and interface synthesize to
+2500-odd standard cells, so they are placed and routed by tool ([#111][gf111])
+rather than drawn, and that directory's own README says exactly what its
+routed result does and does not establish (it has a DEF and an as-built
+netlist; it does not yet have a committed GDS, a DRC verdict or any power
+delivery). `floorplan/` is the entropy source's
 isolation rationale (#16) and the floorplan abstract that carries it: four
 guarded regions, real generated guard rings, DRC'd as one stream, with an
 area rollup against the `< 0.05 mm²` row. As of #110 and #135,
@@ -21,8 +29,9 @@ LVS-verified content (`combiner_sampler`'s real, LVS-matching assembled
 block landed under `blocks/` in #134 — extended to include both `ro_buf`
 instances by #151 — and #135, resolved by PR #139, sized its guarded region
 from that block's own real bounding box and placed it there, re-measured
-from the assembled geometry on every run); `digital` is still *empty* —
-nothing places content inside its own guarded region yet — so `floorplan/`
+from the assembled geometry on every run); the `digital` *region* is still
+*empty* — `layout/digital/`'s routed result is not placed inside it, and
+nothing else puts content there either — so `floorplan/`
 remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
@@ -258,7 +267,7 @@ part of what this block ships, whatever else exists for it in `design/`.
 | `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/) ([#151][gf151], and see below), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
-| the digital section (1655 standard cells) | yes | none — a P&R problem, not a hand-drawn-cell one ([#111][gf111]) | n/a |
+| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed DEF + as-built netlist in [`digital/`](digital/); **not** yet placed in `floorplan/`'s `digital` region |
 
 ### `ro_buf`: drawn, assembled, and placed
 
