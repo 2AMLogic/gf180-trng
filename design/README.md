@@ -76,13 +76,22 @@ klayout-tools#631; see [`layout/cells/README.md`](../layout/cells/README.md))
 (`design/conditioner/crc32_conditioner.v`, `design/health_test/rct_apt.v`,
 `design/health_test/ring_liveness.v`, `design/interface/trng_interface.v`),
 with `hdl_toplevel=trng_top`. **One netlist for the whole digital wiring**,
-not one per sub-block: unlike the analog cells below (each independently
-instantiated by its own transistor-level testbench under `sim/tb/`, per
-DR-0009), none of the four digital RTL modules is elaborated standalone
-anywhere in this repo, and the one consumer of a digital gate-level netlist —
-place-and-route, issue #111 — needs the whole design as one flattened unit
-to place. See the script's own module docstring for the full "why one
-netlist, not five" argument.
+not one per sub-block: the target is scoped to what consumes a gate-level
+netlist. Place-and-route (#111) places one flattened top-level design, and
+digital STA/characterization (#145) times the assembled partition including
+the paths that cross between sub-blocks — so a per-block split would only
+have to be re-stitched into exactly this before either could run.
+
+This is a different rationale from the analog side's per-block split below
+(which follows DR-0009's transistor-level testbenches under `sim/tb/`). The
+digital sub-blocks *do* each have standalone coverage of their own — an
+RTL-vs-behavioral-model equivalence testbench per block
+(`sim/tb/conditioner-crc32/`, `sim/tb/health-test-fault-injection/`,
+`sim/tb/ring-liveness-fault-injection/`, `sim/tb/interface-regfile/`, each
+`tb_rtl_equivalence.v`) — but none of those reads a gate-level netlist, so
+none of them would gain anything from a per-block synthesis target. See the
+script's own module docstring for the full "why one netlist, not five"
+argument.
 
 Requires `klt`, `yosys`, and a gf180mcu PDK install carrying the
 `gf180mcu_fd_sc_mcu9t5v0` library (`ciel enable --pdk-family gf180mcu

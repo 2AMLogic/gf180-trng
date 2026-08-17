@@ -15,22 +15,41 @@ plumbing) over the digital RTL under `design/trng_top/`, `design/conditioner/`,
 
 One netlist, not five
 ----------------------
-`design/README.md`'s analog precedent is per-block (`ro_array_core`,
-`sampler_core`, `meta_arb`, ... each exported and committed separately),
-because each of those cells is independently instantiated by its own
-transistor-level testbench under `sim/tb/` — DR-0009's split makes each one
-a real, separately-verified unit. The digital half has no equivalent: none
-of `crc32_conditioner.v`/`rct_apt.v`/`ring_liveness.v`/`trng_interface.v`
-is elaborated standalone anywhere in this repo (`sim/tests/test_trng_top.py`
-compiles all four together with `trng_top.v` as one hierarchy, the only RTL
-elaboration check that exists), and the one thing that consumes a digital
-gate-level netlist at all — place-and-route, issue #111 — needs the whole
-digital wiring as a single flattened design to place, not four separate
-netlists it would have to re-stitch itself. So this script synthesizes
-exactly one unit: `trng_top` with its four child modules as `sources`,
-`hdl_toplevel="trng_top"`. If a sub-block ever gets its own
-independently-verified testbench (the condition that justifies a per-block
-*analog* netlist), it earns its own synthesis target then, not before.
+This script synthesizes exactly one unit: `trng_top` with its four child
+modules as `sources`, `hdl_toplevel="trng_top"`. The reason is what
+*consumes* a gate-level netlist, not what verifies the RTL. Both named
+consumers want the whole digital partition as one design:
+
+- place-and-route (#111) places a single flattened top-level design; four
+  separate per-block netlists would have to be re-stitched into exactly
+  that before P&R could start;
+- digital STA/characterization (#145) times the assembled digital
+  partition, including the paths that cross between sub-blocks — paths
+  that only exist in the stitched-together design.
+
+Splitting the *synthesis* output per sub-block would therefore create work
+(re-stitching) with no consumer asking for the split. This is the ordinary
+way a synthesis-for-P&R target is scoped: to the unit that gets placed.
+
+Note that this is a **different** rationale from the analog side's
+per-block split (`design/README.md`: `ro_array_core`, `sampler_core`,
+`meta_arb`, ... each exported and committed separately). DR-0009's analog
+split follows the transistor-level testbenches under `sim/tb/`, and the
+digital half does have that same per-block verification structure — each
+of the four sub-blocks is elaborated standalone in its own RTL-equivalence
+testbench (`sim/tb/conditioner-crc32/tb_rtl_equivalence.v`,
+`sim/tb/health-test-fault-injection/tb_rtl_equivalence.v`,
+`sim/tb/ring-liveness-fault-injection/tb_rtl_equivalence.v`,
+`sim/tb/interface-regfile/tb_rtl_equivalence.v`, driven from
+`sim/tests/test_conditioner.py`, `test_health_test.py`,
+`test_ring_liveness.py` and `test_interface.py` respectively), alongside
+`sim/tests/test_trng_top.py`'s combined elaboration of all five together.
+Those testbenches are RTL-vs-behavioral-model equivalence checks, which is
+a different kind of evidence than a per-block synthesized netlist would
+be: none of them reads a gate-level netlist, so none of them would gain
+anything from one. Per-block RTL coverage is therefore not an argument for
+per-block synthesis targets either way — the flattening decision rests on
+the consumers above.
 
 What `klt synthesize` is, and is not
 --------------------------------------
