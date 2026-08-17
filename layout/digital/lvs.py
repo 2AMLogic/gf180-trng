@@ -42,51 +42,51 @@ Not: is every standard cell's own internal transistor layout DRC/LVS-correct
 (that is each cell's own bring-up, out of scope for a 2505-instance macro
 netlist).
 
-Scope: signal connectivity only -- power/ground excluded, pending #171
+Power/ground: compared, since #171
 ------------------------------------------------------------------------
-`trng_top.pnr.v` carries no `VDD`/`VSS` connectivity at all: this flow never
-runs `global_connect`/`pdngen` (`layout/digital/README.md`'s "Two defects
-this bring-up found" #2), so no cell instantiation in the netlist names a
-power pin. But every standard cell's own GDS view still draws real `VDD`/
-`VSS` pin labels on Metal1 (verified directly: `klt extract`'s in-cell-label
-pin resolution takes priority over `--abstract-cell-lef`, and every checked
-cell type in this library labels its functional pins plus `VDD`/`VSS` -- not
-`VNW`/`VPW`, which land on layers this deck does not scan for pin labels).
-So `--abstract-cells` *will* resolve `VDD`/`VSS` as two more pins on every
-abstracted cell type, whether this script accounts for them or not.
+Every standard cell's own GDS view draws real `VDD`/`VSS` pin labels on
+Metal1 (verified directly: `klt extract`'s in-cell-label pin resolution
+takes priority over `--abstract-cell-lef`, and every checked cell type in
+this library labels its functional pins plus `VDD`/`VSS` -- not `VNW`/`VPW`,
+which land on layers this deck does not scan for pin labels). So
+`--abstract-cells` resolves `VDD`/`VSS` as two more pins on every abstracted
+cell type whether this script accounts for them or not, and the only
+question is what the reference side says they are connected to.
 
-This script ties every instance's `VDD` to one reference net named `VDD` and
-every `VSS` to one reference net named `VSS` -- the textbook-correct
-*design intent* for a powered chip. It does **not** claim the layout matches
-that intent: with no PDN, no tapcells and no fillers, each cell's own local
-Metal1 rail segment is wired to whatever it happens to physically abut,
-row by row, with no guarantee of a single continuous net across the design
-(the same physical gap already responsible for this run's committed DRC
-`nwell.space.1` violations -- see `reports/drc.json`). A `klt lvs` run that
-included power connectivity in its comparison would therefore report a
-`net.split`/`net.merged` cascade attributable to that one missing PDN, not to
-a signal-routing defect -- exactly the kind of "real but already explained,
-already tracked" mismatch this repository's DRC section documents rather
-than papers over (see `layout/digital/README.md`'s "Two defects" section).
+Until #171 the honest answer was "nothing checkable". That run built no PDN
+at all: `global_connect`/`pdngen` never ran, so each cell's local Metal1
+rail segment was wired to whatever it happened to physically abut, row by
+row, with no continuous net across the design -- and this script gave every
+instance's `VDD`/`VSS` its own dangling per-instance reference net, which
+reported as a 7694-mismatch `net.split`/`net.merged`/`topology` cascade
+attributable entirely to the missing PDN rather than to any signal-routing
+defect.
 
-Concretely, though: `hints.same_nets` only ties *one* layout net to *one*
-reference net, and the layout's own `VDD`/`VSS` fragmentation (an unknown
-number of disjoint per-row/per-gap islands, not knowable without running the
-extraction) is not a single net on the layout side to tie anything to. There
-is no `klt lvs` option to declare "compare every pin named X across every
-instance, but do not check what net it landed on" (`options.combine_devices`
-is the closest existing knob and is not that). So this run's request
-declares `layout.declared_pins`/`reference` pin sets that never promote
-`VDD`/`VSS` to a *top-level* pin (neither side's `trng_top` chip boundary
-has one -- there is no top-level supply pin in this flow at all, PDN or
-not), but does **not** attempt to suppress the internal `VDD`/`VSS`
-per-instance pins `--abstract-cells` resolves, and does not tell `klt lvs`
-to ignore them. `mismatches[]`'s `net.*`/`topology` categories are expected
-to carry `VDD`/`VSS`-attributable entries for exactly the reason above; this
-script's own report records the category counts un-redacted, and
-`layout/digital/README.md` states the attribution in prose next to the
-number, rather than filtering the report to make the count look smaller than
-it is.
+#171 removed that. The committed DEF now carries a `SPECIALNETS` section
+with exactly two nets, and `global_connect` wires every cell's PG pin to
+them, so there *is* a single continuous power net and a single continuous
+ground net to compare against. This script now reads their names from
+`reports/place_and_route.json`'s own `power` block -- the record of what the
+committed GDS was actually built with, rather than a constant restated here
+-- and ties every instance's `VDD` to the first and every `VSS` to the
+second. Power connectivity is therefore inside the comparison, not excluded
+from it, and a future regression that fragmented the grid would show up here
+as a `net.split` cascade instead of being invisible.
+
+The same run also inserts 6136 physical-only instances (tapcells, endcaps
+and fillers) that carry no logical function and that OpenROAD's
+`write_verilog` deliberately strips from `trng_top.pnr.v` via `-remove_cells`.
+They are real drawn geometry in the GDS, so `klt extract` sees them and the
+reference has to as well, or every one of their nine cell types is an
+unmatchable layout-side circuit. `_def_physical_only_instances()` reads them
+back out of the committed DEF's own `COMPONENTS` section and
+`_write_reference()` emits one two-pin card per instance onto the same two
+supply nets -- the only connection those cells have.
+
+Neither side promotes a supply to a *top-level* pin: `run_extract`'s `--pins`
+declares the 109 real chip I/O nets and nothing else, so the DEF's own
+`vddd`/`vss` `PINS` entries stay internal nets on both sides and the two
+`.SUBCKT trng_top` headers keep matching interfaces.
 
 Pipeline
 --------
@@ -105,7 +105,8 @@ Pipeline
    the two sides describe the same interface even though this script never
    calls that function), and one top-level `.SUBCKT trng_top <109 chip
    pins> ... X<instance> ... .ENDS` transcribing every placed cell
-   instance's connections verbatim, `VDD`/`VSS` appended per the scope note
+   instance's connections verbatim, plus the physical-only instances read
+   from the DEF, with `VDD`/`VSS` on the two supply nets per the section
    above.
 3. `klt extract --abstract-cells 'gf180mcu_fd_sc_mcu9t5v0__*' --top-cell-pins
    --def-net-names` over the committed `trng_top.gds` -- the layout side,
@@ -124,6 +125,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -140,6 +142,8 @@ from layout._klt import _run_klt, klt_origin, klt_version  # noqa: E402
 
 PNR_NETLIST_PATH = DIGITAL_DIR / "trng_top.pnr.v"
 GDS_PATH = DIGITAL_DIR / "trng_top.gds"
+DEF_PATH = DIGITAL_DIR / "trng_top.def"
+PNR_REPORT_PATH = REPORTS_DIR / "place_and_route.json"
 REFERENCE_PATH = DIGITAL_DIR / "trng_top.lvs_reference.spice"
 EXTRACTED_PATH = DIGITAL_DIR / "trng_top.extracted.spice"
 LVS_REQUEST_PATH = DIGITAL_DIR / "trng_top.lvs-request.json"
@@ -150,16 +154,99 @@ CELL_PREFIX = "gf180mcu_fd_sc_mcu9t5v0__"
 CELL_GLOB = f"{CELL_PREFIX}*"
 DECK = "gf180mcu"
 
-#: See the module docstring's "Scope: signal connectivity only" section --
-#: every abstracted cell type resolves these two pins from its own drawn
-#: GDS labels regardless of what this script does, so the reference has to
-#: declare them too, or every cell type is an instant `device.class_arity`
-#: mismatch (wrong pin count) before topology is even compared.
+#: See the module docstring's "Power/ground" section -- every abstracted cell
+#: type resolves these two pins from its own drawn GDS labels regardless of
+#: what this script does, so the reference has to declare them too, or every
+#: cell type is an instant `device.class_arity` mismatch (wrong pin count)
+#: before topology is even compared. These are the *cell pin* names, fixed by
+#: the library's own LEF/GDS; the *net* names they are tied to come from the
+#: committed P&R report -- see `_power_nets`.
 POWER_PINS = ("VDD", "VSS")
+
+#: Matches a `COMPONENTS` entry's `- <instance> <master>` opening line --
+#: `_def_physical_only_instances` reads the tapcell/endcap/filler instances
+#: back out of the committed DEF through this.
+_COMPONENT_ENTRY_RE = re.compile(r"^\s*-\s+(\S+)\s+(\S+)", re.M)
 
 
 class LvsFlowError(RuntimeError):
     """The reference-generation or extract/compare pipeline could not run."""
+
+
+def _pnr_power() -> dict:
+    """`reports/place_and_route.json`'s own `power` block.
+
+    Read from the committed report rather than restated as a constant here:
+    that report is the record of how the committed `trng_top.gds`/
+    `trng_top.def` this script compares were actually built, so a reference
+    generated against anything else would be describing a different layout.
+    """
+    if not PNR_REPORT_PATH.is_file():
+        raise LvsFlowError(
+            f"{PNR_REPORT_PATH.relative_to(REPO_ROOT)} is missing -- run "
+            "`python3 layout/digital/build.py` first"
+        )
+    power = (json.loads(PNR_REPORT_PATH.read_text()) or {}).get("power") or {}
+    if not power.get("global_connect"):
+        raise LvsFlowError(
+            f"{PNR_REPORT_PATH.relative_to(REPO_ROOT)} reports no "
+            "`global_connect` -- the committed layout has no power delivery "
+            "network, so this script cannot build a reference that describes "
+            "it (see this script's 'Power/ground' docstring section, #171)"
+        )
+    return power
+
+
+def _power_nets(power: dict) -> dict[str, str]:
+    """Map each `POWER_PINS` cell pin onto the net the layout wires it to."""
+    return {"VDD": power["power_net"], "VSS": power["ground_net"]}
+
+
+def _physical_only_masters(power: dict) -> tuple[str, ...]:
+    """The tapcell/endcap/filler masters this layout was built with.
+
+    Named by `klt place-and-route`'s own response rather than pattern-matched
+    out of the DEF: which masters are physical-only is the tool's fact about
+    the cell library, not something a name is allowed to imply here.
+    """
+    named = [power.get("tapcell_master"), power.get("endcap_master")]
+    named += list(power.get("filler_masters") or ())
+    return tuple(name for name in named if name)
+
+
+def _def_physical_only_instances(
+    def_path: Path, masters: tuple[str, ...]
+) -> list[tuple[str, str]]:
+    """`[(master, instance_name), ...]` for every `COMPONENTS` entry in
+    `def_path` instantiating one of `masters`, sorted by instance name.
+
+    These are exactly the instances `write_verilog -remove_cells` keeps out
+    of `trng_top.pnr.v` (they carry no logical function) while leaving them
+    in the DEF and therefore in the merged GDS -- so the DEF is the only
+    place a reference generated from the netlist can learn about them.
+    """
+    if not masters:
+        return []
+    text = def_path.read_text(errors="replace")
+    start = text.find("\nCOMPONENTS ")
+    end = text.find("\nEND COMPONENTS", start) if start != -1 else -1
+    if start == -1 or end == -1:
+        raise LvsFlowError(
+            f"{def_path.relative_to(REPO_ROOT)} has no readable COMPONENTS "
+            "section -- cannot recover this layout's physical-only instances"
+        )
+    wanted = set(masters)
+    found = [
+        (master, instance)
+        for instance, master in _COMPONENT_ENTRY_RE.findall(text[start:end])
+        if master in wanted
+    ]
+    if not found:
+        raise LvsFlowError(
+            f"{def_path.relative_to(REPO_ROOT)} instantiates none of the "
+            f"physical-only masters the P&R report names ({', '.join(masters)})"
+        )
+    return sorted(found, key=lambda entry: entry[1])
 
 
 def _yosys_netlist(verilog_path: Path, json_path: Path) -> dict:
@@ -282,7 +369,12 @@ def _cell_instances(module: dict, bit_names: dict[int, str]) -> tuple[
     return sorted_pins, instances
 
 
-def _write_reference(module: dict, path: Path) -> dict:
+def _write_reference(
+    module: dict,
+    path: Path,
+    power_nets: dict[str, str],
+    physical_only: list[tuple[str, str]],
+) -> dict:
     """Write the reference SPICE and return a small provenance summary."""
     bit_names = _bit_names(module)
     pins_by_type, instances = _cell_instances(module, bit_names)
@@ -307,21 +399,38 @@ def _write_reference(module: dict, path: Path) -> dict:
         "standard-cell type",
         "* (signal pins, alphabetical, plus VDD/VSS -- see this script's "
         "module docstring).",
+        f"* Supply nets: VDD -> {power_nets['VDD']}, VSS -> "
+        f"{power_nets['VSS']} (#171), read from reports/place_and_route.json.",
         "",
         f".SUBCKT {HDL_TOPLEVEL} " + " ".join(top_pins),
     ]
     for cell_type, inst_name, connections in instances:
         pins = pins_by_type[cell_type]
         nets = [
-            connections[pin] if pin in connections else f"{pin}${inst_name}"
+            connections.get(pin) or power_nets.get(pin) or f"{pin}${inst_name}"
             for pin in pins
         ]
         lines.append(f"X{inst_name} " + " ".join(nets) + f" {cell_type}")
+
+    # The physical-only instances (tapcells, endcaps, fillers) `write_verilog
+    # -remove_cells` keeps out of the netlist but that are drawn in the GDS.
+    # Their only connection is to the two supply nets, in the same
+    # alphabetical pin order every other cell type here uses.
+    physical_only_pins = sorted(POWER_PINS)
+    physical_only_nets = " ".join(power_nets[pin] for pin in physical_only_pins)
+    for cell_type, inst_name in physical_only:
+        lines.append(f"X{inst_name} {physical_only_nets} {cell_type}")
+
     lines.append(f".ENDS {HDL_TOPLEVEL}")
     lines.append("")
 
+    physical_only_types = sorted({cell_type for cell_type, _ in physical_only})
     for cell_type in sorted(pins_by_type):
         lines.append(f".SUBCKT {cell_type} " + " ".join(pins_by_type[cell_type]))
+        lines.append(f".ENDS {cell_type}")
+        lines.append("")
+    for cell_type in physical_only_types:
+        lines.append(f".SUBCKT {cell_type} " + " ".join(physical_only_pins))
         lines.append(f".ENDS {cell_type}")
         lines.append("")
 
@@ -331,6 +440,9 @@ def _write_reference(module: dict, path: Path) -> dict:
         "top_pin_count": len(top_pins),
         "instance_count": len(instances),
         "distinct_cell_types": len(pins_by_type),
+        "physical_only_instance_count": len(physical_only),
+        "physical_only_cell_types": physical_only_types,
+        "supply_nets": dict(power_nets),
     }
 
 
@@ -428,13 +540,27 @@ def build() -> int:
             file=sys.stderr,
         )
         return 3
+    if not DEF_PATH.is_file():
+        print(
+            f"ERROR  {DEF_PATH.relative_to(REPO_ROOT)} is missing -- it is "
+            "where this script recovers the physical-only tapcell/endcap/"
+            "filler instances the netlist does not carry (#171)",
+            file=sys.stderr,
+        )
+        return 3
 
     yosys_json_path = WORK_DIR / "trng_top_pnr.json"
     try:
+        power = _pnr_power()
+        physical_only = _def_physical_only_instances(
+            DEF_PATH, _physical_only_masters(power)
+        )
         module = _yosys_netlist(PNR_NETLIST_PATH, yosys_json_path)["modules"][
             HDL_TOPLEVEL
         ]
-        reference_summary = _write_reference(module, REFERENCE_PATH)
+        reference_summary = _write_reference(
+            module, REFERENCE_PATH, _power_nets(power), physical_only
+        )
     except LvsFlowError as exc:
         print(f"ERROR  {exc}", file=sys.stderr)
         return 3

@@ -1,16 +1,15 @@
 {
   "status": "mismatch",
-  "mismatch_count": 7694,
+  "mismatch_count": 9,
   "category_counts": {
-    "net.merged": 3786,
-    "net.split": 411,
-    "topology": 3497
+    "net.unmatched": 1,
+    "topology": 8
   },
   "counts": {
     "nets": {
-      "layout": 4165,
-      "reference": 7519,
-      "matched": 3054
+      "layout": 2548,
+      "reference": 2516,
+      "matched": 2964
     },
     "devices": {
       "layout": 0,
@@ -20,7 +19,7 @@
     "pins": {
       "layout": 109,
       "reference": 109,
-      "matched": 536
+      "matched": 558
     }
   },
   "device_classes": null,
@@ -140,14 +139,30 @@
       "str_valid"
     ],
     "top_pin_count": 109,
-    "instance_count": 2499,
-    "distinct_cell_types": 73
+    "instance_count": 2502,
+    "distinct_cell_types": 74,
+    "physical_only_instance_count": 6136,
+    "physical_only_cell_types": [
+      "gf180mcu_fd_sc_mcu9t5v0__endcap",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_1",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_16",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_2",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_32",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_4",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_64",
+      "gf180mcu_fd_sc_mcu9t5v0__fill_8",
+      "gf180mcu_fd_sc_mcu9t5v0__filltie"
+    ],
+    "supply_nets": {
+      "VDD": "vddd",
+      "VSS": "vss"
+    }
   },
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.10",
-    "layout_sha256": "74292e5cd442b9144bd70ae058e59c6f7e8ec5784e353e872b2b56098e52f22a",
-    "reference_sha256": "4c210c5942ce2b42d03fb1a3755892aff727c6a64c0e89fdb377406f5485b9df",
+    "layout_sha256": "9965fb25b6818ec687b1fc54115762b82d55852bbf6d4fd744a83391ceeb9c91",
+    "reference_sha256": "a50142f98f32801572d6675cb62907652be110c2c5827bd4f72c5302e5501bec",
     "extracted_netlist": null
   }
 }

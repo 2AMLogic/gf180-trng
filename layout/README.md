@@ -19,11 +19,15 @@ problem entirely — the conditioner, health tests and interface synthesize to
 2500-odd standard cells, so they are placed and routed by tool ([#111][gf111])
 rather than drawn, and that directory's own README says exactly what its
 routed result does and does not establish (it has a DEF, an as-built
-netlist, a committed GDS, a DRC verdict — 149 residual `nwell.space.1`
-violations, all attributable to the still-missing filler cells/tapcells —
-and a first LVS result against that netlist, `mismatch`, attributable to
-the same missing power delivery network; #170. It does not yet have a real
-power delivery network, tapcells or fillers — #171). `floorplan/` is the entropy source's
+netlist, a committed GDS, and — as of #171 — a real power delivery network:
+`vddd`/`vss` rails and straps in the DEF's own `SPECIALNETS` section, 265
+tapcells, 208 endcaps and 5663 fillers, with a committed check that the grid
+carries none of the entropy source's supplies. `klt drc` over it is **clean**
+(the 149 `nwell.space.1` violations #170 recorded were all the missing
+fillers), and `klt lvs` against the as-built netlist is down from 7694
+mismatches to 9 — still `mismatch`, now traced to one CTS clock-load dummy
+cell rather than to absent power. It does not yet have a placement inside
+`floorplan/`'s own guarded `digital` region). `floorplan/` is the entropy source's
 isolation rationale (#16) and the floorplan abstract that carries it: four
 guarded regions, real generated guard rings, DRC'd as one stream, with an
 area rollup against the `< 0.05 mm²` row. As of #110 and #135,
@@ -270,7 +274,7 @@ part of what this block ships, whatever else exists for it in `design/`.
 | `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/) ([#151][gf151], and see below), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
-| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed DEF + as-built netlist in [`digital/`](digital/); **not** yet placed in `floorplan/`'s `digital` region |
+| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed, power-delivered, DRC-clean DEF/GDS + as-built netlist in [`digital/`](digital/) ([#171][gf171]); **not** yet placed in `floorplan/`'s `digital` region |
 
 ### `ro_buf`: drawn, assembled, and placed
 
@@ -612,6 +616,7 @@ gf180mcu DRC deck accepts).
 [dr11]: ../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
+[gf171]: https://github.com/2AMLogic/gf180-trng/issues/171
 [gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173

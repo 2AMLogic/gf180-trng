@@ -45,12 +45,13 @@ against it rather than assumed identical to it.
 | Constraint | `clk`, 50 ns period (20 MHz) — see [Timing](#timing) |
 | Floorplan | 40 % target utilization, aspect ratio 1.0, 10 µm core margin, site `GF018hv5v_green_sc9` |
 | Routing | signal layers Metal2–Metal5 (Metal1 left to pin access and intra-cell geometry) |
+| Power | `vddd`/`vss`, `Metal1` followpins rails + `Metal4`/`Metal5` straps, tapcells/endcaps/fillers — see [Power](#power) ([#171][gf171]) |
 
 Committed artefacts:
 
 | file | what it is |
 |---|---|
-| [`trng_top.def`](trng_top.def) | the routed DEF — OpenROAD's own output, and the re-entry point for any later STA/extraction run |
+| [`trng_top.def`](trng_top.def) | the routed DEF — OpenROAD's own output, and the re-entry point for any later STA/extraction run; carries the `SPECIALNETS` power grid as of [#171][gf171] |
 | [`trng_top.pnr.v`](trng_top.pnr.v) | the **as-built** gate-level netlist (`write_verilog` after CTS and resizing): the netlist a post-route gate-level simulation (#147) or a golden-reference LVS run must use, *not* `klt synthesize`'s pre-CTS one |
 | [`trng_top.gds`](trng_top.gds) | the DEF merged with the standard cells' own GDS views — committed as of #170, once the merge's database-unit defect ([klayout-tools#1090][klt1090]) was fixed upstream; see [GDS, DRC and LVS](#gds-drc-and-lvs) |
 | [`reports/place_and_route.json`](reports/place_and_route.json) | the full response, the request that produced it, provenance, and this script's own checks (`checks.gds_geometry.status: "ok"`) |
@@ -69,13 +70,13 @@ extraction, no SPEF, no back-annotation:
 
 | | |
 |---|---|
-| Worst slack at `ss_125C_3v00`, 50 ns period | **+27.7 ns** |
+| Worst slack at `ss_125C_3v00`, 50 ns period | **+27.8 ns** |
 | Total negative slack | 0 ns |
-| `fmax_mhz` (OpenROAD's own report) | 44.9 MHz |
+| `fmax_mhz` (OpenROAD's own report) | 45.0 MHz |
 | Setup / hold violations at that corner | 0 / 0 |
-| Clock skew after CTS | 0.40 ns |
+| Clock skew after CTS | 0.35 ns |
 | Swept worst **hold** slack, all 15 shipped `.lib` corners | **+0.52 ns** |
-| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−28.8 ns** |
+| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−29.2 ns** |
 
 The last two rows are the ones that need reading carefully, because a
 positive worst slack sitting next to a strongly negative *swept* setup slack
@@ -95,12 +96,12 @@ point this block is specified for. The 1.62 / 1.80 / 1.98 V decks are also
 the slowest the library ships — `ss_125C_1v62`'s own `inv_1` `cell_fall`
 table starts at 0.154 ns against `ss_125C_3v00`'s 0.073 ns at the same
 slew/load index point, 2.1× before the extra interconnect delay a weaker
-driver pays — so the −28.8 ns is very probably theirs. "Very probably" is as
+driver pays — so the −29.2 ns is very probably theirs. "Very probably" is as
 far as the recorded evidence goes: `klt` returns one number for the whole
 sweep and never names the corner that produced it, filed generically upstream
 as [klayout-tools#1092][klt1092]. What the recorded evidence does say
 outright is that it is *not* the corner this block is implemented and
-specified at, which closes with +27.7 ns.
+specified at, which closes with +27.8 ns.
 
 What the sweep *does* establish outright is the hold result: **+0.52 ns worst
 hold slack across all 15 decks**, including the fastest ones — and the fast
@@ -112,7 +113,7 @@ this run's own input, not a spec row: no issue in this repository has set a
 digital-section Fmax requirement. The ratified requirement the clock rate
 has to satisfy is the raw-rate row (`README.md`, [DR-0003][dr3]): > 1 Mbps
 sustained at the sampler output, one raw bit per `clk` edge, so > 1 MHz, with
-the stretch row at > 4 MHz. This run closes at 20 MHz with 27.7 ns of slack
+the stretch row at > 4 MHz. This run closes at 20 MHz with 27.8 ns of slack
 at a slow-process/hot/−10 %-supply corner, which is 5–20× the rate the spec
 asks for — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
@@ -123,9 +124,26 @@ re-times this directory's committed DEF at fifteen corners (five 3.3 V liberty
 decks × three interconnect decks) with OpenRCX-extracted parasitics and a
 *propagated* clock, and reports an Fmax floor of **37.04 MHz** at
 `ss_125C_3v00` with `max` interconnect, positive setup and hold slack and zero
-TNS at every corner. It also reconciles the +27.7 ns above with its own
-+23.8 ns at the same liberty corner: 3.83 ns of that is extraction versus the
-global-routing estimate, 0.145 ns is the real clock tree.
+TNS at every corner. It also reconciles the +27.7 ns this directory reported
+at the time with its own +23.8 ns at the same liberty corner: 3.83 ns of that
+is extraction versus the global-routing estimate, 0.145 ns is the real clock
+tree.
+
+> **That characterization ran against the pre-[#171][gf171] DEF.** #171
+> re-ran place-and-route to build the PDN, which changed the placement and
+> the clock tree — the numbers in the table above moved by tens of
+> picoseconds (+27.7 → +27.8 ns worst slack, 0.40 → 0.35 ns skew, 2499 →
+> 2502 logical instances). #145's records
+> (`sim/records/2026-08-17-digital-sta-power-*.md`) and #147/#177's
+> post-route functional run
+> (`sim/records/2026-08-17-trng-top-post-route-01.md`) are still accurate
+> statements about the netlist and DEF they name and hash, and this
+> repository's records are append-only, so they stand. What they no longer
+> describe is *this directory's current* committed artefacts. Re-running
+> both against the powered DEF is follow-up work, tracked as
+> [#183](https://github.com/2AMLogic/gf180-trng/issues/183) — and it is the
+> first such run that would see a supply network at all, since the pre-#171
+> DEF had no power geometry for OpenRCX to extract.
 
 ## Corners
 
@@ -180,9 +198,9 @@ netlist.
 |---|---|
 | Die (from the request's own 40 % utilization target) | 548.8 × 548.8 µm = **301 198 µm²** |
 | Core | 277 092 µm² |
-| Achieved utilization | 40.8 % |
-| Standard-cell area inside the core | ≈ 112 000 µm² |
-| Routed wirelength | 163 650 µm |
+| Achieved utilization | 41.9 % |
+| Standard-cell area inside the core | ≈ 112 000 µm² (logical cells only; the 6136 tapcell/endcap/filler instances [#171][gf171] adds fill the rows' remaining gaps and do not enlarge the die) |
+| Routed wirelength | 165 732 µm |
 
 **The die figure is an input, not a result.** It follows arithmetically from
 the 40 % utilization this run asked for, chosen to leave routing headroom on
@@ -191,9 +209,12 @@ compare it against the `< 0.05 mm²` README row; the number to compare is the
 cell area, and even that comparison has caveats:
 [`layout/floorplan/README.md`](../floorplan/README.md)'s bottom-up inventory
 estimate prices the digital region at 74 485 µm² of cell area from **1655
-cells in the 7-track library**, while this run places **2499 instances of
-9-track cells** (`checks.components`, 2505 synthesized minus 6 optimized
-away during placement/CTS) — taller rows, and a different (post-synthesis,
+cells in the 7-track library**, while this run places **2502 logical
+instances of 9-track cells** (`checks.components.logical_placed`, 2505
+synthesized minus 3 optimized away during placement/CTS; the DEF's own
+`COMPONENTS` count of 8638 is that plus the 6136 physical-only
+tapcell/endcap/filler instances [#171][gf171] inserts, which
+`checks.components` subtracts before comparing against the netlist) — taller rows, and a different (post-synthesis,
 real) cell count. The two numbers are not like-for-like, and reconciling them against
 the ratified area row is #145's job (with [#150][gf150] owning the row
 itself). What can be said here: real synthesis and placement land the digital
@@ -207,6 +228,83 @@ splitting into ×1.209 from cell count/mix and ×1.256 from 9-track rather than
 7-track rows. The area row itself is still [#150][gf150]'s.
 
 ## Power
+
+### The power distribution network ([#171][gf171])
+
+Until #171 this flow built **no power delivery at all** — see [Two defects
+this bring-up found](#two-defects-this-bring-up-found) #2, which is where
+that gap and its upstream fix are documented. What it builds now, via `klt
+place-and-route`'s `request.power` block ([klayout-tools#1120][klt1120],
+`build.py`'s own `POWER` constant):
+
+| | |
+|---|---|
+| Supply / ground net | `vddd` / `vss` — **not** the tool's `VDD`/`VSS` default; see below |
+| Rails | `Metal1`, 0.90 µm wide, 5.04 µm pitch, `followpins` (the standard-cell rows' own rails) |
+| Straps | `Metal4` 4.48 µm / 44.8 µm pitch / 22.4 µm offset; `Metal5` 4.48 µm / 89.6 µm pitch / 44.8 µm offset |
+| Well/substrate ties | 265 × `gf180mcu_fd_sc_mcu9t5v0__filltie` at OpenROAD's `tapcell -distance 100` |
+| Row ends | 208 × `gf180mcu_fd_sc_mcu9t5v0__endcap` |
+| Fillers | 5663 instances across the library's seven `fill_*` widths |
+| `SPECIALNETS` in the DEF | 2 nets (`checks.def.special_nets: true`, was `false`) |
+| Top-level supply pins | `vddd`, `vss` — the DEF's `PINS` count goes 109 → 111 |
+
+The strap geometry is not invented here: it is
+`The-OpenROAD-Project/OpenROAD-flow-scripts`' own gf180 platform PDN config
+(`flow/platforms/gf180/openROAD/pdn/pdn_grid_strategy_9t_6M.cfg`, read
+2026-08-17), the `9t`/6-metal strategy matching this run's own
+`GF018hv5v_green_sc9` site and `Metal2`–`Metal5` routing range. Two knobs of
+that config have no `request.power` field to carry them and are therefore
+not reproduced — its `Metal4` stripe's `-spacing 0.56`, and the
+`-max_columns`/`-ongrid`/`-split_cuts` tuning on its two `add_pdn_connect`
+calls, which are the platform's own answer to a via-array DRC question.
+Filed generically upstream as [klayout-tools#1133][klt1133], per this
+repository's friction protocol. The resulting geometry is checked rather than
+assumed: `klt drc` over the merged GDS is **clean** (see [DRC](#drc)) — but
+"DRC-clean on this design" is standing in for "built the way the platform
+says", and that substitution is the reason the issue was filed.
+
+**Why `vddd`/`vss` and not `VDD`/`VSS`.** `vddd` is the digital domain's
+supply name everywhere else in this repository —
+[`layout/floorplan/README.md`](../floorplan/README.md)'s four-domain star and
+`layout/floorplan/floorplan.py`'s own region table. A routed DEF whose
+`SPECIALNETS` said `VDD` would be a block that cannot be composed onto that
+star without a rename. The standard cells' own LEF power/ground *pins* stay
+named `VDD`/`VSS` either way; `add_global_connection -pin_pattern` maps from
+those fixed pin names onto whichever net this block asks for.
+
+### Isolation from the entropy supplies — checked, not asserted
+
+[`layout/floorplan/README.md`](../floorplan/README.md)'s mitigation 2 requires
+four supply domains (`vddr1`, `vddr2`, `vdd`, `vddd`) to be separate branches
+from one star point, and states the layout-side half explicitly: *"the digital
+domain never shares a strap segment with an entropy domain."* This section is
+the aggressor that requirement exists for — 708 flip-flops on one external
+`clk` — so a PDN built without it in mind would undo that mitigation while
+passing DRC and looking entirely ordinary.
+
+`build.py`'s `_power_isolation_check` reads the **routed DEF's own
+`SPECIALNETS` section** (not the request that produced it) and asserts set
+equality against `{vddd, vss}`, separately reporting any of
+`vddr1`/`vddr2`/`vdd` found. This run:
+`checks.power_isolation.status: "ok"`, `found_nets: ["vddd", "vss"]`,
+`entropy_supply_nets_present: []`. Independently: the string `vddr1`/`vddr2`
+does not occur anywhere in `trng_top.def`, and neither does a bare `vdd`
+token.
+
+**What that does and does not establish.** It establishes that *this* block's
+power geometry is confined to this block's own two supplies, and that a
+regression in `build.py`'s `power_net`/`ground_net` — or an upstream defect
+pulling an unexpected net into the grid — fails a committed check rather than
+passing silently. It does **not** establish the star topology itself. This is
+a standalone place-and-route of the digital section: its input netlist
+contains no ring instance, no ring port and no entropy supply net of any
+kind, so the composition the floorplan constraint ultimately governs — where
+`vddd` meets `vddr1`/`vddr2`/`vdd`, and through how much shared metal —
+happens in [`layout/floorplan/`](../floorplan/), which is still an empty
+`digital` region. What this block now brings to that composition is a PDN
+that terminates at its own `vddd`/`vss` pins and nowhere else.
+
+### Estimated power
 
 `estimated_power_mw: 6.4` — OpenROAD's own `report_power` at
 `ss_125C_3v00` with estimated (not extracted) parasitics and no activity
@@ -264,33 +362,56 @@ tool gap in between) — in [#170][gf170]:
   not: DRC over the pre-fix merged stream reported ~1000 `metal1`
   spacing/width violations, **100 % of them between a router-inserted via
   cell's landing pad and standard-cell metal1** — two coordinate systems,
-  not a routing failure. None of those ~1000 recur post-fix; the 149
-  violations DRC reports now are a single different rule
-  (`nwell.space.1`), attributable to a different, already-tracked cause —
-  see [GDS, DRC and LVS](#gds-drc-and-lvs).
+  not a routing failure. None of those ~1000 recurred post-fix; what #170
+  was left with was 149 violations of a single different rule
+  (`nwell.space.1`), attributable to a different cause — defect #2 below —
+  and #171 closed those too. `klt drc` over `trng_top.gds` is now clean; see
+  [GDS, DRC and LVS](#gds-drc-and-lvs).
 
-### 2. There is no power delivery at all — [klayout-tools#1091][klt1091]
+### 2. There was no power delivery at all — [klayout-tools#1091][klt1091], fixed
 
-The flow's stages are floorplan → place → CTS → route, and nothing in that
-sequence connects a supply. The generated Tcl never calls `global_connect`
-or `pdngen`, and inserts no tapcells, endcaps or filler cells. It shows up in
-the committed report as `checks.def.special_nets: false` — the routed DEF has
-no `SPECIALNETS` section, so:
+The flow's stages are floorplan → place → CTS → route, and until
+[klayout-tools#1120][klt1120] nothing in that sequence connected a supply.
+The generated Tcl never called `global_connect` or `pdngen`, and inserted no
+tapcells, endcaps or filler cells. It showed up in the committed report as
+`checks.def.special_nets: false` — the routed DEF had no `SPECIALNETS`
+section, so:
 
-- every standard cell's `VDD`/`VSS` pin belongs to no net,
-- there are no rails, straps or rings,
-- there are no well/substrate ties, and the rows are discontinuous wherever
+- every standard cell's `VDD`/`VSS` pin belonged to no net,
+- there were no rails, straps or rings,
+- there were no well/substrate ties, and the rows were discontinuous wherever
   placement left a gap.
 
-`status: "ok"` from this verb therefore means "the signals routed", not "this
-block is implemented". [#171][gf171] tracks the repository-side work
-(a real PDN, tapcells, fillers) once the tool can express it.
+`status: "ok"` from this verb therefore meant "the signals routed", not "this
+block is implemented" — and the gap was directly measurable rather than only
+inferred: every one of the 149 `nwell.space.1` violations `klt drc` reported
+over the #170 `trng_top.gds` traced to it, and the `klt lvs` mismatch against
+`trng_top.pnr.v` (7694 mismatches) was dominated by the same missing
+`VDD`/`VSS` connectivity.
 
-This gap is now directly measurable rather than only inferred: every one of
-the 149 `nwell.space.1` violations DRC reports over `trng_top.gds` traces to
-it, and the `klt lvs` mismatch against `trng_top.pnr.v` is dominated by the
-same missing `VDD`/`VSS` connectivity — see
-[GDS, DRC and LVS](#gds-drc-and-lvs) below.
+**Fixed upstream**, [klayout-tools#1120][klt1120], merged at commit
+`9c71bb6741f20be19bf94b847832803505042ec6` and closing #1091: an optional
+`request.power` block (net names plus `straps[]` geometry) driving
+`tapcell` + `add_global_connection`/`global_connect` + `pdngen` at the end of
+the floorplan stage, and `filler_placement` + a second `global_connect` at
+the end of the route stage. This repository re-pinned `klt` to exactly that
+commit and sends the block, in [#171][gf171]:
+
+- `checks.def.special_nets` is now `true`; the routed DEF carries a
+  `SPECIALNETS` section with 2 nets and real rail/strap geometry, and
+  `PINS` grows from 109 to 111 (the block's own `vddd`/`vss` supply pins).
+- 265 tapcells, 208 endcaps and 5663 fillers are placed — see
+  [Power](#power) for the full grid, and for the isolation check the
+  floorplan's own star-routing requirement demands.
+- `klt drc` over the merged GDS goes from **149 violations to clean**: all
+  149 were the missing fillers, and inserting them closed every one.
+- `klt lvs` goes from **7694 mismatches to 9**, with the
+  `net.split`/`net.merged` cascade gone entirely — see
+  [LVS](#lvs) for what the 9 are.
+
+What this does **not** fix is composition: this is still a standalone
+place-and-route with no pad/IO ring and no placement inside
+`layout/floorplan/`'s own guarded `digital` region.
 
 ## GDS, DRC and LVS
 
@@ -308,37 +429,49 @@ geometrically valid stream for the first time.
 
 ### DRC
 
-`klt drc trng_top.gds --deck gf180mcu`: **149 violations, all one rule**
-([`reports/drc.json`](reports/drc.json)):
+`klt drc trng_top.gds --deck gf180mcu`: **clean, 0 violations**
+([`reports/drc.json`](reports/drc.json)).
 
-| rule | count | DRM section |
-|---|---|---|
-| `nwell.space.1` | 149 | 7.4 Nwell, `NW.2a` — min. equipotential Nwell-to-Nwell spacing, 0.6 µm |
+That verdict is [#171][gf171]'s, and it is the interesting part of this
+section. #170's run over the same design reported **149 violations, every
+one of them `nwell.space.1`** (DRM 7.4 Nwell, `NW.2a` — minimum
+equipotential Nwell-to-Nwell spacing, 0.6 µm), and traced them by hand to a
+single cause: this flow inserted no filler cells, so every gap detailed
+placement left between two cells was a gap in the Nwell too. The
+cross-check #170 recorded is worth keeping, because it is what makes the
+before/after a measurement rather than a coincidence — its first reported
+violation sat at (57980, 367410)–(58500, 372100), inside a two-site gap on
+row 34 between `u_interface/_1808_` (`mux2_1`, right edge x=57120) and
+`u_interface/_1546_` (`aoi22_1`, left edge x=59360), and all 149 violation
+regions were exactly 0.26 µm wide: each cell's own Nwell stops short of the
+cell's outer edge, so two non-abutting cells' wells fall short of each other
+by a constant.
 
-Every one of the 149 traces to the cause [Two defects this bring-up
-found](#two-defects-this-bring-up-found) above already names: no filler
-cells or tapcells are inserted anywhere in this flow ([#171][gf171]).
-Cross-checking a representative violation directly against `trng_top.def`'s
-own placement confirms the mechanism: running `klt drc trng_top.gds --deck
-gf180mcu --format json` (the full per-violation dump — this repository's
-committed `reports/drc.json` keeps only the verdict and rule counts, the
-same choice `_drc_summary`'s own docstring makes for every DRC report in
-this directory, since the full dump runs to megabytes over a design this
-size), the first reported violation sits at coordinates (57980, 367410)–
-(58500, 372100) — inside the two-site gap OpenROAD's detailed placement left
-on row 34 between `u_interface/_1808_` (`mux2_1`, right edge at x=57120) and
-`u_interface/_1546_` (`aoi22_1`, left edge at x=59360). A filler cell
-dropped into that gap would carry Nwell across it and close the spacing;
-none exists yet, so each cell's own Nwell — which does not reach the cell's
-own outer edge — falls short of its neighbour's by exactly 0.26 µm, the
-constant width of all 149 reported violation regions. This is not a routing
-or synthesis defect: it is the direct, expected geometric consequence of a
-40.8 %-utilization placement with no filler-cell insertion step, tracked
-separately as [#171][gf171].
+#171 inserts 5663 filler cells (plus 265 tapcells and 208 endcaps) into
+exactly those gaps, and the count goes to zero. Nothing was waived, no rule
+was scoped away, and the deck is the same `gf180mcu` deck every other cell
+in this repository is checked against — `layout/README.md`'s
+["Baseline-relative, not absolute"](../README.md) conventions apply here as
+everywhere else.
 
-`status: "violations"`, not `"clean"`, is the correct and expected verdict
-for this run — a zero count here would be the surprising result, not this
-one.
+The full per-violation dump is *not* what
+[`reports/drc.json`](reports/drc.json) commits — it keeps the verdict and
+per-rule counts only, the same choice `_drc_summary`'s own docstring makes
+for every DRC report in this directory, since the dump runs to megabytes
+over a design this size. Re-derive it with `klt drc trng_top.gds --deck
+gf180mcu --format json`.
+
+**What a clean verdict here does not mean.** It is a *deck-relative*
+statement: the gf180mcu deck this repository pins does not model every rule
+in the DRM (its own `coverage` block names what it checks and what it
+skips), and this run's clean result is bounded by that, exactly as
+`layout/README.md` says for every other cell here. In particular the
+tapcell spacing is OpenROAD's `tapcell -distance 100` — ORFS's own gf180
+platform value, not a latch-up rule this deck independently enforces — so
+"the ties are at the PDK's own maximum tie spacing" is a claim this
+repository does not yet have a check for. It also remains true that a
+clean DRC over a standalone core with no IO ring is not a signoff DRC over
+a chip.
 
 ### LVS
 
@@ -350,36 +483,71 @@ see the script's own module docstring for the full pipeline and the
 reasoning for a cell-instance-granularity comparison rather than a
 transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
 
-| | |
-|---|---|
-| Verdict | `mismatch` |
-| Mismatch count | 7694 |
-| `net.merged` | 3786 |
-| `net.split` | 411 |
-| `topology` | 3497 |
-| Nets (layout / reference) | 4165 / 7519 |
-| Pins (layout / reference) | 109 / 109 |
-| Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring |
+| | | #170 |
+|---|---|---|
+| Verdict | `mismatch` | `mismatch` |
+| Mismatch count | **9** | 7694 |
+| `net.merged` / `net.split` | 0 / 0 | 3786 / 411 |
+| `net.unmatched` | 1 | 0 |
+| `topology` | 8 (6 of them severity `warning`) | 3497 |
+| Nets (layout / reference) | 2548 / 2516, 2964 matched | 4165 / 7519 |
+| Pins (layout / reference) | 109 / 109 | 109 / 109 |
+| Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring | 0 / 0 |
 
-**Expected, and attributable to the same missing PDN — not a
-signal-routing defect.** `trng_top.pnr.v` carries no `VDD`/`VSS`
-connectivity at all (this flow never runs `global_connect`/`pdngen` — [defect
-#2 above](#2-there-is-no-power-delivery-at-all--klayout-tools1091)), so
-`lvs.py`'s reference side ties every instance's `VDD` to one net and every
-`VSS` to another — the correct *design intent* — while the layout side's own
-drawn `VDD`/`VSS` pin labels resolve to whatever each cell happens to
-physically abut, row by row, with no guarantee of a single continuous net
-(the same physical gaps the DRC section above measures). That fragments into
-exactly the `net.split`/`net.merged`/`topology` cascade `klt lvs` reports, on
-every one of 2499 abstracted cell instances' two power pins. This run's
-request does **not** filter `VDD`/`VSS` out of the comparison — no `klt lvs`
-option exists to declare "compare pin X on every instance, but ignore what
-net it landed on" (`lvs.py`'s own module docstring states this) — so the
-mismatch count is reported un-redacted rather than narrowed to make it look
-smaller than it is. Signal connectivity is what this run actually tests; a
-real PDN, tapcells and fillers ([#171][gf171]) are the prerequisite for a
-`klt lvs` run that could separate a power-connectivity finding from a
-signal-connectivity one.
+**Power connectivity is now inside the comparison.** #170's 7694 mismatches
+were one finding wearing 7694 hats: with no PDN, each cell's local Metal1
+rail segment was wired to whatever it physically abutted, so the layout had
+no continuous supply net for the reference's design intent to match, and
+`lvs.py` gave every instance's `VDD`/`VSS` its own dangling per-instance
+reference net. #171 removes both halves of that. `lvs.py` now reads the
+supply net names from [`reports/place_and_route.json`](reports/place_and_route.json)'s
+own `power` block — the record of how the committed GDS was actually built —
+and ties every instance's `VDD`/`VSS` to them, and it recovers the 6136
+physical-only tapcell/endcap/filler instances out of the committed DEF's
+`COMPONENTS` section, because `write_verilog -remove_cells` strips them from
+`trng_top.pnr.v` while they remain real drawn geometry in the GDS. Both
+sides now carry the same 8638 instances with identical per-master counts
+(verified directly), and the `net.split`/`net.merged` cascade is gone.
+
+**What the 9 residuals are.** Six of the eight `topology` entries are
+severity `warning`, not `error`: ambiguous net pairings the comparer
+resolved structurally anyway (six symmetric `u_interface` nets). The three
+errors are all one cell. `clkload13` is a CTS clock-*load* dummy —
+OpenROAD inserts it purely for capacitance, so its `ZN` output is
+unconnected by construction, and `trng_top.pnr.v` instantiates it as
+`gf180mcu_fd_sc_mcu9t5v0__inv_8 clkload13 (.I(clknet_leaf_48_clk));` with no
+other port. Two consequences fall out:
+
+1. `lvs.py` derives each cell type's reference interface from the ports its
+   instances actually connect, so `inv_8` — whose only instance connects
+   just `I` — gets a three-pin `.SUBCKT ... I VDD VSS` against the layout's
+   four-pin `I VDD VSS ZN`. That interface mismatch is why one instance on
+   each side reports "subcircuit instance could not be matched". Deriving
+   interfaces from the library instead of from observed connections is the
+   real fix, and it is `lvs.py`'s pre-existing shape rather than anything
+   #171 changed — it was simply invisible under 7694 other mismatches.
+2. The one `net.unmatched` is `clkload13`'s input. `trng_top.def` lists nine
+   terminals on `clknet_leaf_48_clk` (a buffer output, seven flip-flop `CLK`
+   pins and `clkload13 I`) and nine `Via1_HV` pin-access vias to serve them;
+   the extraction resolves eight, with `clkload13`'s `I` landing on an
+   unnamed island (`$2321`) instead. Whether that is a pin-access geometry
+   gap in the merged GDS or an extraction-deck connectivity gap is not
+   settled here.
+
+Neither residual has functional weight — the cell drives nothing — but
+neither is waved away either: this is a `mismatch`, not a `match`, and the
+report says so. `clkload13` is also new to *this* clock tree; #170's run had
+no `inv_8` instance at all, which is the module docstring's own point about
+placement and CTS not being byte-reproducible run to run.
+
+**Attributing those three errors cost more than it should have.** `klt lvs`'s
+mismatch entries for an unmatched subcircuit carry `net: null`, `device:
+null` and no circuit or instance name at all, so the report says how many
+circuits failed to pair and never which — the answer above came from diffing
+the two SPICE files' `.SUBCKT` name sets by hand. Filed generically upstream
+as [klayout-tools#1132][klt1132], along with the smaller observation that
+`category_counts` aggregates `error` and `warning` severities into one
+number (this run's `"topology": 8` is six warnings and two errors).
 
 ## SDF export
 
@@ -452,34 +620,58 @@ regenerates to scratch to diff against what is committed.
 
 **Establishes.** A gf180mcu digital place-and-route path exists, runs
 cold-start from one committed script, and takes this design's real 2500-cell
-gate-level netlist to a fully routed DEF: 0 setup violations, 0 hold
-violations and 0 antenna violations at the ratified binding corner, 0 routing
-DRC violations by the router's own check, +0.52 ns worst hold slack across
-all 15 shipped liberty corners, and an as-built netlist that matches the DEF
-instance-for-instance (`checks.components`). The question #111 was filed to
-answer — *is there any path at all for the digital section's physical
-implementation?* — is answered yes, with numbers. As of #170, the path also
-produces a geometrically valid, committed GDS
-(`checks.gds_geometry.status: "ok"`), a `klt drc` verdict over it (149
-`nwell.space.1` violations, every one of them traced to the still-missing
-filler cells/tapcells rather than to a routing or synthesis defect — see
-[GDS, DRC and LVS](#gds-drc-and-lvs)), and a first `klt lvs` result against
-the as-built netlist (`mismatch`, attributable to the same missing power
-delivery network — same section).
+gate-level netlist to a fully routed, **power-delivered** DEF: 0 setup
+violations, 0 hold violations and 0 antenna violations at the ratified
+binding corner, 0 routing DRC violations by the router's own check,
++0.52 ns worst hold slack across all 15 shipped liberty corners, and an
+as-built netlist that matches the DEF instance-for-instance once the
+physical-only cells are subtracted (`checks.components`). The question #111
+was filed to answer — *is there any path at all for the digital section's
+physical implementation?* — is answered yes, with numbers.
+
+#170 added a geometrically valid, committed GDS
+(`checks.gds_geometry.status: "ok"`), the first `klt drc` verdict over it,
+and the first `klt lvs` result against the as-built netlist. [#171][gf171]
+added the power delivery both of those were waiting on, and the two verdicts
+moved with it:
+
+- a real PDN — `vddd`/`vss` on `Metal1` followpins rails and `Metal4`/
+  `Metal5` straps, `checks.def.special_nets: true`, 2 nets in the DEF's
+  `SPECIALNETS` section, the block's own `vddd`/`vss` supply pins at the
+  boundary;
+- 265 well/substrate tapcells, 208 endcaps and 5663 fillers, closing every
+  row gap;
+- **DRC clean** over the merged GDS — the 149 `nwell.space.1` violations
+  #170 recorded were all the missing fillers, and inserting them closed
+  every one;
+- `klt lvs` down from 7694 mismatches to **9**, with power connectivity now
+  *inside* the comparison rather than excluded from it, and the whole
+  `net.split`/`net.merged` cascade gone;
+- a committed, machine-readable isolation check
+  (`checks.power_isolation`) asserting the routed DEF's own `SPECIALNETS`
+  section carries exactly `{vddd, vss}` and none of `vddr1`/`vddr2`/`vdd` —
+  the layout-side half of `layout/floorplan/README.md`'s mitigation 2.
 
 **Does not establish.** Not signoff timing (no extraction, no SPEF, ideal
-clock). Not a DRC-clean layout: 149 residual `nwell.space.1` violations
-remain, all attributable to the still-missing PDN/tapcells/fillers (#171),
-not to a routing or synthesis defect. Not an LVS-matching layout either, for
-the identical reason — `klt lvs`'s reference declares the power-connectivity
-design intent this layout does not yet have. Neither becomes a real signoff
-DRC/LVS result until #171 lands. Not an area or power result. Not a corner
-characterization: one implementation corner, and the multi-corner sweep the
-tool does offer cannot yet be scoped to this block's supply. Not a
-manufacturable block: no power delivery, no tapcells, no fillers, no pad/IO
-integration, and no placement inside `layout/floorplan/`'s own guarded
-`digital` region — that region is still empty, and
-`layout/floorplan/README.md` remains correct in saying so.
+clock). Not an LVS-matching layout: 9 residual mismatches remain, three of
+them errors, all traced to one CTS clock-load dummy cell — see
+[LVS](#lvs) for exactly what they are and which of them is `lvs.py`'s own
+pre-existing shape rather than a layout defect. Not an unbounded DRC claim
+either: `klt drc`'s clean verdict is relative to the gf180mcu deck this
+repository pins, which does not model every DRM rule, and this repository
+has no independent check that the tapcell spacing meets the DRM's own
+latch-up tie-spacing requirement — `tapcell -distance 100` is ORFS's gf180
+platform value, adopted, not derived here. Not an area or power result. Not
+a corner characterization: one implementation corner, and the multi-corner
+sweep the tool does offer cannot yet be scoped to this block's supply; the
+extracted-parasitics characterizations that exist (#145, #147/#177) were run
+against the *pre-#171* DEF and have not been re-run against this one. Not a
+**system**-level PDN: the star-routing composition with `vddr1`/`vddr2`/`vdd`
+is `layout/floorplan/`'s job, and nothing in this run's netlist even names
+those supplies. Not a manufacturable block: no pad/IO integration, and no
+placement inside `layout/floorplan/`'s own guarded `digital` region — that
+region is still empty, and `layout/floorplan/README.md` remains correct in
+saying so.
 
 ## OpenROAD
 
@@ -515,4 +707,7 @@ boundary.
 [klt1102]: https://github.com/2AMLogic/klayout-tools/issues/1102
 [klt1114]: https://github.com/2AMLogic/klayout-tools/pull/1114
 [klt1115]: https://github.com/2AMLogic/klayout-tools/pull/1115
+[klt1120]: https://github.com/2AMLogic/klayout-tools/pull/1120
+[klt1132]: https://github.com/2AMLogic/klayout-tools/issues/1132
+[klt1133]: https://github.com/2AMLogic/klayout-tools/issues/1133
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md

@@ -191,6 +191,21 @@ clocked by the same external `clk`.
    floorplan's contribution is the requirement that they stay separate to the
    pad, and that the digital domain never shares a strap segment with an
    entropy domain.
+
+   As of [#171](https://github.com/2AMLogic/gf180-trng/issues/171) the
+   digital section has a real PDN of its own
+   ([`layout/digital/README.md`](../digital/README.md#power)), and it is
+   built to this requirement rather than merely alongside it: its grid is on
+   nets `vddd`/`vss`, it terminates at the block's own `vddd`/`vss` pins, and
+   `layout/digital/build.py`'s `_power_isolation_check` reads the routed
+   DEF's own `SPECIALNETS` section on every run and fails if it carries
+   anything other than those two — in particular if it carries `vddr1`,
+   `vddr2` or `vdd`. That is the layout-side half of this requirement,
+   checked and committed (`checks.power_isolation` in
+   `layout/digital/reports/place_and_route.json`). The other half — that the
+   four branches stay separate *to the pad* — is still this floorplan's, and
+   still unbuilt: the `digital` region below is empty, and nothing in this
+   repository yet draws the star point.
 2. **Per-domain guard rings**, tied to each region's own `vss` return. In a
    p-substrate process a p+ tap ring is a majority-carrier collector: it is the
    standard structure for keeping injected substrate current from reaching a

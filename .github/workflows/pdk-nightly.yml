@@ -227,11 +227,34 @@ jobs:
       # `device.body_unverified` expectation dropped from 2 to 1 per
       # fixture -- see that file's own comment for why, and
       # layout/README.md's "Bulk terminals are approximated").
+      #
+      # 9c71bb6741f20be19bf94b847832803505042ec6 (#171) supersedes that
+      # e501e261 pin. It is klayout-tools#1120 exactly -- the commit that
+      # adds `klt place-and-route`'s optional `request.power` block
+      # (tapcell/endcap insertion, add_global_connection/global_connect,
+      # pdngen straps, post-route filler_placement), the capability
+      # klayout-tools#1091 asked for and `layout/digital/build.py` now
+      # sends. Ancestry re-verified against the live upstream history before
+      # pinning (2026-08-17, `gh api .../compare/e501e261...9c71bb67` ->
+      # `ahead_by: 2, behind_by: 0`): the bump is strictly forward, and the
+      # one commit between them is klayout-tools#1118, a refactor that
+      # dedupes two provenance helpers into a shared module.
+      #
+      # Pinned *at* #1120 rather than at upstream `main` on purpose. `main`
+      # was three commits further along when this was set
+      # (klayout-tools#1119/#1124/#1126), and #1119 adds gf180mcu per-flavour
+      # MOS marker and nfet_06v0/pfet_06v0 model binding to `klt extract` --
+      # exactly the surface every committed `layout/reports/*.extract.json`
+      # and `*.lvs.json` here is an expectation over, and the surface
+      # klayout-tools#1113 moved under #170. Whether it actually changes
+      # those reports was not evaluated: taking the bump means regenerating
+      # and re-reading that evidence, which is its own piece of work and not
+      # this issue's. So this pin deliberately stops one commit short of it.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@e501e261c1ac9b96a08e2c3569bf6207123a5b6a"
+            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@9c71bb6741f20be19bf94b847832803505042ec6"
           klt --version
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
