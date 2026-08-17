@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-1260-g06a5a02279",
+  "hdl_toplevel": "trng_top",
+  "status": "ok",
+  "stage_reached": "route",
+  "seed": 1,
+  "die_area_um2": 298690,
+  "core_area_um2": 275918,
+  "utilization_pct": 40.6915,
+  "wirelength_um": 162072,
+  "worst_slack_ns": 23.8243,
+  "total_negative_slack_ns": 0,
+  "fmax_mhz": 38.2034,
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "antenna_violation_count": 0,
+  "route_drc_violation_count": 0,
+  "estimated_power_mw": 6.3847,
+  "clock_skew_ns": 0.1559,
+  "worst_setup_slack_ns": -37.4365,
+  "worst_hold_slack_ns": 0.52051,
+  "stages": [
+    {
+      "name": "floorplan",
+      "die_area_um2": 298690,
+      "core_area_um2": 275918,
+      "utilization_pct": 40.1903,
+      "worst_slack_ns": 33.8249,
+      "total_negative_slack_ns": 0
+    },
+    {
+      "name": "place",
+      "die_area_um2": 298690,
+      "core_area_um2": 275918,
+      "utilization_pct": 39.6399,
+      "worst_slack_ns": 23.9293,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 105195,
+      "fmax_mhz": 38.3572,
+      "estimated_power_mw": 4.7435,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0
+    },
+    {
+      "name": "cts",
+      "die_area_um2": 298690,
+      "core_area_um2": 275918,
+      "utilization_pct": 40.6915,
+      "worst_slack_ns": 23.6065,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 113110,
+      "fmax_mhz": 37.8881,
+      "estimated_power_mw": 6.3852,
+      "clock_skew_ns": 0.10644,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0
+    },
+    {
+      "name": "route",
+      "die_area_um2": 298690,
+      "core_area_um2": 275918,
+      "utilization_pct": 40.6915,
+      "worst_slack_ns": 23.8243,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 162072,
+      "fmax_mhz": 38.2034,
+      "estimated_power_mw": 6.3847,
+      "clock_skew_ns": 0.1559,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "antenna_violation_count": 0,
+      "route_drc_violation_count": 0,
+      "worst_setup_slack_ns": -37.4365,
+      "worst_hold_slack_ns": 0.52051
+    }
+  ],
+  "macros": [],
+  "def_path": "layout/digital/trng_top.def",
+  "gds_path": null,
+  "layer_map": {
+    "resolution": "family"
+  },
+  "verilog_path": "layout/digital/trng_top.pnr.v",
+  "spef_sta": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": {
+      "name": "gf180mcuD",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00",
+      "content_hash": "sha256:d83917f827021eadb159f6011905bf20de632533b2953abba89266a88c2b24af"
+    },
+    "input": {
+      "content_hash": "sha256:4896e5c82b6ddfc62429b58334ac97bed6543c5c4a15e86ae9cd11e399cd8d39"
+    }
+  },
+  "request": {
+    "pdk": {
+      "cell_library": "gf180mcu_fd_sc_mcu9t5v0",
+      "corner": "ss_125C_3v00"
+    },
+    "floorplan": {
+      "method": "utilization",
+      "utilization_pct": 40,
+      "aspect_ratio": 1.0,
+      "core_margin_um": 10.0,
+      "site": "GF018hv5v_green_sc9"
+    },
+    "io": {
+      "layer_h": "Metal3",
+      "layer_v": "Metal4"
+    },
+    "constraints": {
+      "clock_port": "clk",
+      "clock_period_ns": 50.0
+    },
+    "seed": 1,
+    "target_stage": "route"
+  },
+  "checks": {
+    "def": {
+      "database_units_per_um": 2000,
+      "component_count": 2490,
+      "die_width_um": 546.525,
+      "die_height_um": 546.525,
+      "special_nets": false
+    },
+    "components": {
+      "status": "ok",
+      "placed": 2490,
+      "as_built_netlist": 2490,
+      "synthesized": 2505,
+      "delta_vs_synthesized": -15
+    },
+    "gds_geometry": {
+      "status": "mismatch",
+      "def_die_um": [
+        546.525,
+        546.525
+      ],
+      "gds_extent_um": [
+        1093.05,
+        1093.05
+      ],
+      "gds_over_def_ratio": [
+        2.0,
+        2.0
+      ],
+      "tolerance_pct": 5.0
+    }
+  },
+  "drc": null
+}
