@@ -9,8 +9,10 @@ xschem for schematics, ngspice for simulation, and
 measured on silicon.** As of this writing the repository contains an evidence-record
 convention, [twenty-one decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
-harness whose output is ten characterization summaries (`sim/characterization-*.md`)
-resting on 835 append-only evidence records under [`sim/records/`](sim/records/).
+harness — plus, since #145, a gate-level static-timing and power flow over the
+placed digital netlist. Between them they produce twelve characterization
+summaries (`sim/characterization-*.md`) resting on 859 append-only evidence
+records under [`sim/records/`](sim/records/).
 `design/` holds the analog entropy source and sampler as xschem schematics with
 a deterministic SPICE netlist export, plus four digital directories —
 [`conditioner/`](design/conditioner/), [`health_test/`](design/health_test/),
