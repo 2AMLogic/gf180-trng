@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "engine": "yosys",
+  "engine_version": "0.68+post",
+  "hdl_toplevel": "trng_top",
+  "status": "ok",
+  "instance_count": 2505,
+  "area_um2": 110892.096,
+  "sequential_area_um2": 58186.5984,
+  "instance_counts_by_type": {
+    "gf180mcu_fd_sc_mcu9t5v0__and2_1": 30,
+    "gf180mcu_fd_sc_mcu9t5v0__and2_2": 8,
+    "gf180mcu_fd_sc_mcu9t5v0__and2_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__and3_1": 70,
+    "gf180mcu_fd_sc_mcu9t5v0__and3_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__and3_4": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__and4_1": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__and4_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi211_1": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi211_2": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi211_4": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi21_1": 41,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi21_4": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi221_1": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi222_1": 111,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi22_1": 93,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi22_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_1": 63,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_2": 34,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_3": 11,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_8": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__clkbuf_1": 17,
+    "gf180mcu_fd_sc_mcu9t5v0__clkbuf_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__clkinv_1": 77,
+    "gf180mcu_fd_sc_mcu9t5v0__dffq_1": 512,
+    "gf180mcu_fd_sc_mcu9t5v0__dffrnq_1": 194,
+    "gf180mcu_fd_sc_mcu9t5v0__dffsnq_1": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__inv_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__mux2_1": 478,
+    "gf180mcu_fd_sc_mcu9t5v0__mux2_2": 75,
+    "gf180mcu_fd_sc_mcu9t5v0__nand2_1": 176,
+    "gf180mcu_fd_sc_mcu9t5v0__nand2_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__nand2_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_1": 55,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_2": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_4": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__nand4_1": 27,
+    "gf180mcu_fd_sc_mcu9t5v0__nand4_2": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__nand4_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_1": 62,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_2": 8,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_4": 12,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_1": 34,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_2": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__nor4_1": 7,
+    "gf180mcu_fd_sc_mcu9t5v0__nor4_2": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__nor4_4": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__oai211_1": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__oai211_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__oai21_1": 42,
+    "gf180mcu_fd_sc_mcu9t5v0__oai21_2": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__oai221_1": 11,
+    "gf180mcu_fd_sc_mcu9t5v0__oai22_1": 57,
+    "gf180mcu_fd_sc_mcu9t5v0__oai31_1": 5,
+    "gf180mcu_fd_sc_mcu9t5v0__oai31_2": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__oai31_4": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__oai32_1": 16,
+    "gf180mcu_fd_sc_mcu9t5v0__or2_1": 21,
+    "gf180mcu_fd_sc_mcu9t5v0__or2_2": 7,
+    "gf180mcu_fd_sc_mcu9t5v0__or3_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__or3_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__or3_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__or4_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__or4_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__or4_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__tiel": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__xnor2_1": 32,
+    "gf180mcu_fd_sc_mcu9t5v0__xnor2_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__xnor3_1": 7,
+    "gf180mcu_fd_sc_mcu9t5v0__xor2_1": 10,
+    "gf180mcu_fd_sc_mcu9t5v0__xor2_2": 3
+  },
+  "timing": {
+    "source": "abc_stime",
+    "wire_load": null,
+    "critical_path_ps": 16967.25,
+    "delay_target_ps": null
+  },
+  "sta": null,
+  "netlist_path": "design/trng_top/trng_top.synth.v",
+  "script_path": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": {
+      "name": "gf180mcuD",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu9t5v0__tt_025C_1v80",
+      "content_hash": "sha256:2482036479c89fbee3754524e3fcdb530aa40aff0fef9e9385e3bc7b7a67d4ef"
+    },
+    "input": {
+      "content_hash": "sha256:42d0306c633bd088804e4e1841e18028fd6312c73d77c71f143b4915bc23385f"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "rtl_sources": [
+    {
+      "path": "design/trng_top/trng_top.v",
+      "content_hash": "sha256:241a3fe125c015ab11d76d4f7f0aea9e96602ed449fc001e3d3ced8700b6b7bd"
+    },
+    {
+      "path": "design/conditioner/crc32_conditioner.v",
+      "content_hash": "sha256:d1ba83f0327e50867c5b65d8a876da8a574d63e7f16a33a96cf58c734718b808"
+    },
+    {
+      "path": "design/health_test/rct_apt.v",
+      "content_hash": "sha256:c7e301661caefb15bf9559a061189d496e36d6a15d1dfc1f42fff829e9db8303"
+    },
+    {
+      "path": "design/health_test/ring_liveness.v",
+      "content_hash": "sha256:f64a4d4ce86c757bfea49e120323eba33f449c7df76481b0d2b104f0ef5ef620"
+    },
+    {
+      "path": "design/interface/trng_interface.v",
+      "content_hash": "sha256:3cad264b6be0a6b58fffd1dafc90ec034763ab38efbf00c752cad19361b028c9"
+    }
+  ]
+}

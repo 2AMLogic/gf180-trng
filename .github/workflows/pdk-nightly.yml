@@ -79,9 +79,13 @@ jobs:
       # The harness needs the device models under <variant>/libs.tech/ngspice,
       # which ride in the release's `common` tarball (always fetched), plus the
       # primitive library. No sim/tb testbench uses standard cells, IO or SRAM,
-      # so the rest of the ~5 GB default set is skipped; add `-l` entries here
-      # if one ever does.
-      PDK_LIBRARIES: "gf180mcu_fd_pr"
+      # so the rest of the ~5 GB default set would be skipped -- except that
+      # `design/synth.py --check` below needs exactly one more of them:
+      # `gf180mcu_fd_sc_mcu9t5v0`, the digital standard-cell library `klt
+      # synthesize` maps trng_top's RTL onto (#143). Space-separated; each
+      # name becomes its own `-l` flag in the `ciel enable` step below (`-l`
+      # takes one library per flag -- `ciel enable --help`).
+      PDK_LIBRARIES: "gf180mcu_fd_pr gf180mcu_fd_sc_mcu9t5v0"
     steps:
       - uses: actions/checkout@v4
 
@@ -156,7 +160,14 @@ jobs:
           # one of sim/harness/pdk.py's built-in search roots, so no
           # GF180_PDK_PATH / PDK_ROOT wiring is needed. Leaving PDK_ROOT unset
           # is load-bearing: ciel would install there instead if it were set.
-          ciel enable --pdk-family gf180mcu -l "${PDK_LIBRARIES}" "${PDK_VERSION}"
+          #
+          # `-l` takes exactly one library per flag (`ciel enable --help`), so
+          # PDK_LIBRARIES' space-separated names each become their own flag.
+          lib_flags=()
+          for lib in ${PDK_LIBRARIES}; do
+            lib_flags+=(-l "${lib}")
+          done
+          ciel enable --pdk-family gf180mcu "${lib_flags[@]}" "${PDK_VERSION}"
 
       - name: Environment probe (must report ngspice OK and PDK OK)
         run: python3 sim/run_corners.py --check-env
@@ -205,6 +216,32 @@ jobs:
           python3 -m pip install --upgrade \
             "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623"
           klt --version
+
+      # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
+      # way this flow already shells out to `xschem`/`klt` -- from the
+      # runner's distro rather than a version pin, and for the same reason
+      # given above for xschem: it is a netlister, and a version bump is
+      # meant to turn `design/synth.py --check` red (loud) rather than drift
+      # unnoticed. Ubuntu 24.04 ships Yosys 0.33, which `klayout_tools.
+      # synthesize`'s own module docstring already names as the reference
+      # "older build" its graceful-degradation paths (`-dont_use` exclusion,
+      # `sequential_area_um2`) are written and tested against -- so this is
+      # a known-supported floor, not an untested one.
+      - name: Install yosys (the digital synthesis engine)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends yosys
+          yosys -V
+
+      # Fails if design/trng_top/trng_top.synth.{v,json} no longer match
+      # what `klt synthesize` produces from the current RTL -- the digital
+      # analogue of the schematic-vs-netlist guard above (#143). Needs the
+      # `gf180mcu_fd_sc_mcu9t5v0` standard-cell library, provisioned via
+      # PDK_LIBRARIES above alongside the primitive library. Writes nothing:
+      # --check synthesizes into a temp dir and diffs.
+      - name: Digital synthesis staleness guard
+        run: python3 design/synth.py --check
 
       - name: Layout DRC/LVS flow including the PDK-dependent stages
         run: python3 layout/verify.py --require-tools
