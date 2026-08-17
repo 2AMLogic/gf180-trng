@@ -18,9 +18,12 @@ cells by hand, one at a time; `digital/` is the other kind of layout
 problem entirely — the conditioner, health tests and interface synthesize to
 2500-odd standard cells, so they are placed and routed by tool ([#111][gf111])
 rather than drawn, and that directory's own README says exactly what its
-routed result does and does not establish (it has a DEF and an as-built
-netlist; it does not yet have a committed GDS, a DRC verdict or any power
-delivery). `floorplan/` is the entropy source's
+routed result does and does not establish (it has a DEF, an as-built
+netlist, a committed GDS, a DRC verdict — 149 residual `nwell.space.1`
+violations, all attributable to the still-missing filler cells/tapcells —
+and a first LVS result against that netlist, `mismatch`, attributable to
+the same missing power delivery network; #170. It does not yet have a real
+power delivery network, tapcells or fillers — #171). `floorplan/` is the entropy source's
 isolation rationale (#16) and the floorplan abstract that carries it: four
 guarded regions, real generated guard rings, DRC'd as one stream, with an
 area rollup against the `< 0.05 mm²` row. As of #110 and #135,
@@ -328,7 +331,7 @@ load-bearing for LVS diagnosis, not cosmetic; see Tool friction #2.)
 | `trng_tc_inv_lvsbad` | clean | mismatch, 2 errors (`net.unmatched` ×1, `device.unmatched` ×1) | LVS catches a defect DRC structurally cannot see |
 
 Every LVS run — including the known-good one — also reports two categories
-at `severity: "warning"`: `device.body_unverified` ×2 and `topology` ×1.
+at `severity: "warning"`: `device.body_unverified` ×1 and `topology` ×1.
 They describe the *deck*, not the fixture, so they are identical on all
 three; ["Warnings every run carries"](#warnings-every-run-carries) below says
 what each one means. `verify.py` pins them by exact count like everything
@@ -409,16 +412,27 @@ reference still uses `M` cards with the generic `nfet`/`pfet` names, and
 `klt lvs` reconciles the two — so the reference stays a statement about the
 circuit rather than about the extractor's output format.
 
-**Bulk terminals** are approximated, and the fixtures' reference netlist
-says so explicitly:
+**Both bulk terminals are still approximated on these fixtures**, but only
+one of them still says so:
 
-- NMOS bulk is the deck's substrate global, `vsubs`. No substrate tap is
-  extracted.
-- PMOS bulk is a **floating net**. gf180mcu draws well taps on the same
-  `Comp` layer as transistor active, so the deck deliberately does not tie
-  an Nwell to the contacts inside it (doing so would short every device in
-  the well together). The well therefore appears as an unnamed net with one
-  connection.
+- NMOS bulk is the deck's substrate global, `vsubs`. These fixtures draw no
+  dedicated `Pplus`-over-`Comp`-outside-`Nwell` substrate tap, so no real
+  net resolves it, and `klt lvs` still discloses this every run (below).
+- PMOS bulk is a **floating, anonymous net** on these fixtures, exactly as
+  before — verified directly: `klt extract`'s own output still resolves it
+  to an unnamed net (`$5` in `trng_tc_inv`'s extracted SPICE), not a real
+  schematic name. What changed, as of [klayout-tools#1113][kt1113] (picked
+  up by this repository's `klt` re-pin, [#170][gf170]), is **only that `klt
+  lvs` stops disclosing it**: gf180mcu's curated deck now *declares* a
+  derivable well-tap mechanism (`tap_nplus`/`tap_pplus`, for a layout that
+  draws a real `Nplus`-over-`Comp`-inside-`Nwell` tie — these fixtures do
+  not), and the PMOS `device.body_unverified` warning is gated on whether
+  the *deck* has a tap mechanism at all, not on whether *this instance*
+  actually used one — upstream's own docstring names this an intentionally
+  optimistic simplification, matching how the sky130 deck has always
+  treated the same case. So on these fixtures PMOS bulk is exactly as
+  unverified as it always was; only the tool's disclosure of that fact
+  disappeared.
 
 The fixtures are drawn on the curated-deck layer subset only. Implant
 (Nplus/Pplus) and the rest of the sign-off layer set are absent: adding them
@@ -435,12 +449,12 @@ a verdict — `trng_tc_inv` is still `match` and `trng_tc_inv_lvsbad` is still
 
 | category | count | what it says |
 |---|---|---|
-| `device.body_unverified` | 2 | One per MOS. Each device's body terminal was compared against a net the deck synthesized — `vsubs` for the NMOS, an anonymous well net for the PMOS — rather than a real schematic net. That terminal was therefore **not** verified. This is the bulk-terminal approximation above, restated by the tool. |
+| `device.body_unverified` | 1 | One per NMOS. Its body terminal was compared against `vsubs`, a net the deck synthesized, rather than a real schematic net, so that terminal was therefore **not** verified. This is the NMOS half of the bulk-terminal approximation above, restated by the tool. The PMOS half is identically unverified on these fixtures ([above](#what-the-curated-decks-do-and-do-not-check)) but, as of [klayout-tools#1113][kt1113], no longer disclosed here — a deck-level, not instance-level, gate. |
 | `topology` | 1 | A device class the deck declares has no counterpart on the reference side *and* zero extracted devices. The tool's own text: "not a real topology mismatch". |
 
 They are pinned in `EXPECTATIONS` at their exact counts rather than filtered
-out, because "the tool says two body terminals are unverified" is a claim
-that should fail loudly the day it becomes three. And because a warning
+out, because "the tool says a body terminal is unverified" is a claim that
+should fail loudly the day the count moves again. And because a warning
 count alone cannot distinguish a disclosure from a finding, `verify.py` also
 pins the number of `severity: "error"` mismatches per fixture: 0 for the
 known-good cell, 2 for the known-bad one.
@@ -450,7 +464,11 @@ recorded unchanged, which is what prompted [Pinning the tool](#pinning-the-tool)
 above and the upstream note in
 [klayout-tools#306][kt306]. The `device.body_unverified` check is
 [klayout-tools#281][kt281]; the `topology` entry follows from the deck
-declaring device classes it did not previously have.
+declaring device classes it did not previously have. `device.body_unverified`
+dropped from 2 to 1 per fixture on [#170][gf170]'s `klt` re-pin
+([klayout-tools#1113][kt1113]) — the PMOS half of the same approximation is
+still there (verified directly against `klt extract`'s own output, above);
+only the disclosure of it went away.
 
 **Therefore: a clean report from this flow is not tapeout sign-off**, and
 must never be cited as one. It is evidence that a specific, enumerated set
@@ -594,6 +612,7 @@ gf180mcu DRC deck accepts).
 [dr11]: ../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
+[gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173
 [kt230]: https://github.com/2AMLogic/klayout-tools/issues/230
@@ -601,6 +620,7 @@ gf180mcu DRC deck accepts).
 [kt232]: https://github.com/2AMLogic/klayout-tools/issues/232
 [kt233]: https://github.com/2AMLogic/klayout-tools/issues/233
 [kt281]: https://github.com/2AMLogic/klayout-tools/issues/281
+[kt1113]: https://github.com/2AMLogic/klayout-tools/pull/1113
 [kt306]: https://github.com/2AMLogic/klayout-tools/issues/306
 [kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
 [kt321]: https://github.com/2AMLogic/klayout-tools/issues/321

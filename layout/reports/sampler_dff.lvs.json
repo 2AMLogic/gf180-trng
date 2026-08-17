@@ -6,9 +6,9 @@
   "top": "sampler_dff",
   "parameter_tolerance": null,
   "status": "match",
-  "mismatch_count": 3,
+  "mismatch_count": 2,
   "category_counts": {
-    "device.body_unverified": 2,
+    "device.body_unverified": 1,
     "topology": 1
   },
   "counts": {
@@ -50,7 +50,7 @@
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+      "content_hash": "sha256:6a323622d93c1b4716a7874c37ee3d825bd08398c3c030c85175e44e2cc229a3"
     },
     "input": null
   },
@@ -65,20 +65,6 @@
         "layout": null,
         "reference": null,
         "class": "nfet"
-      },
-      "property": null,
-      "details": null
-    },
-    {
-      "category": "device.body_unverified",
-      "severity": "warning",
-      "description": "11 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
-      "side": "layout",
-      "net": null,
-      "device": {
-        "layout": null,
-        "reference": null,
-        "class": "pfet"
       },
       "property": null,
       "details": null

@@ -1,0 +1,8 @@
+{
+  "status": "violations",
+  "deck": "gf180mcu",
+  "violation_count": 149,
+  "rule_counts": {
+    "nwell.space.1": 149
+  }
+}

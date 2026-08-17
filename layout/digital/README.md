@@ -52,11 +52,14 @@ Committed artefacts:
 |---|---|
 | [`trng_top.def`](trng_top.def) | the routed DEF — OpenROAD's own output, and the re-entry point for any later STA/extraction run |
 | [`trng_top.pnr.v`](trng_top.pnr.v) | the **as-built** gate-level netlist (`write_verilog` after CTS and resizing): the netlist a post-route gate-level simulation (#147) or a golden-reference LVS run must use, *not* `klt synthesize`'s pre-CTS one |
-| [`reports/place_and_route.json`](reports/place_and_route.json) | the full response, the request that produced it, provenance, and this script's own checks |
+| [`trng_top.gds`](trng_top.gds) | the DEF merged with the standard cells' own GDS views — committed as of #170, once the merge's database-unit defect ([klayout-tools#1090][klt1090]) was fixed upstream; see [GDS, DRC and LVS](#gds-drc-and-lvs) |
+| [`reports/place_and_route.json`](reports/place_and_route.json) | the full response, the request that produced it, provenance, and this script's own checks (`checks.gds_geometry.status: "ok"`) |
+| [`reports/drc.json`](reports/drc.json) | `klt drc` over `trng_top.gds` — verdict and per-rule counts |
 
-`trng_top.gds` is **not** committed. It is emitted by the tool and rejected
-by this script's own geometry check — see
-[Two defects this bring-up found](#two-defects-this-bring-up-found).
+`layout/digital/lvs.py` (below) writes three more committed artefacts — the
+mechanically-generated LVS reference SPICE, the extracted layout-side SPICE,
+and [`reports/lvs.json`](reports/lvs.json) — see
+[GDS, DRC and LVS](#gds-drc-and-lvs).
 
 ## Timing
 
@@ -226,41 +229,45 @@ report what breaks. Two things did. Both are filed generically against the
 tool, per this repository's friction protocol, and both are visible in the
 committed report rather than smoothed over.
 
-### 1. The merged GDS is geometrically wrong — [klayout-tools#1090][klt1090]
+### 1. The merged GDS was geometrically wrong — [klayout-tools#1090][klt1090], fixed
 
 `klt place-and-route` also merges the routed DEF with the standard cells' own
-GDS views and returns a `gds_path`. That stream is **2× too big in every
-DEF-derived dimension**: placement coordinates, routed wires and via cells
-all double, while the standard-cell geometry stays at its true size, so the
-cells sit on a stretched grid where abutting rows no longer abut, rails no
-longer join, and the routing does not land on the pins it was routed to.
+GDS views and returns a `gds_path`. That stream **was** 2× too big in every
+DEF-derived dimension: placement coordinates, routed wires and via cells all
+doubled, while the standard-cell geometry stayed at its true size, so the
+cells sat on a stretched grid where abutting rows did not abut, rails did not
+join, and the routing did not land on the pins it was routed to.
 
-Root cause, reduced to eight lines: the merge sets the LEF/DEF reader's
-target database unit from the tech LEF (this PDK declares `DATABASE MICRONS
-2000`, i.e. 0.5 nm), reads the DEF correctly at that unit, and then reads the
+Root cause, reduced to eight lines: the merge set the LEF/DEF reader's target
+database unit from the tech LEF (this PDK declares `DATABASE MICRONS 2000`,
+i.e. 0.5 nm), read the DEF correctly at that unit, and then read the
 standard-cell GDS — written at 1000 units/µm — into the *same* layout.
-KLayout adopts the incoming stream's unit and does not rescale the geometry
-already there, so everything from the DEF silently doubles. The DEF is fine;
-only the merged GDS is wrong.
+KLayout adopted the incoming stream's unit and did not rescale the geometry
+already there, so everything from the DEF silently doubled. The DEF was
+fine; only the merged GDS was wrong.
 
-How this repository responds:
+**Fixed upstream**, [klayout-tools#1114][klt1114], merged at commit
+`a65e2bb4fe199725af49c6bf1ba37bd3d6be4cc7` and closing #1090. This repository
+re-pinned `klt` past that fix — to `e501e261c1ac9b96a08e2c3569bf6207123a5b6a`,
+which also carries [klayout-tools#1115][klt1115] (a gf180mcu DRC deck
+correctness fix that landed on `main` immediately after #1114, with no other
+tool gap in between) — in [#170][gf170]:
 
 - `build.py`'s `_gds_geometry_check` compares the merged stream's own extent
   against the DEF's own `DIEAREA` and records the ratio in the committed
-  report (`checks.gds_geometry`, currently `mismatch`, ratio 2.0 × 2.0).
-- **The GDS is not committed while that check fails**, and `klt drc` over it
-  is gated behind the same check. When the tool is fixed, the artefact and
-  its DRC report appear on the next run with no further edit here.
-- The symptom that led to the diagnosis is worth recording, because it is the
-  kind of evidence that reads like a design problem and is not: DRC over the
-  merged stream reports ~1000 `metal1` spacing/width violations, **100 % of
-  them between a router-inserted via cell's landing pad and standard-cell
-  metal1** — two coordinate systems, not a routing failure.
-
-So this directory has **no DRC or LVS result yet**, and that absence is the
-honest state: a DRC verdict over a geometrically invalid stream would be
-meaningless in either direction. [#170][gf170] tracks committing the verified
-GDS once #1090 lands.
+  report. `checks.gds_geometry.status` is now `"ok"`
+  (`gds_over_def_ratio: [1.0, 1.0]`, previously `[2.0, 2.0]`).
+- `trng_top.gds` is now committed, and `klt drc`/`klt lvs` ran over it for
+  the first time — see [GDS, DRC and LVS](#gds-drc-and-lvs) below.
+- The symptom that led to the original diagnosis is worth keeping on record,
+  because it is the kind of evidence that reads like a design problem and is
+  not: DRC over the pre-fix merged stream reported ~1000 `metal1`
+  spacing/width violations, **100 % of them between a router-inserted via
+  cell's landing pad and standard-cell metal1** — two coordinate systems,
+  not a routing failure. None of those ~1000 recur post-fix; the 149
+  violations DRC reports now are a single different rule
+  (`nwell.space.1`), attributable to a different, already-tracked cause —
+  see [GDS, DRC and LVS](#gds-drc-and-lvs).
 
 ### 2. There is no power delivery at all — [klayout-tools#1091][klt1091]
 
@@ -278,6 +285,101 @@ no `SPECIALNETS` section, so:
 `status: "ok"` from this verb therefore means "the signals routed", not "this
 block is implemented". [#171][gf171] tracks the repository-side work
 (a real PDN, tapcells, fillers) once the tool can express it.
+
+This gap is now directly measurable rather than only inferred: every one of
+the 149 `nwell.space.1` violations DRC reports over `trng_top.gds` traces to
+it, and the `klt lvs` mismatch against `trng_top.pnr.v` is dominated by the
+same missing `VDD`/`VSS` connectivity — see
+[GDS, DRC and LVS](#gds-drc-and-lvs) below.
+
+## GDS, DRC and LVS
+
+```sh
+python3 layout/digital/build.py       # (the same command as above) also writes trng_top.gds + reports/drc.json now that the geometry check passes
+python3 layout/digital/lvs.py         # generate the LVS reference, extract the layout side, run klt lvs, write reports/lvs.json
+```
+
+Both were blocked from the start of this bring-up by the DEF→GDS merge
+defect above until it was fixed upstream and this repository re-pinned past
+it ([#170][gf170]). `checks.gds_geometry.status` in
+[`reports/place_and_route.json`](reports/place_and_route.json) is now
+`"ok"`, so `trng_top.gds` is committed and `klt drc`/`klt lvs` ran over a
+geometrically valid stream for the first time.
+
+### DRC
+
+`klt drc trng_top.gds --deck gf180mcu`: **149 violations, all one rule**
+([`reports/drc.json`](reports/drc.json)):
+
+| rule | count | DRM section |
+|---|---|---|
+| `nwell.space.1` | 149 | 7.4 Nwell, `NW.2a` — min. equipotential Nwell-to-Nwell spacing, 0.6 µm |
+
+Every one of the 149 traces to the cause [Two defects this bring-up
+found](#two-defects-this-bring-up-found) above already names: no filler
+cells or tapcells are inserted anywhere in this flow ([#171][gf171]).
+Cross-checking a representative violation directly against `trng_top.def`'s
+own placement confirms the mechanism: running `klt drc trng_top.gds --deck
+gf180mcu --format json` (the full per-violation dump — this repository's
+committed `reports/drc.json` keeps only the verdict and rule counts, the
+same choice `_drc_summary`'s own docstring makes for every DRC report in
+this directory, since the full dump runs to megabytes over a design this
+size), the first reported violation sits at coordinates (57980, 367410)–
+(58500, 372100) — inside the two-site gap OpenROAD's detailed placement left
+on row 34 between `u_interface/_1808_` (`mux2_1`, right edge at x=57120) and
+`u_interface/_1546_` (`aoi22_1`, left edge at x=59360). A filler cell
+dropped into that gap would carry Nwell across it and close the spacing;
+none exists yet, so each cell's own Nwell — which does not reach the cell's
+own outer edge — falls short of its neighbour's by exactly 0.26 µm, the
+constant width of all 149 reported violation regions. This is not a routing
+or synthesis defect: it is the direct, expected geometric consequence of a
+40.8 %-utilization placement with no filler-cell insertion step, tracked
+separately as [#171][gf171].
+
+`status: "violations"`, not `"clean"`, is the correct and expected verdict
+for this run — a zero count here would be the surprising result, not this
+one.
+
+### LVS
+
+[`layout/digital/lvs.py`](lvs.py) bridges `trng_top.pnr.v` (the as-built,
+post-CTS netlist — not `design/trng_top/trng_top.synth.v`'s pre-place
+mapping) into the black-box SPICE shape `klt extract --abstract-cells`
+already resolves for the layout side, then runs `klt lvs` between the two —
+see the script's own module docstring for the full pipeline and the
+reasoning for a cell-instance-granularity comparison rather than a
+transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
+
+| | |
+|---|---|
+| Verdict | `mismatch` |
+| Mismatch count | 7694 |
+| `net.merged` | 3786 |
+| `net.split` | 411 |
+| `topology` | 3497 |
+| Nets (layout / reference) | 4165 / 7519 |
+| Pins (layout / reference) | 109 / 109 |
+| Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring |
+
+**Expected, and attributable to the same missing PDN — not a
+signal-routing defect.** `trng_top.pnr.v` carries no `VDD`/`VSS`
+connectivity at all (this flow never runs `global_connect`/`pdngen` — [defect
+#2 above](#2-there-is-no-power-delivery-at-all--klayout-tools1091)), so
+`lvs.py`'s reference side ties every instance's `VDD` to one net and every
+`VSS` to another — the correct *design intent* — while the layout side's own
+drawn `VDD`/`VSS` pin labels resolve to whatever each cell happens to
+physically abut, row by row, with no guarantee of a single continuous net
+(the same physical gaps the DRC section above measures). That fragments into
+exactly the `net.split`/`net.merged`/`topology` cascade `klt lvs` reports, on
+every one of 2499 abstracted cell instances' two power pins. This run's
+request does **not** filter `VDD`/`VSS` out of the comparison — no `klt lvs`
+option exists to declare "compare pin X on every instance, but ignore what
+net it landed on" (`lvs.py`'s own module docstring states this) — so the
+mismatch count is reported un-redacted rather than narrowed to make it look
+smaller than it is. Signal connectivity is what this run actually tests; a
+real PDN, tapcells and fillers ([#171][gf171]) are the prerequisite for a
+`klt lvs` run that could separate a power-connectivity finding from a
+signal-connectivity one.
 
 ## SDF export
 
@@ -356,17 +458,28 @@ DRC violations by the router's own check, +0.52 ns worst hold slack across
 all 15 shipped liberty corners, and an as-built netlist that matches the DEF
 instance-for-instance (`checks.components`). The question #111 was filed to
 answer — *is there any path at all for the digital section's physical
-implementation?* — is answered yes, with numbers.
+implementation?* — is answered yes, with numbers. As of #170, the path also
+produces a geometrically valid, committed GDS
+(`checks.gds_geometry.status: "ok"`), a `klt drc` verdict over it (149
+`nwell.space.1` violations, every one of them traced to the still-missing
+filler cells/tapcells rather than to a routing or synthesis defect — see
+[GDS, DRC and LVS](#gds-drc-and-lvs)), and a first `klt lvs` result against
+the as-built netlist (`mismatch`, attributable to the same missing power
+delivery network — same section).
 
 **Does not establish.** Not signoff timing (no extraction, no SPEF, ideal
-clock). Not a DRC- or LVS-clean layout — there is no committed layout yet, for
-the reason above. Not an area or power result. Not a corner characterization:
-one implementation corner, and the multi-corner sweep the tool does offer
-cannot yet be scoped to this block's supply. Not a manufacturable block: no
-power delivery, no tapcells, no fillers, no pad/IO integration, and no
-placement inside `layout/floorplan/`'s own guarded `digital` region — that
-region is still empty, and `layout/floorplan/README.md` remains correct in
-saying so.
+clock). Not a DRC-clean layout: 149 residual `nwell.space.1` violations
+remain, all attributable to the still-missing PDN/tapcells/fillers (#171),
+not to a routing or synthesis defect. Not an LVS-matching layout either, for
+the identical reason — `klt lvs`'s reference declares the power-connectivity
+design intent this layout does not yet have. Neither becomes a real signoff
+DRC/LVS result until #171 lands. Not an area or power result. Not a corner
+characterization: one implementation corner, and the multi-corner sweep the
+tool does offer cannot yet be scoped to this block's supply. Not a
+manufacturable block: no power delivery, no tapcells, no fillers, no pad/IO
+integration, and no placement inside `layout/floorplan/`'s own guarded
+`digital` region — that region is still empty, and
+`layout/floorplan/README.md` remains correct in saying so.
 
 ## OpenROAD
 
@@ -400,4 +513,6 @@ boundary.
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
 [klt1102]: https://github.com/2AMLogic/klayout-tools/issues/1102
+[klt1114]: https://github.com/2AMLogic/klayout-tools/pull/1114
+[klt1115]: https://github.com/2AMLogic/klayout-tools/pull/1115
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
