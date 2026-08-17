@@ -5,7 +5,7 @@
   "top": "sampler_dff",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/sampler_dff.extracted.spice",
-  "netlist_sha256": "d37531b3799e7fb4721a2a5d202126eaed259307720c83a79349dd9688e88c7a",
+  "netlist_sha256": "2796706a4ff54d80691d8653aad1d3ebee18d94a9d80895d498613da943dabe9",
   "status": "extracted",
   "device_count": 22,
   "net_count": 16,
@@ -33,7 +33,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$4",
+        "d": "$2",
         "b": "vsubs"
       },
       "params": {
@@ -49,9 +49,9 @@
       "name": "$10",
       "class": "nfet",
       "nets": {
-        "s": "$13",
+        "s": "$10",
         "g": "q",
-        "d": "$11",
+        "d": "$8",
         "b": "vsubs"
       },
       "params": {
@@ -69,7 +69,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$13",
+        "d": "$10",
         "b": "vsubs"
       },
       "params": {
@@ -87,7 +87,7 @@
       "nets": {
         "s": "vdd",
         "g": "clk",
-        "d": "$4",
+        "d": "$2",
         "b": "$15"
       },
       "params": {
@@ -103,7 +103,7 @@
       "name": "$13",
       "class": "pfet",
       "nets": {
-        "s": "$5",
+        "s": "$3",
         "g": "clk",
         "d": "d",
         "b": "$15"
@@ -122,8 +122,8 @@
       "class": "pfet",
       "nets": {
         "s": "vdd",
-        "g": "$5",
-        "d": "$7",
+        "g": "$3",
+        "d": "$13",
         "b": "$15"
       },
       "params": {
@@ -141,7 +141,7 @@
       "nets": {
         "s": "vdd",
         "g": "rst_n",
-        "d": "$7",
+        "d": "$13",
         "b": "$15"
       },
       "params": {
@@ -158,8 +158,8 @@
       "class": "pfet",
       "nets": {
         "s": "vdd",
-        "g": "$7",
-        "d": "$8",
+        "g": "$13",
+        "d": "$5",
         "b": "$15"
       },
       "params": {
@@ -175,9 +175,9 @@
       "name": "$17",
       "class": "pfet",
       "nets": {
-        "s": "$5",
-        "g": "$4",
-        "d": "$8",
+        "s": "$3",
+        "g": "$2",
+        "d": "$5",
         "b": "$15"
       },
       "params": {
@@ -193,9 +193,9 @@
       "name": "$18",
       "class": "pfet",
       "nets": {
-        "s": "$9",
-        "g": "$4",
-        "d": "$7",
+        "s": "$6",
+        "g": "$2",
+        "d": "$13",
         "b": "$15"
       },
       "params": {
@@ -212,7 +212,7 @@
       "class": "pfet",
       "nets": {
         "s": "vdd",
-        "g": "$9",
+        "g": "$6",
         "d": "q",
         "b": "$15"
       },
@@ -229,8 +229,8 @@
       "name": "$2",
       "class": "nfet",
       "nets": {
-        "s": "$5",
-        "g": "$4",
+        "s": "$3",
+        "g": "$2",
         "d": "d",
         "b": "vsubs"
       },
@@ -249,7 +249,7 @@
       "nets": {
         "s": "vdd",
         "g": "q",
-        "d": "$11",
+        "d": "$8",
         "b": "$15"
       },
       "params": {
@@ -267,7 +267,7 @@
       "nets": {
         "s": "vdd",
         "g": "rst_n",
-        "d": "$11",
+        "d": "$8",
         "b": "$15"
       },
       "params": {
@@ -283,9 +283,9 @@
       "name": "$22",
       "class": "pfet",
       "nets": {
-        "s": "$9",
+        "s": "$6",
         "g": "clk",
-        "d": "$11",
+        "d": "$8",
         "b": "$15"
       },
       "params": {
@@ -302,8 +302,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$7",
-        "d": "$8",
+        "g": "$13",
+        "d": "$5",
         "b": "vsubs"
       },
       "params": {
@@ -319,9 +319,9 @@
       "name": "$4",
       "class": "nfet",
       "nets": {
-        "s": "$5",
+        "s": "$3",
         "g": "clk",
-        "d": "$8",
+        "d": "$5",
         "b": "vsubs"
       },
       "params": {
@@ -337,9 +337,9 @@
       "name": "$5",
       "class": "nfet",
       "nets": {
-        "s": "$9",
+        "s": "$6",
         "g": "clk",
-        "d": "$7",
+        "d": "$13",
         "b": "vsubs"
       },
       "params": {
@@ -356,7 +356,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$9",
+        "g": "$6",
         "d": "q",
         "b": "vsubs"
       },
@@ -373,9 +373,9 @@
       "name": "$7",
       "class": "nfet",
       "nets": {
-        "s": "$9",
-        "g": "$4",
-        "d": "$11",
+        "s": "$6",
+        "g": "$2",
+        "d": "$8",
         "b": "vsubs"
       },
       "params": {
@@ -391,9 +391,9 @@
       "name": "$8",
       "class": "nfet",
       "nets": {
-        "s": "$12",
-        "g": "$5",
-        "d": "$7",
+        "s": "$9",
+        "g": "$3",
+        "d": "$13",
         "b": "vsubs"
       },
       "params": {
@@ -411,7 +411,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$12",
+        "d": "$9",
         "b": "vsubs"
       },
       "params": {
@@ -426,19 +426,14 @@
   ],
   "nets": [
     {
-      "name": "$11",
-      "pin": false,
-      "device_count": 5
-    },
-    {
-      "name": "$12",
+      "name": "$10",
       "pin": false,
       "device_count": 2
     },
     {
       "name": "$13",
       "pin": false,
-      "device_count": 2
+      "device_count": 7
     },
     {
       "name": "$15",
@@ -446,29 +441,34 @@
       "device_count": 11
     },
     {
-      "name": "$4",
+      "name": "$2",
+      "pin": false,
+      "device_count": 6
+    },
+    {
+      "name": "$3",
       "pin": false,
       "device_count": 6
     },
     {
       "name": "$5",
       "pin": false,
-      "device_count": 6
+      "device_count": 4
     },
     {
-      "name": "$7",
+      "name": "$6",
       "pin": false,
-      "device_count": 7
+      "device_count": 6
     },
     {
       "name": "$8",
       "pin": false,
-      "device_count": 4
+      "device_count": 5
     },
     {
       "name": "$9",
       "pin": false,
-      "device_count": 6
+      "device_count": 2
     },
     {
       "name": "clk",
@@ -565,7 +565,7 @@
   "matched_device_groups": [],
   "pdk": {
     "variant": "gf180mcuD",
-    "root": "/Users/rwalters/.volare",
+    "root": "/home/ubuntu/.volare",
     "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
   },
   "provenance": {
@@ -581,7 +581,7 @@
       "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
-      "content_hash": "sha256:45d8119d2154934be3c90487025e72a83c1e59b1c3a057d874df3136db62e69f"
+      "content_hash": "sha256:eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42"
     }
   },
   "parasitics": null,

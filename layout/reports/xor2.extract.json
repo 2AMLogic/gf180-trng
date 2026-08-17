@@ -5,7 +5,7 @@
   "top": "xor2",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/xor2.extracted.spice",
-  "netlist_sha256": "869095c6b9d95e5b35b94b1c356466ac5e4138144c0d962a3c44da0b466a122d",
+  "netlist_sha256": "74bd98216b0c521a12ae39b223072a29f0f12b33608505e41ed7aae21bf3847e",
   "status": "extracted",
   "device_count": 12,
   "net_count": 12,
@@ -33,7 +33,7 @@
       "nets": {
         "s": "vss",
         "g": "a",
-        "d": "$3",
+        "d": "$2",
         "b": "vsubs"
       },
       "params": {
@@ -51,7 +51,7 @@
       "nets": {
         "s": "vdd",
         "g": "b",
-        "d": "$10",
+        "d": "$8",
         "b": "$11"
       },
       "params": {
@@ -67,8 +67,8 @@
       "name": "$11",
       "class": "pfet",
       "nets": {
-        "s": "$10",
-        "g": "$3",
+        "s": "$8",
+        "g": "$2",
         "d": "y",
         "b": "$11"
       },
@@ -85,8 +85,8 @@
       "name": "$12",
       "class": "pfet",
       "nets": {
-        "s": "$10",
-        "g": "$5",
+        "s": "$8",
+        "g": "$3",
         "d": "y",
         "b": "$11"
       },
@@ -105,7 +105,7 @@
       "nets": {
         "s": "vss",
         "g": "b",
-        "d": "$5",
+        "d": "$3",
         "b": "vsubs"
       },
       "params": {
@@ -121,7 +121,7 @@
       "name": "$3",
       "class": "nfet",
       "nets": {
-        "s": "$6",
+        "s": "$4",
         "g": "a",
         "d": "y",
         "b": "vsubs"
@@ -141,7 +141,7 @@
       "nets": {
         "s": "vss",
         "g": "b",
-        "d": "$6",
+        "d": "$4",
         "b": "vsubs"
       },
       "params": {
@@ -157,8 +157,8 @@
       "name": "$5",
       "class": "nfet",
       "nets": {
-        "s": "$8",
-        "g": "$3",
+        "s": "$6",
+        "g": "$2",
         "d": "y",
         "b": "vsubs"
       },
@@ -176,8 +176,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$5",
-        "d": "$8",
+        "g": "$3",
+        "d": "$6",
         "b": "vsubs"
       },
       "params": {
@@ -195,7 +195,7 @@
       "nets": {
         "s": "vdd",
         "g": "a",
-        "d": "$3",
+        "d": "$2",
         "b": "$11"
       },
       "params": {
@@ -213,7 +213,7 @@
       "nets": {
         "s": "vdd",
         "g": "b",
-        "d": "$5",
+        "d": "$3",
         "b": "$11"
       },
       "params": {
@@ -231,7 +231,7 @@
       "nets": {
         "s": "vdd",
         "g": "a",
-        "d": "$10",
+        "d": "$8",
         "b": "$11"
       },
       "params": {
@@ -246,14 +246,14 @@
   ],
   "nets": [
     {
-      "name": "$10",
-      "pin": false,
-      "device_count": 4
-    },
-    {
       "name": "$11",
       "pin": false,
       "device_count": 6
+    },
+    {
+      "name": "$2",
+      "pin": false,
+      "device_count": 4
     },
     {
       "name": "$3",
@@ -261,9 +261,9 @@
       "device_count": 4
     },
     {
-      "name": "$5",
+      "name": "$4",
       "pin": false,
-      "device_count": 4
+      "device_count": 2
     },
     {
       "name": "$6",
@@ -273,7 +273,7 @@
     {
       "name": "$8",
       "pin": false,
-      "device_count": 2
+      "device_count": 4
     },
     {
       "name": "a",
@@ -345,7 +345,7 @@
   "matched_device_groups": [],
   "pdk": {
     "variant": "gf180mcuD",
-    "root": "/Users/rwalters/.volare",
+    "root": "/home/ubuntu/.volare",
     "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
   },
   "provenance": {
@@ -361,7 +361,7 @@
       "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
     },
     "input": {
-      "content_hash": "sha256:d23add5f70080e329c855785079388b0e61404dcc19ae43b7c71a55275e15cbf"
+      "content_hash": "sha256:0e1cb48ddc47f15fc5ceb1dd440d75bce1466f4ca5616d0a1e2243601d27c428"
     }
   },
   "parasitics": null,

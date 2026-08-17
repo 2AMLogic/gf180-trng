@@ -146,8 +146,16 @@ VDDR_M2_BAND = (1.75, 2.05)
 VSS_M2_BAND = (0.02, 0.32)
 
 STUB_W = 0.30
-VIA_SZ = 0.22
+VIA_SZ = 0.26  # gf180mcu DRM 7.14 "Vn.1": Via1..Via4 are a fixed 0.26um square
 M2_PAD = 0.30
+
+# Via sizing/enclosure, against the deck thresholds each exists to satisfy --
+# the same `via1.width.1` (0.26) / `metal2.enclosing.via1.1` (0.01) pair
+# `layout/rings/ro_ring11/build.py` documents at its own copy of these
+# constants (issue #162).
+assert VIA_SZ >= 0.26, "via1.width.1 floor is 0.26"
+assert (M2_PAD - VIA_SZ) / 2 >= 0.01, "metal2.enclosing.via1.1 (0.01)"
+assert M2_PAD >= 0.28, "metal2.width.1 (0.28)"
 
 DECK = "gf180mcu"
 EXIT_OK = 0

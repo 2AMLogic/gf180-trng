@@ -229,7 +229,17 @@ def build_shapes() -> tuple[list[Rect], list[Label]]:
     y_metal_p = (0.14, py0 + 0.01, 0.56, py1 - 0.01)
     rect(METAL1, *y_metal_n)
     rect(METAL1, *y_metal_p)
-    rect(METAL1, 0.23, y_metal_n[3] - 0.03, 0.47, y_metal_p[1] + 0.03)  # strap
+    # The strap is 0.30um wide, not the 0.23um `metal1.width.1` minimum it
+    # used to be drawn just over: `layout/blocks/combiner_sampler/build.py`
+    # drops this cell's `y` Via1 right here, and a Via1 is a fixed 0.26um
+    # square (gf180mcu DRM 7.14 "Vn.1"), so a narrower strap leaves part of
+    # the cut outside metal1 -- `metal1.enclosing.via1.1`, issue #162. 0.30
+    # clears the cut by 0.02um on each side and still leaves 0.34um to the
+    # `a` pin's own metal, well over `metal1.space.1` (0.23).
+    Y_STRAP_X = (0.20, 0.50)
+    rect(METAL1, Y_STRAP_X[0], y_metal_n[3] - 0.03, Y_STRAP_X[1], y_metal_p[1] + 0.03)
+    assert Y_STRAP_X[1] - Y_STRAP_X[0] >= 0.26 + 2 * 0.02, "metal1.enclosing.via1.1 headroom"
+    assert Y_STRAP_X[0] - (-0.14) >= 0.23, "metal1.space.1: y strap to a pin metal"
     label(METAL1_LABEL, 0.35, Y_NMOS, "y")
 
     # ----------------------------------------------------------------- #

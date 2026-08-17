@@ -324,17 +324,33 @@ TRACK_FLOOR_UM = 11.6
 TRACK_PITCH_UM = 0.7
 RISER_W = 0.30  # Metal3 riser width, same as _mos_row.py's METAL3_W
 TRACK_H = 0.30  # Metal2 track height, same as _mos_row.py's METAL2_TRUNK_H
-VIA_SZ = 0.22  # Via2 size, same as _mos_row.py's CONTACT_SIZE
+VIA_SZ = 0.26  # Via2 size, same as _mos_row.py's VIA_SIZE (DRM 7.14 "Vn.1")
+#: How far a conductor runs past a via *centre* to enclose it -- half the via
+#: plus 0.02um, 2x `metal2.enclosing.via2.1`/`metal3.enclosing.via2.1`'s own
+#: 0.01um floor. Identical in intent (and value) to `_mos_row.py`'s
+#: `VIA_RUNOUT`: before #162 the Metal3 risers and the Metal2 tracks/hops
+#: below all stopped dead on the via centre at their far end, so every one of
+#: them reported an enclosing-via violation under the deck #142 pinned.
+VIA_RUNOUT = VIA_SZ / 2 + 0.02
 
 #: `ro_buf`'s own routed pins (module docstring, "ro_buf") need a Via1 +
 #: small Metal2 stub landing on their own drawn Metal1 pad before the usual
 #: sideways-hop-then-riser applies -- `RO_BUF_VIA1_SZ` matches this file's
-#: own `VIA_SZ` (no width/enclosure rule constrains either Via1 or Via2 in
-#: this deck -- see layout/cells/_mos_row.py's own module docstring, which
-#: confirms this by grepping the deck's own DrcRule table); `RO_BUF_STUB_UM`
-#: matches `TRACK_H` (both >= metal2.width.1's 0.28 um floor).
-RO_BUF_VIA1_SZ = 0.22
+#: own `VIA_SZ` (both are the DRM's fixed 0.26um via; the claim this comment
+#: used to carry, that "no width/enclosure rule constrains either Via1 or
+#: Via2 in this deck", was true of the deck installed when it was written and
+#: is not true of the one #142 pins -- see layout/cells/_mos_row.py's module
+#: docstring, "Via sizing", and issue #162); `RO_BUF_STUB_UM` matches
+#: `TRACK_H` (both >= metal2.width.1's 0.28 um floor, and >= VIA_SZ + 2 x
+#: metal2.enclosing.via1.1's 0.01 um).
+RO_BUF_VIA1_SZ = 0.26
 RO_BUF_STUB_UM = 0.30
+
+# Via sizing/enclosure, against the deck thresholds each exists to satisfy.
+assert VIA_SZ >= 0.26 and RO_BUF_VIA1_SZ >= 0.26, "via1.width.1/via2.width.1 floor is 0.26"
+assert (RISER_W - VIA_SZ) / 2 >= 0.01, "metal3.enclosing.via2.1 (0.01)"
+assert (TRACK_H - VIA_SZ) / 2 >= 0.01, "metal2.enclosing.via2.1 (0.01)"
+assert (RO_BUF_STUB_UM - RO_BUF_VIA1_SZ) / 2 >= 0.01, "metal2.enclosing.via1.1 (0.01)"
 
 #: Each pin's own local Metal2 trunk already runs almost the full width of
 #: its own cell (`_mos_row.py`'s `_route_nets` spans every terminal the net
@@ -463,21 +479,36 @@ def _wiring_shapes(offsets: dict[str, float]) -> list[dict]:
             # trunk's own drawn span by construction, see the *_LOCAL
             # tables' own docstring) or, for a `ro_buf` pin, with the stub
             # just drawn above.
+            # The hop runs VIA_RUNOUT past the gap slot, not up to it: the
+            # riser's lower Via2 is centred on `gap_x`, so a hop that stopped
+            # there would leave half that cut outside metal2 (issue #162).
             hx0, hx1 = sorted((pin_x, gap_x))
+            if gap_x >= pin_x:
+                hx1 += VIA_RUNOUT
+            else:
+                hx0 -= VIA_RUNOUT
             shapes.append(_rect(METAL2, hx0, y_local - TRACK_H / 2, hx1, y_local + TRACK_H / 2))
 
             # Riser: from the gap slot (guaranteed clear of any cell's own
             # geometry at every Y) straight up to this net's own
-            # block-level track. Via2 at both ends.
+            # block-level track. Via2 at both ends -- and, same reason as the
+            # hop above, the riser runs VIA_RUNOUT past each of them rather
+            # than stopping on their centres.
             y0, y1 = sorted((y_local, track_y))
-            shapes.append(_rect(METAL3, gap_x - RISER_W / 2, y0, gap_x + RISER_W / 2, y1))
+            shapes.append(_rect(
+                METAL3,
+                gap_x - RISER_W / 2, y0 - VIA_RUNOUT,
+                gap_x + RISER_W / 2, y1 + VIA_RUNOUT,
+            ))
             shapes.append(_rect(VIA2, gap_x - VIA_SZ / 2, y_local - VIA_SZ / 2,
                                  gap_x + VIA_SZ / 2, y_local + VIA_SZ / 2))
             shapes.append(_rect(VIA2, gap_x - VIA_SZ / 2, track_y - VIA_SZ / 2,
                                  gap_x + VIA_SZ / 2, track_y + VIA_SZ / 2))
 
         xs = [gap_x for _, gap_x, _, _ in points]
-        x0, x1 = min(xs), max(xs)
+        # Same VIA_RUNOUT reason as the hop/riser above: the outermost risers'
+        # upper Via2s sit exactly on `x0`/`x1`.
+        x0, x1 = min(xs) - VIA_RUNOUT, max(xs) + VIA_RUNOUT
         shapes.append(_rect(METAL2, x0, track_y - TRACK_H / 2, x1, track_y + TRACK_H / 2))
 
     return shapes
