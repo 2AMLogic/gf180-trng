@@ -1,0 +1,41 @@
+{
+  "name": "ro-array-core-mc-freq-control",
+  "description": "Deterministic negative control for sim/tb/ro-array-core-mc-freq/: identical DUT and measurement, device mismatch disabled (sw_stat_mismatch=0). Issue #146's Leg 2 -- demonstrates the mismatch-enabled record's seed-to-seed spread collapses to (numerically) zero when the switch that produces it is off.",
+  "netlist": "tb_ro_array_core_mc_freq_control.sp",
+  "design_netlist": "design/ro_array_core.spice",
+  "analysis_type": "mc",
+  "corners": ["tt", "ss"],
+  "temperatures_c": [27, 125],
+  "design_params": {
+    "sw_stat_mismatch": 0
+  },
+  "default_runs": 3,
+  "tstop": "100n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 100n",
+    "meas tran t1a when v(ro1)=v(vth) rise=2",
+    "meas tran t1b when v(ro1)=v(vth) rise=6",
+    "meas tran t2a when v(ro2)=v(vth) rise=2",
+    "meas tran t2b when v(ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(ro2)=v(vth) rise=6",
+    "let cq = 1e-9",
+    "let nper = 4"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)"
+  },
+  "caveats": [
+    "Same two PVT points as sim/tb/ro-array-core-mc-freq/ (tt/27C/3.30V paired, ss/125C/3.63V paired -- not a 2x2 grid), for direct comparison against that record's spread.",
+    "sw_stat_mismatch=0 makes every device's local mismatch offset multiply to exactly zero regardless of the ngspice `.option seed` in force, so this run is deterministic: the same corner produces bit-identical measurements across every seed. 3 seeds are run (not 8, matching the mismatch-enabled record's count) purely to demonstrate that invariance empirically -- a single seed would already be sufficient given the mechanism, but seeing several distinct seeds collapse to the same number is more convincing evidence than asserting it from the mechanism alone.",
+    "This is a mechanism check, not an independent measurement: it shares its DUT, corner points and measurement expressions with sim/tb/ro-array-core-mc-freq/ by construction, so it cannot show anything that testbench's own deterministic counterpart (sim/tb/ro-array-core-power/) does not already show about the mean device. Its only purpose is to demonstrate the MC record's spread is attributable to sw_stat_mismatch and not to some other source of run-to-run variation."
+  ]
+}

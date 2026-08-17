@@ -89,6 +89,48 @@ class DeckTests(unittest.TestCase):
         self.assertIn(".option seed=7", deck_seeded)
 
 
+class AnalysisContextSubstitutionTests(unittest.TestCase):
+    """``analyses`` entries get {vdd_val}-style fields substituted in Python
+    before ngspice ever sees them (see ``runner._analysis_context``): the
+    interactive control-block ``dc``/``meas`` commands ``compose_deck``
+    inserts these lines as do not evaluate ``.param`` symbols in a numeric
+    argument position, so a voltage-swept testbench has no other way to make
+    its sweep bounds track the PVT point's own supply."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc 0\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "x",
+                    "netlist": "x.spice",
+                    "measure": {"dtrip": "dtrip"},
+                    "analyses": [
+                        "dc v1 0 {vdd_val} 0.01",
+                        "meas dc dtrip when v(out)={vdd_half} fall=1",
+                    ],
+                }
+            )
+        )
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["ss"]), (125,), [3.63])[0]
+
+    def test_vdd_val_and_vdd_half_substituted_from_the_pvt_point(self):
+        deck = runner.compose_deck(self.tb, self.pdk, self.point)
+        self.assertIn("dc v1 0 3.63 0.01", deck)
+        self.assertIn("meas dc dtrip when v(out)=1.815 fall=1", deck)
+        # The unsubstituted placeholders must not survive into the deck --
+        # ngspice cannot evaluate them (that is the whole reason this
+        # substitution exists).
+        self.assertNotIn("{vdd_val}", deck)
+        self.assertNotIn("{vdd_half}", deck)
+
+
 class ExtraLibSectionsTests(unittest.TestCase):
     """extra_lib_sections replaces the plain corner sections entirely (a
     section like "statistical" redefines the same subckts)."""

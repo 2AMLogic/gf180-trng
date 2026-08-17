@@ -45,8 +45,14 @@
 * estimate using the array's own measured slew rate and jitter (both
 * already committed evidence, cited rather than re-derived here).
 *
-* Scope: nominal corner only (tt/27C/3.30V), same rationale as
-* sim/tb/ro-array-core-mc-freq/'s header.
+* Scope (issue #146): two PVT points, not a full corner sweep -- tt/27C/
+* 3.30V (nominal) and ss/125C/3.63V (DR-0015's own measured entropy-binding
+* worst corner), same rationale and same two points as
+* sim/tb/ro-array-core-mc-freq/'s header. Before #146 this testbench's `.dc`
+* sweep bound and mid-supply comparison were hardcoded to the single 3.30V
+* nominal point (0-3.3V / 1.65V literals) and `corners` selection was inert
+* (see tb.json's caveats) -- both are now parameterized by the PVT point via
+* tb.json's `{vdd_val}`/`{vdd_half}` analyses fields.
 *
 * bvth is the same measurement-only mid-supply probe used throughout this
 * repository's testbenches (e.g. sim/tb/ro-array-core-power/).

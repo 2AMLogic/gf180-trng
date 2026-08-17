@@ -54,9 +54,17 @@ all three are printed, is the absolute margin against DR-0007 §2's
 ``Q_array >= M * Q_H0`` inequality.
 
 **3. Monte Carlo mismatch.** Every record in (2) is a single, mismatch-free
-device draw. Two nominal-corner Monte Carlo testbenches
-(``sim/tb/ro-array-core-mc-freq/``, ``sim/tb/sampler-dff-mc-offset/``) close
-that gap. This script reads their committed records AND, for the RO run,
+device draw. Two Monte Carlo testbenches (``sim/tb/ro-array-core-mc-freq/``,
+``sim/tb/sampler-dff-mc-offset/``) close that gap, each run at two PVT points
+since issue #146: the nominal corner and ``ss``/125 °C/3.63 V (DR-0015's
+measured entropy-binding corner) -- see each testbench's own ``tb.json``
+caveats for why those two points and not the full corner grid. A sibling
+deterministic negative control per testbench (``sw_stat_mismatch=0``, e.g.
+``sim/tb/ro-array-core-mc-freq-control/``) exists to show the spread
+collapses when mismatch is disabled, but is not itself read by this script --
+its own record is the evidence for that, cited in
+``sim/characterization-worst-corner-and-mc-mismatch.md`` §3, not re-derived
+here. This script reads the mismatch-enabled records AND, for the RO run,
 their raw per-seed ngspice logs -- because a record's marginal mean/sd of
 each ring separately cannot show whether one seed's mismatch draw happened
 to pull the two rings' periods towards a common ratio, which is exactly what
@@ -331,9 +339,15 @@ def _cv(xs: list[float]) -> float:
 
 def report_mc_ro_freq() -> None:
     print("\n== RO-array frequency-spread MC (sim/tb/ro-array-core-mc-freq/) ==")
-    records = sorted(RECORDS.glob("*-ro-array-core-mc-freq-*.md"))
+    # `-[0-9]` and not `-`: the sequence number must follow the slug directly
+    # (same convention as array_sizing.py's ARRAY_RECORD_GLOBS), so records
+    # from the sibling negative-control testbench
+    # (sim/tb/ro-array-core-mc-freq-control/, issue #146) -- whose slug
+    # extends this one's as a substring -- are never swept in here as if they
+    # were mismatch-enabled MC data.
+    records = sorted(RECORDS.glob("*-ro-array-core-mc-freq-[0-9]*.md"))
     if not records:
-        print("  (no sim/records/*-ro-array-core-mc-freq-*.md record committed yet)")
+        print("  (no sim/records/*-ro-array-core-mc-freq-[0-9]*.md record committed yet)")
         return
     for rec_path in records:
         text = rec_path.read_text()
@@ -381,23 +395,57 @@ def report_mc_ro_freq() -> None:
               f"margin over M*Q_H0 ({need:g}) shown in section 2 above")
 
 
-def _sampler_offset() -> tuple[float, float, float, int, str]:
-    """``(systematic_offset_v, mismatch_sd_v, vdd, n_seeds, record_stem)``."""
-    records = sorted(RECORDS.glob("*-sampler-dff-mc-offset-*.md"))
+_DTRIP_PATTERN = re.compile(
+    r"^- `(dtrip_v)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
+    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)", re.M,
+)
+
+
+def _sampler_offset(corner: str = "tt/27/3.30") -> tuple[float, float, float, int, str]:
+    """``(systematic_offset_v, mismatch_sd_v, vdd, n_seeds, record_stem)`` at
+    ``corner`` (default the nominal corner, where this callable's callers
+    historically only ever had one record to read).
+
+    Since issue #146 added a second (``ss/125/3.63``, DR-0015's binding
+    corner) PVT point, more than one *valid* ``sim/tb/sampler-dff-mc-offset/``
+    record can exist at once -- "the last one sorted by filename" (this
+    function's pre-#146 selection rule) is no longer reliably the nominal
+    one, so this filters explicitly by corner (and by ``status: valid``,
+    skipping superseded records) instead.
+    """
+    # `-[0-9]` and not `-`: the sequence number must follow the slug directly
+    # (same convention as array_sizing.py's ARRAY_RECORD_GLOBS), so records
+    # from the sibling negative-control testbench
+    # (sim/tb/sampler-dff-mc-offset-control/, issue #146) -- whose slug
+    # extends this one's as a substring -- are never picked up here as if
+    # they were mismatch-enabled MC data.
+    records = sorted(RECORDS.glob("*-sampler-dff-mc-offset-[0-9]*.md"))
     if not records:
-        raise RuntimeError("no sim/records/*-sampler-dff-mc-offset-*.md record committed yet")
-    pattern = re.compile(
-        r"^- `(dtrip_v)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-        r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)", re.M,
-    )
-    rec_path = records[-1]
-    text = rec_path.read_text()
-    m = pattern.search(text)
+        raise RuntimeError(
+            "no sim/records/*-sampler-dff-mc-offset-[0-9]*.md record committed yet"
+        )
+    candidates = []
+    for rec_path in records:
+        text = rec_path.read_text()
+        if re.search(r"^status:\s*superseded\s*$", text, re.M):
+            continue
+        process_m = re.search(r"process:\s*(\w+)", text)
+        temp_m = re.search(r"temperature:\s*(-?[\d.]+)", text)
+        vdd_m = re.search(r"voltage:\s*([\d.]+)", text)
+        if not (process_m and temp_m and vdd_m):
+            continue
+        rec_corner = f"{process_m.group(1)}/{float(temp_m.group(1)):.0f}/{float(vdd_m.group(1)):.2f}"
+        if rec_corner == corner:
+            candidates.append((rec_path, text, float(vdd_m.group(1))))
+    if not candidates:
+        raise RuntimeError(
+            f"no valid sim/records/*-sampler-dff-mc-offset-[0-9]*.md record at corner {corner!r}"
+        )
+    rec_path, text, vdd = candidates[-1]
+    m = _DTRIP_PATTERN.search(text)
     if m is None:
         raise RuntimeError(f"{rec_path.stem}: no dtrip_v seed-aggregate found")
     mean_v, n, sd_v = float(m.group(2)), int(m.group(3)), float(m.group(4))
-    vdd_m = re.search(r"voltage:\s*([\d.]+)", text)
-    vdd = float(vdd_m.group(1)) if vdd_m else 3.3
     return mean_v - 0.5 * vdd, sd_v, vdd, n, rec_path.stem
 
 
@@ -539,6 +587,22 @@ def report_bias_margins(rate_bps: float) -> None:
         print(f"  ({exc})")
         return
 
+    # Issue #146: a REAL sampler-offset MC measurement now exists at
+    # MEASURED_MIN_Q_CORNER (DR-0015's binding corner), not just at nominal.
+    # Print it next to the nominal-offset EXTRAPOLATION the loop below still
+    # uses for that corner's row, so a reader can see how far the
+    # extrapolation actually was from the measurement it stood in for.
+    try:
+        offset_v_meas, sd_v_meas, vdd_meas, n_meas, stem_meas = _sampler_offset(MEASURED_MIN_Q_CORNER)
+        print(f"\n  MEASURED (not extrapolated) at {MEASURED_MIN_Q_CORNER} -- {stem_meas}, "
+              f"{n_meas} seeds:")
+        print(f"    systematic offset {1000 * offset_v_meas:+.1f} mV vs nominal-corner "
+              f"{1000 * offset_v:+.1f} mV ({1000 * (offset_v_meas - offset_v):+.1f} mV corner "
+              f"delta); mismatch sd {1000 * sd_v_meas:.2f} mV vs nominal-corner "
+              f"{1000 * sd_v:.2f} mV")
+    except RuntimeError:
+        pass  # no measurement at that corner yet -- the extrapolation below is all there is
+
     cases = [
         ("mismatch spread, 1 sd", sd_v),
         ("mismatch spread, 3 sd", 3.0 * sd_v),
@@ -549,12 +613,12 @@ def report_bias_margins(rate_bps: float) -> None:
     for corner, note in (
         ("tt/27/3.30", "where the offset was actually measured"),
         (PREDICTED_MIN_Q_CORNER,
-         "EXTRAPOLATION: sim/tb/sampler-dff-mc-offset/ is nominal-corner-only, so "
+         "EXTRAPOLATION: no sampler-offset MC record exists at this corner, so "
          "this row set carries the NOMINAL corner's measured offset over to this "
          "corner's own measured slew and jitter. The offset's own corner dependence "
-         "is unmeasured"),
+         "here is unmeasured"),
         (MEASURED_MIN_Q_CORNER,
-         "the entropy-binding corner (DR-0015). Same extrapolation of the offset as "
+         "the entropy-binding corner (DR-0015). Same extrapolation methodology as "
          "above, and sigma_acc here is law-derived rather than measured -- see the "
          "provenance line"),
     ):
