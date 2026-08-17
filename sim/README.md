@@ -93,7 +93,7 @@ re-parsing prose.
 | `record` | The record's own filename stem. Self-identifying. |
 | `date` | UTC date/time the run completed, ISO 8601 (`2026-08-14T09:12:00Z`). |
 | `status` | `valid`, or `superseded` (see [Superseding](#superseding-a-record)). |
-| `level` | `transistor`, `behavioral` or `gate` — what produced this. The first two are the two sides of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary; `gate` is static analysis of a synthesized/placed netlist against the PDK's characterised libraries ([DR-0021](../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md)), which is neither. Absent means `transistor` (records predating DR-0009); new records state it. |
+| `level` | `transistor`, `behavioral`, `gate` or `gate-simulation` — what produced this. The first two are the two sides of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary; `gate` is *static* analysis of a synthesized/placed netlist against the PDK's characterised libraries ([DR-0021](../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md)) and `gate-simulation` is *dynamic* simulation of one with back-annotated delays ([DR-0022](../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md)), neither of which is either of the first two. Absent means `transistor` (records predating DR-0009); new records state it. |
 | `testbench.path` | Repo-relative path to the testbench entry point. |
 | `testbench.sha` | `git rev-parse HEAD:<path>` — blob SHA of the testbench at run time. |
 | `netlist.path` | Repo-relative path to the DUT netlist/schematic-derived netlist. |
@@ -213,6 +213,50 @@ first one.
 
 ---
 
+## Post-route gate-level *simulation* records
+
+`level: gate-simulation` is the fourth `level:` value, added by [DR-0022] for
+#147's post-layout re-run of the digital functional suite
+(`sim/tb/trng-top-post-route/`). It is a **sibling of `level: gate`, not a
+replacement**: both read a gate-level netlist against the PDK's characterised
+libraries and neither instantiates a device model, so everything [DR-0021]
+fixes about a gate record's frontmatter holds here too —
+
+- `corner.process` / `corner.voltage` / `corner.temperature` from the liberty
+  deck's own operating conditions, never `n/a`, plus `corner.liberty` naming
+  the deck;
+- `pdk.models` listing the decks and cell-model files actually read, and
+  `tool.ngspice` written `n/a` **with the reason**, alongside the tools that
+  did produce the numbers, each with its version;
+- no `tb.json`, for the same reason: `sim/run_corners.py` must not sweep it
+  across the analog P/V/T grid.
+
+— and one thing differs, which is why the value is distinct rather than shared:
+
+| | `level: gate` (DR-0021) | `level: gate-simulation` (DR-0022) |
+|---|---|---|
+| What runs | **static** analysis: STA, liberty-table power, placed geometry | **dynamic** simulation: stimulus in, cycle-by-cycle outputs out, delays back-annotated |
+| May be cited for | timing closure, Fmax, cell area, liberty-model power at its corner | functional equivalence of the netlist to its RTL/model on the stimulus run |
+| May **not** be cited for | measured supply current, raw-tap claims, signoff | **timing closure of any kind** — which annotation classes actually applied is simulator-dependent, so a run that reported no violation may not have been checking |
+
+That last cell is the whole reason for a separate value. A reader filtering
+`level: gate` is entitled to timing numbers; a dynamic simulation may have had
+its timing checks silently dropped by the simulator and must not be mistaken
+for one. So a `gate-simulation` record additionally **requires** a
+`timing_annotation` block stating what the annotation models **and what it
+omits** — cell versus interconnect delay, which annotation classes the
+simulator applied, how many corners — with both the netlist and the annotation
+file content-hashed. An omission stated is a coverage limit; an omission
+unstated is a defect, the same rule `Caveats` already carries.
+
+Adding this level **re-labels nothing**. The five `level: behavioral` records
+the digital re-run compares against keep their level and their citation limits
+exactly as before, and [DR-0021]'s `level: gate` records are untouched.
+
+[DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
+
+---
+
 ## Superseding a record
 
 Mistaken, misconfigured, or invalidated runs are **not** deleted or edited.
@@ -278,7 +322,10 @@ Mechanical; run through it before committing any record.
       record is `level: behavioral` and every device-model field carries
       `n/a` plus a reason, and the input source is named. A `level: gate`
       record states its corner like a transistor one, and additionally names
-      its liberty deck and its interconnect corner (DR-0021).
+      its liberty deck and its interconnect corner (DR-0021); a
+      `level: gate-simulation` record does the same and adds a
+      `timing_annotation` block naming what the annotation models and omits
+      (DR-0022).
 - [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed —
       `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.

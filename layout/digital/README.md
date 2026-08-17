@@ -279,6 +279,73 @@ no `SPECIALNETS` section, so:
 block is implemented". [#171][gf171] tracks the repository-side work
 (a real PDN, tapcells, fillers) once the tool can express it.
 
+## SDF export
+
+```sh
+python3 layout/digital/gen_sdf.py            # (re-)generate, write the SDF + report
+python3 layout/digital/gen_sdf.py --check    # regenerate to scratch and diff; never writes
+```
+
+`trng_top.pnr.v` on its own says nothing about *time*. What consumes it — the
+post-route gate-level re-run of the digital functional suite,
+[`sim/tb/trng-top-post-route/`](../../sim/tb/trng-top-post-route/) ([#147][gf147])
+— needs delays attached, so this script writes them:
+
+| file | what it is |
+|---|---|
+| [`trng_top.sdf`](trng_top.sdf) | per-instance **cell** delays for `trng_top.pnr.v`, from OpenSTA over the `ss_125C_3v00` liberty deck |
+| [`reports/sdf_export.json`](reports/sdf_export.json) | provenance plus the coverage statement, machine-readable |
+
+**What it models, and what it deliberately does not.** OpenSTA links the
+as-built netlist against the resolved liberty and writes the delays it
+computes from the library timing arcs at each net's own fan-out: real
+per-instance cell delay from the CTS-buffered, resized netlist, with **zero
+interconnect (wire) delay** — the same lumped, zero-length-net assumption a
+pre-layout SDF makes.
+
+The obvious better answer, real routed parasitics, is *worse* here and that is
+why it was not taken. `klt place-and-route`'s own `request.post_route_sdf`
+would write an SDF from a session with extracted parasitics — but it extracts
+them from the merged DEF→GDS stream, and that merge is geometrically wrong for
+this design by a factor of two in every DEF-derived dimension
+([klayout-tools#1090][klt1090], defect #1 under
+[Two defects this bring-up found](#two-defects-this-bring-up-found)). An SDF
+whose interconnect delays are wrong by a data-dependent factor is worse than
+one that models none, and — unlike "no wire delay", which is a stated,
+one-line limitation — it is not distinguishable from a correct run without
+re-deriving the geometry bug's effect on every net's RC.
+
+Two further gaps belong to Icarus Verilog 13.0, the simulator that consumes
+this SDF, and are generic to Icarus + `write_sdf` + this cell library rather
+than to this design:
+
+1. **`TIMINGCHECK` sections are not applied at all — and neither are the cell
+   models' own timing checks.** Icarus implements no SDF `TIMINGCHECK`
+   annotation, so all 708 of them (one per flop) are dropped; and it
+   implements no `$setup`/`$hold`/`$width` either, so the placeholder checks
+   in the library's own `specify` blocks do not run as a fallback (it warns
+   `Timing checks are not supported` once per check while elaborating). The
+   consequence to state plainly: a gate-level run through this path performs
+   **no setup/hold checking whatsoever** and a run that reports no violation
+   is not evidence that a constraint was met. Setup/hold **signoff** stays
+   with OpenROAD's own STA, above, and with [#145][gf145]. That `klt`'s
+   response reports `annotated: true` without distinguishing this case from a
+   fully-annotated one is filed generically upstream as
+   [klayout-tools#1102][klt1102].
+2. **A minority of `IOPATH` arcs cannot be annotated.** Icarus rejects an
+   `ifnone`-qualified edge-sensitive `specify` path at compile time — the shape
+   `xor`/`xnor`/`mux`/`addf`/`addh` use for their select/toggle inputs — so
+   those arcs never exist at simulation time and the SDF entry for them cannot
+   apply. `gen_sdf.py` derives the exact `(cell, from, to)` list mechanically
+   from the library's own Verilog and drops those entries, rather than letting
+   them raise a diagnostic that would (correctly) fail the whole run; the
+   count is in `reports/sdf_export.json`'s `coverage` block and in the
+   evidence record.
+
+Unlike P&R itself, this artefact **is** byte-reproducible for the same netlist
+and liberty (no placement seed is involved), so `--check` is meaningful and
+regenerates to scratch to diff against what is committed.
+
 ## What this establishes, and what it does not
 
 **Establishes.** A gf180mcu digital place-and-route path exists, runs
@@ -323,6 +390,8 @@ target is what makes those resolve identically on both sides of the container
 boundary.
 
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
+[gf145]: https://github.com/2AMLogic/gf180-trng/issues/145
+[gf147]: https://github.com/2AMLogic/gf180-trng/issues/147
 [gf150]: https://github.com/2AMLogic/gf180-trng/issues/150
 [gf169]: https://github.com/2AMLogic/gf180-trng/issues/169
 [gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
@@ -330,4 +399,5 @@ boundary.
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
+[klt1102]: https://github.com/2AMLogic/klayout-tools/issues/1102
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md

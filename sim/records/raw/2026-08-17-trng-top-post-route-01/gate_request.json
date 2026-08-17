@@ -1,0 +1,34 @@
+{
+  "engine": "icarus",
+  "hdl_toplevel": "trng_top",
+  "options": {
+    "random_seed": 1,
+    "sdf": {
+      "corner": "typ",
+      "file": "/Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-147/layout/digital/trng_top.sdf"
+    },
+    "timescale": [
+      "1ns",
+      "1ps"
+    ]
+  },
+  "sources": [
+    "/Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-147/layout/digital/trng_top.pnr.v",
+    "/Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/gf180mcu_fd_sc_mcu9t5v0.v",
+    "/Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/primitives.v"
+  ],
+  "testbench": {
+    "module": "post_route_tb",
+    "search_path": "/Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-147/sim/tb/trng-top-post-route",
+    "testcase": [
+      "smoke",
+      "startup_and_regfile",
+      "conditioner_blocks",
+      "rct_stuck_output",
+      "ring1_stuck",
+      "reg_read_walk",
+      "reg_read_walk_early_sample",
+      "reg_read_walk_settle_sweep"
+    ]
+  }
+}

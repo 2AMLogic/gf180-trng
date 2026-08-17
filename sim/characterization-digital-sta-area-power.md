@@ -434,6 +434,39 @@ of which are now facing measured numbers instead of estimates.
 
 ---
 
+## 5a. The functional half of item 7, and what it does and does not add here
+
+This document is the **static** half of T1 item 7's digital column: STA, area
+and liberty power over the same routed database. The **dynamic** half is
+[#147]'s post-route gate-level re-run of the digital functional suite,
+`sim/tb/trng-top-post-route/`, recorded at
+[`level: gate-simulation`][DR-0022] (a sibling of this document's
+[`level: gate`][DR-0021], deliberately *not* the same value). Cite it for what
+it establishes and not for anything on this page:
+
+| | this document (`level: gate`) | the re-run (`level: gate-simulation`) |
+|---|---|---|
+| What runs | OpenSTA + liberty power over the routed DEF, 15 corners | Icarus + cocotb over `trng_top.pnr.v`, SDF cell delays annotated, 1 corner |
+| Establishes | timing closure, Fmax floor, placed area, swept power | that the as-built netlist reproduces the RTL's cycle-by-cycle behaviour, bit-exactly, over the digital suite's stimulus |
+| Must not be cited for | measured supply current, signoff, I/O timing | **timing of any kind** — the simulator applies no timing checks at all, so a clean run there says nothing about margin |
+
+Two things the re-run contributes that this page cannot:
+
+- **The netlist is functionally the RTL.** Every number here is a property of
+  *this* synthesis, placement and routing (§5, "Not a claim about the RTL"). The
+  re-run closes the complementary question — that the thing whose timing and
+  power are reported above still *does* what the RTL does — with identical
+  output-trace hashes over 3197 cycles of the digital suite's own stimulus.
+- **Zero `x` on a pin out of reset**, across those cycles, despite 512 of the
+  708 flops having no reset port. That is a property of the netlist's own
+  availability gating and is invisible to static analysis.
+
+And one thing it does **not** contribute, contrary to what §5's
+"Not a supply-current measurement" bullet anticipates: a switching-activity
+annotation. The re-run produces per-cycle output traces at the *pins*, not
+per-net toggle counts, so wiring its activity into a liberty power run is still
+future work rather than something already available.
+
 ## 6. Reproducing this
 
 ```sh
@@ -479,3 +512,4 @@ it.
 [DR-0019]: ../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
 [DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
+[DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
