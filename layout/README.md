@@ -26,18 +26,23 @@ nothing places content inside its own guarded region yet — so `floorplan/`
 remains a floorplan and not a full layout, and
 [`floorplan/README.md`](floorplan/README.md) is explicit about what a
 clean-relative-to-baseline DRC result over it does and does not mean.
-**"DRC-clean" is no longer true of every cell here as of #142**: pinning
-`klt` to a build with the gf180mcu digital flow, `klt pex`, and `klt yield`
-also pulled in a more complete gf180mcu DRC deck (Via1-Via4 width/space
-rules among others), which now flags real violations on `ro_nand2`,
-`ro_nand2_ring2`, `xor2`, `sampler_dff`, `ro_ring11`, `ro_ring11_ring2`, and
+**Every cell here is DRC-clean again as of #162.** Pinning `klt` to a build
+with the gf180mcu digital flow, `klt pex`, and `klt yield` (#142) also
+pulled in a more complete gf180mcu DRC deck — Via1-Via4 width/space rules
+(klayout-tools#546/#564) and the conductor-over-cut enclosures (#551) among
+others — which flagged real violations on `ro_nand2`, `ro_nand2_ring2`,
+`xor2`, `sampler_dff`, `ro_ring11`, `ro_ring11_ring2`, and
 `combiner_sampler` that the previously-pinned PyPI release's deck never
-checked for — see #162 for the per-cell counts and disposition; `ro_stage`,
-`ro_stage_ring2`, and `ro_buf` remain DRC-clean. LVS match/mismatch verdicts
-are unaffected on every cell.
+checked for. #162 fixed the **geometry**, not the expectations: every via
+in this tree is now drawn at the DRM's own fixed 0.26 µm size instead of a
+contact-sized 0.22 µm, and every conductor that carries a via or a contact
+runs past that cut instead of stopping flush with its edge. No rule was
+waived and no expectation was relaxed — `layout/verify.py`'s `EXPECTATIONS`
+table still declares all ten cells DRC-`clean` with empty `rule_counts`,
+and passes. LVS match/mismatch verdicts were unaffected throughout, before
+and after.
 `cells/` (#106) is where drawn design cells land, one at a time, each
-DRC-clean (**as of #142**, no longer true of every landed cell — see above)
-and LVS-matching before the next is started —
+DRC-clean and LVS-matching before the next is started —
 [`cells/README.md`](cells/README.md) says which cells are drawn and which of
 the block's many remaining cells are not, and
 ["What has layout, and what does not"](#what-has-layout-and-what-does-not)
@@ -109,9 +114,12 @@ machine, on the same day: a `pip install klayout-tools==0.2.0` and a
 `klt --version` *and* from `provenance.klt_version`, yet disagree on
 `provenance.deck.content_hash` (`sha256:1256c45b…` vs `sha256:457480f1…`) and
 on the verdict for one unchanged committed stream —
-`layout/cells/ro_nand2/ro_nand2.gds` is `clean` under the released deck and
-reports five `metal1.enclosing.contact.1` violations under the git build's
-stricter one. The git build's extra rules are legitimate; the problem is that
+`layout/cells/ro_nand2/ro_nand2.gds` **as committed that day** is `clean`
+under the released deck and reports five `metal1.enclosing.contact.1`
+violations under the git build's stricter one. (That geometry has since been
+redrawn — #162 — so the same experiment run against today's stream is clean
+under both decks; the point the two decks disagreed on stands as recorded.)
+The git build's extra rules are legitimate; the problem is that
 nothing in the version string says which deck generation ran. Re-filed as
 fresh evidence on [klayout-tools#306][kt306]. **Consequence for anyone
 reproducing this directory's reports:** `.github/workflows/pdk-nightly.yml`

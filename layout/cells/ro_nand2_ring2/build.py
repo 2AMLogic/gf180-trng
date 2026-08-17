@@ -91,6 +91,12 @@ GATE_GAP = 0.80  # x-span reserved between adjacent gates for an internal-node
 # internal nm/ny gaps never needed to.
 ROW_GAP = 1.20  # comp-comp vertical gap between the NMOS and PMOS rows
 NWELL_MARGIN = 0.25  # Nwell enclosure of PMOS comp
+#: How far a metal1 riser runs past the contact it lands on, on the side the
+#: riser leaves from -- the same `metal1.enclosing.contact.1` ("CO.6", 0.005um)
+#: margin `layout/cells/ro_nand2/build.py` documents at its own copy of this
+#: constant, applied to this cell's independently drawn (but identically
+#: routed) risers. Issue #162.
+M1_CONTACT_MARGIN = 0.02
 
 assert PAD_H == W_PARALLEL, "PAD_H sized to need no narrowing for Mpa/Mpb/Mna/Mnb"
 
@@ -251,9 +257,13 @@ def build_shapes() -> tuple[list[Rect], list[Label]]:
     rect(CONTACT, *py_contact)
     rect(CONTACT, *py2_contact)
     PY_JOG_Y = (2.25, 2.55)
-    rect(METAL1, 0.16, 1.75, 0.42, PY_JOG_Y[1])
-    rect(METAL1, 2.32, 1.75, 2.58, PY_JOG_Y[1])
+    # Both risers start M1_CONTACT_MARGIN *below* their contact's own bottom
+    # edge, not flush with it, so metal1 encloses the cut on that side too.
+    py_riser_y0 = py_contact[1] - M1_CONTACT_MARGIN
+    rect(METAL1, 0.16, py_riser_y0, 0.42, PY_JOG_Y[1])
+    rect(METAL1, 2.32, py_riser_y0, 2.58, PY_JOG_Y[1])
     rect(METAL1, 0.16, PY_JOG_Y[0], 2.58, PY_JOG_Y[1])
+    assert py_riser_y0 - en_metal[3] >= 0.23, "metal1.space.1: py/py2 riser to en pin metal"
 
     # ----------------------------------------------------------------- #
     # pad(y): one contact per row (NMOS drain-of-XMna/XMnb-pair pad, PMOS
@@ -292,8 +302,10 @@ def build_shapes() -> tuple[list[Rect], list[Label]]:
     # ----------------------------------------------------------------- #
     VDDR_JOG_Y = (2.80, 3.10)
     assert VDDR_JOG_Y[0] - PY_JOG_Y[1] >= 0.23, "metal1.space.1: vddr jog to py-py2 jog"
-    rect(METAL1, 3.73, 0.70, 3.99, VDDR_JOG_Y[1])  # mnt_contact -> jog
-    rect(METAL1, -2.62, 1.75, -2.36, VDDR_JOG_Y[1])  # vddr_contact -> jog
+    # Both risers again start M1_CONTACT_MARGIN below their own contact's
+    # bottom edge rather than flush with it (see M1_CONTACT_MARGIN).
+    rect(METAL1, 3.73, mnt_contact[1] - M1_CONTACT_MARGIN, 3.99, VDDR_JOG_Y[1])
+    rect(METAL1, -2.62, vddr_contact[1] - M1_CONTACT_MARGIN, -2.36, VDDR_JOG_Y[1])
     rect(METAL1, -2.62, VDDR_JOG_Y[0], 3.99, VDDR_JOG_Y[1])  # the jog itself
 
     # ----------------------------------------------------------------- #
@@ -302,7 +314,9 @@ def build_shapes() -> tuple[list[Rect], list[Label]]:
     # jog *below* the NMOS row -> vertical run up into pad(vss).
     # ----------------------------------------------------------------- #
     VSS_JOG_Y = (-0.55, -0.25)
-    rect(METAL1, -1.26, VSS_JOG_Y[0], -1.00, 1.62)  # mph_contact -> jog
+    # This riser leaves its contact downward, so the M1_CONTACT_MARGIN goes
+    # on the *top* edge (the one that was flush with mph_contact's own top).
+    rect(METAL1, -1.26, VSS_JOG_Y[0], -1.00, mph_contact[3] + M1_CONTACT_MARGIN)
     rect(METAL1, 5.08, VSS_JOG_Y[0], 5.34, 0.35)  # vss_contact -> jog
     rect(METAL1, -1.26, VSS_JOG_Y[0], 5.34, VSS_JOG_Y[1])  # the jog itself
 

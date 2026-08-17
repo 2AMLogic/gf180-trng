@@ -71,13 +71,35 @@ Design-rule values reused below (`comp.width.1` 0.22, `comp.space.1` 0.28,
 `metal1.width.1`/`metal1.space.1` 0.23/0.23, `metal2.width.1`/
 `metal2.space.1` 0.28/0.28, `nwell.enclosing.comp.1` 0.12) are transcribed
 from `klt`'s own gf180mcu deck (`klayout_tools/decks/gf180mcu.py`), the
-same source `ro_stage.build.py` cites. `Via1`/`Via2` (Metal1<->Metal2,
-Metal2<->Metal3) carry no width/space/enclosure rule in that curated deck
-at all -- confirmed by grepping the deck's own `DrcRule` table -- so this
-module still draws them at a contact-sized 0.22 x 0.22um and centres them
-generously inside their neighbouring pad, but nothing here is tuned
-against a threshold that does not exist; only the Comp/Poly2/Contact/
-Metal1/Metal2 margins below are.
+same source `ro_stage.build.py` cites.
+
+Via sizing (`via1.width.1`/`via2.width.1`, issue #162)
+-------------------------------------------------------
+This module used to draw `Via1`/`Via2` at a contact-sized 0.22 x 0.22um on
+the stated grounds that "Via1/Via2 carry no width/space/enclosure rule in
+that curated deck at all -- confirmed by grepping the deck's own `DrcRule`
+table". That was an accurate reading of the deck this repo had installed at
+the time and is no longer true: klayout-tools#546/#564 transcribed DRM
+7.14 ("Vian", n = 1..5) into the curated deck, and #551 added the
+conductor-over-cut enclosures. Under the `klt` build #142 pinned, the deck
+now carries
+
+    via1.width.1 / via2.width.1   0.26um  (DRM 7.14, "Vn.1" min/max via size)
+    via1.space.1 / via2.space.1   0.26um  (DRM 7.14, "Vn.2a")
+    metal1.enclosing.via1.1       0.0um   (DRM 7.14, "V1.3a" -- the cut must
+                                           land on metal1, no margin required)
+    metal2.enclosing.via1.1       0.01um  (DRM 7.14, "V1.4a")
+    metal2.enclosing.via2.1       0.01um  (DRM 7.14, "V2.3b")
+    metal3.enclosing.via2.1       0.01um  (DRM 7.14, "V2.4a")
+
+so every via drawn here is now sized at `VIA_SIZE` (0.26um, the DRM's own
+fixed via size -- *not* `CONTACT_SIZE`, which stays 0.22um because a
+gf180mcu contact really is a different, smaller fixed square), and every
+conductor that carries a via is extended `VIA_ENCLOSURE` (0.02um, 2x the
+0.01um requirement) past that via's own outline. The asserts under
+"Geometry constants" below check each of those margins against the deck
+threshold it exists to satisfy, so a future retune cannot silently drop
+one back under the line.
 """
 
 from __future__ import annotations
@@ -120,11 +142,20 @@ SLOT_PITCH = 0.80  # source -> gate -> drain spacing within one device
 LANDING_W = 0.50  # gate poly landing pad width (x)
 LANDING_GAP = 0.30  # clearance from row top (comp) to landing pad bottom
 LANDING_H = 0.40  # gate poly landing pad height (y)
-CONTACT_SIZE = 0.22
+CONTACT_SIZE = 0.22  # gf180mcu DRM 7.12 "CO.1": contacts are a fixed 0.22um square
+VIA_SIZE = 0.26  # gf180mcu DRM 7.14 "Vn.1": Via1..Via4 are a fixed 0.26um square
+VIA_ENCLOSURE = 0.02  # conductor margin past a via -- 2x the deck's 0.01um floor
 METAL1_PAD = 0.40
 METAL2_STUB = 0.32
 METAL2_TRUNK_H = 0.30
 METAL3_W = 0.30
+#: How far a conductor must run past a via *centre* to enclose it: half the
+#: via plus the enclosure margin. Used for the Metal2 trunk's own X extent
+#: and the Metal3 riser's own Y extent, whose end vias sit exactly on the
+#: extreme terminal coordinate (before #162 those two shapes stopped dead at
+#: the via centre, so every trunk end and every riser end reported a
+#: `metal2.enclosing.via2.1` / `metal3.enclosing.via2.1` violation).
+VIA_RUNOUT = VIA_SIZE / 2 + VIA_ENCLOSURE
 TRUNK_PITCH = 0.65  # Y spacing between adjacent net trunks
 BLOCK_GAP = 3.0  # X gap between the NMOS row and the PMOS row
 ROW_Y = 1.00  # both rows' shared centreline
@@ -135,6 +166,18 @@ CHANNEL_MARGIN = 0.45  # clearance from the taller row's landing top to the
 # top edge sits ~0.04 below landing_top) and the first trunk's bottom edge
 
 assert PAD_W + 0.28 <= SLOT_PITCH, "SLOT_PITCH must clear comp.space.1 (0.28)"
+
+# Via sizing/enclosure margins, each against the deck threshold it exists to
+# satisfy (see the module docstring's "Via sizing" section for the rule ids).
+assert VIA_SIZE >= 0.26, "via1.width.1/via2.width.1 floor is 0.26"
+assert VIA_ENCLOSURE >= 0.01, "metal2/metal3.enclosing.via*.1 floor is 0.01"
+assert (METAL1_PAD - VIA_SIZE) / 2 >= 0.0, "metal1.enclosing.via1.1: cut must land on metal1"
+assert (METAL2_STUB - VIA_SIZE) / 2 >= 0.01, "metal2.enclosing.via1.1/via2.1 (0.01)"
+assert (METAL2_TRUNK_H - VIA_SIZE) / 2 >= 0.01, "metal2.enclosing.via2.1 (0.01)"
+assert (METAL3_W - VIA_SIZE) / 2 >= 0.01, "metal3.enclosing.via2.1 (0.01)"
+assert SLOT_PITCH - VIA_SIZE >= 0.26, "via1.space.1/via2.space.1 (0.26) between terminals"
+assert METAL2_STUB >= 0.28, "metal2.width.1 (0.28)"
+assert TRUNK_PITCH - METAL2_TRUNK_H >= 0.28, "metal2.space.1 (0.28) between adjacent trunks"
 
 
 @dataclass(frozen=True)
@@ -270,14 +313,17 @@ def _terminal(
     `(x, y)`; records `(x, y)` under `net` for `_route_nets` to riser up
     to that net's trunk.
     """
-    h = CONTACT_SIZE / 2
-    canvas.rect(CONTACT, x - h, y - h, x + h, y + h)
+    c = CONTACT_SIZE / 2
+    canvas.rect(CONTACT, x - c, y - c, x + c, y + c)
     m1 = METAL1_PAD / 2
     canvas.rect(METAL1, x - m1, y - m1, x + m1, y + m1)
-    canvas.rect(VIA1, x - h, y - h, x + h, y + h)
+    # Via1/Via2 are 0.26um squares, not contact-sized -- see the module
+    # docstring's "Via sizing" section (issue #162).
+    v = VIA_SIZE / 2
+    canvas.rect(VIA1, x - v, y - v, x + v, y + v)
     m2 = METAL2_STUB / 2
     canvas.rect(METAL2, x - m2, y - m2, x + m2, y + m2)
-    canvas.rect(VIA2, x - h, y - h, x + h, y + h)
+    canvas.rect(VIA2, x - v, y - v, x + v, y + v)
     terminals[net].append((x, y))
 
 
@@ -305,15 +351,23 @@ def _route_nets(
         for x, y in points:
             m3 = METAL3_W / 2
             y0, y1 = sorted((y, trunk_y))
-            canvas.rect(METAL3, x - m3, y0, x + m3, y1)
-            h = CONTACT_SIZE / 2
-            canvas.rect(VIA2, x - h, trunk_y - h, x + h, trunk_y + h)
+            # The riser runs VIA_RUNOUT past *both* end vias (the terminal's
+            # own Via2 at `y`, the trunk's at `trunk_y`) rather than stopping
+            # on their centres, so metal3 encloses each of them -- issue #162.
+            canvas.rect(METAL3, x - m3, y0 - VIA_RUNOUT, x + m3, y1 + VIA_RUNOUT)
+            v = VIA_SIZE / 2
+            canvas.rect(VIA2, x - v, trunk_y - v, x + v, trunk_y + v)
             xs.append(x)
         x0, x1 = min(xs), max(xs)
         if x1 - x0 < METAL2_TRUNK_H:
             pad = (METAL2_TRUNK_H - (x1 - x0)) / 2 + 0.02
             x0 -= pad
             x1 += pad
+        # Same reason as the riser above: the extreme terminals' own Via2s sit
+        # exactly on `x0`/`x1`, so the trunk has to run past them to enclose
+        # them (issue #162).
+        x0 -= VIA_RUNOUT
+        x1 += VIA_RUNOUT
         th = METAL2_TRUNK_H / 2
         canvas.rect(METAL2, x0, trunk_y - th, x1, trunk_y + th)
         if net in pins:

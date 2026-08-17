@@ -80,6 +80,33 @@ layout technique (an independent-device gate array plus a two-layer
 Manhattan routing grid) and why it generalises `ro_stage`'s dog-boned-pad
 technique rather than replacing it.
 
+### Vias are 0.26 µm, not contact-sized ([#162][gf162])
+
+Every cell here that draws a Via1 or a Via2 — `xor2` and `sampler_dff`
+through `_mos_row.py`, and `ro_buf` indirectly, because
+`layout/blocks/combiner_sampler/` drops a Via1 onto its `y` pin — used to
+size the cut at a contact-sized 0.22 µm. That was written against a `klt`
+deck that carried no `via*` rule at all, and it stopped being true when
+#142 pinned a build whose gf180mcu deck transcribes DRM 7.14 ("Vian"): a
+via is a fixed **0.26 µm** square (`via1.width.1`/`via2.width.1`), and the
+conductors either side of it must overlap it by 0.01 µm
+(`metal2.enclosing.via1.1`, `metal2.enclosing.via2.1`,
+`metal3.enclosing.via2.1`) or, for Via1's lower conductor, simply contain
+it (`metal1.enclosing.via1.1`, 0.0 µm).
+
+Two consequences worth carrying forward when drawing a new cell here:
+
+- **A via is 0.26 µm and a contact is 0.22 µm.** They are different fixed
+  sizes in this PDK; reusing one constant for both is the mistake #162
+  fixed.
+- **A wire that ends on a via must run past it, not stop on its centre.**
+  `_mos_row.py`'s `VIA_RUNOUT` (half the via plus 0.02 µm) is that runout,
+  applied to every Metal2 trunk end and Metal3 riser end. The same rule
+  cost `ro_nand2`/`ro_nand2_ring2` five `metal1.enclosing.contact.1`
+  violations each for the analogous reason one layer down — a metal1 riser
+  starting flush with its contact's own edge encloses that cut by 0.0 µm,
+  and the deck asks for 0.005 µm (DRM 7.12, "CO.6").
+
 ## Why hand-drawn, and why one cell at a time
 
 `layout/cells/ro_stage/build.py`'s own docstring has the full account; in
@@ -173,4 +200,5 @@ klayout-tools — none of the gaps below are tool gaps):
 [gf119]: https://github.com/2AMLogic/gf180-trng/issues/119
 [gf144]: https://github.com/2AMLogic/gf180-trng/issues/144
 [gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
+[gf162]: https://github.com/2AMLogic/gf180-trng/issues/162
 [dr18]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
