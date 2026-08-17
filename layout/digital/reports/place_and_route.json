@@ -6,74 +6,74 @@
   "status": "ok",
   "stage_reached": "route",
   "seed": 1,
-  "die_area_um2": 298690,
-  "core_area_um2": 275918,
-  "utilization_pct": 40.6915,
-  "wirelength_um": 162072,
-  "worst_slack_ns": 23.8243,
+  "die_area_um2": 301198,
+  "core_area_um2": 277092,
+  "utilization_pct": 40.8124,
+  "wirelength_um": 163650,
+  "worst_slack_ns": 27.7354,
   "total_negative_slack_ns": 0,
-  "fmax_mhz": 38.2034,
+  "fmax_mhz": 44.9144,
   "setup_violation_count": 0,
   "hold_violation_count": 0,
   "antenna_violation_count": 0,
   "route_drc_violation_count": 0,
-  "estimated_power_mw": 6.3847,
-  "clock_skew_ns": 0.1559,
-  "worst_setup_slack_ns": -37.4365,
-  "worst_hold_slack_ns": 0.52051,
+  "estimated_power_mw": 6.3833,
+  "clock_skew_ns": 0.4026,
+  "worst_setup_slack_ns": -28.7535,
+  "worst_hold_slack_ns": 0.51699,
   "stages": [
     {
       "name": "floorplan",
-      "die_area_um2": 298690,
-      "core_area_um2": 275918,
-      "utilization_pct": 40.1903,
-      "worst_slack_ns": 33.8249,
+      "die_area_um2": 301198,
+      "core_area_um2": 277092,
+      "utilization_pct": 40.3683,
+      "worst_slack_ns": 34.0711,
       "total_negative_slack_ns": 0
     },
     {
       "name": "place",
-      "die_area_um2": 298690,
-      "core_area_um2": 275918,
-      "utilization_pct": 39.6399,
-      "worst_slack_ns": 23.9293,
+      "die_area_um2": 301198,
+      "core_area_um2": 277092,
+      "utilization_pct": 39.747,
+      "worst_slack_ns": 27.11,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 105195,
-      "fmax_mhz": 38.3572,
-      "estimated_power_mw": 4.7435,
+      "wirelength_um": 103807,
+      "fmax_mhz": 43.6872,
+      "estimated_power_mw": 4.691,
       "setup_violation_count": 0,
       "hold_violation_count": 0
     },
     {
       "name": "cts",
-      "die_area_um2": 298690,
-      "core_area_um2": 275918,
-      "utilization_pct": 40.6915,
-      "worst_slack_ns": 23.6065,
+      "die_area_um2": 301198,
+      "core_area_um2": 277092,
+      "utilization_pct": 40.8124,
+      "worst_slack_ns": 26.8492,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 113110,
-      "fmax_mhz": 37.8881,
-      "estimated_power_mw": 6.3852,
-      "clock_skew_ns": 0.10644,
+      "wirelength_um": 111790,
+      "fmax_mhz": 43.195,
+      "estimated_power_mw": 6.3536,
+      "clock_skew_ns": 0.08678,
       "setup_violation_count": 0,
       "hold_violation_count": 0
     },
     {
       "name": "route",
-      "die_area_um2": 298690,
-      "core_area_um2": 275918,
-      "utilization_pct": 40.6915,
-      "worst_slack_ns": 23.8243,
+      "die_area_um2": 301198,
+      "core_area_um2": 277092,
+      "utilization_pct": 40.8124,
+      "worst_slack_ns": 27.7354,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 162072,
-      "fmax_mhz": 38.2034,
-      "estimated_power_mw": 6.3847,
-      "clock_skew_ns": 0.1559,
+      "wirelength_um": 163650,
+      "fmax_mhz": 44.9144,
+      "estimated_power_mw": 6.3833,
+      "clock_skew_ns": 0.4026,
       "setup_violation_count": 0,
       "hold_violation_count": 0,
       "antenna_violation_count": 0,
       "route_drc_violation_count": 0,
-      "worst_setup_slack_ns": -37.4365,
-      "worst_hold_slack_ns": 0.52051
+      "worst_setup_slack_ns": -28.7535,
+      "worst_hold_slack_ns": 0.51699
     }
   ],
   "macros": [],
@@ -89,14 +89,14 @@
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
     },
     "deck": {
       "name": "gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00",
-      "content_hash": "sha256:d83917f827021eadb159f6011905bf20de632533b2953abba89266a88c2b24af"
+      "content_hash": "sha256:c31d836785af6af4502aadaaf7cc0f604119d38fd66b8ee32733510eabdad6d2"
     },
     "input": {
-      "content_hash": "sha256:4896e5c82b6ddfc62429b58334ac97bed6543c5c4a15e86ae9cd11e399cd8d39"
+      "content_hash": "sha256:ee105f2e9bd5935dd9aa1c369b7f7f4123e23672eb3503b0052dcaaae7ce939f"
     }
   },
   "request": {
@@ -125,27 +125,27 @@
   "checks": {
     "def": {
       "database_units_per_um": 2000,
-      "component_count": 2490,
-      "die_width_um": 546.525,
-      "die_height_um": 546.525,
+      "component_count": 2499,
+      "die_width_um": 548.815,
+      "die_height_um": 548.815,
       "special_nets": false
     },
     "components": {
       "status": "ok",
-      "placed": 2490,
-      "as_built_netlist": 2490,
+      "placed": 2499,
+      "as_built_netlist": 2499,
       "synthesized": 2505,
-      "delta_vs_synthesized": -15
+      "delta_vs_synthesized": -6
     },
     "gds_geometry": {
       "status": "mismatch",
       "def_die_um": [
-        546.525,
-        546.525
+        548.815,
+        548.815
       ],
       "gds_extent_um": [
-        1093.05,
-        1093.05
+        1097.63,
+        1097.63
       ],
       "gds_over_def_ratio": [
         2.0,
