@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "engine": "opensta",
+  "engine_version": "26Q3-1260-g06a5a02279",
+  "klt_version": "klt 0.2.0",
+  "hdl_toplevel": "trng_top",
+  "netlist_path": "layout/digital/trng_top.pnr.v",
+  "sdf_path": "layout/digital/trng_top.sdf",
+  "pdk": {
+    "name": "gf180mcuD",
+    "cell_library": "gf180mcu_fd_sc_mcu9t5v0",
+    "corner": "ss_125C_3v00",
+    "tech_lef_corner": "nom"
+  },
+  "clock": {
+    "port": "clk",
+    "period_ns": 50.0
+  },
+  "coverage": {
+    "cell_delay": "modeled (per-instance IOPATH from the resolved liberty timing arcs, at the as-built netlist's real fan-out)",
+    "interconnect_delay": "not modeled -- zero-length/zero-RC net assumption; no DEF, no placement, no parasitic extraction (see this script's own module docstring)",
+    "min_typ_max": "identical -- one liberty corner only, no min/max variation written",
+    "icarus_unsupported_arcs_excluded": 1332,
+    "icarus_unsupported_cells_dropped_entirely": 46,
+    "top_level_interconnect_block_dropped": true
+  },
+  "sdf_sha256": "ae77633baa9dc59afa7da3e1fa5f78de83f8c13b034888b36e3417a48c500a88",
+  "sdf_content_sha256": "c35889d6de97677be092c44a6a0ba96cf8fe49a0eae54be7b36735a1b0f57b03"
+}

@@ -93,7 +93,7 @@ re-parsing prose.
 | `record` | The record's own filename stem. Self-identifying. |
 | `date` | UTC date/time the run completed, ISO 8601 (`2026-08-14T09:12:00Z`). |
 | `status` | `valid`, or `superseded` (see [Superseding](#superseding-a-record)). |
-| `level` | `transistor` or `behavioral` — which side of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary produced this. Absent means `transistor` (records predating DR-0009); new records state it. |
+| `level` | `transistor`, `behavioral`, or `post-route-gate` — what produced this. The first two are the two sides of the [DR-0009](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md) boundary; the third sits between them (see [Post-route gate-level records](#post-route-gate-level-records)). Absent means `transistor` (records predating DR-0009); new records state it. |
 | `testbench.path` | Repo-relative path to the testbench entry point. |
 | `testbench.sha` | `git rev-parse HEAD:<path>` — blob SHA of the testbench at run time. |
 | `netlist.path` | Repo-relative path to the DUT netlist/schematic-derived netlist. |
@@ -172,6 +172,51 @@ recorded result". The rule is unchanged for every claim that *has* a corner.
 
 ---
 
+## Post-route gate-level records
+
+`level: post-route-gate` is a **third** level, added by #147 for the digital
+partition's post-layout re-run (`sim/tb/trng-top-post-route/`). It is neither
+of the two DR-0009 levels and does not move that boundary:
+
+- Not `transistor` — no device model is instantiated and **ngspice is never
+  invoked**. `tool.ngspice` is `n/a` with that reason, as in a behavioral
+  record.
+- Not `behavioral` — there *is* an implementation in the loop: a placed-and-
+  routed gate-level netlist, a standard-cell library's timing Verilog, and
+  delays from a named liberty deck.
+
+The practical difference from `level: behavioral` is that these records **do**
+carry a corner, so DR-0009 rule 3's prohibition does not apply to them in the
+same blanket way. What such a corner *is*, though, has to be written down
+exactly:
+
+- `corner.process` / `corner.voltage` / `corner.temperature` are the
+  standard-cell **liberty deck's** characterisation point (e.g.
+  `gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00`), stated as such — a characterised
+  `.lib` file, not an ngspice model card.
+- The record therefore supports claims about **what the netlist does at that
+  deck's delays**, and no claim about device physics, entropy, rate or power.
+- A `timing_annotation` block is required, and it must state what the
+  annotation models **and what it omits** — cell vs. interconnect delay,
+  which annotation classes the simulator actually applied, how many corners.
+  An omission stated is a coverage limit; an omission unstated is a defect,
+  the same rule the `Caveats` section already carries.
+- Both the netlist and the annotation file are named with content hashes, and
+  the whole tool chain (`iverilog`, `cocotb`, `klt`, the tool that wrote the
+  SDF) is recorded, since none of it is ngspice and `tool.ngspice` alone would
+  say nothing about reproducibility.
+
+Like behavioral testbenches, a post-route gate-level testbench has **no
+`tb.json`** — `sim/run_corners.py` sweeps ngspice decks over a PVT grid and
+has nothing to do with a gate-level regression, whose corner comes from a
+liberty deck chosen at annotation time.
+
+Adding this level **does not re-label anything**. The five `level: behavioral`
+records the digital re-run compares against keep their level and their
+citation limits exactly as before.
+
+---
+
 ## Superseding a record
 
 Mistaken, misconfigured, or invalidated runs are **not** deleted or edited.
@@ -235,7 +280,10 @@ Mechanical; run through it before committing any record.
 - [ ] `tool.ngspice` is the verbatim version string, not "latest".
 - [ ] Corner is a single P/V/T point, and it is stated explicitly — or the
       record is `level: behavioral` and every device-model field carries
-      `n/a` plus a reason, and the input source is named.
+      `n/a` plus a reason, and the input source is named. A
+      `level: post-route-gate` record states its **liberty deck's**
+      characterisation point as the corner, says so, and carries a
+      `timing_annotation` block naming what the annotation models and omits.
 - [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed —
       `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.

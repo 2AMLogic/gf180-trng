@@ -1,0 +1,1588 @@
+{
+  "clock_period_ns": 50.0,
+  "default_sample_offset_ns": 40.0,
+  "drive_offset_ns": 5.0,
+  "leg": "rtl",
+  "output_ports": [
+    "reg_rdata",
+    "str_data",
+    "str_valid",
+    "ht_alarm"
+  ],
+  "reference": null,
+  "scenarios": {
+    "conditioner-blocks": {
+      "bus_reads": [
+        {
+          "cycle": 1546,
+          "dut_reg_rdata": 1692189052,
+          "model_reg_rdata": 946046802,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 1548,
+          "dut_reg_rdata": 3782233012,
+          "model_reg_rdata": 428970281,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 1550,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 1551,
+          "dut_reg_rdata": 8388944,
+          "model_reg_rdata": 8388944,
+          "reg_addr": 1
+        }
+      ],
+      "counterpart": "sim/tb/conditioner-crc32",
+      "cycles": 1552,
+      "dut_first_alarm_cycle": null,
+      "dut_trace_sha256": "26dc06ccbd06cd42818a556f24a3ac1ad3714b902f3c4239e4b1671a089cc5ff",
+      "expect": "match",
+      "first_mismatches": [
+        {
+          "cycle": 1280,
+          "got": {
+            "str_data": 0,
+            "str_valid": 0
+          },
+          "ports": [
+            "str_data",
+            "str_valid"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802,
+            "str_valid": 1
+          }
+        },
+        {
+          "cycle": 1281,
+          "got": {
+            "str_data": 0,
+            "str_valid": 0
+          },
+          "ports": [
+            "str_data",
+            "str_valid"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802,
+            "str_valid": 1
+          }
+        },
+        {
+          "cycle": 1282,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1283,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1284,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1285,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1286,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1287,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1288,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1289,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1290,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1291,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1292,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1293,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1294,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1295,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1296,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1297,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1298,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1299,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1300,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1301,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1302,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1303,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1304,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1305,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1306,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1307,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1308,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1309,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 1,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1310,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        },
+        {
+          "cycle": 1311,
+          "got": {
+            "str_data": 1692189052
+          },
+          "ports": [
+            "str_data"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": true,
+            "reg_addr": 0,
+            "reg_sel": false,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              0,
+              1
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "str_data": 946046802
+          }
+        }
+      ],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 269,
+      "model_conditioned_words": 2,
+      "model_first_alarm_cycle": null,
+      "model_raw_samples": 1544,
+      "model_startup_passes": 1,
+      "model_trace_sha256": "6aca45478ab74be9596caff35a471a87801f46e4f3209c5346eecf13bc649b82",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "shortened_from": "131072 samples (that testbench's `h050` scenario)",
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.622
+    },
+    "rct-stuck-output": {
+      "bus_reads": [
+        {
+          "cycle": 321,
+          "dut_reg_rdata": 8388933,
+          "model_reg_rdata": 8388933,
+          "reg_addr": 1
+        }
+      ],
+      "counterpart": "sim/tb/health-test-fault-injection",
+      "cycles": 322,
+      "dut_first_alarm_cycle": 282,
+      "dut_trace_sha256": "657f0621d3f51e93fc6dfe5fbd1a5f42410d26712f6134f7bc002aac2942b700",
+      "expect": "match",
+      "first_mismatches": [],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 0,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": 282,
+      "model_raw_samples": 321,
+      "model_startup_passes": 0,
+      "model_trace_sha256": "a862f1a06c934c630841925c2a4c3d9d6d6c4b3e7725f5423a787cfafe514748",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "shortened_from": "2000-sample lead-in (that testbench's `stuck-output` scenario)",
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.156
+    },
+    "reg-read-walk": {
+      "bus_reads": [
+        {
+          "cycle": 64,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 65,
+          "dut_reg_rdata": 2097224,
+          "model_reg_rdata": 2097224,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 66,
+          "dut_reg_rdata": 135793,
+          "model_reg_rdata": 135793,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 67,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 68,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 69,
+          "dut_reg_rdata": 1048648,
+          "model_reg_rdata": 1048648,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 70,
+          "dut_reg_rdata": 2987397518,
+          "model_reg_rdata": 2987397518,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 71,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 72,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 73,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 74,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 75,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 76,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 77,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 78,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 79,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 80,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 81,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 82,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 83,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 84,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 85,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 86,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 87,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 88,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 89,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 90,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 91,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 92,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 93,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 94,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 95,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        }
+      ],
+      "counterpart": "n/a (post-route-level only)",
+      "cycles": 96,
+      "dut_first_alarm_cycle": null,
+      "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+      "expect": "match",
+      "first_mismatches": [],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 0,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": null,
+      "model_raw_samples": 64,
+      "model_startup_passes": 0,
+      "model_trace_sha256": "384a2504852e8beab61c50541a639354d7a49ac1b02cf6a51719d280a37e1b74",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.103
+    },
+    "reg-read-walk-early-sample": {
+      "bus_reads": [
+        {
+          "cycle": 64,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 65,
+          "dut_reg_rdata": 2097224,
+          "model_reg_rdata": 2097224,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 66,
+          "dut_reg_rdata": 135793,
+          "model_reg_rdata": 135793,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 67,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 68,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 69,
+          "dut_reg_rdata": 1048648,
+          "model_reg_rdata": 1048648,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 70,
+          "dut_reg_rdata": 2987397518,
+          "model_reg_rdata": 2987397518,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 71,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 72,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 73,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 74,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 75,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 76,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 77,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 78,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 79,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 80,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 81,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 82,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 83,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 84,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 85,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 86,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 87,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 88,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 89,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 90,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 91,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 92,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 93,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 94,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 95,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        }
+      ],
+      "counterpart": "n/a (post-route-level only -- negative control)",
+      "cycles": 96,
+      "dut_first_alarm_cycle": null,
+      "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+      "expect": "mismatch",
+      "first_mismatches": [],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "mismatch",
+      "leg": "rtl",
+      "mismatch_cycles": 0,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": null,
+      "model_raw_samples": 64,
+      "model_startup_passes": 0,
+      "model_trace_sha256": "384a2504852e8beab61c50541a639354d7a49ac1b02cf6a51719d280a37e1b74",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 0.1,
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.071
+    },
+    "reg-read-walk-settle-sweep": {
+      "counterpart": "n/a (post-route-level only)",
+      "cycles_per_pass": 96,
+      "expect": "settle-sweep",
+      "kind": "settle-sweep",
+      "largest_dirty_offset_ns": null,
+      "leg": "rtl",
+      "smallest_clean_offset_ns": 0.1,
+      "sweep": [
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 0.1,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 0.5,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 1.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 2.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 4.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 8.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 16.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 24.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 32.0,
+          "unresolved_cycles": 0
+        },
+        {
+          "dut_trace_sha256": "1bd96539869ce3eb6a973dc3d9c50cde3470b94fe0f77a14e0bd62c292da9025",
+          "mismatch_cycles": 0,
+          "registered_handoff_probe_mismatch_cycles": 0,
+          "sample_offset_ns": 44.0,
+          "unresolved_cycles": 0
+        }
+      ]
+    },
+    "ring1-stuck": {
+      "bus_reads": [
+        {
+          "cycle": 241,
+          "dut_reg_rdata": 7340612,
+          "model_reg_rdata": 7340612,
+          "reg_addr": 1
+        }
+      ],
+      "counterpart": "sim/tb/ring-liveness-fault-injection",
+      "cycles": 242,
+      "dut_first_alarm_cycle": 201,
+      "dut_trace_sha256": "178664904db7d262a0882f32b95580cc00d9d8f077b8e331544ff8b6de0fe6ac",
+      "expect": "match",
+      "first_mismatches": [],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 0,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": 201,
+      "model_raw_samples": 241,
+      "model_startup_passes": 0,
+      "model_trace_sha256": "a54f21a928f09f7f690627a86fd81d19330b165d05d72053f6af48cd3c316d2b",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "shortened_from": "2000-sample lead-in (that testbench's `ring1-stuck` scenario)",
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.118
+    },
+    "smoke": {
+      "bus_reads": [
+        {
+          "cycle": 10,
+          "dut_reg_rdata": 8,
+          "model_reg_rdata": 8,
+          "reg_addr": 1
+        }
+      ],
+      "counterpart": "sim/tb/smoke-trng-top",
+      "cycles": 11,
+      "dut_first_alarm_cycle": null,
+      "dut_trace_sha256": "6ef49cf76a7d6d74bf36d113e64c7b011e93196442136cca3d9dc2f7dfc56e40",
+      "expect": "match",
+      "first_mismatches": [],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 0,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": null,
+      "model_raw_samples": 10,
+      "model_startup_passes": 0,
+      "model_trace_sha256": "510e647f2c0f91d02f141c1cf163e00833bdcfa283e7ba8f939a3f2e7328b89e",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.003
+    },
+    "startup-and-regfile": {
+      "bus_reads": [
+        {
+          "cycle": 200,
+          "dut_reg_rdata": 6291528,
+          "model_reg_rdata": 6291528,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 400,
+          "dut_reg_rdata": 505938180,
+          "model_reg_rdata": 505938180,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 1024,
+          "dut_reg_rdata": 8388936,
+          "model_reg_rdata": 8388944,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 1025,
+          "dut_reg_rdata": 0,
+          "model_reg_rdata": 0,
+          "reg_addr": 2
+        },
+        {
+          "cycle": 1026,
+          "dut_reg_rdata": 2748909570,
+          "model_reg_rdata": 2748909570,
+          "reg_addr": 3
+        },
+        {
+          "cycle": 1028,
+          "dut_reg_rdata": 7340112,
+          "model_reg_rdata": 7340112,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 1030,
+          "dut_reg_rdata": 3,
+          "model_reg_rdata": 3,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 1047,
+          "dut_reg_rdata": 16,
+          "model_reg_rdata": 16,
+          "reg_addr": 1
+        },
+        {
+          "cycle": 1065,
+          "dut_reg_rdata": 1,
+          "model_reg_rdata": 1,
+          "reg_addr": 0
+        },
+        {
+          "cycle": 1066,
+          "dut_reg_rdata": 16,
+          "model_reg_rdata": 16,
+          "reg_addr": 1
+        }
+      ],
+      "counterpart": "sim/tb/interface-regfile",
+      "cycles": 1067,
+      "dut_first_alarm_cycle": null,
+      "dut_trace_sha256": "49fbc43636f9ca956ef5626aad2eb6bb76a784ab4db730694a22a02525514e0c",
+      "expect": "match",
+      "first_mismatches": [
+        {
+          "cycle": 1024,
+          "got": {
+            "reg_rdata": 8388936
+          },
+          "ports": [
+            "reg_rdata"
+          ],
+          "stimulus": {
+            "raw_bit": 0,
+            "raw_valid": false,
+            "reg_addr": 1,
+            "reg_sel": true,
+            "reg_wdata": 0,
+            "reg_write": false,
+            "ring_bit": [
+              1,
+              0
+            ],
+            "str_ready": false
+          },
+          "want": {
+            "reg_rdata": 8388944
+          }
+        }
+      ],
+      "first_registered_handoff_probe_mismatches": [],
+      "first_unresolved": [],
+      "kind": "match",
+      "leg": "rtl",
+      "mismatch_cycles": 1,
+      "model_conditioned_words": 0,
+      "model_first_alarm_cycle": null,
+      "model_raw_samples": 1056,
+      "model_startup_passes": 1,
+      "model_trace_sha256": "779da1801e0118650e8449bbd64bf73beaa7537ffa22b5174078b07610bfa45f",
+      "registered_handoff_probe_mismatch_cycles": 0,
+      "sample_offset_ns": 40.0,
+      "shortened_from": "4096 samples (that testbench's `startup` scenario)",
+      "unresolved_cycles": 0,
+      "wall_time_s": 0.224
+    }
+  },
+  "schema_version": 2
+}
