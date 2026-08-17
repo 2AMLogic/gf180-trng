@@ -14,10 +14,10 @@ this script**, not a bug in it: `main()` records whatever `klt
 place-and-route` actually reports, including a documented failure, rather
 than only handling the success path.
 
-What is committed, and what is deliberately not
+What is committed, and what is gated behind a check
 -------------------------------------------------
-`klt place-and-route` returns three artefacts. This script commits the two
-that survive its checks:
+`klt place-and-route` returns three artefacts. This script commits all three,
+the third only when `_gds_geometry_check` below passes:
 
 - **`trng_top.def`** -- the routed DEF, OpenROAD's own output. Committed.
 - **`trng_top.pnr.v`** -- the *as-built* gate-level netlist (`write_verilog`
@@ -26,17 +26,19 @@ that survive its checks:
   to use as its reference rather than `klt synthesize`'s pre-CTS netlist.
   Committed.
 - **`trng_top.gds`** -- the DEF merged with the standard cells' own GDS
-  views. **Not committed as of this writing**, because `_gds_geometry_check`
-  below catches it being geometrically wrong: every DEF-derived shape
-  (placement coordinates, routing, vias) comes out at exactly 2x its true
-  size while the standard-cell geometry stays at 1x, so the cells sit on a
-  stretched grid that no longer abuts its own power rails. The cause is a
-  database-unit defect in the DEF->GDS merge, reproduced in eight lines and
-  filed generically upstream (see `layout/digital/README.md`'s "Two defects
-  this bring-up found" section). This script writes the GDS only when the
-  check passes, so the artefact appears by itself once the tool is fixed --
-  and `klt drc` over it, gated behind the same check, starts running in the
-  same run.
+  views. `_gds_geometry_check` below compares the merged stream's own extent
+  against the DEF's own `DIEAREA`, and only commits the GDS (plus runs `klt
+  drc` over it, gated behind the same check) when the ratio is 1:1. From
+  when this script was first written until #170, that check always failed:
+  every DEF-derived shape (placement coordinates, routing, vias) came out at
+  exactly 2x its true size while the standard-cell geometry stayed at 1x, so
+  the cells sat on a stretched grid that no longer abutted its own power
+  rails -- a database-unit defect in the DEF->GDS merge, reproduced in eight
+  lines and filed generically upstream as klayout-tools#1090 (see
+  `layout/digital/README.md`'s "Two defects this bring-up found" section).
+  Fixed upstream by klayout-tools#1114; this repository re-pinned `klt` past
+  that fix in #170, and the GDS (plus `klt drc`'s report) has been committed
+  since.
 
 Why this differs from `design/synth.py`'s shape
 -------------------------------------------------

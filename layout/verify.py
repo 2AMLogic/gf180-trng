@@ -160,15 +160,26 @@ EXIT_FAIL = 1
 # whether a category is a finding or a disclosure, and this table has to
 # carry two `severity: "warning"` categories on *every* fixture:
 #
-#   device.body_unverified x2   one per MOS: the deck compares each device's
-#                               body terminal against a net it synthesized
-#                               (`vsubs` for NMOS, an anonymous well net for
-#                               PMOS) rather than a real schematic net, so
-#                               that terminal was not actually verified.
-#                               This is the deck limitation layout/README.md
-#                               has always documented in prose under "Bulk
-#                               terminals are approximated"; klayout-tools
-#                               #281 made the tool state it per run instead.
+#   device.body_unverified x1   one per NMOS: the deck compares each
+#                               device's body terminal against `vsubs`, a
+#                               net it synthesized, rather than a real
+#                               schematic net, so that terminal was not
+#                               actually verified. This is the NMOS half of
+#                               the deck limitation layout/README.md
+#                               documents in prose under "Bulk terminals are
+#                               approximated"; klayout-tools #281 made the
+#                               tool state it per run instead. The PMOS half
+#                               is identically unverified on every fixture
+#                               here (verified directly against `klt
+#                               extract`'s own output, per layout/README.md)
+#                               but, as of klayout-tools#1113 (this
+#                               repository's `klt` re-pin, #170), the deck
+#                               now *declares* a derivable well-tap
+#                               mechanism and the tool stops disclosing the
+#                               PMOS half regardless of whether a given
+#                               layout actually drew one -- was x2 before
+#                               #170, is x1 now, with no change to what is
+#                               actually verified on these fixtures.
 #   topology x1                 a device class the deck declares (bjt,
 #                               cap_mim, resistor -- klayout-tools #219/#227)
 #                               has no counterpart on the reference side, and
@@ -176,7 +187,7 @@ EXIT_FAIL = 1
 #                               says so itself: "not a real topology
 #                               mismatch".
 #
-# Both appeared on 2026-08-02 without any version string moving -- see
+# Both first appeared on 2026-08-02 without any version string moving -- see
 # layout/README.md, "Pinning the tool", for why `klt --version` could not
 # have told us and what identifies a klt build instead. They are recorded
 # rather than filtered out because the point of this table is that a report
@@ -190,7 +201,7 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "trng_tc_inv.spice",
             "status": "match",
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             # Nothing the tool calls an error. That, not `status: match`
             # alone, is what "the flow accepts a correct cell" means now.
             "error_count": 0,
@@ -220,7 +231,7 @@ EXPECTATIONS: dict[str, dict] = {
             "category_counts": {
                 "net.unmatched": 1,
                 "device.unmatched": 1,
-                "device.body_unverified": 2,
+                "device.body_unverified": 1,
                 "topology": 1,
             },
             "error_count": 2,
@@ -247,7 +258,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -273,7 +284,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -297,7 +308,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -324,7 +335,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -353,7 +364,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's two devices are both MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -378,7 +389,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twelve devices are all MOS, so nothing else is
             # declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -405,7 +416,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twenty-two devices are all MOS, so nothing else is
             # declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -432,7 +443,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # forty-six devices here are MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -460,7 +471,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same two deck-level disclosures every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # forty-six devices here are MOS, so nothing else is declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },
@@ -495,7 +506,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # one hundred and four devices here are MOS, so nothing else is
             # declared.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
+            "category_counts": {"device.body_unverified": 1, "topology": 1},
             "error_count": 0,
         },
     },

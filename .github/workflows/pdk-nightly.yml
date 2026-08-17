@@ -210,11 +210,28 @@ jobs:
       # PyPI one -- see layout/README.md's "Pinning the tool" section --
       # which is why the ref is spelled out here instead of floating on
       # `main`/`--upgrade`.
+      #
+      # e501e261c1ac9b96a08e2c3569bf6207123a5b6a (#170) supersedes the prior
+      # a482d393 pin. The commit that actually motivated the bump is
+      # klayout-tools#1114: the fix for the DEF->GDS merge's database-unit
+      # defect (klayout-tools#1090) that made every DEF-derived shape in
+      # `klt place-and-route`'s merged GDS come out 2x its true size.
+      # e501e261 is one commit past that fix rather than exactly at it,
+      # picking up klayout-tools#1115 too (a DRC deck correctness fix,
+      # scoping gf180mcu's DF.1a/DF.3a rules to Dualgate) with no other gap
+      # in between -- see #170. Between a482d393 and #1114 on `main` also
+      # sits klayout-tools#1113 (gf180mcu well/substrate-tap derivation from
+      # drawn Nplus/Pplus geometry): not something #170 went looking for,
+      # but unavoidable on the way to #1114, and its side effect is visible
+      # in this repository's own committed reports (`layout/verify.py`'s
+      # `device.body_unverified` expectation dropped from 2 to 1 per
+      # fixture -- see that file's own comment for why, and
+      # layout/README.md's "Bulk terminals are approximated").
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623"
+            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@e501e261c1ac9b96a08e2c3569bf6207123a5b6a"
           klt --version
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same

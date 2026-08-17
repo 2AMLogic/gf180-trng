@@ -2,7 +2,7 @@
   "klt": "klt 0.2.0",
   "klt_origin": {
     "url": "https://github.com/2AMLogic/klayout-tools",
-    "commit": "a482d3934bd644b763cf925f6344ac05f54a1623"
+    "commit": "e501e261c1ac9b96a08e2c3569bf6207123a5b6a"
   },
   "deck": "gf180mcu",
   "pdk": {

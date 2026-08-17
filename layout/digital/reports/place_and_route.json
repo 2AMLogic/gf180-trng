@@ -78,7 +78,7 @@
   ],
   "macros": [],
   "def_path": "layout/digital/trng_top.def",
-  "gds_path": null,
+  "gds_path": "layout/digital/trng_top.gds",
   "layer_map": {
     "resolution": "family"
   },
@@ -89,11 +89,11 @@
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00",
-      "content_hash": "sha256:c31d836785af6af4502aadaaf7cc0f604119d38fd66b8ee32733510eabdad6d2"
+      "content_hash": "sha256:d83917f827021eadb159f6011905bf20de632533b2953abba89266a88c2b24af"
     },
     "input": {
       "content_hash": "sha256:ee105f2e9bd5935dd9aa1c369b7f7f4123e23672eb3503b0052dcaaae7ce939f"
@@ -138,21 +138,28 @@
       "delta_vs_synthesized": -6
     },
     "gds_geometry": {
-      "status": "mismatch",
+      "status": "ok",
       "def_die_um": [
         548.815,
         548.815
       ],
       "gds_extent_um": [
-        1097.63,
-        1097.63
+        548.815,
+        548.815
       ],
       "gds_over_def_ratio": [
-        2.0,
-        2.0
+        1.0,
+        1.0
       ],
       "tolerance_pct": 5.0
     }
   },
-  "drc": null
+  "drc": {
+    "status": "violations",
+    "deck": "gf180mcu",
+    "violation_count": 149,
+    "rule_counts": {
+      "nwell.space.1": 149
+    }
+  }
 }
