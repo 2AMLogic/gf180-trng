@@ -1114,8 +1114,11 @@ run did **not** model, and therefore a claim this record cannot support:
   deck), so `-T min` and `-T max` would simulate the same numbers as the
   `typ` this run used.
 - **No parasitic coupling, no IR drop, no on-chip variation, no SSTA.** The
-  power grid is not in this simulation — and per #171 it is not in the
-  committed layout yet either.
+  power grid is not in this simulation at all, regardless of whether it is in
+  the committed layout: `gen_sdf.py` links the netlist against the liberty
+  deck alone, with no DEF and no parasitic extraction in the loop (see the
+  interconnect-delay caveat above), so it would carry no PDN even for a DEF
+  that has one — as this DEF has, since #171.
 - **Stimulus is a bounded slice, not the behavioural scenario.** Each scenario
   runs the shortest prefix that exercises the mechanism it is named for; the
   Result table's scenario definitions record the behavioural length each was

@@ -1,0 +1,35 @@
+{
+  "engine": "icarus",
+  "hdl_toplevel": "trng_top",
+  "options": {
+    "includes": [
+      "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/interface"
+    ],
+    "random_seed": 1,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ]
+  },
+  "sources": [
+    "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/trng_top/trng_top.v",
+    "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/conditioner/crc32_conditioner.v",
+    "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/health_test/rct_apt.v",
+    "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/health_test/ring_liveness.v",
+    "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/design/interface/trng_interface.v"
+  ],
+  "testbench": {
+    "module": "post_route_tb",
+    "search_path": "/home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/sim/tb/trng-top-post-route",
+    "testcase": [
+      "smoke",
+      "startup_and_regfile",
+      "conditioner_blocks",
+      "rct_stuck_output",
+      "ring1_stuck",
+      "reg_read_walk",
+      "reg_read_walk_early_sample",
+      "reg_read_walk_settle_sweep"
+    ]
+  }
+}

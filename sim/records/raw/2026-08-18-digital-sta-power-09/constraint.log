@@ -1,0 +1,91 @@
+OpenROAD 26Q3-1278-g4421880472 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: /home/ubuntu/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/techlef/gf180mcu_fd_sc_mcu9t5v0__nom.tlef, created 15 layers, 56 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /home/ubuntu/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef at line 2.
+
+[INFO ODB-0227] LEF file: /home/ubuntu/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef, created 229 library cells
+[INFO ODB-0127] Reading DEF file: /home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/layout/digital/trng_top.def
+[INFO ODB-0128] Design: trng_top
+[INFO ODB-0130]     Created 111 pins.
+[INFO ODB-0131]     Created 8638 components and 42907 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 33606 connections.
+[INFO ODB-0133]     Created 2498 nets and 9254 connections.
+[INFO ODB-0134] Finished DEF file: /home/ubuntu/loom-workspaces/gf180-trng/.loom/worktrees/issue-183/layout/digital/trng_top.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[WARNING RCX-0514] The ext_model_file option is deprecated. Use set_extraction_rules_file command instead.
+[INFO RCX-0435] Reading extraction model file /home/ubuntu/.volare/gf180mcuD/libs.tech/openlane/rules.openrcx.gf180mcuD.max ...
+[INFO RCX-0436] RC segment generation trng_top (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 11641 rc segments
+[INFO RCX-0439] Coupling Cap extraction trng_top ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 51% of 27917 wires extracted
+[INFO RCX-0442] 100% of 27917 wires extracted
+[INFO RCX-0045] Extract 2498 nets, 14107 rsegs, 14107 caps, 30484 ccs
+[INFO RCX-0443] 2498 nets finished
+STA_METRIC worst_setup_slack_ideal_s 3.592606034885648e-8
+STA_METRIC worst_hold_slack_ideal_s 1.1962166812651276e-9
+STA_METRIC period_ns 50.0
+STA_METRIC worst_setup_slack_s 3.585350327739434e-8
+STA_METRIC worst_hold_slack_s 1.2342340482973668e-9
+STA_METRIC tns_setup_s 0.0
+STA_METRIC tns_hold_s 0.0
+STA_METRIC clock_skew_setup_s 1.1295497870378313e-10
+STA_METRIC clock_skew_hold_s 1.1295497870378313e-10
+STA_METRIC cell_area_m2 1.1600064198091786e-7
+STA_METRIC utilization 0.41863591916559234
+worst slack max 35.8535
+worst slack min 1.2342
+tns max 0.0000
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2606_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   35.8535
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2596_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   35.8847
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2593_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   35.8994
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2604_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   35.9059
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2598_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   35.9063
+
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_2663_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2663_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2342
+u_interface/_3069_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_3069_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2347
+u_interface/_2678_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2678_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2355
+u_interface/_2671_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2671_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2377
+u_interface/_2668_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2668_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2435
+
+Clock clk
+ 1.9766 source latency u_interface/_3147_/CLK ^
+-1.8637 target latency u_interface/_2714_/CLK ^
+ 0.0000 CRPR
+--------------
+ 0.1130 setup skew
+
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           5.111201e-03 4.863242e-04 1.555007e-07 5.597680e-03  53.1%
+Combinational        1.243427e-03 1.276979e-03 1.128455e-07 2.520519e-03  23.9%
+Clock                8.194207e-04 1.601220e-03 1.408728e-07 2.420782e-03  23.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                7.174041e-03 3.364528e-03 4.092138e-07 1.053898e-02 100.0%
+                            68.1%        31.9%         0.0%
+Design area 116001 um^2 42% utilization.
+Warning: There are 42 input ports missing set_input_delay.
+Warning: There are 66 output ports missing set_output_delay.
+Warning: There are 68 unconstrained endpoints.
+STA_METRIC bisect_slack_at_lo_s -1.4046495522279656e-8
+STA_METRIC min_period_ns 14.146557617187502
+STA_METRIC min_period_slack_s 6.039613253960852e-14
+STA_METRIC min_period_hold_slack_s 1.2342340482973668e-9

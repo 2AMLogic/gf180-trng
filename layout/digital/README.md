@@ -122,28 +122,29 @@ deliverable, and it is #145 that gets to state them.
 **It has**: [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
 re-times this directory's committed DEF at fifteen corners (five 3.3 V liberty
 decks × three interconnect decks) with OpenRCX-extracted parasitics and a
-*propagated* clock, and reports an Fmax floor of **37.04 MHz** at
+*propagated* clock, and reports an Fmax floor of **35.63 MHz** at
 `ss_125C_3v00` with `max` interconnect, positive setup and hold slack and zero
-TNS at every corner. It also reconciles the +27.7 ns this directory reported
-at the time with its own +23.8 ns at the same liberty corner: 3.83 ns of that
-is extraction versus the global-routing estimate, 0.145 ns is the real clock
+TNS at every corner. It also reconciles the +27.8 ns this directory reports
+above with its own +22.9 ns at the same liberty corner: 4.77 ns of that
+is extraction versus the global-routing estimate, 0.100 ns is the real clock
 tree.
 
-> **That characterization ran against the pre-[#171][gf171] DEF.** #171
-> re-ran place-and-route to build the PDN, which changed the placement and
-> the clock tree — the numbers in the table above moved by tens of
-> picoseconds (+27.7 → +27.8 ns worst slack, 0.40 → 0.35 ns skew, 2499 →
-> 2502 logical instances). #145's records
-> (`sim/records/2026-08-17-digital-sta-power-*.md`) and #147/#177's
-> post-route functional run
-> (`sim/records/2026-08-17-trng-top-post-route-01.md`) are still accurate
-> statements about the netlist and DEF they name and hash, and this
-> repository's records are append-only, so they stand. What they no longer
-> describe is *this directory's current* committed artefacts. Re-running
-> both against the powered DEF is follow-up work, tracked as
-> [#183](https://github.com/2AMLogic/gf180-trng/issues/183) — and it is the
-> first such run that would see a supply network at all, since the pre-#171
-> DEF had no power geometry for OpenRCX to extract.
+**This characterization runs against the powered DEF ([#171][gf171]).**
+#171 re-ran place-and-route to build the PDN, which changed the placement and
+the clock tree from the numbers `sim/records/2026-08-17-digital-sta-power-*.md`
+recorded (+27.7 → +27.8 ns worst slack, 0.40 → 0.35 ns skew, 2499 → 2502
+logical instances) — those earlier records are still accurate statements
+about the pre-[#171] netlist and DEF they name and hash, and this
+repository's records are append-only, so they stand, but they no longer
+describe *this directory's current* committed artefacts.
+`sim/records/2026-08-18-digital-sta-power-*.md` supersedes them for that
+purpose, and is also the **first** run of this kind that sees a supply
+network at all: OpenRCX now extracts real rail and strap geometry rather than
+finding none ([#183](https://github.com/2AMLogic/gf180-trng/issues/183)).
+#147/#177's post-route functional run against the pre-[#171] netlist is
+likewise superseded, for that purpose, by
+`sim/records/2026-08-18-trng-top-post-route-01.md` (see "What this
+establishes, and what it does not" below).
 
 ## Corners
 
@@ -223,9 +224,12 @@ already 2.5× the whole-block budget.
 
 **#145 has since done that reconciliation**
 ([`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
-§3): the placed cell area is **113 087.9 µm²**, ×1.518 the inventory estimate,
-splitting into ×1.209 from cell count/mix and ×1.256 from 9-track rather than
-7-track rows. The area row itself is still [#150][gf150]'s.
+§3): the placed cell area (logical instances plus [#171][gf171]'s
+tapcell/endcap/filler population) is **116 000.6 µm²**, ×1.557 the inventory
+estimate, splitting into ×1.212 from cell count/mix, ×1.256 from 9-track
+rather than 7-track rows, and a further ×1.024 from the power-delivery cells
+that logical-instance count above excludes. The area row itself is still
+[#150][gf150]'s.
 
 ## Power
 
@@ -314,10 +318,13 @@ it is **not** a power result, it does not supersede
 
 **#145 has since done that comparison** —
 [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md),
-from this directory's own committed DEF re-timed at fifteen corners with
-extracted parasitics: 8.45 mW at this corner at 20 MHz and 424 µW at
+from this directory's own committed, powered DEF re-timed at fifteen corners
+with extracted parasitics: 8.56 mW at this corner at 20 MHz and 432 µW at
 DR-0003's ratified 1 MHz raw rate, under a declared 0.25 transitions/net/cycle
-activity, against the library-based estimate's 16.7 µW. The delta and its
+activity, against the library-based estimate's 16.7 µW. Leakage at this
+corner is 3.95 µW, up from 1.39 µW pre-[#171][gf171] — [#171]'s
+tapcell/endcap/filler population now contributes its own leakage, on top of
+the logic's (that document's §4.1/§4.2). The dynamic-power delta and its
 causes are that document's §4; nothing in this directory is edited by it.
 
 ## Two defects this bring-up found
@@ -664,8 +671,12 @@ latch-up tie-spacing requirement — `tapcell -distance 100` is ORFS's gf180
 platform value, adopted, not derived here. Not an area or power result. Not
 a corner characterization: one implementation corner, and the multi-corner
 sweep the tool does offer cannot yet be scoped to this block's supply; the
-extracted-parasitics characterizations that exist (#145, #147/#177) were run
-against the *pre-#171* DEF and have not been re-run against this one. Not a
+extracted-parasitics characterizations (#145,
+`sim/records/2026-08-18-digital-sta-power-*.md`) and the post-route
+functional re-run (#147/#177,
+`sim/records/2026-08-18-trng-top-post-route-01.md`) have both been re-run
+against this powered DEF — see [Timing](#timing) and [Power](#power) above
+([#183](https://github.com/2AMLogic/gf180-trng/issues/183)). Not a
 **system**-level PDN: the star-routing composition with `vddr1`/`vddr2`/`vdd`
 is `layout/floorplan/`'s job, and nothing in this run's netlist even names
 those supplies. Not a manufacturable block: no pad/IO integration, and no
