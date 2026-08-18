@@ -412,9 +412,9 @@ commit and sends the block, in [#171][gf171]:
   floorplan's own star-routing requirement demands.
 - `klt drc` over the merged GDS goes from **149 violations to clean**: all
   149 were the missing fillers, and inserting them closed every one.
-- `klt lvs` goes from **7694 mismatches to 9**, with the
-  `net.split`/`net.merged` cascade gone entirely — see
-  [LVS](#lvs) for what the 9 are.
+- `klt lvs` goes from **7694 mismatches to 9** (later **8**, [#186][gf186]),
+  with the `net.split`/`net.merged` cascade gone entirely — see
+  [LVS](#lvs) for what the residuals are.
 
 What this does **not** fix is composition: this is still a standalone
 place-and-route with no pad/IO ring and no placement inside
@@ -493,11 +493,11 @@ transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
 | | | #170 |
 |---|---|---|
 | Verdict | `mismatch` | `mismatch` |
-| Mismatch count | **9** | 7694 |
+| Mismatch count | **8** | 7694 |
 | `net.merged` / `net.split` | 0 / 0 | 3786 / 411 |
 | `net.unmatched` | 1 | 0 |
-| `topology` | 8 (6 of them severity `warning`) | 3497 |
-| Nets (layout / reference) | 2548 / 2516, 2964 matched | 4165 / 7519 |
+| `topology` | 7 (6 of them severity `warning`) | 3497 |
+| Nets (layout / reference) | 2548 / 2547, 2995 matched | 4165 / 7519 |
 | Pins (layout / reference) | 109 / 109 | 109 / 109 |
 | Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring | 0 / 0 |
 
@@ -516,30 +516,59 @@ physical-only tapcell/endcap/filler instances out of the committed DEF's
 sides now carry the same 8638 instances with identical per-master counts
 (verified directly), and the `net.split`/`net.merged` cascade is gone.
 
-**What the 9 residuals are.** Six of the eight `topology` entries are
-severity `warning`, not `error`: ambiguous net pairings the comparer
-resolved structurally anyway (six symmetric `u_interface` nets). The three
-errors are all one cell. `clkload13` is a CTS clock-*load* dummy —
-OpenROAD inserts it purely for capacitance, so its `ZN` output is
-unconnected by construction, and `trng_top.pnr.v` instantiates it as
-`gf180mcu_fd_sc_mcu9t5v0__inv_8 clkload13 (.I(clknet_leaf_48_clk));` with no
-other port. Two consequences fall out:
+**What the 8 residuals are, and what #186 fixed.** Six of the seven
+`topology` entries are severity `warning`, not `error`: ambiguous net
+pairings the comparer resolved structurally anyway (six symmetric
+`u_interface` nets) — unaffected by #186, unchanged before and after.  The
+remaining two errors (one `net.unmatched`, one `topology`) are both one
+cell. `clkload13` is a CTS clock-*load* dummy — OpenROAD inserts it purely
+for capacitance, so its `ZN` output is unconnected by construction, and
+`trng_top.pnr.v` instantiates it as `gf180mcu_fd_sc_mcu9t5v0__inv_8
+clkload13 (.I(clknet_leaf_48_clk));` with no other port.
 
-1. `lvs.py` derives each cell type's reference interface from the ports its
-   instances actually connect, so `inv_8` — whose only instance connects
-   just `I` — gets a three-pin `.SUBCKT ... I VDD VSS` against the layout's
-   four-pin `I VDD VSS ZN`. That interface mismatch is why one instance on
-   each side reports "subcircuit instance could not be matched". Deriving
-   interfaces from the library instead of from observed connections is the
-   real fix, and it is `lvs.py`'s pre-existing shape rather than anything
-   #171 changed — it was simply invisible under 7694 other mismatches.
-2. The one `net.unmatched` is `clkload13`'s input. `trng_top.def` lists nine
-   terminals on `clknet_leaf_48_clk` (a buffer output, seven flip-flop `CLK`
-   pins and `clkload13 I`) and nine `Via1_HV` pin-access vias to serve them;
-   the extraction resolves eight, with `clkload13`'s `I` landing on an
-   unnamed island (`$2321`) instead. Whether that is a pin-access geometry
-   gap in the merged GDS or an extraction-deck connectivity gap is not
-   settled here.
+Before #186, `lvs.py` derived each cell type's reference interface from the
+ports its instances actually connect, so `inv_8` — whose only instance
+connects just `I` — got a three-pin `.SUBCKT ... I VDD VSS` against the
+layout's four-pin `I VDD VSS ZN`. That interface mismatch was why one
+instance *on each side* reported "subcircuit instance could not be
+matched" — two separate `topology` errors, `mismatch_count: 9`. #186 fixed
+that: `_library_cell_pins()` now reads each cell type's pin list back out of
+`klt extract --abstract-cells`'s own output instead of inferring it from
+observed connections, so `inv_8` correctly gets its real four-pin interface
+on both sides (`Xclkload13 clknet_leaf_48_clk vddd vss ZN$clkload13
+gf180mcu_fd_sc_mcu9t5v0__inv_8` in the regenerated reference). That closed
+one of the two `topology` errors — `mismatch_count: 9 → 8`.
+
+**The second `topology` error did not close, and turned out to be the same
+defect as the pre-existing `net.unmatched` residual, not a second one.**
+With the interface now matching, `klt lvs`'s comparer can structurally pair
+`Xclkload13` (reference) against its layout-side counterpart by cell type —
+but the pairing still fails, because the two sides disagree about what net
+`clkload13`'s `I` pin is on: `trng_top.def` lists nine terminals on
+`clknet_leaf_48_clk` (a buffer output, seven flip-flop `CLK` pins and
+`clkload13 I`) and nine `Via1_HV` pin-access vias to serve them — all nine
+present, verified by direct count — yet `klt extract --abstract-cells`
+resolves eight of the nine terminals onto `clknet_leaf_48_clk` and
+`clkload13`'s `I` onto its own isolated, unnamed island net instead
+(`trng_top.extracted.spice`: `Xgf180mcu_fd_sc_mcu9t5v0__inv_8_0 $2320 vddd
+vss $2208`). That single unresolved terminal is *both* the `net.unmatched`
+entry (the layout's copy of `clknet_leaf_48_clk` is missing this one
+terminal) and the reason the `topology` pairing still fails (the instance's
+connectivity, not just its interface, has to match too) — one root cause,
+two report entries, and #186's interface fix could only ever close the
+entry it actually targeted.
+
+Placement/orientation arithmetic against `gf180mcu_fd_sc_mcu9t5v0__inv_8`'s
+LEF puts one of the nine vias squarely inside the cell's `I`-pin geometry
+(the LEF declares `I` as two disjoint Metal1 rectangles; the via lands in
+the first one) — so the drawn routing is not obviously missing anything a
+`klt components` scan can see. That points more at an extraction-side
+pin/net unification gap for this two-rectangle pin shape than at a
+drawn-geometry defect, but a generic (deck-free) connectivity scan cannot
+rule out a real transistor-level gap either. Filed generically upstream as
+[klayout-tools#1181][klt1181] and tracked here as [#187][gf187], rather than
+resolved in this PR — per the "no claim without a testbench" discipline,
+an unsettled diagnosis does not get waved into a `match`.
 
 Neither residual has functional weight — the cell drives nothing — but
 neither is waved away either: this is a `mismatch`, not a `match`, and the
@@ -547,14 +576,18 @@ report says so. `clkload13` is also new to *this* clock tree; #170's run had
 no `inv_8` instance at all, which is the module docstring's own point about
 placement and CTS not being byte-reproducible run to run.
 
-**Attributing those three errors cost more than it should have.** `klt lvs`'s
-mismatch entries for an unmatched subcircuit carry `net: null`, `device:
-null` and no circuit or instance name at all, so the report says how many
-circuits failed to pair and never which — the answer above came from diffing
-the two SPICE files' `.SUBCKT` name sets by hand. Filed generically upstream
-as [klayout-tools#1132][klt1132], along with the smaller observation that
+**Attributing those errors cost more than it should have, twice over now.**
+`klt lvs`'s mismatch entries for an unmatched subcircuit carry `net: null`,
+`device: null` and no circuit or instance name at all, so the report says
+how many circuits failed to pair and never which — the original three-error
+attribution above came from diffing the two SPICE files' `.SUBCKT` name sets
+by hand, and #186's re-diagnosis of the remaining two (after its own fix
+closed the third) came from the same kind of by-hand cross-referencing
+against `trng_top.def`/the standard-cell LEF. Filed generically upstream as
+[klayout-tools#1132][klt1132], along with the smaller observation that
 `category_counts` aggregates `error` and `warning` severities into one
-number (this run's `"topology": 8` is six warnings and two errors).
+number (pre-#186 this run's `"topology": 8` was six warnings and two
+errors; post-#186 it is `"topology": 7`, six warnings and one error).
 
 ## SDF export
 
@@ -660,10 +693,11 @@ moved with it:
   the layout-side half of `layout/floorplan/README.md`'s mitigation 2.
 
 **Does not establish.** Not signoff timing (no extraction, no SPEF, ideal
-clock). Not an LVS-matching layout: 9 residual mismatches remain, three of
+clock). Not an LVS-matching layout: 8 residual mismatches remain, two of
 them errors, all traced to one CTS clock-load dummy cell — see
-[LVS](#lvs) for exactly what they are and which of them is `lvs.py`'s own
-pre-existing shape rather than a layout defect. Not an unbounded DRC claim
+[LVS](#lvs) for exactly what they are, which one [#186][gf186] closed, and
+[#187][gf187] for the remaining two (tracked separately; not resolved
+here). Not an unbounded DRC claim
 either: `klt drc`'s clean verdict is relative to the gf180mcu deck this
 repository pins, which does not model every DRM rule, and this repository
 has no independent check that the tapcell spacing meets the DRM's own
@@ -712,6 +746,8 @@ boundary.
 [gf169]: https://github.com/2AMLogic/gf180-trng/issues/169
 [gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
 [gf171]: https://github.com/2AMLogic/gf180-trng/issues/171
+[gf186]: https://github.com/2AMLogic/gf180-trng/issues/186
+[gf187]: https://github.com/2AMLogic/gf180-trng/issues/187
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
@@ -721,4 +757,5 @@ boundary.
 [klt1120]: https://github.com/2AMLogic/klayout-tools/pull/1120
 [klt1132]: https://github.com/2AMLogic/klayout-tools/issues/1132
 [klt1133]: https://github.com/2AMLogic/klayout-tools/issues/1133
+[klt1181]: https://github.com/2AMLogic/klayout-tools/issues/1181
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md

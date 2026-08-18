@@ -2,7 +2,7 @@
 * Reference netlist for `klt lvs` (issue #170): a mechanical, cell-instance-granularity
 * transcription of trng_top.pnr.v (the as-built, post-CTS gate-level netlist), matching
 * `klt extract --abstract-cells`'s own black-box interface for each standard-cell type
-* (signal pins, alphabetical, plus VDD/VSS -- see this script's module docstring).
+* (read straight out of trng_top.extracted.spice, #186; see this script's module docstring).
 * Supply nets: VDD -> vddd, VSS -> vss (#171), read from reports/place_and_route.json.
 
 .SUBCKT trng_top clk ht_alarm raw_bit raw_valid reg_addr[0] reg_addr[1] reg_rdata[0] reg_rdata[10] reg_rdata[11] reg_rdata[12] reg_rdata[13] reg_rdata[14] reg_rdata[15] reg_rdata[16] reg_rdata[17] reg_rdata[18] reg_rdata[19] reg_rdata[1] reg_rdata[20] reg_rdata[21] reg_rdata[22] reg_rdata[23] reg_rdata[24] reg_rdata[25] reg_rdata[26] reg_rdata[27] reg_rdata[28] reg_rdata[29] reg_rdata[2] reg_rdata[30] reg_rdata[31] reg_rdata[3] reg_rdata[4] reg_rdata[5] reg_rdata[6] reg_rdata[7] reg_rdata[8] reg_rdata[9] reg_sel reg_wdata[0] reg_wdata[10] reg_wdata[11] reg_wdata[12] reg_wdata[13] reg_wdata[14] reg_wdata[15] reg_wdata[16] reg_wdata[17] reg_wdata[18] reg_wdata[19] reg_wdata[1] reg_wdata[20] reg_wdata[21] reg_wdata[22] reg_wdata[23] reg_wdata[24] reg_wdata[25] reg_wdata[26] reg_wdata[27] reg_wdata[28] reg_wdata[29] reg_wdata[2] reg_wdata[30] reg_wdata[31] reg_wdata[3] reg_wdata[4] reg_wdata[5] reg_wdata[6] reg_wdata[7] reg_wdata[8] reg_wdata[9] reg_write ring_bit[0] ring_bit[1] rst_n str_data[0] str_data[10] str_data[11] str_data[12] str_data[13] str_data[14] str_data[15] str_data[16] str_data[17] str_data[18] str_data[19] str_data[1] str_data[20] str_data[21] str_data[22] str_data[23] str_data[24] str_data[25] str_data[26] str_data[27] str_data[28] str_data[29] str_data[2] str_data[30] str_data[31] str_data[3] str_data[4] str_data[5] str_data[6] str_data[7] str_data[8] str_data[9] str_ready str_valid
@@ -61,52 +61,52 @@ Xclkbuf_leaf_7_clk clknet_2_1__leaf_clk vddd vss clknet_leaf_7_clk gf180mcu_fd_s
 Xclkbuf_leaf_8_clk clknet_2_1__leaf_clk vddd vss clknet_leaf_8_clk gf180mcu_fd_sc_mcu9t5v0__buf_4
 Xclkbuf_leaf_9_clk clknet_2_1__leaf_clk vddd vss clknet_leaf_9_clk gf180mcu_fd_sc_mcu9t5v0__buf_4
 Xclkload0 clknet_2_1__leaf_clk vddd vss Z$clkload0 gf180mcu_fd_sc_mcu9t5v0__buf_4
-Xclkload1 clknet_2_3__leaf_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_4
-Xclkload10 clknet_leaf_45_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload11 clknet_leaf_46_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_4
+Xclkload1 clknet_2_3__leaf_clk vddd vss ZN$clkload1 gf180mcu_fd_sc_mcu9t5v0__inv_4
+Xclkload10 clknet_leaf_45_clk vddd vss ZN$clkload10 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload11 clknet_leaf_46_clk vddd vss ZN$clkload11 gf180mcu_fd_sc_mcu9t5v0__inv_4
 Xclkload12 clknet_leaf_47_clk vddd vss ZN$clkload12 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload13 clknet_leaf_48_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_8
+Xclkload13 clknet_leaf_48_clk vddd vss ZN$clkload13 gf180mcu_fd_sc_mcu9t5v0__inv_8
 Xclkload14 clknet_leaf_6_clk vddd vss ZN$clkload14 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload15 clknet_leaf_7_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload16 clknet_leaf_8_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload15 clknet_leaf_7_clk vddd vss ZN$clkload15 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload16 clknet_leaf_8_clk vddd vss ZN$clkload16 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 Xclkload17 clknet_leaf_9_clk vddd vss ZN$clkload17 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload18 clknet_leaf_10_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
-Xclkload19 clknet_leaf_11_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
-Xclkload2 clknet_leaf_0_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload20 clknet_leaf_12_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_4
-Xclkload21 clknet_leaf_13_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_4
-Xclkload22 clknet_leaf_14_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload18 clknet_leaf_10_clk vddd vss ZN$clkload18 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload19 clknet_leaf_11_clk vddd vss ZN$clkload19 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload2 clknet_leaf_0_clk vddd vss ZN$clkload2 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload20 clknet_leaf_12_clk vddd vss ZN$clkload20 gf180mcu_fd_sc_mcu9t5v0__inv_4
+Xclkload21 clknet_leaf_13_clk vddd vss ZN$clkload21 gf180mcu_fd_sc_mcu9t5v0__inv_4
+Xclkload22 clknet_leaf_14_clk vddd vss ZN$clkload22 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
 Xclkload23 clknet_leaf_15_clk vddd vss ZN$clkload23 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload24 clknet_leaf_17_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload24 clknet_leaf_17_clk vddd vss ZN$clkload24 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 Xclkload25 clknet_leaf_29_clk vddd vss ZN$clkload25 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload26 clknet_leaf_30_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload26 clknet_leaf_30_clk vddd vss ZN$clkload26 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 Xclkload27 clknet_leaf_31_clk vddd vss ZN$clkload27 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xclkload28 clknet_leaf_33_clk vddd vss ZN$clkload28 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xclkload29 clknet_leaf_34_clk vddd vss ZN$clkload29 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload3 clknet_leaf_2_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload3 clknet_leaf_2_clk vddd vss ZN$clkload3 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 Xclkload30 clknet_leaf_35_clk vddd vss ZN$clkload30 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xclkload31 clknet_leaf_36_clk vddd vss ZN$clkload31 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xclkload32 clknet_leaf_37_clk vddd vss ZN$clkload32 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload33 clknet_leaf_38_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_3
-Xclkload34 clknet_leaf_39_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload35 clknet_leaf_40_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload36 clknet_leaf_41_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload33 clknet_leaf_38_clk vddd vss ZN$clkload33 gf180mcu_fd_sc_mcu9t5v0__inv_3
+Xclkload34 clknet_leaf_39_clk vddd vss ZN$clkload34 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload35 clknet_leaf_40_clk vddd vss ZN$clkload35 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload36 clknet_leaf_41_clk vddd vss ZN$clkload36 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
 Xclkload37 clknet_leaf_18_clk vddd vss ZN$clkload37 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload38 clknet_leaf_19_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload39 clknet_leaf_20_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_3
-Xclkload4 clknet_leaf_3_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
-Xclkload40 clknet_leaf_21_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_3
-Xclkload41 clknet_leaf_22_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__inv_4
+Xclkload38 clknet_leaf_19_clk vddd vss ZN$clkload38 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload39 clknet_leaf_20_clk vddd vss ZN$clkload39 gf180mcu_fd_sc_mcu9t5v0__inv_3
+Xclkload4 clknet_leaf_3_clk vddd vss ZN$clkload4 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload40 clknet_leaf_21_clk vddd vss ZN$clkload40 gf180mcu_fd_sc_mcu9t5v0__inv_3
+Xclkload41 clknet_leaf_22_clk vddd vss ZN$clkload41 gf180mcu_fd_sc_mcu9t5v0__inv_4
 Xclkload42 clknet_leaf_23_clk vddd vss ZN$clkload42 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xclkload43 clknet_leaf_25_clk vddd vss Z$clkload43 gf180mcu_fd_sc_mcu9t5v0__buf_4
-Xclkload44 clknet_leaf_26_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload45 clknet_leaf_27_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload46 clknet_leaf_28_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
-Xclkload5 clknet_leaf_4_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
-Xclkload6 clknet_leaf_5_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload44 clknet_leaf_26_clk vddd vss ZN$clkload44 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload45 clknet_leaf_27_clk vddd vss ZN$clkload45 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload46 clknet_leaf_28_clk vddd vss ZN$clkload46 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload5 clknet_leaf_4_clk vddd vss ZN$clkload5 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload6 clknet_leaf_5_clk vddd vss ZN$clkload6 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
 Xclkload7 clknet_leaf_42_clk vddd vss ZN$clkload7 gf180mcu_fd_sc_mcu9t5v0__clkinv_1
-Xclkload8 clknet_leaf_43_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_3
-Xclkload9 clknet_leaf_44_clk vddd vss gf180mcu_fd_sc_mcu9t5v0__clkinv_2
+Xclkload8 clknet_leaf_43_clk vddd vss ZN$clkload8 gf180mcu_fd_sc_mcu9t5v0__clkinv_3
+Xclkload9 clknet_leaf_44_clk vddd vss ZN$clkload9 gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 Xu_conditioner/_181_ raw_valid vddd vss u_conditioner/_073_ gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xu_conditioner/_182_ u_conditioner/count[7] vddd vss u_conditioner/_074_ gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 Xu_conditioner/_183_ u_conditioner/count[6] u_conditioner/count[1] u_conditioner/count[0] vddd vss u_conditioner/_075_ gf180mcu_fd_sc_mcu9t5v0__nand3_2
@@ -8709,10 +8709,10 @@ XTAP_TAPCELL_ROW_9_234 vddd vss gf180mcu_fd_sc_mcu9t5v0__filltie
 .SUBCKT gf180mcu_fd_sc_mcu9t5v0__clkinv_1 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__clkinv_1
 
-.SUBCKT gf180mcu_fd_sc_mcu9t5v0__clkinv_2 I VDD VSS
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__clkinv_2 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__clkinv_2
 
-.SUBCKT gf180mcu_fd_sc_mcu9t5v0__clkinv_3 I VDD VSS
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__clkinv_3 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__clkinv_3
 
 .SUBCKT gf180mcu_fd_sc_mcu9t5v0__dffq_1 CLK D Q VDD VSS
@@ -8727,13 +8727,13 @@ XTAP_TAPCELL_ROW_9_234 vddd vss gf180mcu_fd_sc_mcu9t5v0__filltie
 .SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_1 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__inv_1
 
-.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_3 I VDD VSS
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_3 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__inv_3
 
-.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_4 I VDD VSS
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_4 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__inv_4
 
-.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_8 I VDD VSS
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__inv_8 I VDD VSS ZN
 .ENDS gf180mcu_fd_sc_mcu9t5v0__inv_8
 
 .SUBCKT gf180mcu_fd_sc_mcu9t5v0__mux2_1 I0 I1 S VDD VSS Z

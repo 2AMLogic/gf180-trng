@@ -97,24 +97,28 @@ Pipeline
    _001_" with its *significant trailing space* -- is exactly the kind of
    thing a text parser gets subtly wrong without a real front end behind
    it).
-2. `_write_reference()` walks that graph and writes
-   `trng_top.lvs_reference.spice`: one empty `.SUBCKT <cell type>
-   <sorted signal pins> VDD VSS` per distinct instantiated cell type (pin
-   order alphabetical -- the same convention `klt extract`'s own
-   `_resolve_abstract_cell_pins` documents for its in-cell-label path, so
-   the two sides describe the same interface even though this script never
-   calls that function), and one top-level `.SUBCKT trng_top <109 chip
-   pins> ... X<instance> ... .ENDS` transcribing every placed cell
-   instance's connections verbatim, plus the physical-only instances read
-   from the DEF, with `VDD`/`VSS` on the two supply nets per the section
-   above.
-3. `klt extract --abstract-cells 'gf180mcu_fd_sc_mcu9t5v0__*' --top-cell-pins
+2. `klt extract --abstract-cells 'gf180mcu_fd_sc_mcu9t5v0__*' --top-cell-pins
    --def-net-names` over the committed `trng_top.gds` -- the layout side,
    written to `trng_top.extracted.spice` (`--def-net-names` recovers the
    design's own net names from the DEF->GDS merge's own net-name shape
    property instead of KLayout's synthesized `$<id>` placeholders, so a
    mismatch report is readable against the same names `trng_top.pnr.v`
-   itself uses).
+   itself uses). This runs *before* the reference is written (issue #186):
+   see step 3.
+3. `_write_reference()` walks the graph from step 1 and writes
+   `trng_top.lvs_reference.spice`: one empty `.SUBCKT <cell type> <pins>`
+   per distinct instantiated cell type, with `<pins>` read straight out of
+   step 2's own `trng_top.extracted.spice` (`_library_cell_pins`) rather
+   than inferred from which ports this netlist's instances happen to
+   connect -- the latter broke for a cell type like `gf180mcu_fd_sc_
+   mcu9t5v0__inv_8`, whose sole instance in this netlist (`clkload13`, a
+   CTS clock-load dummy) leaves its `ZN` output pin unconnected by
+   construction, and so appeared to have a 3-pin interface instead of the
+   real 4-pin one (issue #186). Also writes one top-level `.SUBCKT trng_top
+   <109 chip pins> ... X<instance> ... .ENDS` transcribing every placed
+   cell instance's connections verbatim, plus the physical-only instances
+   read from the DEF, with `VDD`/`VSS` on the two supply nets per the
+   section above.
 4. `klt lvs` compares the two, `layout.top`/`reference.top` both pinned to
    `trng_top` explicitly. The report lands at `reports/lvs.json`, the same
    "verdict plus counts, not a full per-mismatch dump" shape `build.py`'s
@@ -167,6 +171,13 @@ POWER_PINS = ("VDD", "VSS")
 #: `_def_physical_only_instances` reads the tapcell/endcap/filler instances
 #: back out of the committed DEF through this.
 _COMPONENT_ENTRY_RE = re.compile(r"^\s*-\s+(\S+)\s+(\S+)", re.M)
+
+#: Matches a `.SUBCKT <name> <pins...>` header line (SPICE keywords are
+#: case-insensitive, but every writer this script's output is compared
+#: against -- `klt extract`'s own -- emits upper-case, so this only matches
+#: that). `_library_cell_pins` reads each abstracted cell type's resolved
+#: interface back out of `trng_top.extracted.spice` through this.
+_SUBCKT_HEADER_RE = re.compile(r"^\.SUBCKT\s+(\S+)\s+(.*)$", re.M)
 
 
 class LvsFlowError(RuntimeError):
@@ -316,20 +327,98 @@ def _bit_names(module: dict) -> dict[int, str]:
     return names
 
 
-def _cell_instances(module: dict, bit_names: dict[int, str]) -> tuple[
-    dict[str, list[str]], list[tuple[str, str, dict[str, str]]]
-]:
-    """Return `(cell_type -> sorted pin list, [(type, instance, {pin: net})])`.
+def _join_spice_continuations(text: str) -> str:
+    """Fold every SPICE `+`-prefixed continuation line into its predecessor.
 
-    `cell_type`'s pin list is the union of every port name any instance of
-    that type actually connects (every checked instance of a type uses the
-    identical port set in this netlist, so "union" and "first instance's
-    set" agree; union is the defensive choice), plus `POWER_PINS`, sorted
-    -- see the module docstring for why this exact convention (alphabetical,
-    library-declared pins plus VDD/VSS) matches `--abstract-cells`'s own
-    resolved interface for the same cell type.
+    None of this design's cell-type `.SUBCKT` headers happen to wrap (the
+    widest, `aoi222_1`, is 10 pins on one line, verified directly against
+    `trng_top.extracted.spice`) but the *top-level* `trng_top` header does
+    (109 pins), and nothing about SPICE's line-length convention guarantees
+    a future cell type stays under it either -- so `_library_cell_pins`
+    parses this joined form rather than assuming one physical line per
+    logical one.
     """
-    pins_by_type: dict[str, set[str]] = {}
+    joined: list[str] = []
+    for line in text.split("\n"):
+        if line.startswith("+") and joined:
+            joined[-1] = f"{joined[-1]} {line[1:].strip()}"
+        else:
+            joined.append(line)
+    return "\n".join(joined)
+
+
+def _library_cell_pins(
+    extracted_path: Path, cell_types: set[str]
+) -> dict[str, list[str]]:
+    """Map each of `cell_types` to its pin list as `klt extract
+    --abstract-cells` resolved it for the committed layout.
+
+    Parsed straight out of `extracted_path`'s own `.SUBCKT <cell type>
+    <pins...>` header for each abstracted cell type -- the tool's own
+    resolved interface, not anything this script infers from which ports an
+    instance happens to connect in `trng_top.pnr.v`. That inference (the
+    union of every observed instance's connected ports) is what issue #186
+    fixed: it silently assumed every instance of a type connects the same
+    ports, which breaks for a CTS clock-load dummy cell like `clkload13`
+    (`gf180mcu_fd_sc_mcu9t5v0__inv_8`) whose output pin `ZN` is left
+    unconnected by construction -- the derived reference interface came out
+    3-pin (`I VDD VSS`) against the layout side's real 4-pin (`I VDD VSS
+    ZN`), an instant `.SUBCKT` mismatch. Reading the interface back out of
+    `klt extract`'s own output instead means the reference always agrees
+    with the layout side on what each cell type's pins are, by construction.
+    """
+    text = _join_spice_continuations(extracted_path.read_text(errors="replace"))
+    found: dict[str, list[str]] = {
+        name: pins.split()
+        for name, pins in _SUBCKT_HEADER_RE.findall(text)
+        if name in cell_types
+    }
+    missing = cell_types - found.keys()
+    if missing:
+        raise LvsFlowError(
+            f"{extracted_path.relative_to(REPO_ROOT)} has no `.SUBCKT` header "
+            f"for {', '.join(sorted(missing))} -- `klt extract "
+            "--abstract-cells` did not resolve an interface for every cell "
+            "type trng_top.pnr.v instantiates"
+        )
+    return found
+
+
+def _top_pins(module: dict) -> list[str]:
+    """Return `module`'s top-level chip pins, sorted.
+
+    Scalar ports stay bare; multi-bit ports expand to `"<port>[<index>]"` --
+    the same naming `trng_top.def`'s own `PINS` section uses for every one
+    of this design's 109 pins (verified directly). Computed once and shared
+    by `run_extract` (the layout-side `--pins` argument) and
+    `_write_reference` (the reference `.SUBCKT trng_top` header) so both
+    sides promote exactly the same set.
+    """
+    top_pins: list[str] = []
+    for port, spec in module["ports"].items():
+        bits = spec["bits"]
+        if len(bits) == 1:
+            top_pins.append(port)
+        else:
+            top_pins.extend(f"{port}[{i}]" for i in range(len(bits)))
+    top_pins.sort()
+    return top_pins
+
+
+def _cell_instances(
+    module: dict, bit_names: dict[int, str], library_pins: dict[str, list[str]]
+) -> tuple[dict[str, list[str]], list[tuple[str, str, dict[str, str]]]]:
+    """Return `(cell_type -> pin list, [(type, instance, {pin: net})])`.
+
+    `cell_type`'s pin list comes from `library_pins` -- the standard-cell
+    library's own declared interface for that type, resolved once by `klt
+    extract --abstract-cells` over the committed layout (see
+    `_library_cell_pins`) -- not from which ports this netlist's instances
+    happen to connect. `POWER_PINS` is not unioned in separately here:
+    every abstracted cell type's `library_pins` entry already carries
+    `VDD`/`VSS` (see the module docstring's "Power/ground" section), so
+    doing it again would be redundant, not defensive.
+    """
     instances: list[tuple[str, str, dict[str, str]]] = []
     for inst_name, cell in module["cells"].items():
         cell_type = cell["type"]
@@ -358,15 +447,31 @@ def _cell_instances(module: dict, bit_names: dict[int, str]) -> tuple[
                     "this reference"
                 )
             connections[port] = bit_names[bit]
-        pins_by_type.setdefault(cell_type, set()).update(connections.keys())
+        library_type_pins = library_pins.get(cell_type)
+        if library_type_pins is None:
+            raise LvsFlowError(
+                f"instance '{inst_name}' has cell type '{cell_type}', which "
+                "klt extract --abstract-cells never resolved an interface "
+                "for -- cannot build a reference for a pin list this script "
+                "does not know"
+            )
+        unknown_ports = set(connections) - set(library_type_pins)
+        if unknown_ports:
+            raise LvsFlowError(
+                f"instance '{inst_name}' (type '{cell_type}') connects "
+                f"port(s) {sorted(unknown_ports)}, which the layout side's "
+                f"resolved interface ({library_type_pins}) does not "
+                "declare -- the netlist and the library disagree about "
+                "this cell type's pins"
+            )
         instances.append((cell_type, inst_name, connections))
 
-    sorted_pins = {
-        cell_type: sorted(pins | set(POWER_PINS))
-        for cell_type, pins in pins_by_type.items()
+    pins_by_type = {
+        cell_type: library_pins[cell_type]
+        for cell_type in sorted({cell_type for cell_type, _, _ in instances})
     }
     instances.sort(key=lambda entry: entry[1])
-    return sorted_pins, instances
+    return pins_by_type, instances
 
 
 def _write_reference(
@@ -374,20 +479,12 @@ def _write_reference(
     path: Path,
     power_nets: dict[str, str],
     physical_only: list[tuple[str, str]],
+    library_pins: dict[str, list[str]],
 ) -> dict:
     """Write the reference SPICE and return a small provenance summary."""
     bit_names = _bit_names(module)
-    pins_by_type, instances = _cell_instances(module, bit_names)
-
-    top_ports = list(module["ports"].keys())
-    top_pins: list[str] = []
-    for port in top_ports:
-        bits = module["ports"][port]["bits"]
-        if len(bits) == 1:
-            top_pins.append(port)
-        else:
-            top_pins.extend(f"{port}[{i}]" for i in range(len(bits)))
-    top_pins.sort()
+    pins_by_type, instances = _cell_instances(module, bit_names, library_pins)
+    top_pins = _top_pins(module)
 
     lines = [
         "* Generated by layout/digital/lvs.py -- do not hand-edit.",
@@ -397,8 +494,8 @@ def _write_reference(
         "netlist), matching",
         "* `klt extract --abstract-cells`'s own black-box interface for each "
         "standard-cell type",
-        "* (signal pins, alphabetical, plus VDD/VSS -- see this script's "
-        "module docstring).",
+        "* (read straight out of trng_top.extracted.spice, #186; see this "
+        "script's module docstring).",
         f"* Supply nets: VDD -> {power_nets['VDD']}, VSS -> "
         f"{power_nets['VSS']} (#171), read from reports/place_and_route.json.",
         "",
@@ -558,18 +655,31 @@ def build() -> int:
         module = _yosys_netlist(PNR_NETLIST_PATH, yosys_json_path)["modules"][
             HDL_TOPLEVEL
         ]
-        reference_summary = _write_reference(
-            module, REFERENCE_PATH, _power_nets(power), physical_only
-        )
+        top_pins = _top_pins(module)
     except LvsFlowError as exc:
         print(f"ERROR  {exc}", file=sys.stderr)
         return 3
 
+    # `klt extract` has to run before the reference is written, not after
+    # (#186): the reference's own per-cell-type pin lists are read back out
+    # of this run's output (`_library_cell_pins`) instead of being inferred
+    # from trng_top.pnr.v's observed instance connections, so the layout
+    # side's own resolved interface has to exist first.
     try:
-        extract_payload = run_extract(reference_summary["top_pins"])
+        extract_payload = run_extract(top_pins)
     except Exception as exc:  # noqa: BLE001 - FlowError from _run_klt
         print(f"FAILED  klt extract: {exc}", file=sys.stderr)
         return 4
+
+    try:
+        cell_types = {cell["type"] for cell in module["cells"].values()}
+        library_pins = _library_cell_pins(EXTRACTED_PATH, cell_types)
+        reference_summary = _write_reference(
+            module, REFERENCE_PATH, _power_nets(power), physical_only, library_pins
+        )
+    except LvsFlowError as exc:
+        print(f"ERROR  {exc}", file=sys.stderr)
+        return 3
 
     try:
         lvs_payload = run_lvs()
