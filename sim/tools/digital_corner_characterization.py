@@ -87,18 +87,18 @@ RATIFIED_RATE_HZ = 1e6
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 23.000,
+    "setup_binding_slack_ns": 21.935,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.707,
-    "fmax_floor_mhz": 37.037,
+    "hold_binding_slack_ns": 0.712,
+    "fmax_floor_mhz": 35.631,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 113_087.9,
-    "area_ratio_vs_inventory": 1.5183,
-    "power_1mhz_max_w": 6.9514e-4,
+    "cell_area_um2": 116_000.6,
+    "area_ratio_vs_inventory": 1.5574,
+    "power_1mhz_max_w": 7.1236e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 1.00258e-5,
+    "leakage_max_w": 1.42052e-5,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 2.78495e-6,
+    "leakage_max_current_a": 3.94589e-6,
 }
 
 #: Fractional tolerance for the numeric gates above. The analysis is
@@ -317,17 +317,27 @@ def area_crosscheck(measured_cell_area_um2: float, estimate_cell_area_um2: float
                     estimate_cells: int, pdk_root: Path) -> dict:
     """Split the area miss into a cell-count term and a track-height term.
 
-    The measured figure prices 2499 real 9-track instances; the inventory
+    The measured figure prices 2502 real 9-track instances; the inventory
     estimate prices 1655 assumed 7-track cells. Those differ on two axes at
     once, and quoting one ratio hides which axis carries it. Pricing the
     *same as-built netlist* against the 7-track library separates them:
 
         estimate (7t, inventory)  --cell count/mix-->  as-built (7t)
-                                  --track height-->    as-built (9t) = measured
+                                  --track height-->    as-built (9t) =/= measured
 
     Every cell in the as-built netlist has a same-named counterpart in the
     7-track library (both libraries ship the same 229 cells at different row
     heights), so the intermediate figure needs no substitution rules.
+
+    The last equality is now approximate, not exact: since #171 the DEF also
+    carries tapcell/endcap/filler instances (6136 of the 8638 DEF
+    `COMPONENTS`) that OpenROAD's own `report_design_area` prices along with
+    the 2502 logical instances above, but that never appear in
+    `trng_top.pnr.v` (a functional netlist has no reason to instantiate a
+    physical-only cell) and so are invisible to this function's liberty-sum
+    crosscheck. `report()` prints the resulting gap under "liberty sum vs
+    OpenROAD's own report_design_area"; before #171 the DEF carried no such
+    cells and the two figures agreed to rounding.
     """
     text = PNR_NETLIST.read_text(errors="replace")
     histogram: dict[str, int] = {}
