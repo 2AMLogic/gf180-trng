@@ -1,15 +1,15 @@
 {
   "status": "mismatch",
-  "mismatch_count": 9,
+  "mismatch_count": 8,
   "category_counts": {
     "net.unmatched": 1,
-    "topology": 8
+    "topology": 7
   },
   "counts": {
     "nets": {
       "layout": 2548,
-      "reference": 2516,
-      "matched": 2964
+      "reference": 2547,
+      "matched": 2995
     },
     "devices": {
       "layout": 0,
@@ -161,8 +161,8 @@
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.10",
-    "layout_sha256": "9965fb25b6818ec687b1fc54115762b82d55852bbf6d4fd744a83391ceeb9c91",
-    "reference_sha256": "a50142f98f32801572d6675cb62907652be110c2c5827bd4f72c5302e5501bec",
+    "layout_sha256": "05b832a7a72414e52f48516a88617cb88fb7791be7219cb2fde62126a07d6f61",
+    "reference_sha256": "2dc8c93c2dfd5c487f5c0bf92b2f64d99041cf92d263ef413bb4a13b84637339",
     "extracted_netlist": null
   }
 }
