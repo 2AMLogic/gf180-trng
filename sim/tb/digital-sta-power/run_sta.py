@@ -835,29 +835,25 @@ file -- a re-run or correction mints a new record and points back here via
 def write_record(point: Point, values: dict, pdk, git: dict, openroad: str,
                  records_dir: Path) -> Path:
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    stem = report.allocate_record_stem(records_dir, date, SLUG)
-    raw_dir = records_dir / "raw" / stem
-    raw_dir.mkdir(parents=True, exist_ok=True)
 
-    names = []
-    for tag in ("constraint", "ratified-rate"):
-        for kind in ("script", "log"):
-            src = point.logs[tag][kind]
-            name = f"{tag}.{'tcl' if kind == 'script' else 'log'}"
-            shutil.copyfile(src, raw_dir / name)
-            names.append(name)
-    raw_files = [(n, report.sha256_file(raw_dir / n)) for n in names]
+    def render(stem: str, raw_dir: Path) -> str:
+        names = []
+        for tag in ("constraint", "ratified-rate"):
+            for kind in ("script", "log"):
+                src = point.logs[tag][kind]
+                name = f"{tag}.{'tcl' if kind == 'script' else 'log'}"
+                shutil.copyfile(src, raw_dir / name)
+                names.append(name)
+        raw_files = [(n, report.sha256_file(raw_dir / n)) for n in names]
 
-    lib_conditions = liberty_operating_conditions(liberty_path(pdk, point.corner.liberty))
-    path = records_dir / f"{stem}.md"
-    if path.exists():  # pragma: no cover - allocate_record_stem prevents this
-        raise report.RecordExists(f"{path} already exists")
-    path.write_text(
-        _frontmatter(stem, point, values, pdk, git, raw_files, openroad, lib_conditions)
-        + "\n"
-        + _body(point, values)
-    )
-    return path
+        lib_conditions = liberty_operating_conditions(liberty_path(pdk, point.corner.liberty))
+        return (
+            _frontmatter(stem, point, values, pdk, git, raw_files, openroad, lib_conditions)
+            + "\n"
+            + _body(point, values)
+        )
+
+    return report.finalize_record(records_dir, date, SLUG, render)
 
 
 # --------------------------------------------------------------------------- #
