@@ -45,6 +45,8 @@ from __future__ import annotations
 import hashlib
 import struct
 
+from harness.bits import pack_lsb_first  # noqa: F401 -- re-exported for source_model.<name> callers
+
 _UINT32 = 1 << 32
 
 
@@ -69,12 +71,3 @@ def healthy_ring_bits(label: str, seed: int, n_bits: int) -> list[int]:
 def stuck_ring_bits(value: int, n_bits: int) -> list[int]:
     """A stuck-at source: ``n_bits`` copies of ``value``. Min-entropy 0."""
     return [value & 1] * n_bits
-
-
-def pack_lsb_first(bits) -> bytes:
-    """Pack a bit list into bytes, LSB of each byte first (stream order)."""
-    out = bytearray((len(bits) + 7) // 8)
-    for i, bit in enumerate(bits):
-        if bit:
-            out[i >> 3] |= 1 << (i & 7)
-    return bytes(out)

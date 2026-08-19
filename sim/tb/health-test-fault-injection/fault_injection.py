@@ -38,31 +38,14 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from decimal import Decimal, getcontext
 
-getcontext().prec = 60
+from harness.bits import (  # noqa: F401 -- re-exported for source_model.<name> callers
+    min_entropy_for_p_one,
+    p_one_for_min_entropy,
+    pack_lsb_first,
+)
 
 _UINT32 = 1 << 32
-
-
-def p_one_for_min_entropy(h_per_bit) -> Decimal:
-    """P(1) of a biased coin whose per-sample min-entropy is ``h_per_bit``."""
-    h = Decimal(str(h_per_bit))
-    if h < 0 or h > 1:
-        raise ValueError("per-sample min-entropy of a binary source is in [0, 1]")
-    p_max = Decimal(2) ** (-h)
-    return Decimal(1) - p_max
-
-
-def min_entropy_for_p_one(p_one) -> Decimal:
-    """Most-common-value min-entropy of a binary source with the given P(1)."""
-    p = Decimal(str(p_one))
-    if not (0 <= p <= 1):
-        raise ValueError("P(1) must be in [0, 1]")
-    p_max = max(p, Decimal(1) - p)
-    if p_max == 0:
-        raise ValueError("degenerate source")
-    return -(p_max.ln() / Decimal(2).ln())
 
 
 def uniform_words(label: str, seed: int):
@@ -114,12 +97,3 @@ def oscillator_lockup_bits(n_bits: int, half_period: int = 2000, start_value: in
         bits.extend([value] * min(half_period, n_bits - len(bits)))
         value ^= 1
     return bits
-
-
-def pack_lsb_first(bits) -> bytes:
-    """Pack a bit list into bytes, LSB of each byte first (stream order)."""
-    out = bytearray((len(bits) + 7) // 8)
-    for i, bit in enumerate(bits):
-        if bit:
-            out[i >> 3] |= 1 << (i & 7)
-    return bytes(out)
