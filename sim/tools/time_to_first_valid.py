@@ -64,9 +64,12 @@ What this does NOT do
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -96,28 +99,17 @@ DR0010_RAW_RATE_BPS = 500.0
 #: The README's current arithmetic floor, seconds, at the ratified rate.
 README_FLOOR_S = 1.28e-3
 
-_VALUE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
-
 
 class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = {m.group(1): float(m.group(2)) for m in _VALUE.finditer(text)}
-        self.process = _field(text, r"process:\s*(\w+)")
-        self.temp_c = float(_field(text, r"temperature:\s*(-?[\d.]+)"))
-        self.vdd = float(_field(text, r"voltage:\s*([\d.]+)"))
+        self.values = parse_values(text)
+        self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
 
     @property
     def corner(self) -> str:
-        return f"{self.process}/{self.temp_c:.0f}C/{self.vdd:.2f}V"
-
-
-def _field(text: str, pattern: str) -> str:
-    m = re.search(pattern, text)
-    if m is None:
-        raise RuntimeError(f"cannot find {pattern!r}")
-    return m.group(1)
+        return format_corner(self.process, self.temp_c, self.vdd)
 
 
 def load_startup_records() -> list[Record]:

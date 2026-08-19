@@ -89,6 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import format_corner, parse_corner  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -145,20 +146,14 @@ class Record:
             self.values[m.group(1)] = float(m.group(2))
             self.seeds = int(m.group(3))
             self.sd[m.group(1)] = float(m.group(4))
-        self.process = self._field(text, r"process:\s*(\w+)")
-        self.temp_c = float(self._field(text, r"temperature:\s*(-?[\d.]+)"))
-        self.vdd = float(self._field(text, r"voltage:\s*([\d.]+)"))
+        self.process, self.temp_c, self.vdd = parse_corner(
+            text, label=self.stem, error_cls=RecordError
+        )
         self.temp_k = self.temp_c + 273.15
-
-    def _field(self, text: str, pattern: str) -> str:
-        m = re.search(pattern, text)
-        if m is None:
-            raise RecordError(f"{self.stem}: cannot find {pattern!r} in the frontmatter")
-        return m.group(1)
 
     @property
     def corner(self) -> str:
-        return f"{self.process}/{self.temp_c:.0f}/{self.vdd:.2f}"
+        return format_corner(self.process, self.temp_c, self.vdd)
 
     def spread(self, key: str) -> float | None:
         """Relative seed-to-seed standard deviation of ``key``, or None."""
