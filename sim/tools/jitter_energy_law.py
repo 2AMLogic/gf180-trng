@@ -52,10 +52,13 @@ largely common-mode across corners.
 from __future__ import annotations
 
 import argparse
-import re
 import statistics
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -77,8 +80,6 @@ GRID_POINTS = range(1, 28)
 #: than on arithmetic noise.
 MAX_SPREAD = 1.60
 
-_VALUE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
-
 
 class RecordError(RuntimeError):
     pass
@@ -89,19 +90,9 @@ def read_record(stem: str) -> tuple[dict[str, float], dict[str, object]]:
     if not path.is_file():
         raise RecordError(f"no such record: sim/records/{stem}.md")
     text = path.read_text()
-    values = {m.group(1): float(m.group(2)) for m in _VALUE.finditer(text)}
-
-    def field(pattern: str) -> str:
-        m = re.search(pattern, text)
-        if m is None:
-            raise RecordError(f"{stem}: cannot find {pattern!r} in the frontmatter")
-        return m.group(1)
-
-    corner = {
-        "process": field(r"process:\s*(\w+)"),
-        "temp_c": float(field(r"temperature:\s*(-?[\d.]+)")),
-        "vdd": float(field(r"voltage:\s*([\d.]+)")),
-    }
+    values = parse_values(text)
+    process, temp_c, vdd = parse_corner(text, label=stem, error_cls=RecordError)
+    corner = {"process": process, "temp_c": temp_c, "vdd": vdd}
     return values, corner
 
 
@@ -119,7 +110,7 @@ class Point:
                 f"power record families: {corner} vs {power_corner}"
             )
         self.nn = nn
-        self.corner = f"{corner['process']}/{corner['temp_c']:.0f}/{corner['vdd']:.2f}"
+        self.corner = format_corner(corner["process"], corner["temp_c"], corner["vdd"])
         self.temp_k = corner["temp_c"] + 273.15
         #: per-corner scaling of the fixed injection to the device's own
         #: high-frequency noise density (the 1 GHz proxy).

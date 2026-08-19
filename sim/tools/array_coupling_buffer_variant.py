@@ -61,7 +61,10 @@ CORNER = "tt/27/3.30"
 #: The power-binding corner. This is where layout/floorplan/README.md's
 #: ~24.4 uW estimate for the mitigation was made, so it is where the
 #: measurement that replaces that estimate has to be read.
-POWER_CORNER = "ff/-40C/3.63V"
+#: Plain `process/temp_c/vdd`, matching `power_rollup.Record.corner` (issue
+#: #104 unified every sim/tools/*.py corner format on this one; before that
+#: power_rollup.py rendered it with `C`/`V` units, `"ff/-40C/3.63V"`).
+POWER_CORNER = "ff/-40/3.63"
 
 #: The shipped array's own power record family, and the buffered variant's.
 #: `-[0-9]` on the first is load-bearing: without it the glob also matches the

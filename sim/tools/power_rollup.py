@@ -77,6 +77,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
 DIGITAL_SCRIPT = REPO_ROOT / "design" / "digital_power_estimate.py"
@@ -111,8 +115,6 @@ DIGITAL_CORNER_IDLE = "ff_125C_3v60"
 TAP_META_W = 187e-6
 TAP_LIVENESS_W = 81.3e-6
 
-_VALUE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
-
 #: The ``netlist:`` block of a record's front matter, which names the DUT file
 #: and pins its blob SHA. Optional: not every record family has a netlist (the
 #: device-level decks, for instance, instantiate a PDK model directly), so a
@@ -124,10 +126,8 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = {m.group(1): float(m.group(2)) for m in _VALUE.finditer(text)}
-        self.process = _field(text, r"process:\s*(\w+)")
-        self.temp_c = float(_field(text, r"temperature:\s*(-?[\d.]+)"))
-        self.vdd = float(_field(text, r"voltage:\s*([\d.]+)"))
+        self.values = parse_values(text)
+        self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         #: Blob SHA of the netlist this record's numbers were measured
         #: against, or ``None`` for a record whose deck names no netlist.
         #: This is what identifies the DUT *revision*: two records of the same
@@ -139,14 +139,7 @@ class Record:
 
     @property
     def corner(self) -> str:
-        return f"{self.process}/{self.temp_c:.0f}C/{self.vdd:.2f}V"
-
-
-def _field(text: str, pattern: str) -> str:
-    m = re.search(pattern, text)
-    if m is None:
-        raise RuntimeError(f"cannot find {pattern!r}")
-    return m.group(1)
+        return format_corner(self.process, self.temp_c, self.vdd)
 
 
 def load(globs) -> list[Record]:

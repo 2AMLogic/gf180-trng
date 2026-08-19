@@ -39,10 +39,13 @@ from __future__ import annotations
 
 import argparse
 import math
-import re
 import sys
 from pathlib import Path
 from statistics import NormalDist
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _record_parsing import parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -93,9 +96,6 @@ def h_hat(p1: float) -> float:
     return -math.log2(max(p1, 1.0 - p1))
 
 
-_VALUE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
-
-
 def latest_record() -> Path:
     candidates = sorted(RECORDS.glob(f"*-{SLUG}-*.md"))
     if not candidates:
@@ -107,7 +107,7 @@ def read_record(path: Path) -> dict[str, float]:
     if not path.is_file():
         raise RecordError(f"no such record: {path}")
     text = path.read_text()
-    return {m.group(1): float(m.group(2)) for m in _VALUE.finditer(text)}
+    return parse_values(text)
 
 
 def main(argv: list[str] | None = None) -> int:

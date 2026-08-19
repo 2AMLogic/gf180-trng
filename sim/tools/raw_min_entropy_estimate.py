@@ -60,6 +60,7 @@ TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "sampler-array-digitize" / "tb.json"
 sys.path.insert(0, str(TOOLS_DIR))
 import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
+from _record_parsing import field, format_corner, parse_corner  # noqa: E402
 
 SLUG = "sampler-array-digitize"
 
@@ -88,10 +89,10 @@ class BitstreamRecord:
             self.values[m.group(1)] = float(m.group(2))
             self.n_seeds = int(m.group(3))
             self.sd[m.group(1)] = float(m.group(4))
-        self.process = self._field(text, r"process:\s*(\w+)")
-        self.temp_c = float(self._field(text, r"temperature:\s*(-?[\d.]+)"))
-        self.vdd = float(self._field(text, r"voltage:\s*([\d.]+)"))
-        self.seeds = self._field(text, r"^seeds:\s*(\[[^\]]*\])")
+        self.process, self.temp_c, self.vdd = parse_corner(
+            text, label=self.stem, error_cls=RecordError
+        )
+        self.seeds = field(text, r"^seeds:\s*(\[[^\]]*\])", label=self.stem, error_cls=RecordError)
 
         bit_indices = sorted(
             int(m.group(1)) for k in self.values if (m := _BIT_KEY.fullmatch(k))
@@ -102,15 +103,9 @@ class BitstreamRecord:
         self.bits = [1 if self.values[f"b{i}_v"] > half_rail else 0 for i in bit_indices]
         self.bit_spread_v = [self.sd.get(f"b{i}_v", 0.0) for i in bit_indices]
 
-    def _field(self, text: str, pattern: str) -> str:
-        m = re.search(pattern, text, re.M)
-        if m is None:
-            raise RecordError(f"{self.stem}: cannot find {pattern!r}")
-        return m.group(1)
-
     @property
     def corner(self) -> str:
-        return f"{self.process}/{self.temp_c:.0f}/{self.vdd:.2f}"
+        return format_corner(self.process, self.temp_c, self.vdd)
 
 
 def load_records() -> list[BitstreamRecord]:
