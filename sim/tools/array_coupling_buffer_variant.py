@@ -364,6 +364,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  vs standalone control (#51's 1.00x baseline): {ratio_to_control:6.2f}x")
     print(f"  vs xor-static        (#51's 1.06x baseline): {ratio_to_static:6.2f}x")
     print(f"  vs xor-driven, the unbuffered 28.6x case   : {ratio_to_driven:6.3f}x")
+    print(f"  xor-driven vs standalone control, unbuffered (pre-mitigation "
+          f"baseline for the row above): {driven_ratio_to_control:6.2f}x")
 
     # The attributing comparison. Every other ratio above spans TWO changes
     # (the buffer's isolation AND the buffer's lighter load, which moves the
