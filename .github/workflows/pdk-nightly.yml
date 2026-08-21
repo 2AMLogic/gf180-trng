@@ -258,28 +258,68 @@ jobs:
           klt --version
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
-      # way this flow already shells out to `xschem`/`klt` -- from the
-      # runner's distro rather than a version pin, and for the same reason
-      # given above for xschem: it is a netlister, and a version bump is
-      # meant to turn `design/synth.py --check` red (loud) rather than drift
-      # unnoticed. Ubuntu 24.04 ships Yosys 0.33, which `klayout_tools.
-      # synthesize`'s own module docstring already names as the reference
-      # "older build" its graceful-degradation paths (`-dont_use` exclusion,
-      # `sequential_area_um2`) are written and tested against -- so this is
-      # a known-supported floor, not an untested one.
+      # way this flow already shells out to `xschem`/`klt` -- floating
+      # rather than a version pin, and for the same reason given above for
+      # xschem: it is a netlister, and a version bump is meant to turn
+      # `design/synth.py --check` red (loud) rather than drift unnoticed.
+      #
+      # This used to float on Ubuntu's own distro `yosys` package (0.33 on
+      # 24.04), on the premise -- `klayout_tools.synthesize`'s own module
+      # docstring -- that 0.33 is the reference "older build" its
+      # graceful-degradation paths (`-dont_use` exclusion,
+      # `sequential_area_um2`) are already written and tested against. That
+      # premise turned out to be true for those two paths but false for a
+      # third: measured live (#196), `klt synthesize --format json` against
+      # this repo's own `trng_top` (a hierarchical top instantiating four
+      # child modules, never flattened -- see design/synth.py's "One
+      # netlist, not five" docstring section) crashes on every single
+      # invocation under Yosys 0.33, with an unhandled `KeyError('area')`
+      # traceback on stderr instead of a clean JSON error envelope, because
+      # 0.33's `stat -json` omits the top module's own `area` key entirely
+      # when -- as here -- none of its *directly* owned cells are
+      # liberty-mapped primitives (they are all un-flattened submodule
+      # instances, so its own contribution is exactly zero and 0.33 drops
+      # the key rather than emitting `0.0`). This is a klayout-tools bug
+      # (`run_synthesize()` indexes `module_stats["area"]` unguarded, with
+      # no fallback to the report's own whole-design `area` rollup, unlike
+      # the module-key-miss case `_read_stats()` already falls back on) --
+      # filed upstream at 2AMLogic/klayout-tools#1262, and NOT
+      # patched here (out of this repo's scope; see CLAUDE.md's friction
+      # protocol). Yosys 0.67+ does not hit it: verified live (#196)
+      # against PyPI's `yowasp-yosys`, whose `stat -json` reports a correct,
+      # non-zero rolled-up `area` for the same hierarchical `trng_top`
+      # request -- matching the `engine_version: "0.68+post"` this repo's
+      # own committed `design/trng_top/trng_top.synth.json` already
+      # recorded (that netlist was never built against the distro package
+      # to begin with). So the floor moves to `yowasp-yosys`: still no
+      # version pin (`--upgrade`, same loud-drift intent as before), just a
+      # different, actually-working channel. `yowasp-yosys` installs its
+      # console script as `yowasp-yosys`, not `yosys` -- `klt synthesize`
+      # (and every caller in this repo) invokes the latter by name, so the
+      # step below symlinks one to the other.
+      #
+      # `yowasp-yosys` is a WASI-sandboxed build (real Yosys compiled to
+      # WebAssembly, run under `wasmtime`): it only has filesystem access
+      # under the invoking directory, never `/tmp` -- the same constraint
+      # `layout/digital/lvs.py`'s own `_yosys_netlist()` already documents
+      # and designs around, and why `design/synth.py`'s own scratch
+      # directory (`design/.work/`, `WORK_DIR`) moved off the OS temp dir in
+      # the same change (#196).
       - name: Install yosys (the digital synthesis engine)
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends yosys
+          python3 -m pip install --disable-pip-version-check --upgrade yowasp-yosys
+          yosys_bin="$(command -v yowasp-yosys)"
+          ln -sf "${yosys_bin}" "$(dirname "${yosys_bin}")/yosys"
           yosys -V
 
       # Fails if design/trng_top/trng_top.synth.{v,json} no longer match
       # what `klt synthesize` produces from the current RTL -- the digital
       # analogue of the schematic-vs-netlist guard above (#143). Needs the
       # `gf180mcu_fd_sc_mcu9t5v0` standard-cell library, provisioned via
-      # PDK_LIBRARIES above alongside the primitive library. Writes nothing:
-      # --check synthesizes into a temp dir and diffs.
+      # PDK_LIBRARIES above alongside the primitive library. Writes nothing
+      # git-visible: --check synthesizes into the gitignored `design/.work/`
+      # scratch directory and diffs against the committed files.
       - name: Digital synthesis staleness guard
         run: python3 design/synth.py --check
 

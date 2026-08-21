@@ -103,7 +103,19 @@ def _run_klt(args: list[str], timeout_s: int = 600) -> dict:
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise FlowError(f"`{' '.join(argv)}` emitted unparseable JSON: {exc}") from exc
+        # Echo a bounded prefix of the offending output so the caller (CI logs
+        # included) can see *what* failed to parse, not just that parsing
+        # failed -- e.g. a Python traceback from an unhandled exception deep
+        # inside `klt` itself starts with "Traceback (most recent call
+        # last):", immediately distinguishing a tool crash from a stray log
+        # line ahead of the JSON payload. Discovered the hard way (#196): a
+        # bare `json.JSONDecodeError` gave no way to tell the two apart
+        # without reproducing the failure locally from scratch.
+        snippet = raw[:2000] + ("... [truncated]" if len(raw) > 2000 else "")
+        raise FlowError(
+            f"`{' '.join(argv)}` emitted unparseable JSON: {exc}\n"
+            f"raw output (exit {done.returncode}):\n{snippet}"
+        ) from exc
     if "error" in payload:
         raise FlowError(f"`{' '.join(argv)}` failed: {payload['error'].get('message')}")
     return payload
