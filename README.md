@@ -27,10 +27,13 @@ two rings, [`ro_ring11` and `ro_ring11_ring2`](layout/rings/README.md), and
 one non-ring block, [`combiner_sampler`](layout/blocks/README.md), all
 DRC-clean and LVS-matching per [`layout/reports/`](layout/reports/), with
 `ring1`, `ring2` and `combiner_sampler` placed inside the entropy source's
-own guarded regions in the floorplan. It is layout for the entropy source
-and sampler, not the whole block: the digital section (conditioner, health
-tests, interface) has no layout at all, and `layout/floorplan/` is still a
-floorplan, not a full layout — see
+own guarded regions in the floorplan. Since #170, the digital section
+(conditioner, health tests, interface) also has its own standalone layout —
+[`layout/digital/trng_top.gds`](layout/digital/), a placed-and-routed,
+DRC-clean gate-level GDS — though its LVS is not yet clean (8 residual
+mismatches, #187). Neither piece is composed into the other yet: there is no
+single whole-block GDS with both the entropy source and the digital section
+placed together, and closing that gap is #106, still open and blocked. See
 [`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
 inventory and what is explicitly still deferred. The specification table
 below was
@@ -219,6 +222,11 @@ DRBG supplies its own and treats this block as the seed source.
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
+Layout work has started on both halves — the entropy source and sampler are
+placed, DRC-clean and LVS-matching, and the digital section has a
+standalone placed-and-routed, DRC-clean GDS (#170) — but they are not yet
+composed into one whole-block layout (#106), and the digital section's own
+LVS is not yet clean (#187), so the second rung has not been cleared.
 The SP 800-90B validation claim attaches to the last rung, not the first
 ([DR-0004]) — a simulated min-entropy estimate is not an entropy assessment,
 and this repository will not let one be read as the other.
@@ -229,8 +237,8 @@ and this repository will not let one be read as the other.
 spec/          spec + decision records
 design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
-layout/        DRC/LVS flow + floorplan (klayout-tools driven) — no design cell drawn
-measurements/  silicon characterization                        — empty until tape-out
+layout/        DRC/LVS flow + drawn cells + digital P&R          — not yet composed (#106)
+measurements/  silicon characterization                          — empty until tape-out
 ```
 
 `design/` holds the two halves of the block, one on each side of the raw tap.
@@ -261,14 +269,20 @@ that always says "clean". [`layout/verify.py`](layout/verify.py) drives `klt`
 DRC, extraction and LVS over three deliberately-chosen fixtures (a known-good
 inverter, a DRC-bad copy, an LVS-bad copy) and compares every report against a
 declared expectation, so the flow is itself a test.
-[`layout/floorplan/`](layout/floorplan/) is the only thing there that is about
-the TRNG: the entropy source's isolation rationale (#16) and the floorplan
-abstract that carries it — four guarded regions, DRC'd as one stream, priced
-against the area row. **Its regions are empty**, so it is a floorplan and not a
-layout, and nothing under `layout/reports/` should be read as a statement about
-this design. [`layout/README.md`](layout/README.md) says exactly what a clean
-report from this flow does and does not mean, and why it is not tapeout
-sign-off.
+[`layout/floorplan/`](layout/floorplan/) is the entropy source's isolation
+rationale (#16) and the floorplan abstract that carries it — four guarded
+regions, DRC'd as one stream, priced against the area row. Three of those
+regions — `ring1`, `ring2` and `combiner_sampler` — are no longer an
+abstract: they carry real, placed, guard-ringed geometry assembled from the
+drawn cells above, DRC-clean and LVS-matching per `layout/reports/`
+(#110, #135). The fourth region, `digital`, is still an empty guard ring in
+this floorplan: the digital section has its own standalone placed-and-routed
+GDS ([`layout/digital/`](layout/digital/), #170) — DRC-clean, though its LVS
+still has residual mismatches (#187) — but it has not been composed into
+this floorplan yet, and closing that gap is #106. Until it is, nothing under
+`layout/reports/` should be read as a statement about the whole design.
+[`layout/README.md`](layout/README.md) says exactly what a clean report from
+this flow does and does not mean, and why it is not tapeout sign-off.
 
 Two conventions govern what lands in those directories:
 
