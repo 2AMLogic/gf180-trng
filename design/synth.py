@@ -61,12 +61,18 @@ counts this script commits. It does **not** place or route anything (that
 is `klt place-and-route`, #111's still-open scope) and it does **not**
 perform signoff timing analysis.
 
-The response does carry a `timing` object (`{"source": "abc_stime",
+The response may carry a `timing` object (`{"source": "abc_stime",
 "wire_load": null, "critical_path_ps": ..., "delay_target_ps": null}`) —
 ABC's own `stime -p` estimate over the mapped netlist, wired in by
 klayout-tools issue #807 after this repo's own #143 was filed expecting a
-bare `timing: null`. It is real output, so this script commits it verbatim
-rather than fabricating the `null` the issue anticipated. But it is, in
+bare `timing: null`. It is real output when present, so this script commits
+it verbatim rather than fabricating the `null` #143 anticipated -- but a bare
+`timing: null` is itself a legitimate, non-error response
+(`klayout_tools.synthesize._read_abc_timing`'s own documented "no number to
+report" case), not something this script treats as a failure: it degrades to
+`null` whenever the captured ABC log carries no parseable `stime -p` summary
+line at all, which the resolved Yosys/ABC build's own verbosity determines,
+not anything in this repository's request. When present, it is, in
 `klayout_tools.synthesize`'s own words, "a pre-layout, wire-free estimate"
 (`wire_load` reports `"none"`) — no wire delay, no parasitics, no SDC, not
 even a real static-timing walk of the netlist (that is the separate,
@@ -154,12 +160,26 @@ import hashlib
 import json
 import shutil
 import sys
-import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DESIGN_DIR = REPO_ROOT / "design"
 TRNG_TOP_DIR = DESIGN_DIR / "trng_top"
+
+#: Scratch directory for `klt synthesize`'s request.json and its own
+#: `.klt/synthesize/` artifacts -- deliberately under the repo tree (gitignored,
+#: same "scratch workdir" role `layout/.work/` already plays for `layout/
+#: verify.py`) rather than the OS temp dir. This used to be a fresh
+#: `tempfile.TemporaryDirectory()` (i.e. under `/tmp`), which works fine
+#: against a native `yosys` binary but not a WASI-sandboxed one (e.g. PyPI's
+#: `yowasp-yosys`): that sandbox only has filesystem access under the
+#: invoking directory, never `/tmp` -- the exact constraint `layout/digital/
+#: lvs.py`'s own `_yosys_netlist()` already documents and designs around.
+#: Reused (not recreated) across runs, matching `layout/verify.py`'s own
+#: `WORK_DIR` precedent -- `synthesize()` below overwrites its contents
+#: fresh on every call, so nothing here needs to persist between runs, and
+#: `--check` never reads it back (see #196).
+WORK_DIR = DESIGN_DIR / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
@@ -322,33 +342,33 @@ def check() -> int:
         )
         return EXIT_STALE
 
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            fresh_report, fresh_netlist_path = synthesize(Path(tmp))
-        except SynthError as exc:
-            print(f"ERROR  {exc}", file=sys.stderr)
-            return EXIT_ENVIRONMENT
-        fresh_netlist = fresh_netlist_path.read_bytes()
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        fresh_report, fresh_netlist_path = synthesize(WORK_DIR)
+    except SynthError as exc:
+        print(f"ERROR  {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    fresh_netlist = fresh_netlist_path.read_bytes()
 
-        committed_report = json.loads(REPORT_PATH.read_text())
-        committed_netlist = NETLIST_PATH.read_bytes()
+    committed_report = json.loads(REPORT_PATH.read_text())
+    committed_netlist = NETLIST_PATH.read_bytes()
 
-        stale = False
-        if committed_report != fresh_report:
-            print(
-                f"STALE  {REPORT_PATH.relative_to(REPO_ROOT)}: committed "
-                "report does not match a fresh synthesis run"
-            )
-            for key in sorted(set(committed_report) | set(fresh_report)):
-                if committed_report.get(key) != fresh_report.get(key):
-                    print(f"       field {key!r} differs")
-            stale = True
-        if committed_netlist != fresh_netlist:
-            print(
-                f"STALE  {NETLIST_PATH.relative_to(REPO_ROOT)}: committed "
-                "netlist does not match a fresh synthesis run"
-            )
-            stale = True
+    stale = False
+    if committed_report != fresh_report:
+        print(
+            f"STALE  {REPORT_PATH.relative_to(REPO_ROOT)}: committed "
+            "report does not match a fresh synthesis run"
+        )
+        for key in sorted(set(committed_report) | set(fresh_report)):
+            if committed_report.get(key) != fresh_report.get(key):
+                print(f"       field {key!r} differs")
+        stale = True
+    if committed_netlist != fresh_netlist:
+        print(
+            f"STALE  {NETLIST_PATH.relative_to(REPO_ROOT)}: committed "
+            "netlist does not match a fresh synthesis run"
+        )
+        stale = True
 
     if stale:
         print("       run `python3 design/synth.py` and commit the diff")
@@ -361,16 +381,16 @@ def check() -> int:
 
 
 def build() -> int:
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            report, netlist_path = synthesize(Path(tmp))
-        except SynthError as exc:
-            print(f"ERROR  {exc}", file=sys.stderr)
-            return EXIT_ENVIRONMENT
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        report, netlist_path = synthesize(WORK_DIR)
+    except SynthError as exc:
+        print(f"ERROR  {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
 
-        TRNG_TOP_DIR.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(netlist_path, NETLIST_PATH)
-        REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n")
+    TRNG_TOP_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(netlist_path, NETLIST_PATH)
+    REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n")
 
     origin = klt_origin()
     commit = (origin or {}).get("commit")

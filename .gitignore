@@ -12,6 +12,15 @@ sim/.work/
 # both modes so a check run never overwrites a committed report (layout/README.md).
 layout/.work/
 
+# design/synth.py: scratch workdir for `klt synthesize`'s request.json + its
+# own `.klt/synthesize/` artifacts. Deliberately under the repo tree rather
+# than the OS temp dir (issue #196): a WASI-sandboxed `yosys` build (e.g.
+# PyPI's `yowasp-yosys`, this repo's floating floor as of #196) only has
+# filesystem access under the invoking directory, never `/tmp` -- the same
+# constraint `layout/digital/lvs.py`'s own `_yosys_netlist()` already
+# documents and designs around.
+design/.work/
+
 # Evidence records ARE meant to be committed even though their raw output
 # uses the generically-ignored *.log/*.raw extensions above (sim/README.md:
 # "sim/ results are append-only evidence").

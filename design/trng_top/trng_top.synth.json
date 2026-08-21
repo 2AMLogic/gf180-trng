@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "engine": "yosys",
-  "engine_version": "0.68+post",
+  "engine_version": "0.68",
   "hdl_toplevel": "trng_top",
   "status": "ok",
   "instance_count": 2505,
-  "area_um2": 111857.3568,
+  "area_um2": 111863.0016,
   "sequential_area_um2": 58186.5984,
   "instance_counts_by_type": {
     "gf180mcu_fd_sc_mcu9t5v0__and2_1": 30,
     "gf180mcu_fd_sc_mcu9t5v0__and2_2": 8,
     "gf180mcu_fd_sc_mcu9t5v0__and2_4": 1,
-    "gf180mcu_fd_sc_mcu9t5v0__and3_1": 69,
-    "gf180mcu_fd_sc_mcu9t5v0__and3_2": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__and3_1": 68,
+    "gf180mcu_fd_sc_mcu9t5v0__and3_2": 4,
     "gf180mcu_fd_sc_mcu9t5v0__and3_4": 1,
     "gf180mcu_fd_sc_mcu9t5v0__and4_1": 6,
     "gf180mcu_fd_sc_mcu9t5v0__and4_2": 1,
@@ -22,14 +22,15 @@
     "gf180mcu_fd_sc_mcu9t5v0__aoi21_4": 4,
     "gf180mcu_fd_sc_mcu9t5v0__aoi221_1": 2,
     "gf180mcu_fd_sc_mcu9t5v0__aoi222_1": 111,
-    "gf180mcu_fd_sc_mcu9t5v0__aoi22_1": 93,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi22_1": 90,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi22_2": 3,
     "gf180mcu_fd_sc_mcu9t5v0__aoi22_4": 1,
-    "gf180mcu_fd_sc_mcu9t5v0__buf_1": 66,
-    "gf180mcu_fd_sc_mcu9t5v0__buf_2": 29,
-    "gf180mcu_fd_sc_mcu9t5v0__buf_3": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__buf_4": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__buf_8": 22,
-    "gf180mcu_fd_sc_mcu9t5v0__clkbuf_1": 14,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_1": 68,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_2": 26,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_3": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_4": 9,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_8": 16,
+    "gf180mcu_fd_sc_mcu9t5v0__clkbuf_1": 12,
     "gf180mcu_fd_sc_mcu9t5v0__clkinv_1": 74,
     "gf180mcu_fd_sc_mcu9t5v0__dffq_1": 512,
     "gf180mcu_fd_sc_mcu9t5v0__dffrnq_1": 194,
@@ -37,26 +38,25 @@
     "gf180mcu_fd_sc_mcu9t5v0__inv_1": 4,
     "gf180mcu_fd_sc_mcu9t5v0__mux2_1": 399,
     "gf180mcu_fd_sc_mcu9t5v0__mux2_2": 154,
-    "gf180mcu_fd_sc_mcu9t5v0__nand2_1": 175,
-    "gf180mcu_fd_sc_mcu9t5v0__nand2_2": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__nand2_1": 176,
+    "gf180mcu_fd_sc_mcu9t5v0__nand2_2": 1,
     "gf180mcu_fd_sc_mcu9t5v0__nand2_4": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__nand3_1": 51,
-    "gf180mcu_fd_sc_mcu9t5v0__nand3_2": 11,
-    "gf180mcu_fd_sc_mcu9t5v0__nand3_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_1": 52,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_2": 9,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_4": 2,
     "gf180mcu_fd_sc_mcu9t5v0__nand4_1": 27,
-    "gf180mcu_fd_sc_mcu9t5v0__nand4_2": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__nand4_4": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__nand4_2": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__nand4_4": 2,
     "gf180mcu_fd_sc_mcu9t5v0__nor2_1": 64,
-    "gf180mcu_fd_sc_mcu9t5v0__nor2_2": 14,
-    "gf180mcu_fd_sc_mcu9t5v0__nor2_4": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_2": 7,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_4": 11,
     "gf180mcu_fd_sc_mcu9t5v0__nor3_1": 34,
-    "gf180mcu_fd_sc_mcu9t5v0__nor3_2": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__nor3_4": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_2": 4,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_4": 2,
     "gf180mcu_fd_sc_mcu9t5v0__nor4_1": 7,
     "gf180mcu_fd_sc_mcu9t5v0__nor4_2": 2,
     "gf180mcu_fd_sc_mcu9t5v0__nor4_4": 2,
-    "gf180mcu_fd_sc_mcu9t5v0__oai211_1": 4,
-    "gf180mcu_fd_sc_mcu9t5v0__oai211_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__oai211_1": 5,
     "gf180mcu_fd_sc_mcu9t5v0__oai21_1": 41,
     "gf180mcu_fd_sc_mcu9t5v0__oai21_2": 3,
     "gf180mcu_fd_sc_mcu9t5v0__oai221_1": 11,
@@ -66,8 +66,8 @@
     "gf180mcu_fd_sc_mcu9t5v0__oai31_4": 3,
     "gf180mcu_fd_sc_mcu9t5v0__oai32_1": 16,
     "gf180mcu_fd_sc_mcu9t5v0__or2_1": 21,
-    "gf180mcu_fd_sc_mcu9t5v0__or2_2": 5,
-    "gf180mcu_fd_sc_mcu9t5v0__or2_4": 2,
+    "gf180mcu_fd_sc_mcu9t5v0__or2_2": 6,
+    "gf180mcu_fd_sc_mcu9t5v0__or2_4": 1,
     "gf180mcu_fd_sc_mcu9t5v0__or3_1": 1,
     "gf180mcu_fd_sc_mcu9t5v0__or3_2": 1,
     "gf180mcu_fd_sc_mcu9t5v0__or3_4": 3,
@@ -80,12 +80,7 @@
     "gf180mcu_fd_sc_mcu9t5v0__xor2_1": 10,
     "gf180mcu_fd_sc_mcu9t5v0__xor2_2": 3
   },
-  "timing": {
-    "source": "abc_stime",
-    "wire_load": null,
-    "critical_path_ps": 6443.28,
-    "delay_target_ps": null
-  },
+  "timing": null,
   "sta": null,
   "netlist_path": "design/trng_top/trng_top.synth.v",
   "script_path": null,
@@ -94,14 +89,14 @@
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30",
-      "content_hash": "sha256:154655e033bec8509acca1575cc2e48e4d7143dfe70a8c61e0695f24c3dcaf02"
+      "content_hash": "sha256:1157d0aa147dba75a214708197d7a046f970175d723cdec108025f6f06727c12"
     },
     "input": {
-      "content_hash": "sha256:42d0306c633bd088804e4e1841e18028fd6312c73d77c71f143b4915bc23385f"
+      "content_hash": "sha256:2927536a8bbb674110ca7382abc03a4dcf8579cae42c04044400d0b3e2a3ffa8"
     }
   },
   "equivalence": null,
@@ -109,7 +104,7 @@
   "rtl_sources": [
     {
       "path": "design/trng_top/trng_top.v",
-      "content_hash": "sha256:241a3fe125c015ab11d76d4f7f0aea9e96602ed449fc001e3d3ced8700b6b7bd"
+      "content_hash": "sha256:0ce4c694ac2a627afe3ef653241dcb6ff7d0791b415a922669deddeaa91cdd16"
     },
     {
       "path": "design/conditioner/crc32_conditioner.v",
