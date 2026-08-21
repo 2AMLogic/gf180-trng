@@ -415,6 +415,21 @@ this one corner, not a new effect.
 
 ### 4.4 What this does and does not change downstream
 
+> **Update — [#174]/[DR-0023] (Proposed, 2026-08-21) has since made the
+> substitution this section deferred.** `sim/tools/power_rollup.py` now reads
+> its digital term from this document's own measured record family via
+> `sim/tools/digital_corner_characterization.py`, not from
+> `design/digital_power_estimate.py` — the whole-block active row moves from
+> "met, 86.6 %" to "missed, 224.5 %", and [DR-0017]'s idle miss narrows from
+> 4.46 µA/4.5× to 3.979 µA/~4.0×. `design/digital_power_estimate.py` is
+> unchanged and still runs, printed as context. `npm run check:spec` passes
+> against the new arithmetic; the paragraphs below are left as this section's
+> author wrote them, because the deferral they describe was real at the time
+> and the record that resolved it (DR-0023) is not ratified — the row's own
+> ratified target text is unedited either way. See [DR-0023] for the decision
+> and its reasoning, and `README.md`'s Power row for the current evidenced
+> figures.
+
 `sim/tools/power_rollup.py` still uses `design/digital_power_estimate.py` for
 its digital term, and `npm run check:spec` still passes unchanged. That is
 deliberate:
@@ -581,3 +596,4 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
+[DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
