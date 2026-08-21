@@ -48,13 +48,15 @@ noted in the output, and it is far below the estimate's own uncertainty.
 This estimate has since been measured against (issue #145)
 ---------------------------------------------------------
 `design/trng_top/trng_top.synth.v` (#143) and `layout/digital/trng_top.def`
-(#111) did not exist when this script was written; they do now, and
-``sim/characterization-digital-sta-area-power.md`` reports the same quantity
-measured from the placed netlist across the corner set, at the same 1 MHz raw
-rate and the same switching-activity assumption. Headline: **measured dynamic
-power is 10-14x this estimate**, while **measured leakage lands within
-0.63-1.32x of it** -- i.e. item 2 above (characterised library data, no
-modelling freedom) held up, and item 3 did not.
+(#111, with #171's power-delivery network) did not exist when this script was
+written; they do now, and ``sim/characterization-digital-sta-area-power.md``
+reports the same quantity measured from the placed netlist across the corner
+set, at the same 1 MHz raw rate and the same switching-activity assumption.
+Headline: **measured dynamic power is 10-14x this estimate**, while
+**measured leakage lands within 0.89-3.76x of it** (0.63-1.32x before #171
+added a tapcell/endcap/filler population this estimate has no term for) --
+i.e. item 2 above (characterised library data, no modelling freedom) held up
+better than item 3 did, though #171's PDN leakage now widens its own spread.
 
 Two of this script's assumptions the netlist falsifies outright, both recorded
 here rather than silently corrected, because this script's value is now as the
@@ -73,11 +75,15 @@ here rather than silently corrected, because this script's value is now as the
    706 flops cost ~196 uW at 1 MHz before anything toggles -- 5x this script's
    entire ungated active figure. This is the single largest term in the gap.
 
-Nothing here is changed to chase those, and ``sim/tools/power_rollup.py`` still
-uses this script for its digital term: substituting a 10-14x larger number
-changes a README-row verdict, which is an operator decision and not this
-script's to make. That decision is issue #174; see the characterization
-document's section 4.4 for what it turns on.
+Nothing here is changed to chase those. Per [DR-0023] (Proposed, issue #174),
+``sim/tools/power_rollup.py`` now reads its digital term from the MEASURED
+gate-level record family instead of from this script -- this script's number
+no longer decides the README `Power` row's verdict. This script itself is
+unchanged in method and keeps running: it is still the pre-synthesis
+prediction the measurement is checked against, and ``power_rollup.py`` still
+computes and prints its result at both corners, explicitly marked context
+only. See the characterization document's section 4.4 and [DR-0023] for the
+decision and its reasoning.
 
 Why CI does not run this
 ------------------------
@@ -93,6 +99,7 @@ gate inventories depend on moves without the inventory being revisited.
 
 [DR-0004]: ../spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 [DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 """
 
 from __future__ import annotations

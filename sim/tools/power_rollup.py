@@ -9,13 +9,13 @@
 What the README rows say
 ------------------------
 > **Power** -- < 500 uW active, binding at ``ff`` / +10 % supply; < 1 uA idle,
-> binding at ``ff`` / +10 % / +125 C (max leakage). **Neither figure has any
-> evidence behind it yet.**
+> binding at ``ff`` / +10 % / +125 C (max leakage).
 
 This script is that evidence, assembled from committed records rather than
 restated. Every term below names the record family it comes from and whether
-it is a transistor-level MEASUREMENT or a [DR-0004] Tier 2 ESTIMATE, and the
-two are never silently added into one number without saying so.
+it is a transistor-level MEASUREMENT, a MEASURED-at-gate-level liberty-power
+result ([DR-0021]), or a [DR-0004] Tier 2 ESTIMATE, and none of the three are
+ever silently added into one number without saying so.
 
 Active power, per corner
 ------------------------
@@ -37,11 +37,21 @@ Active power, per corner
   which rate multiplies which term: the dominant one is ``R_xo``, hundreds of
   megahertz, not the 1 MHz sample clock. Only ``xsb`` sees a moving D; ``xsv``
   has D tied to vdd and contributes the clock term only.
-- ``P_digital`` -- conditioner + health tests + interface, ESTIMATED by
-  ``design/digital_power_estimate.py`` from the PDK's own Liberty library
-  against an enumerated gate inventory. Not a measurement, and labelled as
-  such everywhere it appears. Corner-independent within this script: the
-  Liberty corner is chosen once, from the two the README's Power row binds at.
+- ``P_digital`` -- conditioner + health tests + interface + [#171]'s
+  power-delivery cells, **MEASURED-at-gate-level** ([DR-0021]) from the
+  synthesized, placed and routed ``trng_top`` digital section:
+  ``sim/tools/digital_corner_characterization.py``'s own worst-corner figure
+  over the committed ``sim/records/*-digital-sta-power-*.md`` family (15
+  corners, 5 liberty decks x 3 interconnect decks), rate-scaled from its own
+  1 MHz/20 MHz pair. Per [DR-0023] this REPLACES
+  ``design/digital_power_estimate.py``'s [DR-0004] Tier 2 ESTIMATE as the
+  figure that feeds the totals below; the estimate is still computed and
+  printed alongside it, as context, because it is the pre-synthesis
+  prediction the measurement is checked against -- not because it still
+  decides anything. "MEASURED-at-gate-level" and not bare "MEASURED":
+  [DR-0021] section 3 forbids citing a ``level: gate`` liberty-power result as a
+  measured supply current, which is exactly the distinction this label
+  exists to preserve.
 
 Idle current, per corner
 ------------------------
@@ -50,7 +60,19 @@ Idle current, per corner
 - ``I_analog`` -- rings clamped, reset released, clock parked, MEASURED across
   the full 45-point grid by ``sim/tb/sampler-core-idle-leakage/`` on the whole
   of ``sampler_core``. The worse of the two clock-park states is used.
-- ``I_digital_leakage`` -- the same Liberty inventory's leakage. ESTIMATE.
+- ``I_digital_leakage`` -- the same gate-level record family's worst-corner
+  leakage current. **MEASURED-at-gate-level** ([DR-0021]/[DR-0023]), same
+  scope and same replacement-of-the-estimate rule as ``P_digital`` above.
+
+Scope note (per [DR-0023])
+---------------------------
+The measured digital figure's scope is **wider** than the estimate's: all
+2502 logical instances Yosys/OpenROAD placed for ``trng_top``'s digital
+section, plus 6136 tapcell/endcap/filler cells [#171] added for the power
+delivery network -- against the estimate's 1655-cell, three-block,
+logic-only inventory. That is the actual as-built digital section, so it is
+the right scope for a whole-block rollup even though it is not an
+apples-to-apples re-run of the estimate's inventory.
 
 What this does NOT include
 --------------------------
@@ -62,11 +84,19 @@ What this does NOT include
   them so the cost of adopting them is visible rather than forgotten.
 - Any I/O, level-shifting, clock-generation or reference circuitry outside
   this block. The block does not contain a clock source at all ([DR-0012]).
-- Post-layout parasitics. Nothing here has been laid out (#15/#17).
+- Post-layout parasitics beyond the digital section's own routed DEF. The
+  analog block has not been laid out (#15/#17).
+- A per-net switching-activity annotation. Both the measured and the estimated
+  digital figures share the SAME declared uniform 0.25 transitions/net/cycle
+  activity (deliberately, so the two are comparable); neither is this design's
+  real, data-dependent activity. [DR-0023]'s Follow-up names the annotation
+  that would replace the assumption with a measurement.
 
 [DR-0004]: ../../spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 [DR-0011]: ../../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0021]: ../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
+[DR-0023]: ../../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 """
 
 from __future__ import annotations
@@ -79,6 +109,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import digital_corner_characterization as dcc  # noqa: E402
 from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -106,7 +137,9 @@ RATIFIED_RAW_RATE_BPS = 1e6
 #: own 10/21 duty is a simulation artefact and deliberately does not appear.
 DUTY_OPEN = 0.5
 
-#: Liberty corners for the digital estimate, one per README row half.
+#: Liberty corners for `design/digital_power_estimate.py`'s CONTEXT-only
+#: comparison figure (see `digital_measured()` docstring for the term that
+#: actually feeds the totals below, per DR-0023). One per README row half.
 DIGITAL_CORNER_ACTIVE = "ff_n40C_3v60"
 DIGITAL_CORNER_IDLE = "ff_125C_3v60"
 
@@ -173,7 +206,12 @@ def by_corner(records: list[Record], prefer: str | None = None) -> dict[str, Rec
 
 
 def digital_estimate(corner: str, rate_bps: float) -> dict:
-    """Run design/digital_power_estimate.py and read back its JSON."""
+    """Run design/digital_power_estimate.py and read back its JSON.
+
+    CONTEXT ONLY as of [DR-0023]: this is the [DR-0004] Tier 2 pre-synthesis
+    prediction, still computed and printed for comparison, but it no longer
+    feeds the totals below -- see ``digital_measured()``.
+    """
     proc = subprocess.run(
         [sys.executable, str(DIGITAL_SCRIPT), "--corner", corner,
          "--raw-rate", repr(rate_bps), "--json"],
@@ -185,6 +223,64 @@ def digital_estimate(corner: str, rate_bps: float) -> dict:
         )
     import json
     return json.loads(proc.stdout)
+
+
+def digital_measured(rate_bps: float) -> dict:
+    """Digital section active/idle power, MEASURED-at-gate-level ([DR-0021]),
+    from the committed ``sim/records/*-digital-sta-power-*.md`` family --
+    this is the term [DR-0023] uses in place of ``digital_estimate()``'s
+    ESTIMATE.
+
+    Needs no PDK: unlike the estimate, this reads committed evidence records,
+    the same ones ``sim/tools/digital_corner_characterization.py`` aggregates.
+    Raises ``dcc.RecordError`` if that family is missing or malformed, exactly
+    the failure mode a caller should treat the same way a missing array/
+    sampler/idle record family is treated.
+
+    **Corner selection**: the worst of the swept 15-corner set (5 liberty
+    decks x 3 interconnect decks) for each quantity independently -- the same
+    ``max_1mhz_corner`` / ``max_leakage_corner`` ``sim/tools/
+    digital_corner_characterization.py``'s own ``power()`` derives and
+    ``--check`` holds to its recorded verdict. This deliberately does NOT
+    reuse the two corners the ESTIMATE was pinned to
+    (``DIGITAL_CORNER_ACTIVE``/``DIGITAL_CORNER_IDLE``, chosen to match where
+    the README row's OWN target text says the row binds): now that the
+    digital term dominates the active side, the digital section's own worst
+    corner (``ff_125C_3v60``/``max``) is a different corner from the one the
+    entropy source binds active power at (``ff_n40C_3v60``), and using each
+    term's own worst case is the same conservative convention this script
+    already applies to the idle row's two clock-park states.
+
+    **Rate scaling**: the record family carries two fixed clock rates (1 MHz
+    and 20 MHz -- the P&R run's own implementation constraint). Every
+    non-leakage watt in a liberty power report is ``toggles/sec x energy/
+    toggle`` at the declared activity, i.e. linear in the clock rate; leakage
+    is not. So ``P(rate) = leakage + (P_1MHz - leakage) * (rate / 1MHz)`` is
+    an exact algebraic re-derivation of the SAME model at a different rate,
+    not a new approximation -- checked against the committed family's own
+    1 MHz/20 MHz pair, which agrees with this formula to better than 2e-6
+    relative at every one of the 15 corners.
+    """
+    records = dcc.load()
+    p = dcc.power(records)
+    leak_w = p["max_leakage_w"]
+    dyn_w_at_1mhz = p["max_1mhz_w"] - leak_w
+    active_w = leak_w + dyn_w_at_1mhz * (rate_bps / RATIFIED_RAW_RATE_BPS)
+    # Leakage does not depend on the interconnect corner (it is a device-only
+    # quantity), so `p["max_leakage_corner"]` names an arbitrary rc suffix --
+    # whichever of the three tied interconnect corners `dcc.power()`'s own
+    # `max()` happened to see first. Reporting only the liberty deck keeps
+    # this from implying an interconnect dependence that is not there.
+    leakage_corner = p["max_leakage_corner"].split("/")[0]
+    return {
+        "active_w": active_w,
+        "active_w_at_1mhz": p["max_1mhz_w"],
+        "active_corner": p["max_1mhz_corner"],
+        "leakage_w": leak_w,
+        "leakage_a": p["max_leakage_a"],
+        "leakage_corner": leakage_corner,
+        "n_corners": len(records),
+    }
 
 
 def sampler_active(sampler: Record, r_xo: float, f_clk: float) -> dict:
@@ -233,8 +329,8 @@ def main(argv=None) -> int:
     p.add_argument("--no-digital", action="store_true",
                    help="report only the transistor-level measured terms")
     p.add_argument("--require-digital", action="store_true",
-                   help="fail instead of degrading if the PDK's Liberty libraries "
-                        "(and therefore the digital estimate) are unavailable")
+                   help="fail instead of degrading if the gate-level digital "
+                        "power records are unavailable")
     p.add_argument("--with-taps", action="store_true",
                    help="add the two measured but not-instantiated taps "
                         "(metastability hybrid, ring-liveness digitizer)")
@@ -255,40 +351,57 @@ def main(argv=None) -> int:
         print(f"ERROR: no records for: {', '.join(missing)}", file=sys.stderr)
         return 2
 
-    dig_active = dig_idle = None
+    dig = None
     dig_note = ""
     if not args.no_digital:
-        # The digital term needs the PDK's Liberty libraries. The record-only
-        # arithmetic does not, and CI's PR-blocking path has no PDK -- so a
-        # missing PDK degrades to the measured-silicon-only view with a loud
-        # note, rather than failing a check that is about the records.
+        # The MEASURED-at-gate-level term (DR-0023) reads committed records
+        # and needs no PDK. It is the one that feeds the totals below.
         try:
-            dig_active = digital_estimate(DIGITAL_CORNER_ACTIVE, args.rate)
-            dig_idle = digital_estimate(DIGITAL_CORNER_IDLE, args.rate)
-        except RuntimeError as exc:
+            dig = digital_measured(args.rate)
+        except dcc.RecordError as exc:
             if args.require_digital:
                 print(f"ERROR: {exc}", file=sys.stderr)
                 return 2
-            dig_note = str(exc).splitlines()[-1] if str(exc).strip() else "unavailable"
+            dig_note = str(exc)
+
+    # The pre-synthesis ESTIMATE (DR-0004 Tier 2) is CONTEXT ONLY as of
+    # DR-0023 -- it no longer feeds the totals below, and its own absence
+    # (no PDK Liberty library on this host) never fails `--check` or
+    # `--require-digital`, both of which are about the measured term.
+    dig_est_active = dig_est_idle = None
+    dig_est_note = ""
+    if not args.no_digital:
+        try:
+            dig_est_active = digital_estimate(DIGITAL_CORNER_ACTIVE, args.rate)
+            dig_est_idle = digital_estimate(DIGITAL_CORNER_IDLE, args.rate)
+        except RuntimeError as exc:
+            dig_est_note = str(exc).splitlines()[-1] if str(exc).strip() else "unavailable"
 
     print(f"sample clock     : {args.rate:g} Hz")
     print(f"array records    : {len(arrays)} corners  {', '.join(ARRAY_GLOBS)}")
     print(f"sampler records  : {len(samplers)} corners  {SAMPLER_ACTIVE_GLOB}")
     print(f"idle records     : {len(idles)} corners  {IDLE_GLOB}")
-    if dig_active:
-        print(f"digital estimate : {DIGITAL_CORNER_ACTIVE} (active) / "
-              f"{DIGITAL_CORNER_IDLE} (idle)  -- DR-0004 Tier 2 ESTIMATE, not measured")
+    if dig:
+        print(f"digital term     : MEASURED-at-gate-level ({dig['n_corners']} corners, "
+              f"active binds {dig['active_corner']}, leakage binds "
+              f"{dig['leakage_corner']}) -- DR-0021/DR-0023, feeds the totals below")
     elif dig_note:
-        print("digital estimate : UNAVAILABLE -- no PDK Liberty library on this host.")
+        print("digital term     : UNAVAILABLE -- no gate-level power records on this host.")
         print(f"                   ({dig_note})")
         print("                   Totals below are MEASURED SILICON ONLY and are a "
               "lower bound.")
     else:
-        print("digital estimate : EXCLUDED (--no-digital)")
+        print("digital term     : EXCLUDED (--no-digital)")
+    if dig_est_active:
+        print(f"digital estimate : {DIGITAL_CORNER_ACTIVE} (active) / "
+              f"{DIGITAL_CORNER_IDLE} (idle)  -- DR-0004 Tier 2 ESTIMATE, "
+              "pre-synthesis prediction, CONTEXT ONLY (does not feed the totals)")
+    elif dig_est_note and not args.no_digital:
+        print(f"digital estimate : UNAVAILABLE ({dig_est_note}) -- context comparison skipped")
     print()
 
     # ------------------------------------------------------------------ ACTIVE
-    print("ACTIVE POWER  (rings + XOR + sampler measured; digital estimated)")
+    print("ACTIVE POWER  (rings + XOR + sampler measured; digital MEASURED-at-gate-level)")
     hdr = (f"| {'corner':<16} | {'R_xo':>10} | {'P_array':>9} | {'P_sampler':>9} |"
            f" {'P_digital':>9} | {'TOTAL':>9} | {'vs 500uW':>8} |")
     rule = ("|" + "-" * 18 + "|" + "-" * 12 + "|" + "-" * 11 + "|" + "-" * 11
@@ -296,7 +409,7 @@ def main(argv=None) -> int:
     print(hdr)
     print(rule)
 
-    p_dig = dig_active["shipped_total"]["active_w"] if dig_active else 0.0
+    p_dig = dig["active_w"] if dig else 0.0
     if args.with_taps:
         p_dig += TAP_META_W + TAP_LIVENESS_W
 
@@ -330,9 +443,15 @@ def main(argv=None) -> int:
           f"   ({s['q_open_c']:.3e} C/transition x {worst_active[2]:.3e} /s x {DUTY_OPEN})")
     print(f"  sampler, clock term (measured): {_w(s['i_clk_a'] * s['vdd']):>9}"
           f"   {s['i_clk_a'] * s['vdd'] / ACTIVE_BUDGET_W:6.1%}")
-    if dig_active:
-        print(f"  digital (ESTIMATE)          : {_w(p_dig):>10}"
-              f"   {p_dig / ACTIVE_BUDGET_W:6.1%}")
+    if dig:
+        print(f"  digital (MEASURED-at-gate-level): {_w(p_dig):>7}"
+              f"   {p_dig / ACTIVE_BUDGET_W:6.1%}"
+              f"   [{dig['active_corner']}, rate-scaled from {_w(dig['active_w_at_1mhz'])} @ 1 MHz]")
+        if dig_est_active:
+            est_w = dig_est_active["shipped_total"]["active_w"]
+            print(f"    cf. pre-synthesis ESTIMATE (context, DR-0004 Tier 2, "
+                  f"does not feed this total): {_w(est_w)}"
+                  f"   ({p_dig / est_w:.1f}x)")
     headroom = ACTIVE_BUDGET_W - worst_active[3]
     non_array = worst_active[0] - worst_active[3]
     print(f"  headroom left by the entropy source: {_w(headroom)}; "
@@ -347,7 +466,7 @@ def main(argv=None) -> int:
             + "|" + "-" * 10 + "|")
     print(hdr)
     print(rule)
-    i_dig = dig_idle["shipped_total"]["leakage_a"] if dig_idle else 0.0
+    i_dig = dig["leakage_a"] if dig else 0.0
     idle_rows = []
     for corner, rec in idles.items():
         i_analog = max(abs(rec.values["i_idle_clklo_a"]), abs(rec.values["i_idle_clkhi_a"]))
@@ -366,13 +485,16 @@ def main(argv=None) -> int:
           f"  = {worst_idle[0] / IDLE_BUDGET_A:.0%} of the < 1 uA row")
     print(f"  analog, whole sampler_core (measured): {_a(worst_idle[2]):>10}"
           f"   {worst_idle[2] / IDLE_BUDGET_A:6.1%}")
-    if dig_idle:
-        t = dig_idle["shipped_total"]
-        print(f"  digital leakage (ESTIMATE)          : {_a(i_dig):>10}"
+    if dig:
+        print(f"  digital leakage (MEASURED-at-gate-level): {_a(i_dig):>6}"
               f"   {i_dig / IDLE_BUDGET_A:6.1%}"
-              f"   [{t['flops']} flops, {t['cells']} cells, no power gating]")
-        print(f"    input-state range of that estimate: "
-              f"{_a(t['leakage_min_a'])} .. {_a(t['leakage_max_a'])}")
+              f"   [{dig['leakage_corner']}, {dig['n_corners']} corners swept]")
+        if dig_est_idle:
+            t = dig_est_idle["shipped_total"]
+            print(f"    cf. pre-synthesis ESTIMATE (context, DR-0004 Tier 2, "
+                  f"does not feed this total): {_a(t['leakage_a'])}"
+                  f"   ({i_dig / t['leakage_a']:.2f}x)"
+                  f"   [{t['flops']} flops, {t['cells']} cells, no power gating]")
     print()
 
     if args.check:
@@ -383,6 +505,19 @@ def main(argv=None) -> int:
             problems.append(f"only {len(samplers)} sampler-active corners (expected >= 45)")
         if len(idles) < 45:
             problems.append(f"only {len(idles)} idle corners (expected >= 45)")
+        if not args.no_digital:
+            if dig is None:
+                problems.append(
+                    "digital gate-level power records unavailable "
+                    f"({dig_note or 'unknown reason'}) -- since DR-0023 these feed the "
+                    "totals and, unlike the estimate, need no PDK, so this should not "
+                    "happen on a committed checkout"
+                )
+            elif dig["n_corners"] < 15:
+                problems.append(
+                    f"only {dig['n_corners']} digital-sta-power corners (expected >= 15, "
+                    "DR-0021's 5-liberty x 3-interconnect grid)"
+                )
         for corner, rec in idles.items():
             a = abs(rec.values["i_idle_clklo_a"])
             b = abs(rec.values["i_idle_clklo_prev_a"])

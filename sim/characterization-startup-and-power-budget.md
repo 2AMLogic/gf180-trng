@@ -36,6 +36,23 @@ here decides anything.
 > re-run does not make what it measured untrue. Where a number here matters
 > to a decision, prefer the tool output over this document.
 
+> **Update — the digital section's contribution to both power rows is no
+> longer an estimate (#174 /
+> [`DR-0023`](../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md),
+> Proposed).** `sim/tools/power_rollup.py`'s digital term now comes from
+> #145's measured gate-level power sweep
+> (`sim/characterization-digital-sta-area-power.md`) instead of from
+> `design/digital_power_estimate.py`. That moves the **active row from met
+> (433.2 µW, 86.6 %) to missed (1.122 mW, 224.5 %)** — the digital section
+> alone, at its own worst measured corner (`ff_125C_3v60`/`max`), is 712.4 µW,
+> more than the whole row on its own — and **narrows the idle row's
+> already-`Proposed` [DR-0017] miss from 4.46 µA/4.5× to 3.979 µA/~4.0×**.
+> Neither ratified row is edited: the active miss is reported here exactly as
+> the idle miss already is, routed to [DR-0023] (Proposed). The numbers below
+> are left in the state issue #14 measured them in, for the same reason the
+> #78 update above gives; `python3 sim/tools/power_rollup.py` is the current
+> source of truth.
+
 ---
 
 ## Headline
@@ -43,8 +60,8 @@ here decides anything.
 | Row | Ratified target | Measured / estimated | Binding corner | Verdict |
 |---|---|---|---|---|
 | Time-to-first-valid | ≥ ~1.28 ms at 1 Mbps (an arithmetic floor) | **1.281 ms** | `ss`/+125 °C/2.97 V, but see below — the corner barely matters | **Met**, and the floor is confirmed as a floor |
-| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated**) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array | `ff`/−40 °C/3.63 V | **Met**, 90.8 % of the row (86.6 % since #78) |
-| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated**) | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017] |
+| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated**) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array, digital still **estimated**; **1.122 mW (224.5 %)** since #174/[DR-0023], digital now **measured-at-gate-level** | `ff`/−40 °C/3.63 V | pre-#174: **Met**, 86.6 % of the row. Since #174/[DR-0023] (Proposed): **Missed, 2.2×** |
+| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated**); **3.979 µA** since #174/[DR-0023], digital now **measured-at-gate-level** | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017]; narrowed to **~4.0×** since #174/[DR-0023] |
 
 ---
 
@@ -366,3 +383,4 @@ python3 sim/run_corners.py sampler-core-idle-leakage
 [DR-0012]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0016]: ../spec/decision-records/DR-0016-per-ring-liveness-monitor.md
 [DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
