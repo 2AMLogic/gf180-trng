@@ -13,7 +13,7 @@
 PYTHON ?= python3
 JOBS ?= $(shell $(PYTHON) -c "import os; print(os.cpu_count() or 1)")
 
-.PHONY: help smoke check characterize clean
+.PHONY: help smoke check characterize characterize-dry-run clean
 
 help:
 	@echo "gf180-trng make targets:"
