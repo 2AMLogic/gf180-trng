@@ -438,6 +438,130 @@ is this block's proposal for Open Circuit Design's Chipalooza Challenge #3
 target-specification table cites this repository's actual `sim/` results at
 the challenge's rails, marks the rows that miss or are unmeasured there, and
 proposes a reduced test-chip pinout mapped onto the challenge's slot budget.
+The next section is this repository's answer to that program's own review
+bar: how an outside reviewer independently re-runs the simulations that
+table's numbers come from.
+
+## Independent verification (Chipalooza)
+
+This section is written for someone who has never seen this repository
+before — specifically, for a Chipalooza Challenge #3 schematic reviewer
+checking the bar stated in [#202](https://github.com/2AMLogic/gf180-trng/issues/202):
+*"It must be possible for me to independently run simulations to verify the
+performance of the circuit,"* from a single command, with README instructions
+sufficient to understand how. If you only read one paragraph of this
+document, read the next one.
+
+**In three commands**, from a clean clone, with the prerequisites below
+installed: `make check` (are the tools present?), `make smoke` (does the
+harness work at all, in seconds), `make characterize` (regenerate the
+transistor-level evidence behind [the proposal's spec table](docs/chipalooza/challenge-3-proposal.md#4-target-specification)).
+Every result lands under [`sim/records/`](sim/records/) in the append-only
+format [`sim/README.md`](sim/README.md) fixes — nothing is overwritten, so
+re-running this after a clone changes nothing about the records already
+committed here, it only adds new, independently-produced ones alongside them.
+
+### Prerequisites
+
+| Tool | Version | Needed for |
+|---|---|---|
+| Python 3 | 3.10+ (stdlib only — no `pip install`) | all three `make` targets |
+| [ngspice](http://ngspice.sourceforge.net/) | ≥ 46 | `make smoke`, `make characterize` |
+| gf180mcu PDK | the `open_pdks` commit `.github/workflows/pdk-nightly.yml` pins (`f6eeac7d…`, or any current one) | `make smoke`, `make characterize` |
+| `PDK_ROOT` / `PDK` (or `GF180_PDK_PATH`) | — | only if the PDK is not under `~/.ciel`, `~/.volare`, or another of `sim/harness/pdk.py`'s built-in search roots |
+
+The simplest way to get ngspice + the PDK together is
+[IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) (a maintained
+Docker image with the whole open-source analog IC stack preinstalled) or,
+PDK-only, [ciel](https://github.com/fossi-foundation/ciel):
+
+```sh
+pip install ciel
+ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr \
+  f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+```
+
+ciel installs into `~/.ciel/<variant>`, one of the harness's built-in search
+roots, so nothing needs wiring up afterwards — `make check`'s environment
+report (below) confirms it found the PDK before you run anything longer.
+ciel's predecessor [volare](https://github.com/efabless/volare) also works,
+except its gf180mcu release feed stopped publishing in Aug 2025 and so can no
+longer install a *current* PDK. See the [`sim/` harness](#sim-harness) section
+above for the full PDK-resolution chain if you need to point at a PDK
+installed somewhere else (`GF180_PDK_PATH`, `PDK_ROOT`+`PDK`, or
+`sim/pdk.local.json`).
+
+**KLayout, Magic and Netgen are not needed for any of the three targets
+below.** This design's layout verification runs through
+[klayout-tools](https://github.com/2AMLogic/klayout-tools) (`klt`, which
+brings its own KLayout Python module rather than driving a standalone
+`magic`/`netgen` install) and the digital section's static timing needs
+OpenROAD — both are **separate flows** from the three `make` targets this
+section covers, invoked by `npm run check:layout` / `check:floorplan` and by
+`sim/tb/digital-sta-power/run_sta.py` respectively. The row-mapping table
+below names the exact command for the two spec-table rows that need them
+(Rows G and, partly, D/E), so a reviewer who only wants the analog entropy
+source's evidence never needs to install either.
+
+### The three make targets
+
+```sh
+make check              # unit tests + environment report -- run this first
+make smoke              # harness acceptance test, one typical corner -- seconds
+make characterize       # full PVT/corner campaign -- tens of minutes, multi-core
+make characterize-dry-run   # print the plan for `make characterize` without running it
+make help                   # all of the above, from the repo itself
+```
+
+| Target | What it does | Wall-clock (this repository's own 8-core host) | Exits non-zero on |
+|---|---|---|---|
+| `make check` | `sim/tests/` + `layout/tests/` unit tests (stdlib `unittest`, no PDK needed), then `python3 sim/run_corners.py --check-env` (ngspice version, OS watchdog, PDK resolution — see [Prerequisites](#prerequisites)) | ~10 s, fresh clone | any unit-test failure, or ngspice/PDK not found |
+| `make smoke` | `sim/selftest.sh`: the same unit tests, `sim/tools/verify_record_checksums.py` over every already-committed record, an end-to-end run of `sim/tb/smoke-op` at one corner (`--no-write`, mints no evidence), and `sim/tools/corner_sanity_check.py` (does switching the process corner actually move device behavior — the guardrail against a silently-ignored corner selection contaminating every downstream record) | ~11 s, fresh clone | any stage failing; the PDK-dependent stages **skip** (exit 0) instead of failing when ngspice/the PDK are absent, so this is also safe to run before installing either |
+| `make characterize` | `sim/characterize.py`: `sim/run_corners.py` invocations across six campaign steps (five testbenches, one run twice at two corners), at the same corner grids the proposal's spec-table citations use — 27 + 27 + 45 + 45 + 3 + 3 = 150 ngspice points total — writing real evidence records under `sim/records/` per `sim/README.md` | **per-point cost, uncontended**: ~85 s/point (measured: one 3-point sub-grid, 4m15s serial). At `JOBS=8` on a dedicated 8-core host, expect roughly 25–35 minutes for the full campaign; PR #203's own fresh-clone dry run ran on a heavily shared, multi-tenant host (load average measured >100 from concurrent unrelated builds) and is not a clean baseline — see the PR body for that run's actual, honestly-reported numbers | any `run_corners.py` invocation failing, or ngspice/the PDK not found |
+
+`JOBS=<n>` overrides the default concurrency (`os.cpu_count()`) on any of the
+three, e.g. `make characterize JOBS=4` on a shared or thermally-limited
+machine. `make clean` removes `sim/`'s scratch working directory
+(`sim/.work/`) — never `sim/records/`, which this repository never deletes.
+
+### Where results land, and how to read them
+
+Every `make characterize` run writes new records at
+`sim/records/<YYYY-MM-DD>-<testbench-slug>-<NN>.md` (frontmatter: corner,
+seeds, ngspice version, testbench/netlist SHAs — see
+[`sim/README.md`](sim/README.md) for the full format) with raw ngspice output
+under `sim/records/raw/<same-stem>/`. Two roll-up tools read *every* matching
+record (old and newly-added) and print the current per-corner table:
+
+```sh
+python3 sim/tools/power_rollup.py           # Rows D/E's active/idle power
+python3 sim/tools/time_to_first_valid.py    # Row F's time-to-first-valid
+```
+
+### Proposal spec-table row → regeneration command
+
+Each row of [the proposal's target-specification
+table](docs/chipalooza/challenge-3-proposal.md#4-target-specification) maps
+to one of these commands. `make characterize` covers the ngspice-based
+(transistor-level) rows; the rest are separate, clearly out-of-scope flows
+with their own prerequisites, named here rather than silently skipped.
+
+| Row | Parameter | Regenerated by | Output |
+|---|---|---|---|
+| A | Per-ring oscillation frequency | `make characterize` (`ro-array-core-pvt-q`, 27-point grid) | `sim/records/<date>-ro-array-core-pvt-q-*.md` |
+| B | Raw bit rate | *not* a PVT sweep — `python3 sim/tools/jitter_energy_law.py --check` and `starved_cell_jitter_energy.py --check`, derived from the existing `rostage-noise` / `ro-ring5-starved-jitter-long` records (`npm run check:spec`) | stdout only; no new record |
+| C | Raw min-entropy | `make characterize` (`sampler-array-digitize`, the two corners a real bitstream exists for) | `sim/records/<date>-sampler-array-digitize-*.md` (functional demonstration only — see the record's own caveats and the proposal's Row C notes; **not** an entropy measurement) |
+| D | Active power (whole block) | analog term: `make characterize` (`ro-array-core-pvt-q` + `sampler-dff-active-current`), rolled up by `power_rollup.py`; digital term: `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD, not covered by `make characterize`) | `sim/records/<date>-{ro-array-core-pvt-q,sampler-dff-active-current}-*.md`; digital: `sim/records/<date>-digital-sta-power-*.md` |
+| E | Idle current (whole block) | analog term: `make characterize` (`sampler-core-idle-leakage`), rolled up by `power_rollup.py`; digital leakage term: same `run_sta.py` flow as Row D | `sim/records/<date>-sampler-core-idle-leakage-*.md`; digital: `sim/records/<date>-digital-sta-power-*.md` |
+| F | Time-to-first-valid | `make characterize` (`ro-array-core-startup`), rolled up by `time_to_first_valid.py` | `sim/records/<date>-ro-array-core-startup-*.md` |
+| G | Digital section max clean sample-clock frequency (`Fmax`) | gate-level, not ngspice: `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD; not covered by `make characterize`) | `sim/records/<date>-digital-sta-power-*.md` |
+| H | Health-test cutoffs (RCT/APT) | closed-form, no PVT dependency — `design/health_test/rct_apt.py` is a library, not a CLI: `python3 -c "from design.health_test.rct_apt import c_rct, c_apt, H0; print(c_rct(H0), c_apt(H0))"` | stdout only; no new record |
+| I | Area (whole block) | layout, no PVT dependency: `python3 layout/floorplan/floorplan.py` (needs `klt` + PDK) | `layout/floorplan/reports/area.json` |
+
+`sim/characterize.py --dry-run` prints this same mapping (as
+`ROWS_NOT_COVERED` for the rows it does not produce) alongside the exact
+`run_corners.py` command for each row it does — read it, or the script's own
+module docstring, if this table and the code ever disagree.
 
 ## License
 
