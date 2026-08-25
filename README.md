@@ -430,6 +430,15 @@ runs two digital blocks against each other with the conditioner's `en`/`flush`
 taken from the interface's own outputs — the inter-block contract, not a
 stand-in for it.
 
+## Chipalooza
+
+[`docs/chipalooza/challenge-3-proposal.md`](docs/chipalooza/challenge-3-proposal.md)
+is this block's proposal for Open Circuit Design's Chipalooza Challenge #3
+(GF180MCU / Wafer.Space) — a five-section, email-ready submission whose
+target-specification table cites this repository's actual `sim/` results at
+the challenge's rails, marks the rows that miss or are unmeasured there, and
+proposes a reduced test-chip pinout mapped onto the challenge's slot budget.
+
 ## License
 
 [Apache-2.0](LICENSE). `klayout-tools`, which this project drives, is
