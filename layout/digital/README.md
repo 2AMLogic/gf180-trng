@@ -492,12 +492,12 @@ transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
 
 | | | #170 |
 |---|---|---|
-| Verdict | `mismatch` | `mismatch` |
-| Mismatch count | **8** | 7694 |
+| Verdict | `match` | `mismatch` |
+| Mismatch count | 6 (`error_count: 0`) | 7694 |
 | `net.merged` / `net.split` | 0 / 0 | 3786 / 411 |
-| `net.unmatched` | 1 | 0 |
-| `topology` | 7 (6 of them severity `warning`) | 3497 |
-| Nets (layout / reference) | 2548 / 2547, 2995 matched | 4165 / 7519 |
+| `net.unmatched` | 0 | 0 |
+| `topology` | 6, all severity `warning` | 3497 |
+| Nets (layout / reference) | 2547 / 2547, 2996 matched | 4165 / 7519 |
 | Pins (layout / reference) | 109 / 109 | 109 / 109 |
 | Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring | 0 / 0 |
 
@@ -516,13 +516,15 @@ physical-only tapcell/endcap/filler instances out of the committed DEF's
 sides now carry the same 8638 instances with identical per-master counts
 (verified directly), and the `net.split`/`net.merged` cascade is gone.
 
-**What the 8 residuals are, and what #186 fixed.** Six of the seven
-`topology` entries are severity `warning`, not `error`: ambiguous net
-pairings the comparer resolved structurally anyway (six symmetric
-`u_interface` nets) — unaffected by #186, unchanged before and after.  The
-remaining two errors (one `net.unmatched`, one `topology`) are both one
-cell. `clkload13` is a CTS clock-*load* dummy — OpenROAD inserts it purely
-for capacitance, so its `ZN` output is unconnected by construction, and
+**What the original 8 residuals were, and what #186 fixed.** Six of the
+original seven `topology` entries were severity `warning`, not `error`:
+ambiguous net pairings the comparer resolved structurally anyway (six
+symmetric `u_interface` nets, each a synthesis-inserted `tiel` tie-cell
+driving its own unrouted, single-terminal net — see "Resolved" below for
+why these six are still present and are not a defect). The remaining two
+errors (one `net.unmatched`, one `topology`) were both one cell.
+`clkload13` is a CTS clock-*load* dummy — OpenROAD inserts it purely for
+capacitance, so its `ZN` output is unconnected by construction, and
 `trng_top.pnr.v` instantiates it as `gf180mcu_fd_sc_mcu9t5v0__inv_8
 clkload13 (.I(clknet_leaf_48_clk));` with no other port.
 
@@ -562,19 +564,75 @@ Placement/orientation arithmetic against `gf180mcu_fd_sc_mcu9t5v0__inv_8`'s
 LEF puts one of the nine vias squarely inside the cell's `I`-pin geometry
 (the LEF declares `I` as two disjoint Metal1 rectangles; the via lands in
 the first one) — so the drawn routing is not obviously missing anything a
-`klt components` scan can see. That points more at an extraction-side
+`klt components` scan can see. That pointed more at an extraction-side
 pin/net unification gap for this two-rectangle pin shape than at a
-drawn-geometry defect, but a generic (deck-free) connectivity scan cannot
+drawn-geometry defect, but a generic (deck-free) connectivity scan could not
 rule out a real transistor-level gap either. Filed generically upstream as
-[klayout-tools#1181][klt1181] and tracked here as [#187][gf187], rather than
-resolved in this PR — per the "no claim without a testbench" discipline,
-an unsettled diagnosis does not get waved into a `match`.
+[klayout-tools#1181][klt1181] and tracked here as [#187][gf187] — see
+"Resolved" immediately below for how that upstream chain played out.
 
-Neither residual has functional weight — the cell drives nothing — but
-neither is waved away either: this is a `mismatch`, not a `match`, and the
-report says so. `clkload13` is also new to *this* clock tree; #170's run had
-no `inv_8` instance at all, which is the module docstring's own point about
-placement and CTS not being byte-reproducible run to run.
+`clkload13` is new to *this* clock tree; #170's run had no `inv_8` instance
+at all, which is the module docstring's own point about placement and CTS
+not being byte-reproducible run to run.
+
+**Resolved (2026-09-05): klayout-tools v0.4.0 fixes the `clkload13`
+defect.** [#187][gf187]'s upstream chain
+([klayout-tools#1181][klt1181] → [#1183][klt1183] → [#1296][klt1296] →
+[PR #1310][klt1310], merge commit `ff5c8a0f`) landed a fix
+(`_polygon_interior_point()`, probing a merged local-net island's interior
+rather than its bounding-box centre, which can land outside a concave
+island) that PyPI shipped in `klayout-tools` `v0.4.0`
+(2026-09-05T18:41:28Z). Re-pinning this repository's `klt` to that release
+and re-running `python3 layout/digital/lvs.py` against the same committed
+`trng_top.gds`/`trng_top.pnr.v` confirms the fix directly, not just by
+citation: `trng_top.extracted.spice`'s `inv_8` instance (`clkload13`) now
+reads
+
+```
+Xgf180mcu_fd_sc_mcu9t5v0__inv_8_0 clknet_leaf_48_clk vddd vss \$2208
+```
+
+— its `I` pin (first position) resolves onto `clknet_leaf_48_clk`, not the
+isolated `\$2320` island the pre-fix `klt` produced. `net.unmatched` drops
+from 1 to 0 and the `topology` error for this instance is gone, taking
+`mismatch_count` from 8 to 6 and `error_count` to 0.
+
+**The remaining `mismatch_count: 6` is the same six `severity: warning`
+`u_interface` entries described above, unaffected by this fix** (they
+predate #187 and were never part of its diagnosis): six `gf180mcu_fd_sc_
+mcu9t5v0__tiel` tie-cell instances, each driving its own single-terminal,
+unrouted net (`u_interface/_1249_` through `_1254_` on the reference side).
+Because none of the six carries a second terminal to disambiguate it from
+its five siblings, `--def-net-names` — which reads DEF net names off a
+*routed*-metal shape property (`docs/cli/extract.md`'s own scoping) — has no
+routed shape to read a name from on any of them, so all six extract as
+anonymous `$<id>`s instead of their real DEF names. `klt lvs`'s comparer
+still proves every one of the six layout-side nets structurally equivalent
+to some reference-side net (topology matches; `error_count: 0`), it just
+cannot tell *which* of the six symmetric candidates pairs with which without
+a name to go on, so it reports the ambiguity as a `severity: "warning"`
+disclosure rather than silently guessing. Per `klt lvs`'s own documented
+`status`/`mismatch_count` relationship: "`mismatch_count` ... [c]an be
+nonzero even when `status` is `"match"` — a `severity: "warning"` entry ...
+does not change the verdict," and `error_count` is `0` "on a `status:
+"match"` report exactly." Both hold here: `status: "match"`,
+`mismatch_count: 6`, `error_count: 0`.
+
+Filed generically upstream as a capability request (recovering a name for
+an unrouted, single-pin net has no shape for `--def-net-names` to read a
+property from today):
+[klayout-tools#1488][klt1488] — not a blocker for this issue, since the six
+entries are advisory, not a connectivity defect, but worth tracking so a
+future `--def-net-names` improvement could resolve the ambiguity outright
+rather than requiring a caller to reason about it by hand each time.
+
+Neither this run nor #187's original filing ever found functional weight in
+either residual — `clkload13` drives nothing, and the six `tiel` nets are
+each a synthesis-inserted constant tap with no fan-out — but the distinction
+matters for what "resolved" means here: the `net.unmatched`/`topology`
+*error* pair this issue tracked is fixed and independently re-verified
+against the committed layout, not waved into a `match` on faith in an
+upstream PR's own numbers.
 
 **Attributing those errors cost more than it should have, twice over now.**
 `klt lvs`'s mismatch entries for an unmatched subcircuit carry `net: null`,
@@ -587,7 +645,13 @@ against `trng_top.def`/the standard-cell LEF. Filed generically upstream as
 [klayout-tools#1132][klt1132], along with the smaller observation that
 `category_counts` aggregates `error` and `warning` severities into one
 number (pre-#186 this run's `"topology": 8` was six warnings and two
-errors; post-#186 it is `"topology": 7`, six warnings and one error).
+errors; post-#186 it was `"topology": 7`, six warnings and one error).
+That smaller observation is fixed as of the same `klt` build this section's
+"Resolved" note above cites: the response now also carries `error_count`
+and `category_error_counts` (a per-category breakdown counting only
+`severity: "error"` entries), which is exactly how the current
+`"topology": 6, all severity warning` / `error_count: 0` state above is
+distinguished from a `"topology": 6` reading that still mixed severities.
 
 ## SDF export
 
@@ -758,4 +822,8 @@ boundary.
 [klt1132]: https://github.com/2AMLogic/klayout-tools/issues/1132
 [klt1133]: https://github.com/2AMLogic/klayout-tools/issues/1133
 [klt1181]: https://github.com/2AMLogic/klayout-tools/issues/1181
+[klt1183]: https://github.com/2AMLogic/klayout-tools/issues/1183
+[klt1296]: https://github.com/2AMLogic/klayout-tools/issues/1296
+[klt1310]: https://github.com/2AMLogic/klayout-tools/pull/1310
+[klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
