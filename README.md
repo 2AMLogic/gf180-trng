@@ -30,8 +30,11 @@ DRC-clean and LVS-matching per [`layout/reports/`](layout/reports/), with
 own guarded regions in the floorplan. Since #170, the digital section
 (conditioner, health tests, interface) also has its own standalone layout —
 [`layout/digital/trng_top.gds`](layout/digital/), a placed-and-routed,
-DRC-clean gate-level GDS — though its LVS is not yet clean (8 residual
-mismatches, #187). Neither piece is composed into the other yet: there is no
+DRC-clean gate-level GDS, and its LVS now reports `status: match`
+(`mismatch_count: 6`, all `severity: warning` on benign, unrouted
+constant-tie nets; `error_count: 0` — see
+[`layout/digital/README.md`'s LVS section](layout/digital/README.md#lvs)
+and #187). Neither piece is composed into the other yet: there is no
 single whole-block GDS with both the entropy source and the digital section
 placed together, and closing that gap is #106, still open and blocked. See
 [`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
