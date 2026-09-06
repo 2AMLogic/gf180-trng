@@ -2,7 +2,7 @@
   "drc": {
     "schema_version": 1,
     "deck": "gf180mcu",
-    "dbu_um": 0.001,
+    "dbu_um": 0.0005,
     "status": "clean",
     "violation_count": 0,
     "rule_counts": {},
@@ -23,6 +23,7 @@
         "42/0",
         "46/0",
         "53/0",
+        "55/0",
         "75/0",
         "81/0",
         "127/5"
@@ -36,32 +37,42 @@
         "35/0",
         "36/0",
         "38/0",
-        "42/0"
+        "40/0",
+        "41/0",
+        "42/0",
+        "46/0",
+        "55/0",
+        "81/0"
       ],
       "layers_in_stream_without_rules": [
+        "0/0",
+        "21/10",
+        "31/0",
+        "32/0",
         "34/10",
-        "36/10"
+        "36/10",
+        "46/10",
+        "63/63",
+        "81/10",
+        "112/1",
+        "204/0",
+        "204/10"
       ],
       "rules_skipped": [
         "bjt.separation.comp.1",
-        "metal3.enclosing.via3.1",
-        "metal4.enclosing.via3.1",
-        "metal4.enclosing.via4.1",
-        "metal5.enclosing.via4.1",
-        "metal5.space.1",
-        "metal5.width.1",
         "metaltop.space.1",
         "metaltop.width.1",
         "mim.enclosing.fusetop.1",
         "mim.enclosing.via4.1",
         "mim.space.1",
-        "pad.enclosing.metal5.1",
-        "via3.space.1",
-        "via3.width.1",
-        "via4.space.1",
-        "via4.width.1"
+        "pad.enclosing.metal5.1"
       ],
-      "voltage_domain_warnings": [],
+      "voltage_domain_warnings": [
+        {
+          "marker": "55/0",
+          "description": "Dualgate (55/0) marks gf180mcu's 5V/6V thick-oxide voltage domain. This curated deck models it for the DF.1a/DF.3a COMP width/space rules and (issue #1111) MOS device recognition/model binding (nfet_06v0/pfet_06v0 under --pdk) only; every other DRC rule still applies the 3.3V/_LV thresholds regardless of Dualgate's presence (e.g. DF.6 COMP extend beyond gate 0.24 vs. 0.40, PL.5a/PL.5b field poly to COMP 0.10 vs. 0.30 -- all in um, and neither transcribed in this deck yet)."
+        }
+      ],
       "deck_scope": [
         "10.4.2 MIM Option B",
         "10.7 DRC_BJT Mark Layer",
@@ -76,15 +87,16 @@
       ]
     },
     "provenance": {
-      "klt_version": "0.2.0",
-      "klayout_version": "0.30.10",
+      "klt_version": "0.4.0",
+      "klayout_version": "0.30.12",
       "pdk": null,
       "deck": {
         "name": "gf180mcu",
-        "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+        "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
+        "released": true
       },
       "input": {
-        "content_hash": "sha256:926776d6a572ebde18745c0385a70bbf5f7b741b0377ee0fc28d489a29ca809f"
+        "content_hash": "sha256:a9e1413a929557646a092008f0a2bee099891088103347e390cd7f60d615551a"
       }
     }
   },

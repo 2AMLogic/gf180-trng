@@ -34,10 +34,16 @@ DRC-clean gate-level GDS, and its LVS now reports `status: match`
 (`mismatch_count: 6`, all `severity: warning` on benign, unrouted
 constant-tie nets; `error_count: 0` — see
 [`layout/digital/README.md`'s LVS section](layout/digital/README.md#lvs)
-and #187). Neither piece is composed into the other yet: there is no
-single whole-block GDS with both the entropy source and the digital section
-placed together, and closing that gap is #106, still open and blocked. See
-[`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
+and #187). Since #209/#210, that digital section is composed into the same
+floorplan too: [`layout/floorplan/trng_floorplan.gds`](layout/floorplan/)
+now places `layout/digital/trng_top.gds` inside its own guarded `digital`
+region alongside `ring1`/`ring2`/`combiner_sampler`, DRC-clean (0
+violations introduced by the fit) and LVS-matching against the digital
+section's own reference netlist (`status: match`, `mismatch_count: 6`, the
+same benign residual cited above) — a single whole-block GDS with the
+entropy source and the digital section placed together, per
+[`layout/floorplan/reports/ring_fit.json`](layout/floorplan/reports/ring_fit.json).
+See [`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
 inventory and what is explicitly still deferred. The specification table
 below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
@@ -227,9 +233,14 @@ Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
 Layout work has started on both halves — the entropy source and sampler are
 placed, DRC-clean and LVS-matching, and the digital section has a
-standalone placed-and-routed, DRC-clean GDS (#170) — but they are not yet
-composed into one whole-block layout (#106), and the digital section's own
-LVS is not yet clean (#187), so the second rung has not been cleared.
+standalone placed-and-routed, DRC-clean GDS (#170), and, since #187, a
+clean LVS (`status: match`, six benign warning-severity mismatches). Since
+#209/#210 the two are composed into one whole-block layout too
+(`layout/floorplan/trng_floorplan.gds`, DRC-clean and LVS-matching for all
+four regions) — see
+[`layout/floorplan/README.md`](layout/floorplan/README.md#tool-friction)
+for exactly what that composed check does and does not establish before
+reading it as more than the first rung.
 The SP 800-90B validation claim attaches to the last rung, not the first
 ([DR-0004]) — a simulated min-entropy estimate is not an entropy assessment,
 and this repository will not let one be read as the other.
@@ -240,7 +251,7 @@ and this repository will not let one be read as the other.
 spec/          spec + decision records
 design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
-layout/        DRC/LVS flow + drawn cells + digital P&R          — not yet composed (#106)
+layout/        DRC/LVS flow + drawn cells + digital P&R          — composed (#209/#210)
 measurements/  silicon characterization                          — empty until tape-out
 ```
 
@@ -275,14 +286,16 @@ declared expectation, so the flow is itself a test.
 [`layout/floorplan/`](layout/floorplan/) is the entropy source's isolation
 rationale (#16) and the floorplan abstract that carries it — four guarded
 regions, DRC'd as one stream, priced against the area row. Three of those
-regions — `ring1`, `ring2` and `combiner_sampler` — are no longer an
-abstract: they carry real, placed, guard-ringed geometry assembled from the
-drawn cells above, DRC-clean and LVS-matching per `layout/reports/`
-(#110, #135). The fourth region, `digital`, is still an empty guard ring in
-this floorplan: the digital section has its own standalone placed-and-routed
-GDS ([`layout/digital/`](layout/digital/), #170) — DRC-clean, though its LVS
-still has residual mismatches (#187) — but it has not been composed into
-this floorplan yet, and closing that gap is #106. Until it is, nothing under
+regions — `ring1`, `ring2`, `combiner_sampler`, and, since #209/#210,
+`digital` — are no longer an abstract: they all carry real, placed,
+guard-ringed geometry assembled from the drawn cells above (or, for
+`digital`, from its own standalone placed-and-routed GDS,
+[`layout/digital/`](layout/digital/), #170/#187), DRC-clean and
+LVS-matching per `layout/floorplan/reports/ring_fit.json`
+(#110, #135, #209/#210). That is a composed whole-block *floorplan*, not a
+tapeout sign-off — see
+[`layout/floorplan/README.md`](layout/floorplan/README.md#tool-friction)
+for exactly what its DRC/LVS checks do and do not establish. Nothing under
 `layout/reports/` should be read as a statement about the whole design.
 [`layout/README.md`](layout/README.md) says exactly what a clean report from
 this flow does and does not mean, and why it is not tapeout sign-off.
