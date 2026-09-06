@@ -121,8 +121,13 @@ DIGITAL_SCRIPT = REPO_ROOT / "design" / "digital_power_estimate.py"
 # (e.g. ro-array-core-power-BUFFERED, issue #75's unadopted buffer mitigation)
 # can never be rolled up as if it were the shipped design.
 ARRAY_GLOBS = ("*-ro-array-core-pvt-q-[0-9]*.md", "*-ro-array-core-power-[0-9]*.md")
-SAMPLER_ACTIVE_GLOB = "*-sampler-dff-active-current-*.md"
-IDLE_GLOB = "*-sampler-core-idle-leakage-*.md"
+# Same `-[0-9]` rule as ARRAY_GLOBS above, and for the same reason: issue #17
+# added `sampler-core-idle-leakage-extracted` (a post-layout sibling sharing
+# every PVT corner label with this pre-layout family), which a bare `-*`
+# glob would silently roll up as if it were the pre-layout shipped-design
+# measurement.
+SAMPLER_ACTIVE_GLOB = "*-sampler-dff-active-current-[0-9]*.md"
+IDLE_GLOB = "*-sampler-core-idle-leakage-[0-9]*.md"
 
 #: README rows.
 ACTIVE_BUDGET_W = 500e-6
