@@ -90,11 +90,12 @@ full frontmatter rule.
 
 - **In scope, and re-run below**: everything #12/#13/#14 measured that has a
   transistor-level netlist to re-run against — the RO array's steady-state
-  period/power (§13's `ro-array-core-pvt-q`/`-power` families), its startup
-  behaviour (§14's `ro-array-core-startup`), Monte Carlo device-mismatch
-  ring-frequency spread (§13's `ro-array-core-mc-freq`), the whole-block idle
-  leakage (§14's `sampler-core-idle-leakage`), and the transistor-level raw
-  bit digitization (§12's `sampler-array-digitize`).
+  period/power (issue #13's `ro-array-core-pvt-q`/`-power` families), its
+  startup behaviour (issue #14's `ro-array-core-startup`), Monte Carlo
+  device-mismatch ring-frequency spread (issue #13's `ro-array-core-mc-freq`),
+  the whole-block idle leakage (issue #14's `sampler-core-idle-leakage`), and
+  the transistor-level raw bit digitization (issue #12's
+  `sampler-array-digitize`).
 - **Out of scope, and not re-run, because there is nothing transistor-level
   to extract**: [DR-0009] draws the transistor/behavioral boundary at the raw
   tap. Everything strictly downstream of it — the conditioner, health tests,
@@ -107,7 +108,7 @@ full frontmatter rule.
   by this issue** and are cited unchanged from their own committed records.
 - **Also out of scope**: the Monte Carlo *sampler decision-threshold offset*
   testbench (`sim/tb/sampler-dff-mc-offset/`) and its deterministic negative
-  controls. §13's pre-layout analysis already establishes (§3.2–3.4 of
+  controls. Issue #13's pre-layout analysis already establishes (§3.2–3.4 of
   [`sim/characterization-worst-corner-and-mc-mismatch.md`](characterization-worst-corner-and-mc-mismatch.md))
   that the systematic sampler offset is a structural property of
   `sampler_dff`'s reset-gated NAND2 first inversion, unrelated to which
