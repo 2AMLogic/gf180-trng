@@ -204,8 +204,12 @@ clocked by the same external `clk`.
    checked and committed (`checks.power_isolation` in
    `layout/digital/reports/place_and_route.json`). The other half — that the
    four branches stay separate *to the pad* — is still this floorplan's, and
-   still unbuilt: the `digital` region below is empty, and nothing in this
-   repository yet draws the star point.
+   still unbuilt: as of
+   [#209](https://github.com/2AMLogic/gf180-trng/issues/209)/
+   [#210](https://github.com/2AMLogic/gf180-trng/issues/210) the `digital`
+   region below holds the real, placed `layout/digital/trng_top.gds` rather
+   than an empty guard ring, but nothing in this repository yet draws the
+   star point those four branches would converge on.
 2. **Per-domain guard rings**, tied to each region's own `vss` return. In a
    p-substrate process a p+ tap ring is a majority-carrier collector: it is the
    standard structure for keeping injected substrate current from reaching a
@@ -647,6 +651,12 @@ pre-synthesis prediction it was.
     - `combiner_sampler`: `layout/blocks/combiner_sampler/` (#134), real
       bbox **278.90 × 15.64 µm** — the estimate would have given
       23.27 × 23.27 µm, roughly 11× narrower than the real assembled row.
+    - `digital`: `layout/digital/trng_top.gds` (#170/#171, placed and
+      composed into this floorplan by #209/#210), real bbox
+      **548.815 × 548.815 µm** — the estimate would have given
+      352.34 × 352.34 µm, the largest size delta of the four (roughly the
+      same order of magnitude #119 found for `ring1`/`ring2`, just larger,
+      as #209 anticipated).
 
   (See `region.footprint_source` in [`reports/area.json`](reports/area.json)
   for the exact numbers and which regions use which method.) Each region's
@@ -660,28 +670,36 @@ pre-synthesis prediction it was.
   **79.71 × 5.55 µm** (each ring) / **279.70 × 16.44 µm**
   (`combiner_sampler`) — real bbox **+ 2 ×** `RING_PLACEMENT_CLEARANCE_UM` —
   while `guarded_w_um`/`guarded_h_um` are unchanged by that split. `digital`
-  still uses the square estimate and always will (no synthesis/placement
-  step is in scope to replace it).
+  is sized the same way as of #209/#210: from `layout/digital/
+  trng_top.gds`'s own real bbox, inner cavity **549.615 × 549.615 µm**,
+  guarded **550.815 × 550.815 µm**.
 - `layout/floorplan/floorplan.py` also checks that the real assembled
   geometry actually *fits* inside the region it now sizes: it composes each
   such region's guard ring with the real assembled GDS and runs `klt drc`
   **and** `klt lvs` over the pair, comparing the DRC result against that
   GDS's own standalone DRC so a violation introduced by the fit is
   distinguishable from one already present in the assembled geometry on its
-  own. All three regions (`ring1`, `ring2`, `combiner_sampler`) fit
-  DRC-clean-relative-to-baseline and LVS-match today — see
+  own. All four regions (`ring1`, `ring2`, `combiner_sampler`, `digital`)
+  fit DRC-clean-relative-to-baseline and LVS-match today — see
   [`reports/ring_fit.json`](reports/ring_fit.json),
   [Placement](#placement--issue-110) below for why this is no longer a
-  *zero*-clearance fit and what changed, and
+  *zero*-clearance fit and what changed,
   [Placement — issue #135](#placement--issue-135-combiner_sampler) for
-  `combiner_sampler`'s own placement. (This regeneration's own standalone DRC
-  for all three is clean — 0 violations — not the 49-per-ring pre-existing
-  count issue #110 recorded: see [Tool friction](#tool-friction) for why
-  that count is gone.)
-- The composed abstract's row bounding box is **857.1 × 354.3 µm** (up from
-  601.4 × 354.3 µm before issue #135's `combiner_sampler` resize — almost
-  entirely the width of `combiner_sampler`'s own now much wider region).
-  That is the
+  `combiner_sampler`'s own placement, and #209/#210 for `digital`'s own
+  placement (its LVS step compares an abstracted, cell-instance-
+  granularity extraction against `layout/digital/trng_top.lvs_reference.
+  spice`, not a flat transistor-level one -- see `layout/floorplan/
+  floorplan.py`'s own `RING_LVS_ABSTRACT_CELLS` docstring for why `digital`
+  needs that and the other three do not). (This regeneration's own
+  standalone DRC for `ring1`/`ring2`/`combiner_sampler` is clean — 0
+  violations — not the 49-per-ring pre-existing count issue #110 recorded:
+  see [Tool friction](#tool-friction) for why that count is gone.)
+- The composed abstract's row bounding box is **1070.4 × 550.8 µm** (up
+  from 857.1 × 354.3 µm before #209/#210 placed `digital`'s own real,
+  much larger row into the composition — both the width, from the new
+  `combiner_sampler` | `digital` channel and `digital`'s own 549 µm-wide
+  row, and the height, from `digital`'s own 549 µm-tall row exceeding
+  every other region's). That is the
   tool's one-dimensional arrangement, not a packing proposal — the composer
   supports row placement only. The area figures above are region footprints
   plus channels, which do not depend on that arrangement.
@@ -760,8 +778,10 @@ position independent of the clearance/band-width split. Issue #135 gives
 `combiner_sampler` the same treatment, its own real assembled
 `combiner_sampler.gds` content placed the same way — see
 [Placement — issue #135](#placement--issue-135-combiner_sampler) below.
-`digital` alone stays an empty guard ring — no digital-section placement is
-in scope for either issue.
+`digital` alone stayed an empty guard ring here — no digital-section
+placement was in scope for either issue (that came later, #209/#210, once
+the digital section itself existed to place -- see [What the area model
+is](#what-the-area-model-is) above).
 
 **No common-centroid pairing, verified, not just avoided by construction.**
 `layout/floorplan/README.md`'s own [Mechanism 1](#mechanism-1--mutual-injection-locking-between-the-rings)
@@ -850,9 +870,11 @@ and the same PDK resolver `layout/verify.py` uses. Verbatim output in
 [`reports/floorplan.drc.json`](reports/floorplan.drc.json).
 
 **Since issue #110, `ring1`/`ring2` carry their own real, placed content;
-since issue #135, so does `combiner_sampler`.** `digital` alone is still
-empty *in this composed abstract* — nothing in the digital section is
-assembled at all. This regeneration's own composed abstract is fully clean:
+since issue #135, so does `combiner_sampler`; since #209/#210, so does
+`digital`** (`layout/digital/trng_top.gds`, the routed digital section).
+Every region in this composed abstract now carries its own real,
+DRC-clean assembled content. This regeneration's own composed abstract is
+fully clean:
 
 ```
 composed abstract: status "clean", violation_count 0, rule_counts {}
@@ -896,13 +918,12 @@ block.
 - It **does** mean the isolation structures are legal geometry at these
   dimensions: four guard rings with those tap widths and contact pitches, at
   those sizes, with 20 µm between them, violate no rule in the curated deck —
-  and that placing `ring1`/`ring2`'s and `combiner_sampler`'s own real
+  and that placing `ring1`/`ring2`/`combiner_sampler`/`digital`'s own real
   content inside its own guard ring, at the clearance
   `RING_PLACEMENT_CLEARANCE_UM` establishes (below), introduces no *new*
   rule violation over what that region's own committed GDS already has.
 - It does **not** mean the block is DRC-clean, full stop, as a general
-  property of this check. `digital` is still an empty guard ring — no
-  standard cell in that section has been placed — and a DRC run over a
+  property of this check: a DRC run over a
   floorplan abstract can only check what the floorplan abstract actually
   contains: three layers (below), not the full deck. That this
   particular regeneration's own raw violation count happens to be zero too
@@ -956,17 +977,17 @@ Stated as a list because an unstated limit is a defect.
    this document only sharpens what it has to target.
 8. **No decoupling capacitor sizing** for the entropy domains — the channel is
    reserved, the structure is not designed.
-9. **No full layout, still.** `ring1`/`ring2` now carry real, placed,
-   DRC/LVS-verified content ([Placement](#placement--issue-110), issue
-   #110); `combiner_sampler`'s own contents (`xor2` + 4x `sampler_dff`,
-   [#134][gf134]) are now placed too
-   ([Placement — issue #135](#placement--issue-135-combiner_sampler)),
-   its region resized to the block's own real footprint
-   (278.90 × 15.64 µm) rather than the area/utilisation estimate that
-   previously did not fit it — the same kind of resize issue #119 did for
-   `ring1`/`ring2`, resolved for `combiner_sampler` by [#135][gf135]. Only
-   `digital` remains an empty guard ring in this composed abstract — no
-   standard cell in the digital section has been placed.
+9. ~~No full layout.~~ **Closed as of #209/#210**: every region in this
+   composed abstract now carries real, placed, DRC/LVS-verified content —
+   `ring1`/`ring2` since issue #110, `combiner_sampler` since issue #135
+   ([#134][gf134]), and `digital` since #209/#210
+   (`layout/digital/trng_top.gds`). Each region's own guarded footprint is
+   sized from that real content's own bounding box rather than the area/
+   utilisation estimate that preceded it — see [What the area model
+   is](#what-the-area-model-is) above for the per-region numbers. Kept as
+   a struck-through list entry, not deleted, so a reader diffing this
+   document against an older revision can see the gap closed rather than
+   silently vanish.
 
 None of these is a reason to withhold the floorplan. All of them are reasons
 not to read a clean DRC result as an independence argument.
@@ -977,9 +998,11 @@ not to read a clean DRC result as an independence argument.
 
 Per [CLAUDE.md](../../CLAUDE.md), friction found while using klayout-tools is
 filed generically against the tool — the tool gap, never this repository's
-design. This work produced four, all filed against
+design. This work produced six, all filed against
 [klayout-tools][klt] and all worked around in
-[`floorplan.py`](floorplan.py) rather than silently absorbed:
+[`floorplan.py`](floorplan.py) rather than silently absorbed (two of the six
+were genuine tool defects with no caller-side mitigation possible and are
+recorded here only until fixed upstream, which both now are):
 
 1. **[klayout-tools#320][kt320]** — generated streams are not byte-reproducible.
    `klt gen`, `klt gen-compose` and `klt draw` stamp wall-clock time into the
@@ -1032,6 +1055,39 @@ design. This work produced four, all filed against
    cross-checking it at run time (`RING_PLACEMENT_CLEARANCE_UM`) rather than
    trusting a fixed number, but nothing in `gen-compose`'s own contract
    prompts a caller to do so.
+5. **[klayout-tools#1496][kt1496]**, then **[klayout-tools#1514][kt1514]** —
+   composing `digital`'s real content (issues #209/#210) hit a database-unit
+   (dbu) mismatch `gen-compose` had no override for: `klt gen`'s own output
+   wrote at a hardcoded 0.001 dbu regardless of PDK while `klt place-and-
+   route`'s DEF/GDS merge (how `layout/digital/trng_top.gds` was produced)
+   correctly derived its dbu from the resolved PDK's tech LEF (0.0005 for
+   gf180mcu). Fixed upstream by merged klayout-tools#1512, which made `klt
+   gen` PDK-aware too — but that fix then regressed the *other* three
+   regions, whose own committed assemblies are `klt draw`-descended and
+   still hardcoded at 0.001 with no override (#1514), fixed in turn by merged
+   klayout-tools#1516 (`gen-compose` now resolves the finest dbu among a
+   request's blocks and losslessly rescales coarser ones onto it via an
+   exact integer `ICplxTrans` magnification, instead of refusing on any
+   mismatch). `.github/workflows/pdk-nightly.yml`'s `klt` pin was bumped past
+   both fixes as part of #210; no workaround lives in `floorplan.py` itself
+   for either — both were genuine tool defects with no caller-side mitigation
+   possible.
+6. **[klayout-tools#1533][kt1533]** — once #5's dbu mismatch cleared, `klt
+   lvs`'s own ambiguous-net-pairing heuristic turned out to be sensitive to
+   the mere *presence* of `digital`'s guard ring in the same top-level
+   compare: a single-instance, genuinely-dangling-by-construction cell
+   (`clkload13`, already disclosed in `layout/digital/lvs.py`'s own module
+   docstring) that LVS-matches cleanly on its own flips to a hard,
+   unrecoverable `net.split` once the guard ring's one extra, unrelated net
+   joins the same comparison — confirmed the underlying digital geometry
+   itself is untouched by re-extracting the same content sub-cell back out
+   of the composed GDS and reproducing the clean standalone verdict
+   byte-for-byte. `check_ring_fit`'s own LVS step for `digital` works around
+   this by extracting and comparing that content sub-cell alone (`run_
+   extract_abstract`'s own docstring has the full account) rather than the
+   full composed pair every other region's LVS step uses — relying on the
+   composed *DRC* check (run unconditionally, unaffected by this) to verify
+   the guard ring's adjacency introduces no short.
 
 Not new friction, but worth recording alongside the above: issue #110's own
 regeneration found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
@@ -1063,6 +1119,9 @@ would not block that separate question.
 [kt328]: https://github.com/2AMLogic/klayout-tools/issues/328
 [kt623]: https://github.com/2AMLogic/klayout-tools/issues/623
 [kt692]: https://github.com/2AMLogic/klayout-tools/issues/692
+[kt1496]: https://github.com/2AMLogic/klayout-tools/issues/1496
+[kt1514]: https://github.com/2AMLogic/klayout-tools/issues/1514
+[kt1533]: https://github.com/2AMLogic/klayout-tools/issues/1533
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75

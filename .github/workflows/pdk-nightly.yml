@@ -250,11 +250,50 @@ jobs:
       # those reports was not evaluated: taking the bump means regenerating
       # and re-reading that evidence, which is its own piece of work and not
       # this issue's. So this pin deliberately stops one commit short of it.
+      #
+      # 59c2a2873c171cf5064255b64ff3719d4d54eaa9 (#210) supersedes that
+      # 9c71bb67 pin, 326 commits forward (`gh api .../compare/9c71bb67...
+      # 59c2a287` -> `ahead_by: 326, behind_by: 0`, confirmed 2026-09-06).
+      # This bump exists to compose `layout/digital/trng_top.gds` (the
+      # `klt place-and-route`-produced digital section, #170/#171) into
+      # this repository's own floorplan next to its guard ring, which two
+      # database-unit (dbu) defects blocked in turn:
+      #
+      # - klayout-tools#1496: `klt gen <generator>` (guard rings, and every
+      #   region's own `klt gen`/`gen-compose`-descended real content --
+      #   `ring1`/`ring2`/`combiner_sampler`) wrote its output at a
+      #   hardcoded 0.001 dbu regardless of PDK, while `klt place-and-
+      #   route`'s DEF/GDS merge correctly derives its own dbu from the
+      #   resolved PDK's tech LEF (0.0005 for gf180mcu's `DATABASE MICRONS
+      #   2000`). `gen-compose` refuses to place two blocks at different
+      #   dbus, so composing `trng_top.gds` next to any freshly generated
+      #   guard ring failed outright. Fixed by merged klayout-tools#1512
+      #   (commit 8b8c51466622a6b155ccfb9fb0bcb789c9c330e0): `klt gen` now
+      #   also derives its output dbu from the PDK's tech LEF.
+      # - klayout-tools#1514: #1512's fix, once re-pinned and tested here,
+      #   turned out to only relocate the mismatch rather than remove it --
+      #   `ring1`/`ring2`/`combiner_sampler`'s own committed assemblies are
+      #   `klt draw`-descended geometry, which has no PDK awareness and is
+      #   still hardcoded at the old 0.001 dbu with no override. Re-pinning
+      #   `klt` past #1512 alone regressed those three previously-passing
+      #   compositions against every freshly generated (now 0.0005) guard
+      #   ring. Fixed by merged klayout-tools#1516 (commit
+      #   59c2a2873c171cf5064255b64ff3719d4d54eaa9, this pin): `gen-compose`
+      #   now resolves the finest dbu among a request's blocks and
+      #   losslessly rescales coarser ones onto it via an exact integer
+      #   `ICplxTrans` magnification (0.001 -> 0.0005 is an exact 2:1
+      #   ratio) instead of refusing on any mismatch; a genuinely
+      #   non-integer-ratio mismatch still refuses.
+      #
+      # Both defects, and this repository's own re-verification that the
+      # #1516 fix resolves all four regions' compositions together
+      # (`digital`, `ring1`, `ring2`, `combiner_sampler`), are tracked in
+      # #210/#209.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@9c71bb6741f20be19bf94b847832803505042ec6"
+            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@59c2a2873c171cf5064255b64ff3719d4d54eaa9"
           klt --version
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same

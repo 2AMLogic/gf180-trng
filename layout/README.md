@@ -274,7 +274,7 @@ part of what this block ships, whatever else exists for it in `design/`.
 | `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/) ([#151][gf151], and see below), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
-| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed, power-delivered, DRC-clean DEF/GDS + as-built netlist in [`digital/`](digital/) ([#171][gf171]); **not** yet placed in `floorplan/`'s `digital` region |
+| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed, power-delivered, DRC-clean DEF/GDS + as-built netlist in [`digital/`](digital/) ([#171][gf171]); placed in `floorplan/`'s `digital` region ([#209][gf209]/[#210][gf210]) |
 
 ### `ro_buf`: drawn, assembled, and placed
 
@@ -618,6 +618,8 @@ gf180mcu DRC deck accepts).
 [gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
 [gf171]: https://github.com/2AMLogic/gf180-trng/issues/171
 [gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
+[gf209]: https://github.com/2AMLogic/gf180-trng/issues/209
+[gf210]: https://github.com/2AMLogic/gf180-trng/issues/210
 [klt]: https://github.com/2AMLogic/klayout-tools
 [kt173]: https://github.com/2AMLogic/klayout-tools/issues/173
 [kt230]: https://github.com/2AMLogic/klayout-tools/issues/230

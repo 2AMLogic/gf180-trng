@@ -98,6 +98,12 @@ import digital_power_estimate as digital  # noqa: E402  (design/)
 from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 
+# The standard-cell glob `digital`'s own standalone LVS (`layout/digital/
+# lvs.py`) abstracts every library cell behind -- reused rather than
+# restated here so the two never drift apart. See `RING_LVS_ABSTRACT_CELLS`
+# below for why `check_ring_fit` needs it too.
+from layout.digital.lvs import CELL_GLOB as DIGITAL_ABSTRACT_CELL_GLOB  # noqa: E402
+
 #: The DRC deck name `klt` knows this PDK family by -- per-family, not
 #: per-variant. Same value layout/verify.py uses, for the same reason.
 DECK = "gf180mcu"
@@ -147,12 +153,32 @@ GUARD_CONTACT_PITCH_UM = 2.0
 #: what reshapes the row layout in `reports/area.json`/`trng_floorplan.gds`
 #: -- unchanged in mechanism by #151, since this table always reads the
 #: assembled GDS's own bbox at run time rather than a cached value.
+#: `digital` (issue #209/#210) is the same kind of size mismatch again, this
+#: time against `layout/digital/trng_top.gds`, the routed digital section's
+#: own real placed-and-routed GDS (#170/#171): 548.815 x 548.815 um against
+#: the region's prior area/utilisation-estimate square (~354.3 x 354.3 um).
+#: Composing it required an upstream fix first: `layout/digital/trng_top.gds`
+#: is produced by `klt place-and-route`, which derives its working database
+#: unit (dbu) from the resolved PDK's tech LEF (0.0005 um/unit for
+#: gf180mcu's `DATABASE MICRONS 2000`), while `klt gen`/`gen-compose` -- how
+#: every guard ring and every *other* region's own real content
+#: (`ring1`/`ring2`/`combiner_sampler`, all `klt draw`/`klt gen`-descended)
+#: is produced -- wrote at a hardcoded 0.001 dbu with no override, and
+#: refused to compose two blocks at different dbus. Fixed upstream in two
+#: passes: klayout-tools#1512 made `klt gen` PDK-aware (closing
+#: klayout-tools#1496), which then regressed `ring1`/`ring2`/
+#: `combiner_sampler`'s still-hardcoded-0.001 content against the
+#: now-0.0005 guard rings; klayout-tools#1516 closed that second gap
+#: (klayout-tools#1514) by having `gen-compose` resolve the finest dbu
+#: among a request's blocks and losslessly rescale coarser ones onto it.
+#: Full diagnosis and the `klt` re-pin this required: #210.
 ASSEMBLED_RING_GDS: dict[str, Path] = {
     "ring1": LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.gds",
     "ring2": LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.gds",
     "combiner_sampler": (
         LAYOUT_DIR / "blocks" / "combiner_sampler" / "combiner_sampler.gds"
     ),
+    "digital": LAYOUT_DIR / "digital" / "trng_top.gds",
 }
 
 #: Cells a region's inventory prices but its committed assembly
@@ -181,6 +207,13 @@ ASSEMBLY_INVENTORY_GAP: dict[str, tuple[str, ...]] = {}
 #: connectivity change, so nothing about the reference itself needs to
 #: differ from the standalone check. Issue #135 extends the same reuse to
 #: `combiner_sampler`.
+#: `digital` reuses the digital section's own existing LVS reference/top
+#: (`layout/digital/lvs.py` already generates
+#: `layout/digital/trng_top.lvs_reference.spice`, top cell `trng_top`, for
+#: the standalone digital LVS check, #187) rather than inventing a second
+#: one -- placement is a translation of already-verified geometry, not a
+#: connectivity change, the same reasoning the comment above already gives
+#: for `ring1`/`ring2`/`combiner_sampler`.
 RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
     "ring1": (LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.spice", "ro_ring11"),
     "ring2": (
@@ -191,6 +224,36 @@ RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
         LAYOUT_DIR / "blocks" / "combiner_sampler" / "combiner_sampler.spice",
         "combiner_sampler",
     ),
+    "digital": (
+        LAYOUT_DIR / "digital" / "trng_top.lvs_reference.spice",
+        "trng_top",
+    ),
+}
+
+#: Regions whose real content is standard-cell based (`klt place-and-route`,
+#: issue #170/#171 -- not `klt draw`/`klt gen`, which every other region's
+#: real content traces back to) and whose `RING_LVS_REFERENCE` entry is
+#: therefore a *cell-instance-granularity* abstraction (`klt extract
+#: --abstract-cells`, `layout/digital/lvs.py`'s own module docstring
+#: explains why) rather than a flat transistor-level netlist.
+#:
+#: `check_ring_fit`'s LVS step needs to know this: pointed at `digital`
+#: unmodified, its generic inline `klt lvs` extraction (`run_lvs`, the
+#: `layout.file`/`layout.deck` shape) reports every one of the ~150
+#: distinct `gf180mcu_fd_sc_mcu9t5v0__*` cell types the reference declares
+#: as an unmatched circuit -- 87 mismatches, 86 of them errors -- because
+#: the reference's `.SUBCKT <cell type>` headers are empty pin-only
+#: black boxes and nothing on the layout side abstracts anything to match
+#: them. Issue #210 found this the hard way, once the dbu blocker it was
+#: filed for (klayout-tools#1496, then #1514) cleared far enough for
+#: `digital`'s placement check to reach `klt lvs` for the first time.
+#:
+#: The value is the `--abstract-cells` glob `check_ring_fit` passes to
+#: `run_extract_abstract` for that region -- reused from `layout/digital/
+#: lvs.py`'s own `CELL_GLOB` (`DIGITAL_ABSTRACT_CELL_GLOB`, imported above)
+#: rather than restated, so the two can never name a different library.
+RING_LVS_ABSTRACT_CELLS: dict[str, str] = {
+    "digital": DIGITAL_ABSTRACT_CELL_GLOB,
 }
 
 #: LVS mismatch categories a placement is still allowed to report -- the same
@@ -708,7 +771,15 @@ def _drc_summary(response: dict) -> dict:
     }
 
 
-def run_lvs(gds_relname: str, gds_top: str, reference: Path, reference_top: str, tag: str) -> dict:
+def run_lvs(
+    gds_relname: str | None,
+    gds_top: str,
+    reference: Path,
+    reference_top: str,
+    tag: str,
+    *,
+    layout_netlist: Path | None = None,
+) -> dict:
     """Run `klt lvs` for one placement check, writing its own request under
     `WORK_DIR` (issue #110). `gds_relname` is a filename already inside
     `WORK_DIR` (no directory component -- every composed check artefact this
@@ -716,9 +787,28 @@ def run_lvs(gds_relname: str, gds_top: str, reference: Path, reference_top: str,
     `WORK_DIR` too (klayout-tools#328's "resolves against the request file's
     own directory" rule, the same one every other request this module writes
     already follows).
+
+    `layout_netlist`, when given, switches the layout side from `klt lvs`'s
+    inline-extraction shape (`{"file": ..., "deck": ...}`, `gen-compose`'s
+    output extracted fresh by `klt lvs` itself) to its pre-extracted-netlist
+    shape (`{"netlist": ...}`, issue #210) -- `gds_relname` is unused in
+    that case (pass `None`). See `RING_LVS_ABSTRACT_CELLS`/
+    `run_extract_abstract` for why a region needs this: a standard-cell
+    region's reference is a cell-instance-granularity abstraction, and only
+    a `klt extract --abstract-cells` pre-extraction (not `klt lvs`'s own
+    default flat extraction) produces a layout-side netlist shaped to
+    match it.
     """
+    if layout_netlist is not None:
+        layout = {
+            "netlist": os.path.relpath(layout_netlist, WORK_DIR),
+            "top": gds_top,
+        }
+    else:
+        assert gds_relname is not None
+        layout = {"file": gds_relname, "deck": DECK, "top": gds_top}
     request = {
-        "layout": {"file": gds_relname, "deck": DECK, "top": gds_top},
+        "layout": layout,
         "reference": {
             "netlist": os.path.relpath(reference, WORK_DIR),
             "top": reference_top,
@@ -727,6 +817,92 @@ def run_lvs(gds_relname: str, gds_top: str, reference: Path, reference_top: str,
     request_path = WORK_DIR / f"{tag}-lvs-request.json"
     request_path.write_text(json.dumps(request, indent=2) + "\n")
     return _run_klt(["lvs", str(request_path.relative_to(REPO_ROOT))])
+
+
+_SUBCKT_HEADER_RE = re.compile(r"^\.subckt\s+(\S+)\s+(.*)$", re.MULTILINE | re.IGNORECASE)
+
+
+def _reference_top_pins(reference: Path, top: str) -> list[str]:
+    """The declared pin list off `reference`'s own `.SUBCKT <top> ...`
+    header, joining SPICE's `+`-prefixed continuation lines first.
+
+    A small, purpose-built copy of `layout/digital/lvs.py`'s own
+    `_join_spice_continuations`/`_SUBCKT_HEADER_RE` helpers, not an import
+    of them: this one only ever *reads* a header a reference file already
+    carries (whether that script wrote it, for `digital`, or a region's own
+    hand-drawn `.spice` did, for everything else `RING_LVS_ABSTRACT_CELLS`
+    could grow to cover) -- it never builds one.
+    """
+    joined: list[str] = []
+    for line in reference.read_text(errors="replace").split("\n"):
+        if line.startswith("+") and joined:
+            joined[-1] = f"{joined[-1]} {line[1:].strip()}"
+        else:
+            joined.append(line)
+    text = "\n".join(joined)
+    for name, pins in _SUBCKT_HEADER_RE.findall(text):
+        if name.lower() == top.lower():
+            return pins.split()
+    raise FlowError(
+        f"{reference.relative_to(REPO_ROOT)} has no `.SUBCKT {top}` header -- "
+        "cannot derive its declared pin list for an abstract-cell placement "
+        "check"
+    )
+
+
+def run_extract_abstract(gds_path: str, top: str, abstract_cells: str, pins: list[str], tag: str) -> dict:
+    """`klt extract --abstract-cells ...` for a placement whose real content
+    is standard-cell based (`RING_LVS_ABSTRACT_CELLS`) -- the layout-side
+    half of `check_ring_fit`'s LVS step for such a region, mirroring
+    `layout/digital/lvs.py`'s own `run_extract`, pointed at `gds_path`'s
+    `top` cell and `--pins` (the reference's own declared top-level pins,
+    `_reference_top_pins`) the same way.
+
+    `top` here is deliberately the region's own real-content sub-cell
+    (`check_ring_fit`'s composed request always names it `f"ring__
+    {cell_name}"`, `gen-compose`'s own documented `"<block id>__<cell
+    name>"` sub-cell-naming convention, `docs/cli/gen-compose.md`) --
+    **not** the composed pair's own top cell (guard ring included).
+    `--top-cell-pins` therefore still applies unmodified here (this
+    sub-cell's own pin-name labels are drawn directly in it, exactly as
+    they were in the original standalone GDS `check_ring_fit` composed
+    from), unlike targeting the composed top, where they are not (verified
+    directly: `--top-cell-pins` against the composed top promotes zero
+    pins -- issue #210).
+
+    Extracting (and comparing) the content sub-cell alone, rather than the
+    full composed pair `run_lvs`'s inline-extraction path uses for every
+    other region, is a deliberate scope decision, not an oversight: composing
+    ~2500 abstracted standard-cell instances into the *same* top-level
+    netlist as a guard ring's own small, unrelated body-tie net was found
+    (issue #210) to destabilise `klt lvs`'s own ambiguous-net-pairing
+    heuristic -- a single-instance, genuinely-dangling-by-construction cell
+    (`clkload13`, a CTS clock-load dummy already disclosed in `layout/
+    digital/lvs.py`'s own module docstring) that resolves cleanly on its own
+    flips to a hard, unrecoverable `net.split` once the guard ring's one
+    extra candidate net is added to the same comparison -- with the
+    underlying digital geometry itself unchanged either way (confirmed by
+    extracting this same sub-cell back out of the composed GDS and getting
+    a byte-for-byte identical verdict to the standalone check). Filed
+    generically upstream as klayout-tools#1533. Composed DRC (`check_ring_
+    fit`'s own `composed`/`ring_standalone` comparison, run unconditionally
+    for every region including `digital`, above) is what actually verifies
+    the guard ring's adjacency introduces no new violation -- LVS's own job
+    here is confirming placement did not corrupt the content's own
+    connectivity, which comparing its sub-cell alone against its own
+    reference already answers.
+    """
+    output = WORK_DIR / f"{tag}.extracted.spice"
+    return _run_klt([
+        "extract", gds_path,
+        "--deck", DECK,
+        "--top", top,
+        "--abstract-cells", abstract_cells,
+        "--top-cell-pins",
+        "--pins", ",".join(pins),
+        "--def-net-names",
+        "-o", str(output.relative_to(REPO_ROOT)),
+    ])
 
 
 def _lvs_summary(response: dict) -> dict:
@@ -819,10 +995,29 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
     new_rules = {rule: count for rule, count in (composed_rules - ring_rules).items()}
 
     ref_path, ref_top = RING_LVS_REFERENCE[rid]
-    lvs = run_lvs(
-        f"fp_ring_fit_{rid}.gds", f"fp_ring_fit_{rid}", ref_path, ref_top,
-        f"fp_ring_fit_{rid}",
-    )
+    abstract_cells = RING_LVS_ABSTRACT_CELLS.get(rid)
+    if abstract_cells is not None:
+        # Standard-cell region (`digital`): extract and compare its own
+        # real-content sub-cell alone -- see `run_extract_abstract`'s own
+        # docstring for why the composed pair (guard ring included) is not
+        # what gets extracted/compared here.
+        content_cell = f"ring__{region['footprint_source']['cell_name']}"
+        run_extract_abstract(
+            f"layout/.work/fp_ring_fit_{rid}.gds",
+            content_cell,
+            abstract_cells,
+            _reference_top_pins(ref_path, ref_top),
+            f"fp_ring_fit_{rid}",
+        )
+        lvs = run_lvs(
+            None, content_cell, ref_path, ref_top, f"fp_ring_fit_{rid}",
+            layout_netlist=WORK_DIR / f"fp_ring_fit_{rid}.extracted.spice",
+        )
+    else:
+        lvs = run_lvs(
+            f"fp_ring_fit_{rid}.gds", f"fp_ring_fit_{rid}", ref_path, ref_top,
+            f"fp_ring_fit_{rid}",
+        )
     lvs_categories = set((lvs.get("category_counts") or {}).keys())
     lvs_bad_categories = sorted(lvs_categories - ALLOWED_LVS_CATEGORIES)
 
