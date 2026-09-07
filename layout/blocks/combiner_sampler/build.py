@@ -188,7 +188,7 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers. Metal3/Via2 for the block-level routing
@@ -406,10 +406,6 @@ def row_bbox_um(offsets: dict[str, float]) -> dict:
 # --------------------------------------------------------------------------- #
 # Wiring geometry (klt draw's own JSON shape list)
 # --------------------------------------------------------------------------- #
-
-
-def _rect(layer: list[int], x0: float, y0: float, x1: float, y1: float) -> dict:
-    return {"layer": layer, "rect_um": [x0, y0, x1, y1]}
 
 
 def _net_terminals(

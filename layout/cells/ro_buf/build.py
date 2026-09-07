@@ -83,8 +83,11 @@ _TESTCELL_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..", "testcells"
 )
 sys.path.insert(0, os.path.abspath(_TESTCELL_DIR))
+_CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from gdsii import Label, Rect, write_gds  # noqa: E402
+from _geometry import PAD_H, _narrow, _pad  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers, matching klt's curated decks (the same set
@@ -114,7 +117,6 @@ L_GATE = 0.28  # both
 # Geometry constants (um). See the module docstring for why every device is
 # dog-boned and why these margins are generous relative to the deck minimums.
 # --------------------------------------------------------------------------- #
-PAD_H = 0.44  # comp height at every contacted (source/drain) region
 PAD_W = 0.70  # comp x-extent of a contacted region
 ROW_GAP = 1.20  # comp-comp vertical gap between the NMOS and PMOS rows (deck min 0.28)
 NWELL_MARGIN = 0.25  # Nwell enclosure of PMOS comp (deck min 0.12)
@@ -128,14 +130,6 @@ assert PAD_H >= W_N
 # two cells abut consistently if a future assembly ever rows them together.
 Y_NMOS = PAD_H / 2  # 0.22
 Y_PMOS = PAD_H + ROW_GAP + PAD_H / 2  # 0.44 + 1.20 + 0.22 = 1.86
-
-
-def _pad(y_center: float) -> tuple[float, float]:
-    return (y_center - PAD_H / 2, y_center + PAD_H / 2)
-
-
-def _narrow(y_center: float, w: float) -> tuple[float, float]:
-    return (y_center - w / 2, y_center + w / 2)
 
 
 # --------------------------------------------------------------------------- #

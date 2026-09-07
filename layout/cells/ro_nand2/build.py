@@ -84,8 +84,11 @@ _TESTCELL_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..", "testcells"
 )
 sys.path.insert(0, os.path.abspath(_TESTCELL_DIR))
+_CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from gdsii import Label, Rect, write_gds  # noqa: E402
+from _geometry import PAD_H, _narrow, _pad  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers, matching klt's curated decks.
@@ -113,7 +116,6 @@ L_SWITCH = 0.28  # XMpa, XMpb, XMna, XMnb
 # --------------------------------------------------------------------------- #
 # Geometry constants (um).
 # --------------------------------------------------------------------------- #
-PAD_H = 0.44  # comp height at every contacted (source/drain) region
 PAD_W = 0.70  # comp x-extent of a contacted end pad (pad_y, pad_vddr, pad_vss)
 GATE_GAP = 0.80  # x-span reserved between adjacent gates for an internal-node
 # contact (py, py2) or a pin's own landing pad -- wider than ro_stage's 0.40
@@ -135,15 +137,6 @@ assert PAD_H == W_PARALLEL, "PAD_H sized to need no narrowing for Mpa/Mpb/Mna/Mn
 
 Y_NMOS = PAD_H / 2  # 0.22 -- NMOS row spans [0, 0.44]
 Y_PMOS = PAD_H + ROW_GAP + PAD_H / 2  # 1.86 -- PMOS row spans [1.64, 2.08]
-
-
-def _pad(y_center: float) -> tuple[float, float]:
-    return (y_center - PAD_H / 2, y_center + PAD_H / 2)
-
-
-def _narrow(y_center: float, w: float) -> tuple[float, float]:
-    return (y_center - w / 2, y_center + w / 2)
-
 
 # --------------------------------------------------------------------------- #
 # X layout. `a`'s gate and `en`'s gate land at the same X range on both rows
