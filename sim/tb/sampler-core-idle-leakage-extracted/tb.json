@@ -1,0 +1,65 @@
+{
+  "name": "sampler-core-idle-leakage-extracted",
+  "description": "Issue #17's post-layout re-run of sim/tb/sampler-core-idle-leakage/ against layout/pex/sampler_core.extracted.spice (klt extract --parasitics over drawn leaf cells, composed per design/sampler_core.spice topology -- see layout/pex/build.py). Same DUT topology/rails/measurement expressions as the pre-layout testbench; only device-level parasitics differ. Whole-block idle-power claim of issue #14, re-derived at the binding worst corner post-layout.",
+  "netlist": "tb_sampler_core_idle_leakage_extracted.sp",
+  "design_netlist": "layout/pex/sampler_core.extracted.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "ff"
+  ],
+  "tstop": "1u",
+  "tstep": "200p (print step; ngspice's own LTE sets the actual solver step, which is very coarse here because nothing switches after 300 ns)",
+  "analyses": [
+    "tran 200p 1u",
+    "meas tran qax find v(qa) at=600n",
+    "meas tran qa0 find v(qa) at=800n",
+    "meas tran qa1 find v(qa) at=1u",
+    "meas tran qbx find v(qb) at=600n",
+    "meas tran qb0 find v(qb) at=800n",
+    "meas tran qb1 find v(qb) at=1u",
+    "meas tran vxo find v(xduta.xo) at=1u",
+    "meas tran vn1 find v(xduta.xdut.xr1.n1) at=1u",
+    "meas tran vn2 find v(xduta.xdut.xr1.n2) at=1u",
+    "meas tran vrba find v(rba) at=1u",
+    "meas tran vrva find v(rva) at=1u",
+    "meas tran vrbb find v(rbb) at=1u",
+    "meas tran vrvb find v(rvb) at=1u",
+    "meas tran vsupm find v(vsup) at=1u",
+    "let cq = 1e-9",
+    "let twin = 2e-7"
+  ],
+  "measure": {
+    "i_idle_clklo_a": "-cq*(qa1-qa0)/twin",
+    "i_idle_clkhi_a": "-cq*(qb1-qb0)/twin",
+    "p_idle_clklo_w": "-cq*(qa1-qa0)/twin*vsupm",
+    "p_idle_clkhi_w": "-cq*(qb1-qb0)/twin*vsupm",
+    "i_idle_clklo_prev_a": "-cq*(qa0-qax)/twin",
+    "i_idle_clkhi_prev_a": "-cq*(qb0-qbx)/twin",
+    "i_idle_worst_a": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)",
+    "p_idle_worst_w": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)*vsupm",
+    "v_xo_v": "vxo",
+    "v_n1_v": "vn1",
+    "v_n2_v": "vn2",
+    "v_rawbit_clklo_v": "vrba",
+    "v_rawvalid_clklo_v": "vrva",
+    "v_rawbit_clkhi_v": "vrbb",
+    "v_rawvalid_clkhi_v": "vrvb",
+    "v_sup_v": "vsupm"
+  },
+  "caveats": [
+    "Post-layout, device-level-parasitic-annotated (layout/pex/build.py); NOT a full assembled-ring/inter-region routing extraction -- see layout/pex/build.py's own module docstring and sim/characterization-post-layout-extracted.md for exactly what this does and does not capture.",
+    "v_ro1_v/v_ro2_v (the pre-layout deck's ro_buf-output witnesses) are DROPPED from this extracted deck's measurement set. Both v(xduta.xdut.ro1) and the one-level-deeper v(xduta.xdut.xb1.y) report 'no such vector' from ngspice against this specific composed subcircuit, even though xo, n1 and n2 at the same or greater hierarchy depth resolve fine in the same run -- a node-resolution quirk of this particular flattening (ro1 is a zero-impedance pass-through named identically at three nested levels: ro_buf's own 'y' port, ro_array_core_extracted's 'ro1' port, and sampler_core_extracted's own 'ro1' net) rather than a broken netlist or a missing electrical connection. xo, n1 and n2 remain as witnesses that the block reached the expected clamped idle state (en = 0 implies n1 = vdd, n2 = 0, xo = 0); ro1/ro2 themselves are not load-bearing to the current/power result, which is unaffected.",
+    "Scoped to the single corner sim/characterization-startup-and-power-budget.md identified as binding for idle power (ff/+125 C/3.63 V), per issue #17's acceptance criteria ('spec table confirmed at the worst corner post-layout'), not the full 45-point grid.",
+    "This is the ANALOG side of the DR-0009 boundary only: two rings, the XOR combiner, two sampler_dff instances. The conditioner, the health tests and the interface have no gate-level netlist in this repository (design/README.md), so their leakage cannot be SPICE-measured at all and is not in this number. sim/tools/power_rollup.py adds design/digital_power_estimate.py's library-based figure for those, clearly labelled an estimate (DR-0004 Tier 2) and not a measurement.",
+    "Reports STATIC current in a settled state. It says nothing about the transient the block draws while entering idle (the rings' last decaying cycles after en falls, and the one clock edge this deck itself applies), and nothing about a supply ramp: vdd is a DC source, up from t = 0.",
+    "'Idle' here is the README's ratified definition -- rings stopped, reset RELEASED, state retained, block powered. It is deliberately not the reset-asserted state sim/tb/sampler-dff-reset-current-{xsv,xsb}/ measure, and the two must not be quoted interchangeably.",
+    "The retained flop state is the one the block reaches by clamping the rings and then taking a clock edge: raw_valid = 1 (xsv's D is tied to vdd) and raw_bit = 0 (xo is low while both rings are clamped high). A block parked with raw_bit = 1 instead would bias the slave latch's devices differently; that state is not reachable in this deck without driving xo, and is not measured.",
+    "No power gating of any kind is modelled. This is the ungated leakage floor: any gating scheme an integrator adds can only improve on it, and the README's own note already anticipates that the ungated figure may be the binding one.",
+    "Both clock park states are reported because neither is normative. If a future decision record fixes the parked level, the corresponding column becomes the one to quote and the other stays as evidence that the choice mattered (or did not).",
+    "Two independent windows of the same quantity are recorded per copy: the charge-integrator average over [800 ns, 1 us] (`i_idle_*_a`, the headline) and over the preceding [600 ns, 800 ns] (`i_idle_*_prev_a`). They agree only if the state really is static, so a disagreement between a pair is the record's own self-check failing, not a rounding difference to be averaged away. An INSTANTANEOUS branch-current read was tried first and rejected: with nothing switching, ngspice's timestep grows to a large fraction of the window and `meas ... find i(v...) at=1u` returns an interpolated value that disagreed with the integrated one by three orders of magnitude, and in sign. The integrator is insensitive to that because it reads a node voltage the solver actually carries, and it averages rather than samples.",
+    "The node-voltage rows are witnesses, not results: they exist so a record where the solver landed somewhere other than the clamped state -- which would make the current figure meaningless, as an `op` analysis of this same block demonstrates -- is visible rather than silently plausible. With en = 0 the expected state is ro1 = ro2 = vdd, xo = 0, n1 = vdd, n2 = 0."
+  ],
+  "temperatures_c": [
+    125
+  ]
+}

@@ -109,9 +109,16 @@ class BitstreamRecord:
 
 
 def load_records() -> list[BitstreamRecord]:
-    paths = sorted(RECORDS.glob(f"*-{SLUG}-*.md"))
+    # `-[0-9]` and not `-`: the sequence number must follow the slug
+    # directly, so a record from a *variant* testbench whose slug starts
+    # with this one (e.g. `sampler-array-digitize-extracted`, issue #17's
+    # post-layout re-run, which shares every PVT corner label with this
+    # pre-layout family) can never be silently read as a pre-layout
+    # transistor-level point -- same rule and reason as
+    # sim/tools/power_rollup.py's ARRAY_GLOBS.
+    paths = sorted(RECORDS.glob(f"*-{SLUG}-[0-9]*.md"))
     if not paths:
-        raise RecordError(f"no sim/records/*-{SLUG}-*.md records found")
+        raise RecordError(f"no sim/records/*-{SLUG}-[0-9]*.md records found")
     return [BitstreamRecord(p) for p in paths]
 
 

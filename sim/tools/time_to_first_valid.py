@@ -74,7 +74,14 @@ from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
 
-STARTUP_GLOB = "*-ro-array-core-startup-*.md"
+# `-[0-9]` and not `-`: the sequence number must follow the slug directly, so
+# a record from a *variant* testbench whose slug starts with this one (e.g.
+# `ro-array-core-startup-extracted`, issue #17's post-layout re-run, which
+# shares every PVT corner label with the pre-layout family it is a sibling
+# of) can never be silently read as a pre-layout transistor-level point --
+# see sim/tools/power_rollup.py's ARRAY_GLOBS for the same rule, established
+# first for exactly this failure mode (issue #75's unadopted buffer variant).
+STARTUP_GLOB = "*-ro-array-core-startup-[0-9]*.md"
 
 #: DR-0002 start-up health test: STARTUP_SAMPLES = W = 1024 consecutive clean
 #: raw samples. Read from design/health_test/rct_apt.v's defaults.

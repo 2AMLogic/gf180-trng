@@ -257,6 +257,41 @@ exactly as before, and [DR-0021]'s `level: gate` records are untouched.
 
 ---
 
+## Extracted-netlist records
+
+`level: extracted` is the fifth `level:` value, added by [DR-0024] for #17's
+post-layout re-run of the analog verification suite
+(`sim/tb/*-extracted/`). It is a **sibling of `level: transistor`, not a
+replacement**: both are ordinary ngspice transient/noise/DC runs at a real
+P/V/T point, driven through the same `tb.json`/`sim/run_corners.py`
+machinery, so everything [DR-0009] fixes about a transistor record's
+frontmatter holds here too — `pdk`, `pdk.models`, `tool.ngspice`,
+`corner.process`/`voltage`/`temperature` filled in (never `n/a`), one P/V/T
+point per record ([DR-0005]), seeds recorded for every stochastic run.
+
+The one thing that differs, and the reason the value is distinct rather than
+shared:
+
+| | `level: transistor` (DR-0009) | `level: extracted` (DR-0024) |
+|---|---|---|
+| DUT provenance | `design/*.spice`, schematic-derived (`design/netlist.py`) | `layout/pex/*.extracted.spice` or equivalent — read from real drawn layout via `klt extract --parasitics` |
+| May be cited for | rate, power, jitter, metastability, min-entropy-adjacent measurements, at its corner | the same, at its corner, **for the netlist and coverage its own Caveats state** |
+| Requires | the standard frontmatter | the standard frontmatter, plus a Caveats statement of what the extraction does and does not capture (inter-cell/inter-region routing parasitics, in particular) |
+
+A `level: extracted` record may not be cited as evidence about the fully
+assembled, routed layout unless its Caveats affirmatively say routing
+parasitics are included — the first generation of these records (#17) is
+device-level only (leaf-cell parasitics, schematic-topology composition), not
+a full-chip parasitic re-run, and says so in every record. See
+`layout/pex/build.py`'s module docstring and
+[`sim/characterization-post-layout-extracted.md`](characterization-post-layout-extracted.md)
+for the full accounting of what this generation of records does and does not
+show.
+
+[DR-0024]: ../spec/decision-records/DR-0024-extracted-netlist-record-level.md
+
+---
+
 ## Superseding a record
 
 Mistaken, misconfigured, or invalidated runs are **not** deleted or edited.
