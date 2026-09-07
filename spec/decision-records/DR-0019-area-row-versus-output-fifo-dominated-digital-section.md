@@ -1,12 +1,12 @@
 ---
 dr: DR-0019-area-row-versus-output-fifo-dominated-digital-section
 title: Record the 2.7x miss on the < 0.05 mm2 area row, whose dominant term is the interface's two 8x32-bit output FIFOs, and hold the row until the FIFO-depth question is settled jointly with DR-0017
-status: Proposed
+status: Accepted
 date: 2026-08-04
-deciders: Proposed by #96 (the area row has no decision record, unlike every other missed or unmeasured row). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004 and DR-0007 were.
+deciders: Proposed by #96 (the area row has no decision record, unlike every other missed or unmeasured row). Accepted 2026-09-07 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work) — see Status.
 supersedes: n/a (this record edits no row; on acceptance of option B or D it would be superseded by the record that states the new row)
 superseded_by: n/a
-related: "#16/PR (the floorplan and its area inventory — origin of this record's evidence), #94 (the hygiene pass that surfaced the missing record), #26/DR-0013 (the interface and its two 8x32-bit FIFOs), DR-0017 (the same FIFOs, the idle-current row), DR-0008 (the conditioner's area figure and the AES-128 rejection that is conditioned on this budget), DR-0004 (claim tiers), DR-0010 (the 500 bps raw rate that sets what a buffered word is worth), DR-0016 (the ring-liveness monitor, excluded from the totals here), DR-0020 (the FIFO-depth follow-up this record named in its Consequences, now filed: it sets FIFO_DEPTH = 2, so this record's Decision item-4 supersession trigger does not fire and its Revisit-if 'below 8' branch applies instead), #15/#17 (layout, which will add to this number and cannot reduce it); README §Target specification — Area, layout/floorplan/README.md §Area against the `< 0.05 mm²` row"
+related: "#16/PR (the floorplan and its area inventory — origin of this record's evidence), #94 (the hygiene pass that surfaced the missing record), #26/DR-0013 (the interface and its two 8x32-bit FIFOs), DR-0017 (the same FIFOs, the idle-current row), DR-0008 (the conditioner's area figure and the AES-128 rejection that is conditioned on this budget), DR-0004 (claim tiers), DR-0010 (the 500 bps raw rate that sets what a buffered word is worth), DR-0016 (the ring-liveness monitor, excluded from the totals here), DR-0020 (the FIFO-depth follow-up this record named in its Consequences, now filed and, as of 2026-09-07, also ratified at FIFO_DEPTH = 2: it sets FIFO_DEPTH = 2, so this record's Decision item-4 supersession trigger does not fire and its Revisit-if 'below 8' branch applies instead), #213 (the ratification-PR tracking issue this record was carried through under), #15/#17 (layout, which will add to this number and cannot reduce it); README §Target specification — Area, layout/floorplan/README.md §Area against the `< 0.05 mm²` row"
 ---
 
 # DR-0019: Record the 2.7× miss on the `< 0.05 mm²` area row, whose dominant term is the interface's two 8 × 32-bit output FIFOs, and hold the row until the FIFO-depth question is settled jointly with [DR-0017]
@@ -14,11 +14,24 @@ related: "#16/PR (the floorplan and its area inventory — origin of this record
 ## Status
 
 - 2026-08-04: Proposed, by #96. Not ratified.
+- 2026-09-07: **Accepted** — option C (record the miss, hold the `< 0.05 mm²`
+  row unedited, and sequence the response behind the `FIFO_DEPTH` decision) is
+  ratified as this record's Decision. Ratified via the two-key mechanism
+  (`2AMLogic/2am#372`: EE key + market key both review this repo's
+  ratification pull request, tracked as #213) per the operator's 2026-08-27
+  comment on #150, which superseded the earlier "acceptance is an operator
+  decision" language above and ruled that cutting this ratification PR is
+  ordinary agent work. Ratifying this record's Decision does not by itself
+  resolve the row: `< 0.05 mm²` is still missed on the standing estimate
+  (129.4 % of the row at [DR-0020]'s now-ratified `FIFO_DEPTH = 2`, down from
+  269.4 % at the shipped `FIFO_DEPTH = 8`, both figures pre-layout and both
+  excluding [DR-0016]'s monitor) — see the note below.
 
-Until ratified the `< 0.05 mm²` row stands as written and this record is a
-proposal, not spec. Nothing in `README.md`'s ratified table is edited by the
-pull request that proposes this record; the only README changes it makes are
-pointers to this record.
+The `< 0.05 mm²` row stands as written; this record's ratified Decision is to
+hold it there rather than edit it. `README.md`'s ratified target table is not
+edited by this record or by the pull request that ratifies it — the only
+README changes are to its evidenced-figure commentary, pointing at this
+record.
 
 ## Context
 

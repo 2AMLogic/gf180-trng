@@ -1,12 +1,12 @@
 ---
 dr: DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming
 title: Set the interface's output FIFO_DEPTH to 2, decided once with the idle-power, area and 500 bps streaming consequences in view
-status: Proposed
+status: Accepted
 date: 2026-08-04
-deciders: Proposed by #99 (the joint FIFO-depth follow-up DR-0019 named and did not file). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004, DR-0007, DR-0017 and DR-0019 were.
+deciders: Proposed by #99 (the joint FIFO-depth follow-up DR-0019 named and did not file). Accepted 2026-09-07 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work) — see Status.
 supersedes: n/a (DR-0013 fixed the interface but never fixed a depth; `FIFO_DEPTH = 8` is a shipped RTL default, not a decided value)
 superseded_by: n/a
-related: "#99 (origin), #96/PR #98 (DR-0019, which named this record as its unfiled follow-up), #26/DR-0013 (the interface, its two output FIFOs and the `OUT_MODE` drain cost this record prices), DR-0017 (the `< 1 µA` idle row and its §B depth figures), DR-0019 (the `< 0.05 mm²` area row and its depth table), DR-0010 (the proposed 500 bps raw rate that sets what a buffered word is worth), DR-0003 (the superseded 1 Mbps rate the depth was originally sized against), DR-0008 (K = 8, so what a conditioned word is worth, and §4's AES-128 rejection conditioned on the area budget), DR-0001 (the two output paths and the `OUT_MODE` flush rule), DR-0002 (the 1024-sample start-up window), DR-0004 (claim tiers and the sequential dataset), DR-0016 (the ring-liveness monitor, excluded from DR-0019's totals); README §Target specification — Power, Area and Raw rate rows, none of which are edited by this record"
+related: "#99 (origin), #96/PR #98 (DR-0019, which named this record as its unfiled follow-up), #26/DR-0013 (the interface, its two output FIFOs and the `OUT_MODE` drain cost this record prices), DR-0017 (the `< 1 µA` idle row and its §B depth figures), DR-0019 (the `< 0.05 mm²` area row and its depth table, ratified alongside this record), DR-0010 (the proposed 500 bps raw rate that sets what a buffered word is worth), DR-0003 (the superseded 1 Mbps rate the depth was originally sized against), DR-0008 (K = 8, so what a conditioned word is worth, and §4's AES-128 rejection conditioned on the area budget), DR-0001 (the two output paths and the `OUT_MODE` flush rule), DR-0002 (the 1024-sample start-up window), DR-0004 (claim tiers and the sequential dataset), DR-0016 (the ring-liveness monitor, excluded from DR-0019's totals), #213 (the ratification-PR tracking issue this record was carried through under); README §Target specification — Power, Area and Raw rate rows, none of which are edited by this record"
 ---
 
 # DR-0020: Set the interface's output `FIFO_DEPTH` to 2, decided once with the idle-power, area and 500 bps streaming consequences in view
@@ -14,10 +14,25 @@ related: "#99 (origin), #96/PR #98 (DR-0019, which named this record as its unfi
 ## Status
 
 - 2026-08-04: Proposed, by #99. Not ratified.
+- 2026-09-07: **Accepted** — `FIFO_DEPTH = 2` is ratified as the decided
+  value for both output FIFOs. Ratified via the two-key mechanism
+  (`2AMLogic/2am#372`: EE key + market key both review this repo's
+  ratification pull request, tracked as #213) per the operator's 2026-08-27
+  comment on #150, which superseded the earlier "acceptance is an operator
+  decision" language above. **Ratifying the decision does not itself carry it
+  out**: as of this date `design/interface/regmap.py`'s `FIFO_DEPTH` constant,
+  the RTL default it generates, `design/digital_power_estimate.py`, and
+  `layout/floorplan/floorplan.py`'s inventory all still ship at
+  `FIFO_DEPTH = 8` — the shipped design has not yet been changed to match the
+  now-ratified value. Follow-up below (unchanged, still not filed as its own
+  issue as of this date) remains the honest next step; this record's Decision
+  item 1 already said the RTL change is not done by the pull request that
+  proposes (or, now, ratifies) this record.
 
-Until ratified, `FIFO_DEPTH = 8` stands as the shipped default and this record
-is a proposal, not spec. **No RTL, no generated register map, no estimate script
-and no ratified row is edited by the pull request that proposes this record** —
+Until the follow-up lands, `FIFO_DEPTH = 8` stands as the shipped default,
+even though the record that decides what it *should* be is now ratified. **No
+RTL, no generated register map, no estimate script and no ratified row is
+edited by the pull request that ratifies this record** —
 it changes only this file and the `related` fields of the three records that
 jointly own the decision.
 

@@ -1,12 +1,12 @@
 ---
 dr: DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power
 title: Move power_rollup.py's digital term from the DR-0004 Tier 2 pre-synthesis estimate to #145's measured gate-level figure at the shared 0.25 transitions/net/cycle activity -- the active row moves from met (86.6 %) to a 2.2x miss, and DR-0017's idle miss narrows from 4.5x to ~4.0x
-status: Proposed
+status: Accepted
 date: 2026-08-21
-deciders: Proposed by #174 (Builder). NOT ratified -- acceptance is an operator decision, per #145 §4.4 and the same convention [DR-0017] and [DR-0019] were filed under (both cited by #174 as the direct precedent for this record's shape).
+deciders: Proposed by #174 (Builder). Accepted 2026-09-07 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work) -- see Status.
 supersedes: n/a (edits no ratified figure; on acceptance it supersedes the evidential standing of the 2026-07-31 ratification note's "Active: met" paragraph, and narrows -- without superseding -- [DR-0017]'s idle-miss figure)
 superseded_by: n/a
-related: "#145 (the measurement this record acts on), #174 (this decision), sim/characterization-digital-sta-area-power.md §4 (the corner sweep, §4.4 the prior deferral this record resolves), DR-0004 (claim tiers -- Tier 2 estimate, defined and unchanged), DR-0017 (idle row, Proposed -- this record narrows its headline miss figure without touching its diagnosis or its four options), DR-0019 (area row, Proposed -- the precedent for this record's shape: report the miss, do not edit the ratified row, route the verdict change through a record), DR-0021 (defines `level: gate` and, in §3, forbids citing one as a measured supply current -- the reason this record's term is labelled MEASURED-at-gate-level and never bare MEASURED), DR-0018 (the per-ring output buffer whose adoption produced the 433.2 uW active figure this record's Decision supersedes the standing of), DR-0022/#147 (the post-route gate-level *simulation* that does not yet supply a per-net switching-activity annotation -- named in Follow-up), #171 (the PDN population that moved measured leakage from 0.63x to 0.89x the estimate at the row's binding corner, since the pre-#171 records this issue's own filed numbers cite); README §Target specification -- Power"
+related: "#145 (the measurement this record acts on), #174 (this decision), sim/characterization-digital-sta-area-power.md §4 (the corner sweep, §4.4 the prior deferral this record resolves), DR-0004 (claim tiers -- Tier 2 estimate, defined and unchanged), DR-0017 (idle row, Proposed and unsuperseded -- this record narrows its headline miss figure without touching its diagnosis or its four options), DR-0019 (area row, ratified alongside this record -- the precedent for this record's shape: report the miss, do not edit the ratified row, route the verdict change through a record), DR-0021 (defines `level: gate` and, in §3, forbids citing one as a measured supply current -- the reason this record's term is labelled MEASURED-at-gate-level and never bare MEASURED), DR-0018 (the per-ring output buffer whose adoption produced the 433.2 uW active figure this record's Decision supersedes the standing of), DR-0022/#147 (the post-route gate-level *simulation* that does not yet supply a per-net switching-activity annotation -- named in Follow-up), #171 (the PDN population that moved measured leakage from 0.63x to 0.89x the estimate at the row's binding corner, since the pre-#171 records this issue's own filed numbers cite), #213 (the ratification-PR tracking issue this record was carried through under); README §Target specification -- Power"
 ---
 
 # DR-0023: Move `power_rollup.py`'s digital term from the [DR-0004] Tier 2 estimate to the measured gate-level figure
@@ -14,11 +14,21 @@ related: "#145 (the measurement this record acts on), #174 (this decision), sim/
 ## Status
 
 - 2026-08-21: Proposed, by the Builder of #174. Not ratified.
+- 2026-09-07: **Accepted** -- the digital-term substitution described below
+  is ratified. Ratified via the two-key mechanism (`2AMLogic/2am#372`: EE key
+  + market key both review this repo's ratification pull request, tracked as
+  #213) per the operator's 2026-08-27 comment on #150, which superseded the
+  earlier "acceptance is an operator decision" language above. The
+  substitution itself (`sim/tools/power_rollup.py`'s digital term, and the
+  README's evidenced-figure commentary below) was already carried out by
+  #174/PR #195 at filing time; ratification confirms that substitution as
+  the accepted evidence source rather than changing any figure.
 
-Until ratified the `Power` row stands exactly as the 2026-07-31 ratification
-left it, and this record is a proposal, not spec. The pull request that files
-this record edits `sim/tools/power_rollup.py`'s *evidence*, not any ratified
-figure: the tool's own totals change (that is the whole point -- an evidence
+The `Power` row's ratified target text stands exactly as the 2026-07-31
+ratification left it, and this record's ratified Decision does not touch it.
+The pull request that filed this record edited `sim/tools/power_rollup.py`'s
+*evidence*, not any ratified figure: the tool's own totals change (that is
+the whole point -- an evidence
 tool that keeps citing a superseded source is worse than no tool), but
 `README.md`'s `< 500 uW` / `< 1 uA` target text is untouched, exactly as
 [DR-0017] and [DR-0019] left their own rows untouched. The README's
