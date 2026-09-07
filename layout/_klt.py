@@ -24,6 +24,14 @@ that kind of shared plumbing belongs. `layout/verify.py` keeps its own
 existing copy for now -- consolidating that one is unrelated cleanup, not
 this issue's scope.
 
+`_rect()` (issue #215) is the one-line helper that turns a layer/bbox into
+`klt draw`'s own wiring-shape JSON dict. `layout/rings/ro_ring11/build.py`,
+`layout/rings/ro_ring11_ring2/build.py`, and
+`layout/blocks/combiner_sampler/build.py` each defined a byte-identical copy
+and already import `_run_klt`/`klt_version`/`normalise_gds`/`resolve_pdk`
+from this module, so it moved in alongside them rather than staying a
+fourth independent copy.
+
 Not a package member of anything else under `layout/` -- it computes its own
 `REPO_ROOT` from its own location (`layout/_klt.py` sits directly under
 `layout/`, so one `.parent` up is the repo root) rather than importing a
@@ -177,6 +185,11 @@ def klt_origin() -> dict | None:
         "url": record.get("url"),
         "commit": (record.get("vcs_info") or {}).get("commit_id"),
     }
+
+
+def _rect(layer: list[int], x0: float, y0: float, x1: float, y1: float) -> dict:
+    """Return one `klt draw` wiring-shape dict for a rectangle on `layer`."""
+    return {"layer": layer, "rect_um": [x0, y0, x1, y1]}
 
 
 def normalise_gds(raw: bytes) -> bytes:
