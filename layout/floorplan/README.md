@@ -559,7 +559,9 @@ this issue owns the entropy source's isolation, not the interface's FIFO depth.
 The number is recorded so the conflict is visible rather than discovered later,
 exactly as [DR-0010] §Consequences recorded the power collision.
 
-The miss itself is now routed by **[DR-0019]** (`Proposed`, from #96), the way
+The miss itself is now routed by **[DR-0019]** (`Accepted` 2026-09-07, via the
+two-key ratification mechanism, `2AMLogic/2am#372`/#213; originally `Proposed`
+from #96), the way
 the idle-current miss is routed by [DR-0017]: it states the row's status against
 this estimate, prices the available responses (reduce the FIFO depth, raise the
 row, hold the row, or split it), and carries the depth sensitivity — 269.4 % at
@@ -573,8 +575,14 @@ Re-deriving DR-0019's depth-sensitivity table against the new total is
 that record's own follow-up, not repeated here. Its finding on the shared root
 cause is that the same lever reaches the two rows very differently: [DR-0017]
 rejected a depth reduction because it never gets the idle current under 1 µA at
-any depth, whereas on area it is most of an answer. Until that record is
-ratified the `< 0.05 mm²` row stands as written.
+any depth, whereas on area it is most of an answer. **[DR-0019]'s ratified
+Decision (option C) holds the `< 0.05 mm²` row as written rather than editing
+it**, and the joint `FIFO_DEPTH` decision it deferred to is itself now ratified
+as [DR-0020] (`Accepted` 2026-09-07, same mechanism): `FIFO_DEPTH = 2`. Neither
+this floorplan's own numbers above nor the shipped RTL reflect that value yet —
+[DR-0020] ratifies the decision, not the implementation, and its own Follow-up
+section names the still-unfiled regmap/RTL change that would bring this
+document's figures down to the 129.4 % row above.
 
 ### The digital region has since been synthesized, placed and measured
 
@@ -1140,6 +1148,7 @@ would not block that separate question.
 [DR-0010]: ../../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0020]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
 [#111]: https://github.com/2AMLogic/gf180-trng/issues/111

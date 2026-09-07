@@ -102,7 +102,7 @@ that should be legible too.
 | Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
 | Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (at H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test. The parameterization has a hard floor: **no valid APT cutoff exists at H ≤ 0.03** ([DR-0002]) | — |
 | Time-to-first-valid | **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7). **Now measured (#14): 1.281 ms**, the floor plus one sampler clock plus a 4.1–12.4 ns oscillator start-up (4.4–13.4 ns before #78's buffer adoption) — the row is met and the floor is confirmed as a floor ([`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md)) | — |
-| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption and #174's substitution of #145's measured gate-level digital figure for the pre-synthesis estimate): active 1.122 mW — missed by 2.2×, at 224.5 % of the row. Idle 3.979 µA — missed by ~4.0×**, and the cause on both halves is the synthesized-and-placed digital section (712.4 µW active / 3.946 µA leakage, MEASURED-at-gate-level), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md), [DR-0023] (`Proposed`, the active miss and the idle figure's revision) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded), and the note below | — |
+| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption and #174's substitution of #145's measured gate-level digital figure for the pre-synthesis estimate): active 1.122 mW — missed by 2.2×, at 224.5 % of the row. Idle 3.979 µA — missed by ~4.0×**, and the cause on both halves is the synthesized-and-placed digital section (712.4 µW active / 3.946 µA leakage, MEASURED-at-gate-level), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below | — |
 | Area | < 0.05 mm² | — |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
 | Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013]) | — |
@@ -167,9 +167,11 @@ DRBG supplies its own and treats this block as the seed source.
 >     cell, so the obvious fix is not a library instantiation.
 >
 >   Per `CLAUDE.md` no row is edited here: the digital-term substitution and
->   the active miss it causes go to [DR-0023] (`Proposed`); [DR-0017]
->   (`Proposed`) remains the record for the idle row's diagnosis and its four
->   priced options, unsuperseded — [DR-0023] only narrows its headline figure.
+>   the active miss it causes are recorded in [DR-0023] (`Accepted` 2026-09-07
+>   via the two-key ratification mechanism, `2AMLogic/2am#372`/#213); [DR-0017]
+>   (`Proposed`, not part of the #213 ratification batch) remains the record
+>   for the idle row's diagnosis and its four priced options, unsuperseded —
+>   [DR-0023] only narrows its headline figure.
 >   [DR-0007]'s separate conflict — that its first-cut array size projected far
 >   more active power than this row allows — was resolved by [DR-0010]
 >   shrinking the array to N = 2, which is the 415 µW measured above.
@@ -187,12 +189,20 @@ DRBG supplies its own and treats this block as the seed source.
 >   miss: one design decision showing up on two rows. It is an inventory
 >   estimate with a stated method — no synthesiser, placer or router has run on
 >   this block — so it is not a measurement, and per `CLAUDE.md` the row is not
->   edited here: the miss goes to [DR-0019] (`Proposed`), which prices the four
->   available responses and finds that the shared FIFO-depth lever reaches the
->   two rows very differently — futile on idle current at every depth ([DR-0017]
->   §B), but worth 269.4 % → 105.8 % of the area row between depth 8 and depth 1.
->   It therefore holds the row rather than moving it, and sequences the response
->   behind a `FIFO_DEPTH` decision jointly owned with [DR-0017] and [DR-0013].
+>   edited here: the miss is recorded in [DR-0019] (`Accepted` 2026-09-07 via
+>   the two-key ratification mechanism, `2AMLogic/2am#372`/#213), which priced
+>   four available responses and found that the shared FIFO-depth lever
+>   reaches the two rows very differently — futile on idle current at every
+>   depth ([DR-0017] §B), but worth 269.4 % → 105.8 % of the area row between
+>   depth 8 and depth 1. Its ratified Decision (option C) therefore holds the
+>   row rather than moving it, and sequences the response behind the
+>   `FIFO_DEPTH` decision jointly owned with [DR-0017] and [DR-0013]. That
+>   joint decision is itself now [DR-0020] (also `Accepted` 2026-09-07,
+>   same mechanism): `FIFO_DEPTH = 2`, which brings the estimate above from
+>   270.0 % of the row down to **129.4 %** — still a miss, and still not
+>   carried into the shipped design or this section's own 0.1350 mm² figure,
+>   both of which remain at the pre-ratification `FIFO_DEPTH = 8` pending the
+>   RTL/regmap follow-up [DR-0020] names and does not itself perform.
 >
 > Note also that rows bind at **different** corners, and none at nominal: rate
 > at the slowest-RO corner, min-entropy per bit at the *least*-jitter
@@ -226,6 +236,7 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0017]: spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0018]: spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0019]: spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
+[DR-0020]: spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0023]: spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 
