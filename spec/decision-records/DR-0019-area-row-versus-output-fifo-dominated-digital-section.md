@@ -365,3 +365,4 @@ ratified row is edited by it, and no design parameter is changed by it.
 [DR-0015]: DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0016]: DR-0016-per-ring-liveness-monitor.md
 [DR-0017]: DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0020]: DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
