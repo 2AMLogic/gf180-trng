@@ -4,13 +4,23 @@
   "layout": "../rings/ro_ring11/ro_ring11.gds",
   "reference": "../rings/ro_ring11/ro_ring11.spice",
   "top": "ro_ring11",
+  "reference_top": "RO_RING11",
   "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null
+  },
   "status": "match",
   "mismatch_count": 2,
+  "error_count": 0,
   "category_counts": {
     "device.body_unverified": 1,
     "topology": 1
   },
+  "category_error_counts": {},
   "counts": {
     "nets": {
       "layout": 49,
@@ -39,18 +49,19 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.10",
+    "engine_version": "0.30.12",
     "layout_sha256": "f204887a0a8bd41ee571acde05be227e6588940176ab41e303ca28b8c5daccbb",
     "reference_sha256": "623aee287b5bbc21e3f51167b26313263f59b06d09e9b2fa2f0140018098d235",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.2.0",
-    "klayout_version": "0.30.10",
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:6a323622d93c1b4716a7874c37ee3d825bd08398c3c030c85175e44e2cc229a3"
+      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
+      "released": true
     },
     "input": null
   },
@@ -67,7 +78,10 @@
         "class": "nfet"
       },
       "property": null,
-      "details": null
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     },
     {
       "category": "topology",
@@ -77,7 +91,10 @@
       "net": null,
       "device": null,
       "property": null,
-      "details": null
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     }
   ],
   "net_correspondence": [
@@ -137,172 +154,172 @@
       "pin": true
     },
     {
-      "layout": "$13",
+      "layout": "\\$13",
       "reference": "NM_XG",
       "pin": false
     },
     {
-      "layout": "$30",
+      "layout": "\\$30",
       "reference": "NWELL_FLOAT_X1",
       "pin": false
     },
     {
-      "layout": "$48",
+      "layout": "\\$48",
       "reference": "NWELL_FLOAT_X10",
       "pin": false
     },
     {
-      "layout": "$32",
+      "layout": "\\$32",
       "reference": "NWELL_FLOAT_X2",
       "pin": false
     },
     {
-      "layout": "$34",
+      "layout": "\\$34",
       "reference": "NWELL_FLOAT_X3",
       "pin": false
     },
     {
-      "layout": "$36",
+      "layout": "\\$36",
       "reference": "NWELL_FLOAT_X4",
       "pin": false
     },
     {
-      "layout": "$38",
+      "layout": "\\$38",
       "reference": "NWELL_FLOAT_X5",
       "pin": false
     },
     {
-      "layout": "$40",
+      "layout": "\\$40",
       "reference": "NWELL_FLOAT_X6",
       "pin": false
     },
     {
-      "layout": "$42",
+      "layout": "\\$42",
       "reference": "NWELL_FLOAT_X7",
       "pin": false
     },
     {
-      "layout": "$44",
+      "layout": "\\$44",
       "reference": "NWELL_FLOAT_X8",
       "pin": false
     },
     {
-      "layout": "$46",
+      "layout": "\\$46",
       "reference": "NWELL_FLOAT_X9",
       "pin": false
     },
     {
-      "layout": "$28",
+      "layout": "\\$28",
       "reference": "NWELL_FLOAT_XG",
       "pin": false
     },
     {
-      "layout": "$15",
+      "layout": "\\$15",
       "reference": "NY_X1",
       "pin": false
     },
     {
-      "layout": "$16",
+      "layout": "\\$16",
       "reference": "NY_X10",
       "pin": false
     },
     {
-      "layout": "$17",
+      "layout": "\\$17",
       "reference": "NY_X2",
       "pin": false
     },
     {
-      "layout": "$18",
+      "layout": "\\$18",
       "reference": "NY_X3",
       "pin": false
     },
     {
-      "layout": "$20",
+      "layout": "\\$20",
       "reference": "NY_X4",
       "pin": false
     },
     {
-      "layout": "$21",
+      "layout": "\\$21",
       "reference": "NY_X5",
       "pin": false
     },
     {
-      "layout": "$22",
+      "layout": "\\$22",
       "reference": "NY_X6",
       "pin": false
     },
     {
-      "layout": "$24",
+      "layout": "\\$24",
       "reference": "NY_X7",
       "pin": false
     },
     {
-      "layout": "$23",
+      "layout": "\\$23",
       "reference": "NY_X8",
       "pin": false
     },
     {
-      "layout": "$19",
+      "layout": "\\$19",
       "reference": "NY_X9",
       "pin": false
     },
     {
-      "layout": "$14",
+      "layout": "\\$14",
       "reference": "NY_XG",
       "pin": false
     },
     {
-      "layout": "$29",
+      "layout": "\\$29",
       "reference": "PY_X1",
       "pin": false
     },
     {
-      "layout": "$47",
+      "layout": "\\$47",
       "reference": "PY_X10",
       "pin": false
     },
     {
-      "layout": "$31",
+      "layout": "\\$31",
       "reference": "PY_X2",
       "pin": false
     },
     {
-      "layout": "$33",
+      "layout": "\\$33",
       "reference": "PY_X3",
       "pin": false
     },
     {
-      "layout": "$35",
+      "layout": "\\$35",
       "reference": "PY_X4",
       "pin": false
     },
     {
-      "layout": "$37",
+      "layout": "\\$37",
       "reference": "PY_X5",
       "pin": false
     },
     {
-      "layout": "$39",
+      "layout": "\\$39",
       "reference": "PY_X6",
       "pin": false
     },
     {
-      "layout": "$41",
+      "layout": "\\$41",
       "reference": "PY_X7",
       "pin": false
     },
     {
-      "layout": "$43",
+      "layout": "\\$43",
       "reference": "PY_X8",
       "pin": false
     },
     {
-      "layout": "$45",
+      "layout": "\\$45",
       "reference": "PY_X9",
       "pin": false
     },
     {
-      "layout": "$27",
+      "layout": "\\$27",
       "reference": "PY_XG",
       "pin": false
     },

@@ -289,11 +289,34 @@ jobs:
       # #1516 fix resolves all four regions' compositions together
       # (`digital`, `ring1`, `ring2`, `combiner_sampler`), are tracked in
       # #210/#209.
+      #
+      # 3fbb4478e3017c8d8580fba4feb08bc386b4c925 (#217) supersedes the
+      # 59c2a287 pin above, 19 commits forward (`gh api .../compare/
+      # 59c2a2873c171cf5064255b64ff3719d4d54eaa9...3fbb4478e3017c8d8580fba4feb08bc386b4c925`
+      # -> `ahead_by: 19, behind_by: 0`, confirmed 2026-09-11). This bump
+      # exists for merged klayout-tools#1543 ("feat(extract): disclose
+      # positional net/pin identity for repeated-instance name collisions",
+      # closing klayout-tools#1540): `klt extract`'s flat naming had always
+      # collapsed a repeated leaf-cell instance array's genuinely distinct
+      # internal nets (e.g. `layout/rings/ro_ring11/`'s ten inter-stage
+      # nodes plus its one true external `ro` boundary pin) onto
+      # identically-named `.SUBCKT` header entries, with no documented way
+      # to tell which position was which. #1543 adds three additive
+      # `nets[]` fields -- `net_id` (the net's own cluster id), `pin_index`
+      # (its `.SUBCKT`/instance-line port position) and
+      # `label_positions_um` (every drawn label naming that net, in the
+      # top cell's own coordinates) -- giving a caller with independent
+      # floorplan knowledge (this repository's own `build.py` placement
+      # code) a positive way to identify a specific collided entry. This is
+      # what makes `layout/pex/build.py`'s routing-level composition path
+      # (issue #217, on top of #17's leaf-cell-only path) possible: see
+      # that module's own docstring, "Routing-level composition", for how
+      # each assembled block's true external ports are identified.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@59c2a2873c171cf5064255b64ff3719d4d54eaa9"
+            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@3fbb4478e3017c8d8580fba4feb08bc386b4c925"
           klt --version
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same

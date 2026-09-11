@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "file": "layout/blocks/combiner_sampler/combiner_sampler.gds",
   "deck": "gf180mcu",
   "top": "combiner_sampler",
@@ -51,7 +51,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$17",
+        "d": "\\$17",
         "b": "vsubs"
       },
       "params": {
@@ -69,8 +69,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "q",
-        "d": "$40",
-        "b": "$57"
+        "d": "\\$40",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -87,8 +87,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$40",
-        "b": "$57"
+        "d": "\\$40",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -103,10 +103,10 @@
       "name": "$102",
       "class": "pfet",
       "nets": {
-        "s": "$38",
+        "s": "\\$38",
         "g": "clk",
-        "d": "$40",
-        "b": "$57"
+        "d": "\\$40",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -124,7 +124,7 @@
         "s": "a|d|y",
         "g": "a",
         "d": "d|vdd",
-        "b": "$51"
+        "b": "\\$51"
       },
       "params": {
         "l_um": 0.28,
@@ -142,7 +142,7 @@
         "s": "b|d|y",
         "g": "a",
         "d": "d|vdd",
-        "b": "$52"
+        "b": "\\$52"
       },
       "params": {
         "l_um": 0.28,
@@ -157,9 +157,9 @@
       "name": "$11",
       "class": "nfet",
       "nets": {
-        "s": "$25",
-        "g": "$20",
-        "d": "$48",
+        "s": "\\$25",
+        "g": "\\$20",
+        "d": "\\$48",
         "b": "vsubs"
       },
       "params": {
@@ -177,7 +177,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$25",
+        "d": "\\$25",
         "b": "vsubs"
       },
       "params": {
@@ -193,9 +193,9 @@
       "name": "$13",
       "class": "nfet",
       "nets": {
-        "s": "$26",
+        "s": "\\$26",
         "g": "q",
-        "d": "$24",
+        "d": "\\$24",
         "b": "vsubs"
       },
       "params": {
@@ -213,7 +213,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$26",
+        "d": "\\$26",
         "b": "vsubs"
       },
       "params": {
@@ -229,9 +229,9 @@
       "name": "$15",
       "class": "nfet",
       "nets": {
-        "s": "$33",
-        "g": "$28",
-        "d": "$49",
+        "s": "\\$33",
+        "g": "\\$28",
+        "d": "\\$49",
         "b": "vsubs"
       },
       "params": {
@@ -249,7 +249,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$33",
+        "d": "\\$33",
         "b": "vsubs"
       },
       "params": {
@@ -265,9 +265,9 @@
       "name": "$17",
       "class": "nfet",
       "nets": {
-        "s": "$34",
+        "s": "\\$34",
         "g": "q",
-        "d": "$32",
+        "d": "\\$32",
         "b": "vsubs"
       },
       "params": {
@@ -285,7 +285,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$34",
+        "d": "\\$34",
         "b": "vsubs"
       },
       "params": {
@@ -301,9 +301,9 @@
       "name": "$19",
       "class": "nfet",
       "nets": {
-        "s": "$41",
-        "g": "$36",
-        "d": "$50",
+        "s": "\\$41",
+        "g": "\\$36",
+        "d": "\\$50",
         "b": "vsubs"
       },
       "params": {
@@ -339,7 +339,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$41",
+        "d": "\\$41",
         "b": "vsubs"
       },
       "params": {
@@ -355,9 +355,9 @@
       "name": "$21",
       "class": "nfet",
       "nets": {
-        "s": "$42",
+        "s": "\\$42",
         "g": "q",
-        "d": "$40",
+        "d": "\\$40",
         "b": "vsubs"
       },
       "params": {
@@ -375,7 +375,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$42",
+        "d": "\\$42",
         "b": "vsubs"
       },
       "params": {
@@ -393,7 +393,7 @@
       "nets": {
         "s": "vss",
         "g": "a|d|y",
-        "d": "$4",
+        "d": "\\$4",
         "b": "vsubs"
       },
       "params": {
@@ -411,7 +411,7 @@
       "nets": {
         "s": "vss",
         "g": "b|d|y",
-        "d": "$5",
+        "d": "\\$5",
         "b": "vsubs"
       },
       "params": {
@@ -429,7 +429,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$10",
+        "d": "\\$10",
         "b": "vsubs"
       },
       "params": {
@@ -445,8 +445,8 @@
       "name": "$26",
       "class": "nfet",
       "nets": {
-        "s": "$11",
-        "g": "$10",
+        "s": "\\$11",
+        "g": "\\$10",
         "d": "d|y",
         "b": "vsubs"
       },
@@ -464,8 +464,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$46",
-        "d": "$12",
+        "g": "\\$46",
+        "d": "\\$12",
         "b": "vsubs"
       },
       "params": {
@@ -481,9 +481,9 @@
       "name": "$28",
       "class": "nfet",
       "nets": {
-        "s": "$11",
+        "s": "\\$11",
         "g": "clk",
-        "d": "$12",
+        "d": "\\$12",
         "b": "vsubs"
       },
       "params": {
@@ -499,9 +499,9 @@
       "name": "$29",
       "class": "nfet",
       "nets": {
-        "s": "$13",
+        "s": "\\$13",
         "g": "clk",
-        "d": "$46",
+        "d": "\\$46",
         "b": "vsubs"
       },
       "params": {
@@ -517,7 +517,7 @@
       "name": "$3",
       "class": "nfet",
       "nets": {
-        "s": "$6",
+        "s": "\\$6",
         "g": "a|d|y",
         "d": "d|y",
         "b": "vsubs"
@@ -536,7 +536,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$13",
+        "g": "\\$13",
         "d": "q",
         "b": "vsubs"
       },
@@ -553,9 +553,9 @@
       "name": "$31",
       "class": "nfet",
       "nets": {
-        "s": "$13",
-        "g": "$10",
-        "d": "$15",
+        "s": "\\$13",
+        "g": "\\$10",
+        "d": "\\$15",
         "b": "vsubs"
       },
       "params": {
@@ -573,7 +573,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$19",
+        "d": "\\$19",
         "b": "vsubs"
       },
       "params": {
@@ -589,8 +589,8 @@
       "name": "$33",
       "class": "nfet",
       "nets": {
-        "s": "$20",
-        "g": "$19",
+        "s": "\\$20",
+        "g": "\\$19",
         "d": "d|vdd",
         "b": "vsubs"
       },
@@ -608,8 +608,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$48",
-        "d": "$21",
+        "g": "\\$48",
+        "d": "\\$21",
         "b": "vsubs"
       },
       "params": {
@@ -625,9 +625,9 @@
       "name": "$35",
       "class": "nfet",
       "nets": {
-        "s": "$20",
+        "s": "\\$20",
         "g": "clk",
-        "d": "$21",
+        "d": "\\$21",
         "b": "vsubs"
       },
       "params": {
@@ -643,9 +643,9 @@
       "name": "$36",
       "class": "nfet",
       "nets": {
-        "s": "$22",
+        "s": "\\$22",
         "g": "clk",
-        "d": "$48",
+        "d": "\\$48",
         "b": "vsubs"
       },
       "params": {
@@ -662,7 +662,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$22",
+        "g": "\\$22",
         "d": "q",
         "b": "vsubs"
       },
@@ -679,9 +679,9 @@
       "name": "$38",
       "class": "nfet",
       "nets": {
-        "s": "$22",
-        "g": "$19",
-        "d": "$24",
+        "s": "\\$22",
+        "g": "\\$19",
+        "d": "\\$24",
         "b": "vsubs"
       },
       "params": {
@@ -699,7 +699,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$27",
+        "d": "\\$27",
         "b": "vsubs"
       },
       "params": {
@@ -717,7 +717,7 @@
       "nets": {
         "s": "vss",
         "g": "b|d|y",
-        "d": "$6",
+        "d": "\\$6",
         "b": "vsubs"
       },
       "params": {
@@ -733,8 +733,8 @@
       "name": "$40",
       "class": "nfet",
       "nets": {
-        "s": "$28",
-        "g": "$27",
+        "s": "\\$28",
+        "g": "\\$27",
         "d": "a|d|y",
         "b": "vsubs"
       },
@@ -752,8 +752,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$49",
-        "d": "$29",
+        "g": "\\$49",
+        "d": "\\$29",
         "b": "vsubs"
       },
       "params": {
@@ -769,9 +769,9 @@
       "name": "$42",
       "class": "nfet",
       "nets": {
-        "s": "$28",
+        "s": "\\$28",
         "g": "clk",
-        "d": "$29",
+        "d": "\\$29",
         "b": "vsubs"
       },
       "params": {
@@ -787,9 +787,9 @@
       "name": "$43",
       "class": "nfet",
       "nets": {
-        "s": "$30",
+        "s": "\\$30",
         "g": "clk",
-        "d": "$49",
+        "d": "\\$49",
         "b": "vsubs"
       },
       "params": {
@@ -806,7 +806,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$30",
+        "g": "\\$30",
         "d": "q",
         "b": "vsubs"
       },
@@ -823,9 +823,9 @@
       "name": "$45",
       "class": "nfet",
       "nets": {
-        "s": "$30",
-        "g": "$27",
-        "d": "$32",
+        "s": "\\$30",
+        "g": "\\$27",
+        "d": "\\$32",
         "b": "vsubs"
       },
       "params": {
@@ -843,7 +843,7 @@
       "nets": {
         "s": "vss",
         "g": "clk",
-        "d": "$35",
+        "d": "\\$35",
         "b": "vsubs"
       },
       "params": {
@@ -859,8 +859,8 @@
       "name": "$47",
       "class": "nfet",
       "nets": {
-        "s": "$36",
-        "g": "$35",
+        "s": "\\$36",
+        "g": "\\$35",
         "d": "b|d|y",
         "b": "vsubs"
       },
@@ -878,8 +878,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$50",
-        "d": "$37",
+        "g": "\\$50",
+        "d": "\\$37",
         "b": "vsubs"
       },
       "params": {
@@ -895,9 +895,9 @@
       "name": "$49",
       "class": "nfet",
       "nets": {
-        "s": "$36",
+        "s": "\\$36",
         "g": "clk",
-        "d": "$37",
+        "d": "\\$37",
         "b": "vsubs"
       },
       "params": {
@@ -913,8 +913,8 @@
       "name": "$5",
       "class": "nfet",
       "nets": {
-        "s": "$8",
-        "g": "$4",
+        "s": "\\$8",
+        "g": "\\$4",
         "d": "d|y",
         "b": "vsubs"
       },
@@ -931,9 +931,9 @@
       "name": "$50",
       "class": "nfet",
       "nets": {
-        "s": "$38",
+        "s": "\\$38",
         "g": "clk",
-        "d": "$50",
+        "d": "\\$50",
         "b": "vsubs"
       },
       "params": {
@@ -950,7 +950,7 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$38",
+        "g": "\\$38",
         "d": "q",
         "b": "vsubs"
       },
@@ -967,9 +967,9 @@
       "name": "$52",
       "class": "nfet",
       "nets": {
-        "s": "$38",
-        "g": "$35",
-        "d": "$40",
+        "s": "\\$38",
+        "g": "\\$35",
+        "d": "\\$40",
         "b": "vsubs"
       },
       "params": {
@@ -987,8 +987,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "a|d|y",
-        "d": "$9",
-        "b": "$53"
+        "d": "\\$9",
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1005,8 +1005,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "b|d|y",
-        "d": "$9",
-        "b": "$53"
+        "d": "\\$9",
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1021,10 +1021,10 @@
       "name": "$55",
       "class": "pfet",
       "nets": {
-        "s": "$9",
-        "g": "$4",
+        "s": "\\$9",
+        "g": "\\$4",
         "d": "d|y",
-        "b": "$53"
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1039,10 +1039,10 @@
       "name": "$56",
       "class": "pfet",
       "nets": {
-        "s": "$9",
-        "g": "$5",
+        "s": "\\$9",
+        "g": "\\$5",
         "d": "d|y",
-        "b": "$53"
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1059,8 +1059,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "a|d|y",
-        "d": "$4",
-        "b": "$53"
+        "d": "\\$4",
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1077,8 +1077,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "b|d|y",
-        "d": "$5",
-        "b": "$53"
+        "d": "\\$5",
+        "b": "\\$53"
       },
       "params": {
         "l_um": 0.28,
@@ -1095,8 +1095,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "clk",
-        "d": "$10",
-        "b": "$54"
+        "d": "\\$10",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1112,8 +1112,8 @@
       "class": "nfet",
       "nets": {
         "s": "vss",
-        "g": "$5",
-        "d": "$8",
+        "g": "\\$5",
+        "d": "\\$8",
         "b": "vsubs"
       },
       "params": {
@@ -1129,10 +1129,10 @@
       "name": "$60",
       "class": "pfet",
       "nets": {
-        "s": "$11",
+        "s": "\\$11",
         "g": "clk",
         "d": "d|y",
-        "b": "$54"
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1148,9 +1148,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$11",
-        "d": "$46",
-        "b": "$54"
+        "g": "\\$11",
+        "d": "\\$46",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1167,8 +1167,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$46",
-        "b": "$54"
+        "d": "\\$46",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1184,9 +1184,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$46",
-        "d": "$12",
-        "b": "$54"
+        "g": "\\$46",
+        "d": "\\$12",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1201,10 +1201,10 @@
       "name": "$64",
       "class": "pfet",
       "nets": {
-        "s": "$11",
-        "g": "$10",
-        "d": "$12",
-        "b": "$54"
+        "s": "\\$11",
+        "g": "\\$10",
+        "d": "\\$12",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1219,10 +1219,10 @@
       "name": "$65",
       "class": "pfet",
       "nets": {
-        "s": "$13",
-        "g": "$10",
-        "d": "$46",
-        "b": "$54"
+        "s": "\\$13",
+        "g": "\\$10",
+        "d": "\\$46",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1238,9 +1238,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$13",
+        "g": "\\$13",
         "d": "q",
-        "b": "$54"
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1257,8 +1257,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "q",
-        "d": "$15",
-        "b": "$54"
+        "d": "\\$15",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1275,8 +1275,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$15",
-        "b": "$54"
+        "d": "\\$15",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1291,10 +1291,10 @@
       "name": "$69",
       "class": "pfet",
       "nets": {
-        "s": "$13",
+        "s": "\\$13",
         "g": "clk",
-        "d": "$15",
-        "b": "$54"
+        "d": "\\$15",
+        "b": "\\$54"
       },
       "params": {
         "l_um": 0.28,
@@ -1309,9 +1309,9 @@
       "name": "$7",
       "class": "nfet",
       "nets": {
-        "s": "$16",
-        "g": "$11",
-        "d": "$46",
+        "s": "\\$16",
+        "g": "\\$11",
+        "d": "\\$46",
         "b": "vsubs"
       },
       "params": {
@@ -1329,8 +1329,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "clk",
-        "d": "$19",
-        "b": "$55"
+        "d": "\\$19",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1345,10 +1345,10 @@
       "name": "$71",
       "class": "pfet",
       "nets": {
-        "s": "$20",
+        "s": "\\$20",
         "g": "clk",
         "d": "d|vdd",
-        "b": "$55"
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1364,9 +1364,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$20",
-        "d": "$48",
-        "b": "$55"
+        "g": "\\$20",
+        "d": "\\$48",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1383,8 +1383,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$48",
-        "b": "$55"
+        "d": "\\$48",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1400,9 +1400,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$48",
-        "d": "$21",
-        "b": "$55"
+        "g": "\\$48",
+        "d": "\\$21",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1417,10 +1417,10 @@
       "name": "$75",
       "class": "pfet",
       "nets": {
-        "s": "$20",
-        "g": "$19",
-        "d": "$21",
-        "b": "$55"
+        "s": "\\$20",
+        "g": "\\$19",
+        "d": "\\$21",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1435,10 +1435,10 @@
       "name": "$76",
       "class": "pfet",
       "nets": {
-        "s": "$22",
-        "g": "$19",
-        "d": "$48",
-        "b": "$55"
+        "s": "\\$22",
+        "g": "\\$19",
+        "d": "\\$48",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1454,9 +1454,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$22",
+        "g": "\\$22",
         "d": "q",
-        "b": "$55"
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1473,8 +1473,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "q",
-        "d": "$24",
-        "b": "$55"
+        "d": "\\$24",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1491,8 +1491,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$24",
-        "b": "$55"
+        "d": "\\$24",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1509,7 +1509,7 @@
       "nets": {
         "s": "vss",
         "g": "rst_n",
-        "d": "$16",
+        "d": "\\$16",
         "b": "vsubs"
       },
       "params": {
@@ -1525,10 +1525,10 @@
       "name": "$80",
       "class": "pfet",
       "nets": {
-        "s": "$22",
+        "s": "\\$22",
         "g": "clk",
-        "d": "$24",
-        "b": "$55"
+        "d": "\\$24",
+        "b": "\\$55"
       },
       "params": {
         "l_um": 0.28,
@@ -1545,8 +1545,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "clk",
-        "d": "$27",
-        "b": "$56"
+        "d": "\\$27",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1561,10 +1561,10 @@
       "name": "$82",
       "class": "pfet",
       "nets": {
-        "s": "$28",
+        "s": "\\$28",
         "g": "clk",
         "d": "a|d|y",
-        "b": "$56"
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1580,9 +1580,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$28",
-        "d": "$49",
-        "b": "$56"
+        "g": "\\$28",
+        "d": "\\$49",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1599,8 +1599,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$49",
-        "b": "$56"
+        "d": "\\$49",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1616,9 +1616,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$49",
-        "d": "$29",
-        "b": "$56"
+        "g": "\\$49",
+        "d": "\\$29",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1633,10 +1633,10 @@
       "name": "$86",
       "class": "pfet",
       "nets": {
-        "s": "$28",
-        "g": "$27",
-        "d": "$29",
-        "b": "$56"
+        "s": "\\$28",
+        "g": "\\$27",
+        "d": "\\$29",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1651,10 +1651,10 @@
       "name": "$87",
       "class": "pfet",
       "nets": {
-        "s": "$30",
-        "g": "$27",
-        "d": "$49",
-        "b": "$56"
+        "s": "\\$30",
+        "g": "\\$27",
+        "d": "\\$49",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1670,9 +1670,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$30",
+        "g": "\\$30",
         "d": "q",
-        "b": "$56"
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1689,8 +1689,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "q",
-        "d": "$32",
-        "b": "$56"
+        "d": "\\$32",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1705,9 +1705,9 @@
       "name": "$9",
       "class": "nfet",
       "nets": {
-        "s": "$17",
+        "s": "\\$17",
         "g": "q",
-        "d": "$15",
+        "d": "\\$15",
         "b": "vsubs"
       },
       "params": {
@@ -1725,8 +1725,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$32",
-        "b": "$56"
+        "d": "\\$32",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1741,10 +1741,10 @@
       "name": "$91",
       "class": "pfet",
       "nets": {
-        "s": "$30",
+        "s": "\\$30",
         "g": "clk",
-        "d": "$32",
-        "b": "$56"
+        "d": "\\$32",
+        "b": "\\$56"
       },
       "params": {
         "l_um": 0.28,
@@ -1761,8 +1761,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "clk",
-        "d": "$35",
-        "b": "$57"
+        "d": "\\$35",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1777,10 +1777,10 @@
       "name": "$93",
       "class": "pfet",
       "nets": {
-        "s": "$36",
+        "s": "\\$36",
         "g": "clk",
         "d": "b|d|y",
-        "b": "$57"
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1796,9 +1796,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$36",
-        "d": "$50",
-        "b": "$57"
+        "g": "\\$36",
+        "d": "\\$50",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1815,8 +1815,8 @@
       "nets": {
         "s": "d|vdd",
         "g": "rst_n",
-        "d": "$50",
-        "b": "$57"
+        "d": "\\$50",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1832,9 +1832,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$50",
-        "d": "$37",
-        "b": "$57"
+        "g": "\\$50",
+        "d": "\\$37",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1849,10 +1849,10 @@
       "name": "$97",
       "class": "pfet",
       "nets": {
-        "s": "$36",
-        "g": "$35",
-        "d": "$37",
-        "b": "$57"
+        "s": "\\$36",
+        "g": "\\$35",
+        "d": "\\$37",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1867,10 +1867,10 @@
       "name": "$98",
       "class": "pfet",
       "nets": {
-        "s": "$38",
-        "g": "$35",
-        "d": "$50",
-        "b": "$57"
+        "s": "\\$38",
+        "g": "\\$35",
+        "d": "\\$50",
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1886,9 +1886,9 @@
       "class": "pfet",
       "nets": {
         "s": "d|vdd",
-        "g": "$38",
+        "g": "\\$38",
         "d": "q",
-        "b": "$57"
+        "b": "\\$57"
       },
       "params": {
         "l_um": 0.28,
@@ -1902,294 +1902,666 @@
   ],
   "nets": [
     {
-      "name": "$10",
+      "name": "\\$10",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 10,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$11",
+      "name": "\\$11",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 11,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$12",
+      "name": "\\$12",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 12,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$13",
+      "name": "\\$13",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 13,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$15",
+      "name": "\\$15",
       "pin": false,
-      "device_count": 5
+      "device_count": 5,
+      "net_id": 15,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$16",
+      "name": "\\$16",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 16,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$17",
+      "name": "\\$17",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 17,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$19",
+      "name": "\\$19",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 19,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$20",
+      "name": "\\$20",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 20,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$21",
+      "name": "\\$21",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 21,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$22",
+      "name": "\\$22",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 22,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$24",
+      "name": "\\$24",
       "pin": false,
-      "device_count": 5
+      "device_count": 5,
+      "net_id": 24,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$25",
+      "name": "\\$25",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 25,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$26",
+      "name": "\\$26",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 26,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$27",
+      "name": "\\$27",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 27,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$28",
+      "name": "\\$28",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 28,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$29",
+      "name": "\\$29",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 29,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$30",
+      "name": "\\$30",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 30,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$32",
+      "name": "\\$32",
       "pin": false,
-      "device_count": 5
+      "device_count": 5,
+      "net_id": 32,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$33",
+      "name": "\\$33",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 33,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$34",
+      "name": "\\$34",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 34,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$35",
+      "name": "\\$35",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 35,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$36",
+      "name": "\\$36",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 36,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$37",
+      "name": "\\$37",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 37,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$38",
+      "name": "\\$38",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 38,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$4",
+      "name": "\\$4",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 4,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$40",
+      "name": "\\$40",
       "pin": false,
-      "device_count": 5
+      "device_count": 5,
+      "net_id": 40,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$41",
+      "name": "\\$41",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 41,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$42",
+      "name": "\\$42",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 42,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$46",
+      "name": "\\$46",
       "pin": false,
-      "device_count": 7
+      "device_count": 7,
+      "net_id": 46,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$48",
+      "name": "\\$48",
       "pin": false,
-      "device_count": 7
+      "device_count": 7,
+      "net_id": 48,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$49",
+      "name": "\\$49",
       "pin": false,
-      "device_count": 7
+      "device_count": 7,
+      "net_id": 49,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$5",
+      "name": "\\$5",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 5,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$50",
+      "name": "\\$50",
       "pin": false,
-      "device_count": 7
+      "device_count": 7,
+      "net_id": 50,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$51",
+      "name": "\\$51",
       "pin": false,
-      "device_count": 1
+      "device_count": 1,
+      "net_id": 51,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$52",
+      "name": "\\$52",
       "pin": false,
-      "device_count": 1
+      "device_count": 1,
+      "net_id": 52,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$53",
+      "name": "\\$53",
       "pin": false,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 53,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$54",
+      "name": "\\$54",
       "pin": false,
-      "device_count": 11
+      "device_count": 11,
+      "net_id": 54,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$55",
+      "name": "\\$55",
       "pin": false,
-      "device_count": 11
+      "device_count": 11,
+      "net_id": 55,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$56",
+      "name": "\\$56",
       "pin": false,
-      "device_count": 11
+      "device_count": 11,
+      "net_id": 56,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$57",
+      "name": "\\$57",
       "pin": false,
-      "device_count": 11
+      "device_count": 11,
+      "net_id": 57,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$6",
+      "name": "\\$6",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 6,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$8",
+      "name": "\\$8",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 8,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$9",
+      "name": "\\$9",
       "pin": false,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 9,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
       "name": "a",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 1,
+      "pin_index": 0,
+      "label_positions_um": [
+        {
+          "text": "a",
+          "x_um": -0.29,
+          "y_um": 1.0
+        }
+      ]
     },
     {
       "name": "a",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 2,
+      "pin_index": 1,
+      "label_positions_um": [
+        {
+          "text": "a",
+          "x_um": 8.14,
+          "y_um": 1.0
+        }
+      ]
     },
     {
       "name": "a|d|y",
       "pin": true,
-      "device_count": 8
+      "device_count": 8,
+      "net_id": 43,
+      "pin_index": 2,
+      "label_positions_um": [
+        {
+          "text": "a",
+          "x_um": 28.08,
+          "y_um": 2.59
+        },
+        {
+          "text": "d",
+          "x_um": 193.55,
+          "y_um": 2.37
+        },
+        {
+          "text": "y",
+          "x_um": 0.35,
+          "y_um": 0.22
+        }
+      ]
     },
     {
       "name": "b|d|y",
       "pin": true,
-      "device_count": 8
+      "device_count": 8,
+      "net_id": 44,
+      "pin_index": 3,
+      "label_positions_um": [
+        {
+          "text": "b",
+          "x_um": 30.48,
+          "y_um": 3.24
+        },
+        {
+          "text": "d",
+          "x_um": 254.44,
+          "y_um": 2.37
+        },
+        {
+          "text": "y",
+          "x_um": 8.78,
+          "y_um": 0.22
+        }
+      ]
     },
     {
       "name": "clk",
       "pin": true,
-      "device_count": 24
+      "device_count": 24,
+      "net_id": 45,
+      "pin_index": 4,
+      "label_positions_um": [
+        {
+          "text": "clk",
+          "x_um": 80.57,
+          "y_um": 3.02
+        },
+        {
+          "text": "clk",
+          "x_um": 141.46,
+          "y_um": 3.02
+        },
+        {
+          "text": "clk",
+          "x_um": 202.35,
+          "y_um": 3.02
+        },
+        {
+          "text": "clk",
+          "x_um": 263.24,
+          "y_um": 3.02
+        }
+      ]
     },
     {
       "name": "d|vdd",
       "pin": true,
-      "device_count": 36
+      "device_count": 36,
+      "net_id": 18,
+      "pin_index": 5,
+      "label_positions_um": [
+        {
+          "text": "d",
+          "x_um": 132.66,
+          "y_um": 2.37
+        },
+        {
+          "text": "vdd",
+          "x_um": 1.33,
+          "y_um": 1.86
+        },
+        {
+          "text": "vdd",
+          "x_um": 9.76,
+          "y_um": 1.86
+        },
+        {
+          "text": "vdd",
+          "x_um": 36.78,
+          "y_um": 4.54
+        },
+        {
+          "text": "vdd",
+          "x_um": 92.87,
+          "y_um": 4.97
+        },
+        {
+          "text": "vdd",
+          "x_um": 153.76,
+          "y_um": 4.97
+        },
+        {
+          "text": "vdd",
+          "x_um": 214.65,
+          "y_um": 4.97
+        },
+        {
+          "text": "vdd",
+          "x_um": 275.54,
+          "y_um": 4.97
+        }
+      ]
     },
     {
       "name": "d|y",
       "pin": true,
-      "device_count": 6
+      "device_count": 6,
+      "net_id": 7,
+      "pin_index": 6,
+      "label_positions_um": [
+        {
+          "text": "d",
+          "x_um": 71.77,
+          "y_um": 2.37
+        },
+        {
+          "text": "y",
+          "x_um": 34.88,
+          "y_um": 3.89
+        }
+      ]
     },
     {
       "name": "q",
       "pin": true,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 14,
+      "pin_index": 7,
+      "label_positions_um": [
+        {
+          "text": "q",
+          "x_um": 84.57,
+          "y_um": 4.32
+        }
+      ]
     },
     {
       "name": "q",
       "pin": true,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 23,
+      "pin_index": 8,
+      "label_positions_um": [
+        {
+          "text": "q",
+          "x_um": 145.46,
+          "y_um": 4.32
+        }
+      ]
     },
     {
       "name": "q",
       "pin": true,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 31,
+      "pin_index": 9,
+      "label_positions_um": [
+        {
+          "text": "q",
+          "x_um": 206.35,
+          "y_um": 4.32
+        }
+      ]
     },
     {
       "name": "q",
       "pin": true,
-      "device_count": 4
+      "device_count": 4,
+      "net_id": 39,
+      "pin_index": 10,
+      "label_positions_um": [
+        {
+          "text": "q",
+          "x_um": 267.24,
+          "y_um": 4.32
+        }
+      ]
     },
     {
       "name": "rst_n",
       "pin": true,
-      "device_count": 16
+      "device_count": 16,
+      "net_id": 47,
+      "pin_index": 11,
+      "label_positions_um": [
+        {
+          "text": "rst_n",
+          "x_um": 88.97,
+          "y_um": 3.67
+        },
+        {
+          "text": "rst_n",
+          "x_um": 149.86,
+          "y_um": 3.67
+        },
+        {
+          "text": "rst_n",
+          "x_um": 210.75,
+          "y_um": 3.67
+        },
+        {
+          "text": "rst_n",
+          "x_um": 271.64,
+          "y_um": 3.67
+        }
+      ]
     },
     {
       "name": "vss",
       "pin": true,
-      "device_count": 26
+      "device_count": 26,
+      "net_id": 3,
+      "pin_index": 12,
+      "label_positions_um": [
+        {
+          "text": "vss",
+          "x_um": 1.33,
+          "y_um": 0.22
+        },
+        {
+          "text": "vss",
+          "x_um": 9.76,
+          "y_um": 0.22
+        },
+        {
+          "text": "vss",
+          "x_um": 22.58,
+          "y_um": 5.19
+        },
+        {
+          "text": "vss",
+          "x_um": 65.47,
+          "y_um": 5.62
+        },
+        {
+          "text": "vss",
+          "x_um": 126.36,
+          "y_um": 5.62
+        },
+        {
+          "text": "vss",
+          "x_um": 187.25,
+          "y_um": 5.62
+        },
+        {
+          "text": "vss",
+          "x_um": 248.14,
+          "y_um": 5.62
+        }
+      ]
     },
     {
       "name": "vsubs",
       "pin": true,
-      "device_count": 52
+      "device_count": 52,
+      "net_id": 58,
+      "pin_index": 13,
+      "label_positions_um": []
     }
   ],
   "warnings": [
@@ -2240,222 +2612,222 @@
   "unbiased_pmos_body_nets": [
     {
       "device": "$100",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$101",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$102",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$103",
-      "net": "$51"
+      "net": "\\$51"
     },
     {
       "device": "$104",
-      "net": "$52"
+      "net": "\\$52"
     },
     {
       "device": "$53",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$54",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$55",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$56",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$57",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$58",
-      "net": "$53"
+      "net": "\\$53"
     },
     {
       "device": "$59",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$60",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$61",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$62",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$63",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$64",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$65",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$66",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$67",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$68",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$69",
-      "net": "$54"
+      "net": "\\$54"
     },
     {
       "device": "$70",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$71",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$72",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$73",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$74",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$75",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$76",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$77",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$78",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$79",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$80",
-      "net": "$55"
+      "net": "\\$55"
     },
     {
       "device": "$81",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$82",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$83",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$84",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$85",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$86",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$87",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$88",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$89",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$90",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$91",
-      "net": "$56"
+      "net": "\\$56"
     },
     {
       "device": "$92",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$93",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$94",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$95",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$96",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$97",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$98",
-      "net": "$57"
+      "net": "\\$57"
     },
     {
       "device": "$99",
-      "net": "$57"
+      "net": "\\$57"
     }
   ],
   "single_terminal_nets": [
     {
-      "net": "$51",
+      "net": "\\$51",
       "device": "$103",
       "terminal": "b",
       "terminal_kind": "body"
     },
     {
-      "net": "$52",
+      "net": "\\$52",
       "device": "$104",
       "terminal": "b",
       "terminal_kind": "body"
@@ -2465,12 +2837,15 @@
   "matched_device_groups": [],
   "pdk": {
     "variant": "gf180mcuD",
-    "root": "/home/ubuntu/.ciel",
+    "root": {
+      "path": null,
+      "scope": "external"
+    },
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.2.0",
-    "klayout_version": "0.30.10",
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
     "pdk": {
       "name": "gf180mcuD",
       "source": "search root: ~/.ciel",
@@ -2478,7 +2853,8 @@
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:6a323622d93c1b4716a7874c37ee3d825bd08398c3c030c85175e44e2cc229a3"
+      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
+      "released": true
     },
     "input": {
       "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"

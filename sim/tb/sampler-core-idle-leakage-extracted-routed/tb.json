@@ -1,0 +1,59 @@
+{
+  "name": "sampler-core-idle-leakage-extracted-routed",
+  "description": "Issue #217's routing-level post-layout re-run of sim/tb/sampler-core-idle-leakage-extracted/ against layout/pex/sampler_core.routed.extracted.spice (klt extract --parasitics over the FULLY assembled layout/rings/ro_ring11(+_ring2)/ and layout/blocks/combiner_sampler/ GDS -- see layout/pex/build.py). Same rails/measurement expressions/idle-state protocol as the leaf-level (#17) testbench; every device between en1/en2 and raw_bit/raw_valid/ring_bit1/ring_bit2 is now routing-level, including the real Metal3/Via2 block-level wiring inside combiner_sampler (layout/blocks/README.md) -- the most complete of this issue's two composed drop-ins (layout/pex/build.py's own docstring, 'Two composed drop-ins, different scope'). Whole-block idle-power claim of issue #14, re-derived at the binding worst corner with routing parasitics included.",
+  "netlist": "tb_sampler_core_idle_leakage_extracted_routed.sp",
+  "design_netlist": "layout/pex/sampler_core.routed.extracted.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "ff"
+  ],
+  "tstop": "1u",
+  "tstep": "200p (print step; ngspice's own LTE sets the actual solver step, which is very coarse here because nothing switches after 300 ns)",
+  "analyses": [
+    "tran 200p 1u",
+    "meas tran qax find v(qa) at=600n",
+    "meas tran qa0 find v(qa) at=800n",
+    "meas tran qa1 find v(qa) at=1u",
+    "meas tran qbx find v(qb) at=600n",
+    "meas tran qb0 find v(qb) at=800n",
+    "meas tran qb1 find v(qb) at=1u",
+    "meas tran vxo find v(xduta.xcs.xo) at=1u",
+    "meas tran vn1 find v(xduta.xr1.n1) at=1u",
+    "meas tran vn2 find v(xduta.xr1.n2) at=1u",
+    "meas tran vrba find v(rba) at=1u",
+    "meas tran vrva find v(rva) at=1u",
+    "meas tran vrbb find v(rbb) at=1u",
+    "meas tran vrvb find v(rvb) at=1u",
+    "meas tran vsupm find v(vsup) at=1u",
+    "let cq = 1e-9",
+    "let twin = 2e-7"
+  ],
+  "measure": {
+    "i_idle_clklo_a": "-cq*(qa1-qa0)/twin",
+    "i_idle_clkhi_a": "-cq*(qb1-qb0)/twin",
+    "p_idle_clklo_w": "-cq*(qa1-qa0)/twin*vsupm",
+    "p_idle_clkhi_w": "-cq*(qb1-qb0)/twin*vsupm",
+    "i_idle_clklo_prev_a": "-cq*(qa0-qax)/twin",
+    "i_idle_clkhi_prev_a": "-cq*(qb0-qbx)/twin",
+    "i_idle_worst_a": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)",
+    "p_idle_worst_w": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)*vsupm",
+    "v_xo_v": "vxo",
+    "v_n1_v": "vn1",
+    "v_n2_v": "vn2",
+    "v_rawbit_clklo_v": "vrba",
+    "v_rawvalid_clklo_v": "vrva",
+    "v_rawbit_clkhi_v": "vrbb",
+    "v_rawvalid_clkhi_v": "vrvb",
+    "v_sup_v": "vsupm"
+  },
+  "caveats": [
+    "Post-layout, ROUTING-level-parasitic-annotated for the entire block (both rings AND the fully assembled combiner_sampler -- buffers, XOR, all four samplers, together, exactly as physically wired) -- see layout/pex/build.py's own module docstring, 'Two composed drop-ins, different scope', and sim/characterization-post-layout-extracted.md's 2026-09-11 delta section for exactly what this does and does not capture.",
+    "v_xo_v/v_n1_v/v_n2_v address `v(xduta.xcs.xo)`/`v(xduta.xr1.n1)`/`v(xduta.xr1.n2)` -- ONE HOP SHALLOWER than the leaf-level family's `v(xduta.xdut.xo)`/`v(xduta.xdut.xr1.n1)`/`v(xduta.xdut.xr1.n2)`, because sampler_core_routed_extracted (layout/pex/build.py's own `_sampler_core_routed_subckt`) instantiates its two ring wrappers and the combiner_sampler wrapper directly, with no intermediate ro_array_core_routed_extracted instance (that instance would have forced a duplicate, differently-loaded copy of the buffer/XOR/sampler devices -- see the module docstring). `xcs` is the combiner_sampler wrapper instance; `xo` there is a positively-identified, self-documenting internal net name (layout/pex/build.py's `_resolve_combiner_sampler_ports`), not the arbitrary `cN` placeholder an unresolved position would get. `n1`/`n2` name an arbitrary (klt-assigned) internal ring position, same caveat as the routed ro-array-core-level families.",
+    "Scoped to the single corner sim/characterization-startup-and-power-budget.md identified as binding for idle power (ff/+125 C/3.63 V), the same point issue #17's own leaf-level record used, not the full 45-point grid.",
+    "This is the ANALOG side of the DR-0009 boundary only: two rings, the XOR combiner, two sampler_dff instances -- same scope as the leaf-level family.",
+    "Reports STATIC current in a settled state -- same protocol (two parked-clock copies, charge-integrator measurement, self-check window pair) as the leaf-level family; see that family's own testbench header for the full method notes, unchanged here beyond the DUT and node-address changes above."
+  ],
+  "temperatures_c": [
+    125
+  ]
+}

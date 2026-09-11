@@ -1,12 +1,12 @@
 # Post-layout, extracted-netlist re-run of the verification suite (issue #17)
 
-Status: measurement complete for issue #17, against the scope this document
-states explicitly below. **This document is an ordinary summary, not
-evidence.** Every number cites the `sim/records/` stem that produced it, or
-states the reproducible derivation used to combine several of them — treat
-this as a reading guide over that evidence, not a substitute for it, the same
-convention every other `sim/characterization-*.md` document in this
-repository uses.
+Status: measurement complete for issue #17 (device-level) and, as of
+2026-09-11, issue #217 (routing-level, on top of #17 — see §7). **This
+document is an ordinary summary, not evidence.** Every number cites the
+`sim/records/` stem that produced it, or states the reproducible derivation
+used to combine several of them — treat this as a reading guide over that
+evidence, not a substitute for it, the same convention every other
+`sim/characterization-*.md` document in this repository uses.
 
 **Headline finding, stated up front because it is the one this document must
 not bury**: post-layout, device-level parasitic extraction is not a
@@ -538,21 +538,345 @@ already protected this way.
   check for the same failure mode before assuming a rollup tool's glob is
   unaffected.
 
+---
+
+## 7. 2026-09-11 delta: routing-level extraction (issue #217)
+
+### 7.0 What changed, and what did not
+
+[klayout-tools#1540](https://github.com/2AMLogic/klayout-tools/issues/1540)
+— cited throughout §0–§6 above as the blocker to a routing-level re-run —
+closed 2026-09-07T01:16Z via merged klayout-tools#1543 ("feat(extract):
+disclose positional net/pin identity for repeated-instance name
+collisions"): `klt extract`'s `nets[]` gained `net_id`, `pin_index` and
+`label_positions_um`, giving a caller with independent floorplan knowledge
+a positive way to identify which collided, identically-named net is which.
+`.github/workflows/pdk-nightly.yml` and this repository's own `klt` install
+are now pinned past that fix (commit
+`3fbb4478e3017c8d8580fba4feb08bc386b4c925`).
+
+`layout/pex/build.py` is extended (not forked) with a second composition
+path: `klt extract --parasitics --pdk gf180mcuD` run directly on the
+**assembled** `layout/rings/ro_ring11/ro_ring11.gds`, `layout/rings/
+ro_ring11_ring2/ro_ring11_ring2.gds` and `layout/blocks/combiner_sampler/
+combiner_sampler.gds` (rather than their individual drawn leaf cells), with
+every true external port positively identified from the new `nets[]`
+fields cross-checked against this repository's own `build.py` placement
+code — see that module's own docstring, "Routing-level composition", for
+the full method (and the leaf-level path's docstring, unchanged, for what
+that original path still does and does not capture).
+
+Two composed drop-ins exist, with **different** routing-level scope, because
+the schematic's own module boundary (`ro_array_core` vs `sampler_core`) does
+not line up with this repository's *physical floorplan* boundary (rings are
+their own guarded regions; buffer+combiner+all four samplers are one
+physical `combiner_sampler` region — see `layout/pex/build.py`'s own
+docstring, "Two composed drop-ins, different scope", for the full
+reasoning):
+
+- **`ro_array_core.routed.extracted.spice`**: both rings routing-level;
+  the buffer/XOR stage stays **leaf-level** (no assembled GDS exposes it
+  independent of the four samplers it is physically wired next to).
+- **`sampler_core.routed.extracted.spice`**: both rings **and** the fully
+  assembled `combiner_sampler` block (buffer, XOR, all four samplers,
+  together, exactly as physically wired) — the most complete of the two,
+  and the one where the buffer/combiner/sampler routing this issue's own
+  framing cares about ("loads the sampler") is actually captured.
+
+Five of the six `-extracted` testbench families were re-run against these
+routed netlists, at the same binding corners #17 used, as new sibling
+testbenches (`sim/tb/<family>-routed/`, leaving the six `-extracted`
+families and their 2026-09-06 records completely untouched, per DR-0024).
+The sixth, `sampler-array-digitize-extracted`, could **not** be re-run at
+routing level for a real, disclosed reason — see §7.5, not a silent gap.
+
+### 7.1 Entropy-binding corner margin, routing-level (extends §2.1)
+
+`sim/tb/ro-array-core-pvt-q-extracted-routed/` re-runs the same
+entropy-binding corner (`ss`/+125 °C/3.63 V) against
+`layout/pex/ro_array_core.routed.extracted.spice`:
+
+| Quantity | Pre-layout | Leaf-extracted (#17) | Routed-extracted (#217) | Delta, routed vs. leaf |
+|---|---|---|---|---|
+| Record | [`2026-08-02-ro-array-core-pvt-q-54`](records/2026-08-02-ro-array-core-pvt-q-54.md) | [`2026-09-06-ro-array-core-pvt-q-extracted-01`](records/2026-09-06-ro-array-core-pvt-q-extracted-01.md) | [`2026-09-11-ro-array-core-pvt-q-extracted-routed-01`](records/2026-09-11-ro-array-core-pvt-q-extracted-routed-01.md) | |
+| `period_r1` (`T0`, ring 1) | 9.581 ns | 12.349 ns | 17.426 ns | **+41.1 %** |
+| `period_r2` (`T0`, ring 2) | 8.927 ns | 11.561 ns | 16.462 ns | **+42.4 %** |
+| `p_total_w` (rings + XOR) | 162.7 µW | 179.8 µW | 176.1 µW | **−2.1 %** |
+
+The ring routing's own real inter-stage metal1 chain and metal2/via1
+`vddr`/`vss` straps (`layout/rings/README.md`) slow both rings by another
+~41 % beyond the leaf-level figure — a much larger effect than the leaf
+extraction's own device-level-only +29 % — while total array power moves
+in the **opposite** direction from §2.1's own trend, dropping ~2 % relative
+to the leaf-level figure (still +8.2 % over pre-layout). This is physically
+coherent, not a discrepancy: the routing's own added parasitic capacitance
+raises each edge's charge cost, but the much slower oscillation frequency
+(the dominant term in `P ∝ C·f·V²` at this degree of slowdown) more than
+offsets it, so the array draws about the same active power while producing
+far fewer transitions per second doing it — a genuinely new finding this
+device-level-only extraction could not show.
+
+**Consequence for [DR-0007] §2's sizing inequality**, recomputed the same
+way §2.1's own table was (`sim/tools/array_sizing.py`'s `ArrayPoint`, run
+directly against this record):
+
+| `a` (jitter-energy constant) | Margin, pre-layout | Margin, leaf-extracted (#17) | Margin, routed-extracted (#217) |
+|---|---|---|---|
+| 1.79 ([DR-0010]'s stated plain-cell constant) | **1.356×** | **0.865× — FAILS** | **0.442× — FAILS, roughly half the leaf-level margin** |
+| 11.77 (issue #46's measured starved-cell constant) | 8.918× | 5.689× | **2.908× — still holds, but the margin has now fallen by two-thirds from pre-layout** |
+
+The margin at [DR-0010]'s own stated constant, already failing at the
+device level, is now under 0.5× once real ring routing is included — this
+is the concrete "expected direction: further degradation" the leaf-level
+document's own §6/Follow-up predicted, now measured rather than merely
+anticipated. The margin at the more favorable, physically-measured
+starved-cell constant still clears 1× (2.908×), but with materially less
+headroom than either prior figure. **No ratified README row's verdict
+changes** (same reasoning as §2.1: [DR-0010]'s rate is `Proposed`, not
+ratified, and the *ratified* rate misses this sizing target by orders of
+magnitude regardless of layout).
+
+### 7.2 Monte Carlo device mismatch, routing-level (extends §2.2)
+
+`sim/tb/ro-array-core-mc-freq-extracted-routed/` re-runs the same 8-seed,
+two-PVT-point mismatch draw (`sw_stat_mismatch=1`) against
+`layout/pex/ro_array_core.routed.extracted.spice`. Per-seed ratios are
+computed the same way §2.2's own table computes them — pairing each seed's
+own `m_period_r1`/`m_period_r2` from its raw ngspice log, not from the
+record's marginal (`period_r1`/`period_r2` mean/sd) statistics — from the
+raw logs under
+`sim/records/raw/2026-09-11-ro-array-core-mc-freq-extracted-routed-{01,02}/`:
+
+| Quantity | `tt`/27 °C/3.30 V, leaf-extracted | `tt`/27 °C/3.30 V, routed-extracted | `ss`/+125 °C/3.63 V, leaf-extracted | `ss`/+125 °C/3.63 V, routed-extracted |
+|---|---|---|---|---|
+| Record | [`2026-09-06-ro-array-core-mc-freq-extracted-02`](records/2026-09-06-ro-array-core-mc-freq-extracted-02.md) | [`2026-09-11-ro-array-core-mc-freq-extracted-routed-01`](records/2026-09-11-ro-array-core-mc-freq-extracted-routed-01.md) | [`2026-09-06-ro-array-core-mc-freq-extracted-03`](records/2026-09-06-ro-array-core-mc-freq-extracted-03.md) | [`2026-09-11-ro-array-core-mc-freq-extracted-routed-02`](records/2026-09-11-ro-array-core-mc-freq-extracted-routed-02.md) |
+| Seeds | 8/8 | 8/8 | 8/8 | **6/8** (2 timed out — see below) |
+| Ring frequency ratio `f_r2/f_r1`, per-draw mean | 1.0648 | 1.0521 | 1.0685 | 1.0570 |
+| …seed-to-seed sd (mismatch-driven spread) | 0.187 % of mean | 0.275 % of mean | 0.186 % of mean | 0.280 % of mean |
+| Distance of the mean ratio from the nearest integer | ~34.8 sd | ~18.0 sd | 34.4 sd | ~19.3 sd |
+
+**Two of the `ss`/125 °C/3.63 V point's eight seeds (seeds 1–2) timed out**
+(300 s + 30 s kill-grace, `ngspice timed out: no result` — recorded verbatim
+in the record's own `Run failures` section, per DR-0024's append-only,
+nothing-hidden convention) rather than converging or erroring; `uptime`
+sampled during this run showed this host's load average at 35–41 on an
+18-core machine, i.e. genuine system-wide resource contention rather than a
+netlist or methodology defect (the same corner's *deterministic* run,
+`sim/tb/ro-array-core-pvt-q-extracted-routed/`, completed this identical
+DUT and PVT point in under a minute earlier in this same session). The
+remaining six seeds are unaffected: five ordinary ngspice runs completed and
+converged, and the reported mean/sd/distance-from-integer above are computed
+from exactly those six. Six mismatch seeds remain enough to characterize
+the spread's rough magnitude, the same standard the leaf-level family's own
+caveat states for eight.
+
+Also widened for this point: the leaf-level family's own 100 ns `tstop`
+does not fit six rising edges of the routed ring's own much slower period
+at this corner (~17.4 ns/~16.5 ns deterministic, per
+`sim/tb/ro-array-core-pvt-q-extracted-routed/`) — a first attempt at 100 ns
+failed `meas ... t1b`/`t2b` ('out of interval') outright. Widened to 160 ns
+(`sim/tb/ro-array-core-mc-freq-extracted-routed/tb.json`'s own caveat
+records the derivation); the `tt`/27 °C/3.30 V point is unaffected by the
+widening beyond its own slightly longer run time.
+
+**Ring routing narrows the non-integer-ratio margin further (~18–19 sd, down
+from ~34–35 sd leaf-extracted and ~39–54 sd pre-layout), but by two orders
+of magnitude less than what would be needed to threaten [DR-0007] §1** —
+~18–19 sd is still an astronomically safe margin against injection locking.
+The design's own deliberate ~5–7 % frequency skew between rings remains one
+to two orders of magnitude larger than the mismatch-driven scatter at either
+corner, routing-level exactly as it was device-level and pre-layout. This is
+the same "no material difference" kind of finding §2.2 reported: not every
+claim degrades under a more complete extraction, and this one still plainly
+does not, even though the *rate* at which the margin narrows (device-level →
+routing-level) is itself larger than pre-layout → device-level was.
+
+### 7.3 Startup, routing-level (extends §3.1)
+
+`sim/tb/ro-array-core-startup-extracted-routed/` re-runs the same
+time-to-first-valid binding corner (`ss`/+125 °C/2.97 V):
+
+| Quantity | Pre-layout | Leaf-extracted (#17) | Routed-extracted (#217) | Delta, routed vs. leaf |
+|---|---|---|---|---|
+| Record | [`2026-08-03-ro-array-core-startup-25`](records/2026-08-03-ro-array-core-startup-25.md) | [`2026-09-06-ro-array-core-startup-extracted-01`](records/2026-09-06-ro-array-core-startup-extracted-01.md) | [`2026-09-11-ro-array-core-startup-extracted-routed-01`](records/2026-09-11-ro-array-core-startup-extracted-routed-01.md) | |
+| Steady-state period, ring 1 (`t10-t9`) | 12.297 ns | 16.024 ns | 23.431 ns | **+46.2 %** |
+| Steady-state period, ring 2 (`t10-t9`) | 11.429 ns | 14.974 ns | 21.649 ns | **+44.6 %** |
+
+**A widened measurement window was needed, and is itself evidence.** The
+leaf-level family's own 180 ns `tstop` (already sized to fit ten rising
+edges of a much faster leaf-level ring) does not fit ten edges of the
+routed ring at this corner — a first attempt at the leaf-level window
+failed `meas ... t8r1` outright ("out of interval"). The routed
+testbench's own `tstop` was widened to 280 ns (`sim/tb/
+ro-array-core-startup-extracted-routed/tb.json`'s own caveat records the
+derivation) specifically *because* routing parasitics slow the ring enough
+to need it — a concrete, load-bearing instance of "extraction can only add
+delay, never remove it" that would not have been visible from period
+numbers alone.
+
+**Consequence for the ratified raw-rate row**: still none. Even a ~46 %
+degradation on top of the leaf-level's own +30 % leaves the rate-binding
+corner's ~21–23 ns period roughly four orders of magnitude inside
+[DR-0003]'s > 1 Mbps (< 1 µs raw sample period) budget.
+
+### 7.4 Power, routing-level (extends §3.2/3.3)
+
+**Active** (`sim/tb/ro-array-core-power-extracted-routed/`, `ff`/−40 °C/3.63 V):
+
+| Quantity | Pre-layout | Leaf-extracted (#17) | Routed-extracted (#217) |
+|---|---|---|---|
+| Record | [`2026-08-02-ro-array-core-pvt-q-12` family](characterization-startup-and-power-budget.md) | [`2026-09-06-ro-array-core-power-extracted-01`](records/2026-09-06-ro-array-core-power-extracted-01.md) | [`2026-09-11-ro-array-core-power-extracted-routed-01`](records/2026-09-11-ro-array-core-power-extracted-routed-01.md) |
+| `p_total_w` (rings + XOR) | 393.2 µW | 469.2 µW | 489.9 µW |
+
+| Term | Pre-layout | Leaf-extracted | Routed-extracted |
+|---|---|---|---|
+| Entropy array (measured) | 393.2 µW | 469.2 µW | **489.9 µW** |
+| Sampler (measured, unchanged — see §3.2) | 16.88 µW | 16.88 µW | 16.88 µW |
+| Digital (MEASURED-at-gate-level, unaffected) | 712.4 µW | 712.4 µW | 712.4 µW |
+| **Total** | **1.122 mW (224.5 %)** | **≈1.198 mW (≈239.6 %)** | **≈1.219 mW (≈243.8 % of the < 500 µW row)** |
+
+Unlike §7.1's entropy-binding corner, this corner's active power keeps
+rising under routing parasitics (+4.4 % routed vs. leaf, +24.6 % vs.
+pre-layout) rather than falling — the two corners' oscillation frequencies
+are far enough apart (this one is `ff`/−40 °C, the array's *fastest*
+corner) that the period-vs-capacitance tradeoff §7.1 describes resolves in
+the opposite direction here. The row was already missed pre-layout, on the
+digital section's account; the miss widens further (2.2× → ≈2.4×
+pre-layout-to-leaf, then ≈2.4× essentially unchanged leaf-to-routed) but
+the verdict does not flip.
+
+**Idle** (`sim/tb/sampler-core-idle-leakage-extracted-routed/`, `ff`/+125 °C/3.63 V):
+
+| Quantity | Pre-layout | Leaf-extracted (#17) | Routed-extracted (#217) |
+|---|---|---|---|
+| Record | [`sampler-core-idle-leakage` family](characterization-startup-and-power-budget.md) | [`2026-09-06-sampler-core-idle-leakage-extracted-01`](records/2026-09-06-sampler-core-idle-leakage-extracted-01.md) | [`2026-09-11-sampler-core-idle-leakage-extracted-routed-01`](records/2026-09-11-sampler-core-idle-leakage-extracted-routed-01.md) |
+| Whole-block idle current (worst of the two clock-park states) | 32.77 nA | 93.37 nA | **136.8 nA** |
+
+| Term | Pre-layout | Leaf-extracted | Routed-extracted |
+|---|---|---|---|
+| Analog (`sampler_core`, measured) | 32.77 nA (3.3 %) | 93.37 nA (9.3 %) | **136.8 nA (≈13.7 % of the row)** |
+| Digital leakage (MEASURED-at-gate-level, unaffected) | 3.946 µA (394.6 %) | 3.946 µA (394.6 %) | 3.946 µA (394.6 %) |
+| **Total** | **3.979 µA (398 %)** | **≈4.040 µA (≈404 %)** | **≈4.083 µA (≈408.3 % of the < 1 µA row)** |
+
+Unlike the leaf-level composition, **this figure is the most complete of
+this issue's evidence**: `sampler_core.routed.extracted.spice` routes the
+entire block (both rings and the fully assembled `combiner_sampler`), so
+this 136.8 nA is the first idle-current number in this repository's
+evidence that includes the real Metal3/Via2 block-level wiring inside
+`combiner_sampler` and the real fan-out load the four samplers place on the
+ring-facing nodes (`layout/pex/build.py`'s own docstring, "Two composed
+drop-ins"). The analog term's own share of the row keeps climbing
+(3.3 % → 9.3 % → 13.7 %) but the digital section's gate-level leakage still
+dominates by roughly 29:1 — the **overall verdict is unchanged** (missed by
+essentially the same ~4.0× the row was already missed by pre-layout), and a
+future integrator sizing headroom against a digital-side power-gating fix
+([DR-0017]) should size against this 136.8 nA figure, the most complete one
+available.
+
+### 7.5 Residual: `sampler-array-digitize-extracted` could not be re-run at routing level
+
+`sim/tb/sampler-array-digitize-extracted/`'s own testbench fragment
+"restates the array's top-level wiring... because ngspice cannot insert a
+series noise source inside a subcircuit" (that testbench's own header) —
+it injects per-stage `trnoise` sources **in series with each individual
+ring stage's own output node**, which requires addressing each of the
+eleven per-stage devices/nets individually. The leaf-level composition
+(#17) can do this because each stage is its own separately-extracted,
+separately-instantiated leaf-cell subcircuit call
+(`layout/pex/build.py`'s `_ring_subckt`).
+
+The routing-level composition cannot: `klt extract` on the *assembled*
+`ro_ring11`/`ro_ring11_ring2` GDS flattens all eleven stages' devices into
+one device list with no remaining per-instance boundary — this repository's
+own `nets[].pin_index`/`label_positions_um`-based positional resolution
+(§7.0, `layout/pex/build.py`'s own docstring) identifies *which single net*
+is the ring's true external `ro` port, but says nothing about which devices
+belonged to which of the ten internal stages, because `klt extract` never
+recorded that association at all (a different, generic gap from the one
+klayout-tools#1543 fixed — filed fresh, not silently worked around:
+[klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666),
+"klt extract always flattens hierarchy, so a caller cannot address a
+specific repeated-instance boundary inside an assembled block"). Inventing
+an equivalent single-tap noise injection (e.g. one lumped source at the
+ring's external port instead of eleven per-stage ones) would change the
+testbench's own phase-noise-accumulation physics from the one issue #12's
+own methodology established and is not a substitution this document makes
+silently.
+
+**Consequence**: `sampler-array-digitize-extracted`'s own 2026-09-06
+leaf-extracted records remain, for now, this repository's only
+noise-injected digitization evidence — there is no
+`sampler-array-digitize-extracted-routed` sibling. This is a genuine,
+disclosed residual, not a silently narrowed scope; §2's Follow-up notes it
+as an open item pending either klayout-tools#1666 or an in-repo alternative
+injection method.
+
+### 7.6 Spec table: routing-level does not flip any ratified verdict either
+
+Extending §4's own table with the routing-level column:
+
+| Row | Post-layout (leaf, #17) | Post-layout (routed, #217) | Changed further? |
+|---|---|---|---|
+| Entropy source, [DR-0007] §2 sizing law | Fails at [DR-0010]'s plain-cell constant (0.865×); holds at the starved-cell constant (5.69×) | **Fails further at the plain-cell constant (0.442×); still holds at the starved-cell constant, with less headroom (2.91×)** | Yes — degrades further, §7.1. Still no ratified row flips ([DR-0010]'s rate is `Proposed`). |
+| Raw rate ([DR-0003], ratified) | Met by ~5 orders of magnitude | Met by ~4 orders of magnitude (§7.3) | No — still met by a wide margin. |
+| Raw min-entropy per bit (placeholder) | Not measurable, unchanged reason | Still not measurable — and §7.5's residual means even the routing-level *functional* digitization evidence this ceiling would sit next to does not yet exist | No (placeholder stands) |
+| Time-to-first-valid (measured, met) | Met | Met — even the widened §7.3 startup term stays ~0.001 % of the 1.281 ms total | No |
+| Power — active (measured, missed) | Missed ≈2.4× | **Missed ≈2.4× (essentially unchanged in ratio; analog term +4.4 % over leaf, §7.4)** | Miss ratio essentially flat; verdict unchanged |
+| Power — idle (measured, missed) | Missed ≈4.0× | **Missed ≈4.0× (essentially unchanged in ratio; analog term +46.5 % over leaf, now the most complete figure available, §7.4)** | Verdict unchanged; analog contribution materially larger and more complete |
+| Area, Operating envelope, Interface, Health tests, Conditioning, Delivered rate | Unaffected | Unaffected | No |
+
+**No ratified README row's pass/fail verdict changes as a result of this
+routing-level increment**, consistent with §4's own framing: this issue's
+extraction can only add parasitic loading, never remove it, and every
+number above moved in that expected direction except where a corner's own
+frequency response reverses the power-vs-period tradeoff (§7.1, §7.4
+active). The one number that was not previously a row —
+[DR-0007] §2's own sizing margin at [DR-0010]'s proposed rate — is now
+known to fail more than twice as hard at the constant DR-0010 itself
+states (0.865× → 0.442×), which is new, material information for whoever
+eventually rules on that proposal.
+
+---
+
 ## Follow-up
 
-- **Full-chip (inter-cell + inter-region routed) extraction**, once
+- ~~**Full-chip (inter-cell + inter-region routed) extraction**, once
   [klayout-tools#1540](https://github.com/2AMLogic/klayout-tools/issues/1540)
   is resolved — the natural next increment of this issue's own scope, and the
   only way to know whether §2.1's already-failing DR-0010-constant margin
   degrades further once real routing parasitics are included (expected
-  direction: further degradation, per §0.1).
+  direction: further degradation, per §0.1).~~ **Struck 2026-09-11 (issue
+  #217): klayout-tools#1540 closed and the *intra-region* half of this item
+  is done** — §7 re-runs the entropy-binding, MC-mismatch, startup and power
+  methodologies against the assembled, routed rings and combiner/sampler
+  block, confirming §2.1's margin degrades further as expected (0.865× →
+  0.442× at [DR-0010]'s own constant, §7.1). **What remains of this item**:
+  *inter-region* routing (the four floorplan regions are still electrically
+  unjoined, §0.1/§7.0 — full-chip extraction needs a floorplan-level routing
+  step first, out of #217's own scope per its own Out-of-scope section) and
+  `sampler-array-digitize-extracted`'s own routing-level sibling, which could
+  not be built at all for a real, disclosed reason (§7.5,
+  [klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666)).
 - **Re-sweep the full PVT grid** against the extracted netlist, not just the
   previously-identified binding corners, to confirm those corners still bind
-  post-layout (this document's own caveat above).
-- **DR-0010's ratification decision** should read §2.1 before proceeding: the
-  proposed rate's margin at its own stated jitter-energy constant is now
-  known to fail under even a partial, device-level-only post-layout
-  extraction.
+  post-layout (this document's own caveat above) — still open, now for
+  *both* the leaf-level and routed-level netlists.
+- **DR-0010's ratification decision** should read §7.1 (not just §2.1)
+  before proceeding: the proposed rate's margin at its own stated
+  jitter-energy constant is now known to fail more than twice as hard
+  (0.865× → 0.442×) once real ring routing parasitics, not just device-level
+  ones, are included.
+- **`sampler-array-digitize-extracted-routed`** (§7.5): build a
+  routing-level sibling of this family once either
+  [klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666)
+  gives a way to address a specific repeated-instance boundary inside an
+  assembled-block extraction, or an in-repo alternative per-stage noise
+  injection method is found that does not change issue #12's own
+  phase-noise-accumulation methodology.
+- **Inter-region floorplan routing**, tracked as its own future issue per
+  #217's own Out-of-scope section — the only remaining gap between this
+  document's routing-level evidence and a genuine full-chip post-layout
+  re-run.
 
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
