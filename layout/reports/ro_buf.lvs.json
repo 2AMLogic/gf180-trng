@@ -4,13 +4,23 @@
   "layout": "../cells/ro_buf/ro_buf.gds",
   "reference": "../cells/ro_buf/ro_buf.spice",
   "top": "ro_buf",
+  "reference_top": "RO_BUF",
   "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null
+  },
   "status": "match",
   "mismatch_count": 2,
+  "error_count": 0,
   "category_counts": {
     "device.body_unverified": 1,
     "topology": 1
   },
+  "category_error_counts": {},
   "counts": {
     "nets": {
       "layout": 6,
@@ -39,18 +49,19 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.10",
+    "engine_version": "0.30.12",
     "layout_sha256": "d505cac28dd185e7c8fa4ce7a6055af01e017ddf9c4caaaa4bab80eb2429dfab",
     "reference_sha256": "87260d8fe8b7471c05f2da0cc00af3ef437b50bd97a0ec3485206e1db9da372e",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.2.0",
-    "klayout_version": "0.30.10",
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:6a323622d93c1b4716a7874c37ee3d825bd08398c3c030c85175e44e2cc229a3"
+      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
+      "released": true
     },
     "input": null
   },
@@ -67,7 +78,10 @@
         "class": "nfet"
       },
       "property": null,
-      "details": null
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     },
     {
       "category": "topology",
@@ -77,7 +91,10 @@
       "net": null,
       "device": null,
       "property": null,
-      "details": null
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     }
   ],
   "net_correspondence": [
@@ -87,7 +104,7 @@
       "pin": true
     },
     {
-      "layout": "$5",
+      "layout": "\\$5",
       "reference": "NWELL_FLOAT",
       "pin": false
     },

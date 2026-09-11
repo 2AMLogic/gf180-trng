@@ -603,6 +603,24 @@ Running the flow since produced a fifth, of a different kind:
    own install metadata for the commit; a version a downstream flow can pin
    would make that unnecessary.
 
+6. **[klayout-tools#1540][kt1540]** *(fixed)* — `klt extract`'s flat naming
+   collapses distinct nets in a repeated leaf-cell instance array (e.g. a
+   ring of identical stages) onto identically-named `.SUBCKT` header
+   entries, with no documented way to tell which position is which. This
+   repository hit it directly: `layout/rings/ro_ring11/`'s ten genuinely
+   internal inter-stage nodes and its one true external `ro` boundary pin
+   all extracted as identically-named `a|y` entries, so `layout/pex/
+   build.py`'s original (#17) post-layout composition could only use
+   individually-drawn *leaf* cells, never the assembled, more complete
+   ring/block GDS. Fixed by merged klayout-tools#1543 (commit
+   `3fbb4478e3017c8d8580fba4feb08bc386b4c925`, this directory's pin as of
+   #217): `nets[]` gained `net_id`, `pin_index` and `label_positions_um`,
+   giving a caller with independent floorplan knowledge (this repository's
+   own `build.py` placement code) a positive way to identify a specific
+   collided entry. `layout/pex/build.py`'s own module docstring,
+   "Routing-level composition", is the workaround-turned-permanent-method
+   this fix enabled.
+
 Building the floorplan abstract in [`floorplan/`](floorplan/) produced three
 more, all open and all listed with their workarounds in
 [`floorplan/README.md`](floorplan/README.md#tool-friction):
@@ -629,6 +647,7 @@ gf180mcu DRC deck accepts).
 [kt281]: https://github.com/2AMLogic/klayout-tools/issues/281
 [kt1113]: https://github.com/2AMLogic/klayout-tools/pull/1113
 [kt306]: https://github.com/2AMLogic/klayout-tools/issues/306
+[kt1540]: https://github.com/2AMLogic/klayout-tools/issues/1540
 [kt320]: https://github.com/2AMLogic/klayout-tools/issues/320
 [kt321]: https://github.com/2AMLogic/klayout-tools/issues/321
 [kt322]: https://github.com/2AMLogic/klayout-tools/issues/322

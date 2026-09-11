@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "file": "layout/cells/ro_nand2/ro_nand2.gds",
   "deck": "gf180mcu",
   "top": "ro_nand2",
@@ -31,7 +31,7 @@
       "name": "$1",
       "class": "nfet",
       "nets": {
-        "s": "$8",
+        "s": "\\$8",
         "g": "vddr",
         "d": "vss",
         "b": "vsubs"
@@ -51,7 +51,7 @@
       "nets": {
         "s": "y",
         "g": "a",
-        "d": "$7",
+        "d": "\\$7",
         "b": "vsubs"
       },
       "params": {
@@ -67,9 +67,9 @@
       "name": "$3",
       "class": "nfet",
       "nets": {
-        "s": "$7",
+        "s": "\\$7",
         "g": "en",
-        "d": "$8",
+        "d": "\\$8",
         "b": "vsubs"
       },
       "params": {
@@ -87,8 +87,8 @@
       "nets": {
         "s": "vddr",
         "g": "vss",
-        "d": "$5",
-        "b": "$9"
+        "d": "\\$5",
+        "b": "\\$9"
       },
       "params": {
         "l_um": 2.0,
@@ -103,10 +103,10 @@
       "name": "$5",
       "class": "pfet",
       "nets": {
-        "s": "$5",
+        "s": "\\$5",
         "g": "a",
         "d": "y",
-        "b": "$9"
+        "b": "\\$9"
       },
       "params": {
         "l_um": 0.28,
@@ -123,8 +123,8 @@
       "nets": {
         "s": "y",
         "g": "en",
-        "d": "$5",
-        "b": "$9"
+        "d": "\\$5",
+        "b": "\\$9"
       },
       "params": {
         "l_um": 0.28,
@@ -138,54 +138,114 @@
   ],
   "nets": [
     {
-      "name": "$5",
+      "name": "\\$5",
       "pin": false,
-      "device_count": 3
+      "device_count": 3,
+      "net_id": 5,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$7",
+      "name": "\\$7",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 7,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$8",
+      "name": "\\$8",
       "pin": false,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 8,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
-      "name": "$9",
+      "name": "\\$9",
       "pin": false,
-      "device_count": 3
+      "device_count": 3,
+      "net_id": 9,
+      "pin_index": null,
+      "label_positions_um": []
     },
     {
       "name": "a",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 3,
+      "pin_index": 0,
+      "label_positions_um": [
+        {
+          "text": "a",
+          "x_um": 0.59,
+          "y_um": 1.25
+        }
+      ]
     },
     {
       "name": "en",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 4,
+      "pin_index": 1,
+      "label_positions_um": [
+        {
+          "text": "en",
+          "x_um": 2.26,
+          "y_um": 1.25
+        }
+      ]
     },
     {
       "name": "vddr",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 2,
+      "pin_index": 2,
+      "label_positions_um": [
+        {
+          "text": "vddr",
+          "x_um": -2.45,
+          "y_um": 1.86
+        }
+      ]
     },
     {
       "name": "vss",
       "pin": true,
-      "device_count": 2
+      "device_count": 2,
+      "net_id": 6,
+      "pin_index": 3,
+      "label_positions_um": [
+        {
+          "text": "vss",
+          "x_um": 5.21,
+          "y_um": 0.22
+        }
+      ]
     },
     {
       "name": "vsubs",
       "pin": true,
-      "device_count": 3
+      "device_count": 3,
+      "net_id": 10,
+      "pin_index": 4,
+      "label_positions_um": []
     },
     {
       "name": "y",
       "pin": true,
-      "device_count": 3
+      "device_count": 3,
+      "net_id": 1,
+      "pin_index": 5,
+      "label_positions_um": [
+        {
+          "text": "y",
+          "x_um": 0.35,
+          "y_um": 0.22
+        }
+      ]
     }
   ],
   "warnings": [
@@ -199,15 +259,15 @@
   "unbiased_pmos_body_nets": [
     {
       "device": "$4",
-      "net": "$9"
+      "net": "\\$9"
     },
     {
       "device": "$5",
-      "net": "$9"
+      "net": "\\$9"
     },
     {
       "device": "$6",
-      "net": "$9"
+      "net": "\\$9"
     }
   ],
   "single_terminal_nets": [],
@@ -215,12 +275,15 @@
   "matched_device_groups": [],
   "pdk": {
     "variant": "gf180mcuD",
-    "root": "/home/ubuntu/.ciel",
+    "root": {
+      "path": null,
+      "scope": "external"
+    },
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.2.0",
-    "klayout_version": "0.30.10",
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
     "pdk": {
       "name": "gf180mcuD",
       "source": "search root: ~/.ciel",
@@ -228,7 +291,8 @@
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:6a323622d93c1b4716a7874c37ee3d825bd08398c3c030c85175e44e2cc229a3"
+      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
+      "released": true
     },
     "input": {
       "content_hash": "sha256:f769791b1d5702aeb633c6ea3e1f231fae25282e135e64fe33deab7ceb44b915"

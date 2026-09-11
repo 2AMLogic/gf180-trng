@@ -1,0 +1,45 @@
+{
+  "name": "ro-array-core-mc-freq-extracted-routed",
+  "description": "Issue #217's routing-level post-layout re-run of sim/tb/ro-array-core-mc-freq-extracted/ against layout/pex/ro_array_core.routed.extracted.spice (klt extract --parasitics over the assembled ro_ring11/ro_ring11_ring2 GDS -- see layout/pex/build.py). Same DUT topology/rails/measurement expressions/design_params as the leaf-level (#17) testbench; both rings now carry their own real hand-routed inter-stage wiring instead of an idealised leaf-cell chain. Monte Carlo device mismatch on the shipped 2-ring x 11-stage entropy-source array: per-ring period/current spread across virtual chip samples, at the nominal corner and DR-0015's measured worst (entropy-binding) corner. Issue #13's RO-frequency-spread MC claim, re-derived with ring routing parasitics included.",
+  "netlist": "tb_ro_array_core_mc_freq_extracted_routed.sp",
+  "design_netlist": "layout/pex/ro_array_core.routed.extracted.spice",
+  "analysis_type": "mc",
+  "corners": ["tt", "ss"],
+  "temperatures_c": [27, 125],
+  "design_params": {
+    "sw_stat_mismatch": 1
+  },
+  "default_runs": 8,
+  "tstop": "160n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step). Window widened from the leaf-level family's 100n -- see the 'widened window' caveat below.",
+  "analyses": [
+    "tran 1p 160n",
+    "meas tran t1a when v(ro1)=v(vth) rise=2",
+    "meas tran t1b when v(ro1)=v(vth) rise=6",
+    "meas tran t2a when v(ro2)=v(vth) rise=2",
+    "meas tran t2b when v(ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(ro2)=v(vth) rise=6",
+    "let cq = 1e-9",
+    "let nper = 4"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)"
+  },
+  "caveats": [
+    "Post-layout, ROUTING-level-parasitic-annotated for both rings (layout/pex/build.py); the buffer/XOR stage remains device-level (leaf-cell) -- see layout/pex/build.py's own module docstring, 'Two composed drop-ins, different scope', and sim/characterization-post-layout-extracted.md's 2026-09-11 delta section.",
+    "Two PVT points, not a full corner sweep, matching the leaf-level family and issue #146's own scope note: tt/27C/3.30V paired with ss/125C/3.63V (DR-0015's own measured entropy-binding worst corner). `corners`/`temperatures_c` above list the two VALUES exercised -- they are not independently swept, so do not read this as a 2x2 grid.",
+    "8 mismatch seeds is enough to characterize the spread's rough magnitude, not to bound a tail probability.",
+    "Each seed is an independent full-array mismatch draw (both rings' own routed extraction, redrawn together), the physically correct picture for one chip -- but the two rings' mismatch draws are correlated only through whatever global (not per-device) variation sw_stat_global would add, which this testbench leaves off.",
+    "No deterministic negative control (sw_stat_mismatch=0) is re-run against this routed netlist, for the same reason the leaf-level family gives: gf180mcu's per-corner device libraries gate mismatch's EFFECT on the model by sw_stat_mismatch regardless of which netlist instantiates those same PDK device subcircuits.",
+    "The mismatch model itself is unaffected by which composition path extracted the devices: layout/pex/build.py's `klt extract --parasitics` binds each drawn device to the SAME real PDK subcircuit name design/netlist.py's schematic already instantiates, whether extracted at leaf level or from the assembled ring GDS -- see layout/pex/build.py's own module docstring.",
+    "WIDENED MEASUREMENT WINDOW (100n -> 160n) relative to the leaf-level family: at the ss/125C/3.63V point, the routed rings' own real hand-routed inter-stage parasitics slow the deterministic (mismatch-free) steady-state period to ~17.4 ns/~16.5 ns (sim/tb/ro-array-core-pvt-q-extracted-routed/'s own figure at this identical PVT point) -- six rising edges (needed for the 2nd-to-6th-edge period measurement) land close to or past a 100n tstop even before mismatch-driven seed-to-seed variance is added. A first attempt at the leaf-level family's own 100n window failed outright at this corner (`t1b`/`t2b` 'out of interval' on the one seed that did not additionally fail from apparent numerical/resource pressure) -- widened to 160n, comfortably past six edges (~104-140 ns across the mismatch-drawn seeds) with margin. The tt/27C/3.30V point (already comfortably inside 100n at its own ~11.8/11.2 ns period) is unaffected by the widening beyond its own slightly longer run time."
+  ]
+}

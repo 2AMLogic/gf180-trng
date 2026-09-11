@@ -288,6 +288,19 @@ a full-chip parasitic re-run, and says so in every record. See
 for the full accounting of what this generation of records does and does not
 show.
 
+A second generation (issue #217, `sim/tb/*-extracted-routed/`) adds
+*intra*-region routing parasitics — the assembled rings' own real
+hand-routed inter-stage wiring, and (for `sampler_core.routed.
+extracted.spice`'s own consumers) the fully assembled `combiner_sampler`
+block's own real block-level wiring too — on top of the leaf-cell parasitics
+the first generation already captured. It is still `level: extracted`, not a
+new value: the DUT-provenance/citation rules above apply unchanged, and each
+record's own Caveats state exactly which parts of its own DUT are
+routing-level versus still leaf-level (`layout/pex/build.py`'s own
+docstring, "Two composed drop-ins, different scope") — *inter*-region
+routing is not captured by either generation (§0.1 of the characterization
+doc above).
+
 [DR-0024]: ../spec/decision-records/DR-0024-extracted-netlist-record-level.md
 
 ---
