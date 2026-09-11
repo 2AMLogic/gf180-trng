@@ -207,15 +207,55 @@ the affected block's own `build.py` is the first thing to check), or a
 genuinely new `klt extract` positional-disclosure gap. Per this repo's own
 friction protocol (root `CLAUDE.md`), the latter is filed generically at
 `2AMLogic/klayout-tools` (describing the tool gap, not this design) and the
-residual is recorded rather than silently composing from path 1 instead --
-see `sim/characterization-post-layout-extracted.md`'s 2026-09-11 delta
-section for the one instance of this that this issue's own work found (the
-per-stage noise-injection incompatibility affecting
-`sampler-array-digitize-extracted`'s own routed re-run -- not a port-naming
-ambiguity `klt extract` could resolve either way, since a flat extraction
-never preserved a "this device belongs to stage N" tag `klt extract` could
-disclose positionally; recorded as a residual, not attempted, with its own
-generic gap filed).
+residual is recorded rather than silently composing from path 1 instead.
+
+## Per-stage noise injection (issue #217 §7.5), and why no tool gap blocks it
+
+`sim/tb/sampler-array-digitize-*/` puts a series `trnoise` source on every
+one of a ring's eleven inter-stage nets, and its own manifest records the
+constraint that forces its shape: *"ngspice cannot insert a series noise
+source inside a subcircuit."* At leaf level (path 1) that costs nothing --
+the inter-stage wire runs BETWEEN eleven separately-instantiated leaf
+subcircuits, so the source goes on the wire. At routing level the assembled
+ring is one subcircuit and the wire is inside it.
+
+This document's own 2026-09-11 delta section first recorded that as a
+residual blocked on per-instance device addressability (filed as
+klayout-tools#1666: a flat extraction keeps no "this device belongs to
+stage N" tag). **That framing overstated what the testbench actually
+needs, and this module no longer depends on it.** A series source does not
+need to know which stage a device came from. It needs one net broken
+between its driver side and its receiver side -- and `klt extract
+--parasitics` already discloses exactly that, in the netlist it writes:
+
+* every net's lumped resistance arrives as a star of `R<name> <terminal>
+  <hub> <ohms>` cards, one per device terminal on that net (the extractor's
+  own documented model, restated in every generated file's banner), so each
+  terminal is individually addressable whether or not its stage is;
+* every device card names its own gate node, so a terminal is classifiable
+  as receiver-side (a gate) or driver-side (anything else) without any
+  instance tag.
+
+`_noise_tapped()` therefore re-points each tapped net's *gate-side* star
+resistors from the shared hub to a new `rx<j>` hub and promotes both to
+ports, emitting `<ring>_routed_ntap` alongside the untapped netlist. Tie a
+pair together and the two are the same circuit: a 0 V source is a short, so
+every star resistance, the net's grounded capacitance, and therefore every
+terminal-to-terminal path are bit-for-bit what the untapped ring has. The
+only difference the testbench introduces is the injected series EMF --
+which is the leaf-level deck's own construction, one hierarchy level down.
+
+`layout/tests/test_pex_noise_tap.py` holds that equivalence to **byte**
+equality (un-tap the committed netlist, compare against the committed
+untapped one), and `_noise_tapped()`/`_tap_positions()`/`_gate_nodes()`
+raise rather than guess if a tapped net ends up with nothing on either
+side, if a device card's arity or model is not what the gate rule assumes,
+or if the ring stops having exactly eleven tappable nets.
+
+One asymmetry is disclosed rather than hidden: the net's lumped grounded
+capacitance stays on the DRIVER side of the tap -- as it does in the
+leaf-level deck, where the wire capacitance lives inside the driving cell's
+own extraction, ahead of the source.
 
 ## Out of scope (routing-level, same as path 1)
 
@@ -233,6 +273,7 @@ of what each path changes and what it cannot yet show.
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -558,6 +599,257 @@ def _resolve_combiner_sampler_ports(
     }
 
 
+# --------------------------------------------------------------------------- #
+# Noise-tapped ring variant (issue #217, closing this document's own §7.5
+# residual). See the module docstring, "Per-stage noise injection".
+# --------------------------------------------------------------------------- #
+
+#: The two device models `--pdk gf180mcuD` binds this design's extracted
+#: devices onto. `_gate_nodes()` refuses to classify a card naming anything
+#: else, because the "node field 2 is the gate" rule below is a property of
+#: these two PDK subcircuits' own pin order, not a general SPICE truth.
+_TAP_DEVICE_MODELS = ("nfet_03v3", "pfet_03v3")
+
+#: Field index of the gate on an `nfet_03v3`/`pfet_03v3` instance card as
+#: `klt extract` writes it -- `X<name> <n1> <g> <n3> <b> <model> ...`, i.e.
+#: field 0 is the card name, fields 1..4 are nodes and field 5 is the model.
+#: Cross-checked against this design's own extractions rather than assumed:
+#: the always-on starving devices (`L=2U`) come back with their gate on
+#: `vddr` (nfet) and `vss` (pfet), which is exactly how those cells are
+#: drawn, and every inverter device comes back with its gate on the stage
+#: input it is drawn on.
+_GATE_FIELD = 2
+_DEVICE_NODE_FIELDS = 4
+
+#: Prefix for the receiver-side hub a tapped net is split onto. Indexed by
+#: the tap's own position in `_tap_positions()`'s output, NOT by a net name:
+#: the whole point of this construction is that it needs no semantic name
+#: for the ten internal ring nets, only the extraction's own header order.
+_TAP_PREFIX = "rx"
+
+#: The four `.SUBCKT` ports of an assembled ring that are NOT ring nets.
+#: Everything else in the header is one of the eleven inter-stage nets a
+#: per-stage noise source has to sit on.
+_RING_NON_SIGNAL_PORTS = ("en", "vddr", "vss", "vsubs")
+
+#: An 11-stage ring has exactly eleven tappable nets (the NAND output, nine
+#: stage outputs, and the ring output `ro` that closes the loop back into
+#: the NAND). Asserted rather than assumed -- a ring whose extraction stops
+#: matching this shape must fail loudly, not silently tap a different set.
+_RING_TAP_COUNT = 11
+
+
+def _subckt_header(text: str, name: str) -> tuple[list[str], list[int]]:
+    """`(port tokens, source line indexes)` for one raw `.SUBCKT` header,
+    continuation lines folded."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        match = re.match(rf"^\.SUBCKT\s+{re.escape(name)}\s*(.*)$", line, re.IGNORECASE)
+        if not match:
+            continue
+        tokens = match.group(1).split()
+        idx = [i]
+        j = i + 1
+        while j < len(lines) and lines[j].startswith("+"):
+            tokens += lines[j][1:].split()
+            idx.append(j)
+            j += 1
+        return tokens, idx
+    raise FlowError(f"no `.SUBCKT {name}` header in the extracted netlist")
+
+
+def _gate_nodes(text: str, name: str) -> set[str]:
+    """Every node an `nfet_03v3`/`pfet_03v3` card in `text` uses as its gate.
+
+    Raises rather than guessing on any card whose arity or model is not the
+    one `_GATE_FIELD` assumes: a misclassified gate would split a net at the
+    wrong place and quietly simulate a different circuit.
+    """
+    gates: set[str] = set()
+    for line in text.splitlines():
+        if line[:1].upper() != "X":
+            continue
+        fields = line.split()
+        if len(fields) < _DEVICE_NODE_FIELDS + 2:
+            raise FlowError(
+                f"{name}: device card {fields[0]!r} has fewer than "
+                f"{_DEVICE_NODE_FIELDS} nodes plus a model name"
+            )
+        model = fields[_DEVICE_NODE_FIELDS + 1]
+        if model not in _TAP_DEVICE_MODELS:
+            raise FlowError(
+                f"{name}: device card {fields[0]!r} instantiates {model!r}, not "
+                f"one of {_TAP_DEVICE_MODELS} -- this module cannot say which "
+                f"of its nodes is the gate"
+            )
+        gates.add(fields[_GATE_FIELD])
+    if not gates:
+        raise FlowError(f"{name}: no device cards found to classify")
+    return gates
+
+
+def _tap_positions(pin_count: int, port_map: dict[int, str]) -> list[int]:
+    """Header positions of the eleven ring nets: every `.SUBCKT` port that
+    flat extraction promoted which is not one of the ring's four non-signal
+    ports. Includes `ro`, which is both a true external port and the net
+    that closes the loop into the NAND's own `a` input."""
+    skip = {idx for idx, nm in port_map.items() if nm in _RING_NON_SIGNAL_PORTS}
+    positions = [idx for idx in range(pin_count) if idx not in skip]
+    if len(positions) != _RING_TAP_COUNT:
+        raise FlowError(
+            f"expected {_RING_TAP_COUNT} tappable ring nets in a {pin_count}-pin "
+            f"assembled ring extraction, found {len(positions)} -- this ring's "
+            f"extraction no longer has the shape the per-stage noise tap assumes"
+        )
+    return positions
+
+
+def _noise_tapped(text: str, raw_subckt: str, positions: list[int]) -> str:
+    """Split each tapped net's parasitic star hub into a driver-side hub (the
+    existing header token) and a receiver-side hub (`rx<j>`, a new port)
+    carrying only that net's gate-connected terminals.
+
+    See the module docstring, "Per-stage noise injection". Tie `rx<j>` to its
+    own header token and the result is this same subcircuit: a 0 V source is a
+    short, so every terminal's star resistance, the net's grounded
+    capacitance, and therefore every terminal-to-terminal path are untouched.
+    `layout/tests/test_pex_noise_tap.py` holds that to BYTE equality against
+    the committed untapped netlist.
+    """
+    tokens, header_lines = _subckt_header(text, raw_subckt)
+    gates = _gate_nodes(text, raw_subckt)
+    hubs = {tokens[p]: f"{_TAP_PREFIX}{j}" for j, p in enumerate(positions)}
+    if len(hubs) != len(positions):
+        raise FlowError(
+            f"{raw_subckt}: two tapped header positions carry the same token -- "
+            f"they cannot be split onto two distinct receiver hubs"
+        )
+
+    moved = dict.fromkeys(hubs, 0)
+    kept = dict.fromkeys(hubs, 0)
+    out: list[str] = []
+    for i, line in enumerate(text.splitlines()):
+        if i in header_lines:
+            if i == header_lines[0]:
+                out.append(
+                    ".SUBCKT " + " ".join(
+                        [f"{raw_subckt}_ntap"] + tokens
+                        + [hubs[tokens[p]] for p in positions]
+                    )
+                )
+            continue
+        fields = line.split()
+        if line[:1].upper() == "R" and len(fields) == 4 and fields[2] in hubs:
+            hub = fields[2]
+            if fields[1] in gates:
+                moved[hub] += 1
+                out.append(" ".join([fields[0], fields[1], hubs[hub], fields[3]]))
+                continue
+            kept[hub] += 1
+        elif line.upper().startswith(".ENDS"):
+            out.append(f".ENDS {raw_subckt}_ntap")
+            continue
+        elif line.strip() == f"* cell {raw_subckt}":
+            out.append(f"* cell {raw_subckt}_ntap")
+            continue
+        out.append(line)
+
+    for hub in hubs:
+        if moved[hub] == 0:
+            raise FlowError(
+                f"{raw_subckt}: tapped net at header token {hub!r} has no "
+                f"gate-side terminal -- a noise source on its tap would drive "
+                f"nothing"
+            )
+        if kept[hub] == 0:
+            raise FlowError(
+                f"{raw_subckt}: tapped net at header token {hub!r} has no "
+                f"driver-side terminal -- tapping it would float the net"
+            )
+    return "\n".join(out) + "\n"
+
+
+def _ring_routed_ntap_subckt(
+    name: str, raw_subckt: str, pin_count: int, port_map: dict[int, str],
+    positions: list[int],
+) -> str:
+    """The `_ring_routed_subckt` wrapper again, with each tapped net's pair of
+    hubs exposed so a testbench can place a series source between them.
+
+    Port order after the base interface is `<net> <net>__rx` for each tapped
+    position in header order, with `<net>` omitted where it is already a base
+    port (`ro`). That order is the contract with
+    `sim/tb/sampler-array-digitize-extracted-routed/`'s instantiation line and
+    is restated in the generated file's own banner.
+    """
+    args = _positional_args(pin_count, port_map, "n")
+    tail: list[str] = []
+    tap_args: list[str] = []
+    for p in positions:
+        label = args[p]
+        if label != "ro":
+            tail.append(label)
+        tail.append(f"{label}__rx")
+        tap_args.append(f"{label}__rx")
+    lines = [f".subckt {name} en ro vddr vss vsubs " + " ".join(tail)]
+    lines.append(f"xcore {' '.join(args + tap_args)} {raw_subckt}_ntap")
+    lines.append(".ends")
+    return "\n".join(lines) + "\n"
+
+
+def _ntap_port_order(pin_count: int, port_map: dict[int, str], positions: list[int]) -> str:
+    args = _positional_args(pin_count, port_map, "n")
+    tail: list[str] = []
+    for p in positions:
+        label = args[p]
+        if label != "ro":
+            tail.append(label)
+        tail.append(f"{label}__rx")
+    return " ".join(tail)
+
+
+NTAP_HEADER = """* GENERATED by layout/pex/build.py -- do not edit by hand.
+* NOISE-TAPPED variant of {raw} ({stem}.routed.extracted.spice): the same
+* cards and the same parasitics, with each of this ring's {count} inter-stage
+* nets split into a driver-side hub (its existing `.SUBCKT` header token)
+* and a receiver-side hub `{prefix}<j>` carrying only that net's
+* gate-connected terminals. Both are ports, so a testbench can place a
+* series `trnoise` source between them; tie each pair together and this
+* subcircuit is ELECTRICALLY IDENTICAL to {raw} -- a 0 V source is a short,
+* so every star resistance and the net's grounded capacitance are untouched.
+* That equivalence is held to BYTE equality by
+* layout/tests/test_pex_noise_tap.py, which un-taps this file and compares
+* it against the committed untapped one.
+* Exists because ngspice cannot insert a series source inside a subcircuit
+* and, at routing level, the inter-stage wire IS inside one. See
+* layout/pex/build.py's module docstring, "Per-stage noise injection".
+* Regenerate with: python3 layout/pex/build.py
+"""
+
+NTAP_BUNDLE_HEADER = """* GENERATED by layout/pex/build.py -- do not edit by hand.
+* The DUT bundle sim/tb/sampler-array-digitize-extracted-routed/ needs, and
+* nothing else: the two NOISE-TAPPED routing-level rings behind clean
+* wrappers, plus the leaf-level `xor2` and `sampler_dff` extractions.
+* That deck restates ro_array_core's top-level wiring in its own fragment
+* (its pre-layout ancestor already did, and its manifest says why), so what
+* it needs from layout/pex/ is the cell library, not a composed core.
+* PARTIAL BY CONSTRUCTION, and deliberately so: the two rings are
+* routing-level, `xor2`/`sampler_dff` are leaf-level. That is exactly the
+* leaf-level deck's own topology with the rings swapped, which is what makes
+* the leaf-vs-routed delta attributable to the ring routing -- the only
+* place that testbench's entropy comes from. Substituting
+* `combiner_sampler_routed_extracted` would also have changed the TOPOLOGY
+* (it carries two `ro_buf` instances and the two ring-liveness samplers that
+* this deck's pre-layout ancestor does not instantiate).
+* Each ring wrapper's tapped ports follow its base `en ro vddr vss vsubs`
+* interface in this order -- the contract with that testbench's own
+* positional instantiation line:
+*   ro_ring11_routed_ntap:       {order1}
+*   ro_ring11_ring2_routed_ntap: {order2}
+* Regenerate with: python3 layout/pex/build.py
+"""
+
+
 def _positional_args(pin_count: int, port_map: dict[int, str], prefix: str) -> list[str]:
     """Return `pin_count` positional call-site node names for a raw `klt
     extract` `.SUBCKT`: `port_map`'s resolved name at each identified
@@ -723,6 +1015,49 @@ def build(outdir: Path) -> None:
         + _sampler_core_routed_subckt()
     )
     (outdir / "sampler_core.routed.extracted.spice").write_text(sampler_core_routed)
+
+    # -- Noise-tapped ring variant (issue #217 §7.5) -- see module docstring. --
+    tap_positions = {}
+    for name, _gds, _top, _mod, _nand, _stage in ASSEMBLED_RINGS:
+        payload = ring_payloads[name]
+        positions = _tap_positions(payload["pin_count"], ring_ports[name])
+        tap_positions[name] = positions
+        raw_path = outdir / f"{name}.routed.extracted.spice"
+        (outdir / f"{name}.routed.ntap.extracted.spice").write_text(
+            NTAP_HEADER.format(
+                raw=name, stem=name, count=_RING_TAP_COUNT, prefix=_TAP_PREFIX
+            )
+            + _noise_tapped(raw_path.read_text(), name, positions)
+        )
+
+    ntap_bundle = (
+        NTAP_BUNDLE_HEADER.format(
+            order1=_ntap_port_order(
+                ring1_payload["pin_count"], ring_ports["ro_ring11"],
+                tap_positions["ro_ring11"],
+            ),
+            order2=_ntap_port_order(
+                ring2_payload["pin_count"], ring_ports["ro_ring11_ring2"],
+                tap_positions["ro_ring11_ring2"],
+            ),
+        )
+        + '.include "ro_ring11.routed.ntap.extracted.spice"\n'
+        + '.include "ro_ring11_ring2.routed.ntap.extracted.spice"\n'
+        + '.include "xor2.extracted.spice"\n'
+        + '.include "sampler_dff.extracted.spice"\n'
+        + "\n"
+        + _ring_routed_ntap_subckt(
+            "ro_ring11_routed_ntap", "ro_ring11", ring1_payload["pin_count"],
+            ring_ports["ro_ring11"], tap_positions["ro_ring11"],
+        )
+        + "\n"
+        + _ring_routed_ntap_subckt(
+            "ro_ring11_ring2_routed_ntap", "ro_ring11_ring2",
+            ring2_payload["pin_count"], ring_ports["ro_ring11_ring2"],
+            tap_positions["ro_ring11_ring2"],
+        )
+    )
+    (outdir / "ro_ring_pair.routed.ntap.extracted.spice").write_text(ntap_bundle)
 
 
 def main(argv: list[str] | None = None) -> int:
