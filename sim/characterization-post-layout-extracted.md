@@ -507,12 +507,16 @@ already protected this way.
 ## 6. Caveats (repository-wide, restated here because every number above depends on them)
 
 - **Device-level, not full-chip, extraction (§0.1).** No inter-cell or
-  inter-region routing parasitic is in any number above. A future extraction
-  of the physically assembled rings/combiner-sampler block, once
-  [klayout-tools#1540](https://github.com/2AMLogic/klayout-tools/issues/1540)
-  is resolved, can only add further capacitance/resistance — every
-  degradation reported here is a floor, not a ceiling, on the eventual
-  full-chip number.
+  inter-region routing parasitic is in any number in **§§1–5**. A future
+  extraction of the physically assembled rings/combiner-sampler block can
+  only add further capacitance/resistance — every degradation reported in
+  those sections is a floor, not a ceiling.
+  **That extraction has since been done — see §7**, and it confirms the
+  framing emphatically: the inter-cell routing term is comparable to or
+  larger than the device term at every quantity measured here (§2.1's
+  already-failing 0.865× margin is 0.442× at routing level, §7.1). Nothing
+  in §§1–6 is retracted by that: they are what a device-level extraction
+  shows, and they remain the correct answer to that question.
 - **One PVT point per testbench family**, not a full grid re-sweep — this
   issue re-runs each pre-layout methodology's own previously-identified
   worst/binding corner(s), not the full 27- or 45-point grids #13/#14
@@ -583,12 +587,14 @@ reasoning):
   and the one where the buffer/combiner/sampler routing this issue's own
   framing cares about ("loads the sampler") is actually captured.
 
-Five of the six `-extracted` testbench families were re-run against these
-routed netlists, at the same binding corners #17 used, as new sibling
-testbenches (`sim/tb/<family>-routed/`, leaving the six `-extracted`
-families and their 2026-09-06 records completely untouched, per DR-0024).
-The sixth, `sampler-array-digitize-extracted`, could **not** be re-run at
-routing level for a real, disclosed reason — see §7.5, not a silent gap.
+**All six** `-extracted` testbench families were re-run against these routed
+netlists, at the same binding corners #17 used, as new sibling testbenches
+(`sim/tb/<family>-extracted-routed/`, leaving the six `-extracted` families
+and their 2026-09-06 records completely untouched, per DR-0024). The sixth,
+`sampler-array-digitize-extracted`, needed one extra piece of machinery to
+get there — a noise-tapped ring variant — and this section's own first draft
+recorded it as an unresolvable residual before that machinery existed. Both
+the original judgement and its correction are kept in §7.5.
 
 ### 7.1 Entropy-binding corner margin, routing-level (extends §2.1)
 
@@ -773,43 +779,130 @@ future integrator sizing headroom against a digital-side power-gating fix
 ([DR-0017]) should size against this 136.8 nA figure, the most complete one
 available.
 
-### 7.5 Residual: `sampler-array-digitize-extracted` could not be re-run at routing level
+### 7.5 The sixth family, and a correction to this section's first draft
 
-`sim/tb/sampler-array-digitize-extracted/`'s own testbench fragment
-"restates the array's top-level wiring... because ngspice cannot insert a
-series noise source inside a subcircuit" (that testbench's own header) —
-it injects per-stage `trnoise` sources **in series with each individual
-ring stage's own output node**, which requires addressing each of the
-eleven per-stage devices/nets individually. The leaf-level composition
-(#17) can do this because each stage is its own separately-extracted,
-separately-instantiated leaf-cell subcircuit call
-(`layout/pex/build.py`'s `_ring_subckt`).
+> **Corrected 2026-09-11, same day, before this document's own §7.5 residual
+> was ever cited elsewhere.** This section first recorded
+> `sampler-array-digitize-extracted` as the one family of six that *could
+> not* be re-run at routing level, blocked on per-instance device
+> addressability and filed upstream as
+> [klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666).
+> **That was wrong about what the testbench needs**, and the family has since
+> been re-run. The original claim is kept below rather than deleted, because
+> a superseded technical judgement is worth more in the open than in a
+> squashed diff, and because the upstream issue it produced is still open and
+> a reader may arrive here from it.
 
-The routing-level composition cannot: `klt extract` on the *assembled*
-`ro_ring11`/`ro_ring11_ring2` GDS flattens all eleven stages' devices into
-one device list with no remaining per-instance boundary — this repository's
-own `nets[].pin_index`/`label_positions_um`-based positional resolution
-(§7.0, `layout/pex/build.py`'s own docstring) identifies *which single net*
-is the ring's true external `ro` port, but says nothing about which devices
-belonged to which of the ten internal stages, because `klt extract` never
-recorded that association at all (a different, generic gap from the one
-klayout-tools#1543 fixed — filed fresh, not silently worked around:
-[klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666),
-"klt extract always flattens hierarchy, so a caller cannot address a
-specific repeated-instance boundary inside an assembled block"). Inventing
-an equivalent single-tap noise injection (e.g. one lumped source at the
-ring's external port instead of eleven per-stage ones) would change the
-testbench's own phase-noise-accumulation physics from the one issue #12's
-own methodology established and is not a substitution this document makes
-silently.
+**What the first draft said.** `sim/tb/sampler-array-digitize-extracted/`
+injects per-stage `trnoise` sources in series with each individual ring
+stage's own output node, and its own header states the constraint: *"ngspice
+cannot insert a series noise source inside a subcircuit."* The leaf-level
+composition (#17) satisfies it because each stage is its own separately
+instantiated leaf-cell subcircuit call. `klt extract` on the *assembled*
+ring flattens all eleven stages' devices into one list with no per-instance
+boundary — §7.0's positional resolution identifies which single **net** is
+the ring's true external `ro` port, but says nothing about which **devices**
+belonged to which stage, because `klt extract` never recorded that
+association. That was filed generically, per this repository's friction
+protocol, as klayout-tools#1666.
 
-**Consequence**: `sampler-array-digitize-extracted`'s own 2026-09-06
-leaf-extracted records remain, for now, this repository's only
-noise-injected digitization evidence — there is no
-`sampler-array-digitize-extracted-routed` sibling. This is a genuine,
-disclosed residual, not a silently narrowed scope; §2's Follow-up notes it
-as an open item pending either klayout-tools#1666 or an in-repo alternative
-injection method.
+**Why that was the wrong requirement.** A series source does not need to
+know which stage a device came from. It needs one **net** broken between its
+driver side and its receiver side — and `klt extract --parasitics` already
+discloses exactly that, in the netlist it writes:
+
+- every net's lumped resistance arrives as a **star of per-terminal cards**,
+  `R<name> <terminal> <hub> <ohms>`, one per device terminal on that net (the
+  extractor's own documented model, restated in every generated file's
+  banner), so each terminal is individually addressable whether or not its
+  instance is;
+- every device card names its own **gate** node, so each terminal on a net is
+  classifiable as receiver-side (a gate) or driver-side (anything else) with
+  no instance tag at all.
+
+`layout/pex/build.py` therefore emits a `<ring>_ntap` variant alongside each
+untapped routing-level ring: the eleven ring nets' gate-side star resistors
+are re-pointed onto a second hub and both hubs are promoted to ports. **Tie a
+pair together and the tapped ring is the untapped ring** — a 0 V source is a
+short, so every star resistance, the net's grounded capacitance and therefore
+every terminal-to-terminal path are untouched. That is not asserted here:
+`layout/tests/test_pex_noise_tap.py` un-taps the committed netlist and
+compares it **byte-for-byte** against the committed untapped one (and checks
+that every tap really is split on both sides, and that the wrapper's
+positional port order is the one its own banner publishes). No lumped
+single-tap substitution was invented, and issue #12's per-stage
+phase-noise-accumulation methodology is unchanged: eleven sources per ring,
+the same injected PSD, the same node names, the same measurement expressions.
+
+klayout-tools#1666 is **left open upstream** and has been
+[commented on](https://github.com/2AMLogic/klayout-tools/issues/1666) rather
+than closed: the generic gap it describes — nothing associates a `devices[]`
+entry with the GDS instance it came from — is real and still matters for
+genuinely instance-scoped work. What is withdrawn is the *motivating
+example*, since "insert a series element between two repeated instances" turns
+out to be achievable with the schema as shipped.
+
+**Result** (`sim/tb/sampler-array-digitize-extracted-routed/`, same two
+corners #12 and #17 used, 3 seeds each). Note `xor2` and both `sampler_dff`
+instances stay **leaf-level** on purpose: this deck's pre-layout ancestor
+wires them itself (no `ro_buf`, no ring-liveness samplers), so substituting
+the routed `combiner_sampler` block would have changed the topology as well
+as the parasitics and the delta would stop isolating the ring routing — the
+only place this testbench's entropy comes from.
+
+| Corner | Pre-layout | Leaf-extracted (#17) | Routed-extracted (#217) |
+|---|---|---|---|
+| `tt`/27 °C/3.30 V, record | [`2026-08-01-sampler-array-digitize-01`](records/2026-08-01-sampler-array-digitize-01.md) | [`2026-09-06-…-extracted-02`](records/2026-09-06-sampler-array-digitize-extracted-02.md) | [`2026-09-11-…-extracted-routed-01`](records/2026-09-11-sampler-array-digitize-extracted-routed-01.md) |
+| …bits | `0101111100` | `0011111111` | **`0010110111`** |
+| …flipped vs. the column to its left | — | 4 of 10 | **2 of 10** (positions 3, 6) |
+| …`period_r1` | — | 9.387 ns | **12.852 ns (+36.9 %)** |
+| …`ring1_swing_v` | — | 3.367 V | **3.083 V (−0.283 V)** |
+| `ss`/−40 °C/3.63 V, record | [`2026-08-01-sampler-array-digitize-02`](records/2026-08-01-sampler-array-digitize-02.md) | [`2026-09-06-…-extracted-03`](records/2026-09-06-sampler-array-digitize-extracted-03.md) | [`2026-09-11-…-extracted-routed-02`](records/2026-09-11-sampler-array-digitize-extracted-routed-02.md) |
+| …bits | `1111010011` | `1011110110` | **`0000111111`** |
+| …flipped vs. the column to its left | — | 4 of 10 | **5 of 10** (positions 0, 2, 3, 6, 9) |
+| …`period_r1` | — | 7.850 ns | **10.726 ns (+36.6 %)** |
+| …`ring1_swing_v` | — | 3.728 V | **3.414 V (−0.314 V)** |
+
+**§1.1's two findings both replicate, and the netlist-sensitivity one gets
+stronger.** The bit pattern is still **seed-invariant within one netlist**
+(identical across all 3 seeds at each corner). It is still **not
+netlist-invariant** — 2 of 10 bits flip at `tt` and 5 of 10 at `ss` purely
+from adding the rings' own routing parasitics, with no noise realization
+changed; counted against the pre-layout schematic netlist rather than
+against #17's leaf composition, 6 of 10 and 7 of 10 respectively now differ.
+Every sampled level is still settled to within 6.9 mV of a rail
+(`worst_rail_dev_v`), so no bit is ambiguous: which side of the sampler's
+decision threshold a deterministic sample lands on is simply
+parasitic-sensitive, exactly as issue #17's own framing predicted.
+
+Applying [`sim/tools/raw_min_entropy_estimate.py`](tools/raw_min_entropy_estimate.py)'s
+method by hand (that tool's own glob deliberately excludes these records —
+§5's `-[0-9]` fix): both routed corners read `ones = 6`, `p1_hat = 0.600`,
+`H_hat = 0.7370 bit`. **This is not reported as a design-stage min-entropy
+estimate**, for §1.2's reasons, unchanged by routing: ten *successive*
+samples of one evolving ring-phase process are not ten independent draws, and
+§7.1's sizing law puts this deck's 10 ns sample interval four to five orders
+of magnitude below the accumulated phase noise `H0 = 0.5` needs. That `H_hat`
+reads *higher* than at leaf level is an artefact of ten samples landing 6/4
+instead of 8/2, not evidence of more entropy.
+
+One methodology note the new manifest carries: `ring_periods_per_sample` at
+`tt` falls from 1.065 to **0.778**, i.e. at this deck's deliberately-too-fast
+100 MHz demonstration clock the sampler now takes *less* than one ring period
+per sample. That makes this deck an even weaker basis for an entropy claim
+than it already was — which is why it still makes none.
+
+The transient window lengthens (`tran 10p 132n` → `10p 200n`) for one reason:
+the routed rings are ~37 % slower, so the 14th rising edge the period
+measurement addresses no longer lands inside 132 ns and ngspice reports `out
+of interval`. The same edges are addressed, the same 12 periods are averaged,
+and every sampled bit (39–129 ns) and swing window (30–130 ns) sits where it
+did. How much the lengthening itself perturbs the earlier part of a
+transient-**noise** run was measured rather than assumed: the same seed at
+`tstop` = 200 ns and 250 ns returns the same ten bit decisions and the same
+`ones_count`, agrees to five significant figures on every period and swing,
+and differs by at most 2.4e-4 V on a near-rail reading — smaller than the
+seed-to-seed spread these records already report.
 
 ### 7.6 Spec table: routing-level does not flip any ratified verdict either
 
@@ -819,7 +912,7 @@ Extending §4's own table with the routing-level column:
 |---|---|---|---|
 | Entropy source, [DR-0007] §2 sizing law | Fails at [DR-0010]'s plain-cell constant (0.865×); holds at the starved-cell constant (5.69×) | **Fails further at the plain-cell constant (0.442×); still holds at the starved-cell constant, with less headroom (2.91×)** | Yes — degrades further, §7.1. Still no ratified row flips ([DR-0010]'s rate is `Proposed`). |
 | Raw rate ([DR-0003], ratified) | Met by ~5 orders of magnitude | Met by ~4 orders of magnitude (§7.3) | No — still met by a wide margin. |
-| Raw min-entropy per bit (placeholder) | Not measurable, unchanged reason | Still not measurable — and §7.5's residual means even the routing-level *functional* digitization evidence this ceiling would sit next to does not yet exist | No (placeholder stands) |
+| Raw min-entropy per bit (placeholder) | Not measurable, unchanged reason | Still not measurable, same structural reason (§1.2); the routing-level *functional* digitization evidence now exists (§7.5) and the underlying bit pattern is parasitic-sensitive, but that does not move the ceiling | No (placeholder stands) |
 | Time-to-first-valid (measured, met) | Met | Met — even the widened §7.3 startup term stays ~0.001 % of the 1.281 ms total | No |
 | Power — active (measured, missed) | Missed ≈2.4× | **Missed ≈2.4× (essentially unchanged in ratio; analog term +4.4 % over leaf, §7.4)** | Miss ratio essentially flat; verdict unchanged |
 | Power — idle (measured, missed) | Missed ≈4.0× | **Missed ≈4.0× (essentially unchanged in ratio; analog term +46.5 % over leaf, now the most complete figure available, §7.4)** | Verdict unchanged; analog contribution materially larger and more complete |
@@ -853,10 +946,10 @@ eventually rules on that proposal.
   0.442× at [DR-0010]'s own constant, §7.1). **What remains of this item**:
   *inter-region* routing (the four floorplan regions are still electrically
   unjoined, §0.1/§7.0 — full-chip extraction needs a floorplan-level routing
-  step first, out of #217's own scope per its own Out-of-scope section) and
-  `sampler-array-digitize-extracted`'s own routing-level sibling, which could
-  not be built at all for a real, disclosed reason (§7.5,
-  [klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666)).
+  step first, out of #217's own scope per its own Out-of-scope section,
+  tracked as [#219](https://github.com/2AMLogic/gf180-trng/issues/219)). The
+  sixth family's own routing-level sibling, first recorded here as an
+  unresolvable residual, **has since been built** — see §7.5's correction.
 - **Re-sweep the full PVT grid** against the extracted netlist, not just the
   previously-identified binding corners, to confirm those corners still bind
   post-layout (this document's own caveat above) — still open, now for
@@ -866,17 +959,22 @@ eventually rules on that proposal.
   jitter-energy constant is now known to fail more than twice as hard
   (0.865× → 0.442×) once real ring routing parasitics, not just device-level
   ones, are included.
-- **`sampler-array-digitize-extracted-routed`** (§7.5): build a
-  routing-level sibling of this family once either
-  [klayout-tools#1666](https://github.com/2AMLogic/klayout-tools/issues/1666)
-  gives a way to address a specific repeated-instance boundary inside an
+- ~~**`sampler-array-digitize-extracted-routed`** (§7.5): build a
+  routing-level sibling of this family once either klayout-tools#1666 gives a
+  way to address a specific repeated-instance boundary inside an
   assembled-block extraction, or an in-repo alternative per-stage noise
-  injection method is found that does not change issue #12's own
-  phase-noise-accumulation methodology.
-- **Inter-region floorplan routing**, tracked as its own future issue per
-  #217's own Out-of-scope section — the only remaining gap between this
-  document's routing-level evidence and a genuine full-chip post-layout
-  re-run.
+  injection method is found.~~ **DONE 2026-09-11**, by the second route: the
+  per-stage sources needed a *net* split, not per-instance device
+  addressability, and `klt extract --parasitics`' own per-terminal resistance
+  star plus its device cards' gate nodes already disclose enough to do it.
+  Issue #12's methodology is unchanged. See §7.5.
+- **Inter-region floorplan routing**, tracked as
+  [#219](https://github.com/2AMLogic/gf180-trng/issues/219) per #217's own
+  Out-of-scope section — now the only remaining gap between this document's
+  routing-level evidence and a genuine full-chip post-layout re-run. Note it
+  is a *layout* task, not an extraction one: the four guarded regions are
+  placed with a 20 um isolation channel and no signal routing between them,
+  so there is nothing to extract until they are joined.
 
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
