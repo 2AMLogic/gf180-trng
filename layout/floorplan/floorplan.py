@@ -95,6 +95,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 
 import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
+import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
 from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 
@@ -214,21 +215,16 @@ ASSEMBLY_INVENTORY_GAP: dict[str, tuple[str, ...]] = {}
 #: one -- placement is a translation of already-verified geometry, not a
 #: connectivity change, the same reasoning the comment above already gives
 #: for `ring1`/`ring2`/`combiner_sampler`.
-RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = {
-    "ring1": (LAYOUT_DIR / "rings" / "ro_ring11" / "ro_ring11.spice", "ro_ring11"),
-    "ring2": (
-        LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "ro_ring11_ring2.spice",
-        "ro_ring11_ring2",
-    ),
-    "combiner_sampler": (
-        LAYOUT_DIR / "blocks" / "combiner_sampler" / "combiner_sampler.spice",
-        "combiner_sampler",
-    ),
-    "digital": (
-        LAYOUT_DIR / "digital" / "trng_top.lvs_reference.spice",
-        "trng_top",
-    ),
-}
+#:
+#: Sourced from `design/floorplan_netlist.py`'s own `REGION_REFERENCES`
+#: (issue #221) rather than restated as a second literal dict here: that
+#: module's own inter-region net declaration and this placement-check LVS
+#: both need the same four (path, top-cell) pairs, and duplicating them
+#: would let the two silently point at different files for the same region
+#: id -- exactly the kind of drift this repository's own conventions
+#: (`DIGITAL_ABSTRACT_CELL_GLOB`, `digital_power_estimate.BLOCKS`, ...)
+#: already go out of their way to avoid.
+RING_LVS_REFERENCE: dict[str, tuple[Path, str]] = floorplan_netlist.REGION_REFERENCES
 
 #: Regions whose real content is standard-cell based (`klt place-and-route`,
 #: issue #170/#171 -- not `klt draw`/`klt gen`, which every other region's
@@ -1699,6 +1695,37 @@ def main(argv: list[str] | None = None) -> int:
     if args.list:
         print_table()
         return EXIT_OK
+
+    # Issue #221's own self-check: the declared inter-region net list
+    # (`design/floorplan_netlist.py`) against the four regions' own
+    # committed reference netlists, and the committed composed LVS
+    # reference against what that declaration currently generates. Neither
+    # needs `klt` or a PDK, so both run before the tool-availability gate
+    # below and independently of it -- a broken declaration must fail this
+    # script even on a runner with no PDK installed, not silently SKIP.
+    netlist_problems = floorplan_netlist.validate_inter_region_nets()
+    if netlist_problems:
+        print(
+            "FAIL: design/floorplan_netlist.py's own inter-region net list "
+            "does not match the four regions' committed reference netlists:"
+        )
+        for problem in netlist_problems:
+            print(f"  - {problem}")
+        return EXIT_FAIL
+    if args.write:
+        written_ref = floorplan_netlist.write_lvs_reference()
+        print(f"wrote  {written_ref.relative_to(REPO_ROOT)}")
+    else:
+        generated_ref = floorplan_netlist.generate_lvs_reference()
+        ref_path = floorplan_netlist.LVS_REFERENCE_PATH
+        if not ref_path.is_file() or ref_path.read_text() != generated_ref:
+            print(
+                f"FAIL: {ref_path.relative_to(REPO_ROOT)} does not match "
+                "design/floorplan_netlist.py's own declaration -- re-run "
+                "with --write to refresh it"
+            )
+            return EXIT_FAIL
+    print()
 
     version = klt_version()
     pdk = resolve_pdk()

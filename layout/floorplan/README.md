@@ -870,6 +870,123 @@ block it already assembled.
 
 ---
 
+## Planned inter-region connectivity — issue #221
+
+Every region above is placed, but **nothing is wired between them yet.**
+`compose()` draws four guard rings and, for `ring1`/`ring2`/
+`combiner_sampler`/`digital`, each one's own real assembled content — and
+stops there. The block cannot function without a wire from `ring1.ro` to
+`combiner_sampler.rn1`, from the sample clock to `combiner_sampler.clk`, from
+each region's own supply pin to a pad, and so on, and none of those wires
+exist in the composed GDS today.
+
+This section is the write-up for **phase 1** of issue #219's own two-phase
+decomposition (issue #221): a *declared, reviewable* net list — as Python
+data, not yet drawn geometry — of every net that has to cross a region
+boundary, plus a generated top-level LVS reference netlist built from that
+declaration. **Nothing below is drawn, routed, DRC'd or LVS'd.** The
+physical routing geometry, the resulting `klt extract --top trng_floorplan`
+pin-count change (still ~2588 today, unaffected by this section — see
+[#219](https://github.com/2AMLogic/gf180-trng/issues/219)'s own finding),
+and running `klt lvs` against the generated reference are **phase 2's
+work, a separate follow-up issue**, not done here.
+
+The full declaration, with every net's role, its `(region, pin)` endpoints
+(each region's own already-committed reference pin name, never a name
+invented here), a target metal-layer *role*, and the rationale tying it to
+Mechanism 1/2/3 above, lives in
+[`design/floorplan_netlist.py`](../../design/floorplan_netlist.py)'s own
+`INTER_REGION_NETS`. `python3 design/floorplan_netlist.py` self-checks that
+declaration against the four regions' own committed reference `.spice`
+files (`layout/rings/ro_ring11/ro_ring11.spice`, `layout/rings/
+ro_ring11_ring2/ro_ring11_ring2.spice`, `layout/blocks/combiner_sampler/
+combiner_sampler.spice`, `layout/digital/trng_top.lvs_reference.spice`),
+stdlib-only, no `klt`/PDK needed (`npm run check:floorplan-netlist`, run on
+every push/PR); `--write` regenerates the composed reference at
+[`trng_floorplan.lvs_reference.spice`](trng_floorplan.lvs_reference.spice).
+
+**The sixteen declared nets**, condensed from the module's own table
+(supply/ground first, since they are the constraint most likely to be
+gotten wrong):
+
+| net | crosses | layer role | why |
+|---|---|---|---|
+| `vddr1` | chip pin → `ring1.vddr` | Metal2 | own star branch (Mechanism 2) |
+| `vddr2` | chip pin → `ring2.vddr` | Metal2 | own star branch |
+| `vdd` | chip pin → `combiner_sampler.vdd` | Metal2 | own star branch, also feeds the two DR-0018 `ro_buf` instances |
+| `vddd` | chip pin → `digital`'s own implicit PDN net | Metal4/Metal5 transition | own star branch; `digital`'s committed reference has no `.SUBCKT` `vddd` pin to wire against (SPECIALNETS-only, see `layout/digital/README.md#power`) |
+| `vss` | shared return: `ring1`/`ring2`/`combiner_sampler`'s own `vss` pins, plus `digital`'s implicit ground | Metal2 + PDN transition | the one deliberately shared net (Mechanism 2) |
+| `en1` / `en2` | chip pin → `ring1.en` / `ring2.en` | Metal1 | ring enable, no fan-out |
+| `ro1` | `ring1.ro` → `combiner_sampler.rn1`, **spans `ring2`'s own region** | Metal2 | entropy tap; the one long-haul route in this table — see below |
+| `ro2` | `ring2.ro` → `combiner_sampler.rn2` | Metal1 | entropy tap, single adjacent channel |
+| `clk` | chip pin → `digital.clk` → `combiner_sampler.clk` | Metal4 transition | Mechanism 1's worst-disturbance case (DR-0012); routed via `digital` so it never crosses a ring's own channel |
+| `rst_n` | chip pin → `digital.rst_n` → `combiner_sampler.rst_n` | Metal4 transition | same topology as `clk` |
+| `raw_bit` / `raw_valid` | `combiner_sampler` → `digital` | Metal4 transition | raw sampler tap |
+| `ring_bit1` / `ring_bit2` | `combiner_sampler` → `digital` (`ring_bit[0]` / `ring_bit[1]` on the digital side — the two committed references spell this pin differently, resolved here rather than by renaming either) | Metal4 transition | DR-0016 per-ring liveness taps |
+| `vsubs` | `ring1`/`ring2`/`combiner_sampler`'s own substrate-global pins | guard-ring tap (no metal route) | not in the design's own schematic at all — a layout-LVS-reference-only artifact of the extraction deck's synthesized substrate handle (`layout/verify.py`'s own `device.body_unverified` disclosure); declared purely so the composed reference has a complete pin list for these three regions |
+
+**The four supply branches must never merge before a star point.**
+`vddr1`, `vddr2`, `vdd` and `vddd` are declared as four separate, disjoint
+net entries — `design/floorplan_netlist.py`'s own module docstring carries
+an explicit "DO NOT MERGE" comment immediately above them, and
+`validate_inter_region_nets()` asserts mechanically, on every run, that no
+two of the four reach the same region. This is the same constraint
+[Mechanism 1](#mechanism-1--mutual-injection-locking-between-the-rings)
+item 2 and [Mechanism 2](#mechanism-2--supply-and-substrate-coupling) item 1
+already state in prose; phase 2 must route four textually and
+topologically distinct rails all the way to a (not-yet-drawn) star point,
+never one merged `vdd_all`-style strap.
+
+**The one long-haul route.** The composed row order is `ring1 | ring2 |
+combiner_sampler | digital` (see [The regions](#the-regions) above), so
+`ring1.ro → combiner_sampler.rn1` is not a single-channel hop: `ring1` and
+`combiner_sampler` are not adjacent, and the route has to cross, or route
+around in the channel space, `ring2`'s own guarded region. Every other
+inter-region net connects only adjacent regions.
+`design/floorplan_netlist.py` records this in the net's own
+`spans_regions` field (`["ring2"]`) rather than leaving phase 2 to
+re-discover it by re-reading the row order.
+
+**The `digital` region's Metal4 transition.** `digital`'s own real, routed
+pins (`clk`, `rst_n`, `raw_bit`, `raw_valid`, `ring_bit[0]`, `ring_bit[1]`)
+all land on Metal4 (`layout/digital/trng_top.def`'s `PINS` section, `+
+LAYER Metal4`) — several routing-metal levels above where `ring1`/`ring2`/
+`combiner_sampler`'s own content lives (Metal1 signal, Metal2+Via1 supply,
+the same convention `layout/rings/ro_ring11/build.py` documents for
+*intra*-ring wiring, extended here to *inter*-region). Reaching them needs a
+hand-drawn Metal4-to-lower-metal via-stack transition. Separately worth
+flagging for phase 2: `klt gen-compose`'s own routing-role map for the
+`gf180mcu` family (`klayout_tools.gen._PDK_ROLE_LAYERS["gf180mcu"]`, as
+installed — `klt 0.4.0+g3fbb4478e301`) only defines roles up to `"metal3"`/
+`"via2"`, with no `"metal4"`/`"via3"` role at all, so `gen-compose`'s own
+auto-router structurally cannot resolve a route directly onto one of
+`digital`'s real pins today — filed generically upstream as
+[klayout-tools#1670](https://github.com/2AMLogic/klayout-tools/issues/1670).
+Phase 2 will need either that upstream fix or a hand-drawn transition stub;
+this declaration does not depend on which, and records only the `layer_
+role` each affected net needs once decided.
+
+**What this section does not claim.** No pin count changes as a result of
+it (`klt extract --top trng_floorplan` is still ~2588 pins, unaffected — the
+composed GDS itself has not moved). No routing geometry exists. No DRC or
+LVS has run against the generated composed reference — `layout/floorplan/
+trng_floorplan.lvs_reference.spice` is written and self-checked for
+*declaration* consistency (every endpoint names a real pin on its region),
+not yet verified against any drawn wiring, because there is none yet to
+verify against. #219's own "~12-pin block" phrase (predating `digital`'s
+real ~109-pin interface landing in the floorplan, #209/#210) is stale and
+should not be treated as a target — a correctly-wired `trng_floorplan`
+composed reference reports on the order of 110-115 top-level pins (the
+generated file's own header, at the time of writing, has 112: `digital`'s
+own 109 committed pins, minus the six absorbed into inter-region nets
+(`clk`, `rst_n`, `raw_bit`, `raw_valid`, `ring_bit[0]`, `ring_bit[1]`),
+plus the nine genuinely external nets (`en1`, `en2`, `vddr1`, `vddr2`,
+`vdd`, `vddd`, `vss`, `clk`, `rst_n` — the last two counted once each, not
+twice, since they are both inter-region *and* chip pins)), not the real
+composed GDS's own pin count, which this section does not change.
+
+---
+
 ## DRC: what actually ran
 
 `klt drc` was run — by this script, not by hand — on every generated device
