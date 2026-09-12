@@ -1369,7 +1369,9 @@ post-route STA already models the digital-side routing, so a trunk-only
 interface load is what it should add, not the merged total above — but on
 the `ro1`/`ro2` evidence its numbers are a **floor**: the real riser-plus-via
 contribution is not in them. Flagged on #233 rather than left to be
-rediscovered.
+rediscovered; #233 has since merged and closed, so the live tracker for this
+disclosure is [#242](https://github.com/2AMLogic/gf180-trng/issues/242) (see
+the Follow-up section below).
 
 ### 8.6 Spec table: full-chip does not flip any ratified verdict either
 
@@ -1530,12 +1532,21 @@ double-counting them.
   cleared **only for the two nets [DR-0025] scopes** (`ro1`, `ro2`) plus the
   four disclosed driver-side-only output loads; every other inter-region net
   is still unpriced, and §8 states that up front rather than in a footnote.
-- **Feed the six `digital`-facing trunks' capacitance into the post-route
+- ~~**Feed the six `digital`-facing trunks' capacitance into the post-route
   STA** as an interface load, under [DR-0022]'s path — new, from §7.7, filed
   as [#233](https://github.com/2AMLogic/gf180-trng/issues/233). This is where
   the `clk` drive-strength question belongs (can `digital`'s clock driver
   drive the trunk's ≈21 fF?); [DR-0025] Alternative B declines to answer it
-  with an ngspice run over an ideal source, and routes it here instead.
+  with an ngspice run over an ideal source, and routes it here instead.~~
+  **DONE (issue #233, merged 2026-09-12)**: `sim/tb/digital-sta-power/
+  run_sta.py` states each trunk's lumped Metal4 RC as a `set_input_transition`
+  on the corresponding port, every run (`sim/characterization-digital-sta-
+  area-power.md` §2a). Per §8.5 above, that trunk-only Metal4 arithmetic is a
+  **floor**, not the measured load — #233 is closed, so this caveat's live
+  tracker is
+  [#242](https://github.com/2AMLogic/gf180-trng/issues/242), which disclosed
+  the floor at every site the number is computed or reported rather than
+  leaving it findable only in this section.
 - **IR drop on the shared 430.23 µm `vss` trunk** — new, from §7.7, filed as
   [#234](https://github.com/2AMLogic/gf180-trng/issues/234). A static supply
   analysis with its own methodology, needing a current profile the
