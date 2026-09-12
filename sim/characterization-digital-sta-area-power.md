@@ -652,6 +652,10 @@ of which are now facing measured numbers instead of estimates.
   with 21.9 ns of setup margin and 0.7 ns of hold margin at the respective
   binding corners, and an Fmax floor of 35.6 MHz — 35.6× [DR-0003]'s ratified
   raw-rate row and 8.9× its stretch row.
+- The six inter-region trunks that land on this block's pins are **priced from
+  as-built geometry and carried permanently**, and none of them violates the
+  library's max-transition constraint at any corner ([#233], §2a) — which is
+  what [DR-0025] deferred to this path rather than to an ngspice run.
 - The digital section's **area is measured**: 116 001 µm² of placed cell
   area, decomposed into a cell-count term, a library-track term, and (new
   since [#171]) a power-delivery-cell term.
@@ -672,7 +676,17 @@ of which are now facing measured numbers instead of estimates.
   analysis, and none is run here), no on-chip variation derating, and no
   multi-mode analysis.
 - **Not an I/O timing result.** 68 unconstrained endpoints, by construction
-  (§2).
+  (§2). [#233] adds the six `digital`-facing inter-region trunks' own RC as an
+  input transition on the ports they land on, which prices the *wire* and
+  nothing upstream of it — it is not an arrival/required-time contract for
+  those ports, and the four `combiner_sampler`-driven ones still start no
+  timed path (§2a).
+- **Not a clean max-transition result.** The six trunk ports pass the
+  library's `max_transition` check with ≥ 536× margin, but the design itself
+  violates it at 9 of the 15 corners on internal `u_interface` pins, worst
+  −1.59 ns ([#237], §2a). Pre-existing, unrelated to [#233]'s interface load,
+  and on those paths every delay and energy figure above is a library-table
+  extrapolation rather than an interpolation.
 - **Not a supply-current measurement.** Liberty power under a declared uniform
   activity. The real design's activity is data-dependent and, for a TRNG,
   deliberately unpredictable; a switching-activity annotation from the
@@ -747,6 +761,12 @@ python3 sim/tools/digital_corner_characterization.py --estimate
 
 # the gate CI runs
 python3 sim/tools/digital_corner_characterization.py --check
+
+# §2a's two modelling decisions, re-measured rather than re-read: set_load
+# vs set_input_transition on these ports, and which slew domain the stated
+# transition is in (~1 min; needs openroad + the PDK)
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
 ```
 
 Records: `sim/records/2026-09-12-digital-sta-power-{01..15}.md`, one per

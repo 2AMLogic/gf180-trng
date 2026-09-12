@@ -137,10 +137,15 @@ logical instances) — those earlier records are still accurate statements
 about the pre-[#171] netlist and DEF they name and hash, and this
 repository's records are append-only, so they stand, but they no longer
 describe *this directory's current* committed artefacts.
-`sim/records/2026-08-18-digital-sta-power-*.md` supersedes them for that
-purpose, and is also the **first** run of this kind that sees a supply
+`sim/records/2026-08-18-digital-sta-power-*.md` superseded them for that
+purpose, and was also the **first** run of this kind that sees a supply
 network at all: OpenRCX now extracts real rail and strap geometry rather than
 finding none ([#183](https://github.com/2AMLogic/gf180-trng/issues/183)).
+`sim/records/2026-09-12-digital-sta-power-*.md` supersedes that family in
+turn, adding the six `digital`-facing inter-region trunks as an interface load
+and the library's own max-transition check
+([#233](https://github.com/2AMLogic/gf180-trng/issues/233)); it reports the
+same slack, Fmax and area figures.
 #147/#177's post-route functional run against the pre-[#171] netlist is
 likewise superseded, for that purpose, by
 `sim/records/2026-08-18-trng-top-post-route-01.md` (see "What this
