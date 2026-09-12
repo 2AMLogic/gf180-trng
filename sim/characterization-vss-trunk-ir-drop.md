@@ -9,14 +9,16 @@ drop is a static supply analysis with its own methodology and needs a current
 profile a PEX re-run does not produce. This is that analysis.
 
 **Verdict: not material.** The largest computed local-`vss` offset is
-**15.64 mV** (`ring1`, the active-power binding corner `ff`/−40 °C/3.63 V),
+**16.07 mV** (`ring1`, the active-power binding corner `ff`/−40 °C/3.63 V),
 and a deliberately unphysical conservative bound — all of that corner's
 active current forced through `ring1` alone — still only reaches
-**21.48 mV**. Both are well under the **33 mV** (10 % of the ±10 %/330 mV
+**21.94 mV**. Both are well under the **33 mV** (10 % of the ±10 %/330 mV
 supply-corner spread this design's own PVT sweep already runs) yardstick this
 document checks against. At the idle corner the offsets are three orders of
 magnitude smaller (tens of µV). No ratified or Proposed row is affected — see
-§4.
+§4. (Updated post-[#224]: figures were 15.64 mV / 21.48 mV before that issue
+moved the `vss` chip pin east to clear `digital`'s own new PDN riser — see
+§1's own note.)
 
 This document is an ordinary summary, not evidence. Every number below cites
 the `sim/` record or committed report it comes from; the arithmetic itself is
@@ -46,17 +48,26 @@ change too (`sim/tests/test_vss_trunk_ir_drop.py` holds the endpoint set to
 the committed `interregion.json` so a silent mismatch fails loudly instead of
 just changing a number no one is watching).
 
-The resulting network (chip pin at `x = 505.98 µm`, nearest tap first):
+The resulting network (chip pin at `x = 514.58 µm`, nearest tap first):
 
 | Region | Segment to previous node (ohm) | Riser (ohm) | Riser length (µm) |
 |---|---:|---:|---:|
-| `combiner_sampler` | 0.900 | 8.310 | 27.70 |
-| `ring2` | 97.806 | 3.696 | 12.32 |
-| `ring1` | 30.273 | 3.696 | 12.32 |
+| `combiner_sampler` | 3.480 | 8.520 | 28.40 |
+| `ring2` | 97.806 | 3.906 | 13.02 |
+| `ring1` | 30.273 | 3.906 | 13.02 |
 
-Segment resistances alone sum to 128.98 ohm — matching DR-0025's lumped
-~129 ohm, as they must (same geometry, same sheet resistance table); the
-riser resistances (3.7–8.3 ohm each) are the piece the lumped number never
+Segment resistances alone sum to 131.56 ohm — 2.58 ohm above DR-0025's own
+lumped ~129 ohm. Before [#224], that sum matched DR-0025 exactly (same
+geometry, same sheet resistance table); #224 moved the `vss` chip pin
+(`CHIP_PIN_PLACEMENT["vss"]` in `layout/floorplan/interregion.py`) east by
+that same 2.58 ohm's worth of Metal4 length, to clear a new riser for
+`digital`'s own PDN tie (`layout/digital`'s ground return, drawn into this
+same `vss` net for the first time). `sim/tools/vss_trunk_ir_drop.py`
+deliberately excludes `digital` itself from this table (`SCOPED_OUT_
+REGIONS`) — its own PDN is a dense multi-strap grid, not a single riser tap,
+so this series-chain model does not apply to it — but the chip pin's own
+new position is real, drawn geometry this table correctly reflects. The
+riser resistances (3.9–8.5 ohm each) are the piece the lumped number never
 separated out. Both Metal3 (riser) and Metal4 (trunk) share the same curated
 0.09 ohm/sq in the `klt` gf180mcu deck (klayout-tools#547), the same table
 DR-0025 already cites — restated as a constant in the script rather than
@@ -129,7 +140,7 @@ where that frequency (and therefore current) is highest across the covered
 PVT grid. In particular it is *not* the same corner as the **entropy-binding**
 corner (`ss`/+125 °C/3.63 V, [DR-0015]) that [DR-0007]'s jitter-energy margin
 is evaluated at — that corner is the *slowest* in the grid, hence draws less
-active current than the one analysed here. So the 15.64 mV / 21.48 mV
+active current than the one analysed here. So the 16.07 mV / 21.94 mV
 figures in this document upper-bound the offset at the entropy-binding corner
 too, without needing a separate run at it.
 
@@ -151,7 +162,7 @@ structural, not just "the number is small":
   claim — a `vss` offset perturbs it only by shifting the starving device's
   own `vddr`–`vss` bias, since `vddr` is delivered by its own low-resistance
   star branch (~1 ohm, DR-0025's own table) essentially unaffected by this
-  trunk. §3 shows this trunk's own worst-case offset (21.48 mV) is bounded
+  trunk. §3 shows this trunk's own worst-case offset (21.94 mV) is bounded
   above the entropy-binding corner's *actual* offset (which draws less
   current still), and both are under 6.5 % of the ±10 % supply-corner spread
   this design's period is already characterised across. A period-vs-`vss`
@@ -208,11 +219,17 @@ is either already-committed geometry or an already-recorded `sim/` figure.
   current, consistent with how `sim/characterization-post-layout-extracted.md`
   §7.4 itself reports `p_total_w`/idle current (time-averaged quantities, not
   instantaneous peaks).
-- **The four supply branches (`vddr1`/`vddr2`/`vdd`/`vddd`) and `digital`'s
-  own `vddd`/`vss` PDN tie ([#224]) are out of scope**, per issue #234's own
-  "Out of scope" section — the former are each a deliberate off-die star with
-  negligible (~1 ohm) on-die resistance, and the latter is a
-  reference-interface question, not a resistance one.
+- **The four supply branches (`vddr1`/`vddr2`/`vdd`/`vddd`) and `digital`
+  itself are out of scope**, per issue #234's own "Out of scope" section —
+  the four branches are each a deliberate off-die star with negligible
+  (~1 ohm) on-die resistance. `digital`'s own connection into this trunk
+  turned out to be more than a reference-interface question once [#224]
+  actually drew it: it is a real chip-pin relocation this document's own
+  §1 now reflects (chip pin moved from `x = 505.98` to `514.58 µm`,
+  +2.58 ohm on `ring1`'s own path). What stays out of scope is `digital`'s
+  own *internal* PDN drop — its dense multi-strap grid needs a different
+  model than this trunk's single-riser-per-region chain, and no such model
+  exists in this repository as of this writing.
 
 [#222]: https://github.com/2AMLogic/gf180-trng/issues/222
 [#224]: https://github.com/2AMLogic/gf180-trng/issues/224

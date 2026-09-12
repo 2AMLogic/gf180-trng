@@ -90,6 +90,11 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
         self.assertEqual(regions, ["combiner_sampler", "ring2", "ring1"])
 
     def test_matches_committed_interregion_json_endpoints(self):
+        """`digital` (gf180-trng#224) is a real, committed endpoint of `vss`
+        now, but `ir.SCOPED_OUT_REGIONS` deliberately excludes it from this
+        module's own chain (a dense PDN grid, not a single riser tap -- see
+        that constant's own docstring), so the committed set is expected to
+        have exactly one more region than the model's own chain, not zero."""
         import json
         committed = json.loads(
             (REPO_ROOT / "layout" / "floorplan" / "reports" / "interregion.json").read_text()
@@ -97,7 +102,8 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
         route = next(r for r in committed["routes"] if r["net"] == "vss")
         committed_regions = {e["region"] for e in route["endpoints"]}
         model_regions = {node["region"] for node in self.model["chain"]}
-        self.assertEqual(committed_regions, model_regions)
+        self.assertEqual(committed_regions - ir.SCOPED_OUT_REGIONS, model_regions)
+        self.assertEqual(committed_regions - model_regions, ir.SCOPED_OUT_REGIONS)
 
     def test_riser_lengths_are_positive_and_plausible(self):
         # "A few um each", per DR-0025's own capacitance note -- risers
@@ -107,10 +113,18 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
             self.assertGreater(node["riser_len_um"], 1.0)
             self.assertLess(node["riser_len_um"], 100.0)
 
-    def test_segment_resistances_sum_close_to_dr0025s_lumped_129_ohm(self):
+    def test_segment_resistances_sum_close_to_the_post_224_lumped_total(self):
+        """DR-0025's own original lumped estimate (128.979 ohm) was over the
+        pre-#224 430.23 um trunk. gf180-trng#224 moved the `vss` chip pin
+        east to clear `digital`'s own new riser (`CHIP_PIN_PLACEMENT["vss"]`
+        in `layout/floorplan/interregion.py`), lengthening the pin-to-
+        `combiner_sampler` segment by the same amount -- a real, if small,
+        change to the total resistance from the (moved) pin to `ring1`, the
+        farthest node, independent of `SCOPED_OUT_REGIONS` excluding
+        `digital` itself (excluding an intermediate node from an itemised
+        chain does not change the chain's own total span)."""
         total = sum(node["seg_r_ohm"] for node in self.model["chain"])
-        # DR-0025's own lumped estimate over the full 430.23 um trunk.
-        self.assertAlmostEqual(total, 128.979, delta=0.5)
+        self.assertAlmostEqual(total, 131.559, delta=0.5)
 
 
 class ReportAndCheckRunCleanly(unittest.TestCase):

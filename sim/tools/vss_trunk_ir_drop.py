@@ -58,9 +58,26 @@ What this deliberately does not do
 - Model `vddr1`/`vddr2`/`vdd`/`vddd`, the four supply branches issue #234
   explicitly places out of scope (each its own star, off-die, not a shared
   return).
-- Model `digital`'s own `vddd`/`vss` PDN tie (issue #224) -- `digital` is
-  not an endpoint of this trunk at all (`interregion.py`'s own docstring,
-  "What is drawn, and what deliberately is not").
+- Model `digital`'s own contribution to this trunk's IR drop. Issue #224
+  drew `digital`'s own connection into the same `vss` net this module
+  analyses (`digital` is a real chain endpoint in `layout/floorplan/
+  reports/interregion.json` now, not absent the way it was when this
+  module was first written), but `digital`'s own PDN is a dense
+  multi-strap Metal1/4/5 grid (`layout/digital/README.md#power`), not a
+  single guard-ring tap the way `ring1`/`ring2`/`combiner_sampler`'s own
+  `vss` pins are -- folding it into this module's series-resistor-chain
+  abstraction would misrepresent its own local impedance (that grid has
+  many parallel paths to the block's own internal rails, not one riser).
+  `SCOPED_OUT_REGIONS` excludes it from `resistance_model()`'s own chain
+  for that reason; a `digital`-side PDN drop analysis needs a different
+  model and is not attempted here. Excluding it does not change the
+  chain's own total resistance to `ring1` (the farthest node) -- that
+  total is the physical distance from the (now `digital`-adjacent) chip
+  pin to `ring1`'s own tap regardless of which intermediate nodes are
+  itemised -- so #224 still shows up here as a real, if small, increase:
+  the chip pin itself moved east to clear `digital`'s own riser
+  (`CHIP_PIN_PLACEMENT["vss"]`), lengthening the pin-to-`combiner_sampler`
+  segment by the same amount.
 - Re-run any ngspice testbench. The current figures below are read off
   existing `sim/` evidence, not re-measured with the offset applied; see
   "the digital term from DR-0023" is not needed section below for the
@@ -92,6 +109,13 @@ METAL_SHEET_RES_OHM_SQ = 0.09
 #: net is either a star supply branch (out of scope, issue #234's own
 #: "Out of scope" section) or carries no meaningful DC current profile.
 NET = "vss"
+
+#: Regions this module excludes from `resistance_model()`'s own chain even
+#: when they are a real, drawn endpoint of `NET` -- see the module
+#: docstring's "What this deliberately does not do" for why `digital`
+#: (gf180-trng#224) belongs here: a dense multi-strap PDN grid, not a
+#: single riser tap, so this series-chain abstraction does not apply to it.
+SCOPED_OUT_REGIONS = frozenset({"digital"})
 
 #: Active-power binding corner (`sim/characterization-startup-and-power-budget.md`):
 #: `ff` / -40 C / 3.63 V. This is the HIGHEST-current corner this repository's
@@ -206,6 +230,8 @@ def resistance_model() -> dict:
     riser_len_um: dict[str, float] = {}
     for endpoint in route["endpoints"]:
         rid = endpoint["region"]
+        if rid in SCOPED_OUT_REGIONS:
+            continue
         riser_x = endpoint["riser_x_um"]
         # The riser is the METAL3 vertical rect landing at this endpoint's
         # own x (within rounding) -- `_endpoint_geometry()`'s own `_vrect`.
@@ -225,7 +251,10 @@ def resistance_model() -> dict:
     # Taps in trunk order, nearest-the-pin first -- the chip pin always
     # anchors one end (`chip_pin_x_um`), so sort every endpoint plus the pin
     # by x and read the chain off that order.
-    tap_x = {e["region"]: e["riser_x_um"] for e in route["endpoints"]}
+    tap_x = {
+        e["region"]: e["riser_x_um"] for e in route["endpoints"]
+        if e["region"] not in SCOPED_OUT_REGIONS
+    }
     pin_x = route["chip_pin_x_um"]
     order = sorted(tap_x, key=lambda rid: abs(tap_x[rid] - pin_x))
 
@@ -380,16 +409,23 @@ def _check(model: dict) -> int:
     # Sanity check against the committed report, so a future #222 routing
     # change that silently drops an endpoint or changes the trunk's own net
     # composition fails loudly here rather than only changing numbers no
-    # one is watching.
+    # one is watching. `SCOPED_OUT_REGIONS` (`digital`, since gf180-trng#224)
+    # is a real, drawn endpoint this module deliberately excludes from its
+    # own chain -- see that constant's own docstring -- so it is subtracted
+    # from both sides here rather than causing a permanent, expected
+    # mismatch.
     committed = json.loads(INTERREGION_REPORT.read_text())
     committed_route = next(r for r in committed["routes"] if r["net"] == NET)
-    committed_regions = {e["region"] for e in committed_route["endpoints"]}
+    committed_regions = {
+        e["region"] for e in committed_route["endpoints"]
+    } - SCOPED_OUT_REGIONS
     model_regions = {node["region"] for node in model["chain"]}
     if committed_regions != model_regions:
         print(
             f"FAIL: committed interregion.json's {NET!r} endpoints "
-            f"{sorted(committed_regions)} no longer match this module's "
-            f"resistance-model chain {sorted(model_regions)}",
+            f"{sorted(committed_regions)} (excluding {sorted(SCOPED_OUT_REGIONS)}) "
+            f"no longer match this module's resistance-model chain "
+            f"{sorted(model_regions)}",
             file=sys.stderr,
         )
         return 1
