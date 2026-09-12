@@ -388,6 +388,22 @@ jobs:
       - name: Layout DRC/LVS flow including the PDK-dependent stages
         run: python3 layout/verify.py --require-tools
 
+      # The floorplan analogue of the DRC/LVS step above (#227): the same
+      # klt-version-changes-a-verdict risk applies to
+      # layout/floorplan/reports/, but until now nothing on any path promoted
+      # its self-skip-without-PDK behavior to a failure -- layout/verify.py
+      # got exactly this treatment here, while layout/floorplan/floorplan.py
+      # only ever ran self-skipping, on the PR path (ci.yml). That left the
+      # floorplan's deck/tool provenance invisible to CI, surfacing only when
+      # someone happened to regenerate locally and diff (as happened between
+      # #226 and #230). --require-tools closes that blind spot the same way
+      # it does above: expect this to go red on a klt upgrade that moves a
+      # floorplan verdict, region geometry, or report shape, the same as the
+      # step above; regenerate layout/floorplan/reports/ with
+      # `layout/floorplan/floorplan.py --write` when that happens.
+      - name: Floorplan flow including the PDK-dependent stages
+        run: python3 layout/floorplan/floorplan.py --require-tools
+
       - name: Assert no evidence records were written
         run: |
           set -euo pipefail
