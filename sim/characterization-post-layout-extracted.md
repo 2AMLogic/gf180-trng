@@ -929,6 +929,123 @@ known to fail more than twice as hard at the constant DR-0010 itself
 states (0.865× → 0.442×), which is new, material information for whoever
 eventually rules on that proposal.
 
+### 7.7 2026-09-12 scope decision: what a *full-chip* path would and would not show (issue #225, [DR-0025])
+
+**Nothing in §§1–7.6 changes here. No record was produced, no extraction
+output informed anything below, and no number below is a simulation
+result.** This subsection exists because the standing "full-chip extraction"
+follow-up below stopped being blocked and started being a *choice*, and
+because a choice that big should be written down before anyone spends a
+corner sweep on it. (A full-chip `klt extract --parasitics` run *was*
+started while [DR-0025] was being written, purely as a runtime feasibility
+probe; it did not complete within ~19.5 minutes and was terminated, and its
+output was never read. That is disclosed in DR-0025's own Status and
+Consequences, and is a cost input for whoever builds the increment — not a
+source for anything here.)
+
+**What unblocked.** Issue #222 (phase 2 of #219) drew real Metal4 trunks and
+Metal3 risers across the four regions' isolation channels for every net
+`design/floorplan_netlist.py` declares. Verified against the committed
+artefacts rather than the merge description:
+`layout/floorplan/reports/floorplan.drc.json` records `status: "clean"`, and
+`layout/floorplan/reports/interregion.json`'s `check.lvs` records
+`status: "match"` (`mismatch_count: 2`, both `topology.flattened`). The
+sentence §0.1 and §7.0 both lean on — "the four floorplan regions are
+electrically unjoined, so there is nothing to extract" — is **no longer
+true**, and every place this document says it should be read as historical.
+
+**What was decided**, in full in
+[`spec/decision-records/DR-0025-full-chip-pex-scope.md`][DR-0025]: a
+full-chip PEX increment is worth building, but **only** for the inter-region
+nets that have a transistor-level device at *both* ends. Today that filter
+admits exactly two of the fourteen drawn nets — `ro1` (`ring1.ro` →
+`combiner_sampler.rn1`, a 128.40 µm Metal4 trunk) and `ro2` (`ring2.ro` →
+`combiner_sampler.rn2`, 35.92 µm). A blanket transistor-level extraction of
+the composed stream — the ~2500 `gf180mcu_fd_sc_mcu9t5v0__*` instances
+included — is **rejected**, primarily because the digital section's timing
+and power are already owned by a better evidence path
+([DR-0021]/[DR-0022]/[DR-0023], post-route gate-level against the real
+routed DEF) that an ngspice re-derivation would not improve on.
+
+**Why those two nets and not the longer ones.** The trunk lengths are read
+off `layout/floorplan/reports/interregion.json`; the R/C figures are
+first-order arithmetic over that geometry and the `klt` gf180mcu deck's own
+published Metal4 coefficients (0.09 Ω/sq, 0.007602 fF/µm², 0.028153 fF/µm at
+`WIRE_W = 0.30 µm`) — **estimates, not extraction output, and not cited as
+measurements anywhere**:
+
+| Net | Trunk | Est. C | Both ends transistor-level? | In DR-0025's scope? |
+|---|---:|---:|---|---|
+| `raw_bit` | 524.77 µm | ≈30.8 fF | No — driver only (`sampler_dff` → abstracted `digital`) | Driver-side load only |
+| `raw_valid` | 446.61 µm | ≈26.2 fF | No — driver only | Driver-side load only |
+| `vss` | 430.23 µm | ≈25.2 fF | n/a (shared return) | No — IR drop is a separate analysis |
+| `clk` | 353.78 µm | ≈20.7 fF | No — driven *from* abstracted `digital` | **No** |
+| `ring_bit1` | 343.16 µm | ≈20.1 fF | No — driver only | Driver-side load only |
+| `rst_n` | 339.34 µm | ≈19.9 fF | No — driven *from* abstracted `digital` | **No** |
+| `ring_bit2` | 265.47 µm | ≈15.6 fF | No — driver only | Driver-side load only |
+| **`ro1`** | **128.40 µm** | **≈7.5 fF** | **Yes** (`ro_stage` → `ro_buf`, both extracted) | **Yes** |
+| **`ro2`** | **35.92 µm** | **≈2.1 fF** | **Yes** | **Yes** |
+| `en1`/`en2`/`vddr1`/`vddr2`/`vdd` | 3.30 µm each | ≈0.2 fF | n/a (DC control / supply stubs) | No — negligible |
+
+The two shortest signal trunks are the two that matter because of *where*
+they land. `layout/pex/ro_ring11.routed.extracted.spice`, already committed,
+gives each ring's eleven inter-stage nets **24.87 fF** in total, of which the
+`ro` wrap net alone carries 8.16 fF (ring 1) / 7.89 fF (ring 2) — the
+lightest, most delay-sensitive nodes in the design. `ro1`'s ≈7.5 fF would
+land on top of exactly that node, roughly doubling it.
+
+**Which measurement it would change.** §7.1's own already-measured
+routed-vs-leaf pair is the sensitivity: ring 1 went 12.349 ns → 17.426 ns
+when 24.87 fF of ring-internal signal-net capacitance appeared, i.e.
+≈0.20 ns/fF at the entropy-binding corner. Linearizing that (a sizing
+argument from two measured points, **not** a result):
+
+- `ring1`: +≈7.5 fF ⇒ ≈ **+1.5 ns, ≈ +9 %** on `period_r1`.
+- `ring2`: +≈2.1 fF ⇒ ≈ **+0.4 ns, ≈ +3 %** on `period_r2`.
+
+That is the reason DR-0025 says "build it" rather than "defer": a ≈9 %
+correction is far outside rounding, and §7.6's own last paragraph is
+precisely about a number ([DR-0007] §2's sizing margin at [DR-0010]'s
+proposed rate, 0.865× → 0.442×) that whoever rules on DR-0010 should not
+have to rule on with a known, unpriced 9 %-scale correction outstanding.
+
+**What such a path would still not show**, and what therefore may not be
+claimed from it when it exists:
+
+- Nothing about `digital`'s own devices — the standard cells stay
+  abstracted, at cell-instance granularity, exactly as the composed LVS
+  already treats them.
+- No arrival-time or clock-tree claim across a region boundary. Every deck
+  in `sim/tb/` drives `clk`/`rst_n` from an ideal zero-impedance ngspice
+  source, so the trunk's ≈106 Ω in front of it is ≈2 ps of RC on edges
+  measured in tens to hundreds of ps. The real `clk` question — can
+  `digital`'s clock driver drive ≈21 fF? — is a post-route STA question
+  ([DR-0022]'s path), and DR-0025's Follow-up sends it there.
+- Only driver-side loading on `raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2`:
+  real added output load on a real extracted `sampler_dff`, with **no
+  receiver gate capacitance behind it**. `raw_bit`'s trunk is the largest
+  single parasitic on the chip and would remain only partly priced.
+- No IR-drop verdict on the shared `vss` trunk, and nothing about
+  `digital`'s `vddd`/`vss` PDN tie (gf180-trng#224).
+
+**Record level: unchanged.** Records from such a path stay `level: extracted`
+([DR-0024]). No new `level:` value is added and DR-0024 is not amended —
+DR-0024's own Consequences already legislate this case ("a record with
+fuller routing coverage says so in its own Caveats rather than needing a new
+`level:` value"), and its Decision already requires every `level: extracted`
+record's Caveats to state whether inter-region routing parasitics are
+included. A floorplan-level record satisfies that rule by answering "yes,
+for `ro1` and `ro2`" instead of "no". DR-0025 adds two further Caveats
+requirements of its own for such records: that the digital section is at
+cell-instance granularity, and that `clk`/`rst_n` arrival is still from an
+ideal source.
+
+**"Floor, not ceiling" survives.** §0.1's framing is unaffected: inter-region
+parasitics can only add R and C, so every degradation §§1–7.6 report remains
+a lower bound on the full chip — and would remain one even after the
+increment DR-0025 authorises lands, because the receiver-side capacitance on
+the six `digital`-facing trunks stays unpriced.
+
 ---
 
 ## Follow-up
@@ -984,8 +1101,29 @@ eventually rules on that proposal.
   follow-up (see `layout/pex/build.py`'s own "Out of scope" section for what
   such a path would have to price). Nothing in this document's own
   routing-level records changes as a result — they are all intra-region.
+  **Scoped 2026-09-12 (issue #225, [DR-0025], §7.7)**: the extraction half
+  is now a decided, narrow piece of work rather than an open question —
+  price the two inter-region nets with a transistor-level device at both
+  ends (`ro1`, `ro2`), keep `digital` abstracted, and re-run §7.1/§7.3/§7.4
+  at their existing binding corners. **Still open**: building it. No record
+  in this repository may be cited as full-chip post-layout evidence until it
+  exists.
+- **Feed the six `digital`-facing trunks' capacitance into the post-route
+  STA** as an interface load, under [DR-0022]'s path — new, from §7.7. This
+  is where the `clk` drive-strength question belongs (can `digital`'s clock
+  driver drive the trunk's ≈21 fF?); [DR-0025] Alternative B declines to
+  answer it with an ngspice run over an ideal source, and routes it here
+  instead.
+- **IR drop on the shared 430.23 µm `vss` trunk** — new, from §7.7. A static
+  supply analysis with its own methodology, needing a current profile the
+  extracted-netlist path does not produce. Not owed by [DR-0025]'s
+  increment.
 
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
+[DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
+[DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 [DR-0024]: ../spec/decision-records/DR-0024-extracted-netlist-record-level.md
+[DR-0025]: ../spec/decision-records/DR-0025-full-chip-pex-scope.md
