@@ -344,6 +344,43 @@ class Point:
         return self.rec.spread("sigma_1")
 
 
+def load_variants_by_glob(variants, corner: str, factory):
+    """Load one ``factory``-built object per entry of a ``VARIANTS``-style
+    sequence of ``(label, glob, *rest)`` tuples, filtered to records at
+    ``corner`` that carry a ``sigma_1``.
+
+    Shared by the ring-coupling and liveness-tap-phase variant-comparison
+    scripts (issues #51/#75/#76/#87), which otherwise each re-implement the
+    same filter-and-pick-latest loop over their own ``VARIANTS`` list. ``rest``
+    covers the extra positional fields those scripts' tuples carry beyond
+    ``(label, glob)`` -- e.g. a testbench manifest path and a human-readable
+    "what makes it different" string -- and is passed straight through to
+    ``factory`` after the record, so each caller can keep its own ``Variant``
+    constructor and tuple arity: ``factory(label, record, *rest)``.
+
+    Latest record wins; earlier ones (including failed/superseded runs) stay
+    on file as append-only evidence. A failed run's record has no ``sigma_1``
+    value (measurements come back "no data"), so it never reaches the filter
+    below in the first place -- it is the ``"sigma_1" not in rec.values``
+    check that excludes it, not any special-casing of failure.
+    """
+    out = []
+    for label, glob, *rest in variants:
+        matches = []
+        for path in sorted(RECORDS.glob(glob)):
+            rec = Record(path)
+            if rec.corner != corner or "sigma_1" not in rec.values:
+                continue
+            matches.append(rec)
+        if not matches:
+            raise RecordError(
+                f"variant {label!r}: no sim/records/{glob} record at {corner} carries a "
+                "sigma_1, so this variant cannot be compared"
+            )
+        out.append(factory(label, matches[-1], *rest))
+    return out
+
+
 def load_points() -> tuple[list[Point], list[str]]:
     """``(points, skipped)`` -- one Point per usable record, plus the stems of
     any record in the family that carries no data.

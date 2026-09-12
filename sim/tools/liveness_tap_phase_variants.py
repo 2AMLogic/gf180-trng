@@ -103,15 +103,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
-    RecordError,
     _lags,
     _loglog_slope,
+    load_variants_by_glob,
     reference_spread,
     window_geometry,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-RECORDS = REPO_ROOT / "sim" / "records"
 TB = REPO_ROOT / "sim" / "tb"
 
 #: The one corner this experiment is run at. Like #51's, it is a mechanism
@@ -264,22 +263,7 @@ class Variant:
 
 
 def load_variants() -> list[Variant]:
-    out: list[Variant] = []
-    for label, glob, manifest, difference in VARIANTS:
-        matches = []
-        for path in sorted(RECORDS.glob(glob)):
-            rec = Record(path)
-            if rec.corner != CORNER or "sigma_1" not in rec.values:
-                continue
-            matches.append(rec)
-        if not matches:
-            raise RecordError(
-                f"variant {label!r}: no sim/records/{glob} record at {CORNER} carries a "
-                "sigma_1, so this variant cannot be compared"
-            )
-        # Latest record wins; earlier ones stay on file as append-only evidence.
-        out.append(Variant(label, matches[-1], manifest, difference))
-    return out
+    return load_variants_by_glob(VARIANTS, CORNER, Variant)
 
 
 def classify(by_key: dict[str, Variant], ref_spread_1: float) -> tuple[str, str]:

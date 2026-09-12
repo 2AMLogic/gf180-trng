@@ -50,7 +50,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import power_rollup as pr  # noqa: E402
-from starved_cell_jitter_energy import Record, RecordError, _lags, _loglog_slope  # noqa: E402
+from starved_cell_jitter_energy import (  # noqa: E402
+    Record,
+    RecordError,
+    _lags,
+    _loglog_slope,
+    load_variants_by_glob,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -144,26 +150,7 @@ class Variant:
 
 
 def load_variants() -> list[Variant]:
-    out: list[Variant] = []
-    for label, glob in VARIANTS:
-        matches = []
-        for path in sorted(RECORDS.glob(glob)):
-            rec = Record(path)
-            if rec.corner != CORNER or "sigma_1" not in rec.values:
-                continue
-            matches.append(rec)
-        if not matches:
-            raise RecordError(
-                f"variant {label!r}: no sim/records/{glob} record at {CORNER} carries a "
-                "sigma_1, so this variant cannot be compared"
-            )
-        # Latest record wins; earlier ones (including failed/superseded runs)
-        # stay on file as append-only evidence. A failed run's record has no
-        # sigma_1 value (measurements come back "no data"), so it never
-        # reaches this filter in the first place -- see the "sigma_1" in
-        # rec.values check above.
-        out.append(Variant(label, matches[-1]))
-    return out
+    return load_variants_by_glob(VARIANTS, CORNER, Variant)
 
 
 # --------------------------------------------------------------------------
