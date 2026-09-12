@@ -91,6 +91,42 @@ python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
 python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
 ```
 
+## The design's own `max_transition` violation (#233 → #237)
+
+Asking whether the six trunk ports violate the library's `max_transition`
+meant asking OpenSTA for that check at all, for the first time here — and the
+answer for the *design* is that **9 of the 15 corners violate it**, on nets
+none of the six trunks touches. `run_sta.py` reports it as three metrics per
+record (`max_slew_limit_ns`, `max_slew_slack_ns`, `max_slew_violations`);
+`max_transition_probe.py` is the decomposition behind them, and the testbench
+`sim/characterization-digital-sta-area-power.md` §2a's verdict rests on.
+
+Per corner, in one OpenROAD session over the same committed DEF and the same
+constraints the sweep uses: every violating pin resolved to its net, that
+net's driver and load count; the worst setup slack of any path *through* a
+violating pin (against the design-wide worst, which turns out to be the same
+path); the violating cells' share of total power; the library's sibling
+`max_capacitance` check; the design's own worst net fanout; and the
+`set_max_transition` at the P&R corner that would be needed for every corner
+to come out clean, derived from the measured slews rather than assumed.
+
+```sh
+# all 15 corners, ~4 min, no records minted
+python3 sim/tb/digital-sta-power/max_transition_probe.py
+python3 sim/tb/digital-sta-power/max_transition_probe.py --liberty tt_025C_3v30 --rc max
+
+# the gate: fails if the violation spreads to a new net, lands on a trunk
+# net, stops closing setup, or grows its power share
+python3 sim/tb/digital-sta-power/max_transition_probe.py --check
+```
+
+The decision was **not** to rebuild: the constraint that would fix this
+cannot be stated through `klt place-and-route`'s request contract today
+(klayout-tools#1709), so the residual is accepted, bounded and gated instead.
+#240 is the follow-up that constrains and re-mints once it can be stated.
+`sim/tools/digital_corner_characterization.py --check` gates the record-side
+half with no PDK needed.
+
 Each record's raw output is the generated Tcl and the full OpenROAD log for
 both sessions. The SPEF (3.3 MB per corner) is **not** committed; its sha256,
 byte size and summed capacitance are, so a re-run is checkable against the

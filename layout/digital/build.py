@@ -238,6 +238,45 @@ POWER = {
     ],
 }
 
+#: The timing constraints this run is placed and routed against.
+#:
+#: **There is no `set_max_transition` / `set_max_fanout` entry here, and its
+#: absence is a recorded decision (#237), not an oversight.** The routed DEF
+#: this script commits violates the library's own `max_transition` at nine of
+#: the fifteen corners `sim/tb/digital-sta-power/run_sta.py` sweeps -- four
+#: high-fanout nets inside `u_interface`/`u_conditioner`, measured per net and
+#: per corner by `sim/tb/digital-sta-power/max_transition_probe.py` and
+#: written up in `sim/characterization-digital-sta-area-power.md` section 2a.
+#: OpenROAD's own `repair_design` (which `klt place-and-route` runs after
+#: global placement) would fix exactly that, given a tighter target than the
+#: `CORNER` deck's own 13.2 ns limit: the probe derives the number it would
+#: need, 11.21 ns at this corner, from the measured cross-corner slews.
+#:
+#: It cannot be stated. `klt place-and-route`'s request contract exposes
+#: exactly two constraint fields -- `clock_port` and `clock_period_ns` --
+#: with no SDC passthrough and no design-rule constraint of any kind (its own
+#: `_validate_constraints` accepts nothing else, and nothing else is ever
+#: emitted into the Tcl it generates). Filed generically upstream as
+#: klayout-tools#1709. When it lands, #240 is the follow-up that adds the
+#: constraint here, re-runs this script, and re-mints the sweep against the
+#: new DEF; do not hand-edit the committed DEF to get there.
+#:
+#: `design/synth.py` cannot state it on this script's behalf either: `klt
+#: synthesize`'s `request.constraints` reads exactly one field,
+#: `clock_period_ns` (ABC's `-D` delay target), and the `abc -constr` file it
+#: writes is two fixed lines from `klt`'s own per-library table. That is the
+#: right place for the gap to be, though -- the violation is a placement and
+#: drive-strength outcome, and `repair_design` is where the flow first has
+#: the parasitics to repair it.
+#:
+#: A `set_max_fanout` is *separately* not wanted, on this library's own
+#: evidence rather than on availability: `gf180mcu_fd_sc_mcu9t5v0` declares no
+#: `default_max_fanout` and no per-pin `max_fanout` at all, and this design's
+#: highest-fanout net (`rst_n`, 201 loads -- nearly six times the largest of
+#: the four offenders) is clean at every corner while a 13-load net violates
+#: at seven. Fanout does not predict the violation here; load capacitance
+#: against drive strength does, which is what `max_transition` already
+#: measures.
 CONSTRAINTS = {"clock_port": "clk", "clock_period_ns": 50.0}
 SEED = 1
 TARGET_STAGE = "route"

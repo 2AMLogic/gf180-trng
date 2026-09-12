@@ -15,8 +15,8 @@ It needs no PDK, no ``openroad`` and no ``klt``, writes nothing, and is what
 ``npm run check:spec`` runs to keep
 ``sim/characterization-digital-sta-area-power.md`` from going stale.
 
-The three legs
---------------
+The four legs
+-------------
 **Timing.** Per-corner worst setup and hold slack against the 50 ns (20 MHz)
 constraint the place-and-route run itself used, and the Fmax each corner
 supports (bisected on the clock period, not extrapolated). The binding corner
@@ -31,6 +31,14 @@ cell area, so they are directly comparable; the *die* area in
 ``layout/digital/reports/place_and_route.json`` is not comparable to either
 (it follows arithmetically from that run's own 40 % utilization target) and
 this tool refuses to present it as if it were.
+
+**Design rules.** The library's own `max_transition` check across the
+family — how many corners violate it, the worst corner and slack, and how
+many violating pins sit on one of #233's six inter-region trunk nets
+(none). This is #237's accepted residual, pinned in ``RECORDED`` so the
+acceptance is an enforced invariant rather than a paragraph in the document;
+the per-net decomposition behind it needs the PDK and lives in
+``sim/tb/digital-sta-power/max_transition_probe.py``.
 
 **Power.** Per-corner total, per-group and leakage power at two operating
 points -- the 20 MHz implementation constraint and [DR-0003]'s ratified 1 MHz
@@ -99,6 +107,20 @@ RECORDED = {
     "leakage_max_w": 1.42052e-5,
     "leakage_max_corner": "ff_125C_3v60",
     "leakage_max_current_a": 3.94589e-6,
+    # Section 2a's accepted residual (#237). The design violates the
+    # library's own `max_transition` at nine of the fifteen corners, and that
+    # was decided to be *accepted and bounded* rather than fixed, because the
+    # constraint that would fix it cannot be stated through the build flow's
+    # only interface today. Pinned here so the acceptance is an enforced
+    # invariant rather than a paragraph: a re-built DEF that moves any of
+    # these fails this gate and forces section 2a to be re-read.
+    "max_transition_violating_corners": 9,
+    "max_transition_worst_slack_ns": -1.5930,
+    "max_transition_worst_corner": "tt_025C_3v30/rc-max",
+    "max_transition_worst_violating_pins": 94,
+    # No violating pin is on one of the six #233 trunk nets, at any corner --
+    # the evidence that this is pre-existing and not the interface load's.
+    "interface_load_max_slew_violations": 0,
 }
 
 #: Fractional tolerance for the numeric gates above. The analysis is
@@ -241,6 +263,70 @@ def timing(records: list[Record]) -> dict:
             for r in records
         ),
         "unconstrained_endpoints": records[0].v("unconstrained_endpoints"),
+    }
+
+
+def max_transition(records: list[Record]) -> dict:
+    """The library's own max-transition check, across the family (#237).
+
+    Records from the live family carry `max_slew_limit_ns` /
+    `max_slew_slack_ns` / `max_slew_violations` (the library's
+    `max_transition` constraint, asked for the first time by [#233]) and
+    `interface_load_max_slew_violations` (how many of the six #233 trunk nets
+    carry a violating pin). This aggregates them into the four numbers
+    `sim/characterization-digital-sta-area-power.md` section 2a's verdict
+    quotes, so the accepted residual risk is derived from the records rather
+    than transcribed into prose and left to rot.
+
+    Slack is `limit - slew`: negative means the design's worst transition is
+    outside the range the library characterises its delay and internal-energy
+    tables over, on the pins that check names.
+
+    Records that predate the check are **skipped, not faulted**: the
+    `2026-08-17` and `2026-08-18` families are still committed, still valid,
+    and simply never asked OpenSTA the question, so demanding the metric of
+    them would make this tool refuse to read evidence that is accurate about
+    what it does contain. `records_with_check` says how many were read, and
+    `check()` below is what fails when the *live* family stops carrying it.
+    """
+    checked = [r for r in records if "max_slew_slack_ns" in r.values]
+    if not checked:
+        return {
+            "rows": [],
+            "records_with_check": 0,
+            "records_total": len(records),
+            "violating_corners": None,
+            "worst_corner": None,
+            "worst_slack_ns": None,
+            "worst_violating_pins": None,
+            "on_trunk_nets_max": None,
+        }
+    worst = min(checked, key=lambda r: r.v("max_slew_slack_ns"))
+    return {
+        "rows": [
+            {
+                "corner": r.corner,
+                "limit_ns": r.v("max_slew_limit_ns"),
+                "slack_ns": r.v("max_slew_slack_ns"),
+                "worst_slew_ns": r.v("max_slew_limit_ns") - r.v("max_slew_slack_ns"),
+                "violations": int(r.v("max_slew_violations")),
+                "on_trunk_nets": int(r.v("interface_load_max_slew_violations")),
+            }
+            for r in checked
+        ],
+        "records_with_check": len(checked),
+        "records_total": len(records),
+        "violating_corners": sum(
+            1 for r in checked if r.v("max_slew_violations") > 0
+        ),
+        "worst_corner": worst.corner,
+        "worst_slack_ns": worst.v("max_slew_slack_ns"),
+        "worst_violating_pins": int(
+            max(r.v("max_slew_violations") for r in checked)
+        ),
+        "on_trunk_nets_max": int(
+            max(r.v("interface_load_max_slew_violations") for r in checked)
+        ),
     }
 
 
@@ -521,6 +607,27 @@ def report(records: list[Record], with_estimate: bool) -> None:
           f"{t['unconstrained_endpoints']:.0f}")
     print()
 
+    m = max_transition(records)
+    print("== The library's own max_transition check (section 2a, #237) ==")
+    if not m["rows"]:
+        print("  no live record carries the check -- it postdates this family")
+    else:
+        print(f"{'corner':28s} {'limit':>8s} {'worst slew':>11s} {'slack':>9s} "
+              f"{'pins':>6s} {'on trunk':>9s}")
+        for row in m["rows"]:
+            print(f"{row['corner']:28s} {row['limit_ns']:7.2f}n "
+                  f"{row['worst_slew_ns']:10.4f}n {row['slack_ns']:8.4f}n "
+                  f"{row['violations']:6d} {row['on_trunk_nets']:9d}")
+        print(f"  {m['violating_corners']} of {m['records_with_check']} corners "
+              f"violate; worst {m['worst_corner']} at {m['worst_slack_ns']:.4f} "
+              f"ns ({m['worst_violating_pins']} pins)")
+        print(f"  on a #233 trunk net, worst corner: {m['on_trunk_nets_max']} "
+              "(pre-existing, not the interface load's)")
+        print("  accepted and bounded, not fixed -- see section 2a, and")
+        print("  `python3 sim/tb/digital-sta-power/max_transition_probe.py` for")
+        print("  the per-net decomposition this summary is the record-side half of.")
+    print()
+
     print("== Area (standard-cell area; NOT die area) ==")
     print(f"  measured, placed  {a['measured_cell_area_um2']:10.1f} um^2  "
           f"({a['measured_instances']} instances, {a['measured_library']}, "
@@ -664,6 +771,32 @@ def check(records: list[Record]) -> list[str]:
             f"leakage now binds at {p['max_leakage_corner']}, "
             f"RECORDED says the {RECORDED['leakage_max_corner']} liberty corner"
         )
+
+    # Section 2a's accepted residual (#237). Gated in both directions on
+    # purpose: fewer violations than recorded is good news that still makes
+    # the document wrong, and a document that overstates a known defect is
+    # no more trustworthy than one that understates it.
+    m = max_transition(records)
+    if m["records_with_check"] != len(records):
+        fails.append(
+            f"{m['records_with_check']} of {len(records)} live records carry "
+            "the library's max_transition check (`max_slew_slack_ns`); section "
+            "2a's accepted residual is stated over the whole family, so a "
+            "partial family cannot support it -- re-run "
+            "`sim/tb/digital-sta-power/run_sta.py` for the missing corners"
+        )
+    else:
+        equal("max-transition violating corners", m["violating_corners"],
+              RECORDED["max_transition_violating_corners"])
+        equal("max-transition worst corner", m["worst_corner"],
+              RECORDED["max_transition_worst_corner"])
+        close("max-transition worst slack", m["worst_slack_ns"],
+              RECORDED["max_transition_worst_slack_ns"])
+        equal("max-transition worst violating pin count",
+              m["worst_violating_pins"],
+              RECORDED["max_transition_worst_violating_pins"])
+        equal("violating pins on a #233 trunk net", m["on_trunk_nets_max"],
+              RECORDED["interface_load_max_slew_violations"])
     return fails
 
 
@@ -686,6 +819,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         payload = {
             "timing": timing(records),
+            "max_transition": max_transition(records),
             "area": area(records),
             "power": power(records),
         }

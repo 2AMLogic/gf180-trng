@@ -34,6 +34,25 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 import digital_corner_characterization as dcc  # noqa: E402
 
 
+def _max_slew_lines(max_slew: tuple[float, float, int, int] | None) -> str:
+    """The four max-transition Result rows, or nothing at all.
+
+    Nothing at all is the interesting case: the ``2026-08-17``/``2026-08-18``
+    families are committed, valid and carry none of these, because the check
+    postdates them (#233). Anything that reads this family has to treat their
+    absence as "this record predates the question" rather than as a defect.
+    """
+    if max_slew is None:
+        return ""
+    limit, slack, pins, on_trunk = max_slew
+    return (
+        f"- `max_slew_limit_ns`: {limit:.6e}\n"
+        f"- `max_slew_slack_ns`: {slack:.6e}\n"
+        f"- `max_slew_violations`: {pins:.6e}\n"
+        f"- `interface_load_max_slew_violations`: {on_trunk:.6e}\n"
+    )
+
+
 def synthetic_record(
     stem: str,
     liberty: str,
@@ -47,11 +66,17 @@ def synthetic_record(
     cell_area_um2: float = 113_087.9,
     p_1mhz_w: float = 5e-4,
     leakage_w: float = 1e-6,
+    max_slew: tuple[float, float, int, int] | None = None,
 ) -> str:
     """One record in the shape ``run_sta.py`` writes, with only the fields
     this tool reads. Deliberately hand-written rather than generated from the
     driver: a test that builds its input with the same code path as
-    production cannot catch a format change in that path."""
+    production cannot catch a format change in that path.
+
+    ``max_slew`` is ``(limit_ns, slack_ns, violating_pins, on_trunk_nets)``
+    and defaults to **absent**, matching the ``2026-08-17``/``2026-08-18``
+    families that predate the library max-transition check (#233): a record
+    without it is a legitimate record, not a malformed one."""
     return f"""---
 record: {stem}
 date: 2026-08-17T00:00:00Z
@@ -113,7 +138,7 @@ wall_time: 1.0s
 - `unconstrained_endpoints`: 6.800000e+01
 - `inputs_missing_delay`: 4.200000e+01
 - `outputs_missing_delay`: 6.600000e+01
-"""
+{_max_slew_lines(max_slew)}"""
 
 
 class SyntheticRecordTests(unittest.TestCase):
@@ -200,6 +225,71 @@ class SyntheticRecordTests(unittest.TestCase):
         p = dcc.power(dcc.load(tmp))
         self.assertEqual(p["max_1mhz_corner"], "ff_n40C_3v60/rc-min")
         self.assertEqual(p["max_leakage_corner"], "ff_125C_3v60/rc-max")
+
+
+class MaxTransitionTests(unittest.TestCase):
+    """Section 2a's accepted residual (#237), read off the records."""
+
+    def test_records_predating_the_check_are_skipped_not_faulted(self):
+        # The 2026-08-17/2026-08-18 families carry none of these metrics and
+        # are still valid evidence about the DEF they name. Demanding the
+        # metric of them would make this tool refuse to read them at all.
+        tmp = self._dir([
+            synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
+                             "nom"),
+        ])
+        m = dcc.max_transition(dcc.load(tmp))
+        self.assertEqual(m["records_with_check"], 0)
+        self.assertEqual(m["records_total"], 1)
+        self.assertIsNone(m["worst_corner"])
+        self.assertEqual(m["rows"], [])
+
+    def test_a_partial_family_fails_the_gate_rather_than_being_averaged(self):
+        tmp = self._dir([
+            synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
+                             "nom", max_slew=(6.0, -1.593, 94, 0)),
+            synthetic_record("2026-08-17-digital-sta-power-02", "ss_125C_3v00",
+                             "max"),
+        ])
+        fails = dcc.check(dcc.load(tmp))
+        self.assertTrue(any("live records carry" in f for f in fails), fails)
+
+    def test_worst_corner_is_the_minimum_slack_not_the_most_pins(self):
+        # Slack and pin count are different orderings and both are reported;
+        # naming the "worst" corner by pin count would quote one record's
+        # slack against another record's corner.
+        tmp = self._dir([
+            synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
+                             "nom", max_slew=(6.0, -1.593, 46, 0)),
+            synthetic_record("2026-08-17-digital-sta-power-02", "ff_125C_3v60",
+                             "max", max_slew=(5.2, -1.588, 94, 0)),
+        ])
+        m = dcc.max_transition(dcc.load(tmp))
+        self.assertEqual(m["worst_corner"], "tt_025C_3v30/rc-nom")
+        self.assertAlmostEqual(m["worst_slack_ns"], -1.593)
+        self.assertEqual(m["worst_violating_pins"], 94)
+        self.assertEqual(m["violating_corners"], 2)
+
+    def test_worst_slew_is_derived_from_limit_and_slack(self):
+        tmp = self._dir([
+            synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
+                             "nom", max_slew=(6.0, -1.593, 46, 0)),
+        ])
+        row = dcc.max_transition(dcc.load(tmp))["rows"][0]
+        self.assertAlmostEqual(row["worst_slew_ns"], 7.593)
+
+    def test_a_clean_corner_is_not_counted_as_violating(self):
+        tmp = self._dir([
+            synthetic_record("2026-08-17-digital-sta-power-01", "ss_n40C_3v00",
+                             "min", max_slew=(11.2, 2.7907, 0, 0)),
+        ])
+        self.assertEqual(dcc.max_transition(dcc.load(tmp))["violating_corners"], 0)
+
+    def _dir(self, records: list[str]) -> Path:
+        tmp = Path(tempfile.mkdtemp())
+        for i, text in enumerate(records, start=1):
+            (tmp / f"2026-08-17-digital-sta-power-{i:02d}.md").write_text(text)
+        return tmp
 
 
 class CommittedFamilyTests(unittest.TestCase):

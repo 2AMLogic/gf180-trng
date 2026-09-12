@@ -47,10 +47,17 @@ findings:
    at the tightest of them, and neither Fmax nor worst slack moves
    measurably (§2a). Asking that question for the first time, however, also
    asked OpenSTA for the design's *own* max-transition check — and **9 of
-   the 15 corners violate it, at 33–94 internal `u_interface` pins, worst
-   −1.59 ns at `tt_025C_3v30`/`max`** (§2a). That is pre-existing, present
-   with no interface load at all, on none of the six trunk nets, and filed
-   as [#237] rather than absorbed here.
+   the 15 corners violate it, at 33–94 internal pins, worst −1.59 ns at
+   `tt_025C_3v30`/`max`** (§2a). That is pre-existing, present with no
+   interface load at all, and on none of the six trunk nets. [#237] then
+   measured it per net and per corner: **four high-fanout nets** across
+   `u_interface` and `u_conditioner`, carrying ≤ 1.84 % of total power — but
+   the design's critical path passes through them at every violating corner,
+   so §2's +21.94 ns margin is a margin on an *extrapolated* path. The
+   verdict is **constrain, but the flow cannot state the constraint today**
+   (§2a): it is accepted, bounded, and gated in both directions rather than
+   fixed, with [klayout-tools#1709][klt1709] upstream and [#240] the
+   follow-up here.
 
 **This document is an ordinary summary, not evidence.** Every number below
 cites the `sim/records/` stem family that produced it or the committed
@@ -346,19 +353,149 @@ not:
 | `ff_n40C_3v60`/`min,nom` | 4.4 ns | +0.4511, +0.2320 ns | 0 | 0 |
 | `ff_n40C_3v60`/`max` | 4.4 ns | **−0.0183 ns** | 33 | 0 |
 
-The violators are internal to `u_interface`: at the worst corner they are
-the `S` (select) pins of a block of `mux2_1` cells on one net,
-`u_interface/_1190_`, which `layout/digital/trng_top.pnr.v` shows driven by
-a single `nor2_2` into **33 load pins**. This is **pre-existing and not
-[#233]'s**: the unconstrained `baseline` session in the probe table above
-reports the identical worst max-slew slack, and
-`interface_load_max_slew_violations` is 0 at every corner — none of the
+This is **pre-existing and not [#233]'s**: the unconstrained `baseline`
+session in the probe table above reports the identical worst max-slew slack,
+and `interface_load_max_slew_violations` is 0 at every corner — none of the
 violating pins is on one of the six trunk nets. It was simply never asked
-about before. Per [#233]'s fourth acceptance criterion it is written up with
-its own follow-up, [#237], rather than absorbed here; the honest reading of
-§2's "+21.9 ns of slack" is that on the paths through those pins, the
-library's delay and energy tables are being extrapolated beyond their
-characterised slew range.
+about before. Per [#233]'s fourth acceptance criterion it was written up with
+its own follow-up, [#237], rather than absorbed here; the next subsection is
+that follow-up's answer.
+
+### The verdict ([#237]): constrain — and the flow cannot say it yet
+
+A violation count says which corners are unhappy and nothing else. Deciding
+what to do needed four more things — which nets, whether the reported timing
+and power ride on them, what it costs, and what a constraint would have to
+say — so [#237] measured them.
+`sim/tb/digital-sta-power/max_transition_probe.py` is that measurement: one
+OpenROAD session per corner over the same committed DEF, the same 50 ns
+constraint and the same six trunk `set_input_transition` lines the sweep
+itself uses, reproducing every record's `max_slew_slack_ns` to the digit and
+then decomposing it. `--check` gates the findings below.
+
+**One structure, four nets — and not all of it is in `u_interface`.** Every
+violating pin at every corner resolves to one of four nets, each a
+single-cell driver into a large load-pin count:
+
+| net | pins on net | driver | corners it violates at | worst violating pins |
+|---|---:|---|---:|---:|
+| `u_interface/_0999_` | 34 | `u_interface/_1760_/Z` (`or2_1`) | 2 | 34 |
+| `u_interface/_1190_` | 33 | `u_interface/_2212_/ZN` (`nor2_2`) | **9** | 33 |
+| `u_conditioner/_095_` | 14 | `u_conditioner/_209_/ZN` (`xnor2_1`) | 2 | 14 |
+| `u_interface/_0606_` | 13 | `u_interface/_1304_/ZN` (`nor2_1`) | 7 | 13 |
+
+`u_interface/_1190_` — the `mux2_1` select net [#237] traced by hand — is the
+one that violates everywhere; the other three join it as the corner tightens,
+and the 94-pin worst corners are exactly 34 + 33 + 14 + 13. [#237]'s own
+issue text called the violators "internal to `u_interface`", which the
+measurement corrects: `u_conditioner/_095_` is not. What the four have in
+common is not a sub-block but a shape — a low-drive cell into a wide fanout —
+which is a drive-strength outcome of synthesis + place-and-route, not of any
+spec row or RTL structure.
+
+**The design's critical path *is* an extrapolated path.** At all nine
+violating corners, the worst setup slack of any path passing through a
+violating pin (`report_checks -through`, over the whole violator set) equals
+the design-wide worst setup slack to every digit — including the +21.935 ns
+at `ss_125C_3v00`/`rc-max` that §2 quotes as this design's timing margin. So
+the honest reading of that margin is not "21.9 ns of slack on a path we
+understand"; it is "21.9 ns of slack on a path whose cell delays are
+looked up outside the range the library characterises". It is still a large
+margin — a delay error would have to consume 44 % of the 50 ns period to
+close it — but the qualifier belongs on the number.
+
+**The cost, priced.** The instances owning a violating pin (plus the four
+drivers) carry at most **1.84 %** of total power (`ff_125C_3v60`/`rc-max`),
+so the extrapolated internal-energy tables cannot move §4's figures
+materially. The same probe finds the library's sibling `max_capacitance`
+check violated too, at **11 of 15 corners** (worst 6 pins, −0.154 pF against
+a 0.373 pF limit at `ff_125C_3v60`/`rc-max`) — the same four nets, the same
+cause, and equally never asked about before.
+
+**What a constraint would have to say.** `layout/digital/build.py` reads
+exactly one liberty deck (`ss_125C_3v00`), so OpenROAD's `repair_design` —
+which the flow already runs after global placement, and which exists to fix
+precisely this — only ever sees that deck's own 13.2 ns limit. Meeting it is
+not enough, because the limit and the slew do not scale together across the
+shipped decks: the probe derives, from the measured per-corner slews, that
+the slew at `ss_125C_3v00` would have to be held to **11.21 ns** for every
+corner to come out clean, binding at `ff_125C_3v60`/`rc-min`. That is 84.9 %
+of the implementation deck's own limit — a derived, guard-banded number, not
+a library constant.
+
+| corner | limit | worst slew | slew ÷ P&R corner | required P&R-corner slew |
+|---|---:|---:|---:|---:|
+| `ss_125C_3v00`/`min,nom,max` | 13.2 ns | 13.04 … 14.65 ns | 1.000 | 13.20 ns |
+| `ss_n40C_3v00`/`min,nom,max` | 11.2 ns | 8.41 … 9.46 ns | 0.645 … 0.646 | 17.33 … 17.36 ns |
+| `tt_025C_3v30`/`min,nom,max` | 6.0 ns | 6.76 … 7.59 ns | 0.518 | 11.58 ns |
+| `ff_125C_3v60`/`min,nom,max` | 5.2 ns | 6.05 … 6.79 ns | 0.463 … 0.464 | **11.21 … 11.22 ns** |
+| `ff_n40C_3v60`/`min,nom,max` | 4.4 ns | 3.95 … 4.42 ns | 0.302 … 0.303 | 14.53 … 14.59 ns |
+
+**The verdict: constrain — and it cannot be stated today.** The right
+treatment is a `set_max_transition` at the implementation corner, below the
+11.21 ns derived above (`repair_design` optimises against
+placement-estimated parasitics, not the post-route extraction this table is
+built from, so the real run needs margin under that number and then has to
+verify rather than assume). `klt place-and-route`'s request contract exposes
+exactly two constraint fields, `clock_port` and `clock_period_ns`, with no
+SDC passthrough and no design-rule constraint of any kind — the optimiser
+that would act on it is in the generated flow and cannot be aimed at
+anything. Filed generically upstream as [klayout-tools#1709][klt1709] — whose
+third option, a multi-corner `repair_design`, would remove the need to derive
+a scalar by hand at all; [#240] is the follow-up here that states the
+constraint, rebuilds and re-mints once it lands.
+`layout/digital/build.py`'s `CONSTRAINTS` block carries the same note at the
+point of use.
+
+**Nor can the synthesis stage say it instead.** [#237] asks about
+"synthesis/P&R time", so `design/synth.py`'s side was checked too, and it is
+the same answer for the same reason: `klt synthesize`'s
+`request.constraints` reads exactly one field, `clock_period_ns`, which it
+turns into ABC's `-D` picosecond delay target. The `abc -constr` file the
+command writes is two fixed lines (`set_driving_cell` / `set_load`) built
+from `klt`'s own per-library table, not from anything the request can
+influence — so there is no synthesis-side surface for a design-rule
+constraint either. That is the correct place for it to be missing, in any
+case: the violation is created by drive-strength and placement decisions
+that the mapped netlist does not fix, and `repair_design` after global
+placement is where the flow already has the information to repair it.
+
+**`set_max_fanout` is rejected on its own merits, not on availability.**
+`gf180mcu_fd_sc_mcu9t5v0` declares no `default_max_fanout` and no per-pin
+`max_fanout` anywhere, so there is no library limit to enforce and
+`sta::max_fanout_check_limit` returns the 1e30 sentinel. More to the point,
+fanout does not predict this violation: the design's highest-fanout net is
+`rst_n` at **201 load pins** — nearly six times the largest of the four —
+and it is clean at every corner, while a 13-load net violates at seven
+(77 nets carry ≥ 16 loads in all). What binds is load
+capacitance against drive strength, which is what `max_transition` already
+measures. (`sta::max_fanout_violation_count` is also not safe to call — it
+takes OpenROAD down with SIGSEGV inside `sta::CheckFanouts::check` on this
+design at every corner, which is why the probe walks the topology instead;
+noted in the upstream issue.)
+
+**What the accepted residual is, and what holds it in place.** No spec row is
+affected: setup and hold close at every corner, and [DR-0003]'s ratified raw
+rate needs 1 MHz against a 35.6 MHz Fmax floor. The affected nets sit inside
+`u_interface`'s register-file logic and `u_conditioner`'s CRC32 — both
+*downstream* of the raw tap that rate is defined at, and none of them on the
+sampler's own path. What is accepted is narrower and precise: the timing and
+power this document reports on paths through those pins are read from the
+library outside the slew range it characterises, and the design's critical
+path is one of them. That acceptance
+is gated rather than asserted, in both halves and in both directions —
+`max_transition_probe.py --check` fails if the violation spreads to a net
+outside the four, lands on a trunk net, stops closing setup, or grows its
+power share; `sim/tools/digital_corner_characterization.py --check` (the
+PDK-free gate CI runs) fails if the record family's violating-corner count,
+worst corner, worst slack or worst pin count moves *in either direction*,
+because a document that overstates a known defect is no more trustworthy
+than one that understates it.
+
+No new record family is minted by this verdict, and that is the point: the
+decision was not to rebuild, so the DEF under test is unchanged and the
+2026-09-12 records still describe it exactly. [#240] is where a new family
+gets minted.
 
 ### Permanent, not a one-off scenario
 
@@ -767,6 +904,12 @@ python3 sim/tools/digital_corner_characterization.py --check
 # transition is in (~1 min; needs openroad + the PDK)
 python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
 python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
+
+# §2a's max-transition verdict (#237), per net and per corner: which nets,
+# what a constraint would have to say, and what the residual costs
+# (~4 min, all 15 corners; needs openroad + the PDK)
+python3 sim/tb/digital-sta-power/max_transition_probe.py
+python3 sim/tb/digital-sta-power/max_transition_probe.py --check
 ```
 
 Records: `sim/records/2026-09-12-digital-sta-power-{01..15}.md`, one per
@@ -796,9 +939,11 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#232]: https://github.com/2AMLogic/gf180-trng/issues/232
 [#233]: https://github.com/2AMLogic/gf180-trng/issues/233
 [#237]: https://github.com/2AMLogic/gf180-trng/issues/237
+[#240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
+[klt1709]: https://github.com/2AMLogic/klayout-tools/issues/1709
 [DR-0003]: ../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0006]: ../spec/decision-records/DR-0006-ro-jitter-characterization-pvt-sampling-strategy.md
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
