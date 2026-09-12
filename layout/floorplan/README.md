@@ -1086,21 +1086,51 @@ four branches carry no shared series impedance anywhere on this die.
 `vss` is the one deliberately shared return (phase 1's own net table), and
 it is the one trunk that spans the row.
 
-`vddd` is the one declared supply with **no drawn wire at all**, and that is
-also deliberate. Phase 1 declares its connection into `digital` under
+**Decision record ([#224](https://github.com/2AMLogic/gf180-trng/issues/224),
+2026-09):** through issue #222, `vddd` was the one declared supply with **no
+drawn wire at all**. Phase 1 declared its connection into `digital` under
 `implicit_regions`, not `endpoints`, because
-`layout/digital/trng_top.lvs_reference.spice` declares no `vddd` pin to wire
-against (it is `SPECIALNETS`-only — see
-[`layout/digital/README.md#power`](../digital/README.md#power)). The
-physical tie points are real and reachable (`trng_top.def`'s own `PINS`
-section carries `vddd` and `vss` as Metal5 PDN straps), but drawing them
-would make the layout merge two nets the phase-1 reference keeps
-separate — so the LVS this phase is held to would fail on geometry that is
-*more* correct, not less. The same reasoning applies to `digital`'s own
-`vss` return. Reconciling both is
-[#224](https://github.com/2AMLogic/gf180-trng/issues/224), and the decision
-there is about `digital`'s own reference interface, not about this
-geometry.
+`layout/digital/trng_top.lvs_reference.spice` declared no `vddd` pin to wire
+against (it was `SPECIALNETS`-only). The physical tie points were always
+real and reachable (`trng_top.def`'s own `PINS` section carries `vddd` and
+`vss` as Metal5 PDN straps), but drawing them against that reference would
+have made the layout merge two nets the reference kept separate — so the LVS
+this phase is held to would have failed on geometry that was *more*
+correct, not less. The same reasoning applied to `digital`'s own `vss`
+return.
+
+**#224 resolved this on the reference side (chose "promote `vddd`/`vss` to
+real `.SUBCKT trng_top` pins," not "leave the tie undrawn permanently"):**
+`layout/digital/lvs.py` now reads the two supply net names out of the
+committed `place_and_route.json`'s own `power` block and promotes both to
+real top-level pins on both sides of `digital`'s own standalone LVS (see
+that script's own module docstring's "`vddd`/`vss` are real top-level pins
+too" section and [`layout/digital/README.md#lvs`](../digital/README.md#lvs)
+for the re-run report). `design/floorplan_netlist.py` declares both as
+ordinary `endpoints` of `digital` — the `implicit_regions` field is gone
+entirely, because there is no longer a connection this module cannot
+mechanically check against a real `.SUBCKT` pin. `layout/floorplan/
+interregion.py` draws both ties: a Metal3 riser inside the
+`combiner_sampler | digital` isolation channel, transitioning to Metal4/
+Via4/Metal5 only once it is past `digital`'s own boundary, docking against
+the lowest of that net's own PDN-strap bands (`digital_pdn_strap_bands`) —
+see that module's own "The `digital` PDN tie" docstring section for why
+Metal5 specifically (it is the one layer nothing else this floorplan draws
+uses, so the hop cannot collide with any other net's geometry). The
+rejected alternative — leaving the tie undrawn and documenting it as
+permanent — was judged defensible only for as long as this stays a
+floorplan rather than something intended for tape-out, which this
+repository's own stated goal (a working, verified TRNG block) already rules
+out as the long-term answer.
+
+With both ties now drawn, `vss` no longer promotes twice at the composed
+`klt extract` step: `digital`'s own PDN ground is the *same* net as the
+analog `vss` return now, not a same-labelled but electrically distinct one
+(see `layout/floorplan/floorplan.py`'s own `DUPLICATE_PIN_NAME_PROMOTIONS`,
+now empty). All four supply branches (`vddr1`/`vddr2`/`vdd`/`vddd`) stay
+electrically separate up to their own not-yet-drawn star point — verified by
+the same composed LVS run below finding no `net.merged` between any two of
+them.
 
 ### The shared `vss` return's IR-drop cost, measured — issue #234
 
@@ -1138,7 +1168,7 @@ reproducible with `python3 sim/tools/vss_trunk_ir_drop.py`.
 |---|---|
 | unrouted floorplan, no declared interface (`klt extract --top trng_floorplan`) | **2588** |
 | composed reference's own `.SUBCKT trng_floorplan` header | **112** |
-| routed floorplan, held to that declared interface | **108** |
+| routed floorplan, held to that declared interface | **107** (was 108 before [#224][gf224]) |
 
 The 2588 is not a meaningful interface — it is every labelled net in the
 design, and `digital`'s own DEF→GDS merge draws a text for essentially
@@ -1147,21 +1177,32 @@ every routed net it has. The check `floorplan.py` actually applies gives
 the standard cells (`--abstract-cells`), exactly as `layout/digital/lvs.py`
 already does standalone.
 
-The gap between 112 and 108 is a **tool limitation, not missing wiring**,
+The gap between 112 and 107 is a **tool limitation, not missing wiring**,
 and it is derived rather than remembered — `floorplan.py` computes the
 expected number and fails if the extraction disagrees:
 
 - KLayout joins *every* text label found on one electrical net into a single
-  comma-separated net name. Five of the declared pins land on nets that
-  already carry a label from a region's own cells (`en1` → `en,en1`,
-  `en2`, `vddr1` → `vddr,vddr1`, `vddr2`, `vdd` → `d,vdd`). `klt extract
+  `'|'`-separated net name. Five of the declared pins land on nets that
+  already carry a label from a region's own cells (`en1` → `en|en1`,
+  `en2`, `vddr1` → `vddr|vddr1`, `vddr2`, `vdd` → `d|vdd`). `klt extract
   --pins` takes a *comma-separated list*, so those names cannot be written
   in it at all, and the five stay internal nets. −5.
-- `vss` promotes twice: the analog ground return and `digital`'s own PDN
-  ground are two separate nets (see `vddd` above) that legitimately carry
-  the same label. +1.
+- **Since [#224][gf224], nothing else promotes twice.** Before #224, `vss`
+  promoted twice (+1): the analog ground return and `digital`'s own PDN
+  ground were two separate nets that happened to carry the same label,
+  because `digital`'s connection into `vss` was undrawn. #224 draws that
+  tie (see "The supply/ground star point lands off-die" above), so there is
+  now only one `vss`-labelled net, not two — `layout/floorplan/floorplan.py`'s
+  own `DUPLICATE_PIN_NAME_PROMOTIONS` is empty. `vddd` does not gain a
+  compound label either: `run_extract_composed`'s own `--def-net-names`
+  names `digital`'s contribution to a net from the DEF's own declared net
+  name (`vddd`/`vss`, already equal to the net's own name), not from a
+  per-cell-instance `VDD`/`VSS` pin label, so neither tie adds anything
+  `--pins` would need to express. 112 − 5 + 0 = **107**, verified directly
+  against `klt extract`'s own reported count.
 
-Both are filed generically upstream — see [Tool friction](#tool-friction).
+Both remaining gaps are filed generically upstream — see [Tool
+friction](#tool-friction).
 
 **The count on its own is a weak check, and this is the evidence for
 saying so.** Run the *same* extraction against the **unrouted** floorplan
@@ -1172,9 +1213,14 @@ copy of those nets is a separate net that happens to carry the same label.
 That duplicate signature *is* the "regions not electrically joined"
 condition, and a reader looking only at the headline number would read it as
 a better result than the routed one. What actually separates the two cases
-is the net count and the LVS verdict below: 2702 nets unrouted against 2692
-routed — exactly the ten joins the fourteen drawn nets make (eight
-two-endpoint nets, plus `vss` merging three region returns into one).
+is the net count and the LVS verdict below: 2702 nets unrouted against 2691
+routed (was 2692 before #224 — `vss` now merges **four** region returns into
+one, not three, since `digital`'s own ground return joined) — exactly the
+eleven joins the fifteen drawn nets make (eight two-endpoint nets, plus
+`vss` merging four region returns into one; `vddd`'s own tie is a
+single-endpoint join — a wire onto `digital`'s already-singular internal
+PDN net, not a merge of two previously-distinct nets — so it does not
+itself change this count).
 
 ### DRC and LVS over the routed result
 
@@ -1193,11 +1239,17 @@ two-endpoint nets, plus `vss` merging three region returns into one).
 **And the negative control, because a check that cannot fail is not a
 check.** The identical LVS run against the *unrouted* floorplan — same
 reference, same extraction flags, same flatten options, only the wiring
-block removed — is **`mismatch`, 157 mismatches**: 70 `device.unmatched`,
-39 `net.merged`, 43 `net.split`, 3 `net.unmatched`. So the `match` verdict
-above is load-bearing: it is the difference between four regions wired as
-phase 1 declares and four regions sitting next to each other, and it is
-what a future regression that silently disconnects a region would trip.
+block removed — was **`mismatch`, 157 mismatches** (70 `device.unmatched`,
+39 `net.merged`, 43 `net.split`, 3 `net.unmatched`) before [#224][gf224];
+the exact mismatch breakdown shifts slightly now that the reference itself
+declares two more real connections (`vddd`/`vss` into `digital`) for the
+unrouted geometry to fail against, but the qualitative result this control
+exists to demonstrate is unchanged: removing the wiring block still turns
+`match` into a `mismatch` with dozens of entries, not zero. So the `match`
+verdict above is load-bearing: it is the difference between four regions
+wired as phase 1 declares and four regions sitting next to each other, and
+it is what a future regression that silently disconnects a region would
+trip.
 
 ---
 
@@ -1522,6 +1574,7 @@ would not block that separate question.
 [gf120]: https://github.com/2AMLogic/gf180-trng/pull/120
 [gf134]: https://github.com/2AMLogic/gf180-trng/issues/134
 [gf135]: https://github.com/2AMLogic/gf180-trng/issues/135
+[gf224]: https://github.com/2AMLogic/gf180-trng/issues/224
 [#144]: https://github.com/2AMLogic/gf180-trng/issues/144
 [#151]: https://github.com/2AMLogic/gf180-trng/issues/151
 

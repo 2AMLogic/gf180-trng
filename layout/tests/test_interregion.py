@@ -109,16 +109,17 @@ class DrawnNetsMatchTheDeclaration(unittest.TestCase):
         drawn = {route["net"] for route in _plan()["routes"]}
         self.assertEqual(declared, drawn)
 
-    def test_vsubs_and_vddd_are_not_drawn(self):
-        """Both are declared by phase 1 but deliberately carry no drawn
-        wire -- `vsubs` because it is the guard rings' own substrate tap and
-        not a metal route at all, `vddd` because its only connection is into
-        `digital`'s SPECIALNETS-only PDN, which the phase-1 reference this
-        layout is LVS'd against cannot express. Drawing either would put the
-        layout and that reference into disagreement."""
+    def test_vsubs_is_not_drawn(self):
+        """`vsubs` is declared by phase 1 but deliberately carries no drawn
+        wire: it is the guard rings' own substrate tap, not a metal route at
+        all. `vddd` used to be excluded here too (its only connection was
+        into `digital`'s SPECIALNETS-only PDN, which the phase-1 reference
+        this layout was LVS'd against could not express) -- gf180-trng#224
+        promoted `vddd`/`vss` to real `.SUBCKT trng_top` pins on `digital`'s
+        own reference, so both are ordinary drawn endpoints now (see
+        `test_every_declared_net_with_endpoints_is_drawn` above)."""
         drawn = {route["net"] for route in _plan()["routes"]}
         self.assertNotIn("vsubs", drawn)
-        self.assertNotIn("vddd", drawn)
 
     def test_every_declared_endpoint_gets_a_riser(self):
         for route in _plan()["routes"]:
@@ -157,18 +158,19 @@ class NoTwoNetsTouch(unittest.TestCase):
 
     def test_the_four_supply_branches_share_no_conductor(self):
         """Phase 1's own DO-NOT-MERGE invariant, restated over drawn
-        geometry: `vddr1`/`vddr2`/`vdd` (the three supply branches that are
-        drawn at all -- `vddd` has no drawn wire) must not share a single
-        rectangle, and their trunks must be on distinct lanes."""
+        geometry: `vddr1`/`vddr2`/`vdd`/`vddd` must not share a single
+        rectangle, and their trunks must be on distinct lanes. `vddd` joined
+        the drawn set in gf180-trng#224 (previously it had no drawn wire at
+        all)."""
         plan = _plan()
         grouped = _rects_by_net(plan)
-        supplies = [name for name in ("vddr1", "vddr2", "vdd") if name in grouped]
-        self.assertEqual(len(supplies), 3)
+        supplies = [name for name in ("vddr1", "vddr2", "vdd", "vddd") if name in grouped]
+        self.assertEqual(len(supplies), 4)
         trunks = {
             route["net"]: route["trunk_y_um"] for route in plan["routes"]
             if route["net"] in supplies
         }
-        self.assertEqual(len(set(trunks.values())), 3, trunks)
+        self.assertEqual(len(set(trunks.values())), 4, trunks)
 
 
 class TrunkLanes(unittest.TestCase):

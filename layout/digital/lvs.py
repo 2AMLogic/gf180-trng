@@ -83,10 +83,29 @@ back out of the committed DEF's own `COMPONENTS` section and
 `_write_reference()` emits one two-pin card per instance onto the same two
 supply nets -- the only connection those cells have.
 
-Neither side promotes a supply to a *top-level* pin: `run_extract`'s `--pins`
-declares the 109 real chip I/O nets and nothing else, so the DEF's own
-`vddd`/`vss` `PINS` entries stay internal nets on both sides and the two
-`.SUBCKT trng_top` headers keep matching interfaces.
+`vddd`/`vss` are real top-level pins too, since gf180-trng#224
+------------------------------------------------------------------
+Through gf180-trng#221, neither side promoted a supply to a *top-level* pin:
+`run_extract`'s `--pins` declared only the 109 real chip I/O nets, so the
+DEF's own `vddd`/`vss` `PINS` entries stayed internal nets on both sides and
+the two `.SUBCKT trng_top` headers kept matching interfaces. That was a
+narrower interface than the real layout has: `trng_top.def`'s own `PINS`
+section has carried `vddd`/`vss` as real Metal5 PDN-strap pins since #171
+(111 entries, not 109 -- see this directory's own README, "Power"), and the
+composed floorplan (issue #219) needs a real pin to tie its own `vddd`/`vss`
+star branches into, not an internal net it cannot reach.
+
+gf180-trng#224 promotes both: `_top_pins()` now takes an `extra` argument,
+and `build()` passes it `power["power_net"]`/`power["ground_net"]` (`vddd`,
+`vss` as of the committed `place_and_route.json`) alongside the 109 Verilog
+ports. Nothing else about `_write_reference`'s own X-card generation
+changes -- every instance's `VDD`/`VSS` cell pin was already tied to those
+exact net-name strings (see "Power/ground" above), so promoting the two
+names to top-level pins wires the reference's already-complete internal PDN
+topology to the new pins for free; it does not change what any instance
+connects to. The standalone check below (this script's own `klt lvs` run)
+therefore now compares the *whole* PDN, top pins included, not just its
+internal topology.
 
 Pipeline
 --------
@@ -211,6 +230,22 @@ def _pnr_power() -> dict:
 def _power_nets(power: dict) -> dict[str, str]:
     """Map each `POWER_PINS` cell pin onto the net the layout wires it to."""
     return {"VDD": power["power_net"], "VSS": power["ground_net"]}
+
+
+def _power_pin_names(power: dict) -> list[str]:
+    """The composed-net names `_power_nets` ties every instance's `VDD`/`VSS`
+    to (`vddd`/`vss` as of the committed `place_and_route.json`), sorted --
+    the `extra` `_top_pins()` promotes to a real top-level pin since #224 (see
+    this module's own docstring). Read from the same committed report rather
+    than restated as a literal here, for the same reason `_power_nets` is."""
+    names = sorted({power["power_net"], power["ground_net"]})
+    if len(names) != 2:
+        raise LvsFlowError(
+            f"{PNR_REPORT_PATH.relative_to(REPO_ROOT)}'s own `power` block "
+            f"names the same net for both power_net and ground_net ({names!r}) "
+            "-- cannot promote it as two distinct top-level pins"
+        )
+    return names
 
 
 def _physical_only_masters(power: dict) -> tuple[str, ...]:
@@ -384,15 +419,20 @@ def _library_cell_pins(
     return found
 
 
-def _top_pins(module: dict) -> list[str]:
-    """Return `module`'s top-level chip pins, sorted.
+def _top_pins(module: dict, extra: tuple[str, ...] = ()) -> list[str]:
+    """Return `module`'s top-level chip pins plus `extra`, sorted.
 
     Scalar ports stay bare; multi-bit ports expand to `"<port>[<index>]"` --
     the same naming `trng_top.def`'s own `PINS` section uses for every one
-    of this design's 109 pins (verified directly). Computed once and shared
-    by `run_extract` (the layout-side `--pins` argument) and
-    `_write_reference` (the reference `.SUBCKT trng_top` header) so both
-    sides promote exactly the same set.
+    of this design's 109 Verilog-port pins (verified directly). `extra` is
+    where `build()` folds in the two supply pins `_power_pin_names` names
+    (`vddd`/`vss`, since #224) -- they are not Verilog ports (`trng_top.pnr.v`
+    carries no power/ground port at all; see this module's own "vddd/vss are
+    real top-level pins too" docstring section), so they cannot come from
+    `module["ports"]` the way the other 109 do. Computed once and shared by
+    `run_extract` (the layout-side `--pins` argument) and `_write_reference`
+    (the reference `.SUBCKT trng_top` header) so both sides promote exactly
+    the same set.
     """
     top_pins: list[str] = []
     for port, spec in module["ports"].items():
@@ -401,6 +441,13 @@ def _top_pins(module: dict) -> list[str]:
             top_pins.append(port)
         else:
             top_pins.extend(f"{port}[{i}]" for i in range(len(bits)))
+    overlap = set(top_pins) & set(extra)
+    if overlap:
+        raise LvsFlowError(
+            f"extra top pin(s) {sorted(overlap)} already name a real Verilog "
+            "port -- cannot promote the same name twice"
+        )
+    top_pins.extend(extra)
     top_pins.sort()
     return top_pins
 
@@ -480,11 +527,20 @@ def _write_reference(
     power_nets: dict[str, str],
     physical_only: list[tuple[str, str]],
     library_pins: dict[str, list[str]],
+    top_pins: list[str],
 ) -> dict:
-    """Write the reference SPICE and return a small provenance summary."""
+    """Write the reference SPICE and return a small provenance summary.
+
+    `top_pins` is `build()`'s own already-computed `_top_pins(module,
+    extra=...)` result, passed in rather than recomputed here, so this
+    function and `run_extract` are structurally guaranteed to promote the
+    same set (see `_top_pins`'s own docstring) -- recomputing it a second
+    time here, with no way to pass `extra` through, was how this function
+    used to work before #224 added a set of top pins (`vddd`/`vss`) that do
+    not come from `module` at all.
+    """
     bit_names = _bit_names(module)
     pins_by_type, instances = _cell_instances(module, bit_names, library_pins)
-    top_pins = _top_pins(module)
 
     lines = [
         "* Generated by layout/digital/lvs.py -- do not hand-edit.",
@@ -546,7 +602,8 @@ def _write_reference(
 def run_extract(top_pins: list[str]) -> dict:
     """`klt extract --abstract-cells ...`.
 
-    `--pins` (a comma-separated list of the 109 real chip I/O net names) is
+    `--pins` (a comma-separated list of the 109 real chip I/O net names plus,
+    since #224, the two supply net names `_power_pin_names` resolves) is
     load-bearing, not decoration: this design is fully flat once every
     standard cell is abstracted (no hierarchy below the chip boundary at
     all), and the DEF->GDS merge draws a GDS text label for essentially
@@ -655,7 +712,7 @@ def build() -> int:
         module = _yosys_netlist(PNR_NETLIST_PATH, yosys_json_path)["modules"][
             HDL_TOPLEVEL
         ]
-        top_pins = _top_pins(module)
+        top_pins = _top_pins(module, extra=_power_pin_names(power))
     except LvsFlowError as exc:
         print(f"ERROR  {exc}", file=sys.stderr)
         return 3
@@ -675,7 +732,8 @@ def build() -> int:
         cell_types = {cell["type"] for cell in module["cells"].values()}
         library_pins = _library_cell_pins(EXTRACTED_PATH, cell_types)
         reference_summary = _write_reference(
-            module, REFERENCE_PATH, _power_nets(power), physical_only, library_pins
+            module, REFERENCE_PATH, _power_nets(power), physical_only,
+            library_pins, top_pins,
         )
     except LvsFlowError as exc:
         print(f"ERROR  {exc}", file=sys.stderr)

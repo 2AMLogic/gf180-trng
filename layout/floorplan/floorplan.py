@@ -549,14 +549,22 @@ def starve_geometry(subckts: dict[str, list[str]], parent: str, instance: str) -
 
 
 def _run_klt(args: list[str]) -> dict:
-    """`layout._klt._run_klt` at this module's own 900s timeout.
+    """`layout._klt._run_klt` at this module's own 2400s timeout.
 
     Every other `klt` caller under `layout/` uses the shared 600s default;
     this module's own `gen-compose` invocations run over more geometry than
     a single cell/block/ring build, so it keeps its longer, explicit budget
-    (see `layout/_klt.py`'s own docstring).
+    (see `layout/_klt.py`'s own docstring). Raised from 900s to 2400s in
+    gf180-trng#224: `run_extract_composed`'s own `klt extract` now traces
+    net connectivity through the `vddd`/`vss` Metal5 PDN straps this issue
+    adds to the composed stream's own `--pins` list, and those straps are
+    large, near-full-block-width polygons (`digital_pdn_strap_bands`) that
+    take materially longer for `klt`'s own net extraction to merge than the
+    smaller nets this budget was originally sized for -- measured directly:
+    the same extraction that completed within 900s before #224 timed out at
+    exactly that limit once the PDN ties were added.
     """
-    return _shared_run_klt(args, timeout_s=900)
+    return _shared_run_klt(args, timeout_s=2400)
 
 
 def read_gds_bbox(gds_path: Path) -> dict:
@@ -1138,18 +1146,19 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
 
 #: Top-level pin names the composed layout ends up carrying **twice**, once
 #: per net, because two electrically separate nets legitimately share a
-#: label. There is exactly one: `vss`. The composed reference wires a
-#: top-level `vss` to `ring1`/`ring2`/`combiner_sampler`'s own `vss` pins and
-#: leaves `digital`'s own PDN ground a *separate* internal net (phase 1's own
-#: `implicit_regions` gap -- `layout/digital/trng_top.lvs_reference.spice`
-#: declares no `vss` pin to wire against, so the reference cannot express
-#: that tie and this floorplan deliberately does not draw it). Both nets
-#: really are labelled `vss` in the layout -- the analog one by the analog
-#: cells' own drawn labels, `digital`'s by its own PDN -- so `klt extract
-#: --pins vss` promotes both. That is a faithful report of the geometry, not
-#: a wiring error: the two nets are distinct, which is exactly what the
-#: composed LVS then confirms.
-DUPLICATE_PIN_NAME_PROMOTIONS = ("vss",)
+#: label. Empty since gf180-trng#224: through issue #222, `vss` was the one
+#: entry here -- the composed reference wired a top-level `vss` to `ring1`/
+#: `ring2`/`combiner_sampler`'s own `vss` pins and left `digital`'s own PDN
+#: ground a *separate* internal net that happened to carry the same label
+#: (phase 1's own `implicit_regions` gap; see `layout/floorplan/interregion.
+#: py`'s own module docstring). #224 closed that gap -- `digital`'s own
+#: `vss` is now electrically joined to the same composed net, so there is
+#: only one `vss`-labelled net left to promote, not two. Kept as an empty
+#: tuple, not removed outright, the same way `ASSEMBLY_INVENTORY_GAP` above
+#: stays an empty table: `check_interregion` below still reads this
+#: unconditionally, and a future net could reintroduce a genuine multi-label
+#: promotion the same way this one existed from #222 to #224.
+DUPLICATE_PIN_NAME_PROMOTIONS: tuple[str, ...] = ()
 
 #: The four supply branches that must never merge (phase 1's own "DO NOT
 #: MERGE" invariant, README Mechanism 2). `check_interregion` asserts they

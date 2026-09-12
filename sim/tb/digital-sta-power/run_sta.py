@@ -351,22 +351,39 @@ class InterfaceTrunk:
         return slew.rc_factor * self.rc_ns
 
 
+#: Roles this sweep does not treat as a "digital-facing trunk" even when the
+#: route has a `digital` endpoint: `vddd`/`vss` (gf180-trng#224) tie into
+#: `digital`'s own PDN, not a `trng_top` *signal* pin with a timing arc --
+#: `_tcl()` below states each trunk as a `set_input_transition` on a
+#: `get_ports` reference, and `vddd`/`vss` are not OpenSTA timing ports at
+#: all (they are `SPECIALNETS`, per `layout/digital/README.md#power`).
+#: Excluded by `role`, not by name, so a future net with one of these roles
+#: is excluded the same way without another hand-maintained list.
+NON_SIGNAL_TRUNK_ROLES = frozenset({"supply", "ground", "substrate"})
+
+
 def digital_facing_trunks(report_path: Path | None = None) -> list[InterfaceTrunk]:
-    """Every inter-region trunk with an endpoint on `digital`, read live from
-    `report_path` (module-level `INTERREGION_REPORT` if omitted -- resolved
-    at *call* time, not bound as a default-argument value at import time, so
-    a test can point this at a synthetic report by reassigning the module
-    attribute). DR-0025 names exactly six today (`clk`, `rst_n`, `raw_bit`,
-    `raw_valid`, `ring_bit1`, `ring_bit2`) -- not hard-coded here, so a
-    future floorplan/routing change (#222-style) that adds, removes or
-    re-lengthens a digital-facing trunk is picked up the next time this
-    sweep runs rather than silently going stale.
+    """Every *signal* inter-region trunk with an endpoint on `digital`, read
+    live from `report_path` (module-level `INTERREGION_REPORT` if omitted --
+    resolved at *call* time, not bound as a default-argument value at import
+    time, so a test can point this at a synthetic report by reassigning the
+    module attribute). DR-0025 names exactly six today (`clk`, `rst_n`,
+    `raw_bit`, `raw_valid`, `ring_bit1`, `ring_bit2`) -- not hard-coded here,
+    so a future floorplan/routing change (#222-style) that adds, removes or
+    re-lengthens a digital-facing *signal* trunk is picked up the next time
+    this sweep runs rather than silently going stale. `NON_SIGNAL_TRUNK_
+    ROLES` excludes `vddd`/`vss` (gf180-trng#224 gave both a `digital`
+    endpoint too, but neither is a signal port this sweep's own
+    `set_input_transition` construct applies to -- see that constant's own
+    docstring), so the six stays six rather than silently becoming eight.
     """
     if report_path is None:
         report_path = INTERREGION_REPORT
     data = json.loads(report_path.read_text())
     trunks: list[InterfaceTrunk] = []
     for route in data["routes"]:
+        if route.get("role") in NON_SIGNAL_TRUNK_ROLES:
+            continue
         digital_ep = next(
             (ep for ep in route["endpoints"] if ep["region"] == "digital"), None
         )

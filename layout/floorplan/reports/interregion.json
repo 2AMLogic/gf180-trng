@@ -361,20 +361,44 @@
       ]
     },
     {
-      "net": "vss",
-      "role": "ground",
+      "net": "vddd",
+      "role": "supply",
       "chip_pin": true,
-      "declared_layer_role": "metal2_plus_digital_pdn_transition",
+      "declared_layer_role": "metal5_pdn_strap",
       "trunk_layer": "metal4",
       "riser_layer": "metal3",
       "trunk_y_um": -10.3,
       "trunk_x_um": [
-        75.9,
-        506.13
+        512.43,
+        515.73
       ],
-      "trunk_length_um": 430.23,
-      "chip_pin_x_um": 505.98,
-      "label_x_um": 505.98,
+      "trunk_length_um": 3.3,
+      "chip_pin_x_um": 515.58,
+      "label_x_um": 515.58,
+      "endpoints": [
+        {
+          "region": "digital",
+          "pin": "vddd",
+          "anchor": "digital_pdn_strap",
+          "riser_x_um": 512.58
+        }
+      ]
+    },
+    {
+      "net": "vss",
+      "role": "ground",
+      "chip_pin": true,
+      "declared_layer_role": "metal5_pdn_strap",
+      "trunk_layer": "metal4",
+      "riser_layer": "metal3",
+      "trunk_y_um": -11.0,
+      "trunk_x_um": [
+        75.9,
+        514.73
+      ],
+      "trunk_length_um": 438.83,
+      "chip_pin_x_um": 514.58,
+      "label_x_um": 514.58,
       "endpoints": [
         {
           "region": "ring1",
@@ -393,17 +417,23 @@
           "pin": "vss",
           "anchor": "metal2_extend",
           "riser_x_um": 502.98
+        },
+        {
+          "region": "digital",
+          "pin": "vss",
+          "anchor": "digital_pdn_strap",
+          "riser_x_um": 511.58
         }
       ]
     }
   ],
   "wiring_bbox_um": {
     "x0": 4.16,
-    "y0": -10.450000000000001,
+    "y0": -11.15,
     "x1": 853.61,
-    "y1": 17.25
+    "y1": 102.92
   },
-  "shape_count": 112,
+  "shape_count": 125,
   "net_labels": [
     "en1",
     "en2",
@@ -418,6 +448,7 @@
     "vddr1",
     "vddr2",
     "vdd",
+    "vddd",
     "vss"
   ],
   "check": {
@@ -429,15 +460,13 @@
       "vddr1",
       "vddr2"
     ],
-    "duplicate_pin_name_promotions": [
-      "vss"
-    ],
-    "expected_pin_count": 108,
+    "duplicate_pin_name_promotions": [],
+    "expected_pin_count": 107,
     "extract": {
       "status": "extracted",
       "device_count": 196,
-      "net_count": 2692,
-      "pin_count": 108,
+      "net_count": 2691,
+      "pin_count": 107,
       "abstracted_cell_types": 83
     },
     "drawn_nets": [
@@ -454,6 +483,7 @@
       "vddr1",
       "vddr2",
       "vdd",
+      "vddd",
       "vss"
     ],
     "supply_branch_nets": {
@@ -470,9 +500,9 @@
       },
       "counts": {
         "nets": {
-          "layout": 2692,
-          "reference": 2692,
-          "matched": 255
+          "layout": 2691,
+          "reference": 2690,
+          "matched": 254
         },
         "devices": {
           "layout": 196,
@@ -480,9 +510,9 @@
           "matched": 196
         },
         "pins": {
-          "layout": 108,
+          "layout": 107,
           "reference": 112,
-          "matched": 113
+          "matched": 112
         }
       }
     },

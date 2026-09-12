@@ -20,8 +20,8 @@ skipping the wire.
 
 What is drawn, and what deliberately is not
 -------------------------------------------
-Exactly the endpoints phase 1 declares in a net's own `endpoints` list. Two
-declared things are deliberately **not** drawn, and both are phase-1's own
+Exactly the endpoints phase 1 declares in a net's own `endpoints` list. One
+declared thing is deliberately **not** drawn, and that is phase-1's own
 distinction, not a shortcut taken here:
 
 * `vsubs` (`layer_role: "guard_ring_tap"`) -- phase 1 says in as many words
@@ -30,21 +30,30 @@ distinction, not a shortcut taken here:
   to any region's `vss` would also merge the extraction deck's synthesized
   substrate handle into `vss`, which is exactly the `net.merged` failure the
   composed LVS exists to catch.
-* `vddd`'s and `vss`'s connection *into* `digital` -- phase 1 declares these
-  under `implicit_regions`, not `endpoints`, precisely because
-  `layout/digital/trng_top.lvs_reference.spice`'s own `.SUBCKT trng_top`
-  header has no `vddd`/`vss` pin to wire against (they are `SPECIALNETS`-only
-  -- see that module's docstring). The physical tie points are real and
-  reachable (`trng_top.def`'s `PINS` section carries both as Metal5 PDN
-  straps), but the phase-1 reference cannot express the connection, so
-  drawing it would put the layout and the reference into disagreement --
-  the layout would merge two nets the reference keeps separate. Phase 1
-  states that "reconciling this (if phase 2 needs to) is that follow-up
-  issue's problem"; this module's answer is that phase 2 does not need to,
-  and must not, because the acceptance criterion phase 2 is held to is LVS
-  against that same reference. gf180-trng#224 owns the reconciliation --
-  it is a decision about `digital`'s own reference interface, not about
-  this geometry.
+
+`vddd`'s and `vss`'s connection into `digital`, resolved by gf180-trng#224
+----------------------------------------------------------------------------
+Through issue #222, `vddd`'s and `vss`'s connection *into* `digital` was
+also left undrawn: phase 1 declared both under `implicit_regions`, not
+`endpoints`, because `layout/digital/trng_top.lvs_reference.spice`'s own
+`.SUBCKT trng_top` header had no `vddd`/`vss` pin to wire against (they were
+`SPECIALNETS`-only). Drawing a tie against that reference would have merged
+two nets the reference kept separate -- a `net.merged` failure on geometry
+that was, if anything, *more* correct.
+
+gf180-trng#224 resolved this on the reference side instead of leaving it
+undrawn permanently: `layout/digital/lvs.py` now promotes `vddd`/`vss` to
+real `.SUBCKT trng_top` pins on both sides of `digital`'s own standalone LVS
+(see that script's own module docstring), `design/floorplan_netlist.py`
+declares both as ordinary `endpoints` of `digital` (the `implicit_regions`
+escape hatch is gone -- there is no longer a pin it needs to route around),
+and this module draws the tie: a Metal5 route from each net's own trunk,
+across the `combiner_sampler | digital` isolation channel (where nothing
+else this floorplan draws uses that layer), into the lowest of the several
+Metal5 PDN straps `trng_top.def`'s own `PINS` section places for that net
+(`digital_pdn_strap_bands`). See "The `digital` PDN tie" below for the
+routing plan and why it needs a layer neither the trunk/riser scheme nor any
+other endpoint in this module uses.
 
 Routing plan: one Metal4 trunk per net, under the row
 -----------------------------------------------------
@@ -104,7 +113,46 @@ the package/board level: this module defers it rather than inventing an
 on-die star structure, which is a decision recorded in
 `layout/floorplan/README.md` rather than assumed silently here. `vss` is the
 one deliberately shared return (phase 1's own net table), and it is the one
-trunk that does span the row.
+trunk that does span the row -- and, since gf180-trng#224, it is also the
+one whose trunk now reaches all the way into `digital`.
+
+The `digital` PDN tie (gf180-trng#224)
+---------------------------------------
+`vddd`'s and `vss`'s own endpoint into `digital` is not another Metal3
+riser onto a Metal4 pin the way `clk`/`rst_n` are: those two pins sit right
+at `digital`'s own bottom edge (local y in roughly 0 .. 1.3 um), reachable by
+a short riser from below the row with nothing else in the way. `trng_top.
+def`'s own PDN straps for `vddd`/`vss` are Metal5, and they run the width of
+the block at several Y heights spread across nearly the block's *entire*
+549 um height (`digital_pdn_strap_bands`) -- a Metal3 riser reaching one of
+the higher bands would have to cross `digital`'s own dense internal
+Metal1-3 routing for however far short of the target it started, which is
+exactly the "never put a riser inside a cell's own footprint" failure mode
+`combiner_sampler`'s own anchors (`cs_anchors`) already avoid for a similar
+reason.
+
+The fix is a layer, not a workaround: every PDN strap band spans local x
+=~ 10.08 .. 538.72 um, i.e. its own **west edge sits barely inside
+`digital`'s own boundary**, immediately next to the `combiner_sampler |
+digital` isolation channel -- and Metal5 is drawn *nowhere else* in the
+composed floorplan except these two nets' own straps (verified directly:
+neither the rings, `combiner_sampler`, nor `digital`'s own standard-cell
+routing/PDN below Metal5 uses it). So each tie runs Metal3 only inside the
+channel (empty at every Y, the same property every other net's riser
+already depends on), transitions up through Via4 to Metal5 at the channel's
+own east edge -- still outside `digital`'s footprint -- and only then
+crosses into `digital`, entirely on Metal5, to dock against the **lowest**
+of that net's own bands (shortest reach, and `digital_pdn_strap_bands`
+returns them sorted so "lowest" is just `[0]`). Nothing on this path ever
+touches a layer `digital`'s own interior actually uses for anything else.
+
+`VSS_PDN_RISER_X_LOCAL`/`VDDD_PDN_RISER_X_LOCAL` place the two risers 1 um
+apart inside the channel -- clearing `metal3.space.1` by more than 3x --
+and well clear of both `combiner_sampler`'s own channel risers
+(`CS_CHANNEL_RISER_X`, which land within about 4.4 um of *that* region's
+edge) and `digital`'s own 1 um guard ring band. `PDN_STRAP_DOCK_REACH_UM`
+is how far past each strap's own west edge the docking rectangle reaches --
+comfortably inside real drawn strap metal, nowhere near its own east edge.
 
 Geometry legality
 -----------------
@@ -151,7 +199,11 @@ class WiringError(RuntimeError):
 # Layers -- gf180mcu drawn layers, same (layer, datatype) pairs every other
 # build script under layout/ uses, plus Metal4/Via3 and the Metal4 pin/label
 # purpose (46, 10) this deck scans for net labels
-# (`klayout_tools.decks.gf180mcu`'s own `metal_labels`).
+# (`klayout_tools.decks.gf180mcu`'s own `metal_labels`). Via4/Metal5 (issue
+# #224) are the same deck's own layer numbers for the `digital`-only PDN
+# strap this module ties into -- verified directly against
+# `klayout_tools.decks.gf180mcu`'s own DRC rule layer references
+# (`via4.width.1` -> `(41, 0)`, `metal5.width.1` -> `(81, 0)`).
 # --------------------------------------------------------------------------- #
 METAL1 = [34, 0]
 VIA1 = [35, 0]
@@ -161,6 +213,8 @@ METAL3 = [42, 0]
 VIA3 = [40, 0]
 METAL4 = [46, 0]
 METAL4_LABEL = [46, 10]
+VIA4 = [41, 0]
+METAL5 = [81, 0]
 
 # --------------------------------------------------------------------------- #
 # Geometry constants, and the deck thresholds each one exists to clear
@@ -238,6 +292,68 @@ assert TRUNK_Y0 + WIRE_W / 2 <= DIGITAL_STUB_Y_UM - 0.28, "stub-to-trunk spacing
 #: conductor on the same layer it could not otherwise avoid -- the deck's
 #: own `metal3.space.1`. Used by the gap-slot picker below.
 MIN_SPACE = 0.28
+
+#: The `digital` PDN tie (gf180-trng#224) -- see the module docstring's own
+#: section. Local X bounds (digital's own content-origin frame) of the
+#: `combiner_sampler | digital` isolation channel, verified directly against
+#: the committed composed placement (`reports/compose.json`'s own
+#: `origins_um`): `combiner_sampler`'s own guarded region ends at absolute
+#: x = 499.58, `digital`'s own guard ring starts at x = 519.58 (the 20 um
+#: `ISOLATION_CHANNEL_UM` gap `floorplan.py`'s own `_row_offsets` leaves),
+#: and `digital`'s own *content* origin -- what every `origin["digital"]`
+#: this module receives actually is -- sits one more `GUARD_RING_WIDTH_UM`
+#: (1 um) east of that, at x = 520.58. So in `digital`'s own local frame the
+#: channel runs from 499.58 - 520.58 = -21.0 to 519.58 - 520.58 = -1.0.
+_DIGITAL_CHANNEL_X_LOCAL = (-21.0, -1.0)
+
+#: Where the two PDN-tie risers cross that channel, one micron apart --
+#: clearing `metal3.space.1` more than 3x over -- and clear of both
+#: `combiner_sampler`'s own channel risers (`CS_CHANNEL_RISER_X`, which land
+#: within about 4.4 um of *that* region's own edge, i.e. near this channel's
+#: own west bound) and `digital`'s own 1 um guard ring band at this
+#: channel's own east bound.
+VSS_PDN_RISER_X_LOCAL = -9.0
+VDDD_PDN_RISER_X_LOCAL = -8.0
+
+#: How far past each PDN strap's own drawn west edge (`digital_pdn_strap_
+#: bands` reads it from `trng_top.def`, ~10.08 um local for both `vddd` and
+#: `vss`) this module's own docking rectangle reaches -- enough for a real
+#: overlap, nowhere near that strap's own east edge (~538.7 um), which
+#: nothing this module draws ever comes close to.
+PDN_STRAP_DOCK_REACH_UM = 2.0
+
+#: How far west of the PDN riser's own X the Metal5 docking rectangle's own
+#: west edge extends, so the Via4 landing at that riser X (`_via(VIA4, x,
+#: y_mid)`) sits *inside* the Metal5 rectangle rather than exactly on its
+#: edge. Without this, the rectangle drawn as `_hrect(METAL5, x, x_dock,
+#: ...)` starts exactly at the via's own centre X, giving zero overlap on
+#: the via's west half -- `metal5.enclosing.via4.1` (minimum metal5 overlap
+#: of via4, threshold 0.01 um in this deck) then fails on exactly that
+#: sliver (verified directly: `klt drc` on the composed stream reported two
+#: `metal5.enclosing.via4.1` violations, one per net, before this margin was
+#: added). 0.15 um clears that threshold by 15x and costs nothing -- the
+#: channel is 20 um wide and nothing else this module draws is anywhere
+#: near this riser's own west side.
+METAL5_VIA4_ENCLOSE_UM = 0.15
+
+assert (
+    _DIGITAL_CHANNEL_X_LOCAL[0] + 4.4 + MIN_SPACE
+    < VSS_PDN_RISER_X_LOCAL
+    < _DIGITAL_CHANNEL_X_LOCAL[1] - 1.0
+), "vss PDN riser must clear combiner_sampler's own channel risers and digital's own guard band"
+assert (
+    _DIGITAL_CHANNEL_X_LOCAL[0] + 4.4 + MIN_SPACE
+    < VDDD_PDN_RISER_X_LOCAL
+    < _DIGITAL_CHANNEL_X_LOCAL[1] - 1.0
+), "vddd PDN riser must clear combiner_sampler's own channel risers and digital's own guard band"
+assert abs(VSS_PDN_RISER_X_LOCAL - VDDD_PDN_RISER_X_LOCAL) >= MIN_SPACE + WIRE_W, \
+    "the two PDN risers must clear metal3.space.1 from each other"
+
+#: `{pin name -> its own PDN riser's local X}` -- `wiring_plan`'s own
+#: `anchor_for` uses this to recognise a `digital` endpoint that needs the
+#: `"digital_pdn_strap"` anchor kind instead of the generic per-pin
+#: `digital_pin_positions()` lookup every other `digital` endpoint uses.
+_DIGITAL_PDN_RISER_X_LOCAL = {"vss": VSS_PDN_RISER_X_LOCAL, "vddd": VDDD_PDN_RISER_X_LOCAL}
 
 
 # --------------------------------------------------------------------------- #
@@ -488,6 +604,93 @@ def digital_pin_positions() -> dict[str, tuple[float, float]]:
     return pins
 
 
+#: Matches one `+ LAYER Metal5 ( x0 y0 ) ( x1 y1 )` PORT rectangle line --
+#: `digital_pdn_strap_bands`'s own reader for a `vddd`/`vss` PINS entry's
+#: several PDN-strap bands (gf180-trng#224).
+_DEF_PIN_METAL5_LAYER_RE = re.compile(
+    r"\+\s*LAYER\s+Metal5\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)"
+)
+
+#: Matches a PINS entry's own `+ FIXED ( x y ) N` (or `+ PLACED ...`)
+#: placement line -- every `PORT LAYER` rectangle in that entry is drawn
+#: relative to this reference point. The trailing `N` (no rotation) is
+#: matched literally, not just captured: both `vddd` and `vss` carry it in
+#: the committed DEF (verified directly), and a rotated pin would place the
+#: `PORT` rectangles this function reads at coordinates this simple
+#: translate-only arithmetic would get wrong.
+_DEF_PIN_FIXED_N_RE = re.compile(r"\+\s*(?:FIXED|PLACED)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s+N\b")
+
+
+def digital_pdn_strap_bands(pin_name: str) -> list[tuple[float, float, float, float]]:
+    """Every Metal5 `PORT` rectangle `trng_top.def`'s own `PINS` section
+    declares for `pin_name` (`"vddd"` or `"vss"`), as `(x0, y0, x1, y1)` in
+    `digital`'s own local frame, sorted by `y0` ascending -- so `[0]` is
+    always the *lowest* band, the one this module's own PDN tie docks
+    against (shortest reach from the isolation channel below).
+
+    These are the real, placed PDN straps -- `layout/digital/README.md`'s
+    own "Power" section and this repository's own `layout/digital/lvs.py`
+    module docstring both record that `trng_top.def`'s `PINS` section has
+    carried `vddd`/`vss` as Metal5 straps since #171 -- not the single
+    reference point `digital_pin_positions()` returns for every other pin
+    (that generic reader only ever captures a PINS entry's own `+ FIXED`/
+    `+ PLACED` coordinate, which for `vddd`/`vss` is a placement *origin*
+    the `PORT LAYER` rectangles below are drawn relative to, not itself a
+    point on drawn metal -- see gf180-trng#224).
+    """
+    text = DIGITAL_DEF.read_text(errors="replace")
+    match = _DEF_UNITS_RE.search(text)
+    if not match:
+        raise WiringError(f"{DIGITAL_DEF} declares no `UNITS DISTANCE MICRONS`")
+    units = float(match.group(1))
+
+    start = text.find("\nPINS ")
+    end = text.find("\nEND PINS", start) if start != -1 else -1
+    if start == -1 or end == -1:
+        raise WiringError(f"{DIGITAL_DEF} has no readable PINS section")
+    section = text[start:end]
+
+    # Each PINS entry starts with a `- <name> ...` line, indented (the
+    # committed DEF uses 4 spaces -- see `digital_pin_positions()`'s own
+    # line-based reader, which strips the same way rather than assuming a
+    # fixed column). Matched line-by-line, not by a raw substring search
+    # anchored at `\n- `, so this does not depend on that indentation width.
+    entry_start_re = re.compile(rf"\n[ \t]*-\s+{re.escape(pin_name)}\s")
+    next_entry_re = re.compile(r"\n[ \t]*-\s+\S")
+
+    entry_match = entry_start_re.search(section)
+    if entry_match is None:
+        raise WiringError(
+            f"{DIGITAL_DEF} PINS section has no `- {pin_name} ...` entry"
+        )
+    entry_start = entry_match.start()
+    next_match = next_entry_re.search(section, entry_match.end())
+    entry = section[entry_start: next_match.start() if next_match else len(section)]
+
+    fixed_match = _DEF_PIN_FIXED_N_RE.search(entry)
+    if not fixed_match:
+        raise WiringError(
+            f"{DIGITAL_DEF}'s `- {pin_name} ...` PINS entry has no `+ FIXED "
+            "(...) N` placement this reader knows how to interpret"
+        )
+    origin_x = int(fixed_match.group(1)) / units
+    origin_y = int(fixed_match.group(2)) / units
+
+    bands = [
+        (
+            origin_x + int(x0) / units, origin_y + int(y0) / units,
+            origin_x + int(x1) / units, origin_y + int(y1) / units,
+        )
+        for x0, y0, x1, y1 in _DEF_PIN_METAL5_LAYER_RE.findall(entry)
+    ]
+    if not bands:
+        raise WiringError(
+            f"{DIGITAL_DEF}'s `- {pin_name} ...` PINS entry declares no "
+            "`+ LAYER Metal5 (...) (...)` rectangle"
+        )
+    return sorted(bands, key=lambda band: band[1])
+
+
 # --------------------------------------------------------------------------- #
 # The drawn net list -- read out of phase 1's declaration
 # --------------------------------------------------------------------------- #
@@ -495,9 +698,11 @@ def digital_pin_positions() -> dict[str, tuple[float, float]]:
 
 def drawn_nets() -> list[dict]:
     """Every phase-1 net with at least one mechanically-checkable endpoint,
-    in declaration order. A net whose `endpoints` list is empty (`vddd`) or
-    whose `layer_role` says it is not a drawn wire at all (`vsubs`) is not
-    returned -- see the module docstring for why each is deliberate."""
+    in declaration order. A net whose `endpoints` list is empty or whose
+    `layer_role` says it is not a drawn wire at all (`vsubs`) is not
+    returned -- see the module docstring for why each is deliberate. As of
+    gf180-trng#224, `vddd` and `vss` both have real `endpoints` into
+    `digital` (previously `vddd` had none at all and was excluded here)."""
     return [
         net for net in floorplan_netlist.INTER_REGION_NETS
         if net.get("endpoints") and net["layer_role"] != "guard_ring_tap"
@@ -510,7 +715,11 @@ def drawn_nets() -> list[dict]:
 #: branch runs under another region to reach its own (module docstring,
 #: "Supply/ground star point"); `clk`/`rst_n` are pinned on the `digital`
 #: side of the row, which is what keeps them from ever entering a ring's own
-#: isolation channel (phase 1's own DR-0012 routing constraint).
+#: isolation channel (phase 1's own DR-0012 routing constraint). `vddd`
+#: (gf180-trng#224) is single-endpoint, so its own sole riser is both its
+#: westmost and eastmost -- `"east"` places its chip pin 3 um past it, the
+#: same convention `vdd`/`vss` already use for a pin placed beneath the one
+#: region it feeds.
 CHIP_PIN_PLACEMENT: dict[str, tuple[str, float]] = {
     "en1": ("west", -3.0),
     "en2": ("west", -3.0),
@@ -518,6 +727,7 @@ CHIP_PIN_PLACEMENT: dict[str, tuple[str, float]] = {
     "vddr2": ("west", -3.0),
     "vdd": ("east", 3.0),
     "vss": ("east", 3.0),
+    "vddd": ("east", 3.0),
     "clk": ("east", 12.0),
     "rst_n": ("east", 12.0),
 }
@@ -582,6 +792,29 @@ def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
                             x + DIGITAL_STUB_W / 2, y1))
         shapes.append(_via(VIA3, x, DIGITAL_STUB_VIA_Y_UM))   # Metal4 stub -> Metal3
         riser_x, riser_top = x, DIGITAL_STUB_VIA_Y_UM
+    elif kind == "digital_pdn_strap":
+        # gf180-trng#224 -- see the module docstring's "The `digital` PDN
+        # tie" section. `lx_riser` is one of VSS_PDN_RISER_X_LOCAL/
+        # VDDD_PDN_RISER_X_LOCAL (inside the isolation channel, west of
+        # `digital`'s own boundary); `(ly0, ly1)` is the lowest PDN strap
+        # band `digital_pdn_strap_bands` found; `lx_dock` is that band's own
+        # west edge plus PDN_STRAP_DOCK_REACH_UM (east of `lx_riser`, inside
+        # `digital`'s own footprint, overlapping real strap metal). The
+        # riser stays Metal3 the whole way up from the trunk (drawn by the
+        # generic code below); only the final, purely-in-channel-then-onto-
+        # the-strap hop is this net's own Metal4/Via4/Metal5.
+        _, lx_riser, ly0, ly1, lx_dock = anchor
+        x = lx_riser + origin["x"]
+        y0 = ly0 + origin["y"]
+        y1 = ly1 + origin["y"]
+        y_mid = (y0 + y1) / 2
+        x_dock = lx_dock + origin["x"]
+        shapes.append(_hrect(METAL5, x - METAL5_VIA4_ENCLOSE_UM, x_dock, y_mid,
+                             h=(y1 - y0)))
+        shapes.append(_via(VIA4, x, y_mid))          # Metal4 landing -> Metal5
+        shapes.append(_pad(METAL4, x, y_mid))
+        shapes.append(_via(VIA3, x, y_mid))          # Metal3 riser  -> Metal4
+        riser_x, riser_top = x, y_mid
     else:  # pragma: no cover - guarded by wiring_plan's own validation
         raise WiringError(f"unknown endpoint anchor kind {kind!r}")
 
@@ -627,6 +860,15 @@ def wiring_plan(origins: dict[str, dict[str, float]],
                 )
             return cs_table[pin]
         if rid == "digital":
+            riser_x = _DIGITAL_PDN_RISER_X_LOCAL.get(pin)
+            if riser_x is not None:
+                # gf180-trng#224 -- `vddd`/`vss` dock against a real PDN
+                # strap, not the small per-pin Metal4 stub every other
+                # `digital` endpoint uses; see `digital_pdn_strap_bands` and
+                # the module docstring's "The `digital` PDN tie" section.
+                band_x0, band_y0, _band_x1, band_y1 = digital_pdn_strap_bands(pin)[0]
+                dock_x = band_x0 + PDN_STRAP_DOCK_REACH_UM
+                return ("digital_pdn_strap", riser_x, band_y0, band_y1, dock_x)
             if pin not in digital_pins:
                 raise WiringError(
                     f"region 'digital' pin {pin!r} is declared by "
@@ -732,14 +974,33 @@ def wiring_plan(origins: dict[str, dict[str, float]],
 #: against that joined string *exactly*, and cannot express a name
 #: containing a comma at all (klayout-tools#1687, unlike `--def-pins`, which
 #: matches any one component label). It is what makes the routed floorplan
-#: report 108 top-level pins against the reference's declared 112 -- see
-#: `layout/floorplan/README.md`'s "What `klt extract` reports, and why".
+#: report fewer top-level pins than the reference's own declared count (107
+#: against 112, since gf180-trng#224 -- `en1`/`en2`/`vdd`/`vddr1`/`vddr2`
+#: are the five still-unnameable pins) -- see `layout/floorplan/README.md`'s
+#: "What `klt extract` reports, and why".
 #:
 #: **This table is checked, not assumed.** `floorplan.py`'s own
 #: `check_interregion()` compares each chip-pin net's predicted label set
 #: against the one `klt extract` actually reports, so a cell that gains or
 #: loses a pin label fails the flow here instead of silently shifting the
 #: expected pin count.
+#:
+#: `vddd`/`vss` do **not** gain an extra label from `digital`'s own PDN tie
+#: (gf180-trng#224), even though the tie really does join `digital`'s
+#: internal PDN to the composed net. `klt extract --def-net-names` -- which
+#: `layout/floorplan/floorplan.py`'s own `run_extract_composed` passes, the
+#: same flag `layout/digital/lvs.py` already relies on for `digital`'s own
+#: standalone check -- names `digital`'s contribution to a net from the
+#: DEF's own declared net name (`vddd`/`vss`, lowercase, the SPECIALNETS
+#: name), not from a per-cell-instance `VDD`/`VSS` pin label. That name
+#: already equals this net's own name, so it adds nothing to the label set
+#: `{net_name}` already contains -- verified directly (`klt extract` on the
+#: composed, routed floorplan reports both as a single, unmodified `vddd`/
+#: `vss`, not a `'|'`-joined compound). `vss` keeps its own no-op
+#: self-referential entry below for documentation clarity (the analog
+#: cells' own lowercase `vss` pin labels coincide with `digital`'s DEF net
+#: name too, so there is still only one label either way); `vddd` has no
+#: entry at all, the same as any other net whose only label is its own name.
 REGION_CELL_LABELS: dict[str, tuple[str, ...]] = {
     "en1": ("en",),
     "en2": ("en",),

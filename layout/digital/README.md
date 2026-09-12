@@ -503,8 +503,22 @@ transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
 | `net.unmatched` | 0 | 0 |
 | `topology` | 6, all severity `warning` | 3497 |
 | Nets (layout / reference) | 2547 / 2547, 2996 matched | 4165 / 7519 |
-| Pins (layout / reference) | 109 / 109 | 109 / 109 |
+| Pins (layout / reference) | 111 / 111 | 109 / 109 |
 | Devices (layout / reference) | 0 / 0 — comparison is cell-instance-granularity (`--abstract-cells`), not transistor-level; see the script's docstring | 0 / 0 |
+
+**Pin count is 111, not 109, since [#224][gf224].** `vddd`/`vss` are now
+promoted to real top-level `.SUBCKT trng_top` pins on both sides of this
+check, not left as internal-only nets: `_top_pins()` folds in the two
+supply net names `_power_pin_names()` reads from the committed
+`place_and_route.json`'s own `power` block, alongside the 109 Verilog chip
+I/O ports. This closes the gap `design/floorplan_netlist.py`'s composed
+inter-region declaration depended on — see
+[`layout/floorplan/README.md`](../floorplan/README.md), "The supply/ground
+star point lands off-die," for what that unblocks at the composed-floorplan
+level. The re-run above is
+otherwise identical to the pre-#224 state: `status: match`,
+`mismatch_count: 6` (the same six benign `u_interface` warnings), `error_
+count: 0`.
 
 **Power connectivity is now inside the comparison.** #170's 7694 mismatches
 were one finding wearing 7694 hats: with no PDN, each cell's local Metal1
@@ -817,6 +831,7 @@ boundary.
 [gf171]: https://github.com/2AMLogic/gf180-trng/issues/171
 [gf186]: https://github.com/2AMLogic/gf180-trng/issues/186
 [gf187]: https://github.com/2AMLogic/gf180-trng/issues/187
+[gf224]: https://github.com/2AMLogic/gf180-trng/issues/224
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092

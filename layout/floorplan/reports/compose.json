@@ -111,7 +111,7 @@
     "dbu_um": 0.0005,
     "bbox_um": {
       "x0": 0.0,
-      "y0": -10.450000000000001,
+      "y0": -11.15,
       "x1": 1070.395,
       "y1": 550.815
     },
@@ -264,9 +264,9 @@
         },
         "bbox_um": {
           "x0": 4.16,
-          "y0": -10.450000000000001,
+          "y0": -11.15,
           "x1": 853.61,
-          "y1": 17.25
+          "y1": 102.92
         },
         "orientation": "none"
       }
@@ -293,5 +293,5 @@
       "block 'combiner_sampler_ring' gds 'layout/blocks/combiner_sampler/combiner_sampler.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)"
     ]
   },
-  "gds_sha256_timestamp_normalised": "a093cac8415c702670cf76ff4d6bec98aec4fb3e1d7e66a98eee5541c400eb2e"
+  "gds_sha256_timestamp_normalised": "5698c4e1db04be69140c73406ed8457984d86a605b69a31018bec2f634872c96"
 }

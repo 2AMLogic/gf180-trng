@@ -69,7 +69,6 @@ class ValidateInterRegionNetsTests(unittest.TestCase):
         regions_seen: set[str] = set()
         for net in supply_nets:
             regions = {rid for rid, _ in net.get("endpoints", ())}
-            regions |= {rid for rid, _ in net.get("implicit_regions", ())}
             self.assertTrue(
                 regions.isdisjoint(regions_seen),
                 msg=f"net {net['name']!r} shares a region with an earlier "
@@ -99,17 +98,19 @@ class ValidateInterRegionNetsTests(unittest.TestCase):
             sorted([("combiner_sampler", "ring_bit2"), ("digital", "ring_bit[1]")]),
         )
 
-    def test_vddd_and_vss_reach_digital_only_implicitly(self) -> None:
+    def test_vddd_and_vss_reach_digital_as_ordinary_endpoints(self) -> None:
+        """Since gf180-trng#224, `digital`'s own committed reference
+        promotes `vddd`/`vss` to real `.SUBCKT trng_top` pins (`layout/
+        digital/lvs.py`), so both nets declare `digital` as an ordinary,
+        mechanically-checked `endpoints` entry -- there is no longer an
+        `implicit_regions` escape hatch for either."""
         by_name = {n["name"]: n for n in fn.INTER_REGION_NETS}
         vddd = by_name["vddd"]
-        self.assertEqual(vddd["endpoints"], [])
-        self.assertEqual(vddd["implicit_regions"], [("digital", "vddd")])
+        self.assertEqual(vddd["endpoints"], [("digital", "vddd")])
+        self.assertNotIn("implicit_regions", vddd)
         vss = by_name["vss"]
-        self.assertIn(("digital", "vss"), vss["implicit_regions"])
-        self.assertNotIn(
-            "digital", {rid for rid, _ in vss["endpoints"]},
-            msg="digital's own reference has no .SUBCKT vss pin to claim",
-        )
+        self.assertIn(("digital", "vss"), vss["endpoints"])
+        self.assertNotIn("implicit_regions", vss)
 
 
 class ValidateInterRegionNetsCatchesBreakageTests(unittest.TestCase):
@@ -197,11 +198,16 @@ class ValidateInterRegionNetsCatchesBreakageTests(unittest.TestCase):
             msg=problems,
         )
 
-    def test_bad_implicit_region_specialnet_is_caught(self) -> None:
+    def test_vddd_endpoint_typo_is_caught(self) -> None:
+        """The `implicit_regions` escape hatch (and its own dedicated
+        `DIGITAL_IMPLICIT_SPECIALNETS` check) is gone since gf180-trng#224:
+        `vddd`'s connection into `digital` is now an ordinary `endpoints`
+        entry, caught by the same generic per-pin check every other net's
+        endpoints already go through."""
         nets = copy.deepcopy(self._original_nets)
         for net in nets:
             if net["name"] == "vddd":
-                net["implicit_regions"] = [("digital", "vccc")]  # not a real specialnet
+                net["endpoints"] = [("digital", "vccc")]  # not a real pin
         problems = self._install(nets)
         self.assertTrue(
             any("vccc" in problem for problem in problems), msg=problems

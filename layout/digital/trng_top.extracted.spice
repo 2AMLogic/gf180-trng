@@ -84,6 +84,8 @@
 * pin str_data[9]
 * pin str_ready
 * pin str_valid
+* pin vddd
+* pin vss
 * pin reg_wdata[10]
 * pin reg_wdata[11]
 * pin reg_wdata[12]
@@ -124,12 +126,12 @@
 + str_data[21] str_data[22] str_data[23] str_data[24] str_data[25] str_data[26]
 + str_data[27] str_data[28] str_data[29] str_data[2] str_data[30] str_data[31]
 + str_data[3] str_data[4] str_data[5] str_data[6] str_data[7] str_data[8]
-+ str_data[9] str_ready str_valid reg_wdata[10] reg_wdata[11] reg_wdata[12]
-+ reg_wdata[13] reg_wdata[14] reg_wdata[15] reg_wdata[16] reg_wdata[17]
-+ reg_wdata[18] reg_wdata[19] reg_wdata[20] reg_wdata[21] reg_wdata[22]
-+ reg_wdata[23] reg_wdata[24] reg_wdata[25] reg_wdata[26] reg_wdata[27]
-+ reg_wdata[28] reg_wdata[29] reg_wdata[30] reg_wdata[31] reg_wdata[3]
-+ reg_wdata[4] reg_wdata[5] reg_wdata[6]
++ str_data[9] str_ready str_valid vddd vss reg_wdata[10] reg_wdata[11]
++ reg_wdata[12] reg_wdata[13] reg_wdata[14] reg_wdata[15] reg_wdata[16]
++ reg_wdata[17] reg_wdata[18] reg_wdata[19] reg_wdata[20] reg_wdata[21]
++ reg_wdata[22] reg_wdata[23] reg_wdata[24] reg_wdata[25] reg_wdata[26]
++ reg_wdata[27] reg_wdata[28] reg_wdata[29] reg_wdata[30] reg_wdata[31]
++ reg_wdata[3] reg_wdata[4] reg_wdata[5] reg_wdata[6]
 * cell instance gf180mcu_fd_sc_mcu9t5v0__and2_1_0 r0 *1 0,0
 Xgf180mcu_fd_sc_mcu9t5v0__and2_1_0 u_ring_liveness/_067_ u_ring_liveness/_068_
 + vddd vss u_ring_liveness/_004_ gf180mcu_fd_sc_mcu9t5v0__and2_1
