@@ -1,8 +1,9 @@
 # Post-layout, extracted-netlist re-run of the verification suite (issue #17)
 
-Status: measurement complete for issue #17 (device-level) and, as of
-2026-09-11, issue #217 (routing-level, on top of #17 — see §7). **This
-document is an ordinary summary, not evidence.** Every number cites the
+Status: measurement complete for issue #17 (device-level); as of 2026-09-11,
+issue #217 (routing-level, on top of #17 — see §7); and as of 2026-09-12,
+issue #232 (the full-chip *inter-region* delta [DR-0025] scopes, on top of
+#217 — see §8). **This document is an ordinary summary, not evidence.** Every number cites the
 `sim/records/` stem that produced it, or states the reproducible derivation
 used to combine several of them — treat this as a reading guide over that
 evidence, not a substitute for it, the same convention every other
@@ -931,6 +932,14 @@ eventually rules on that proposal.
 
 ### 7.7 2026-09-12 scope decision: what a *full-chip* path would and would not show (issue #225, [DR-0025])
 
+> **Superseded in the only sense that matters, later the same day, by §8
+> (issue #232): the increment scoped here was then built, and every estimate
+> below now has a measured counterpart.** Nothing here is retracted or
+> rewritten — this subsection is what was *predicted from committed geometry
+> before any extraction was read*, and §8 is what the extraction actually
+> reported, so the two are deliberately left side by side. §8.2 compares them
+> line by line, including where the prediction was wrong.
+
 **Nothing in §§1–7.6 changes here. No record was produced, no extraction
 output informed anything below, and no number below is a simulation
 result.** This subsection exists because the standing "full-chip extraction"
@@ -1048,6 +1057,410 @@ the six `digital`-facing trunks stays unpriced.
 
 ---
 
+## 8. 2026-09-12 delta: full-chip *inter-region* extraction, scoped to `ro1`/`ro2` (issue #232, [DR-0025])
+
+### 8.0 What changed, what did not, and why every number below has a control
+
+§7.7 wrote down, from committed geometry and the deck's own published
+coefficients, what a full-chip extraction *would* show. This section is what
+it **did** show. The increment [DR-0025] authorised is built:
+`layout/pex/build.py` gained a third composition path, the delta report it
+produces is committed at
+[`layout/pex/reports/fullchip_parasitics.json`](../layout/pex/reports/fullchip_parasitics.json),
+and the netlist it composes is
+[`layout/pex/sampler_core.fullchip.extracted.spice`](../layout/pex/sampler_core.fullchip.extracted.spice).
+
+**What the path does**, in one paragraph: `klt extract --parasitics` over
+the composed, routed `layout/floorplan/trng_floorplan.gds` — the same
+invocation `layout/floorplan/floorplan.py`'s own `run_extract_composed` is
+held to (so the extraction the composed LVS is checked against and the
+extraction the parasitics come from are one run shape, not two), plus
+`--parasitics`, with `digital`'s ~2500 `gf180mcu_fd_sc_mcu9t5v0__*`
+instances abstracted. From that run it takes **only** the inter-region
+nets' R/C, and only as a **delta** over what the intra-region extractions
+already carry, because the full-chip extraction merges the ring's own wrap
+wire, the Metal4 trunk, the Metal3 risers and `combiner_sampler`'s own input
+stub into one electrical net. Summing rather than subtracting would
+double-count the first and last of those. The subtraction is held, not
+asserted: `layout/pex/build.py`'s `_reconcile_delta` raises `FlowError`
+rather than composing if a merged net comes back *smaller* than the sum of
+its own already-extracted parts (physically impossible — more wire only adds
+R and C — so it can only mean a net-identification bug), and
+[`layout/tests/test_pex_fullchip.py`](../layout/tests/test_pex_fullchip.py)
+holds both the arithmetic and the committed report/netlist pair to that rule.
+
+**The measured delta.** Every figure below is read out of the committed
+report, which records the merged total and each subtracted part alongside
+the delta so the arithmetic can be re-checked by hand:
+
+| Net | Full-chip merged | − ring's own | − `combiner_sampler`'s own | **= delta** |
+|---|---|---|---|---|
+| `ro1` | 251.50 Ω / 16.992 fF | 105.83 Ω / 7.890 fF | 88.12 Ω / 0.585 fF | **57.55 Ω / 8.517 fF** |
+| `ro2` | 224.18 Ω / 11.663 fF | 105.83 Ω / 7.890 fF | 88.12 Ω / 0.585 fF | **30.22 Ω / 3.188 fF** |
+| `raw_bit` | 557.89 Ω / 92.234 fF | — | 123.57 Ω / 4.231 fF | **88.003 fF** (C only) |
+| `raw_valid` | 577.80 Ω / 96.634 fF | — | 123.57 Ω / 4.231 fF | **92.403 fF** (C only) |
+| `ring_bit1` | 265.95 Ω / 32.181 fF | — | 123.57 Ω / 4.231 fF | **27.950 fF** (C only) |
+| `ring_bit2` | 270.59 Ω / 33.172 fF | — | 123.57 Ω / 4.231 fF | **28.942 fF** (C only) |
+
+`ro1`/`ro2` are composed as a symmetric lumped-pi segment (C/2 at each end,
+R in series) between each ring wrapper's own `ro` port and
+`combiner_sampler`'s `rn1`/`rn2`. That split is a **disclosed modelling
+choice, not an extraction output**: `klt extract --parasitics` reports one
+lumped total R and one lumped ground C per net, with no per-position
+breakdown, so a delta computed from two scalars cannot reconstruct the
+trunk's internal distribution, and the symmetric pi is the standard lumped
+equivalent available from two scalars. The four `digital`-facing taps get
+their capacitance only and **no series R** — DR-0025's own filter excludes
+them from being simulated as two-ended nets, and a resistor ending in an
+open node passes no current and would change nothing electrically.
+
+**Two things the delta deliberately leaves out**, both in the direction of
+*under*-reporting:
+
+- **Net-to-net coupling.** `klt extract --parasitics` keeps a net's ground
+  capacitance separate from the net-to-net capacitors it shares with the
+  nets it crosses, and a coupling capacitor belongs to a *pair* of nets, so
+  it has no intra-region counterpart to subtract. It is reported next to
+  each delta instead of folded into it. For the two simulated nets it is
+  negligible (`ro1`: 0.077 fF, `ro2`: 0.067 fF — under 1 % and 3 % of their
+  own deltas respectively), so nothing below turns on it.
+- **Receiver-side gate capacitance on the four `digital`-facing taps**,
+  exactly as §7.7 said: real added output load on a real extracted
+  `sampler_dff`, with nothing modelled behind it.
+
+**Why every comparison below is against a *control*, not against §7's own
+routing-level records.** The routing-level records for §7.1/§7.3/§7.4-active
+are composed from `ro_array_core`'s topology (two routed rings, leaf-level
+buffer/XOR, no samplers), while [DR-0025] requires this increment to be
+composed from `sampler_core`'s (two routed rings plus the fully assembled
+`combiner_sampler`, samplers and all). Subtracting those two would measure
+the *composition* difference, not the inter-region delta: the whole-block
+supply rail alone is about twice as large in the `sampler_core` composition
+(the four `sampler_dff` instances' own static bias appears in it). So each
+family here has a **zero-delta control** — the identical deck, identical
+window, identical PVT point, against `layout/pex/sampler_core.routed.extracted.spice`,
+i.e. the same composition with the inter-region delta absent. Every "delta"
+column below is fullchip-minus-control, and each control record's own
+Caveats say what it is.
+
+That control is also a check on itself: at the entropy-binding corner it
+reproduces the routing-level record's [DR-0007] §2 sizing margin to 0.6 %
+(0.440× vs §7.1's 0.442×), confirming that swapping the composition does not
+move the number this document actually turns on — only the rail scope.
+
+### 8.1 Entropy-binding corner margin, full-chip (extends §7.1)
+
+`sim/tb/ro-array-core-pvt-q-extracted-fullchip/` and its control, both at
+`ss`/+125 °C/3.63 V:
+
+| Quantity | Routed (#217, §7.1) | **Control** (same composition, no inter-region delta) | **Full-chip** (#232) | Delta, full-chip vs. control |
+|---|---|---|---|---|
+| Record | [`2026-09-11-…-extracted-routed-01`](records/2026-09-11-ro-array-core-pvt-q-extracted-routed-01.md) | [`2026-09-12-…-fullchip-control-01`](records/2026-09-12-ro-array-core-pvt-q-extracted-fullchip-control-01.md) | [`2026-09-12-…-fullchip-01`](records/2026-09-12-ro-array-core-pvt-q-extracted-fullchip-01.md) | |
+| `period_r1` | 17.426 ns | 17.788 ns | 19.826 ns | **+2.038 ns, +11.5 %** |
+| `period_r2` | 16.462 ns | 16.667 ns | 17.458 ns | **+0.791 ns, +4.7 %** |
+| `p_rings_w` (two rings only) | 103.5 µW | 100.8 µW | 101.8 µW | +1.0 % |
+| `xo_trans_per_s` | 236.3 M/s | 232.4 M/s | 215.4 M/s | −7.3 % |
+
+Ring 1 is the one that matters, and it moves the way §7.7 predicted it
+would: its `ro` wrap node is the lightest node in the design, and the `ro1`
+trunk lands 8.5 fF and 57.5 Ω straight on top of it. Ring 2's much shorter
+trunk moves it about a third as much.
+
+**Consequence for [DR-0007] §2's sizing inequality**, recomputed exactly the
+way §2.1 and §7.1 computed theirs (`sim/tools/array_sizing.py`'s
+`ArrayPoint`, run directly against each record, at [DR-0010]'s proposed
+500 bps):
+
+| `a` (jitter-energy constant) | Leaf (#17) | Routed (#217) | **Control** | **Full-chip (#232)** |
+|---|---|---|---|---|
+| 1.79 ([DR-0010]'s stated plain-cell constant) | 0.865× — FAILS | 0.442× — FAILS | 0.440× | **0.374× — FAILS, another 14.8 % down** |
+| 11.77 (issue #46's measured starved-cell constant) | 5.689× | 2.908× | 2.890× | **2.462× — still holds** |
+
+The margin at [DR-0010]'s own stated constant, already failing at device
+level and failing twice as hard at routing level, loses a further **14.8 %**
+once the two inter-region entropy trunks are priced (0.440× → 0.374×
+against the like-for-like control; 0.442× → 0.374× against §7.1's own
+routing-level record). At the physically-measured starved-cell constant it
+still clears 1× with 2.46× of margin, down 14.8 % from the control.
+
+**No ratified README row's verdict changes** — same reasoning as §2.1 and
+§7.1: [DR-0010]'s rate is `Proposed`, not ratified, and the *ratified* rate
+misses this sizing target by orders of magnitude regardless of layout. What
+is new is that whoever rules on [DR-0010] no longer has to rule on a number
+with a known-but-unpriced correction outstanding: the correction is priced,
+it is −15 %, and it is in the record.
+
+### 8.2 Monte Carlo device mismatch: not re-run at full-chip level, and why
+
+§7.2's family (`ro-array-core-mc-freq-extracted-routed`) is **not** re-run
+here. [DR-0025] scopes this increment to §7.1/§7.3/§7.4 and does not ask for
+it, and the reason it does not is worth restating rather than leaving as an
+omission: §7.2's finding is about the *ratio* `f_r2/f_r1` and its
+seed-to-seed spread, and the inter-region delta moves both rings' periods in
+the same direction by a known amount (§8.1: +11.5 % and +4.7 %), which
+shifts the mean ratio by ~6 % while leaving the mismatch-driven scatter —
+a device-model property, §2.3 — untouched. §7.2's own margin against
+injection locking is ~18–19 sd; a 6 % shift in a ratio that sits ~5–7 %
+away from an integer is not capable of closing an 18-sd gap. That is a
+stated argument from already-measured numbers, **not a measurement**, and it
+is why the family is skipped rather than a claim that skipping it is free.
+
+### 8.3 Startup, full-chip (extends §7.3)
+
+`sim/tb/ro-array-core-startup-extracted-fullchip/` and its control, both at
+`ss`/+125 °C/2.97 V:
+
+| Quantity | Routed (#217, §7.3) | **Control** | **Full-chip** (#232) | Delta, full-chip vs. control |
+|---|---|---|---|---|
+| Record | [`2026-09-11-…-extracted-routed-01`](records/2026-09-11-ro-array-core-startup-extracted-routed-01.md) | [`2026-09-12-…-fullchip-control-01`](records/2026-09-12-ro-array-core-startup-extracted-fullchip-control-01.md) | [`2026-09-12-…-fullchip-01`](records/2026-09-12-ro-array-core-startup-extracted-fullchip-01.md) | |
+| First rising edge after `en` (`t1r1`) | 27.571 ns | 27.716 ns | 31.442 ns | **+3.727 ns, +13.4 %** |
+| Steady-state period, ring 1 (`t10−t9`) | 23.431 ns | 22.708 ns | 25.619 ns | **+2.911 ns, +12.8 %** |
+| Steady-state period, ring 2 (`t10−t9`) | 21.651 ns | 21.269 ns | 22.484 ns | **+1.215 ns, +5.7 %** |
+| 4th `xo` edge (`t4xo`) | 58.558 ns | 59.334 ns | 61.814 ns | +4.2 % |
+
+The steady-state periods agree with §8.1's independent measurement of the
+same quantity at a different supply, and the start-up transient degrades by
+about the same fraction as the period does — the ring starts later because
+each lap takes longer, not because the trunk changes the start-up mechanism.
+
+**Consequence for the ratified raw-rate row**: still none, and not close.
+Even stacking this on §7.3's own +46 %, the rate-binding corner's ~26 ns
+period stays roughly four orders of magnitude inside [DR-0003]'s > 1 Mbps
+(< 1 µs raw sample period) budget.
+
+### 8.4 Power, full-chip (extends §7.4)
+
+**Active** (`sim/tb/ro-array-core-power-extracted-fullchip/`, `ff`/−40 °C/3.63 V):
+
+| Quantity | **Control** | **Full-chip** (#232) | Delta |
+|---|---|---|---|
+| Record | [`2026-09-12-…-fullchip-control-01`](records/2026-09-12-ro-array-core-power-extracted-fullchip-control-01.md) | [`2026-09-12-…-fullchip-01`](records/2026-09-12-ro-array-core-power-extracted-fullchip-01.md) | |
+| `p_rings_w` (the two rings' own term) | 263.5 µW | 267.4 µW | **+1.45 %** |
+| `p_total_w` (this composition's whole-block rail) | 957.8 µW | 965.5 µW | **+0.80 %** |
+| `period_r1` | 7.175 ns | 7.958 ns | +10.9 % |
+
+**§7.4's active-power rollup is deliberately not restated here.** This DUT's
+`p_total_w` is a `sampler_core`-scope rail (both rings, the buffers, the XOR
+*and* all four samplers), roughly twice §7.4's `ro_array_core`-scope
+489.9 µW, so dropping it into that table's "entropy array (measured)" row
+would silently change what the row means. What this increment contributes to
+that row is a **+1.45 % correction on the rings' own term**, which does not
+move §7.4's ≈2.4× miss in any visible digit. The verdict is unchanged and
+the row was already missed on the digital section's account.
+
+**Idle** (`sim/tb/sampler-core-idle-leakage-extracted-fullchip/`, `ff`/+125 °C/3.63 V):
+
+| Quantity | Routed (#217, §7.4) | **Control** | **Full-chip** (#232) | Delta, full-chip vs. control |
+|---|---|---|---|---|
+| Record | [`2026-09-11-…-extracted-routed-01`](records/2026-09-11-sampler-core-idle-leakage-extracted-routed-01.md) | [`2026-09-12-…-fullchip-control-01`](records/2026-09-12-sampler-core-idle-leakage-extracted-fullchip-control-01.md) | [`2026-09-12-…-fullchip-01`](records/2026-09-12-sampler-core-idle-leakage-extracted-fullchip-01.md) | |
+| Integration window | 1 µs tstop / 200 ns | **9.5 µs / 1 µs** | **9.5 µs / 1 µs** | |
+| Whole-block idle current (worst clock-park state) | 136.80 nA | 121.90 nA | 127.04 nA | **+5.13 nA, +4.2 %** |
+| Self-check (previous-window) disagreement | 0.9 % | 0.5 % | 1.2 % | |
+
+**A widened measurement window was needed, and finding that out is itself a
+result.** The ~237 fF of added driver-side output load on
+`raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2` settles slowly at
+leakage-level currents. Two first attempts were discarded before any record
+was minted — the same convention §7.2 and §7.3 used for their own failed
+first windows, and both are reported rather than hidden:
+
+| Window | `i_idle_clklo_a` | Its own self-check pair | Disagreement |
+|---|---|---|---|
+| 1 µs / 200 ns (the routing-level family's own) | 190.99 nA | 205.61 nA | 7.7 % — **not settled** |
+| 5 µs / 1 µs | 138.07 nA | 143.52 nA | 3.9 % — still drifting |
+| **9.5 µs / 1 µs** (this deck) | **127.04 nA** | 128.51 nA | **1.2 % — settled** |
+
+9.5 µs is as far as this can be pushed without changing the shared
+idle-state protocol itself (`rst_n`'s own pulse falls at 10.1 µs), which is
+stated because it is a real ceiling.
+
+**One consequence has to be said plainly, because it cuts against a number
+this document already published.** The control — the *identical* netlist the
+#217 record measured, same blob SHA — reads **121.90 nA** over the widened
+window against that record's **136.80 nA** over the 1 µs one. The difference
+is a measurement-window difference on the same DUT, not a design change and
+not a correction to the #217 record, which stands unedited as the
+append-only rule requires. But it means §7.4's closing advice ("a future
+integrator sizing headroom … should size against this 136.8 nA figure, the
+most complete one available") should now read **127.04 nA** — the most
+complete *and* the most settled figure, and still the conservative one of
+the two settled readings. The rollup verdict does not move: at 127.04 nA the
+analog term is ≈12.8 % of the < 1 µA row against `digital`'s unchanged
+3.946 µA of gate-level leakage, and the row stays missed by ≈4.07×, the same
+≈4× it was already missed by pre-layout.
+
+### 8.5 [DR-0025]'s own first-order estimate, against what was measured
+
+[DR-0025]'s "Revisit if" clause asks for exactly this comparison, and says a
+materially different result means the sizing argument that justified the
+scope was wrong and the scope should be re-derived from measured values.
+Taking it seriously, in both directions:
+
+| Quantity | §7.7 / DR-0025 estimate | Measured | Ratio |
+|---|---|---|---|
+| `ro1` delta C | ≈7.5 fF | 8.517 fF | 1.14× |
+| `ro1` delta R | ≈39 Ω | 57.55 Ω | 1.48× |
+| `ro2` delta C | ≈2.1 fF | 3.188 fF | 1.52× |
+| `ro2` delta R | ≈11 Ω | 30.22 Ω | 2.75× |
+| `period_r1` shift | ≈+1.5 ns, **≈+9 %** | +2.038 ns, **+11.5 %** | 1.27× |
+| `period_r2` shift | ≈+0.4 ns, ≈+3 % | +0.791 ns, +4.7 % | 1.98× |
+
+**Verdict on `ro1`, the load-bearing one: the estimate holds.** +11.5 %
+measured against ≈+9 % predicted is a 27 % relative error on a first-order,
+trunk-only, lumped, deck-coefficient calculation that was explicitly
+labelled an estimate — it is not the kind of discrepancy DR-0025's "Revisit
+if" is about, and the scoping argument it justified (that a ~9 %-scale
+correction on `period_r1` was too big to leave unpriced) is if anything
+strengthened: the correction is bigger than predicted, not smaller. **No
+re-derivation of the scope is called for, and none is made here.**
+
+Three reasons the measurement lands above the estimate, all of them
+reasons the estimate itself disclosed:
+
+1. **Trunk-only geometry.** DR-0025's arithmetic priced the Metal4 trunk and
+   said so ("risers, vias and vertical-overlap coupling … are not in it").
+   The measured delta includes the Metal3 risers and vias, which is most of
+   the +14 % on `ro1`'s capacitance and nearly all of the +48 % on its
+   resistance.
+2. **The linearisation ignored series R entirely.** §7.7's ≈0.20 ns/fF
+   sensitivity was derived from a pure-capacitance step (ring-internal
+   wiring). The `ro1` trunk also puts 57.5 Ω in series between the ring's
+   last stage and the buffer's gate; 0.20 ns/fF × 8.517 fF is +1.70 ns,
+   and the measured +2.04 ns leaves ≈0.34 ns that the capacitance term does
+   not account for.
+3. **`ro2`'s relative error is large and its absolute error is not.** 1.52×
+   on a 2.1 fF estimate is 1.1 fF. Short trunks are exactly where a
+   trunk-only estimate should be worst, because the fixed riser/via cost is
+   a larger share of the total.
+
+**The four `digital`-facing taps look far worse than the estimate, and the
+comparison is not like-for-like — both halves of that are worth stating.**
+
+| Net | DR-0025's trunk-only estimate | Measured full-chip delta C | Ratio |
+|---|---|---|---|
+| `raw_bit` | ≈30.8 fF | 88.00 fF | 2.86× |
+| `raw_valid` | ≈26.2 fF | 92.40 fF | 3.53× |
+| `ring_bit1` | ≈20.1 fF | 27.95 fF | 1.39× |
+| `ring_bit2` | ≈15.6 fF | 28.94 fF | 1.86× |
+
+**These two columns do not measure the same thing, and the difference is
+structural.** `--abstract-cells` abstracts the standard *cells*, not the
+routing between them, so a `digital`-facing net's own routed metal **inside**
+the `digital` region is real drawn geometry and is in the full-chip
+extraction. The measured column is therefore "cs stub + riser + trunk +
+digital-side routing, less the cs stub", while the estimate column is "trunk
+only". Splitting the measured total back into those pieces is exactly the
+attribution the extractor cannot do
+([klayout-tools#1699](https://github.com/2AMLogic/klayout-tools/issues/1699)
+§2), so **this section does not claim that DR-0025's ≈30.8 fF is 2.86× too
+low** — only that the trunk is not the whole story on those nets, and that
+the real added load sits somewhere between the two columns.
+
+What *is* directly comparable is `ro1`/`ro2`, where both endpoints are
+inside blocks this repository extracts separately and the subtraction
+therefore closes cleanly. There, a trunk-only Metal4 arithmetic undercounts
+the real added capacitance by ~14 % and the real added resistance by ~48 %
+(the risers and vias). **That is the transferable finding**, and it is the
+one that matters to [#233](https://github.com/2AMLogic/gf180-trng/issues/233)
+(merged 2026-09-12), which loads these six trunks into the post-route STA
+from the same trunk-only, Metal4-only arithmetic read live out of
+`layout/floorplan/reports/interregion.json`. Its *scope* is right — the
+post-route STA already models the digital-side routing, so a trunk-only
+interface load is what it should add, not the merged total above — but on
+the `ro1`/`ro2` evidence its numbers are a **floor**: the real riser-plus-via
+contribution is not in them. Flagged on #233 rather than left to be
+rediscovered.
+
+### 8.6 Spec table: full-chip does not flip any ratified verdict either
+
+Extending §7.6's table with the full-chip column:
+
+| Row | Post-layout (routed, #217) | **Post-layout (full-chip, #232)** | Changed further? |
+|---|---|---|---|
+| Entropy source, [DR-0007] §2 sizing law | Fails at the plain-cell constant (0.442×); holds at the starved-cell constant (2.91×) | **Fails further at the plain-cell constant (0.374×); still holds at the starved-cell constant (2.46×)** | Yes — degrades a further 14.8 %, §8.1. Still no ratified row flips ([DR-0010]'s rate is `Proposed`). |
+| Raw rate ([DR-0003], ratified) | Met by ~4 orders of magnitude | Met by ~4 orders of magnitude (§8.3) | No |
+| Raw min-entropy per bit (placeholder) | Not measurable, same structural reason | Unchanged — this increment adds no entropy measurement | No |
+| Time-to-first-valid (measured, met) | Met | Met — the start-up term grows 13 % and stays ~0.001 % of the 1.281 ms total | No |
+| Power — active (measured, missed) | Missed ≈2.4× | Missed ≈2.4× (rings' own term +1.45 %, §8.4) | No |
+| Power — idle (measured, missed) | Missed ≈4.0× | **Missed ≈4.07×**, on a more complete *and* better-settled 127.04 nA analog term (§8.4) | Verdict unchanged |
+| Area, Operating envelope, Interface, Health tests, Conditioning, Delivered rate | Unaffected | Unaffected | No |
+
+**No ratified README row's pass/fail verdict changes as a result of this
+full-chip increment either.** The one number that is not a row — [DR-0007]
+§2's sizing margin at [DR-0010]'s proposed rate — has now moved
+1.356× (pre-layout) → 0.865× (device-level) → 0.442× (routing-level) →
+**0.374×** (with the two inter-region entropy trunks priced).
+
+### 8.7 What this still does not price, and what it cost
+
+**Still unpriced, and therefore still a floor.** §0.1's "floor, not ceiling"
+framing survives this increment exactly as §7.7 said it would:
+
+- Twelve of the fourteen drawn inter-region nets are not simulated at all.
+  `clk` and `rst_n` are driven from an ideal zero-impedance source in every
+  deck in `sim/tb/`, so their trunks' R in front of it is a no-op
+  ([DR-0025] Alternative B); `vss`'s IR drop is
+  [#234](https://github.com/2AMLogic/gf180-trng/issues/234)'s question, now
+  answered in [`characterization-vss-trunk-ir-drop.md`](characterization-vss-trunk-ir-drop.md);
+  the supply and control stubs are ≈0.2 fF each.
+- The four `digital`-facing taps carry **driver-side load only** — no
+  receiver gate capacitance — and §8.5 shows the capacitance actually
+  hanging off those nets is 1.4×–3.5× the trunk-only estimate (because the
+  net's own routed metal inside `digital` is in the extraction too), which
+  makes that hole bigger than it looked, not smaller.
+- Nothing here is evidence about any `gf180mcu_fd_sc_mcu9t5v0__*` cell's own
+  devices. The digital section stays at cell-instance granularity, and every
+  record minted in this section carries that caveat in its own Caveats
+  block, per [DR-0025].
+- Net-to-net coupling capacitance is reported but not composed (§8.0).
+
+**Record level: unchanged.** Every record in this section is `level:
+extracted` per [DR-0024], which already legislated this case — "a record
+with fuller routing coverage says so in its own Caveats rather than needing
+a new `level:` value". No new `level:` value is added and [DR-0024] is not
+amended, exactly as [DR-0025] Alternative D decided.
+
+**Runtime, measured properly this time.** [DR-0025] could only record that
+its own feasibility probe "had not completed after ~19.5 minutes" on a
+partly-contended host. Two instrumented runs of the identical invocation on
+the same host say:
+
+| Run | Wall clock | CPU time (user) | Peak RSS | Host 1-min load average (28 cores) |
+|---|---|---|---|---|
+| Out-of-band, `/usr/bin/time -l` | 2283.9 s (**38.1 min**) | 1052.3 s (**17.5 min**) | 286 MB | ~25–29 |
+| In-tool, `build.py --fullchip-extract` (the committed report) | 2194.8 s (**36.6 min**) | — | — | 25.7 (recorded in the report) |
+
+Both runs are on the same host, the same `klt 0.4.0+gc903103cba9e`, the same
+stream, with the identical invocation the committed report echoes — and they
+produced **bit-identical parasitics** (the composed netlist rebuilt from
+either is byte-identical, which is what `build.py --check` compares). Two
+independent 36–38-minute extractions agreeing to the last decimal place is
+worth recording on its own: this step is expensive, but it is reproducible.
+
+The load figure is recorded beside the wall clock deliberately: DR-0025's
+probe had to be discounted precisely because it was contended and nobody
+wrote down by how much. The **CPU-time** figure (~17.5 min) is the
+contention-independent one, and it is the number to budget against; the
+wall-clock figure is roughly double it on a host running at ~28/28 cores'
+worth of other work. Either way the conclusion DR-0025 drew stands: this is
+a tens-of-minutes step and it must not sit on an interactive check's path.
+It does not — `layout/pex/build.py --check` never re-runs it, and composes
+from the committed report instead, reconciling that report against a fresh
+(cheap) intra-region extraction on every run so a stale report fails loudly
+rather than silently.
+
+**Friction filed upstream**, per this repository's protocol: the measured
+cost above was added to
+[klayout-tools#1699](https://github.com/2AMLogic/klayout-tools/issues/1699)
+("`klt extract --parasitics` is whole-layout and total-only, so pricing a
+few top-level nets costs a full pass and needs hand-subtraction to avoid
+double-counting"), which [DR-0025] filed generically from the same gap. Both
+halves of that gap are what made this increment expensive: a full pass to
+price six nets, and a hand-written subtraction (`_reconcile_delta`) to avoid
+double-counting them.
+
+---
+
 ## Follow-up
 
 - ~~**Full-chip (inter-cell + inter-region routed) extraction**, once
@@ -1098,17 +1511,25 @@ the six `digital`-facing trunks stays unpriced.
   `layout/floorplan/README.md`, "Inter-region routing". So there *is* now a
   joined full-chip composition to extract. The remaining gap is the
   extraction half: no full-chip PEX path exists over it, which is its own
-  follow-up (see `layout/pex/build.py`'s own "Out of scope" section for what
-  such a path would have to price). Nothing in this document's own
-  routing-level records changes as a result — they are all intra-region.
+  follow-up (see `layout/pex/build.py`'s own "Full-chip (inter-region) delta
+  composition" section for what such a path would have to price). Nothing in
+  this document's own routing-level records changes as a result — they are
+  all intra-region.
   **Scoped 2026-09-12 (issue #225, [DR-0025], §7.7)**: the extraction half
   is now a decided, narrow piece of work rather than an open question —
   price the two inter-region nets with a transistor-level device at both
   ends (`ro1`, `ro2`), keep `digital` abstracted, and re-run §7.1/§7.3/§7.4
-  at their existing binding corners. **Still open**: building it, filed as
+  at their existing binding corners. ~~**Still open**: building it, filed as
   [#232](https://github.com/2AMLogic/gf180-trng/issues/232). No record in
   this repository may be cited as full-chip post-layout evidence until it
-  exists.
+  exists.~~ **Struck 2026-09-12 (issue #232): built.** The extraction half
+  exists now too — `layout/pex/build.py`'s third path, its committed
+  `layout/pex/reports/fullchip_parasitics.json` delta report and the composed
+  `layout/pex/sampler_core.fullchip.extracted.spice` — and §8 records what it
+  measured. The "may not be cited as full-chip post-layout evidence" bar is
+  cleared **only for the two nets [DR-0025] scopes** (`ro1`, `ro2`) plus the
+  four disclosed driver-side-only output loads; every other inter-region net
+  is still unpriced, and §8 states that up front rather than in a footnote.
 - **Feed the six `digital`-facing trunks' capacitance into the post-route
   STA** as an interface load, under [DR-0022]'s path — new, from §7.7, filed
   as [#233](https://github.com/2AMLogic/gf180-trng/issues/233). This is where

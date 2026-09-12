@@ -2,20 +2,31 @@
 """Compose parasitic-annotated (`klt extract --parasitics`) netlists into
 post-layout drop-in replacements for `design/ro_array_core.spice` and
 `design/sampler_core.spice`, for issue #17 (device-level post-layout
-re-run) and issue #217 (routing-level post-layout re-run, on top of #17).
+re-run), issue #217 (routing-level post-layout re-run, on top of #17) and
+issue #232 (the full-chip inter-region delta DR-0025 authorises, on top of
+#217).
 
     python3 layout/pex/build.py            # extract + compose, write files
     python3 layout/pex/build.py --check    # rebuild to scratch, compare bytes
+    python3 layout/pex/build.py --fullchip-extract   # refresh the DR-0025
+                                           # delta report (EXPENSIVE -- tens
+                                           # of minutes; see below)
 
-This module now runs two independent composition paths, both written by the
-same `build()` call and both covered by the same `--check`:
+This module now runs three composition paths. The first two are written by
+the same `build()` call and covered by the same `--check`; the third is
+written by `build()` too, but from a committed, separately-refreshed report,
+because the extraction behind it is far too expensive to run on every check:
 
 1. **Leaf-cell (device-level)**, issue #17 -- `ro_array_core.extracted.spice`
    / `sampler_core.extracted.spice`. See "Why leaf cells" below; unchanged
-   by issue #217.
+   by issues #217 and #232.
 2. **Assembled-block (routing-level)**, issue #217 --
    `ro_array_core.routed.extracted.spice` / `sampler_core.routed.extracted.spice`.
    See "Routing-level composition" below.
+3. **Full chip (inter-region delta)**, issue #232 / DR-0025 --
+   `sampler_core.fullchip.extracted.spice`, from
+   `layout/pex/reports/fullchip_parasitics.json`. See "Full-chip
+   (inter-region) delta composition" below.
 
 ## Why leaf cells, not the assembled `ro_ring11`/`combiner_sampler` GDS -- for path 1
 
@@ -68,7 +79,9 @@ plus that cell's own internal metal parasitics (its `--parasitics` R/C).
 ring/block (`layout/rings/README.md`'s hand-routed metal1 stage-to-stage
 chain and metal2/via1 `vddr`/`vss` straps, `layout/blocks/README.md`'s
 combiner/sampler row wiring) and any inter-region routing at all (see
-"Out of scope" below, unchanged by issue #217).
+"Full-chip (inter-region) delta composition" below, where path 3 prices two
+of those inter-region nets -- unchanged by issues #217 and #232 for path 1
+itself, which still composes leaf cells only).
 
 ## Routing-level composition (issue #217) -- how each true external port
    was positively identified
@@ -257,123 +270,229 @@ capacitance stays on the DRIVER side of the tap -- as it does in the
 leaf-level deck, where the wire capacitance lives inside the driving cell's
 own extraction, ahead of the source.
 
-## Out of scope: the full-chip (inter-region) path, and why -- a CHOICE now,
-   not a blocker (DR-0025, issue #225)
+## Full-chip (inter-region) delta composition (issue #232, DR-0025)
 
-Both paths in this module are *intra*-region: each re-runs a single block's
-own netlist with device-level or routing-level parasitics annotated, and
-**neither reads `layout/floorplan/trng_floorplan.gds` at all**. Nothing in
-this module carries any inter-region parasitic.
+Both paths above are *intra*-region: each re-runs a single block's own
+netlist with device-level or routing-level parasitics annotated, and
+neither reads `layout/floorplan/trng_floorplan.gds` at all. Until issue
+#222 that was a blocker, not a choice: `layout/floorplan/`'s four guarded
+regions were placed with a 20 um isolation channel and **no wiring at all**
+between them (`klt extract --top trng_floorplan` on the composed floorplan
+GDS reported 2588 top-level pins for what should be a ~12-pin block).
 
-Until issue #222 the reason was that there was no full chip to extract:
-`layout/floorplan/`'s four guarded regions were placed with a 20 um
-isolation channel and **no wiring at all** between them -- confirmed
-empirically at the time, `klt extract --top trng_floorplan` on the composed
-floorplan GDS reported 2588 top-level pins for what should be a ~12-pin
-block, i.e. the regions were not electrically joined in the committed
-layout.
+#222 (phase 2 of #219) draws real Metal4 trunks and Metal3 risers across
+the isolation channels for every net `design/floorplan_netlist.py`
+declares, and the composed, routed floorplan is DRC-clean and LVS-matches
+that declaration's own composed reference. That made a third,
+**inter-region** path possible, and
+`spec/decision-records/DR-0025-full-chip-pex-scope.md` decided what it is
+allowed to be about: extract `trng_floorplan.gds` with `--parasitics` at
+the same cell-instance granularity the composed LVS already uses, take from
+it only the inter-region net parasitics as a **delta** over what the two
+intra-region paths above already carry, and simulate only the nets with a
+transistor-level device at both ends -- today `ro1`/`ro2`
+(`design/floorplan_netlist.INTER_REGION_NETS`'s own `role: "entropy_tap"`
+nets), plus a disclosed, driver-side-only output-load capacitor on the four
+`role: "raw_tap"/"liveness_tap"` nets (`raw_bit`, `raw_valid`, `ring_bit1`,
+`ring_bit2`). Read DR-0025 in full before extending this section further --
+in particular its "Alternatives considered" for why a blanket
+transistor-level full-chip extraction, and a `clk`-trunk-focused increment,
+were both rejected, and its own worked-example arithmetic for why `ro1`/
+`ro2` are the only two nets the "both ends transistor-level" filter admits
+today.
 
-That is no longer true. #222 (phase 2 of #219) draws real Metal4 trunks and
-Metal3 risers across the isolation channels for every net
-`design/floorplan_netlist.py` declares, and the composed, routed floorplan
-is DRC-clean and LVS-matches that declaration's own composed reference
-(`layout/floorplan/reports/floorplan.drc.json` -> `status: "clean"`,
-`layout/floorplan/reports/interregion.json` -> `check.lvs.status: "match"`).
-So the blocker this section used to name is **gone**, and the absence of a
-full-chip path here is now a scoping decision rather than an obstruction.
+### Why a DELTA, and why it must be able to raise rather than compose
 
-`spec/decision-records/DR-0025-full-chip-pex-scope.md` is that decision.
-Read it before extending this module toward the composed stream; the short
-form is:
+The full-chip extraction's `ro1` net merges four physically distinct
+pieces into one electrical net: `ring1`'s own internal wrap wire (already
+inside `ro_ring11.routed.extracted.spice`'s own `ro` net), the Metal4 trunk
+and Metal3 risers `interregion.py` draws, and `combiner_sampler`'s own
+`rn1` stub (already inside `combiner_sampler.routed.extracted.spice`'s own
+`rn1` net). Composing the full-chip extraction's merged R/C **on top of**
+those two intra-region extractions would double-count the wire they already
+carry; the trunk's own contribution is only recoverable by subtraction:
 
-**A full-chip PEX increment is worth building, in one narrow form.** Extract
-`trng_floorplan.gds` with `--parasitics` at the same cell-instance
-granularity the composed LVS already uses (`--abstract-cells
-'gf180mcu_fd_sc_mcu9t5v0__*'`), take from it only the *inter-region* net
-parasitics as a **delta** over what the intra-region extractions above
-already carry (the full-chip extraction merges the ring's own wrap wire, the
-trunk, the riser and `combiner_sampler`'s own stub into one net -- summing
-rather than subtracting would double-count), and simulate only the nets with
-a transistor-level device at **both** ends.
+    delta = fullchip_net.{resistance_ohm, capacitance_ff}
+            - ring_net.{resistance_ohm, capacitance_ff}
+            - combiner_sampler_net.{resistance_ohm, capacitance_ff}
 
-**What such a path would show.** Today that filter admits exactly two nets:
-`ro1` (`ring1.ro` -> `combiner_sampler.rn1`, a 128.40 um trunk) and `ro2`
-(`ring2.ro` -> `combiner_sampler.rn2`, 35.92 um). Both land on a ring's own
-`ro` wrap node -- the lightest, most delay-sensitive nodes in the design
-(`ro_ring11.routed.extracted.spice` gives each ring's eleven inter-stage
-nets 24.87 fF in total, of which the `ro` net carries ~8 fF), which is why
-DR-0025 judges the increment worth building at all. It would move the
-entropy-binding-corner ring period (`sim/characterization-post-layout-
-extracted.md` §7.1) and, through it, DR-0007 §2's sizing margin at DR-0010's
-proposed rate, plus the startup (§7.3) and power (§7.4) families that read
-off the same netlist.
+`_reconcile_delta` is the one function that arithmetic runs through, for
+every net this module prices this way. Parasitics are only ever *added* by
+more wire, never removed, so a merged net's own R/C can only be >= the sum
+of its already-extracted intra-region parts; a result below that (beyond
+`_CLOSE_TOLERANCE_OHM`/`_CLOSE_TOLERANCE_FF`'s own float-rounding
+allowance) can only mean a labelling/positional-identification bug
+upstream, not physical reality, and `_reconcile_delta` raises `FlowError`
+rather than composing from it -- the same "raise rather than guess"
+discipline `_match_positional`/`_unique_pin_index` already follow for the
+routing-level path.
 
-**What such a path would NOT show**, and what therefore may not be claimed
-from it:
+Net identity for `ro1`/`ro2`/the four output-load nets in the full-chip
+extraction needs no *positional* resolution (unlike the routing-level path's
+collided `a|y`/`a`/`q` names), but it does need more than an exact name
+match, because flat extraction of the composed stream joins every drawn
+label on a net into one name. Measured, not assumed: `ro1` comes back as
+`a|ro1|y` (the ring's own `y` pin label, `interregion.py`'s own trunk label
+and `ro_buf`'s own `a` pin label, merged), `ring_bit1` as
+`q|ring_bit1|ring_bit[0]`. What IS unique is the *label*:
+`interregion.py` draws exactly one `ro1` text, on the trunk itself, and no
+other net carries it. `_parasitics_entry_by_label` matches on that label
+and raises `FlowError` if it ever stops resolving to exactly one net,
+rather than guessing. The ring-side and
+`combiner_sampler`-side intra-region parts, by contrast, DO need the
+existing routing-level path's own positional port resolution (`ro`/`rn1`/
+`rn2` are collided flat names in *those* extractions) -- `_net_id_at_pin_index`
+joins a resolved `pin_index` back to its own `parasitics.nets[]` entry via
+`net_id` (`net.cluster_id`), the stable cross-reference `klt extract`'s own
+JSON schema provides for exactly this.
+
+### The composed segment: a symmetric pi-model, not a re-derived star
+
+`klt extract --parasitics`'s own model gives each net a single lumped
+series resistance distributed as a star across that net's device terminals,
+plus one hub-level ground capacitance -- there is no per-position R/C
+breakdown to subtract piecewise, only the net's own two scalar totals. A
+delta computed from two scalars cannot reconstruct the trunk's own
+internal star, so `_pi_delta_lines` instead inserts the standard lumped
+approximation of a distributed line for a segment with only its own total R
+and total C known: `C_delta/2` at each end, `R_delta` in series between
+them -- between each ring wrapper's own `ro` port and
+`combiner_sampler_routed_extracted`'s `rn1`/`rn2` port respectively. This is
+a disclosed modelling choice (a symmetric split is not derived from the
+extraction, it is the simplest lumped equivalent available from two
+scalars), stated here and in every record's own Caveats.
+
+The four output-load nets get no series R at all: `raw_bit`/`raw_valid`/
+`ring_bit1`/`ring_bit2` are driven by a real extracted `sampler_dff`
+instance into an *abstracted* `digital` receiver (DR-0025's own filter
+excludes them from being simulated as two-ended nets), so a series resistor
+ending in an open node would pass no current and change nothing
+electrically -- only the added grounded capacitance at the driver's own pin
+is carried forward (`_sampler_core_fullchip_subckt`'s `cload_<net>` cards),
+disclosed as driver-side-only, exactly as DR-0025 requires.
+
+### The expensive step is never on `build()`'s unconditional path
+
+The full-chip `--parasitics` extraction is not cheap the way every other
+`_run_klt` call in this module is. DR-0025's own runtime probe had not
+completed after ~19.5 minutes (partly CPU-contended, single uninstrumented
+observation) before being terminated; issue #232 re-measured it properly and
+recorded **~17.5 minutes of CPU time** (the contention-independent figure to
+budget against), which was ~38 minutes of wall clock on a 28-core host
+running at a ~25-29 load average. Every run writes its own `runtime_s` AND
+the host load average it was measured under into the committed report, so
+the next person does not have to discount an uninstrumented number the way
+DR-0025 had to.
+
+`run_fullchip_extraction_and_report` (invoked only by `main()`'s
+`--fullchip-extract`, never by `build()`) is the one place this module ever
+runs it, at `FULLCHIP_TIMEOUT_S` (3600s, chosen to leave headroom above that
+without being unbounded), and writes its result to the COMMITTED
+`layout/pex/reports/fullchip_parasitics.json`.
+
+There are therefore TWO caches here, doing two different jobs, and it is
+worth keeping them straight:
+
+* the **committed report** is what every ordinary `build()`/`--check` run
+  composes from, so the expensive extraction is paid once per layout
+  revision rather than once per check; and
+* `FULLCHIP_CACHE` (gitignored, under `layout/.work/`) holds the last run's
+  raw `klt` response, so `--fullchip-extract --reuse-cache` can recompute
+  the delta arithmetic in seconds while that arithmetic is being developed
+  or debugged. It is keyed on the exact argument list, and a report produced
+  from it is stamped `from_cache: true` -- a cache hit never re-dates
+  someone else's measurement as a fresh one. `klt extract --rerun` is not a
+  substitute: it re-runs the extraction and diffs it against a committed
+  report, which is a staleness check, not a cache.
+
+`build()`'s own unconditional path (every plain invocation and every
+`--check`) never re-runs that extraction. It reads the committed report
+back (cheap, no new `klt` call) and reconciles it (`_reconcile_cached_report`)
+against a FRESH ring1/ring2/combiner_sampler extraction -- which `build()`
+already runs for the routing-level path above, so this costs nothing
+additional -- raising `FlowError` if the cached report's own recorded
+intra-region R/C has drifted from what a fresh extraction now reports (the
+drawn geometry moved since `--fullchip-extract` was last run, and the
+committed report needs refreshing, not silently trusting). This is the
+"held, not asserted" reconciliation covered by
+`layout/tests/test_pex_fullchip.py`.
+
+### What this does and does not capture
+
+**Captured**: `ro1`/`ro2`'s own inter-region trunk-plus-riser delta,
+inserted where it physically sits (between each ring's own output and
+`combiner_sampler`'s own buffer input), on top of every parasitic the two
+intra-region extractions already carry for that same net; plus a disclosed
+driver-side-only output-load capacitor on `raw_bit`/`raw_valid`/
+`ring_bit1`/`ring_bit2`.
+
+**Not captured**, per DR-0025's own stated coverage hole -- restated here,
+not relaxed:
 
 - **Nothing about `digital`'s own devices.** The ~2500
-  `gf180mcu_fd_sc_mcu9t5v0__*` instances stay abstracted (black boxes), as
-  every existing extraction of the composed stream already abstracts them.
-  The digital section's timing and power are owned by the post-route
-  gate-level path (DR-0021/DR-0022/DR-0023), which is better evidence for
-  that question than an ngspice re-derivation would be.
-- **No arrival-time / clock-tree claim across a region boundary.**
-  `clk` and `rst_n` are driven *from* `digital`, and every deck in `sim/tb/`
-  replaces that driver with an ideal, zero-impedance ngspice source. The
-  trunks' ~106 ohm in front of a 0 ohm source is ~2 ps of RC on edges
-  measured in tens to hundreds of ps -- a no-op dressed as a measurement.
-  The real question (can `digital`'s clock driver drive the trunk's ~21 fF?)
-  belongs in the post-route STA, not here.
-- **Only driver-side loading on the four `digital`-facing outputs.**
-  `raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2` are driven by real extracted
-  `sampler_dff` instances into abstracted receivers, so their trunk C is a
-  real added output load with **no receiver gate capacitance behind it**.
-  `raw_bit`'s 524.77 um trunk is the largest single parasitic on the chip
-  and is only partly priced by this scope -- stated, not hidden.
-- **No IR-drop verdict** on the shared 430.23 um `vss` trunk (a static
-  supply analysis needing a current profile this produces nothing for), and
-  nothing about `digital`'s `vddd`/`vss` PDN tie (gf180-trng#224).
+  `gf180mcu_fd_sc_mcu9t5v0__*` instances stay abstracted (black boxes); the
+  digital section's timing and power are owned by the post-route
+  gate-level path (DR-0021/DR-0022/DR-0023), better evidence for that
+  question than an ngspice re-derivation would be.
+- **No arrival-time / clock-tree claim across a region boundary.** `clk`
+  and `rst_n` are driven from `digital` in the real chip, but every deck in
+  `sim/tb/` (including the new `-extracted-fullchip` siblings) replaces
+  that driver with an ideal, zero-impedance ngspice source -- the trunks'
+  own resistance in front of a 0 ohm source is a no-op dressed as a
+  measurement, so this module prices no delta on `clk`/`rst_n` at all.
+- **Only driver-side loading on the four `digital`-facing outputs**, with
+  **no receiver gate capacitance** behind it -- `raw_bit`'s 524.77 um trunk
+  is the largest single parasitic on the chip and is only partly priced
+  here, stated rather than hidden.
+- **No IR-drop verdict** on the shared 430.23 um `vss` trunk, and nothing
+  about `digital`'s `vddd`/`vss` PDN tie (gf180-trng#224) -- both their own
+  follow-ups (gf180-trng#234, gf180-trng#224).
+- **Net-to-net (vertical-overlap) coupling capacitance is reported, not
+  composed.** `klt extract --parasitics` keeps each net's ground
+  capacitance (`parasitics.nets[].capacitance_ff`) separate from the
+  capacitors it shares with the nets it crosses
+  (`parasitics.nets[].coupled[]`), and a coupling capacitor belongs to a
+  *pair* of nets, so it has no intra-region counterpart for
+  `_reconcile_delta` to subtract. Each net's coupling total is written into
+  the committed report as `fullchip_coupling_capacitance_ff` beside its
+  delta (`_coupling_total_ff`) rather than folded into it -- under-reporting
+  rather than over-reporting, which is the direction the "floor, not
+  ceiling" framing below requires. Measured, for scale: 0.077 fF on `ro1`
+  and 0.067 fF on `ro2`, against deltas of 8.5 fF and 3.2 fF.
 
-**No such path exists in this module yet**, and no record in this repository
-may be cited as full-chip post-layout evidence until one does. Building it is
-gf180-trng#232, filed from DR-0025's own Follow-up.
+Because inter-region parasitics can only *add* R and C,
+`sim/characterization-post-layout-extracted.md` §0.1's "floor, not
+ceiling" framing survives this increment unchanged -- every degradation
+reported anywhere in this module's evidence, including this section's own,
+is still a lower bound on what a full transistor-level chip extraction
+would show.
 
-One practical warning for whoever does, from the runtime probe DR-0025
-discloses: the full-chip `--parasitics` extraction is **not** cheap the way
-every `_run_klt` call in this module is. It had not finished after ~19.5
-minutes on the host DR-0025 was written on and was terminated rather than
-waited out (single uninstrumented observation, partly CPU-contended --
-"tens of minutes, order of magnitude", not a benchmark). Do not wire it into
-`build()`'s unconditional path, and do not assume `--check`'s
-rebuild-and-compare stays interactive if you do; budget it, and expect to
-want `klt extract --rerun` or an equivalent cache so the composition step
-can be iterated without re-paying the extraction.
-
-One consequence worth restating: because inter-region parasitics can only
-*add* R and C, `sim/characterization-post-layout-extracted.md` §0.1's "floor,
-not ceiling" framing survives unchanged -- every degradation the paths above
-report is still a lower bound on what the full chip would show, and would
-remain one even after the increment DR-0025 authorises lands.
-
-See `sim/characterization-post-layout-extracted.md` (§7.7 in particular) for
-the honest accounting of what each path changes and what it cannot yet show.
+See `sim/characterization-post-layout-extracted.md` for the honest
+accounting of what each path changes and what it cannot show, and
+`layout/pex/reports/fullchip_parasitics.json` (once `--fullchip-extract`
+has been run) for the measured delta figures themselves.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import shutil
 import sys
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import FlowError, _run_klt, resolve_pdk  # noqa: E402
+from layout._klt import FlowError, _run_klt, klt_version, resolve_pdk  # noqa: E402
 import layout.blocks.combiner_sampler.build as _cs_mod  # noqa: E402
 import layout.rings.ro_ring11.build as _ring1_mod  # noqa: E402
 import layout.rings.ro_ring11_ring2.build as _ring2_mod  # noqa: E402
+from design.floorplan_netlist import INTER_REGION_NETS  # noqa: E402
+from layout.floorplan.floorplan import _reference_top_pins  # noqa: E402
 
 PEX_DIR = REPO_ROOT / "layout" / "pex"
 WORK_DIR = REPO_ROOT / "layout" / ".work" / "pex-check"
@@ -423,6 +542,585 @@ PDK_VARIANT = "gf180mcuD"
 #: drawn geometry step in this design (the coarsest grid used anywhere here
 #: is 0.01 um, `layout/README.md`'s own dbu).
 _POS_TOL_UM = 0.02
+
+# --------------------------------------------------------------------------- #
+# Full-chip delta composition (issue #232, DR-0025). See this module's own
+# docstring, "Full-chip (inter-region) delta composition", for the design.
+# --------------------------------------------------------------------------- #
+
+FULLCHIP_GDS = "layout/floorplan/trng_floorplan.gds"
+FULLCHIP_TOP = "trng_floorplan"
+FULLCHIP_LVS_REFERENCE = REPO_ROOT / "layout" / "floorplan" / "trng_floorplan.lvs_reference.spice"
+#: Same glob `layout/floorplan/floorplan.py`'s own `run_extract_composed`
+#: uses (`COMPOSED_ABSTRACT_CELLS`) -- kept as a literal here rather than
+#: imported, the same "don't import a caller's constant, restate the deck
+#: fact" discipline `layout/tests/test_pex_noise_tap.py`'s own `TAP_PREFIX`
+#: follows, so a rename of one does not silently desync the other.
+FULLCHIP_ABSTRACT_CELLS = "gf180mcu_fd_sc_mcu9t5v0__*"
+#: DR-0025's own measured cost input: the full-chip `--parasitics` extraction
+#: had not completed after ~19.5 minutes (partly CPU-contended, single
+#: uninstrumented observation) on the host that record was written on.
+#: 3600s leaves headroom above that without being unbounded. Every other
+#: `_run_klt` call in this module keeps `_run_klt`'s own 600s default --
+#: this is the one deliberate exception, and it is never on `build()`'s own
+#: unconditional path (see `main()`'s `--fullchip-extract`).
+FULLCHIP_TIMEOUT_S = 3600
+FULLCHIP_REPORT = PEX_DIR / "reports" / "fullchip_parasitics.json"
+#: Raw `klt extract` response of the last `--fullchip-extract` run, under the
+#: gitignored scratch tree -- never committed, and never read unless
+#: `--reuse-cache` asks for it. This is the iteration cache DR-0025's own
+#: runtime note anticipated: composing, re-composing and debugging the delta
+#: arithmetic against a fixed extraction costs seconds instead of the
+#: tens-of-minutes the extraction itself does. See `extract_fullchip`.
+FULLCHIP_CACHE = REPO_ROOT / "layout" / ".work" / "pex-fullchip" / "fullchip_extraction_cache.json"
+#: Scratch directory `--fullchip-extract` extracts into. Deliberately NOT
+#: `WORK_DIR`: `--check` globs `*.spice` out of `WORK_DIR` and requires a
+#: committed counterpart for each, so a multi-megabyte
+#: `trng_floorplan.fullchip.extracted.spice` left there by an earlier
+#: `--fullchip-extract` run would make the next `--check` fail demanding a
+#: file this module never composes (`layout/pex/` holds composed drop-ins,
+#: not raw full-chip extractions). Found the hard way while building #232.
+FULLCHIP_WORK_DIR = FULLCHIP_CACHE.parent
+
+#: DR-0025's own load-bearing filter: a full-chip inter-region trunk is
+#: SIMULATED only when both its endpoints are already transistor-level in
+#: this module's existing intra-region extractions -- today exactly the two
+#: nets `design/floorplan_netlist.INTER_REGION_NETS` tags `role:
+#: "entropy_tap"` (`ro1`: ring1.ro -> combiner_sampler.rn1; `ro2`: ring2.ro
+#: -> combiner_sampler.rn2). Derived from that declared data, not
+#: hardcoded, so a future net gaining a transistor-level receiver (DR-0025's
+#: own "Revisit if") is picked up here without an edit.
+_SIMULATED_ROLES = ("entropy_tap",)
+#: Roles whose driver is transistor-level (a real `sampler_dff` inside
+#: `combiner_sampler`) but whose receiver is `digital`, abstracted --
+#: DR-0025 prices these as a disclosed, driver-side-only OUTPUT LOAD (a
+#: capacitor at the driver's own pin), never as a simulated two-ended net
+#: (no receiver gate capacitance is modelled -- see the module docstring).
+_DRIVER_SIDE_LOAD_ROLES = ("raw_tap", "liveness_tap")
+
+#: Absolute tolerance the delta arithmetic must close within (float rounding
+#: only -- `klt extract`'s own JSON already rounds `resistance_ohm` to 4
+#: decimals and `capacitance_ff` to 6, so this is generous against that
+#: alone). A full-chip merged net's own R/C can only be >= the sum of its
+#: already-extracted intra-region parts (more wire only adds parasitics);
+#: anything below `-`(tolerance) means a labelling/positional-identification
+#: bug, not physical reality, and `_reconcile_delta` raises rather than
+#: composing from it.
+_CLOSE_TOLERANCE_OHM = 1e-3
+_CLOSE_TOLERANCE_FF = 1e-4
+
+
+def _entropy_tap_nets() -> list[dict]:
+    """The full-chip inter-region nets DR-0025's filter actually simulates
+    (today: `ro1`, `ro2`) -- see `_SIMULATED_ROLES`."""
+    return [net for net in INTER_REGION_NETS if net["role"] in _SIMULATED_ROLES]
+
+
+def _driver_side_load_nets() -> list[dict]:
+    """The full-chip inter-region nets DR-0025 prices as an added,
+    driver-side-only output load (today: `raw_bit`, `raw_valid`,
+    `ring_bit1`, `ring_bit2`) -- see `_DRIVER_SIDE_LOAD_ROLES`."""
+    return [net for net in INTER_REGION_NETS if net["role"] in _DRIVER_SIDE_LOAD_ROLES]
+
+
+def _net_id_at_pin_index(payload: dict, pin_index: int) -> int:
+    """The `net_id` (`net.cluster_id`) of the `nets[]` entry promoted to
+    `.SUBCKT` position `pin_index` in this extraction -- the stable key that
+    joins a resolved port position back to its own `parasitics.nets[]`
+    entry (which is indexed by `net_id`, not `pin_index`)."""
+    for net in payload["nets"]:
+        if net.get("pin_index") == pin_index:
+            return net["net_id"]
+    raise FlowError(f"no net at pin_index {pin_index} in this extraction's own nets[]")
+
+
+def _parasitics_entry_by_net_id(payload: dict, net_id: int) -> dict:
+    parasitics = payload.get("parasitics")
+    if not parasitics:
+        raise FlowError(
+            "this extraction has no `parasitics` block -- was `--parasitics` given?"
+        )
+    matches = [net for net in parasitics["nets"] if net["net_id"] == net_id]
+    if len(matches) != 1:
+        raise FlowError(
+            f"expected exactly one parasitics.nets[] entry for net_id {net_id}, "
+            f"found {len(matches)}"
+        )
+    return matches[0]
+
+
+#: KLayout joins every drawn label on one net into a single net name -- `'|'`
+#: between labels of a flat extraction (`layout/floorplan/interregion.
+#: extracted_net_name`'s own documented convention) and `','` in the
+#: LEF/DEF-merged case. A full-chip inter-region net therefore never arrives
+#: under its own bare name: `ro1` comes back as `a|ro1|y` (the ring's own `ro
+#: _stage` `y` pin label, `interregion.py`'s own trunk label, and `ro_buf`'s
+#: own `a` pin label, all merged onto one electrical net), and `ring_bit1` as
+#: `q|ring_bit1|ring_bit[0]`. Measured, not assumed -- see
+#: `_parasitics_entry_by_label`.
+_NET_LABEL_SEPARATORS = re.compile(r"[|,]")
+
+
+def _net_labels(name: str) -> set[str]:
+    """Every drawn label KLayout joined into one extracted net name."""
+    return {part for part in _NET_LABEL_SEPARATORS.split(name) if part}
+
+
+def _parasitics_entry_by_label(payload: dict, label: str) -> dict:
+    """Like `_parasitics_entry_by_net_id`, but for a full-chip net identified
+    by one of its own drawn labels.
+
+    Positional resolution is not needed here, and exact-name matching does
+    not work: flat extraction of the composed stream merges every label on a
+    net into one joined name (`_NET_LABEL_SEPARATORS`), so the net
+    `design/floorplan_netlist.py` calls `ro1` arrives as `a|ro1|y`. What IS
+    unique is the label itself -- `interregion.py` draws exactly one `ro1`
+    text, on the trunk, and no other net carries that label. That uniqueness
+    is CHECKED here rather than assumed: zero or more than one match raises
+    `FlowError` instead of composing, the same discipline
+    `_match_positional`/`_unique_pin_index` follow for the routing-level
+    path.
+    """
+    parasitics = payload.get("parasitics")
+    if not parasitics:
+        raise FlowError(
+            "this extraction has no `parasitics` block -- was `--parasitics` given?"
+        )
+    matches = [net for net in parasitics["nets"] if label in _net_labels(net["net"])]
+    if len(matches) != 1:
+        raise FlowError(
+            f"expected exactly one parasitics.nets[] entry carrying the drawn label "
+            f"{label!r} in the full-chip extraction, found {len(matches)} "
+            f"({[net['net'] for net in matches]}) -- see {FRICTION_ISSUE} and this "
+            "module's own docstring, 'Full-chip (inter-region) delta composition'"
+        )
+    return matches[0]
+
+
+def _coupling_total_ff(entry: dict) -> float:
+    """This net's total net-to-net (vertical-overlap) coupling capacitance,
+    which is reported ALONGSIDE the delta and deliberately NOT folded into
+    it.
+
+    `klt extract --parasitics` keeps a net's own ground capacitance
+    (`capacitance_ff`) separate from the net-to-net capacitors it shares with
+    the nets it crosses (`coupled[]`), and only the first is a quantity the
+    subtraction in `_reconcile_delta` can close over -- a coupling capacitor
+    belongs to a *pair* of nets, so it has no intra-region counterpart to
+    subtract. Recording it is how this module keeps
+    `sim/characterization-post-layout-extracted.md` section 0.1's "floor, not
+    ceiling" framing honest: the coupled term is real added load that this
+    composition does not carry, so the composed netlist under-reports rather
+    than over-reports.
+    """
+    return round(sum(c["capacitance_ff"] for c in (entry.get("coupled") or [])), 6)
+
+
+def _reconcile_delta(name: str, fullchip: dict, parts: list[dict]) -> dict:
+    """DR-0025's own arithmetic: `fullchip`'s merged R/C, less every already-
+    extracted intra-region `parts` entry's own R/C for that same physical
+    net. Raises `FlowError` (composes nothing) rather than returning a
+    negative delta beyond float-rounding tolerance -- see
+    `_CLOSE_TOLERANCE_OHM`/`_CLOSE_TOLERANCE_FF`.
+    """
+    delta_r = fullchip["resistance_ohm"] - sum(p["resistance_ohm"] for p in parts)
+    delta_c = fullchip["capacitance_ff"] - sum(p["capacitance_ff"] for p in parts)
+    if delta_r < -_CLOSE_TOLERANCE_OHM or delta_c < -_CLOSE_TOLERANCE_FF:
+        raise FlowError(
+            f"{name}: the full-chip extraction's merged net (R={fullchip['resistance_ohm']} "
+            f"ohm, C={fullchip['capacitance_ff']} fF) is SMALLER than the sum of its own "
+            f"already-extracted intra-region parts (R={sum(p['resistance_ohm'] for p in parts)} "
+            f"ohm, C={sum(p['capacitance_ff'] for p in parts)} fF) -- the arithmetic does not "
+            "close. Parasitics are only ever added by more wire, never removed, so this can "
+            "only mean a labelling/positional-identification bug upstream of this function, "
+            "not physical reality. Composing from this would double-count or undercount; see "
+            "this module's own docstring, 'Full-chip (inter-region) delta composition'."
+        )
+    # A tiny negative residual inside tolerance is float rounding, not signal
+    # -- clamp rather than writing a (physically meaningless) negative R/C
+    # card into the composed netlist.
+    return {
+        "resistance_ohm": round(max(delta_r, 0.0), 6),
+        "capacitance_ff": round(max(delta_c, 0.0), 6),
+    }
+
+
+def _fullchip_extract_args(outdir: Path) -> list[str]:
+    """`layout/floorplan/floorplan.py`'s own `run_extract_composed` argument
+    list, plus `--parasitics` -- DR-0025 step 1, verbatim. Built in one place
+    so the run, the cache key and the provenance line in the committed report
+    can never describe three different invocations."""
+    pins = _reference_top_pins(FULLCHIP_LVS_REFERENCE, FULLCHIP_TOP)
+    out_path = outdir / "trng_floorplan.fullchip.extracted.spice"
+    return [
+        "extract",
+        FULLCHIP_GDS,
+        "--deck",
+        DECK,
+        "--top",
+        FULLCHIP_TOP,
+        "--parasitics",
+        "--pdk",
+        PDK_VARIANT,
+        "--abstract-cells",
+        FULLCHIP_ABSTRACT_CELLS,
+        "--pins",
+        ",".join(pins),
+        "--def-net-names",
+        "-o",
+        str(out_path.relative_to(REPO_ROOT)),
+    ]
+
+
+def _fullchip_cache_key(args: list[str]) -> list[str]:
+    """`args` with the `-o <path>` pair dropped.
+
+    Everything else in the invocation changes what the extractor computes;
+    where the netlist is written does not. Keying the cache on the full list
+    would miss on a pure scratch-directory move, which is a false negative
+    that costs tens of minutes."""
+    out: list[str] = []
+    skip = False
+    for arg in args:
+        if skip:
+            skip = False
+            continue
+        if arg in ("-o", "--output"):
+            skip = True
+            continue
+        out.append(arg)
+    return out
+
+
+def extract_fullchip(
+    outdir: Path, timeout_s: int = FULLCHIP_TIMEOUT_S, *, reuse_cache: bool = False
+) -> tuple[dict, dict]:
+    """`klt extract --parasitics` over the composed, routed floorplan
+    (DR-0025) -- the SAME run shape `layout/floorplan/floorplan.py`'s own
+    `run_extract_composed` is held to (the extraction the composed LVS is
+    already checked against), plus `--parasitics`. Returns
+    `(payload, meta)`.
+
+    Expensive (see `FULLCHIP_TIMEOUT_S`'s own docstring) and NOT part of
+    `build()`'s unconditional path -- only ever invoked by `main()`'s
+    `--fullchip-extract`.
+
+    Every run writes its raw response to `FULLCHIP_CACHE` (under the
+    gitignored `layout/.work/`), and `reuse_cache=True` reads that back
+    instead of re-running -- the "equivalent cache" DR-0025's own runtime
+    note says whoever built this would need, so the composition step can be
+    iterated without re-paying a tens-of-minutes extraction. The cache is
+    keyed on the full argument list, so a changed flag, pin set or input path
+    misses it rather than silently composing from the wrong run. A cached
+    run's own measured `runtime_s` travels with it, and the report it
+    produces says `from_cache: true` -- a cache hit never re-dates or
+    re-attributes someone else's measurement as a fresh one.
+    """
+    args = _fullchip_extract_args(outdir)
+    if reuse_cache and FULLCHIP_CACHE.is_file():
+        cached = json.loads(FULLCHIP_CACHE.read_text())
+        if _fullchip_cache_key(cached.get("args") or []) != _fullchip_cache_key(args):
+            raise FlowError(
+                f"{FULLCHIP_CACHE.relative_to(REPO_ROOT)} was written by a DIFFERENT "
+                "extraction invocation than the one this module now builds -- refusing "
+                "to compose from it. Re-run without --reuse-cache to refresh it."
+            )
+        meta = dict(cached["meta"])
+        meta["from_cache"] = True
+        return cached["payload"], meta
+
+    start = time.monotonic()
+    payload = _run_klt(args, timeout_s=timeout_s)
+    runtime_s = time.monotonic() - start
+    meta = {
+        "command": "klt " + " ".join(args),
+        "runtime_s": round(runtime_s, 1),
+        "klt_version": klt_version(),
+        "pdk_variant": PDK_VARIANT,
+        "host_load_average_1min": _load_average_1min(),
+        "cpu_count": os.cpu_count(),
+        "from_cache": False,
+    }
+    FULLCHIP_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    FULLCHIP_CACHE.write_text(json.dumps({"args": args, "meta": meta, "payload": payload}))
+    return payload, meta
+
+
+def _load_average_1min() -> float | None:
+    """The host's 1-minute load average at the moment an extraction finished,
+    recorded next to its wall-clock runtime.
+
+    DR-0025's own runtime probe had to be discounted precisely because it was
+    partly CPU-contended and nobody wrote down by how much. A wall-clock
+    figure with no load figure beside it is not reproducible evidence about
+    the tool -- it is evidence about the host that day."""
+    try:
+        return round(os.getloadavg()[0], 2)
+    except (OSError, AttributeError):  # pragma: no cover - platform-dependent
+        return None
+
+
+def compute_fullchip_report(
+    fullchip_payload: dict,
+    ring_payloads: dict[str, dict],
+    ring_ports: dict[str, dict[int, str]],
+    cs_payload: dict,
+    cs_ports: dict[int, str],
+) -> dict:
+    """DR-0025's own delta arithmetic for every inter-region net this module
+    prices, keyed by net name. See the module docstring, "Full-chip
+    (inter-region) delta composition"."""
+    region_payload = {"ring1": ring_payloads["ro_ring11"], "ring2": ring_payloads["ro_ring11_ring2"]}
+    region_ports = {"ring1": ring_ports["ro_ring11"], "ring2": ring_ports["ro_ring11_ring2"]}
+
+    def _pin_index(port_map: dict[int, str], pin: str) -> int:
+        for idx, name in port_map.items():
+            if name == pin:
+                return idx
+        raise FlowError(f"no resolved port named {pin!r} in {port_map!r}")
+
+    def _entry_for(payload: dict, port_map: dict[int, str], pin: str) -> dict:
+        net_id = _net_id_at_pin_index(payload, _pin_index(port_map, pin))
+        return _parasitics_entry_by_net_id(payload, net_id)
+
+    entropy: dict[str, dict] = {}
+    for net in _entropy_tap_nets():
+        name = net["name"]
+        ring_region = next(r for r, _p in net["endpoints"] if r in region_payload)
+        ring_pin = next(p for r, p in net["endpoints"] if r == ring_region)
+        cs_pin = next(p for r, p in net["endpoints"] if r == "combiner_sampler")
+
+        ring_entry = _entry_for(region_payload[ring_region], region_ports[ring_region], ring_pin)
+        cs_entry = _entry_for(cs_payload, cs_ports, cs_pin)
+        fc_entry = _parasitics_entry_by_label(fullchip_payload, name)
+
+        delta = _reconcile_delta(name, fc_entry, [ring_entry, cs_entry])
+        entropy[name] = {
+            "ring_region": ring_region,
+            "ring_pin": ring_pin,
+            "cs_pin": cs_pin,
+            "fullchip_net_name": fc_entry["net"],
+            "fullchip_coupling_capacitance_ff": _coupling_total_ff(fc_entry),
+            "fullchip": {
+                "resistance_ohm": fc_entry["resistance_ohm"],
+                "capacitance_ff": fc_entry["capacitance_ff"],
+            },
+            "ring_intra_region": {
+                "resistance_ohm": ring_entry["resistance_ohm"],
+                "capacitance_ff": ring_entry["capacitance_ff"],
+            },
+            "combiner_sampler_intra_region": {
+                "resistance_ohm": cs_entry["resistance_ohm"],
+                "capacitance_ff": cs_entry["capacitance_ff"],
+            },
+            "delta": delta,
+        }
+
+    loads: dict[str, dict] = {}
+    for net in _driver_side_load_nets():
+        name = net["name"]
+        cs_pin = next(p for r, p in net["endpoints"] if r == "combiner_sampler")
+        cs_entry = _entry_for(cs_payload, cs_ports, cs_pin)
+        fc_entry = _parasitics_entry_by_label(fullchip_payload, name)
+        delta = _reconcile_delta(name, fc_entry, [cs_entry])
+        loads[name] = {
+            "cs_pin": cs_pin,
+            "fullchip_net_name": fc_entry["net"],
+            "fullchip_coupling_capacitance_ff": _coupling_total_ff(fc_entry),
+            "fullchip": {
+                "resistance_ohm": fc_entry["resistance_ohm"],
+                "capacitance_ff": fc_entry["capacitance_ff"],
+            },
+            "combiner_sampler_intra_region": {
+                "resistance_ohm": cs_entry["resistance_ohm"],
+                "capacitance_ff": cs_entry["capacitance_ff"],
+            },
+            # Driver-side-only (DR-0025): no receiver device exists to size
+            # a series R against (an R ending in an open node passes no
+            # current and changes nothing electrically), so only the added
+            # capacitance is carried forward into the composed netlist.
+            "delta": delta,
+        }
+
+    return {"entropy_tap": entropy, "driver_side_load": loads}
+
+
+def write_fullchip_report(report: dict, extraction_meta: dict, path: Path = FULLCHIP_REPORT) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "_comment": (
+            "GENERATED by layout/pex/build.py --fullchip-extract -- do not edit by "
+            "hand. DR-0025's own inter-region delta arithmetic -- see "
+            "layout/pex/build.py's module docstring, 'Full-chip (inter-region) "
+            "delta composition'."
+        ),
+        "extraction": extraction_meta,
+        **report,
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def run_fullchip_extraction_and_report(outdir: Path, *, reuse_cache: bool = False) -> dict:
+    """The expensive step (DR-0025's own measured tens-of-minutes cost) --
+    ONLY invoked by `main()`'s `--fullchip-extract`, never by `build()`'s own
+    unconditional path. Re-runs the cheap intra-region assembled extractions
+    too (ring1/ring2/combiner_sampler), since the delta needs both sides
+    fresh to reconcile against, then writes the committed derived report
+    `layout/pex/reports/fullchip_parasitics.json` that `build()`'s own
+    default path reads back cheaply (no new `klt` call) on every
+    run/`--check`, reconciling it against a FRESH intra-region extraction
+    each time -- see the module docstring.
+
+    `reuse_cache=True` composes from the last run's cached raw response
+    (`FULLCHIP_CACHE`) instead of re-extracting -- for iterating on the
+    composition, not for producing the committed report.
+    """
+    outdir.mkdir(parents=True, exist_ok=True)
+    leaf_payloads: dict[str, dict] = {}
+    for name, gds, top in LEAF_CELLS:
+        leaf_payloads[name] = extract_leaf(name, gds, top, outdir)
+
+    ring_payloads: dict[str, dict] = {}
+    ring_ports: dict[str, dict[int, str]] = {}
+    for name, gds, top, mod, nand_leaf, stage_leaf in ASSEMBLED_RINGS:
+        payload = extract_assembled(name, gds, top, outdir)
+        ring_payloads[name] = payload
+        ring_ports[name] = _resolve_ring_ports(payload, leaf_payloads[nand_leaf], leaf_payloads[stage_leaf], mod)
+
+    cs_payload = extract_assembled("combiner_sampler", COMBINER_SAMPLER_GDS, COMBINER_SAMPLER_TOP, outdir)
+    cs_ports = _resolve_combiner_sampler_ports(
+        cs_payload, leaf_payloads["ro_buf"], leaf_payloads["sampler_dff"], _cs_mod
+    )
+
+    fullchip_payload, meta = extract_fullchip(outdir, reuse_cache=reuse_cache)
+    report = compute_fullchip_report(fullchip_payload, ring_payloads, ring_ports, cs_payload, cs_ports)
+    write_fullchip_report(report, meta)
+    return report
+
+
+def _reconcile_cached_report(
+    cached: dict,
+    ring_payloads: dict[str, dict],
+    ring_ports: dict[str, dict[int, str]],
+    cs_payload: dict,
+    cs_ports: dict[int, str],
+) -> None:
+    """Hold the COMMITTED `fullchip_parasitics.json` report to a FRESH
+    intra-region extraction, every `build()`/`--check` run -- the cheap half
+    of the reconciliation this module's docstring describes (the expensive
+    half, re-running the full-chip extraction itself, is
+    `run_fullchip_extraction_and_report`'s job, invoked separately). Raises
+    `FlowError` if the cached report's own recorded intra-region R/C no
+    longer matches a fresh extraction -- meaning the committed report is
+    stale relative to the current drawn geometry and `--fullchip-extract`
+    needs re-running, not that this module should silently keep composing
+    from a number that no longer describes what is on disk.
+    """
+    region_payload = {"ring1": ring_payloads["ro_ring11"], "ring2": ring_payloads["ro_ring11_ring2"]}
+    region_ports = {"ring1": ring_ports["ro_ring11"], "ring2": ring_ports["ro_ring11_ring2"]}
+
+    def _pin_index(port_map: dict[int, str], pin: str) -> int:
+        for idx, name in port_map.items():
+            if name == pin:
+                return idx
+        raise FlowError(f"no resolved port named {pin!r} in {port_map!r}")
+
+    def _fresh_entry(payload: dict, port_map: dict[int, str], pin: str) -> dict:
+        net_id = _net_id_at_pin_index(payload, _pin_index(port_map, pin))
+        return _parasitics_entry_by_net_id(payload, net_id)
+
+    def _check(name: str, cached_entry: dict, fresh: dict) -> None:
+        if (
+            abs(fresh["resistance_ohm"] - cached_entry["resistance_ohm"]) > _CLOSE_TOLERANCE_OHM
+            or abs(fresh["capacitance_ff"] - cached_entry["capacitance_ff"]) > _CLOSE_TOLERANCE_FF
+        ):
+            raise FlowError(
+                f"{name}: {FULLCHIP_REPORT.relative_to(REPO_ROOT)}'s cached intra-region "
+                f"R/C (R={cached_entry['resistance_ohm']} ohm, C={cached_entry['capacitance_ff']} "
+                f"fF) no longer matches a fresh extraction (R={fresh['resistance_ohm']} ohm, "
+                f"C={fresh['capacitance_ff']} fF) -- the committed report is stale relative to "
+                "the current drawn geometry. Re-run `python3 layout/pex/build.py "
+                "--fullchip-extract` to refresh it."
+            )
+
+    for name, entry in cached["entropy_tap"].items():
+        ring_region = entry["ring_region"]
+        fresh_ring = _fresh_entry(region_payload[ring_region], region_ports[ring_region], entry["ring_pin"])
+        _check(f"{name} (ring)", entry["ring_intra_region"], fresh_ring)
+        fresh_cs = _fresh_entry(cs_payload, cs_ports, entry["cs_pin"])
+        _check(f"{name} (combiner_sampler)", entry["combiner_sampler_intra_region"], fresh_cs)
+
+    for name, entry in cached["driver_side_load"].items():
+        fresh_cs = _fresh_entry(cs_payload, cs_ports, entry["cs_pin"])
+        _check(f"{name} (combiner_sampler)", entry["combiner_sampler_intra_region"], fresh_cs)
+
+
+FULLCHIP_HEADER = """* GENERATED by layout/pex/build.py -- do not edit by hand.
+* Post-layout, FULL-CHIP-DELTA-annotated drop-in replacement for {source},
+* extending sampler_core.routed.extracted.spice with the two-net inter-
+* region delta DR-0025 authorises: klt extract --parasitics --pdk {pdk}
+* over the composed, routed layout/floorplan/trng_floorplan.gds, less what
+* ro_ring11(_ring2).routed.extracted.spice and
+* combiner_sampler.routed.extracted.spice already carry for that same
+* physical net (see layout/pex/reports/fullchip_parasitics.json and this
+* file's own module docstring, "Full-chip (inter-region) delta
+* composition", for what this captures and what it does not -- DR-0025's
+* own stated coverage hole).
+* Regenerate with: python3 layout/pex/build.py --fullchip-extract && python3 layout/pex/build.py
+"""
+
+
+def _pi_delta_lines(prefix: str, from_node: str, to_node: str, delta: dict) -> list[str]:
+    """A symmetric pi-model two-terminal lumped RC segment (`C/2` at each
+    end, `R` in series between them) for one net's own delta -- the
+    standard lumped approximation of a distributed line when only the net's
+    own total R and total C (not a per-position breakdown) are available.
+    See the module docstring, "Full-chip (inter-region) delta composition".
+    """
+    c_half_f = delta["capacitance_ff"] * 1e-15 / 2
+    return [
+        f"c{prefix}a {from_node} vsubs {c_half_f:.6e}",
+        f"r{prefix} {from_node} {to_node} {delta['resistance_ohm']:.6f}",
+        f"c{prefix}b {to_node} vsubs {c_half_f:.6e}",
+    ]
+
+
+def _sampler_core_fullchip_subckt(report: dict) -> str:
+    """`sampler_core.routed.extracted.spice`'s own topology
+    (`_sampler_core_routed_subckt`), with DR-0025's `ro1`/`ro2` delta
+    inserted between each ring wrapper's `ro` port and
+    `combiner_sampler_routed_extracted`'s `rn1`/`rn2` port, plus the
+    disclosed driver-side-only output load on `raw_bit`/`raw_valid`/
+    `ring_bit1`/`ring_bit2` (a grounded capacitor at each pin -- no series R,
+    since no receiver device exists on the other end of that trunk to
+    justify one -- see the module docstring)."""
+    entropy = report["entropy_tap"]
+    loads = report["driver_side_load"]
+    ro1 = next(n for n in _entropy_tap_nets() if n["name"] == "ro1")
+    ro2 = next(n for n in _entropy_tap_nets() if n["name"] == "ro2")
+
+    lines = [
+        ".subckt sampler_core_fullchip_extracted en1 en2 vddr1 vddr2 vdd vss "
+        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs"
+    ]
+    lines.append("xr1 en1 dro1 vddr1 vss vsubs ro_ring11_routed_extracted")
+    lines.append("xr2 en2 dro2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted")
+    lines += _pi_delta_lines("delta1", "dro1", "rn1", entropy[ro1["name"]]["delta"])
+    lines += _pi_delta_lines("delta2", "dro2", "rn2", entropy[ro2["name"]]["delta"])
+    lines.append(
+        "xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs "
+        "combiner_sampler_routed_extracted"
+    )
+    for name, port in (
+        ("raw_bit", "raw_bit"),
+        ("raw_valid", "raw_valid"),
+        ("ring_bit1", "ring_bit1"),
+        ("ring_bit2", "ring_bit2"),
+    ):
+        c_f = loads[name]["delta"]["capacitance_ff"] * 1e-15
+        lines.append(f"cload_{name} {port} vsubs {c_f:.6e}")
+    lines.append(".ends")
+    return "\n".join(lines) + "\n"
 
 
 def extract_leaf(name: str, gds: str, top: str, outdir: Path) -> dict:
@@ -1148,12 +1846,83 @@ def build(outdir: Path) -> None:
     )
     (outdir / "ro_ring_pair.routed.ntap.extracted.spice").write_text(ntap_bundle)
 
+    # -- Full-chip (inter-region) delta composition (issue #232, DR-0025). --
+    # Reads the COMMITTED fullchip_parasitics.json report (written by
+    # `--fullchip-extract`, never by this unconditional path -- see the
+    # module docstring) and reconciles it against the ring1/ring2/
+    # combiner_sampler extractions this same build() call already ran
+    # above, cheaply, on every run/--check. Raises FlowError (via
+    # `_reconcile_cached_report`) if the committed report is stale relative
+    # to a fresh intra-region extraction.
+    #
+    # UNCONDITIONAL, deliberately: composing this file only `if
+    # FULLCHIP_REPORT.is_file()` would make `--check` silently PASS on a
+    # stale committed `sampler_core.fullchip.extracted.spice` whenever the
+    # report went missing, because `--check` only compares files a rebuild
+    # actually produced. A missing report is a hard error with an
+    # instruction, not a skipped step.
+    if not FULLCHIP_REPORT.is_file():
+        raise FlowError(
+            f"{FULLCHIP_REPORT.relative_to(REPO_ROOT)} is missing -- the full-chip "
+            "delta composition (DR-0025) cannot be rebuilt without it. Run "
+            "`python3 layout/pex/build.py --fullchip-extract` to regenerate it "
+            "(expensive: see FULLCHIP_TIMEOUT_S's own docstring and this module's "
+            "docstring, 'The expensive step is never on build()'s unconditional path')."
+        )
+    fullchip_report = json.loads(FULLCHIP_REPORT.read_text())
+    _reconcile_cached_report(fullchip_report, ring_payloads, ring_ports, cs_payload, cs_ports)
+
+    sampler_core_fullchip = (
+        FULLCHIP_HEADER.format(source="design/sampler_core.spice", pdk=PDK_VARIANT)
+        + '.include "ro_ring11.routed.extracted.spice"\n'
+        + '.include "ro_ring11_ring2.routed.extracted.spice"\n'
+        + '.include "combiner_sampler.routed.extracted.spice"\n'
+        + "\n"
+        + _ring_routed_subckt(
+            "ro_ring11_routed_extracted", "ro_ring11", ring1_payload["pin_count"], ring_ports["ro_ring11"]
+        )
+        + "\n"
+        + _ring_routed_subckt(
+            "ro_ring11_ring2_routed_extracted",
+            "ro_ring11_ring2",
+            ring2_payload["pin_count"],
+            ring_ports["ro_ring11_ring2"],
+        )
+        + "\n"
+        + _combiner_sampler_routed_subckt(cs_payload["pin_count"], cs_ports)
+        + "\n"
+        + _sampler_core_fullchip_subckt(fullchip_report)
+    )
+    (outdir / "sampler_core.fullchip.extracted.spice").write_text(sampler_core_fullchip)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="rebuild to scratch, compare to committed output")
     parser.add_argument("--require-tools", action="store_true", help="fail instead of skipping when klt/PDK are absent")
+    parser.add_argument(
+        "--fullchip-extract",
+        action="store_true",
+        help=(
+            "re-run the expensive klt extract --parasitics over the composed "
+            "layout/floorplan/trng_floorplan.gds (DR-0025) and refresh the committed "
+            "layout/pex/reports/fullchip_parasitics.json delta report. NOT part of the "
+            "default build/--check path -- see FULLCHIP_TIMEOUT_S's own docstring for why."
+        ),
+    )
+    parser.add_argument(
+        "--reuse-cache",
+        action="store_true",
+        help=(
+            "with --fullchip-extract: recompute the delta report from the LAST run's "
+            "cached raw extraction (layout/.work/pex-fullchip/, gitignored) instead of "
+            "re-extracting. For iterating on the composition -- the report it writes "
+            "records from_cache: true, and is not a fresh measurement."
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.reuse_cache and not args.fullchip_extract:
+        parser.error("--reuse-cache is only meaningful with --fullchip-extract")
 
     if shutil.which("klt") is None or resolve_pdk() is None:
         msg = "klt and/or the gf180mcu PDK are not available -- skipping layout/pex/build.py"
@@ -1161,6 +1930,23 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {msg}", file=sys.stderr)
             return 1
         print(msg)
+        return 0
+
+    if args.fullchip_extract:
+        try:
+            report = run_fullchip_extraction_and_report(
+                FULLCHIP_WORK_DIR, reuse_cache=args.reuse_cache
+            )
+        except FlowError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(f"wrote {FULLCHIP_REPORT.relative_to(REPO_ROOT)}")
+        for name, entry in report["entropy_tap"].items():
+            d = entry["delta"]
+            print(f"  {name}: delta R={d['resistance_ohm']} ohm, C={d['capacitance_ff']} fF")
+        for name, entry in report["driver_side_load"].items():
+            d = entry["delta"]
+            print(f"  {name}: delta C={d['capacitance_ff']} fF (output load only)")
         return 0
 
     target = WORK_DIR if args.check else PEX_DIR

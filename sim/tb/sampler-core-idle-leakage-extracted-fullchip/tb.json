@@ -1,0 +1,62 @@
+{
+  "name": "sampler-core-idle-leakage-extracted-fullchip",
+  "description": "Issue #232's full-chip (inter-region) delta post-layout re-run of sim/tb/sampler-core-idle-leakage-extracted-routed/ against layout/pex/sampler_core.fullchip.extracted.spice -- DR-0025's ro1/ro2 trunk delta inserted between each ring wrapper's own `ro` port and combiner_sampler_routed_extracted's `rn1`/`rn2`, plus the disclosed driver-side-only output load on raw_bit/raw_valid/ring_bit1/ring_bit2 (see layout/pex/build.py's own module docstring, 'Full-chip (inter-region) delta composition'). Same rails/measurement expressions/idle-state protocol as the routing-level (#217) testbench -- every address it uses stays valid unchanged (the delta and the four output-load capacitors sit strictly between the ring wrappers and combiner_sampler, touching no measured node). Whole-block idle-power claim of issue #14, re-derived at the binding worst corner with the ro1/ro2 trunk delta (and the four disclosed output-load capacitors) included.",
+  "netlist": "tb_sampler_core_idle_leakage_extracted_fullchip.sp",
+  "design_netlist": "layout/pex/sampler_core.fullchip.extracted.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "ff"
+  ],
+  "tstop": "9.5u",
+  "tstep": "200p (print step; ngspice's own LTE sets the actual solver step, which is very coarse here because nothing switches after 300 ns)",
+  "analyses": [
+    "tran 200p 9.5u",
+    "meas tran qax find v(qa) at=7.5u",
+    "meas tran qa0 find v(qa) at=8.5u",
+    "meas tran qa1 find v(qa) at=9.5u",
+    "meas tran qbx find v(qb) at=7.5u",
+    "meas tran qb0 find v(qb) at=8.5u",
+    "meas tran qb1 find v(qb) at=9.5u",
+    "meas tran vxo find v(xduta.xcs.xo) at=9.5u",
+    "meas tran vn1 find v(xduta.xr1.n1) at=9.5u",
+    "meas tran vn2 find v(xduta.xr1.n2) at=9.5u",
+    "meas tran vrba find v(rba) at=9.5u",
+    "meas tran vrva find v(rva) at=9.5u",
+    "meas tran vrbb find v(rbb) at=9.5u",
+    "meas tran vrvb find v(rvb) at=9.5u",
+    "meas tran vsupm find v(vsup) at=9.5u",
+    "let cq = 1e-9",
+    "let twin = 1e-6"
+  ],
+  "measure": {
+    "i_idle_clklo_a": "-cq*(qa1-qa0)/twin",
+    "i_idle_clkhi_a": "-cq*(qb1-qb0)/twin",
+    "p_idle_clklo_w": "-cq*(qa1-qa0)/twin*vsupm",
+    "p_idle_clkhi_w": "-cq*(qb1-qb0)/twin*vsupm",
+    "i_idle_clklo_prev_a": "-cq*(qa0-qax)/twin",
+    "i_idle_clkhi_prev_a": "-cq*(qb0-qbx)/twin",
+    "i_idle_worst_a": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)",
+    "p_idle_worst_w": "max(-cq*(qa1-qa0)/twin,-cq*(qb1-qb0)/twin)*vsupm",
+    "v_xo_v": "vxo",
+    "v_n1_v": "vn1",
+    "v_n2_v": "vn2",
+    "v_rawbit_clklo_v": "vrba",
+    "v_rawvalid_clklo_v": "vrva",
+    "v_rawbit_clkhi_v": "vrbb",
+    "v_rawvalid_clkhi_v": "vrvb",
+    "v_sup_v": "vsupm"
+  },
+  "caveats": [
+    "Post-layout, FULL-CHIP-DELTA-annotated for the ro1/ro2 inter-region trunks AND the four disclosed driver-side-only output-load capacitors on raw_bit/raw_valid/ring_bit1/ring_bit2 (layout/pex/build.py); every other inter-region trunk (clk, rst_n, vss, the supply branches) is unpriced by this composition -- see DR-0025 and layout/pex/build.py's own module docstring for the full accounting.",
+    "CELL-INSTANCE GRANULARITY, NOT TRANSISTOR LEVEL (DR-0025): the inter-region parasitics this DUT carries were measured by a full-chip `klt extract --parasitics` run over layout/floorplan/trng_floorplan.gds in which every one of digital's ~2500 gf180mcu_fd_sc_mcu9t5v0__* standard-cell instances was abstracted as an opaque black box -- the same granularity the composed LVS already uses. No number in this record is evidence about any standard cell's own devices, and digital is not instantiated in this deck at all.",
+    "A WIDENED measurement window was needed, and the widening is itself evidence. The routing-level family's own 1 us tstop / 200 ns integration window does NOT settle on this DUT. Two discarded first attempts, reported rather than hidden (neither minted a record, the same way sections 7.2 and 7.3's own failed first attempts did not): at 1 us / 200 ns, i_idle_clklo_a = 190.99 nA against its own previous-window self-check i_idle_clklo_prev_a = 205.61 nA, a 7.7 % disagreement; at 5 us / 1 us, 138.07 nA against 143.52 nA, 3.9 %. For scale, the routing-level record's own self-check pair agrees to 0.9 % (136.80 nA vs 138.05 nA). The cause is physical, not numerical: the ~237 fF of added driver-side output load on raw_bit/raw_valid/ring_bit1/ring_bit2 takes materially longer to settle at leakage-level currents, so a short window integrates a settling transient rather than a static leakage. This deck's window is 9.5 us with a 1 us integration window -- as long as the shared idle-state protocol allows (rst_n's own pulse falls at 10.1 us, clk1's at 10.2 us), which is stated because it is a real ceiling on how far this can be pushed without changing the protocol itself. Any residual self-check disagreement in the record below is a stated upper bound on how much settling transient remains in the reported figure, always in the direction of OVER-reporting idle current.",
+    "v_xo_v/v_n1_v/v_n2_v address `v(xduta.xcs.xo)`/`v(xduta.xr1.n1)`/`v(xduta.xr1.n2)` -- identical addresses to the routing-level family's own (`sampler_core_fullchip_extracted`'s `_sampler_core_fullchip_subckt` instantiates its two ring wrappers and the combiner_sampler wrapper the same way `_sampler_core_routed_subckt` does, with the DR-0025 delta and load capacitors inserted strictly between them). `n1`/`n2` name an arbitrary (klt-assigned) internal ring position, same caveat as every routed/fullchip family.",
+    "Scoped to the single corner sim/characterization-startup-and-power-budget.md identified as binding for idle power (ff/+125 C/3.63 V), the same point issues #17/#217's own records used, not the full 45-point grid.",
+    "This is the ANALOG side of the DR-0009 boundary only: two rings, the XOR combiner, two sampler_dff instances -- same scope as the leaf-level and routing-level families.",
+    "Reports STATIC current in a settled state -- same protocol (two parked-clock copies, charge-integrator measurement, self-check window pair) as the leaf-level and routing-level families; see the leaf-level family's own testbench header for the full method notes, unchanged here beyond the DUT and delta/load-capacitor additions above.",
+    "clk/rst_n arrival is still driven from an ideal, zero-impedance ngspice source -- this record says nothing about clock-tree arrival at the sampler, per DR-0025."
+  ],
+  "temperatures_c": [
+    125
+  ]
+}

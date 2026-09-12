@@ -301,22 +301,41 @@ docstring, "Two composed drop-ins, different scope") — *inter*-region
 routing is not captured by either generation (§0.1 of the characterization
 doc above).
 
-A third generation — carrying *inter*-region (floorplan-level) parasitics —
-does not exist yet, but its scope is decided: [DR-0025] (issue #225) limits
-it to the inter-region nets with a transistor-level device at **both** ends,
-keeping the digital section at cell-instance granularity. Two things follow
-for anyone writing one of those records. **It is still `level: extracted`** —
-no sixth value, and [DR-0024] is not amended, because DR-0024's own Caveats
-requirement ("whether inter-cell/inter-region routing parasitics are
-included") already covers the case; such a record answers it "yes, for these
-nets" instead of "no". And its Caveats must additionally say **(a)** that the
-digital section is at cell-instance granularity, not transistor level, so no
-number in the record is evidence about a standard cell's own devices, and
-**(b)** that `clk`/`rst_n` arrival is still driven from an ideal source, so
-the record says nothing about clock arrival at the sampler. Building that
-generation is [#232](https://github.com/2AMLogic/gf180-trng/issues/232);
-until it lands, **no record in this repository may be cited as full-chip
-post-layout evidence.**
+A third generation (issue #232, `sim/tb/*-extracted-fullchip/`) carries
+*inter*-region (floorplan-level) parasitics, within the scope [DR-0025]
+(issue #225) fixed for it: only the inter-region nets with a
+transistor-level device at **both** ends are simulated (today `ro1`/`ro2`),
+the four `digital`-facing taps are priced as a **driver-side-only** output
+load, and the digital section stays at cell-instance granularity. Two things
+follow for anyone reading or writing one of those records. **It is still
+`level: extracted`** — no sixth value, and [DR-0024] is not amended, because
+DR-0024's own Caveats requirement ("whether inter-cell/inter-region routing
+parasitics are included") already covers the case; such a record answers it
+"yes, for these nets" instead of "no". And its Caveats must additionally say
+**(a)** that the digital section is at cell-instance granularity, not
+transistor level, so no number in the record is evidence about a standard
+cell's own devices, and **(b)** that `clk`/`rst_n` arrival is still driven
+from an ideal source, so the record says nothing about clock arrival at the
+sampler. Both are present on every record of this generation.
+
+**The citation bar this generation clears, and the one it does not.** A
+`*-extracted-fullchip` record may be cited as full-chip post-layout evidence
+**only for the two inter-region nets [DR-0025] scopes**, plus the disclosed
+driver-side load on the four `digital`-facing taps. Every other inter-region
+net (`clk`, `rst_n`, `vss`, the supply and control stubs) is unpriced by it,
+and no record in this repository may be cited as evidence about the chip's
+*whole* inter-region parasitic picture. §8 of
+[`sim/characterization-post-layout-extracted.md`](characterization-post-layout-extracted.md)
+is the full accounting.
+
+Each family of this generation also has a **zero-delta control** sibling
+(`sim/tb/*-extracted-fullchip-control/`): the identical deck against
+`layout/pex/sampler_core.routed.extracted.spice`, i.e. the same composition
+with the inter-region delta absent. Its records exist so the
+routed-vs-floorplan comparison subtracts two measurements of the same
+composition instead of two different ones — a control record is ordinary
+`level: extracted` evidence and says in its own Caveats that it carries no
+inter-region parasitic at all.
 
 [DR-0024]: ../spec/decision-records/DR-0024-extracted-netlist-record-level.md
 [DR-0025]: ../spec/decision-records/DR-0025-full-chip-pex-scope.md
