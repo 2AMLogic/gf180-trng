@@ -257,37 +257,106 @@ capacitance stays on the DRIVER side of the tap -- as it does in the
 leaf-level deck, where the wire capacitance lives inside the driving cell's
 own extraction, ahead of the source.
 
-## Out of scope (routing-level, same as path 1)
+## Out of scope: the full-chip (inter-region) path, and why -- a CHOICE now,
+   not a blocker (DR-0025, issue #225)
 
-A full-chip PEX path. Until issue #222 the reason was that there was no
-full chip to extract: `layout/floorplan/`'s four guarded regions were placed
-with a 20 um isolation channel and **no wiring at all** between them --
-confirmed empirically at the time, `klt extract --top trng_floorplan` on the
-composed floorplan GDS reported 2588 top-level pins for what should be a
-~12-pin block, i.e. the regions were not electrically joined in the
-committed layout.
+Both paths in this module are *intra*-region: each re-runs a single block's
+own netlist with device-level or routing-level parasitics annotated, and
+**neither reads `layout/floorplan/trng_floorplan.gds` at all**. Nothing in
+this module carries any inter-region parasitic.
 
-That is no longer true. Issue #222 (phase 2 of #219) draws real routing
-geometry across the isolation channels for every net
+Until issue #222 the reason was that there was no full chip to extract:
+`layout/floorplan/`'s four guarded regions were placed with a 20 um
+isolation channel and **no wiring at all** between them -- confirmed
+empirically at the time, `klt extract --top trng_floorplan` on the composed
+floorplan GDS reported 2588 top-level pins for what should be a ~12-pin
+block, i.e. the regions were not electrically joined in the committed
+layout.
+
+That is no longer true. #222 (phase 2 of #219) draws real Metal4 trunks and
+Metal3 risers across the isolation channels for every net
 `design/floorplan_netlist.py` declares, and the composed, routed floorplan
 is DRC-clean and LVS-matches that declaration's own composed reference
-(`layout/floorplan/README.md`, "Inter-region routing"). **A full-chip
-composition now exists to extract.** What does not exist yet is a full-chip
-*PEX* path over it, and that is a separate piece of work (gf180-trng#225)
-rather than something this module already covers:
+(`layout/floorplan/reports/floorplan.drc.json` -> `status: "clean"`,
+`layout/floorplan/reports/interregion.json` -> `check.lvs.status: "match"`).
+So the blocker this section used to name is **gone**, and the absence of a
+full-chip path here is now a scoping decision rather than an obstruction.
 
-- Both paths in this module are still *intra*-region (device-level or
-  routing-level) post-layout re-runs of a single block's own netlist. Neither
-  reads the composed floorplan stream at all.
-- A full-chip path would have to price the inter-region routing's own
-  parasitics -- the Metal4 trunks under the row are hundreds of microns long,
-  which is a different order of R and C from anything either path here
-  currently carries -- and decide what to do with `digital`'s ~2500
-  standard-cell instances, which every existing path abstracts rather than
-  extracts.
+`spec/decision-records/DR-0025-full-chip-pex-scope.md` is that decision.
+Read it before extending this module toward the composed stream; the short
+form is:
 
-See `sim/characterization-post-layout-extracted.md` for the honest
-accounting of what each path changes and what it cannot yet show.
+**A full-chip PEX increment is worth building, in one narrow form.** Extract
+`trng_floorplan.gds` with `--parasitics` at the same cell-instance
+granularity the composed LVS already uses (`--abstract-cells
+'gf180mcu_fd_sc_mcu9t5v0__*'`), take from it only the *inter-region* net
+parasitics as a **delta** over what the intra-region extractions above
+already carry (the full-chip extraction merges the ring's own wrap wire, the
+trunk, the riser and `combiner_sampler`'s own stub into one net -- summing
+rather than subtracting would double-count), and simulate only the nets with
+a transistor-level device at **both** ends.
+
+**What such a path would show.** Today that filter admits exactly two nets:
+`ro1` (`ring1.ro` -> `combiner_sampler.rn1`, a 128.40 um trunk) and `ro2`
+(`ring2.ro` -> `combiner_sampler.rn2`, 35.92 um). Both land on a ring's own
+`ro` wrap node -- the lightest, most delay-sensitive nodes in the design
+(`ro_ring11.routed.extracted.spice` gives each ring's eleven inter-stage
+nets 24.87 fF in total, of which the `ro` net carries ~8 fF), which is why
+DR-0025 judges the increment worth building at all. It would move the
+entropy-binding-corner ring period (`sim/characterization-post-layout-
+extracted.md` §7.1) and, through it, DR-0007 §2's sizing margin at DR-0010's
+proposed rate, plus the startup (§7.3) and power (§7.4) families that read
+off the same netlist.
+
+**What such a path would NOT show**, and what therefore may not be claimed
+from it:
+
+- **Nothing about `digital`'s own devices.** The ~2500
+  `gf180mcu_fd_sc_mcu9t5v0__*` instances stay abstracted (black boxes), as
+  every existing extraction of the composed stream already abstracts them.
+  The digital section's timing and power are owned by the post-route
+  gate-level path (DR-0021/DR-0022/DR-0023), which is better evidence for
+  that question than an ngspice re-derivation would be.
+- **No arrival-time / clock-tree claim across a region boundary.**
+  `clk` and `rst_n` are driven *from* `digital`, and every deck in `sim/tb/`
+  replaces that driver with an ideal, zero-impedance ngspice source. The
+  trunks' ~106 ohm in front of a 0 ohm source is ~2 ps of RC on edges
+  measured in tens to hundreds of ps -- a no-op dressed as a measurement.
+  The real question (can `digital`'s clock driver drive the trunk's ~21 fF?)
+  belongs in the post-route STA, not here.
+- **Only driver-side loading on the four `digital`-facing outputs.**
+  `raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2` are driven by real extracted
+  `sampler_dff` instances into abstracted receivers, so their trunk C is a
+  real added output load with **no receiver gate capacitance behind it**.
+  `raw_bit`'s 524.77 um trunk is the largest single parasitic on the chip
+  and is only partly priced by this scope -- stated, not hidden.
+- **No IR-drop verdict** on the shared 430.23 um `vss` trunk (a static
+  supply analysis needing a current profile this produces nothing for), and
+  nothing about `digital`'s `vddd`/`vss` PDN tie (gf180-trng#224).
+
+**No such path exists in this module yet**, and no record in this repository
+may be cited as full-chip post-layout evidence until one does. Building it is
+gf180-trng#232, filed from DR-0025's own Follow-up.
+
+One practical warning for whoever does, from the runtime probe DR-0025
+discloses: the full-chip `--parasitics` extraction is **not** cheap the way
+every `_run_klt` call in this module is. It had not finished after ~19.5
+minutes on the host DR-0025 was written on and was terminated rather than
+waited out (single uninstrumented observation, partly CPU-contended --
+"tens of minutes, order of magnitude", not a benchmark). Do not wire it into
+`build()`'s unconditional path, and do not assume `--check`'s
+rebuild-and-compare stays interactive if you do; budget it, and expect to
+want `klt extract --rerun` or an equivalent cache so the composition step
+can be iterated without re-paying the extraction.
+
+One consequence worth restating: because inter-region parasitics can only
+*add* R and C, `sim/characterization-post-layout-extracted.md` §0.1's "floor,
+not ceiling" framing survives unchanged -- every degradation the paths above
+report is still a lower bound on what the full chip would show, and would
+remain one even after the increment DR-0025 authorises lands.
+
+See `sim/characterization-post-layout-extracted.md` (§7.7 in particular) for
+the honest accounting of what each path changes and what it cannot yet show.
 """
 
 from __future__ import annotations
