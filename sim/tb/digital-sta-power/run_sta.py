@@ -197,9 +197,20 @@ LIBERTY_CORNERS = (
 )
 
 #: OpenRCX interconnect (parasitic) corners the PDK ships, under
-#: `libs.tech/openlane/rules.openrcx.<variant>.<corner>`. Orthogonal to the
+#: `libs.tech/<RCX_DIRS>/rules.openrcx.<variant>.<corner>`. Orthogonal to the
 #: liberty axis: the liberty deck models the devices, these model the wires.
 RC_CORNERS = ("min", "nom", "max")
+
+#: Where open_pdks stages those decks, newest naming first. The directory was
+#: `libs.tech/openlane/` when this sweep was first written and is
+#: `libs.tech/librelane/` in the open_pdks revision `sim/harness/pdk.py`'s own
+#: install hint (and `.github/workflows/pdk-nightly.yml`) pins today --
+#: OpenLane 2 was renamed LibreLane upstream and open_pdks followed. Both are
+#: accepted, resolved by existence at run time by `deck_paths` rather than
+#: pinned to one spelling: a checkout that resolved only the old name reports
+#: "OpenRCX rule deck not found" against a perfectly good PDK install, which
+#: is what a `pdk-copy` shim under `layout/.work/` was silently papering over.
+RCX_DIRS = ("librelane", "openlane")
 
 #: Which tech LEF the DEF is read against. Held at `nom` for every point on
 #: purpose: the tech LEF supplies the *geometry* the committed DEF was routed
@@ -500,11 +511,19 @@ def resolve_pdk():
 
 def deck_paths(pdk) -> dict[str, Path]:
     libs_ref = Path(pdk.path) / "libs.ref" / CELL_LIBRARY
+    libs_tech = Path(pdk.path) / "libs.tech"
+    # First `RCX_DIRS` entry that actually exists in this install; the first
+    # entry regardless when none does, so `check_environment` reports a
+    # concrete missing path rather than a list of candidates.
+    rcx_dir = next(
+        (libs_tech / name for name in RCX_DIRS if (libs_tech / name).is_dir()),
+        libs_tech / RCX_DIRS[0],
+    )
     return {
         "lib_dir": libs_ref / "lib",
         "tech_lef": libs_ref / "techlef" / f"{CELL_LIBRARY}__{TECH_LEF_CORNER}.tlef",
         "cell_lef": libs_ref / "lef" / f"{CELL_LIBRARY}.lef",
-        "rcx_dir": Path(pdk.path) / "libs.tech" / "openlane",
+        "rcx_dir": rcx_dir,
     }
 
 
