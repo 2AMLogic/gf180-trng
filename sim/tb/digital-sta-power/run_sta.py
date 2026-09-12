@@ -71,6 +71,37 @@ is swept against all three of the PDK's OpenRCX interconnect corners
 (device, interconnect) pair and this repository has no basis for assuming
 which pairing binds. 5 x 3 = 15 points, one record each, per DR-0005.
 
+The six digital-facing inter-region trunks (#233)
+--------------------------------------------------
+Six of the fourteen inter-region trunks #222 drew (`clk`, `rst_n`,
+`raw_bit`, `raw_valid`, `ring_bit1`/`ring_bit[0]`, `ring_bit2`/
+`ring_bit[1]`) terminate on `trng_top`'s own pins -- DR-0025 scoped a
+full-chip parasitic extraction (#232) away from them because `digital`'s
+~2500 standard cells are abstracted in every existing extraction, but left
+open the question this sweep now answers: what does each trunk's own
+Metal4 RC do to the edge arriving at that pin. `digital_facing_trunks()`
+reads `layout/floorplan/reports/interregion.json` at run time (never
+transcribed by hand) and `_tcl()` states each trunk's lumped R/C as a
+`set_input_transition` on the corresponding port, permanently (every run,
+not a flag-gated scenario), in the transition convention the corner's own
+liberty deck declares (`SlewConvention`).
+
+`set_load` -- the construct issue #233 was filed expecting for the four
+`combiner_sampler`-driven ports -- is deliberately **not** used, and the
+reason is stronger than the port direction: all six ports are `DIRECTION
+INPUT` on `trng_top` (`layout/digital/trng_top.def`'s `PINS` section) with
+no driver inside this single-region netlist, whether the real upstream
+driver is `combiner_sampler` (`raw_bit`/`raw_valid`/`ring_bit[0]`/
+`ring_bit[1]`) or an off-chip pad (`clk`/`rst_n`). With no driver arc at
+the port there is nothing for a load to attach to, and OpenSTA reports
+bit-identical slack, slew and power whether these six ports carry no
+`set_load`, their as-built 15.6-30.7 fF, or 10 pF. `set_load` here would
+be a no-op wearing the costume of a measurement -- exactly what DR-0025
+declined to do with an ngspice run, one level removed.
+`sdc_treatment_probe.py` in this directory re-runs that comparison, and
+the `set_input_transition` / `max_transition` domain check behind
+`SlewConvention`, on demand.
+
 What this is not
 ----------------
 Not silicon, and not a signoff sign-off. The parasitics are OpenRCX's own
@@ -93,6 +124,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import platform
 import re
 import shutil
@@ -185,6 +217,171 @@ FMAX_TOLERANCE_NS = 1e-3
 
 OPENROAD_TIMEOUT_S = 1800
 
+# --------------------------------------------------------------------------- #
+# Interface load: the six digital-facing inter-region trunks (#233)
+# --------------------------------------------------------------------------- #
+
+#: `layout/floorplan/reports/interregion.json` -- the as-built geometry of
+#: every inter-region trunk #222 drew. Read at run time, never transcribed by
+#: hand, so this sweep's interface load follows the floorplan's own routing
+#: if it moves (#233's first acceptance criterion).
+INTERREGION_REPORT = REPO_ROOT / "layout" / "floorplan" / "reports" / "interregion.json"
+
+#: Metal4 sheet parasitics, at `WIRE_W = 0.30 um` (`layout/floorplan/
+#: interregion.py`, the width every trunk is drawn at). Not independently
+#: measured by this repository: the same `klt` gf180mcu deck coefficients
+#: DR-0025 (`spec/decision-records/DR-0025-full-chip-pex-scope.md`) and
+#: `sim/characterization-post-layout-extracted.md` cite, and not committed
+#: anywhere else as a reusable constant as of DR-0025's own writing -- cited
+#: here rather than transcribed silently a second time. `git grep
+#: cap_area/cap_perim/0.007602` before touching these numbers to confirm
+#: that is still true.
+METAL4_SHEET_RES_OHM_PER_SQ = 0.09
+METAL4_CAP_AREA_FF_PER_UM2 = 0.007602
+METAL4_CAP_PERIM_FF_PER_UM = 0.028153
+METAL4_WIRE_W_UM = 0.30
+
+#: 10-90 % is the transition convention most RC hand-calculations are quoted
+#: in (`t = ln(9) * R * C`), including DR-0025's own prose. It is *not* the
+#: convention this sweep hands OpenSTA -- see `SlewConvention` -- but every
+#: record reports it alongside, so a reader comparing against a textbook
+#: number does not have to redo the conversion.
+RC_TRANSITION_10_90 = math.log(9.0)
+
+
+@dataclass(frozen=True)
+class SlewConvention:
+    """How one liberty deck defines a transition time.
+
+    A transition time is meaningless without the thresholds it is measured
+    between, and a liberty deck states its own: `slew_lower_threshold_pct_*`
+    / `slew_upper_threshold_pct_*` (30 %/70 % in every
+    `gf180mcu_fd_sc_mcu9t5v0` deck) plus `slew_derate_from_library`, the
+    factor relating the numbers *stored in the tables* to that measurement
+    (0.5 in every deck: a table value of 13.2 describes a 6.6 ns 30-70 %
+    edge). `max_transition` and the slew a `set_input_transition` states are
+    both in the **table** domain, not the measured one -- verified directly
+    against this library rather than assumed, by walking
+    `set_input_transition` across `max_transition` and watching where
+    OpenSTA's own `report_check_types -max_slew -violators` flips: at
+    `ss_125C_3v00` (`max_transition` 13.2) a stated 13.1 is clean, 13.3
+    violates by exactly 0.10, and 26.5 violates by 13.30 -- i.e. the stated
+    number is compared against the limit 1:1, with no derate applied. See
+    `sdc_treatment_probe.py`, which re-runs that walk on demand.
+    """
+
+    lower_pct: float
+    upper_pct: float
+    derate: float
+
+    @property
+    def rc_factor(self) -> float:
+        """Table-domain transition time of a single-pole RC step response,
+        in units of `R * C`.
+
+        A step into a lumped RC settles as `1 - exp(-t / RC)`, so the time
+        between two threshold fractions is `RC * ln((1 - lo) / (1 - hi))` --
+        `ln(7/3) ~= 0.847 RC` at this library's 30/70 %. Dividing by
+        `derate` expresses it in the same domain as the library's tables and
+        its `max_transition` limit, which is the domain
+        `set_input_transition` is read in.
+        """
+        lo = self.lower_pct / 100.0
+        hi = self.upper_pct / 100.0
+        return math.log((1.0 - lo) / (1.0 - hi)) / self.derate
+
+
+@dataclass(frozen=True)
+class InterfaceTrunk:
+    """One inter-region trunk that terminates on the abstracted `digital`
+    region -- a #233 "digital-facing" trunk. `def_pin` is read from the
+    endpoint's own declared pin name (not derived from `net`), which is what
+    correctly resolves the DEF's bus-notation names (`ring_bit[0]`/
+    `ring_bit[1]`) against `INTERREGION_REPORT`'s net names (`ring_bit1`/
+    `ring_bit2`) without a hand-maintained lookup table.
+    """
+
+    net: str
+    def_pin: str
+    chip_pin: bool
+    trunk_length_um: float
+
+    @property
+    def cap_fF(self) -> float:
+        """Lumped trunk capacitance: area term + both-side fringe term."""
+        return self.trunk_length_um * (
+            METAL4_CAP_AREA_FF_PER_UM2 * METAL4_WIRE_W_UM
+            + 2 * METAL4_CAP_PERIM_FF_PER_UM
+        )
+
+    @property
+    def res_ohm(self) -> float:
+        return METAL4_SHEET_RES_OHM_PER_SQ * self.trunk_length_um / METAL4_WIRE_W_UM
+
+    @property
+    def rc_ns(self) -> float:
+        """`R * C` as a time. R is in ohm and C in fF, so the product is in
+        femtoseconds * 1e0 -- 1 ohm * 1 fF = 1e-15 s = 1e-6 ns."""
+        return 1e-6 * self.res_ohm * self.cap_fF
+
+    @property
+    def transition_10_90_ns(self) -> float:
+        """The textbook 10-90 % figure, for comparison only: not what this
+        sweep states to OpenSTA (see `transition_ns`)."""
+        return RC_TRANSITION_10_90 * self.rc_ns
+
+    def transition_ns(self, slew: SlewConvention) -> float:
+        """The trunk's own RC transition time, in the domain the given
+        liberty deck's `set_input_transition` / `max_transition` use.
+
+        Two deliberate conservatisms, both of which make this an upper bound
+        on the trunk's own contribution rather than a best estimate:
+
+        * **Lumped, not distributed.** The whole trunk's R and the whole
+          trunk's C are multiplied together; a distributed line of the same
+          total R and C responds roughly twice as fast.
+        * **Ideal source.** The edge arriving at the trunk's far end is
+          treated as a step, so the number is the wire's own contribution
+          and nothing upstream of it. For `raw_bit`/`raw_valid`/`ring_bit[*]`
+          the real driver is a `combiner_sampler` device this netlist does
+          not contain; for `clk`/`rst_n` it is an off-chip pad driver no
+          netlist in this repository models at all (#233). Neither can be
+          priced here without inventing it, so neither is.
+        """
+        return slew.rc_factor * self.rc_ns
+
+
+def digital_facing_trunks(report_path: Path | None = None) -> list[InterfaceTrunk]:
+    """Every inter-region trunk with an endpoint on `digital`, read live from
+    `report_path` (module-level `INTERREGION_REPORT` if omitted -- resolved
+    at *call* time, not bound as a default-argument value at import time, so
+    a test can point this at a synthetic report by reassigning the module
+    attribute). DR-0025 names exactly six today (`clk`, `rst_n`, `raw_bit`,
+    `raw_valid`, `ring_bit1`, `ring_bit2`) -- not hard-coded here, so a
+    future floorplan/routing change (#222-style) that adds, removes or
+    re-lengthens a digital-facing trunk is picked up the next time this
+    sweep runs rather than silently going stale.
+    """
+    if report_path is None:
+        report_path = INTERREGION_REPORT
+    data = json.loads(report_path.read_text())
+    trunks: list[InterfaceTrunk] = []
+    for route in data["routes"]:
+        digital_ep = next(
+            (ep for ep in route["endpoints"] if ep["region"] == "digital"), None
+        )
+        if digital_ep is None:
+            continue
+        trunks.append(
+            InterfaceTrunk(
+                net=route["net"],
+                def_pin=digital_ep["pin"],
+                chip_pin=bool(route["chip_pin"]),
+                trunk_length_um=float(route["trunk_length_um"]),
+            )
+        )
+    return trunks
+
 _METRIC = re.compile(r"^STA_METRIC\s+(\S+)\s+(\S+)\s*$", re.M)
 _POWER_ROW = re.compile(
     r"^(Sequential|Combinational|Clock|Macro|Pad|Total)\s+"
@@ -195,6 +392,20 @@ _MISSING_INPUT = re.compile(r"There are (\d+) input ports missing set_input_dela
 _MISSING_OUTPUT = re.compile(r"There are (\d+) output ports missing set_output_delay")
 _UNCONSTRAINED = re.compile(r"There are (\d+) unconstrained endpoints")
 _LIB_ATTR = re.compile(r"^\s*(nom_process|nom_temperature|nom_voltage)\s*:\s*([-\d.]+)\s*;", re.M)
+_LIB_SLEW_ATTR = re.compile(
+    r"^\s*(slew_lower_threshold_pct_rise|slew_upper_threshold_pct_rise|"
+    r"slew_derate_from_library)\s*:\s*([-\d.]+)\s*;",
+    re.M,
+)
+_MAX_SLEW_VIOLATORS_BLOCK = re.compile(
+    r"STA_MAX_SLEW_VIOLATORS_BEGIN\n(.*?)\nSTA_MAX_SLEW_VIOLATORS_END", re.S
+)
+_MAX_SLEW_VIOLATOR_PIN = re.compile(r"^Pin\s+(\S+?)(?:\s+[\^v])?\s*$", re.M)
+#: `STA_IFACE_PIN <port> <pin>` -- every pin OpenSTA itself finds on one of
+#: the six trunk nets, emitted by the generated Tcl so a violator pin can be
+#: attributed to a trunk without this script guessing the netlist's internal
+#: names.
+_IFACE_PIN = re.compile(r"^STA_IFACE_PIN\s+(\S+)\s+(\S+)\s*$", re.M)
 
 
 class StaError(RuntimeError):
@@ -238,6 +449,15 @@ class Point:
     spef: dict = field(default_factory=dict)
     logs: dict = field(default_factory=dict)
     wall_s: float = 0.0
+    #: The six digital-facing trunks (#233). The geometry is corner-
+    #: independent; the transition time stated for it is not, because it is
+    #: expressed in the liberty deck's own declared convention.
+    interface_loads: list = field(default_factory=list)
+    #: This corner's liberty deck's own transition-time convention (#233).
+    slew_convention: SlewConvention | None = None
+    #: Which trunks carry a pin OpenSTA itself named in a `-max_slew`
+    #: violator block, at this corner's constraint-period session.
+    interface_load_max_slew_violators: set = field(default_factory=set)
 
 
 # --------------------------------------------------------------------------- #
@@ -307,6 +527,13 @@ def check_environment(pdk) -> list[str]:
                 f"{path.relative_to(REPO_ROOT)} is missing -- run "
                 "`python3 layout/digital/build.py` first (#111)"
             )
+    if not INTERREGION_REPORT.is_file():
+        missing.append(
+            f"{INTERREGION_REPORT.relative_to(REPO_ROOT)} is missing -- run "
+            "`python3 layout/floorplan/floorplan.py` first (#222); it is "
+            "this sweep's source for the six digital-facing trunks' "
+            "interface load (#233)"
+        )
     return missing
 
 
@@ -325,6 +552,42 @@ def liberty_operating_conditions(path: Path) -> dict:
                 break
     found = {m.group(1): float(m.group(2)) for m in _LIB_ATTR.finditer("".join(head))}
     return found
+
+
+def liberty_slew_convention(path: Path) -> SlewConvention:
+    """The deck's own transition-time definition (see `SlewConvention`).
+
+    Read from the liberty header, never assumed: the number this sweep hands
+    `set_input_transition` is only meaningful in the convention the deck it
+    is timed against declares, and a deck that declared different thresholds
+    would need a different number for the same physical edge. Raises if any
+    of the three attributes is absent rather than falling back to a default,
+    because a silent default here would be an unsourced constant in a
+    recorded result.
+    """
+    head = []
+    with path.open(errors="replace") as handle:
+        for i, line in enumerate(handle):
+            head.append(line)
+            if i > 200:
+                break
+    found = {m.group(1): float(m.group(2)) for m in _LIB_SLEW_ATTR.finditer("".join(head))}
+    missing = {
+        "slew_lower_threshold_pct_rise",
+        "slew_upper_threshold_pct_rise",
+        "slew_derate_from_library",
+    } - set(found)
+    if missing:
+        raise StaError(
+            f"{path.name} declares no {sorted(missing)} -- this sweep cannot "
+            "state a transition time in a convention the deck does not declare "
+            "(#233)"
+        )
+    return SlewConvention(
+        lower_pct=found["slew_lower_threshold_pct_rise"],
+        upper_pct=found["slew_upper_threshold_pct_rise"],
+        derate=found["slew_derate_from_library"],
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -355,12 +618,52 @@ def _tcl(
     own.
     """
     paths = deck_paths(pdk)
+    trunks = digital_facing_trunks()
+    slew = liberty_slew_convention(liberty_path(pdk, corner.liberty))
     lines = [
         f"read_liberty {liberty_path(pdk, corner.liberty)}",
         f"read_lef {paths['tech_lef']}",
         f"read_lef {paths['cell_lef']}",
         f"read_def {DEF_PATH}",
         f"create_clock -name {CLOCK_PORT} -period {period_ns} [get_ports {CLOCK_PORT}]",
+        "",
+        "# The six inter-region trunks that terminate on `digital` (#233),",
+        "# sourced from layout/floorplan/reports/interregion.json at run time",
+        "# -- permanent, not a one-off scenario, because re-deriving it costs",
+        "# nothing on every run while a pinned constant would go stale the",
+        "# moment #222's routing moves.",
+        "#",
+        "# All six are DIRECTION INPUT on trng_top (layout/digital/",
+        "# trng_top.def's own PINS section): raw_bit/raw_valid/ring_bit[0]/",
+        "# ring_bit[1] are genuinely combiner_sampler-driven inputs, and",
+        "# clk/rst_n are chip-pin-sourced inputs that also fan out to",
+        "# combiner_sampler along the same trunk (issue #233's Curator-",
+        "# verified correction). Neither group has a driver inside this",
+        "# digital-only netlist, which is what rules `set_load` out as the",
+        "# technique for all six rather than just for clk/rst_n: with no",
+        "# driver arc at the port there is nothing for a load to attach to,",
+        "# and OpenSTA reports bit-identical slack, slew and power with the",
+        "# trunks' as-built 15.6-30.7 fF and with 10 pF -- i.e. set_load",
+        "# here is a no-op that only looks like a measurement. Re-run that",
+        "# comparison with sdc_treatment_probe.py.",
+        "#",
+        "# What each port genuinely has is an edge arriving from off this",
+        f"# netlist degraded by the trunk's own RC. At {corner.liberty}'s own",
+        f"# declared convention ({slew.lower_pct:g}-{slew.upper_pct:g} % thresholds,",
+        f"# slew_derate_from_library {slew.derate:g}) a single-pole RC edge is",
+        f"# {slew.rc_factor:.4f} * R * C in the table domain set_input_transition and",
+        "# max_transition both use -- lumped R and C, ideal source, so an",
+        "# upper bound on the trunk's own contribution (see InterfaceTrunk).",
+    ]
+    for trunk in trunks:
+        lines.append(
+            f"set_input_transition {trunk.transition_ns(slew):.6f} "
+            f"[get_ports {{{trunk.def_pin}}}]"
+            f"  ;# {trunk.net}: {trunk.trunk_length_um:.2f} um, "
+            f"{trunk.res_ohm:.2f} ohm, {trunk.cap_fF:.3f} fF"
+        )
+    lines += [
+        "",
         "define_process_corner -ext_model_index 0 X",
         f"extract_parasitics -ext_model_file {rcx_rules_path(pdk, corner.rc)}",
         f"write_spef {spef_path}",
@@ -396,6 +699,36 @@ def _tcl(
         "report_power -digits 6",
         "report_design_area",
         "check_setup",
+        # Interface-load acceptance criterion #3 (#233): does any of the six
+        # trunk-loaded ports' transition now violate the library's own
+        # max_transition constraint. Answered three ways, because OpenSTA
+        # reports a max-slew violation at the *load pins* a slew reaches and
+        # not at the input port that stated it -- intersecting violators
+        # against the six port names alone would be a silent false negative:
+        #
+        #   1. the library's own limit at this corner and the design-wide
+        #      worst max-slew slack, as numbers (so a record says how much
+        #      margin there is, not just "no violation");
+        #   2. every pin OpenSTA itself finds on the six trunk nets, so a
+        #      violator can be attributed to a trunk by name;
+        #   3. the verbose violator list, as the record's raw evidence.
+        'set _mslim [sta::max_slew_check_limit]',
+        'if {$_mslim eq ""} { set _mslim nan }',
+        'puts "STA_METRIC max_slew_limit_ns $_mslim"',
+        'set _msslack [sta::max_slew_check_slack]',
+        'if {$_msslack eq ""} { set _msslack nan }',
+        'puts "STA_METRIC max_slew_slack_ns $_msslack"',
+        'puts "STA_METRIC max_slew_violations [sta::max_slew_violation_count]"',
+    ]
+    for trunk in trunks:
+        lines.append(
+            f"foreach _p [get_pins -of_objects [get_nets {{{trunk.def_pin}}}]] "
+            f'{{ puts "STA_IFACE_PIN {trunk.def_pin} [get_full_name $_p]" }}'
+        )
+    lines += [
+        'puts "STA_MAX_SLEW_VIOLATORS_BEGIN"',
+        "report_check_types -max_slew -violators -verbose",
+        'puts "STA_MAX_SLEW_VIOLATORS_END"',
     ]
     if bisect:
         lines += [
@@ -478,6 +811,57 @@ def _parse_setup_checks(text: str) -> dict:
     }
 
 
+def _parse_max_slew_violators(text: str) -> set[str]:
+    """Every pin name `report_check_types -max_slew -violators` names,
+    between this session's own begin/end markers.
+
+    Global by construction (not just the six trunk ports): a `VIOLATED`
+    block names the *pin*, not just the port, so this also catches a
+    violation the added interface load causes one hop downstream of a
+    trunk port without this sweep having to guess which internal pin that
+    would be.
+    """
+    block = _MAX_SLEW_VIOLATORS_BLOCK.search(text)
+    if block is None:
+        return set()
+    return {m.group(1) for m in _MAX_SLEW_VIOLATOR_PIN.finditer(block.group(1))}
+
+
+def _parse_iface_pins(text: str) -> dict[str, set[str]]:
+    """`{trunk port -> every pin OpenSTA found on that trunk's net}`, from the
+    `STA_IFACE_PIN` lines the generated Tcl emits."""
+    out: dict[str, set[str]] = {}
+    for m in _IFACE_PIN.finditer(text):
+        out.setdefault(m.group(1), set()).add(m.group(2))
+    return out
+
+
+def interface_load_max_slew_violations(text: str, trunks: list) -> set[str]:
+    """Which digital-facing trunks (#233) carry a pin OpenSTA's own
+    `-max_slew` check reports as violating -- issue #233's acceptance
+    criterion 3 ("does any of the six ports' transition now violate the
+    library's max-transition constraint"), read off the tool's check rather
+    than inferred from a slack number.
+
+    Attribution is by **net**, not by port name, because OpenSTA reports a
+    max-slew violation at each load pin the slew reaches and never at the
+    input port that stated it: walking `set_input_transition` past
+    `max_transition` on `raw_bit` at `ss_125C_3v00` names that net's fifteen
+    load pins and not `raw_bit` itself. Matching port names against the
+    violator list alone would therefore report zero violations for a port
+    whose own stated transition exceeds the limit -- the one false negative
+    this check exists to avoid.
+    """
+    violators = _parse_max_slew_violators(text)
+    pins = _parse_iface_pins(text)
+    hit = set()
+    for trunk in trunks:
+        on_net = pins.get(trunk.def_pin, set()) | {trunk.def_pin}
+        if on_net & violators:
+            hit.add(trunk.def_pin)
+    return hit
+
+
 def _spef_summary(spef_path: Path) -> dict:
     """Total grounded (wire-to-ground) and coupling capacitance in the SPEF.
 
@@ -552,6 +936,13 @@ def run_point(pdk, corner: Corner, work_dir: Path) -> Point:
             point.metrics = metrics
             point.metrics.update(_parse_setup_checks(text))
             point.spef = _spef_summary(spef_path)
+            point.interface_loads = digital_facing_trunks()
+            point.slew_convention = liberty_slew_convention(
+                liberty_path(pdk, corner.liberty)
+            )
+            point.interface_load_max_slew_violators = interface_load_max_slew_violations(
+                text, point.interface_loads
+            )
         else:
             point.metrics["ratified_rate_period_ns"] = metrics["period_ns"]
 
@@ -624,7 +1015,26 @@ def derive(point: Point) -> dict:
         "unconstrained_endpoints": float(m["unconstrained_endpoints"]),
         "inputs_missing_delay": float(m["inputs_missing_delay"]),
         "outputs_missing_delay": float(m["outputs_missing_delay"]),
+        # #233: the six digital-facing trunks' interface load.
+        "interface_load_ports": float(len(point.interface_loads)),
+        "interface_load_max_slew_violations": float(
+            len(point.interface_load_max_slew_violators)
+        ),
+        "max_slew_violations": float(m.get("max_slew_violations", float("nan"))),
+        "max_slew_limit_ns": m.get("max_slew_limit_ns", float("nan")),
+        "max_slew_slack_ns": m.get("max_slew_slack_ns", float("nan")),
     }
+    if point.interface_loads and point.slew_convention is not None:
+        worst = max(
+            t.transition_ns(point.slew_convention) for t in point.interface_loads
+        )
+        out["interface_load_worst_transition_ns"] = worst
+        limit = out["max_slew_limit_ns"]
+        # Margin of the worst-loaded trunk port against the library's own
+        # max_transition limit at this corner, in the same (table) domain --
+        # the number acceptance criterion 3 (#233) asks for. Positive is
+        # margin; negative would be a violation.
+        out["interface_load_transition_margin_ns"] = limit - worst
     if min_period_ns is not None:
         out["min_period_ns"] = min_period_ns
         out["fmax_bisect_mhz"] = 1e3 / min_period_ns
@@ -731,6 +1141,57 @@ def _frontmatter(stem: str, point: Point, values: dict, pdk, git: dict,
         "    committed (3.3 MB per corner, 15 corners). Its sha256 and its summed",
         "    capacitance are, so a re-run is checkable against this record.",
         "",
+        "interface_loads:",
+        "  note: >-",
+        "    The inter-region trunks terminating on `digital` (#233, DR-0025's",
+        "    'Alternative B' follow-up), stated to OpenSTA as a",
+        "    set_input_transition on each port -- derived from interregion_json",
+        "    below at run time, not a pinned constant, and permanent rather than a",
+        "    one-off scenario. set_load is NOT used, and not because of the",
+        "    input/output direction alone: all six ports are DIRECTION INPUT on",
+        "    trng_top with no driver inside this netlist, so there is no driver arc",
+        "    for a load to attach to, and OpenSTA reports bit-identical slack, slew",
+        "    and power whether these ports carry no set_load, their as-built",
+        "    15.6-30.7 fF, or 10 pF. sdc_treatment_probe.py re-runs that comparison.",
+        "    Metal4 coefficients per DR-0025 (spec/decision-records/",
+        "    DR-0025-full-chip-pex-scope.md): sheet_res "
+        f"{METAL4_SHEET_RES_OHM_PER_SQ:g} ohm/sq, cap_area "
+        f"{METAL4_CAP_AREA_FF_PER_UM2:g} fF/um^2, cap_perim "
+        f"{METAL4_CAP_PERIM_FF_PER_UM:g} fF/um at WIRE_W {METAL4_WIRE_W_UM:g} um.",
+        f"  interregion_json: {INTERREGION_REPORT.relative_to(REPO_ROOT)} "
+        f"(sha256:{report.sha256_file(INTERREGION_REPORT)})",
+    ]
+    if point.slew_convention is not None:
+        s = point.slew_convention
+        lines += [
+            f"  slew_convention: {s.lower_pct:g}-{s.upper_pct:g}% thresholds, "
+            f"slew_derate_from_library {s.derate:g} (read from this record's own "
+            f"liberty deck) => a single-pole RC edge is {s.rc_factor:.4f} * R * C "
+            "in the table domain set_input_transition and max_transition share",
+            "  transition_model: >-",
+            "    Lumped whole-trunk R times whole-trunk C, driven by an ideal step:",
+            "    an upper bound on the trunk's own contribution, not a best estimate",
+            "    (a distributed line of the same total R and C responds roughly twice",
+            "    as fast), and it prices nothing upstream of the wire -- the real",
+            "    drivers are a combiner_sampler device this netlist does not contain",
+            "    and an off-chip pad no netlist in this repository models.",
+        ]
+    lines.append("  ports:")
+    for trunk in point.interface_loads:
+        stated = (
+            f"{trunk.transition_ns(point.slew_convention):.6f}"
+            if point.slew_convention is not None
+            else "n/a"
+        )
+        lines.append(
+            f"    - {trunk.def_pin}: net {trunk.net}, trunk "
+            f"{trunk.trunk_length_um:.2f} um, R {trunk.res_ohm:.2f} ohm, "
+            f"C {trunk.cap_fF:.3f} fF, R*C {trunk.rc_ns * 1e3:.3f} ps, "
+            f"set_input_transition {stated} ns "
+            f"(10-90% reference {trunk.transition_10_90_ns:.6f} ns)"
+        )
+    lines += [
+        "",
         "raw:",
         f"  path: sim/records/raw/{stem}/",
         "  files:",
@@ -761,6 +1222,9 @@ def _result_lines(values: dict) -> str:
         "p_combinational_switching_1mhz_w",
         "p_leakage_w", "i_leakage_a", "i_total_1mhz_a",
         "unconstrained_endpoints", "inputs_missing_delay", "outputs_missing_delay",
+        "interface_load_ports", "interface_load_worst_transition_ns",
+        "interface_load_transition_margin_ns", "interface_load_max_slew_violations",
+        "max_slew_limit_ns", "max_slew_slack_ns", "max_slew_violations",
     ]
     out = []
     for key in order:
@@ -823,6 +1287,34 @@ provisioning is `layout/digital/README.md`'s "OpenROAD" section).
 - **Area is corner-independent** and is repeated in every record of this
   family so no record has to be read alongside another to be complete; it is
   the DEF's own placed standard-cell area, not a die area.
+- **Interface load (#233) is a port-local edge-transition model, and it is an
+  upper bound, not an estimate.** `interface_load_ports`
+  (= {values.get('interface_load_ports', 0):.0f}) is the number of
+  `digital`-facing inter-region trunks priced this way; the stated transition
+  for each is in the `interface_loads:` block above, lumped-R-times-lumped-C
+  driven by an ideal step. The worst of them is
+  `interface_load_worst_transition_ns`, against this corner's own library
+  `max_slew_limit_ns` -- `interface_load_transition_margin_ns` is the
+  difference, and `interface_load_max_slew_violations`
+  (= {values.get('interface_load_max_slew_violations', 0):.0f}) counts the
+  trunks with a pin OpenSTA's own `-max_slew` check calls violating (attributed
+  by net, because the tool reports such a violation at a net's load pins and
+  never at the input port that stated the slew).
+- **What the interface load cannot move, and why.** `raw_bit`/`raw_valid`/
+  `ring_bit[0]`/`ring_bit[1]` carry no `set_input_delay`, so no reg-to-reg
+  path starts at one and `worst_setup_slack_ns`/`worst_hold_slack_ns`/`fmax_*`
+  cannot move from those four trunks at all -- their effect is confined to the
+  transition time at the port and at the pins it drives. `clk` and `rst_n`
+  reach the clock tree and the flops' reset pins, so they can in principle
+  move a slack: measured at `ss_125C_3v00`/`min` against an otherwise
+  identical session with no interface load, `worst_setup_slack_ns` and
+  `worst_hold_slack_ns` were unchanged in every digit of double precision, and
+  a deliberate 10x overstatement of all six transitions moved worst setup
+  slack by +3.6 fs. The residual sign is **not** guaranteed to be a
+  degradation: launch and capture share the clock root, so a slower root edge
+  largely cancels, and what is left is numerical residue rather than a
+  measured effect. The degradation that *is* monotonic in the trunks' RC is
+  the slew at the six ports and at the pins they drive.
 
 ---
 

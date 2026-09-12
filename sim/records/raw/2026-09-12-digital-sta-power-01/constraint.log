@@ -1,0 +1,336 @@
+OpenROAD 26Q3-1510-g6cb3f2b704 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/.work/pdk-copy/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/techlef/gf180mcu_fd_sc_mcu9t5v0__nom.tlef, created 15 layers, 56 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/.work/pdk-copy/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef at line 2.
+
+[INFO ODB-0227] LEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/.work/pdk-copy/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef, created 229 library cells
+[INFO ODB-0127] Reading DEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/digital/trng_top.def
+[INFO ODB-0128] Design: trng_top
+[INFO ODB-0130]     Created 111 pins.
+[INFO ODB-0131]     Created 8638 components and 42907 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 33606 connections.
+[INFO ODB-0133]     Created 2498 nets and 9254 connections.
+[INFO ODB-0134] Finished DEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/digital/trng_top.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[WARNING RCX-0514] The ext_model_file option is deprecated. Use set_extraction_rules_file command instead.
+[INFO RCX-0435] Reading extraction model file /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-233/layout/.work/pdk-copy/gf180mcuD/libs.tech/openlane/rules.openrcx.gf180mcuD.min ...
+[INFO RCX-0436] RC segment generation trng_top (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 11352 rc segments
+[INFO RCX-0439] Coupling Cap extraction trng_top ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 51% of 27917 wires extracted
+[INFO RCX-0442] 100% of 27917 wires extracted
+[INFO RCX-0045] Extract 2498 nets, 13818 rsegs, 13818 caps, 30175 ccs
+[INFO RCX-0443] 2498 nets finished
+STA_METRIC worst_setup_slack_ideal_s 2.3771368873326537e-8
+STA_METRIC worst_hold_slack_ideal_s 2.3653192737782547e-9
+STA_METRIC period_ns 50.0
+STA_METRIC worst_setup_slack_s 2.368576268452216e-8
+STA_METRIC worst_hold_slack_s 2.4247370777885635e-9
+STA_METRIC tns_setup_s 0.0
+STA_METRIC tns_hold_s 0.0
+STA_METRIC clock_skew_setup_s 1.5275225528910141e-10
+STA_METRIC clock_skew_hold_s 1.5275225528910141e-10
+STA_METRIC cell_area_m2 1.1600064198091786e-7
+STA_METRIC utilization 0.41863591916559234
+worst slack max 23.6858
+worst slack min 2.4247
+tns max 0.0000
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2606_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   23.6858
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2596_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   23.7359
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2593_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   23.7566
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2609_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   23.7628
+u_interface/_2847_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2604_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   23.7641
+
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_3069_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_3069_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    2.4247
+u_interface/_2663_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2663_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    2.4263
+u_interface/_2678_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2678_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    2.4274
+u_interface/_2671_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2671_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    2.4319
+u_interface/_2912_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_2912_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    2.4397
+
+Clock clk
+ 3.4591 source latency u_interface/_3149_/CLK ^
+-3.3063 target latency u_interface/_2714_/CLK ^
+ 0.0000 CRPR
+--------------
+ 0.1528 setup skew
+
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           4.280359e-03 3.770506e-04 5.369258e-07 4.657947e-03  55.2%
+Combinational        9.539264e-04 9.542021e-04 8.034496e-07 1.908932e-03  22.6%
+Clock                6.340374e-04 1.237123e-03 2.609363e-06 1.873770e-03  22.2%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                5.868323e-03 2.568376e-03 3.949752e-06 8.440648e-03 100.0%
+                            69.5%        30.4%         0.0%
+Design area 116001 um^2 42% utilization.
+Warning: There are 42 input ports missing set_input_delay.
+Warning: There are 66 output ports missing set_output_delay.
+Warning: There are 68 unconstrained endpoints.
+STA_METRIC max_slew_limit_ns 13.199999809265137
+STA_METRIC max_slew_slack_ns 0.16246560215950012
+STA_METRIC max_slew_violations 0
+STA_IFACE_PIN clk clkbuf_0_clk/I
+STA_IFACE_PIN rst_n u_ring_liveness/_179_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_178_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_177_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_176_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_175_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_174_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_173_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_172_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_171_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_170_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_169_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_168_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_167_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_166_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_165_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_164_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_163_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_162_/RN
+STA_IFACE_PIN rst_n u_interface/_3151_/RN
+STA_IFACE_PIN rst_n u_interface/_3150_/RN
+STA_IFACE_PIN rst_n u_interface/_3149_/RN
+STA_IFACE_PIN rst_n u_interface/_3148_/RN
+STA_IFACE_PIN rst_n u_interface/_3147_/RN
+STA_IFACE_PIN rst_n u_interface/_3146_/RN
+STA_IFACE_PIN rst_n u_interface/_3145_/SETN
+STA_IFACE_PIN rst_n u_interface/_3144_/RN
+STA_IFACE_PIN rst_n u_interface/_3143_/SETN
+STA_IFACE_PIN rst_n u_interface/_3014_/RN
+STA_IFACE_PIN rst_n u_interface/_3013_/RN
+STA_IFACE_PIN rst_n u_interface/_3012_/RN
+STA_IFACE_PIN rst_n u_interface/_3011_/RN
+STA_IFACE_PIN rst_n u_interface/_2850_/RN
+STA_IFACE_PIN rst_n u_interface/_2849_/RN
+STA_IFACE_PIN rst_n u_interface/_2848_/RN
+STA_IFACE_PIN rst_n u_interface/_2847_/RN
+STA_IFACE_PIN rst_n u_interface/_2846_/RN
+STA_IFACE_PIN rst_n u_interface/_2845_/RN
+STA_IFACE_PIN rst_n u_interface/_2844_/RN
+STA_IFACE_PIN rst_n u_interface/_2843_/RN
+STA_IFACE_PIN rst_n u_interface/_2842_/RN
+STA_IFACE_PIN rst_n u_interface/_2841_/RN
+STA_IFACE_PIN rst_n u_interface/_2840_/RN
+STA_IFACE_PIN rst_n u_interface/_2839_/RN
+STA_IFACE_PIN rst_n u_interface/_2838_/RN
+STA_IFACE_PIN rst_n u_interface/_2837_/RN
+STA_IFACE_PIN rst_n u_interface/_2836_/RN
+STA_IFACE_PIN rst_n u_interface/_2835_/RN
+STA_IFACE_PIN rst_n u_interface/_2834_/RN
+STA_IFACE_PIN rst_n u_interface/_2833_/RN
+STA_IFACE_PIN rst_n u_interface/_2832_/RN
+STA_IFACE_PIN rst_n u_interface/_2831_/RN
+STA_IFACE_PIN rst_n u_interface/_2830_/RN
+STA_IFACE_PIN rst_n u_interface/_2829_/RN
+STA_IFACE_PIN rst_n u_interface/_2828_/RN
+STA_IFACE_PIN rst_n u_interface/_2827_/RN
+STA_IFACE_PIN rst_n u_interface/_2826_/RN
+STA_IFACE_PIN rst_n u_interface/_2825_/RN
+STA_IFACE_PIN rst_n u_interface/_2824_/RN
+STA_IFACE_PIN rst_n u_interface/_2823_/RN
+STA_IFACE_PIN rst_n u_interface/_2822_/RN
+STA_IFACE_PIN rst_n u_interface/_2821_/RN
+STA_IFACE_PIN rst_n u_interface/_2820_/RN
+STA_IFACE_PIN rst_n u_interface/_2819_/RN
+STA_IFACE_PIN rst_n u_interface/_2818_/RN
+STA_IFACE_PIN rst_n u_interface/_2817_/RN
+STA_IFACE_PIN rst_n u_interface/_2816_/RN
+STA_IFACE_PIN rst_n u_interface/_2719_/RN
+STA_IFACE_PIN rst_n u_interface/_2718_/RN
+STA_IFACE_PIN rst_n u_interface/_2717_/RN
+STA_IFACE_PIN rst_n u_interface/_2652_/RN
+STA_IFACE_PIN rst_n u_interface/_2651_/RN
+STA_IFACE_PIN rst_n u_interface/_2650_/RN
+STA_IFACE_PIN rst_n u_interface/_2649_/RN
+STA_IFACE_PIN rst_n u_interface/_2648_/RN
+STA_IFACE_PIN rst_n u_interface/_2647_/RN
+STA_IFACE_PIN rst_n u_interface/_2646_/RN
+STA_IFACE_PIN rst_n u_interface/_2645_/RN
+STA_IFACE_PIN rst_n u_interface/_2644_/RN
+STA_IFACE_PIN rst_n u_interface/_2277_/A1
+STA_IFACE_PIN rst_n u_interface/_2078_/A1
+STA_IFACE_PIN rst_n u_interface/_1954_/A1
+STA_IFACE_PIN rst_n u_interface/_1826_/A1
+STA_IFACE_PIN rst_n u_interface/_1796_/A1
+STA_IFACE_PIN rst_n u_health_test/_450_/RN
+STA_IFACE_PIN rst_n u_health_test/_449_/RN
+STA_IFACE_PIN rst_n u_health_test/_448_/RN
+STA_IFACE_PIN rst_n u_health_test/_447_/RN
+STA_IFACE_PIN rst_n u_health_test/_446_/RN
+STA_IFACE_PIN rst_n u_health_test/_445_/RN
+STA_IFACE_PIN rst_n u_health_test/_444_/RN
+STA_IFACE_PIN rst_n u_health_test/_443_/RN
+STA_IFACE_PIN rst_n u_health_test/_442_/RN
+STA_IFACE_PIN rst_n u_health_test/_441_/RN
+STA_IFACE_PIN rst_n u_health_test/_440_/RN
+STA_IFACE_PIN rst_n u_health_test/_439_/RN
+STA_IFACE_PIN rst_n u_health_test/_438_/RN
+STA_IFACE_PIN rst_n u_health_test/_437_/RN
+STA_IFACE_PIN rst_n u_health_test/_436_/RN
+STA_IFACE_PIN rst_n u_health_test/_435_/RN
+STA_IFACE_PIN rst_n u_health_test/_434_/RN
+STA_IFACE_PIN rst_n u_health_test/_433_/RN
+STA_IFACE_PIN rst_n u_health_test/_432_/RN
+STA_IFACE_PIN rst_n u_health_test/_431_/RN
+STA_IFACE_PIN rst_n u_health_test/_430_/RN
+STA_IFACE_PIN rst_n u_health_test/_429_/RN
+STA_IFACE_PIN rst_n u_health_test/_428_/RN
+STA_IFACE_PIN rst_n u_health_test/_427_/RN
+STA_IFACE_PIN rst_n u_health_test/_426_/RN
+STA_IFACE_PIN rst_n u_health_test/_425_/RN
+STA_IFACE_PIN rst_n u_health_test/_424_/RN
+STA_IFACE_PIN rst_n u_health_test/_423_/RN
+STA_IFACE_PIN rst_n u_health_test/_422_/RN
+STA_IFACE_PIN rst_n u_health_test/_421_/RN
+STA_IFACE_PIN rst_n u_health_test/_420_/RN
+STA_IFACE_PIN rst_n u_health_test/_419_/RN
+STA_IFACE_PIN rst_n u_health_test/_418_/RN
+STA_IFACE_PIN rst_n u_health_test/_417_/RN
+STA_IFACE_PIN rst_n u_health_test/_416_/RN
+STA_IFACE_PIN rst_n u_health_test/_415_/RN
+STA_IFACE_PIN rst_n u_health_test/_414_/RN
+STA_IFACE_PIN rst_n u_health_test/_413_/RN
+STA_IFACE_PIN rst_n u_health_test/_412_/RN
+STA_IFACE_PIN rst_n u_health_test/_411_/RN
+STA_IFACE_PIN rst_n u_health_test/_410_/RN
+STA_IFACE_PIN rst_n u_health_test/_409_/RN
+STA_IFACE_PIN rst_n u_health_test/_408_/RN
+STA_IFACE_PIN rst_n u_health_test/_407_/RN
+STA_IFACE_PIN rst_n u_health_test/_406_/RN
+STA_IFACE_PIN rst_n u_conditioner/_434_/RN
+STA_IFACE_PIN rst_n u_conditioner/_433_/RN
+STA_IFACE_PIN rst_n u_conditioner/_432_/RN
+STA_IFACE_PIN rst_n u_conditioner/_431_/RN
+STA_IFACE_PIN rst_n u_conditioner/_430_/RN
+STA_IFACE_PIN rst_n u_conditioner/_429_/RN
+STA_IFACE_PIN rst_n u_conditioner/_428_/RN
+STA_IFACE_PIN rst_n u_conditioner/_427_/RN
+STA_IFACE_PIN rst_n u_conditioner/_426_/RN
+STA_IFACE_PIN rst_n u_conditioner/_425_/RN
+STA_IFACE_PIN rst_n u_conditioner/_424_/RN
+STA_IFACE_PIN rst_n u_conditioner/_423_/RN
+STA_IFACE_PIN rst_n u_conditioner/_422_/RN
+STA_IFACE_PIN rst_n u_conditioner/_421_/RN
+STA_IFACE_PIN rst_n u_conditioner/_420_/RN
+STA_IFACE_PIN rst_n u_conditioner/_419_/RN
+STA_IFACE_PIN rst_n u_conditioner/_418_/RN
+STA_IFACE_PIN rst_n u_conditioner/_417_/RN
+STA_IFACE_PIN rst_n u_conditioner/_416_/RN
+STA_IFACE_PIN rst_n u_conditioner/_415_/RN
+STA_IFACE_PIN rst_n u_conditioner/_414_/RN
+STA_IFACE_PIN rst_n u_conditioner/_413_/RN
+STA_IFACE_PIN rst_n u_conditioner/_412_/RN
+STA_IFACE_PIN rst_n u_conditioner/_411_/RN
+STA_IFACE_PIN rst_n u_conditioner/_410_/RN
+STA_IFACE_PIN rst_n u_conditioner/_409_/RN
+STA_IFACE_PIN rst_n u_conditioner/_408_/RN
+STA_IFACE_PIN rst_n u_conditioner/_407_/RN
+STA_IFACE_PIN rst_n u_conditioner/_406_/RN
+STA_IFACE_PIN rst_n u_conditioner/_405_/RN
+STA_IFACE_PIN rst_n u_conditioner/_404_/RN
+STA_IFACE_PIN rst_n u_conditioner/_403_/RN
+STA_IFACE_PIN rst_n u_conditioner/_402_/RN
+STA_IFACE_PIN rst_n u_conditioner/_401_/RN
+STA_IFACE_PIN rst_n u_conditioner/_400_/RN
+STA_IFACE_PIN rst_n u_conditioner/_399_/RN
+STA_IFACE_PIN rst_n u_conditioner/_398_/RN
+STA_IFACE_PIN rst_n u_conditioner/_397_/RN
+STA_IFACE_PIN rst_n u_conditioner/_396_/RN
+STA_IFACE_PIN rst_n u_conditioner/_395_/RN
+STA_IFACE_PIN rst_n u_conditioner/_394_/RN
+STA_IFACE_PIN rst_n u_conditioner/_393_/RN
+STA_IFACE_PIN rst_n u_conditioner/_392_/RN
+STA_IFACE_PIN rst_n u_conditioner/_391_/RN
+STA_IFACE_PIN rst_n u_conditioner/_390_/RN
+STA_IFACE_PIN rst_n u_conditioner/_389_/RN
+STA_IFACE_PIN rst_n u_conditioner/_388_/RN
+STA_IFACE_PIN rst_n u_conditioner/_387_/RN
+STA_IFACE_PIN rst_n u_conditioner/_386_/RN
+STA_IFACE_PIN rst_n u_conditioner/_385_/RN
+STA_IFACE_PIN rst_n u_conditioner/_384_/RN
+STA_IFACE_PIN rst_n u_conditioner/_383_/RN
+STA_IFACE_PIN rst_n u_conditioner/_382_/RN
+STA_IFACE_PIN rst_n u_conditioner/_381_/RN
+STA_IFACE_PIN rst_n u_conditioner/_380_/RN
+STA_IFACE_PIN rst_n u_conditioner/_379_/RN
+STA_IFACE_PIN rst_n u_conditioner/_378_/RN
+STA_IFACE_PIN rst_n u_conditioner/_377_/RN
+STA_IFACE_PIN rst_n u_conditioner/_376_/RN
+STA_IFACE_PIN rst_n u_conditioner/_375_/RN
+STA_IFACE_PIN rst_n u_conditioner/_374_/RN
+STA_IFACE_PIN rst_n u_conditioner/_373_/RN
+STA_IFACE_PIN rst_n u_conditioner/_372_/RN
+STA_IFACE_PIN rst_n u_conditioner/_371_/RN
+STA_IFACE_PIN rst_n u_conditioner/_370_/RN
+STA_IFACE_PIN rst_n u_conditioner/_369_/RN
+STA_IFACE_PIN rst_n u_conditioner/_368_/RN
+STA_IFACE_PIN rst_n u_conditioner/_367_/RN
+STA_IFACE_PIN rst_n u_conditioner/_366_/RN
+STA_IFACE_PIN rst_n u_conditioner/_365_/RN
+STA_IFACE_PIN rst_n u_conditioner/_364_/RN
+STA_IFACE_PIN rst_n u_conditioner/_363_/RN
+STA_IFACE_PIN rst_n u_conditioner/_362_/RN
+STA_IFACE_PIN raw_bit u_interface/_2577_/I1
+STA_IFACE_PIN raw_bit u_interface/_2491_/I1
+STA_IFACE_PIN raw_bit u_interface/_2485_/I1
+STA_IFACE_PIN raw_bit u_interface/_2466_/I1
+STA_IFACE_PIN raw_bit u_interface/_2464_/I1
+STA_IFACE_PIN raw_bit u_interface/_2392_/A1
+STA_IFACE_PIN raw_bit u_interface/_2377_/I1
+STA_IFACE_PIN raw_bit u_interface/_2351_/I1
+STA_IFACE_PIN raw_bit u_interface/_2350_/I1
+STA_IFACE_PIN raw_bit u_health_test/_390_/I0
+STA_IFACE_PIN raw_bit u_health_test/_389_/I0
+STA_IFACE_PIN raw_bit u_health_test/_241_/A1
+STA_IFACE_PIN raw_bit u_health_test/_205_/A1
+STA_IFACE_PIN raw_bit u_conditioner/_349_/A2
+STA_IFACE_PIN raw_bit u_conditioner/_209_/A2
+STA_IFACE_PIN raw_valid u_interface/_1854_/A2
+STA_IFACE_PIN raw_valid u_interface/_1849_/A2
+STA_IFACE_PIN raw_valid u_interface/_1756_/A2
+STA_IFACE_PIN raw_valid u_health_test/_399_/A1
+STA_IFACE_PIN raw_valid u_health_test/_396_/A2
+STA_IFACE_PIN raw_valid u_health_test/_386_/A1
+STA_IFACE_PIN raw_valid u_health_test/_384_/A1
+STA_IFACE_PIN raw_valid u_health_test/_375_/A1
+STA_IFACE_PIN raw_valid u_health_test/_371_/A1
+STA_IFACE_PIN raw_valid u_health_test/_285_/A2
+STA_IFACE_PIN raw_valid u_health_test/_277_/A2
+STA_IFACE_PIN raw_valid u_health_test/_235_/I
+STA_IFACE_PIN raw_valid u_conditioner/_219_/A1
+STA_IFACE_PIN raw_valid u_conditioner/_206_/I
+STA_IFACE_PIN raw_valid u_conditioner/_203_/A3
+STA_IFACE_PIN raw_valid u_conditioner/_195_/A4
+STA_IFACE_PIN raw_valid u_conditioner/_181_/I
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_178_/D
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_136_/A1
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_086_/A1
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_179_/D
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_111_/A1
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_103_/A1
+STA_MAX_SLEW_VIOLATORS_BEGIN
+STA_MAX_SLEW_VIOLATORS_END
+STA_METRIC bisect_slack_at_lo_s -2.6214234338794995e-8
+STA_METRIC min_period_ns 26.31470794677734
+STA_METRIC min_period_slack_s 4.725109192804666e-13
+STA_METRIC min_period_hold_slack_s 2.4247370777885635e-9

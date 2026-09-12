@@ -4,11 +4,14 @@ Status: measurement complete for issue [#145] — the digital column of [#124]'s
 T1 checklist items **5** (full corner verification) and **8**
 (characterization report), both of which [#140] recorded as FAIL with the same
 one-line reason: *no static timing analysis exists at all, no real-layout
-area, and no power across corners.*
+area, and no power across corners.* Also carries [#233]'s answer to
+[DR-0025]'s deferred question about the six inter-region trunks that land on
+this block's own pins — see §2a, including the pre-existing max-transition
+violation ([#237]) that asking it uncovered.
 
 All three now exist, from one measurement pass over one fixed piece of
 geometry — the committed routed DEF `layout/digital/trng_top.def` ([#111],
-[#171]), re-timed at fifteen corners with real extracted parasitics. Three
+[#171]), re-timed at fifteen corners with real extracted parasitics. Four
 findings:
 
 1. **Timing closes at every corner of the set**, with the worst setup slack
@@ -35,6 +38,19 @@ findings:
    synthesis existed: it prices a flip-flop's clock-edge internal energy at
    the *data* activity, and a flop pays that energy on every clock edge
    whether its data moves or not.
+4. **The six digital-facing inter-region trunks ([#233]) are not the
+   problem — but something else is.** The trunks' own Metal4 RC, stated as a
+   `set_input_transition` on `clk`/`rst_n`/`raw_bit`/`raw_valid`/
+   `ring_bit[0]`/`ring_bit[1]` and derived from the as-built geometry, is
+   2.1–8.2 **ps** against a library `max_transition` of 4.4–13.2 ns: **none
+   of the six violates at any of the fifteen corners**, with ≥ 535× margin
+   at the tightest of them, and neither Fmax nor worst slack moves
+   measurably (§2a). Asking that question for the first time, however, also
+   asked OpenSTA for the design's *own* max-transition check — and **9 of
+   the 15 corners violate it, at 33–94 internal `u_interface` pins, worst
+   −1.59 ns at `tt_025C_3v30`/`max`** (§2a). That is pre-existing, present
+   with no interface load at all, on none of the six trunk nets, and filed
+   as [#237] rather than absorbed here.
 
 **This document is an ordinary summary, not evidence.** Every number below
 cites the `sim/records/` stem family that produced it or the committed
@@ -60,12 +76,13 @@ number to be decided against instead of an estimate.
 |---|---|
 | DUT | `layout/digital/trng_top.def` — the committed routed DEF from [#111]/[#172], re-placed and re-CTS'd by [#171] to add the vddd/vss power delivery network (tapcells, endcaps and filler), unchanged and never re-placed by this sweep. 8638 DEF `COMPONENTS`: 2502 logical instances + 6136 tapcell/endcap/filler cells, all `gf180mcu_fd_sc_mcu9t5v0` |
 | Driver | `sim/tb/digital-sta-power/run_sta.py` (gate-level testbench, [DR-0021]) |
-| Engine | OpenSTA + OpenRCX inside OpenROAD `26Q3-1278-g4421880472` |
+| Engine | OpenSTA + OpenRCX inside OpenROAD `26Q3-1278-g4421880472` ([#145]'s original pass; [#233]'s re-run below used `26Q3-1510-g6cb3f2b704`, an unrelated later OpenROAD build — see each record's own `tool:` field) |
 | PDK | `gf180mcuD @ c6d73a35f524070e85faff4a6a9eef49553ebc2b` |
 | Parasitics | OpenRCX extraction of the real routing → SPEF → `read_spef`. Not estimated: `rules.openrcx.gf180mcuD.{min,nom,max}` as shipped by the PDK |
 | Clock | `clk`, **propagated** through the CTS-built tree in the DEF (not ideal), 50 ns / 20 MHz — the P&R run's own constraint |
+| Interface load | [#233]: `set_input_transition` on the six `digital`-facing inter-region trunks, derived from `layout/floorplan/reports/interregion.json` at run time — permanent, every run (§2a) |
 | Grid | 5 liberty decks × 3 interconnect decks = **15 corners**, one record each |
-| Records | `sim/records/2026-08-18-digital-sta-power-{01..15}.md`, superseding `sim/records/2026-08-17-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#171] DEF they name — [#183]) |
+| Records | `sim/records/2026-09-12-digital-sta-power-{01..15}.md` ([#233]: interface load added, max-transition checks added, nothing else), superseding `sim/records/2026-08-18-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#233] SDC they name — §2a), which itself superseded `sim/records/2026-08-17-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#171] DEF they name — [#183]) |
 
 The liberty decks are the five `gf180mcu_fd_sc_mcu9t5v0` characterises in the
 block's ratified 3.3 V family: `ss_125C_3v00`, `ss_n40C_3v00`, `tt_025C_3v30`,
@@ -188,6 +205,173 @@ owns it"). Constraining them here would mean inventing arrival and required
 times and then checking the invention, which is not a verification result.
 Specifying the block's I/O timing contract, and re-running this sweep against
 it, is the natural follow-on and is not this issue's scope.
+
+---
+
+## 2a. The six digital-facing inter-region trunks ([#233]): clean by three orders of magnitude — and one pre-existing violation they uncovered
+
+[DR-0025] scoped the full-chip parasitic-extraction increment ([#232]) away
+from the six inter-region trunks that terminate on `digital`'s own pins
+(`clk`, `rst_n`, `raw_bit`, `raw_valid`, `ring_bit[0]`, `ring_bit[1]`) —
+`digital`'s ~2500 standard cells are abstracted in every existing
+extraction, so an ngspice run over an ideal clock source would have priced a
+couple of picoseconds of RC against edges measured in tens to hundreds of
+ps, "a no-op dressed as a measurement" in that record's own words. [DR-0025]
+handed the real question here instead: what does each trunk's own Metal4 RC
+do to the edge arriving at `digital`'s pin, asked of a characterised library
+rather than of an unmodelled ngspice source.
+
+### What was added, and in what units
+
+`run_sta.py`'s `_tcl()` reads `layout/floorplan/reports/interregion.json` at
+run time — never a transcribed length — and states each trunk's own lumped
+R·C as a `set_input_transition` on the corresponding port, in every session
+of every corner. The DEF's own pin names come from each route's `digital`
+endpoint, so the two bus-notation ports (`ring_bit[0]`/`ring_bit[1]`, whose
+interregion net names are `ring_bit1`/`ring_bit2`) are matched rather than
+silently skipped.
+
+A transition time is meaningless without the thresholds it is measured
+between, and these decks declare their own: 30 %/70 % thresholds *and*
+`slew_derate_from_library 0.5` — a factor of two between the edge a scope
+would measure and the number in the tables. `set_input_transition` and
+`max_transition` are both in the **table** domain, which this repository
+verified against the tool rather than against a reading of the Liberty
+spec: walking a stated transition across `ss_125C_3v00`'s 13.2 ns limit,
+13.1 is clean and 13.3 violates by exactly 0.10, with no derate applied
+(`sim/tb/digital-sta-power/sdc_treatment_probe.py --domain`). So the stated
+number is `ln(7/3) / 0.5 = 1.6946 × R × C`, with all three attributes read
+from the deck at run time, and each record also carries the textbook 10–90 %
+figure (`ln 9 × R × C`) for comparison. Two deliberate conservatisms, which
+make every figure below an upper bound rather than a best estimate: lumped
+R times lumped C (a distributed line of the same totals responds roughly
+twice as fast), and an ideal source, so the number prices the wire and
+nothing upstream of it.
+
+| port | net | trunk | R | C | R·C | stated transition | 10–90 % reference |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `clk` | `clk` | 353.78 µm | 106.13 Ω | 20.727 fF | 2.200 ps | 3.728 ps | 4.833 ps |
+| `rst_n` | `rst_n` | 339.34 µm | 101.80 Ω | 19.881 fF | 2.024 ps | 3.430 ps | 4.447 ps |
+| `raw_bit` | `raw_bit` | 524.77 µm | 157.43 Ω | 30.744 fF | 4.840 ps | 8.202 ps | 10.635 ps |
+| `raw_valid` | `raw_valid` | 446.61 µm | 133.98 Ω | 26.165 fF | 3.506 ps | 5.941 ps | 7.703 ps |
+| `ring_bit[0]` | `ring_bit1` | 343.16 µm | 102.95 Ω | 20.105 fF | 2.070 ps | 3.507 ps | 4.548 ps |
+| `ring_bit[1]` | `ring_bit2` | 265.47 µm | 79.64 Ω | 15.553 fF | 1.239 ps | 2.099 ps | 2.722 ps |
+
+Metal4 coefficients are [DR-0025]'s own (0.09 Ω/sq, 0.007602 fF/µm²,
+0.028153 fF/µm at the `WIRE_W = 0.30 µm` every trunk is drawn at); the
+lengths are `interregion.json`'s as-built `trunk_length_um`, and both the
+file's sha256 and the per-port arithmetic are in every record's
+`interface_loads:` block.
+
+### Why `set_load` is not used — for any of the six
+
+[#233] was filed expecting `set_load` on the four `combiner_sampler`-driven
+ports, with `clk`/`rst_n` to be decided separately. It is not used for
+either group, and the reason is stronger than the port direction: all six
+are `DIRECTION INPUT` on `trng_top` (`layout/digital/trng_top.def`'s own
+`PINS` section) with **no driver inside this single-region netlist** —
+`combiner_sampler` drives four of them and an off-chip pad drives
+`clk`/`rst_n`, and neither exists here — so there is no driver arc at the
+port for a load to attach to. Measured, not assumed, at
+`ss_125C_3v00`/`rc-min` over five otherwise identical sessions:
+
+| session | worst setup slack | worst hold slack | total power (20 MHz) | worst slew at the six ports |
+|---|---:|---:|---:|---:|
+| no interface constraint | 23.685763 ns | 2.4247368557 ns | 8.44065938 mW | 0.000000 ns |
+| `set_load`, as-built 15.6–30.7 fF | 23.685763 ns | 2.4247368557 ns | 8.44065938 mW | 0.000000 ns |
+| `set_load`, 10 pF | 23.685763 ns | 2.4247368557 ns | 8.44065938 mW | 0.000000 ns |
+| `set_input_transition`, derived | 23.685763 ns | 2.4247370778 ns | 8.44064821 mW | 0.008202 ns |
+| `set_input_transition`, 10× | 23.685763 ns | 2.4247370778 ns | 8.44054576 mW | 0.082021 ns |
+
+Both `set_load` rows are **bit-identical** to the unconstrained one — every
+slack, every power column, every slew, and the design-wide worst max-slew
+slack. A `set_load` line here would have been a no-op wearing the costume of
+a measurement: exactly what [DR-0025] declined to do with an ngspice run,
+one level removed. `set_input_transition` is the one construct that states
+what these ports genuinely have, which is an edge arriving from off this
+netlist already degraded by the trunk's RC.
+`sdc_treatment_probe.py` re-runs that comparison on demand, and `--check`
+fails if any of it stops holding.
+
+### Result: no violation, ≥ 536× margin, no measurable slack cost
+
+| | value |
+|---|---|
+| Ports priced this way | **6 of 6**, at all 15 corners (`interface_load_ports`) |
+| Worst stated transition | **8.202 ps** (`raw_bit`, the longest trunk) |
+| Library `max_transition` | 13.2 ns (`ss_125C_3v00`), 11.2, 6.0, 5.2, **4.4 ns** (`ff_n40C_3v60`) |
+| Margin at the tightest deck | **4.3918 ns — a factor of 536** (`interface_load_transition_margin_ns`) |
+| Trunk ports violating it | **0 of 6, at every one of the 15 corners** (`interface_load_max_slew_violations`) |
+| Fmax floor | **35.63 MHz, unmoved** (`ss_125C_3v00`/`max`) |
+| Worst setup / hold slack | **+21.935 ns / +0.712 ns, unmoved** |
+
+The slack columns cannot move much, and the reason is structural rather
+than lucky: `raw_bit`/`raw_valid`/`ring_bit[0]`/`ring_bit[1]` carry no
+`set_input_delay`, so no reg-to-reg path starts at one (§2, "What is not
+timed") and those four trunks cannot touch a reported slack at all. `clk`
+and `rst_n` do reach the clock tree and the flops' reset pins — and in the
+controlled comparison above, worst setup slack was unchanged in **every
+digit of double precision** while worst hold slack moved by **+0.22 ps**.
+Note the sign: that is an *improvement*, and it stays an improvement when
+all six transitions are overstated 10×. Launch and capture share the clock
+root, so a slower root edge largely cancels, and the residual's sign is not
+guaranteed to be a degradation — anyone reading a sub-picosecond slack shift
+here as "the trunk RC cost us timing" would be reading numerical residue.
+The effect that *is* monotonic in the trunks' RC is the slew at the six
+ports and at the pins they drive, and that is where it is reported.
+
+A note on comparing record families: the `2026-08-18` family was produced by
+OpenROAD `26Q3-1278-g4421880472` and this one by `26Q3-1510-g6cb3f2b704`, so
+a cross-family diff conflates the interface load with a tool upgrade. (It
+is small either way: every slack and Fmax figure is identical to the digits
+reported, and total 1 MHz power differs by ≤ 3 nW, both signs.) The
+controlled with/without comparison is the probe table above, one binary, one
+corner, one DEF.
+
+### What asking the question uncovered: 9 of 15 corners already violate `max_transition`
+
+Answering [#233]'s third acceptance criterion meant asking OpenSTA for the
+library's own max-transition check (`report_check_types -max_slew`) for the
+first time in this repository. The six trunk ports are clean. The design is
+not:
+
+| corner | library limit | worst max-slew slack | violating pins | on a trunk net |
+|---|---:|---:|---:|---:|
+| `ss_125C_3v00`/`min` | 13.2 ns | +0.1625 ns | 0 | 0 |
+| `ss_125C_3v00`/`nom` | 13.2 ns | **−0.5651 ns** | 33 | 0 |
+| `ss_125C_3v00`/`max` | 13.2 ns | **−1.4487 ns** | 46 | 0 |
+| `ss_n40C_3v00`/`min,nom,max` | 11.2 ns | +2.7907 … +1.7354 ns | 0 | 0 |
+| `tt_025C_3v30`/`min,nom,max` | 6.0 ns | **−0.7562 … −1.5930 ns** | 46, 46, 94 | 0 |
+| `ff_125C_3v60`/`min,nom,max` | 5.2 ns | **−0.8471 … −1.5884 ns** | 46, 46, 94 | 0 |
+| `ff_n40C_3v60`/`min,nom` | 4.4 ns | +0.4511, +0.2320 ns | 0 | 0 |
+| `ff_n40C_3v60`/`max` | 4.4 ns | **−0.0183 ns** | 33 | 0 |
+
+The violators are internal to `u_interface`: at the worst corner they are
+the `S` (select) pins of a block of `mux2_1` cells on one net,
+`u_interface/_1190_`, which `layout/digital/trng_top.pnr.v` shows driven by
+a single `nor2_2` into **33 load pins**. This is **pre-existing and not
+[#233]'s**: the unconstrained `baseline` session in the probe table above
+reports the identical worst max-slew slack, and
+`interface_load_max_slew_violations` is 0 at every corner — none of the
+violating pins is on one of the six trunk nets. It was simply never asked
+about before. Per [#233]'s fourth acceptance criterion it is written up with
+its own follow-up, [#237], rather than absorbed here; the honest reading of
+§2's "+21.9 ns of slack" is that on the paths through those pins, the
+library's delay and energy tables are being extrapolated beyond their
+characterised slew range.
+
+### Permanent, not a one-off scenario
+
+[#233]'s open question was whether this belongs in the STA setup permanently
+or as a one-off. **Permanent**, and the deciding argument is that it can be
+*derived*: the SDC lines are regenerated from `interregion.json` and the
+corner's own liberty deck on every invocation, so a floorplan or routing
+change ([#222]-style) is picked up the next time the sweep runs. A pinned
+constant would have been the thing to keep out of the permanent setup, and
+there is none here — not the trunk lengths, not the slew convention, not the
+library limit the margin is quoted against. `check_environment()` now fails
+the sweep outright if `interregion.json` is missing rather than quietly
+timing the design without its interface load.
 
 ---
 
@@ -468,6 +652,10 @@ of which are now facing measured numbers instead of estimates.
   with 21.9 ns of setup margin and 0.7 ns of hold margin at the respective
   binding corners, and an Fmax floor of 35.6 MHz — 35.6× [DR-0003]'s ratified
   raw-rate row and 8.9× its stretch row.
+- The six inter-region trunks that land on this block's pins are **priced from
+  as-built geometry and carried permanently**, and none of them violates the
+  library's max-transition constraint at any corner ([#233], §2a) — which is
+  what [DR-0025] deferred to this path rather than to an ngspice run.
 - The digital section's **area is measured**: 116 001 µm² of placed cell
   area, decomposed into a cell-count term, a library-track term, and (new
   since [#171]) a power-delivery-cell term.
@@ -488,7 +676,17 @@ of which are now facing measured numbers instead of estimates.
   analysis, and none is run here), no on-chip variation derating, and no
   multi-mode analysis.
 - **Not an I/O timing result.** 68 unconstrained endpoints, by construction
-  (§2).
+  (§2). [#233] adds the six `digital`-facing inter-region trunks' own RC as an
+  input transition on the ports they land on, which prices the *wire* and
+  nothing upstream of it — it is not an arrival/required-time contract for
+  those ports, and the four `combiner_sampler`-driven ones still start no
+  timed path (§2a).
+- **Not a clean max-transition result.** The six trunk ports pass the
+  library's `max_transition` check with ≥ 536× margin, but the design itself
+  violates it at 9 of the 15 corners on internal `u_interface` pins, worst
+  −1.59 ns ([#237], §2a). Pre-existing, unrelated to [#233]'s interface load,
+  and on those paths every delay and energy figure above is a library-table
+  extrapolation rather than an interpolation.
 - **Not a supply-current measurement.** Liberty power under a declared uniform
   activity. The real design's activity is data-dependent and, for a TRNG,
   deliberately unpredictable; a switching-activity annotation from the
@@ -563,13 +761,24 @@ python3 sim/tools/digital_corner_characterization.py --estimate
 
 # the gate CI runs
 python3 sim/tools/digital_corner_characterization.py --check
+
+# §2a's two modelling decisions, re-measured rather than re-read: set_load
+# vs set_input_transition on these ports, and which slew domain the stated
+# transition is in (~1 min; needs openroad + the PDK)
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
 ```
 
-Records: `sim/records/2026-08-18-digital-sta-power-{01..15}.md`, one per
+Records: `sim/records/2026-09-12-digital-sta-power-{01..15}.md`, one per
 corner, each with the generated Tcl and the full OpenROAD log as committed raw
 output. The SPEF is not committed (3.3 MB × 15); each record carries its
 sha256, byte count and summed capacitance so a re-run can be checked against
-it. The pre-[#171] `sim/records/2026-08-17-digital-sta-power-{01..15}.md`
+it. The pre-[#233] `sim/records/2026-08-18-digital-sta-power-{01..15}.md`
+remain committed as append-only evidence about the pre-interface-load SDC,
+and every slack, Fmax and area figure they carry is identical to the digits
+reported (§2a — the two families were produced by different OpenROAD builds,
+so that is a reconciliation rather than a controlled comparison; the
+controlled one is `sdc_treatment_probe.py`'s). The pre-[#171] `sim/records/2026-08-17-digital-sta-power-{01..15}.md`
 remain committed as append-only evidence about the DEF they name and hash,
 but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 
@@ -584,6 +793,9 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#172]: https://github.com/2AMLogic/gf180-trng/issues/172
 [#174]: https://github.com/2AMLogic/gf180-trng/issues/174
 [#183]: https://github.com/2AMLogic/gf180-trng/issues/183
+[#232]: https://github.com/2AMLogic/gf180-trng/issues/232
+[#233]: https://github.com/2AMLogic/gf180-trng/issues/233
+[#237]: https://github.com/2AMLogic/gf180-trng/issues/237
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
@@ -597,3 +809,4 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
 [DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
+[DR-0025]: ../spec/decision-records/DR-0025-full-chip-pex-scope.md
