@@ -98,6 +98,7 @@ import digital_power_estimate as digital  # noqa: E402  (design/)
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
 from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
+from layout.floorplan import interregion  # noqa: E402  (issue #222, phase 2)
 
 # The standard-cell glob `digital`'s own standalone LVS (`layout/digital/
 # lvs.py`) abstracts every library cell behind -- reused rather than
@@ -108,6 +109,22 @@ from layout.digital.lvs import CELL_GLOB as DIGITAL_ABSTRACT_CELL_GLOB  # noqa: 
 #: The DRC deck name `klt` knows this PDK family by -- per-family, not
 #: per-variant. Same value layout/verify.py uses, for the same reason.
 DECK = "gf180mcu"
+
+#: Cell name of the one composed block that is not a region: the drawn
+#: inter-region wiring (issue #222, phase 2 of #219). See
+#: `layout/floorplan/interregion.py`.
+INTERREGION_CELL = "trng_interregion"
+
+#: The standard-cell glob every `digital` extraction in this repository
+#: abstracts (`layout/digital/lvs.py`'s own `CELL_GLOB`, imported above as
+#: `DIGITAL_ABSTRACT_CELL_GLOB`) -- the composed floorplan's own extraction
+#: needs it for exactly the reason the standalone digital check does: the
+#: composed LVS reference `.INCLUDE`s `trng_top.lvs_reference.spice`, whose
+#: standard cells are empty pin-only black boxes, so the layout side has to
+#: abstract the same cells or every one of them is an unmatched circuit.
+#: Named separately here only so this module's own call site reads as what
+#: it is.
+COMPOSED_ABSTRACT_CELLS = DIGITAL_ABSTRACT_CELL_GLOB
 
 EXIT_OK = 0
 EXIT_FAIL = 1
@@ -683,7 +700,63 @@ def _row_offsets(regions: list[dict]) -> dict[str, float]:
     return offsets
 
 
-def compose(regions: list[dict], variant: str) -> tuple[dict, dict]:
+def draw_interregion_wiring(
+    regions: list[dict],
+    content_origins: dict[str, dict[str, float]],
+    dbu_um: float | None,
+) -> tuple[dict, dict]:
+    """Draw the inter-region wiring (issue #222, phase 2 of #219) with
+    `klt draw`, and return `(generator report, wiring plan)`.
+
+    The geometry itself is computed by `layout/floorplan/interregion.py`
+    from `design/floorplan_netlist.py`'s own declared net list and from each
+    region's own build module -- see that module's docstring for the routing
+    plan and for what is deliberately *not* drawn. This function is only the
+    `klt` call and the `blocks[].generator_report` wrapper around it, the
+    same shape `layout/rings/ro_ring11/build.py` already uses for its own
+    hand-drawn intra-ring wiring.
+
+    `dbu_um` is passed through to `klt draw`'s own `params.dbu_um` at
+    whatever database unit the guard-ring generator itself resolved from the
+    PDK, rather than left at `klt draw`'s own 0.001 um default: `gen-compose`
+    would otherwise have to rescale this block onto the finest dbu among the
+    request's blocks (klayout-tools#1514/#1516, see `ASSEMBLED_RING_GDS`'s
+    own note) -- lossless, but one more moving part between the numbers
+    `interregion.py` computes and the geometry that lands in the stream.
+    """
+    content_bboxes = {
+        region["id"]: region["ring_content_bbox_um"]
+        for region in regions
+        if "ring_content_bbox_um" in region
+    }
+    plan = interregion.wiring_plan(content_origins, content_bboxes)
+
+    params: dict = {"shapes": plan["shapes"], "labels": plan["labels"]}
+    if dbu_um is not None:
+        params["dbu_um"] = dbu_um
+    params_path = WORK_DIR / "fp_interregion_params.json"
+    params_path.write_text(json.dumps(params, indent=2) + "\n")
+
+    response = _run_klt([
+        "draw",
+        "--params", str(params_path.relative_to(REPO_ROOT)),
+        "--cell-name", INTERREGION_CELL,
+        "-o", f"layout/.work/{INTERREGION_CELL}.gds",
+    ])
+    report = {
+        "generator": "layout.floorplan.interregion",
+        "cell_name": INTERREGION_CELL,
+        "gds_path": f"layout/.work/{INTERREGION_CELL}.gds",
+        "bbox_um": response["bbox_um"],
+        "ports": [],
+    }
+    (WORK_DIR / f"{INTERREGION_CELL}.json").write_text(json.dumps(report, indent=2) + "\n")
+    plan["bbox_um"] = response["bbox_um"]
+    return report, plan
+
+
+def compose(regions: list[dict], variant: str,
+            dbu_um: float | None = None) -> tuple[dict, dict, dict]:
     # `blocks[].generator_report` resolves against the *request file's own
     # directory* (klayout-tools#328), the same rule a `klt lvs` request
     # already followed -- so that path is written relative to wherever this
@@ -732,6 +805,21 @@ def compose(regions: list[dict], variant: str) -> tuple[dict, dict]:
         }
         content_ids.append(content_id)
 
+    # Issue #222 (phase 2 of #219): one more block, the real inter-region
+    # routing geometry, drawn at absolute composed-frame coordinates from
+    # each region's own content origin above -- so it is placed at the
+    # origin, not offset like the guard rings and their content. This is
+    # the only block in the request that is not a region; everything it
+    # draws lives either in an isolation channel, under the row (`y < 0`,
+    # where no region draws anything), or on a via stack landing on one
+    # declared pin. See `layout/floorplan/interregion.py`.
+    wiring_report, wiring_plan = draw_interregion_wiring(
+        regions, {rid: origins[f"{rid}_ring"] for rid in ASSEMBLED_RING_GDS}, dbu_um,
+    )
+    blocks.append({"id": INTERREGION_CELL, "generator_report": f"{INTERREGION_CELL}.json"})
+    origins[INTERREGION_CELL] = {"x": 0.0, "y": 0.0}
+    content_ids.append(INTERREGION_CELL)
+
     path = WORK_DIR / "compose-request.json"
     request = {
         "_comment": (
@@ -752,7 +840,7 @@ def compose(regions: list[dict], variant: str) -> tuple[dict, dict]:
         },
     }
     path.write_text(json.dumps(request, indent=2) + "\n")
-    return request, _run_klt(["gen-compose", str(path.relative_to(REPO_ROOT))])
+    return request, _run_klt(["gen-compose", str(path.relative_to(REPO_ROOT))]), wiring_plan
 
 
 def run_drc(gds: str) -> dict:
@@ -775,6 +863,7 @@ def run_lvs(
     tag: str,
     *,
     layout_netlist: Path | None = None,
+    options: dict | None = None,
 ) -> dict:
     """Run `klt lvs` for one placement check, writing its own request under
     `WORK_DIR` (issue #110). `gds_relname` is a filename already inside
@@ -794,6 +883,14 @@ def run_lvs(
     a `klt extract --abstract-cells` pre-extraction (not `klt lvs`'s own
     default flat extraction) produces a layout-side netlist shaped to
     match it.
+
+    `options`, when given, is passed straight through as the request's own
+    `options` block (`klt lvs`'s documented request shape). The composed
+    floorplan check (`check_interregion`, issue #222) is the one caller that
+    needs it, for `flatten_layout`/`flatten_reference`: an abstracted layout
+    netlist is flat by construction while the composed reference is four
+    `.SUBCKT` instantiations, so the two can only be compared once both
+    sides are flattened.
     """
     if layout_netlist is not None:
         layout = {
@@ -810,6 +907,8 @@ def run_lvs(
             "top": reference_top,
         },
     }
+    if options:
+        request["options"] = options
     request_path = WORK_DIR / f"{tag}-lvs-request.json"
     request_path.write_text(json.dumps(request, indent=2) + "\n")
     return _run_klt(["lvs", str(request_path.relative_to(REPO_ROOT))])
@@ -1030,6 +1129,228 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
         "new_violations_from_fit": sum(new_rules.values()),
         "lvs": _lvs_summary(lvs),
         "lvs_unexpected_categories": lvs_bad_categories,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Inter-region connectivity -- issue #222 (phase 2 of #219)
+# --------------------------------------------------------------------------- #
+
+#: Top-level pin names the composed layout ends up carrying **twice**, once
+#: per net, because two electrically separate nets legitimately share a
+#: label. There is exactly one: `vss`. The composed reference wires a
+#: top-level `vss` to `ring1`/`ring2`/`combiner_sampler`'s own `vss` pins and
+#: leaves `digital`'s own PDN ground a *separate* internal net (phase 1's own
+#: `implicit_regions` gap -- `layout/digital/trng_top.lvs_reference.spice`
+#: declares no `vss` pin to wire against, so the reference cannot express
+#: that tie and this floorplan deliberately does not draw it). Both nets
+#: really are labelled `vss` in the layout -- the analog one by the analog
+#: cells' own drawn labels, `digital`'s by its own PDN -- so `klt extract
+#: --pins vss` promotes both. That is a faithful report of the geometry, not
+#: a wiring error: the two nets are distinct, which is exactly what the
+#: composed LVS then confirms.
+DUPLICATE_PIN_NAME_PROMOTIONS = ("vss",)
+
+#: The four supply branches that must never merge (phase 1's own "DO NOT
+#: MERGE" invariant, README Mechanism 2). `check_interregion` asserts they
+#: are four distinct extracted nets and that no single extracted net name
+#: carries two of these tokens -- which is what a shared strap would look
+#: like in `klt extract`'s own multi-label net naming.
+SUPPLY_NETS = ("vddr1", "vddr2", "vdd", "vddd")
+
+
+def run_extract_composed(pins: list[str]) -> dict:
+    """`klt extract` over the composed, routed floorplan.
+
+    Same shape as `layout/digital/lvs.py`'s own `run_extract`, for the same
+    reasons: `--abstract-cells` because the composed reference `.INCLUDE`s
+    `digital`'s cell-instance-granularity reference, and `--pins` because
+    this layout is otherwise labelled all the way down -- `digital`'s own
+    DEF->GDS merge draws a text for essentially every routed net, and each
+    analog cell labels its own pins, so without a declared interface `klt
+    extract` promotes thousands of internal nodes to top-level pins (2588 of
+    them, measured on the unrouted floorplan this issue started from).
+
+    `--pins` is given the composed reference's own `.SUBCKT trng_floorplan`
+    header verbatim, so the layout is held to exactly the interface the
+    reference declares rather than to a list restated here.
+    """
+    output = WORK_DIR / "trng_floorplan.extracted.spice"
+    return _run_klt([
+        "extract", "layout/.work/trng_floorplan.gds",
+        "--deck", DECK,
+        "--top", "trng_floorplan",
+        "--abstract-cells", COMPOSED_ABSTRACT_CELLS,
+        "--pins", ",".join(pins),
+        "--def-net-names",
+        "-o", str(output.relative_to(REPO_ROOT)),
+    ])
+
+
+def check_interregion(wiring_plan: dict) -> dict:
+    """Hold the composed, routed floorplan to phase 1's own declaration:
+    the nets it says cross a region boundary are electrically joined, the
+    four supply branches are not, the top-level interface is the one the
+    composed reference declares, and the whole thing LVS-matches that
+    reference.
+
+    Four verdicts come out of one extraction plus one `klt lvs` run:
+
+    1. **Connectivity.** `interregion.py` labels every drawn net on its own
+       trunk, so exactly one extracted net must carry that label. Two nets
+       carrying it means the net's declared endpoints never joined -- which
+       is precisely the unrouted floorplan's own measured signature (two
+       nets named `clk`, two named `rst_n`, four named `vss`).
+    2. **The chip-pin label table.** Each chip-pin net's predicted label set
+       (`interregion.REGION_CELL_LABELS`, which the expected pin count below
+       is derived from) is compared against the one the extraction reports,
+       so that derivation is checked rather than assumed.
+    3. **Supply separation.** `vddr1`/`vddr2`/`vdd`/`vddd` must resolve to
+       four distinct extracted nets, and no extracted net may carry two of
+       those names at once.
+    4. **LVS.** The extracted netlist against
+       `trng_floorplan.lvs_reference.spice`, both sides flattened
+       (`options.flatten_layout`/`flatten_reference`): the layout side is
+       flat by construction once the standard cells are abstracted, while
+       the reference is four `.SUBCKT` instantiations, so neither can pair
+       against the other hierarchically.
+
+    The expected pin count is *derived*, not asserted from a remembered
+    number: it is the reference's own declared pin count, minus the pins
+    `klt extract --pins` structurally cannot name (see
+    `interregion.extracted_net_name` -- KLayout joins every label on one net
+    into a single comma-separated name, and `--pins` takes a
+    comma-separated *list*, so a multiply-labelled net's name cannot be
+    written in it at all), plus `DUPLICATE_PIN_NAME_PROMOTIONS`.
+    """
+    ref_path = floorplan_netlist.LVS_REFERENCE_PATH
+    ref_top = floorplan_netlist.TOP_CELL
+    declared = _reference_top_pins(ref_path, ref_top)
+
+    unnameable = sorted(
+        pin for pin in declared if "|" in interregion.extracted_net_name(pin)
+    )
+    expected_pins = (
+        len(declared) - len(unnameable) + len(DUPLICATE_PIN_NAME_PROMOTIONS)
+    )
+
+    extracted = run_extract_composed(declared)
+    net_names = [net.get("name") or "" for net in extracted.get("nets") or ()]
+
+    # `{label: [every extracted net name carrying that label]}`. KLayout
+    # joins the labels found on one electrical net into a single `'|'`-
+    # separated name, so splitting that name back apart recovers the label
+    # set -- which is what the two checks below are actually about.
+    nets_by_label: dict[str, list[str]] = {}
+    for name in net_names:
+        for label in name.split("|"):
+            nets_by_label.setdefault(label, []).append(name)
+
+    problems: list[str] = []
+
+    # 1. Connectivity. Every drawn net carries its own label on its trunk,
+    # so exactly one extracted net must carry that label. Two nets carrying
+    # it means an endpoint pair never joined (the unrouted floorplan's own
+    # signature: two nets named `clk`, two named `rst_n`, four named `vss`);
+    # zero means the label landed on no conductor at all.
+    for route in wiring_plan["routes"]:
+        carriers = nets_by_label.get(route["net"], [])
+        # One carrier each, except the one label two electrically separate
+        # nets legitimately share -- see `DUPLICATE_PIN_NAME_PROMOTIONS`.
+        # Even then the count is exact, so `vss`'s own three region returns
+        # failing to join (four carriers, the unrouted floorplan's measured
+        # signature) is still caught.
+        expected_carriers = 2 if route["net"] in DUPLICATE_PIN_NAME_PROMOTIONS else 1
+        if len(carriers) != expected_carriers:
+            problems.append(
+                f"drawn net {route['net']!r} is carried by {len(carriers)} "
+                f"extracted net(s) {carriers} -- expected {expected_carriers}; "
+                "more than that means its declared endpoints are not "
+                "electrically joined"
+            )
+
+    # 2. The chip-pin label table itself (`interregion.REGION_CELL_LABELS`),
+    # which the expected pin count above is derived from. Checked against
+    # what the extraction actually reports rather than assumed, so a cell
+    # that gains or loses a pin label fails here instead of quietly moving
+    # the expected count.
+    for route in wiring_plan["routes"]:
+        if not route["chip_pin"]:
+            continue
+        expected = interregion.extracted_label_set(route["net"])
+        for carrier in nets_by_label.get(route["net"], []):
+            found = set(carrier.split("|"))
+            if found != expected:
+                problems.append(
+                    f"chip-pin net {route['net']!r} came back labelled "
+                    f"{sorted(found)}; interregion.REGION_CELL_LABELS predicts "
+                    f"{sorted(expected)} -- the predicted set is what the "
+                    "expected pin count is derived from, so it has to be "
+                    "corrected rather than ignored"
+                )
+
+    # 3. Supply separation (phase 1's DO-NOT-MERGE invariant). A shared
+    # strap would show up as one extracted net carrying two supply labels.
+    merged_supplies = sorted(
+        name for name in net_names
+        if sum(token in name.split("|") for token in SUPPLY_NETS) > 1
+    )
+    if merged_supplies:
+        problems.append(
+            "extracted net(s) carrying two supply-branch labels at once (a "
+            f"shared strap before the star point): {merged_supplies}"
+        )
+    supply_names = {
+        name: (nets_by_label.get(name) or [None])[0] for name in SUPPLY_NETS
+    }
+    resolved = [name for name, found in supply_names.items() if found is not None]
+    if len(set(supply_names[name] for name in resolved)) != len(resolved):
+        problems.append(
+            f"two supply branches resolve to the same extracted net: {supply_names}"
+        )
+
+    pin_count = extracted.get("pin_count")
+    if pin_count != expected_pins:
+        problems.append(
+            f"klt extract --top trng_floorplan reports {pin_count} top-level "
+            f"pin(s); the composed reference declares {len(declared)} and "
+            f"{len(unnameable)} of those ({unnameable}) cannot be named "
+            "through `klt extract --pins` at all, plus "
+            f"{len(DUPLICATE_PIN_NAME_PROMOTIONS)} duplicate-name promotion(s) "
+            f"{list(DUPLICATE_PIN_NAME_PROMOTIONS)} -- expected {expected_pins}"
+        )
+
+    lvs = run_lvs(
+        None, "trng_floorplan", ref_path, ref_top, "trng_floorplan",
+        layout_netlist=WORK_DIR / "trng_floorplan.extracted.spice",
+        options={"flatten_layout": True, "flatten_reference": True},
+    )
+    lvs_categories = set((lvs.get("category_counts") or {}).keys())
+    lvs_bad = sorted(lvs_categories - ALLOWED_LVS_CATEGORIES - {"topology.flattened"})
+    if lvs["status"] != "match" or lvs_bad:
+        problems.append(
+            f"composed LVS is {lvs['status']} with "
+            f"{lvs.get('mismatch_count')} mismatch(es); unexpected categories "
+            f"{lvs_bad}"
+        )
+
+    return {
+        "declared_pins": len(declared),
+        "pins_unnameable_by_klt_extract": unnameable,
+        "duplicate_pin_name_promotions": list(DUPLICATE_PIN_NAME_PROMOTIONS),
+        "expected_pin_count": expected_pins,
+        "extract": {
+            "status": extracted.get("status"),
+            "device_count": extracted.get("device_count"),
+            "net_count": extracted.get("net_count"),
+            "pin_count": pin_count,
+            "abstracted_cell_types": len(extracted.get("abstracted_cells") or ()),
+        },
+        "drawn_nets": [route["net"] for route in wiring_plan["routes"]],
+        "supply_branch_nets": supply_names,
+        "lvs": _lvs_summary(lvs),
+        "lvs_unexpected_categories": lvs_bad,
+        "problems": problems,
     }
 
 
@@ -1266,6 +1587,12 @@ def build(pdk) -> dict:
 
     # --- 4. guard rings, composition, DRC ---------------------------------
     print("== guard rings ==")
+    #: The database unit `klt gen` resolved from this PDK for the guard
+    #: rings -- reused for the hand-drawn inter-region wiring below rather
+    #: than restated, so both halves of the composition are written at the
+    #: same dbu and `gen-compose` never has to rescale one onto the other
+    #: (klayout-tools#1514/#1516).
+    guard_dbu_um: float | None = None
     for region in regions:
         rid = region["id"]
         # `ring1`/`ring2` reserve `RING_PLACEMENT_CLEARANCE_UM` of clearance
@@ -1303,6 +1630,9 @@ def build(pdk) -> dict:
             region["ring_band_width_um"] = ring_band_um
             region["inner_w_um"] = gen_inner_w
             region["inner_h_um"] = gen_inner_h
+
+        if guard_dbu_um is None:
+            guard_dbu_um = response.get("dbu_um")
 
         box = response["bbox_um"]
         region["guarded_w_um"] = round(box["x1"] - box["x0"], 3)
@@ -1363,11 +1693,18 @@ def build(pdk) -> dict:
     # block's own scope; issue #16's floorplan abstract only ever placed
     # empty guard rings before this).
     print("== composition ==")
-    request, composed = compose(regions, variant)
+    request, composed, wiring = compose(regions, variant, guard_dbu_um)
     box = composed["bbox_um"]
     print(
         f"  row bbox {box['x1'] - box['x0']:.2f} x {box['y1'] - box['y0']:.2f} um, "
         f"{ISOLATION_CHANNEL_UM:.0f} um channels"
+    )
+    print(
+        f"  inter-region wiring: {len(wiring['routes'])} net(s), "
+        f"{len(wiring['shapes'])} shape(s), {len(wiring['labels'])} net "
+        f"label(s), bbox {wiring['bbox_um']['x0']:.2f} .. "
+        f"{wiring['bbox_um']['x1']:.2f} x {wiring['bbox_um']['y0']:.2f} .. "
+        f"{wiring['bbox_um']['y1']:.2f} um"
     )
 
     drc = run_drc("layout/.work/trng_floorplan.gds")
@@ -1402,6 +1739,26 @@ def build(pdk) -> dict:
         f"  drc {drc.get('status')} ({drc.get('violation_count')} violations, "
         f"{sum(new_from_composition.values())} not already present in each "
         "assembled region's own standalone DRC)"
+    )
+    print()
+
+    # --- 4d. inter-region connectivity (issue #222): extract the composed,
+    # routed stream and hold it to phase 1's own declaration -- the declared
+    # nets joined, the four supply branches not, the top-level interface the
+    # composed reference declares, and `klt lvs` against that reference.
+    print("== inter-region connectivity (issue #222) ==")
+    interregion_check = check_interregion(wiring)
+    print(
+        f"  extract pin_count {interregion_check['extract']['pin_count']} "
+        f"(expected {interregion_check['expected_pin_count']}), "
+        f"{interregion_check['extract']['net_count']} nets, "
+        f"{interregion_check['extract']['device_count']} devices"
+    )
+    print(
+        f"  lvs {interregion_check['lvs']['status']} "
+        f"({interregion_check['lvs']['mismatch_count']} mismatches, "
+        f"unexpected categories: "
+        f"{interregion_check['lvs_unexpected_categories'] or 'none'})"
     )
     print()
 
@@ -1524,6 +1881,13 @@ def build(pdk) -> dict:
             ),
         },
         "ring_fit": ring_fit,
+        "interregion": {
+            "routes": wiring["routes"],
+            "wiring_bbox_um": wiring["bbox_um"],
+            "shape_count": len(wiring["shapes"]),
+            "net_labels": [label["text"] for label in wiring["labels"]],
+            "check": interregion_check,
+        },
     }
 
 
@@ -1592,6 +1956,21 @@ def print_report(report: dict) -> None:
     if report.get("ring_fit"):
         print()
 
+    interregion_report = report.get("interregion")
+    if interregion_report:
+        check = interregion_report["check"]
+        print(
+            f"  inter-region     : {len(interregion_report['routes'])} net(s) "
+            f"drawn across the isolation channels, "
+            f"{interregion_report['shape_count']} shapes; extract "
+            f"{check['extract']['pin_count']} top-level pin(s) "
+            f"(expected {check['expected_pin_count']}), lvs "
+            f"{check['lvs']['status']} ({check['lvs']['mismatch_count']} "
+            f"mismatches, unexpected categories: "
+            f"{check['lvs_unexpected_categories'] or 'none'})"
+        )
+        print()
+
 
 def print_table() -> None:
     print(f"{'region':<20} {'supply':<8} {'role':<14} contents")
@@ -1643,6 +2022,10 @@ ARTEFACTS = {
     # DRC-clean? Issue #110 extends it to `klt lvs` too. One entry per
     # region in `ASSEMBLED_RING_GDS`.
     "ring_fit.json": lambda report: report["ring_fit"],
+    # Issue #222's own check: what was actually drawn across the isolation
+    # channels for each of phase 1's declared nets, and the extraction /
+    # pin-count / LVS verdict over the composed, routed result.
+    "interregion.json": lambda report: report["interregion"],
 }
 
 _REGENERATE = "-- re-run `python3 layout/floorplan/floorplan.py --write`"
@@ -1799,6 +2182,12 @@ def main(argv: list[str] | None = None) -> int:
                 f"{fit['lvs_unexpected_categories']} (allowed: "
                 f"{sorted(ALLOWED_LVS_CATEGORIES)})"
             )
+
+    # Issue #222: the inter-region routing's own three verdicts
+    # (connectivity, supply separation, pin count + composed LVS) --
+    # `check_interregion` collects them so each one fails with its own
+    # message rather than as one opaque "connectivity check failed".
+    failures.extend(report["interregion"]["check"]["problems"])
 
     if args.write:
         written = write_artefacts(report)

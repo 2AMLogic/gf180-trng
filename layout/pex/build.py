@@ -259,15 +259,35 @@ own extraction, ahead of the source.
 
 ## Out of scope (routing-level, same as path 1)
 
-Any inter-*region* routing: the `layout/floorplan/` guarded regions are
-placed with a 20 um isolation channel and no signal routing between them --
-confirmed empirically, `klt extract --top trng_floorplan` on the composed
-floorplan GDS reports 2588 top-level pins for what should be a ~12-pin
-block, i.e. the regions are not electrically joined in the committed layout
-at all. Both paths here are therefore *intra*-region (device-level or
-routing-level) post-layout re-runs, never a full-chip one -- see
-`sim/characterization-post-layout-extracted.md` for the honest accounting
-of what each path changes and what it cannot yet show.
+A full-chip PEX path. Until issue #222 the reason was that there was no
+full chip to extract: `layout/floorplan/`'s four guarded regions were placed
+with a 20 um isolation channel and **no wiring at all** between them --
+confirmed empirically at the time, `klt extract --top trng_floorplan` on the
+composed floorplan GDS reported 2588 top-level pins for what should be a
+~12-pin block, i.e. the regions were not electrically joined in the
+committed layout.
+
+That is no longer true. Issue #222 (phase 2 of #219) draws real routing
+geometry across the isolation channels for every net
+`design/floorplan_netlist.py` declares, and the composed, routed floorplan
+is DRC-clean and LVS-matches that declaration's own composed reference
+(`layout/floorplan/README.md`, "Inter-region routing"). **A full-chip
+composition now exists to extract.** What does not exist yet is a full-chip
+*PEX* path over it, and that is a separate piece of work (gf180-trng#225)
+rather than something this module already covers:
+
+- Both paths in this module are still *intra*-region (device-level or
+  routing-level) post-layout re-runs of a single block's own netlist. Neither
+  reads the composed floorplan stream at all.
+- A full-chip path would have to price the inter-region routing's own
+  parasitics -- the Metal4 trunks under the row are hundreds of microns long,
+  which is a different order of R and C from anything either path here
+  currently carries -- and decide what to do with `digital`'s ~2500
+  standard-cell instances, which every existing path abstracts rather than
+  extracts.
+
+See `sim/characterization-post-layout-extracted.md` for the honest
+accounting of what each path changes and what it cannot yet show.
 """
 
 from __future__ import annotations

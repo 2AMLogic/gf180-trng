@@ -33,6 +33,10 @@
       {
         "id": "digital_ring",
         "generator_report": "fp_ring_content_digital.json"
+      },
+      {
+        "id": "trng_interregion",
+        "generator_report": "trng_interregion.json"
       }
     ],
     "placement": {
@@ -45,7 +49,8 @@
         "ring1_ring",
         "ring2_ring",
         "combiner_sampler_ring",
-        "digital_ring"
+        "digital_ring",
+        "trng_interregion"
       ],
       "origins_um": {
         "ring1": {
@@ -79,6 +84,10 @@
         "digital_ring": {
           "x": 520.58,
           "y": 1.0
+        },
+        "trng_interregion": {
+          "x": 0.0,
+          "y": 0.0
         }
       }
     },
@@ -102,7 +111,7 @@
     "dbu_um": 0.0005,
     "bbox_um": {
       "x0": 0.0,
-      "y0": 0.0,
+      "y0": -10.450000000000001,
       "x1": 1070.395,
       "y1": 550.815
     },
@@ -243,6 +252,23 @@
           "y1": 549.815
         },
         "orientation": "none"
+      },
+      {
+        "id": "trng_interregion",
+        "source": "generator_report",
+        "generator": "layout.floorplan.interregion",
+        "cell_name": "trng_interregion",
+        "offset_um": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "bbox_um": {
+          "x0": 4.16,
+          "y0": -10.450000000000001,
+          "x1": 853.61,
+          "y1": 17.25
+        },
+        "orientation": "none"
       }
     ],
     "nets": [],
@@ -255,13 +281,17 @@
     },
     "warnings": [
       "block 'ring1_ring' is placed 0.00um from block 'ring1' (strategy: explicit), closer than ring1's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'trng_interregion' is placed 0.00um from block 'ring1' (strategy: explicit), closer than ring1's own declared drc_hints.min_spacing_um of 0.40um",
       "block 'ring2_ring' is placed 0.00um from block 'ring2' (strategy: explicit), closer than ring2's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'trng_interregion' is placed 0.00um from block 'ring2' (strategy: explicit), closer than ring2's own declared drc_hints.min_spacing_um of 0.40um",
       "block 'combiner_sampler_ring' is placed 0.00um from block 'combiner_sampler' (strategy: explicit), closer than combiner_sampler's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'trng_interregion' is placed 0.00um from block 'combiner_sampler' (strategy: explicit), closer than combiner_sampler's own declared drc_hints.min_spacing_um of 0.40um",
       "block 'digital_ring' is placed 0.00um from block 'digital' (strategy: explicit), closer than digital's own declared drc_hints.min_spacing_um of 0.40um",
+      "block 'trng_interregion' is placed 0.00um from block 'digital' (strategy: explicit), closer than digital's own declared drc_hints.min_spacing_um of 0.40um",
       "block 'ring1_ring' gds 'layout/rings/ro_ring11/ro_ring11.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)",
       "block 'ring2_ring' gds 'layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)",
       "block 'combiner_sampler_ring' gds 'layout/blocks/combiner_sampler/combiner_sampler.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)"
     ]
   },
-  "gds_sha256_timestamp_normalised": "a9e1413a929557646a092008f0a2bee099891088103347e390cd7f60d615551a"
+  "gds_sha256_timestamp_normalised": "a093cac8415c702670cf76ff4d6bec98aec4fb3e1d7e66a98eee5541c400eb2e"
 }

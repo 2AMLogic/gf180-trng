@@ -968,13 +968,22 @@ eventually rules on that proposal.
   addressability, and `klt extract --parasitics`' own per-terminal resistance
   star plus its device cards' gate nodes already disclose enough to do it.
   Issue #12's methodology is unchanged. See §7.5.
-- **Inter-region floorplan routing**, tracked as
+- ~~**Inter-region floorplan routing**, tracked as
   [#219](https://github.com/2AMLogic/gf180-trng/issues/219) per #217's own
   Out-of-scope section — now the only remaining gap between this document's
   routing-level evidence and a genuine full-chip post-layout re-run. Note it
   is a *layout* task, not an extraction one: the four guarded regions are
   placed with a 20 um isolation channel and no signal routing between them,
-  so there is nothing to extract until they are joined.
+  so there is nothing to extract until they are joined.~~ **The layout half
+  is DONE** (issue #222, phase 2 of #219): the inter-region nets
+  `design/floorplan_netlist.py` declares are drawn, and the composed,
+  routed floorplan is DRC-clean and LVS-matches that declaration — see
+  `layout/floorplan/README.md`, "Inter-region routing". So there *is* now a
+  joined full-chip composition to extract. The remaining gap is the
+  extraction half: no full-chip PEX path exists over it, which is its own
+  follow-up (see `layout/pex/build.py`'s own "Out of scope" section for what
+  such a path would have to price). Nothing in this document's own
+  routing-level records changes as a result — they are all intra-region.
 
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md

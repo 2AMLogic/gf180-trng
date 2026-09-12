@@ -43,6 +43,14 @@ section's own reference netlist (`status: match`, `mismatch_count: 6`, the
 same benign residual cited above) — a single whole-block GDS with the
 entropy source and the digital section placed together, per
 [`layout/floorplan/reports/ring_fit.json`](layout/floorplan/reports/ring_fit.json).
+Since #221/#222 those four regions are also **wired to each other**: the
+inter-region net list is declared as reviewable data
+([`design/floorplan_netlist.py`](design/floorplan_netlist.py)) and drawn as
+real routing geometry across the isolation channels
+([`layout/floorplan/interregion.py`](layout/floorplan/interregion.py)), with
+the composed, routed stream DRC-clean and LVS-matching that declaration's
+own composed reference
+([`layout/floorplan/reports/interregion.json`](layout/floorplan/reports/interregion.json)).
 See [`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
 inventory and what is explicitly still deferred. The specification table
 below was
@@ -303,8 +311,12 @@ guard-ringed geometry assembled from the drawn cells above (or, for
 `digital`, from its own standalone placed-and-routed GDS,
 [`layout/digital/`](layout/digital/), #170/#187), DRC-clean and
 LVS-matching per `layout/floorplan/reports/ring_fit.json`
-(#110, #135, #209/#210). That is a composed whole-block *floorplan*, not a
-tapeout sign-off — see
+(#110, #135, #209/#210). Since #222 they are also **wired to each other**:
+real routing geometry crosses the isolation channels for every net
+`design/floorplan_netlist.py` declares (#221), and the composed, routed
+stream is DRC-clean and LVS-matches that declaration's own composed
+reference — `layout/floorplan/reports/interregion.json`. That is a composed
+whole-block *floorplan*, not a tapeout sign-off — see
 [`layout/floorplan/README.md`](layout/floorplan/README.md#tool-friction)
 for exactly what its DRC/LVS checks do and do not establish. Nothing under
 `layout/reports/` should be read as a statement about the whole design.
