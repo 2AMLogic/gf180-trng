@@ -1102,6 +1102,36 @@ separate — so the LVS this phase is held to would fail on geometry that is
 there is about `digital`'s own reference interface, not about this
 geometry.
 
+### The shared `vss` return's IR-drop cost, measured — issue #234
+
+The paragraph above states the *decision* (star the four supplies, share
+`vss`); it did not, until now, cost what sharing `vss` actually does to each
+region's own local ground reference. [Issue #234](https://github.com/2AMLogic/gf180-trng/issues/234)
+answers that with a segmented resistance model derived from this module's
+own drawn geometry (`interregion.wiring_plan()`, the same function
+`compose()` calls, walked with the committed `reports/compose.json` and
+`reports/area.json`) rather than the single lumped ~129 ohm [DR-0025]
+already quotes for the whole trunk — the resistance model instead separates
+*where along the trunk* each region taps in:
+
+| Region | Segment to previous node (ohm) | Riser (ohm) |
+|---|---:|---:|
+| `combiner_sampler` (nearest the chip pin) | 0.900 | 8.310 |
+| `ring2` | 97.806 | 3.696 |
+| `ring1` (farthest) | 30.273 | 3.696 |
+
+Combined with the two corners this repository already treats as binding for
+analog power (`sim/characterization-startup-and-power-budget.md`), the
+largest computed local-`vss` offset is **15.64 mV** (`ring1`, active corner
+`ff`/−40 °C/3.63 V), and a deliberately conservative bound — all of that
+corner's active current forced through `ring1` alone — still only reaches
+**21.48 mV**, under 6.5 % of the ±10 % (330 mV) supply-corner spread this
+design's own PVT sweep already runs. **Verdict: not material** — full
+derivation, current-profile sourcing and the "does this move any ratified
+row" question in
+[`sim/characterization-vss-trunk-ir-drop.md`](../../sim/characterization-vss-trunk-ir-drop.md),
+reproducible with `python3 sim/tools/vss_trunk_ir_drop.py`.
+
 ### What `klt extract` reports, and why
 
 | | pins |
@@ -1503,6 +1533,7 @@ would not block that separate question.
 [DR-0020]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
+[DR-0025]: ../../spec/decision-records/DR-0025-full-chip-pex-scope.md
 [#111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [#143]: https://github.com/2AMLogic/gf180-trng/issues/143
 [#145]: https://github.com/2AMLogic/gf180-trng/issues/145
