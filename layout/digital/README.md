@@ -145,7 +145,12 @@ finding none ([#183](https://github.com/2AMLogic/gf180-trng/issues/183)).
 turn, adding the six `digital`-facing inter-region trunks as an interface load
 and the library's own max-transition check
 ([#233](https://github.com/2AMLogic/gf180-trng/issues/233)); it reports the
-same slack, Fmax and area figures.
+same slack, Fmax and area figures. That interface load is a trunk-only
+Metal4 arithmetic, and per full-chip PEX evidence
+([#232](https://github.com/2AMLogic/gf180-trng/issues/232),
+[#242](https://github.com/2AMLogic/gf180-trng/issues/242)) it is a **floor**
+on the real added R/C, not the measured value — see
+`sim/characterization-digital-sta-area-power.md` §2a for the disclosure.
 #147/#177's post-route functional run against the pre-[#171] netlist is
 likewise superseded, for that purpose, by
 `sim/records/2026-08-18-trng-top-post-route-01.md` (see "What this

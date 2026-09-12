@@ -102,6 +102,20 @@ declined to do with an ngspice run, one level removed.
 the `set_input_transition` / `max_transition` domain check behind
 `SlewConvention`, on demand.
 
+**The trunk-only Metal4 arithmetic below is a floor, not the measured
+load (#232, #242).** `InterfaceTrunk.cap_fF`/`res_ohm` price only the
+Metal4 trunk itself; they omit the Metal3 risers and vias that a real
+full-chip extraction includes. Issue #232's `ro1`/`ro2` full-chip
+`klt extract --parasitics` measurement -- the only case in this repository
+where a trunk-only estimate and a real extraction can be compared
+like-for-like -- found the trunk-only arithmetic undercounts real added
+capacitance by ~14 % and real added resistance by ~48 % on those two
+(the *shortest* measured) trunks; see
+`sim/characterization-post-layout-extracted.md` §8.5 for the full table
+and why the ratio is not extrapolated onto the six trunks below. See
+`InterfaceTrunk`'s own docstring for the disclosure at its computation
+site.
+
 What this is not
 ----------------
 Not silicon, and not a signoff sign-off. The parasitics are OpenRCX's own
@@ -247,6 +261,13 @@ INTERREGION_REPORT = REPO_ROOT / "layout" / "floorplan" / "reports" / "interregi
 #: here rather than transcribed silently a second time. `git grep
 #: cap_area/cap_perim/0.007602` before touching these numbers to confirm
 #: that is still true.
+#:
+#: Metal4-only: these coefficients omit the Metal3 riser/via R and C a real
+#: full-chip extraction includes, which is why `InterfaceTrunk.cap_fF`/
+#: `res_ohm` computed from them are a **floor**, not the measured load --
+#: see `InterfaceTrunk`'s own docstring, `sim/characterization-post-layout-
+#: extracted.md` §8.5, and issue #232/#242 for the ~14 %/~48 % undercount
+#: this arithmetic carries on the shortest measured trunks.
 METAL4_SHEET_RES_OHM_PER_SQ = 0.09
 METAL4_CAP_AREA_FF_PER_UM2 = 0.007602
 METAL4_CAP_PERIM_FF_PER_UM = 0.028153
@@ -310,6 +331,21 @@ class InterfaceTrunk:
     correctly resolves the DEF's bus-notation names (`ring_bit[0]`/
     `ring_bit[1]`) against `INTERREGION_REPORT`'s net names (`ring_bit1`/
     `ring_bit2`) without a hand-maintained lookup table.
+
+    **`cap_fF`/`res_ohm` are a floor, not the measured load (#232, #242).**
+    Both properties price only the trunk's own Metal4 sheet (see
+    `METAL4_SHEET_RES_OHM_PER_SQ` et al.); neither includes the Metal3
+    risers and vias a real full-chip extraction picks up. Issue #232's
+    full-chip `klt extract --parasitics` measurement on `ro1`/`ro2` -- the
+    two nets where a trunk-only estimate and a real extraction can be
+    compared like-for-like -- found this same Metal4-only arithmetic
+    undercounts real added capacitance by ~14 % and real added resistance
+    by ~48 % on those two (the *shortest* measured) trunks; see
+    `sim/characterization-post-layout-extracted.md` §8.5 for the full
+    measured table and why that ratio is not extrapolated onto the six
+    trunks `digital_facing_trunks()` returns (they are 2-4x longer, where
+    the fixed riser/via cost is a *smaller* share of the total, not
+    necessarily the same share).
     """
 
     net: str
@@ -345,19 +381,32 @@ class InterfaceTrunk:
         """The trunk's own RC transition time, in the domain the given
         liberty deck's `set_input_transition` / `max_transition` use.
 
-        Two deliberate conservatisms, both of which make this an upper bound
-        on the trunk's own contribution rather than a best estimate:
+        Three deliberate conservatisms are disclosed here, but they do not
+        all point the same direction, so this is not simply an upper bound
+        on the trunk's own contribution:
 
         * **Lumped, not distributed.** The whole trunk's R and the whole
           trunk's C are multiplied together; a distributed line of the same
-          total R and C responds roughly twice as fast.
+          total R and C responds roughly twice as fast. (Makes this number
+          larger than reality.)
         * **Ideal source.** The edge arriving at the trunk's far end is
           treated as a step, so the number is the wire's own contribution
           and nothing upstream of it. For `raw_bit`/`raw_valid`/`ring_bit[*]`
           the real driver is a `combiner_sampler` device this netlist does
           not contain; for `clk`/`rst_n` it is an off-chip pad driver no
           netlist in this repository models at all (#233). Neither can be
-          priced here without inventing it, so neither is.
+          priced here without inventing it, so neither is. (Makes this
+          number larger than reality.)
+        * **Metal4-only, so a floor on `R` and `C` themselves.** `res_ohm`
+          and `cap_fF` omit the Metal3 risers and vias a real full-chip
+          extraction includes -- issue #232's `ro1`/`ro2` full-chip
+          measurement shows this arithmetic undercounts real added
+          capacitance by ~14 % and real added resistance by ~48 % on the
+          shortest measured trunks (`sim/characterization-post-layout-
+          extracted.md` §8.5, #242). (Makes the *inputs* to this number
+          smaller than reality, which pulls the other way from the first
+          two conservatisms above -- the net effect on `transition_ns`
+          itself is not derived here.)
         """
         return slew.rc_factor * self.rc_ns
 

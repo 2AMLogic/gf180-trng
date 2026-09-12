@@ -87,7 +87,7 @@ number to be decided against instead of an estimate.
 | PDK | `gf180mcuD @ c6d73a35f524070e85faff4a6a9eef49553ebc2b` |
 | Parasitics | OpenRCX extraction of the real routing → SPEF → `read_spef`. Not estimated: `rules.openrcx.gf180mcuD.{min,nom,max}` as shipped by the PDK |
 | Clock | `clk`, **propagated** through the CTS-built tree in the DEF (not ideal), 50 ns / 20 MHz — the P&R run's own constraint |
-| Interface load | [#233]: `set_input_transition` on the six `digital`-facing inter-region trunks, derived from `layout/floorplan/reports/interregion.json` at run time — permanent, every run (§2a) |
+| Interface load | [#233]: `set_input_transition` on the six `digital`-facing inter-region trunks, derived from `layout/floorplan/reports/interregion.json` at run time — permanent, every run (§2a). Trunk-only Metal4 arithmetic; per [#232]/[#242] and §8.5 of [the full-chip PEX characterization](characterization-post-layout-extracted.md), this is a **floor**, not the measured load — see §2a's own caveat below |
 | Grid | 5 liberty decks × 3 interconnect decks = **15 corners**, one record each |
 | Records | `sim/records/2026-09-12-digital-sta-power-{01..15}.md` ([#233]: interface load added, max-transition checks added, nothing else), superseding `sim/records/2026-08-18-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#233] SDC they name — §2a), which itself superseded `sim/records/2026-08-17-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#171] DEF they name — [#183]) |
 
@@ -249,11 +249,27 @@ spec: walking a stated transition across `ss_125C_3v00`'s 13.2 ns limit,
 (`sim/tb/digital-sta-power/sdc_treatment_probe.py --domain`). So the stated
 number is `ln(7/3) / 0.5 = 1.6946 × R × C`, with all three attributes read
 from the deck at run time, and each record also carries the textbook 10–90 %
-figure (`ln 9 × R × C`) for comparison. Two deliberate conservatisms, which
-make every figure below an upper bound rather than a best estimate: lumped
+figure (`ln 9 × R × C`) for comparison. Two deliberate conservatisms make
+every figure below an upper bound rather than a best estimate: lumped
 R times lumped C (a distributed line of the same totals responds roughly
 twice as fast), and an ideal source, so the number prices the wire and
 nothing upstream of it.
+
+**The `R` and `C` themselves are a floor, not the measured load
+([#232], [#242]).** The 0.09 Ω/sq / 0.007602 fF/µm² / 0.028153 fF/µm
+Metal4 coefficients below price only the trunk's own Metal4 sheet; they
+omit the Metal3 risers and vias a real full-chip extraction includes. On
+`ro1`/`ro2` — the two nets in [#232]'s full-chip `klt extract --parasitics`
+measurement where a trunk-only estimate and a real extraction close
+like-for-like — this same arithmetic undercounts real added capacitance by
+~14 % and real added resistance by ~48 % (§8.5 of
+[the full-chip PEX characterization](characterization-post-layout-extracted.md)).
+`ro1`/`ro2` are the *shortest* measured trunks, and §8.5 explains why a
+trunk-only estimate should be worst there; the six trunks in the table below
+are 2–4× longer, where that fixed riser/via cost should be a *smaller*
+share of the total, but no measurement of any of these six trunks exists to
+turn that expectation into a correction factor — so the numbers below are
+stated with the floor disclosed, not adjusted by an unmeasured multiplier.
 
 | port | net | trunk | R | C | R·C | stated transition | 10–90 % reference |
 |---|---|---:|---:|---:|---:|---:|---:|
@@ -940,6 +956,7 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#233]: https://github.com/2AMLogic/gf180-trng/issues/233
 [#237]: https://github.com/2AMLogic/gf180-trng/issues/237
 [#240]: https://github.com/2AMLogic/gf180-trng/issues/240
+[#242]: https://github.com/2AMLogic/gf180-trng/issues/242
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
