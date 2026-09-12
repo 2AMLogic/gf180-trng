@@ -474,11 +474,26 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 
 | region | cells | cell area | placed @ 60 % | guarded footprint |
 |---|---:|---:|---:|---:|
-| Entropy ring 1 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
-| Entropy ring 2 | 11 | 164.4 µm² | 274.0 µm² | 546.1 µm² |
-| XOR combiner + 2 buffers + 4 samplers | 7 | 342.4 µm² | 570.8 µm² | 4 955.1 µm² |
-| Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 125 556.8 µm² |
-| **total** | | **75 156.6 µm²** | **125 261.0 µm²** | **131 604.2 µm²** |
+| Entropy ring 1 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
+| Entropy ring 2 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
+| XOR combiner + 2 buffers + 4 samplers | 7 | 342.4 µm² | 570.8 µm² | 5 434.1 µm² |
+| Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 303 397.2 µm² |
+| **total** | | **75 277.9 µm²** | **125 463.2 µm²** | **309 923.6 µm²** |
+
+> Two of these columns moved for reasons that have nothing to do with the
+> inter-region routing this document's [own section](#inter-region-routing--issue-222)
+> adds, and both are worth naming rather than leaving as an unexplained
+> diff. The **guarded** column had been stale since #135/#209/#210 grew
+> `combiner_sampler`'s and `digital`'s guarded footprints (it was last
+> transcribed before those landed; `reports/area.json` has been right all
+> along). The two rings' **cell area** moved because the starve devices
+> under them are priced at a *generated* footprint measured by `klt gen
+> mos_array` at run time, and the `klt` build this regeneration ran against
+> draws that device differently from the one the previous numbers came from
+> (2.39/3.58 µm² then, 5.04/6.44 µm² now, at the same drawn W/L). That is a
+> tool-version-dependent *estimate*, not a measurement of drawn geometry:
+> every **guarded** figure, and therefore every share-of-row figure below,
+> is read from the committed assembled GDS and is unaffected by it.
 
 The two [`DR-0018`][DR-0018] output buffers (`xb1`/`xb2`) joined this table in
 issue [#144]. They are inventoried in `combiner_sampler` rather than in the
@@ -654,11 +669,11 @@ pre-synthesis prediction it was.
   `klt stats`) replaced the square estimate for that region only.
     - `ring1`/`ring2`: `layout/rings/ro_ring11/` (#110/#120) and
       `layout/rings/ro_ring11_ring2/` (#118), real bbox **78.9 × 4.75 µm**
-      each — the estimate would have given 16.55 × 16.55 µm each, a
+      each — the estimate would have given 19.37 × 19.37 µm each, a
       footprint the real row does not remotely fit inside.
     - `combiner_sampler`: `layout/blocks/combiner_sampler/` (#134), real
       bbox **278.90 × 15.64 µm** — the estimate would have given
-      23.27 × 23.27 µm, roughly 11× narrower than the real assembled row.
+      23.89 × 23.89 µm, roughly 11× narrower than the real assembled row.
     - `digital`: `layout/digital/trng_top.gds` (#170/#171, placed and
       composed into this floorplan by #209/#210), real bbox
       **548.815 × 548.815 µm** — the estimate would have given
@@ -966,13 +981,15 @@ Phase 2 will need either that upstream fix or a hand-drawn transition stub;
 this declaration does not depend on which, and records only the `layer_
 role` each affected net needs once decided.
 
-**What this section does not claim.** No pin count changes as a result of
-it (`klt extract --top trng_floorplan` is still ~2588 pins, unaffected — the
-composed GDS itself has not moved). No routing geometry exists. No DRC or
-LVS has run against the generated composed reference — `layout/floorplan/
-trng_floorplan.lvs_reference.spice` is written and self-checked for
+**What this section did not claim** (and what has since changed — see
+[the next section](#inter-region-routing--issue-222), which draws it). At
+the time this section was written no pin count changed as a result of it
+(`klt extract --top trng_floorplan` was still ~2588 pins, unaffected — the
+composed GDS itself had not moved). No routing geometry existed. No DRC or
+LVS had run against the generated composed reference — `layout/floorplan/
+trng_floorplan.lvs_reference.spice` was written and self-checked for
 *declaration* consistency (every endpoint names a real pin on its region),
-not yet verified against any drawn wiring, because there is none yet to
+not yet verified against any drawn wiring, because there was none yet to
 verify against. #219's own "~12-pin block" phrase (predating `digital`'s
 real ~109-pin interface landing in the floorplan, #209/#210) is stale and
 should not be treated as a target — a correctly-wired `trng_floorplan`
@@ -984,6 +1001,173 @@ plus the nine genuinely external nets (`en1`, `en2`, `vddr1`, `vddr2`,
 `vdd`, `vddd`, `vss`, `clk`, `rst_n` — the last two counted once each, not
 twice, since they are both inter-region *and* chip pins)), not the real
 composed GDS's own pin count, which this section does not change.
+
+---
+
+## Inter-region routing — issue #222
+
+Phase 2 of [#219]: the nets the section above *declares* are now **drawn**.
+`compose()` places one more block alongside the four guard rings and their
+content — `trng_interregion`, real routing geometry generated by
+[`interregion.py`](interregion.py) from the same
+`design/floorplan_netlist.py` declaration, never from a second copy of the
+net list. Fourteen nets are drawn; what was drawn, per net, is in
+[`reports/interregion.json`](reports/interregion.json), which also carries
+the extraction and LVS verdicts below.
+
+### What crosses, on which layer
+
+Every region in the composed row sits at `y ≥ 0`, so the half-plane *below*
+the row is empty at every `x` across the whole block. That is where the
+routing goes:
+
+| | layer | runs |
+|---|---|---|
+| per-net trunk | **Metal4** | east–west, under the row, one lane per net at `y = −1.2 − 0.7·k` |
+| per-endpoint riser | **Metal3** | north–south, from the trunk up to its own endpoint |
+| endpoint via stack | Via1/Via2/Via3 + a Metal2 landing pad | only at the pin itself |
+
+Two layers, not one, is the load-bearing part: because trunks are Metal4 and
+risers are Metal3, a riser reaching a *deep* trunk crosses every shallower
+net's trunk on a different layer instead of shorting to it. Neither layer is
+used by `ring1`/`ring2` (Metal1 + Metal2 only) or by `combiner_sampler`
+(Metal1/Metal2/Metal3, all of it above `y = 0`), and `digital`'s own
+Metal3/Metal4 is likewise all at `y ≥ 0`.
+
+### Why it does not defeat the isolation channel
+
+The 20 µm channel is a **routing-derived floor, not a coupling-derived one**
+(see [`ISOLATION_CHANNEL_UM`](floorplan.py)'s own note and "What this
+floorplan does not establish" below): it is what each supply domain needs to
+reach its own region without sharing a channel with another domain's
+straps. Routing *through* it is what it is for. What would defeat it is a
+route that gave two regions a shared conductor they are not declared to
+share, or that broke a guard ring. Neither happens here:
+
+- **Every crossing is on Metal3/Metal4, never on Metal1** — the guard rings'
+  own layer. Each tap loop stays geometrically and electrically continuous;
+  no guard ring is cut, bridged, or tied to any drawn net. (`vsubs`, the
+  substrate global, is declared by phase 1 with `layer_role:
+  "guard_ring_tap"` and is deliberately **not** drawn as metal — tying a
+  guard ring to a region's `vss` would merge the extraction deck's own
+  synthesized substrate handle into `vss`, which is precisely the kind of
+  merge the composed LVS exists to catch.)
+- **`ro1` never passes over `ring2` at all.** Phase 1 flagged it as the one
+  long-haul route (`spans_regions: ["ring2"]`) and asked for Metal2 so it
+  would not share Metal1 with `ring2`'s own chain wiring. It is routed under
+  the row instead — outside `ring2`'s guarded area entirely, two routing
+  levels above its topmost drawn layer. That is a documented deviation from
+  the declared `layer_role`, and a strictly more conservative one; the same
+  applies to every other net's `layer_role` (see
+  [`interregion.py`](interregion.py)'s "Why this is not the layer phase 1
+  named").
+- **`clk`/`rst_n` still reach the samplers from the `digital` side.** Both
+  trunks are pinned east of `combiner_sampler`'s own west edge and never
+  enter a ring's isolation channel — DR-0012's own constraint, which
+  [`layout/tests/test_interregion.py`](../tests/test_interregion.py)
+  asserts mechanically on every push.
+- **No two drawn nets come within `metal3.space.1` (0.28 µm) of each other
+  on the same layer.** That is arithmetic over the drawn rectangles, checked
+  stdlib-only in CI by the same test file, and independently by `klt drc`
+  over the composed stream.
+
+### The supply/ground star point lands off-die
+
+`vddr1`, `vddr2`, `vdd` and `vddd` each get their own trunk and their own
+top-level pin, and no two of them share a conductor anywhere. Each supply's
+chip pin is placed on its own trunk **directly beneath the region it
+feeds**, so no supply branch runs under another region on its way in.
+
+**The star point itself is off-die**, at the package/board level. This is a
+deferral, stated as one rather than assumed: nothing in this floorplan
+draws an on-die star node, and nothing in it prevents one later. What it
+does guarantee is the property Mechanism 2 actually depends on — that the
+four branches carry no shared series impedance anywhere on this die.
+`vss` is the one deliberately shared return (phase 1's own net table), and
+it is the one trunk that spans the row.
+
+`vddd` is the one declared supply with **no drawn wire at all**, and that is
+also deliberate. Phase 1 declares its connection into `digital` under
+`implicit_regions`, not `endpoints`, because
+`layout/digital/trng_top.lvs_reference.spice` declares no `vddd` pin to wire
+against (it is `SPECIALNETS`-only — see
+[`layout/digital/README.md#power`](../digital/README.md#power)). The
+physical tie points are real and reachable (`trng_top.def`'s own `PINS`
+section carries `vddd` and `vss` as Metal5 PDN straps), but drawing them
+would make the layout merge two nets the phase-1 reference keeps
+separate — so the LVS this phase is held to would fail on geometry that is
+*more* correct, not less. The same reasoning applies to `digital`'s own
+`vss` return. Reconciling both is
+[#224](https://github.com/2AMLogic/gf180-trng/issues/224), and the decision
+there is about `digital`'s own reference interface, not about this
+geometry.
+
+### What `klt extract` reports, and why
+
+| | pins |
+|---|---|
+| unrouted floorplan, no declared interface (`klt extract --top trng_floorplan`) | **2588** |
+| composed reference's own `.SUBCKT trng_floorplan` header | **112** |
+| routed floorplan, held to that declared interface | **108** |
+
+The 2588 is not a meaningful interface — it is every labelled net in the
+design, and `digital`'s own DEF→GDS merge draws a text for essentially
+every routed net it has. The check `floorplan.py` actually applies gives
+`klt extract` the composed reference's own pin list (`--pins`) and abstracts
+the standard cells (`--abstract-cells`), exactly as `layout/digital/lvs.py`
+already does standalone.
+
+The gap between 112 and 108 is a **tool limitation, not missing wiring**,
+and it is derived rather than remembered — `floorplan.py` computes the
+expected number and fails if the extraction disagrees:
+
+- KLayout joins *every* text label found on one electrical net into a single
+  comma-separated net name. Five of the declared pins land on nets that
+  already carry a label from a region's own cells (`en1` → `en,en1`,
+  `en2`, `vddr1` → `vddr,vddr1`, `vddr2`, `vdd` → `d,vdd`). `klt extract
+  --pins` takes a *comma-separated list*, so those names cannot be written
+  in it at all, and the five stay internal nets. −5.
+- `vss` promotes twice: the analog ground return and `digital`'s own PDN
+  ground are two separate nets (see `vddd` above) that legitimately carry
+  the same label. +1.
+
+Both are filed generically upstream — see [Tool friction](#tool-friction).
+
+**The count on its own is a weak check, and this is the evidence for
+saying so.** Run the *same* extraction against the **unrouted** floorplan
+(the committed stream this issue started from, before any wiring) and it
+also reports **112** pins — but they are 112 with *duplicates*: four nets
+named `vss`, two named `clk`, two named `rst_n`, because each region's own
+copy of those nets is a separate net that happens to carry the same label.
+That duplicate signature *is* the "regions not electrically joined"
+condition, and a reader looking only at the headline number would read it as
+a better result than the routed one. What actually separates the two cases
+is the net count and the LVS verdict below: 2702 nets unrouted against 2692
+routed — exactly the ten joins the fourteen drawn nets make (eight
+two-endpoint nets, plus `vss` merging three region returns into one).
+
+### DRC and LVS over the routed result
+
+- `klt drc` over the composed, routed stream: **clean, 0 violations**, and
+  0 beyond each assembled region's own standalone baseline
+  ([`reports/floorplan.drc.json`](reports/floorplan.drc.json)).
+- `klt lvs` of the extracted netlist against phase 1's own
+  [`trng_floorplan.lvs_reference.spice`](trng_floorplan.lvs_reference.spice),
+  both sides flattened: **match**
+  ([`reports/interregion.json`](reports/interregion.json)). Flattening is
+  required on both sides, not a convenience: the layout side is flat by
+  construction once the standard cells are abstracted, while the reference
+  is four `.SUBCKT` instantiations, so neither can pair against the other
+  hierarchically.
+
+**And the negative control, because a check that cannot fail is not a
+check.** The identical LVS run against the *unrouted* floorplan — same
+reference, same extraction flags, same flatten options, only the wiring
+block removed — is **`mismatch`, 157 mismatches**: 70 `device.unmatched`,
+39 `net.merged`, 43 `net.split`, 3 `net.unmatched`. So the `match` verdict
+above is load-bearing: it is the difference between four regions wired as
+phase 1 declares and four regions sitting next to each other, and it is
+what a future regression that silently disconnects a region would trip.
 
 ---
 
@@ -1123,11 +1307,11 @@ not to read a clean DRC result as an independence argument.
 
 Per [CLAUDE.md](../../CLAUDE.md), friction found while using klayout-tools is
 filed generically against the tool — the tool gap, never this repository's
-design. This work produced six, all filed against
+design. This work produced ten, all filed against
 [klayout-tools][klt] and all worked around in
-[`floorplan.py`](floorplan.py) rather than silently absorbed (two of the six
-were genuine tool defects with no caller-side mitigation possible and are
-recorded here only until fixed upstream, which both now are):
+[`floorplan.py`](floorplan.py)/[`interregion.py`](interregion.py) rather than
+silently absorbed (some were genuine tool defects with no caller-side
+mitigation possible and are recorded here only until fixed upstream):
 
 1. **[klayout-tools#320][kt320]** — generated streams are not byte-reproducible.
    `klt gen`, `klt gen-compose` and `klt draw` stamp wall-clock time into the
@@ -1213,6 +1397,53 @@ recorded here only until fixed upstream, which both now are):
    full composed pair every other region's LVS step uses — relying on the
    composed *DRC* check (run unconditionally, unaffected by this) to verify
    the guard ring's adjacency introduces no short.
+7. **[klayout-tools#1670][kt1670]** (closed, fixed) — `gen-compose`'s own
+   routing-role map for the `gf180mcu` family had no `"metal4"`/`"via3"`
+   role, so its auto-router structurally could not resolve a route onto one
+   of `digital`'s real Metal4 pins. Filed during phase 1 (#221) and fixed
+   upstream before phase 2 ran: the installed build's
+   `_PDK_ROLE_LAYERS["gf180mcu"]` now carries both roles. The wiring here is
+   still hand-drawn rather than auto-routed, for a separate reason that is
+   *not* a tool gap: every one of these routes has to cross its own region's
+   guard ring and reach a pin inside a block, which `route_two_pin` rejects
+   by design (it treats a guard/collector ring's tap loop and a block's
+   interior as barriers), and the four regions' generator reports declare no
+   `ports[]` for it to route between. Hand-drawing is the same technique
+   `layout/rings/ro_ring11/build.py` already uses one level down.
+8. **[klayout-tools#1687][kt1687]** — `klt extract --pins` cannot name a net
+   that carries more than one label. KLayout joins every text found on one
+   electrical net into a single **comma-separated** `Net.name`, and `--pins`
+   is itself a comma-separated list, so a net named `en,en1` cannot be
+   written in it at all (`--pins en,en1` parses as two names, neither of
+   which matches). `--def-pins` already solved exactly this by matching on
+   any one component label; `--pins` has no equivalent, and `--pins` is the
+   only option when the pin list comes from a reference netlist's `.SUBCKT`
+   header rather than from a DEF. This is what makes the routed floorplan
+   report 108 pins against the reference's declared 112 — see [What `klt
+   extract` reports, and why](#what-klt-extract-reports-and-why).
+   `floorplan.py` works around it by *deriving* the expected count (declared
+   pins, minus the ones whose extracted name is a multi-label join, plus the
+   one name that legitimately promotes twice) and failing if the extraction
+   disagrees — so the shortfall is asserted, not absorbed.
+9. **[klayout-tools#1688][kt1688]** — the curated `gf180mcu` deck has no
+   `metal4.width` / `metal4.space` rule, while Metal1/2/3/5/MetalTop all
+   have both and Metal4 itself carries both of its via-enclosure rules. A
+   Metal4 width or spacing error is therefore not reported at all, and a
+   caller drawing Metal4 by hand has no threshold to assert its own
+   constants against — the practice every other hand-drawn cell in this
+   repository follows. [`interregion.py`](interregion.py) sizes its Metal4
+   trunks to the Metal3 thresholds instead and says so in its own docstring,
+   which is a documented guess, not a check.
+10. **[klayout-tools#1689][kt1689]** — `gen-compose` drops the DEF net-name
+   shape property when it copies a block's geometry, so `klt extract
+   --def-net-names` silently stops recovering `digital`'s own net names once
+   that macro is composed into the floorplan (it works on
+   `layout/digital/trng_top.gds` standalone — `trng_top.extracted.spice`'s
+   own `clknet_*` names are the evidence). The composed extraction still
+   resolves every net correctly; only the *names* of `digital`'s internals
+   degrade to `$<id>` placeholders, which is exactly the case where readable
+   names are worth most. No caller-side workaround exists; the flag is
+   passed anyway so the warning stays visible in the committed report.
 
 Not new friction, but worth recording alongside the above: issue #110's own
 regeneration found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
@@ -1247,6 +1478,10 @@ would not block that separate question.
 [kt1496]: https://github.com/2AMLogic/klayout-tools/issues/1496
 [kt1514]: https://github.com/2AMLogic/klayout-tools/issues/1514
 [kt1533]: https://github.com/2AMLogic/klayout-tools/issues/1533
+[kt1670]: https://github.com/2AMLogic/klayout-tools/issues/1670
+[kt1687]: https://github.com/2AMLogic/klayout-tools/issues/1687
+[kt1688]: https://github.com/2AMLogic/klayout-tools/issues/1688
+[kt1689]: https://github.com/2AMLogic/klayout-tools/issues/1689
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75

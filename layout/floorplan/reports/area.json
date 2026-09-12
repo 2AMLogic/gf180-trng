@@ -13,7 +13,7 @@
       "drawn_w_um": 0.22,
       "generated_w_um": 0.42,
       "l_um": 2.0,
-      "footprint_um2": 2.3856,
+      "footprint_um2": 5.04,
       "drc_status": "clean",
       "drc_rule_counts": {}
     },
@@ -22,7 +22,7 @@
       "drawn_w_um": 0.22,
       "generated_w_um": 0.42,
       "l_um": 2.0,
-      "footprint_um2": 3.5796,
+      "footprint_um2": 6.44,
       "drc_status": "clean",
       "drc_rule_counts": {}
     },
@@ -31,7 +31,7 @@
       "drawn_w_um": 0.24,
       "generated_w_um": 0.42,
       "l_um": 2.0,
-      "footprint_um2": 2.3856,
+      "footprint_um2": 5.04,
       "drc_status": "clean",
       "drc_rule_counts": {}
     },
@@ -40,7 +40,7 @@
       "drawn_w_um": 0.24,
       "generated_w_um": 0.42,
       "l_um": 2.0,
-      "footprint_um2": 3.5796,
+      "footprint_um2": 6.44,
       "drc_status": "clean",
       "drc_rule_counts": {}
     }
@@ -58,27 +58,27 @@
           "cell": "ro_nand2",
           "count": 1,
           "priced_as": "nand2_1 + nfet starve + pfet starve",
-          "unit_um2": 16.941,
-          "area_um2": 16.94,
+          "unit_um2": 22.456,
+          "area_um2": 22.46,
           "shipped": true
         },
         {
           "cell": "ro_stage",
           "count": 10,
           "priced_as": "inv_1 + nfet starve + pfet starve",
-          "unit_um2": 14.746,
-          "area_um2": 147.46,
+          "unit_um2": 20.261,
+          "area_um2": 202.61,
           "shipped": true
         }
       ],
-      "cell_area_um2": 164.4,
+      "cell_area_um2": 225.06,
       "placed_area_um2": {
-        "60pct": 274.0,
-        "80pct": 205.5
+        "60pct": 375.11,
+        "80pct": 281.33
       },
       "footprint_source": {
         "kind": "assembled_gds",
-        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (16.55 x 16.55 um)",
+        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (19.37 x 19.37 um)",
         "gds": "layout/rings/ro_ring11/ro_ring11.gds",
         "cell_name": "ro_ring11",
         "bbox_um": {
@@ -116,27 +116,27 @@
           "cell": "ro_nand2",
           "count": 1,
           "priced_as": "nand2_1 + nfet starve + pfet starve",
-          "unit_um2": 16.941,
-          "area_um2": 16.94,
+          "unit_um2": 22.456,
+          "area_um2": 22.46,
           "shipped": true
         },
         {
           "cell": "ro_stage",
           "count": 10,
           "priced_as": "inv_1 + nfet starve + pfet starve",
-          "unit_um2": 14.746,
-          "area_um2": 147.46,
+          "unit_um2": 20.261,
+          "area_um2": 202.61,
           "shipped": true
         }
       ],
-      "cell_area_um2": 164.4,
+      "cell_area_um2": 225.06,
       "placed_area_um2": {
-        "60pct": 274.0,
-        "80pct": 205.5
+        "60pct": 375.11,
+        "80pct": 281.33
       },
       "footprint_source": {
         "kind": "assembled_gds",
-        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (16.55 x 16.55 um)",
+        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (19.37 x 19.37 um)",
         "gds": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
         "cell_name": "ro_ring11_ring2",
         "bbox_um": {
@@ -297,7 +297,7 @@
   ],
   "rollup": {
     "budget_um2": 50000.0,
-    "cell_area_um2": 75156.58,
+    "cell_area_um2": 75277.9,
     "isolation_channel_um": 20.0,
     "channels": [
       {
@@ -333,11 +333,11 @@
     "floorplan_area_um2": 321439.86,
     "row_bbox_um": {
       "w": 1070.395,
-      "h": 550.815
+      "h": 561.265
     },
     "placed_area_um2": {
-      "60pct": 125260.97,
-      "80pct": 93945.72
+      "60pct": 125463.19,
+      "80pct": 94097.38
     },
     "subtotals": {
       "analog": {
@@ -346,7 +346,7 @@
           "ring1",
           "ring2"
         ],
-        "cell_area_um2": 671.25,
+        "cell_area_um2": 792.57,
         "guarded_area_um2": 6526.4,
         "isolation_channel_area_um2": 500.0,
         "area_um2": 7026.4,
