@@ -1,0 +1,59 @@
+{
+  "name": "ro-array-core-power-extracted-fullchip",
+  "description": "Issue #232's full-chip (inter-region) delta post-layout re-run of sim/tb/ro-array-core-power-extracted-routed/ against layout/pex/sampler_core.fullchip.extracted.spice -- DR-0025's ro1/ro2 trunk delta inserted between each ring wrapper's own `ro` port and combiner_sampler_routed_extracted's `rn1`/`rn2` (see layout/pex/build.py's own module docstring, 'Full-chip (inter-region) delta composition'). Same measurement expressions and 50 ns window as the routing-level (#217) testbench; `xo`/`ro1`/`ro2` are addressed one hierarchy hop deeper (`xdut.xcs.<net>`) -- see sim/tb/ro-array-core-pvt-q-extracted-fullchip/'s own .sp header for the full rationale. Active-power claim of issue #14, re-derived at the binding worst corner with the ro1/ro2 trunk delta included.",
+  "netlist": "tb_ro_array_core_power_extracted_fullchip.sp",
+  "design_netlist": "layout/pex/sampler_core.fullchip.extracted.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "ff"
+  ],
+  "tstop": "50n",
+  "tstep": "1p (print step; ngspice's own LTE sets the actual solver step)",
+  "analyses": [
+    "tran 1p 50n",
+    "meas tran t1a when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran t1b when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran t2a when v(xdut.xcs.ro2)=v(vth) rise=2",
+    "meas tran t2b when v(xdut.xcs.ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(xdut.xcs.ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(xdut.xcs.ro2)=v(vth) rise=6",
+    "meas tran cta find v(qt) when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran ctb find v(qt) when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran vhi max v(xdut.xcs.ro1) from=25n to=48n",
+    "meas tran vlo min v(xdut.xcs.ro1) from=25n to=48n",
+    "meas tran vxhi max v(xdut.xcs.xo) from=25n to=48n",
+    "meas tran vxlo min v(xdut.xcs.xo) from=25n to=48n",
+    "let cq = 1e-9",
+    "let nper = 4",
+    "let nstg = 11"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)",
+    "i_tree_a": "cq*(ctb-cta)/(t1b-t1a)",
+    "e_cycle_r1_j": "cq*(c1b-c1a)/nper*mean(v(vsup))",
+    "c_eff_node_r1_f": "cq*(c1b-c1a)/(nper*nstg*mean(v(vsup)))",
+    "ring_swing_v": "vhi-vlo",
+    "xo_swing_v": "vxhi-vxlo",
+    "i_total_a": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))",
+    "p_rings_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a))*mean(v(vsup))",
+    "p_total_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))*mean(v(vsup))",
+    "xo_trans_per_s": "2*(nper/(t1b-t1a)+nper/(t2b-t2a))"
+  },
+  "temperatures_c": [
+    -40
+  ],
+  "caveats": [
+    "Post-layout, FULL-CHIP-DELTA-annotated for the ro1/ro2 inter-region trunks ONLY (layout/pex/build.py); every other inter-region trunk is unpriced by this composition -- see DR-0025 and layout/pex/build.py's own module docstring for the full accounting.",
+    "CELL-INSTANCE GRANULARITY, NOT TRANSISTOR LEVEL (DR-0025): the inter-region parasitics this DUT carries were measured by a full-chip `klt extract --parasitics` run over layout/floorplan/trng_floorplan.gds in which every one of digital's ~2500 gf180mcu_fd_sc_mcu9t5v0__* standard-cell instances was abstracted as an opaque black box -- the same granularity the composed LVS already uses. No number in this record is evidence about any standard cell's own devices, and digital is not instantiated in this deck at all.",
+    "clk/rst_n are tied STATIC (clk=0, rst_n=vdd_val) rather than toggled. Consequence: p_total_w now includes the four sampler_dff instances' own static bias current on the vdd rail (this DUT's vdd rail is the fully assembled combiner_sampler block), a disclosed SCOPE BROADENING relative to ro-array-core-power-extracted-routed's own rings+XOR-only p_total_w -- not directly comparable without accounting for that difference.",
+    "Scoped to the single corner sim/characterization-startup-and-power-budget.md identified as binding for active power (ff/-40 C/3.63 V), the same point issues #17/#217's own records used -- not the full grid.",
+    "clk/rst_n arrival is still driven from an ideal, zero-impedance source at combiner_sampler's own pins (tied off entirely in this testbench) -- this record says nothing about clock-tree arrival at the sampler, per DR-0025."
+  ]
+}

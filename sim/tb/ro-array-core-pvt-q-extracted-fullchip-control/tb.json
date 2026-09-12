@@ -1,0 +1,62 @@
+{
+  "name": "ro-array-core-pvt-q-extracted-fullchip-control",
+  "description": "Zero-delta CONTROL for sim/tb/ro-array-core-pvt-q-extracted-fullchip/ (issue #232): the same deck, the same measurement expressions, the same PVT point and the same sampler_core-composed DUT topology, against layout/pex/sampler_core.routed.extracted.spice -- i.e. with DR-0025's inter-region delta absent. Recorded so the routed-vs-floorplan comparison in sim/characterization-post-layout-extracted.md section 8 subtracts two measurements of the SAME composition, isolating the inter-region trunk delta from the (larger) topology difference between ro_array_core's and sampler_core's own compositions. Same measurement expressions and 300 ns / 5 ps window as the routing-level (#217) testbench; `xo`/`ro1`/`ro2` are addressed one hierarchy hop deeper (`xdut.xcs.<net>`) because this DUT is composed from sampler_core's topology, not ro_array_core's -- see this testbench's own .sp header. Issue #13's per-corner Q table, re-derived at the worst (minimum-Q) corner with the inter-region ro1/ro2 trunk delta included.",
+  "netlist": "tb_ro_array_core_pvt_q_extracted_fullchip_control.sp",
+  "design_netlist": "layout/pex/sampler_core.routed.extracted.spice",
+  "analysis_type": "tran",
+  "corners": [
+    "ss"
+  ],
+  "temperatures_c": [
+    125
+  ],
+  "tstop": "300n",
+  "tstep": "5p (print step; it also caps ngspice's own solver step, same convention as the routing-level family)",
+  "analyses": [
+    "tran 5p 300n",
+    "meas tran t1a when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran t1b when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran t2a when v(xdut.xcs.ro2)=v(vth) rise=2",
+    "meas tran t2b when v(xdut.xcs.ro2)=v(vth) rise=6",
+    "meas tran c1a find v(q1) when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran c1b find v(q1) when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran c2a find v(q2) when v(xdut.xcs.ro2)=v(vth) rise=2",
+    "meas tran c2b find v(q2) when v(xdut.xcs.ro2)=v(vth) rise=6",
+    "meas tran cta find v(qt) when v(xdut.xcs.ro1)=v(vth) rise=2",
+    "meas tran ctb find v(qt) when v(xdut.xcs.ro1)=v(vth) rise=6",
+    "meas tran vhi max v(xdut.xcs.ro1) from=200n to=295n",
+    "meas tran vlo min v(xdut.xcs.ro1) from=200n to=295n",
+    "meas tran vxhi max v(xdut.xcs.xo) from=200n to=295n",
+    "meas tran vxlo min v(xdut.xcs.xo) from=200n to=295n",
+    "let cq = 1e-9",
+    "let nper = 4",
+    "let nstg = 11"
+  ],
+  "measure": {
+    "period_r1": "(t1b-t1a)/nper",
+    "period_r2": "(t2b-t2a)/nper",
+    "f_r1": "nper/(t1b-t1a)",
+    "f_r2": "nper/(t2b-t2a)",
+    "i_r1_a": "cq*(c1b-c1a)/(t1b-t1a)",
+    "i_r2_a": "cq*(c2b-c2a)/(t2b-t2a)",
+    "i_tree_a": "cq*(ctb-cta)/(t1b-t1a)",
+    "e_cycle_r1_j": "cq*(c1b-c1a)/nper*mean(v(vsup))",
+    "c_eff_node_r1_f": "cq*(c1b-c1a)/(nper*nstg*mean(v(vsup)))",
+    "ring_swing_v": "vhi-vlo",
+    "xo_swing_v": "vxhi-vxlo",
+    "i_total_a": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))",
+    "p_rings_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a))*mean(v(vsup))",
+    "p_total_w": "cq*((c1b-c1a)/(t1b-t1a)+(c2b-c2a)/(t2b-t2a)+(ctb-cta)/(t1b-t1a))*mean(v(vsup))",
+    "xo_trans_per_s": "2*(nper/(t1b-t1a)+nper/(t2b-t2a))"
+  },
+  "caveats": [
+    "ZERO-DELTA CONTROL for sim/tb/ro-array-core-pvt-q-extracted-fullchip/: this deck is byte-identical to that one except for its own header comment and the DUT subcircuit name (sampler_core_routed_extracted here, sampler_core_fullchip_extracted there), so the difference between this record and its -extracted-fullchip sibling at the same PVT point is EXACTLY what layout/pex/build.py's full-chip composition adds (DR-0025's ro1/ro2 inter-region trunk delta, plus the four disclosed driver-side-only output-load capacitors) and nothing else. It exists because the pre-existing -extracted-routed record of this family is composed from ro_array_core's topology, not sampler_core's, so it is NOT a valid subtraction baseline for the inter-region delta on its own -- see sim/characterization-post-layout-extracted.md section 8.",
+    "Carries NO inter-region parasitic at all (that is the point of a control): the DUT is layout/pex/sampler_core.routed.extracted.spice, the same intra-region routing-level composition issue #217 recorded, per DR-0024.",
+    "clk/rst_n are tied STATIC (clk=0, rst_n=vdd_val) rather than toggled -- this testbench measures the ring array's own oscillation, not sampler activity, and a static tie avoids adding unrelated switching current. Consequence: p_total_w now includes the four sampler_dff instances' own static bias current on the vdd rail (this DUT's vdd rail is the fully assembled combiner_sampler block), a disclosed SCOPE BROADENING relative to ro-array-core-pvt-q-extracted-routed's own rings+XOR-only p_total_w -- not directly comparable without accounting for that difference.",
+    "Scoped to the single worst (minimum-Q) corner (ss/+125 C/3.63 V), the same point issues #17/#217's own records used -- not the full 27-point grid.",
+    "fs/sf process corners are NOT covered, per DR-0006's ratified reduced process axis.",
+    "Deterministic (mismatch-free, noiseless) transient: one nominal device draw at this PVT point. Device mismatch is not exercised here.",
+    "clk/rst_n arrival is still driven from an ideal, zero-impedance source at combiner_sampler's own pins (they are tied off entirely in this testbench) -- this record says nothing about clock-tree arrival at the sampler, per DR-0025.",
+    "The swing window (200-295 ns) and the 2nd-to-6th rising-edge measurement window are fixed in simulated time, not in ring periods, matching the routing-level family's own convention."
+  ]
+}
