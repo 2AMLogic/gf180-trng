@@ -6,7 +6,7 @@ date: 2026-09-12
 deciders: Builder (issue #225), under the same delegated-methodology rule DR-0009, DR-0021, DR-0022 and DR-0024 were accepted under. Not an operator ratification — see Status. It changes no ratified row, relaxes no ratified claim, and adds no `level:` value; it fixes what the next post-layout increment is allowed to be about.
 supersedes: n/a
 superseded_by: n/a
-related: "#225 (origin, the scope decision this record IS), #219/#221/#222 (the composed, routed floorplan that made the question answerable at all), #217 (the intra-region routing-level extraction this would extend), #17 (the device-level extraction both sit on top of), DR-0024 (the `level: extracted` record kind these records would carry — unchanged by this decision, see Consequences), DR-0021/DR-0022/DR-0023 (the gate-level path that already owns the digital section's own timing and power), DR-0010 (the Proposed raw rate whose sizing margin is the measurement this scoping is chosen to move), #224 (digital's vddd/vss PDN tie, explicitly not in scope here); README §Target specification — no row is edited by this record"
+related: "#225 (origin, the scope decision this record IS), #219/#221/#222 (the composed, routed floorplan that made the question answerable at all), #217 (the intra-region routing-level extraction this would extend), #17 (the device-level extraction both sit on top of), DR-0024 (the `level: extracted` record kind these records would carry — unchanged by this decision, see Consequences), DR-0021/DR-0022/DR-0023 (the gate-level path that already owns the digital section's own timing and power), DR-0010 (the Proposed raw rate whose sizing margin is the measurement this scoping is chosen to move), #224 (digital's vddd/vss PDN tie, explicitly not in scope here); #232/#233/#234 (the three follow-ups this record obligates); klayout-tools#1699 (the generic tool gap this scoping surfaced, filed per the friction protocol); README §Target specification — no row is edited by this record"
 ---
 
 # DR-0025: Scope a full-chip PEX path to the inter-region nets whose driver and receiver are both already transistor-level, and not to the whole composed stream
@@ -372,17 +372,30 @@ Explicitly **not** in this increment, and not owed by it:
   without re-paying it. Neither changes the scope decided above — the
   extraction is run once per layout revision either way.
 
-- **Follow-up required**:
-  - Build the increment authorised above (its own issue, filed from #225),
-    with the runtime figure above budgeted into it.
-    Until it exists, no record in this repository may be cited as full-chip
-    post-layout evidence.
-  - Feed the six `digital`-facing trunks' extracted capacitance into the
-    post-route STA as an interface load, under [DR-0022]'s path — the
-    correct home for the `clk` drive-strength question Alternative B
-    declines. Its own issue.
-  - IR drop on the shared `vss` trunk, if and when a current profile exists
-    to run it against.
+- **Follow-up required**, all three filed from #225:
+  - **[#232]** — build the increment authorised above, with the runtime
+    figure above budgeted into it. Until it exists, no record in this
+    repository may be cited as full-chip post-layout evidence.
+  - **[#233]** — feed the six `digital`-facing trunks' capacitance into the
+    post-route STA as an interface load, under [DR-0022]'s path. The correct
+    home for the `clk` drive-strength question Alternative B declines to
+    answer with an ngspice run over an ideal source.
+  - **[#234]** — IR drop on the shared 430.23 um `vss` return trunk
+    (≈129 ohm end to end, estimated), which no analysis in this repository
+    has ever checked.
+
+- **Friction filed upstream**, per this repository's own protocol (root
+  `CLAUDE.md`) — the tool gap this scoping ran into, described generically
+  rather than in terms of this design:
+  [klayout-tools#1699](https://github.com/2AMLogic/klayout-tools/issues/1699),
+  "`klt extract --parasitics` is whole-layout and total-only, so pricing a
+  few top-level nets costs a full pass and needs hand-subtraction to avoid
+  double-counting". Both halves of that gap are visible in the increment
+  above: the runtime cost recorded here is the first, and the
+  "subtract, don't sum" rule in Decision step 2 is the second. Nothing in
+  this decision is *blocked* on it — the increment is buildable today, just
+  more expensive and more error-prone than it would be with per-net scoping
+  or a per-geometry-subset R/C breakdown.
 
 - **Revisit if**:
   - The extraction authorised above returns an `ro1`/`ro2` delta materially
@@ -408,3 +421,6 @@ Explicitly **not** in this increment, and not owed by it:
 [DR-0022]: DR-0022-post-route-gate-level-simulation-records.md
 [DR-0023]: DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 [DR-0024]: DR-0024-extracted-netlist-record-level.md
+[#232]: https://github.com/2AMLogic/gf180-trng/issues/232
+[#233]: https://github.com/2AMLogic/gf180-trng/issues/233
+[#234]: https://github.com/2AMLogic/gf180-trng/issues/234

@@ -335,8 +335,8 @@ from it:
   nothing about `digital`'s `vddd`/`vss` PDN tie (gf180-trng#224).
 
 **No such path exists in this module yet**, and no record in this repository
-may be cited as full-chip post-layout evidence until one does. DR-0025's
-Follow-up owns building it.
+may be cited as full-chip post-layout evidence until one does. Building it is
+gf180-trng#232, filed from DR-0025's own Follow-up.
 
 One practical warning for whoever does, from the runtime probe DR-0025
 discloses: the full-chip `--parasitics` extraction is **not** cheap the way

@@ -1105,17 +1105,19 @@ the six `digital`-facing trunks stays unpriced.
   is now a decided, narrow piece of work rather than an open question —
   price the two inter-region nets with a transistor-level device at both
   ends (`ro1`, `ro2`), keep `digital` abstracted, and re-run §7.1/§7.3/§7.4
-  at their existing binding corners. **Still open**: building it. No record
-  in this repository may be cited as full-chip post-layout evidence until it
+  at their existing binding corners. **Still open**: building it, filed as
+  [#232](https://github.com/2AMLogic/gf180-trng/issues/232). No record in
+  this repository may be cited as full-chip post-layout evidence until it
   exists.
 - **Feed the six `digital`-facing trunks' capacitance into the post-route
-  STA** as an interface load, under [DR-0022]'s path — new, from §7.7. This
-  is where the `clk` drive-strength question belongs (can `digital`'s clock
-  driver drive the trunk's ≈21 fF?); [DR-0025] Alternative B declines to
-  answer it with an ngspice run over an ideal source, and routes it here
-  instead.
-- **IR drop on the shared 430.23 µm `vss` trunk** — new, from §7.7. A static
-  supply analysis with its own methodology, needing a current profile the
+  STA** as an interface load, under [DR-0022]'s path — new, from §7.7, filed
+  as [#233](https://github.com/2AMLogic/gf180-trng/issues/233). This is where
+  the `clk` drive-strength question belongs (can `digital`'s clock driver
+  drive the trunk's ≈21 fF?); [DR-0025] Alternative B declines to answer it
+  with an ngspice run over an ideal source, and routes it here instead.
+- **IR drop on the shared 430.23 µm `vss` trunk** — new, from §7.7, filed as
+  [#234](https://github.com/2AMLogic/gf180-trng/issues/234). A static supply
+  analysis with its own methodology, needing a current profile the
   extracted-netlist path does not produce. Not owed by [DR-0025]'s
   increment.
 

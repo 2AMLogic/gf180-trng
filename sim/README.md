@@ -313,8 +313,9 @@ nets" instead of "no". And its Caveats must additionally say **(a)** that the
 digital section is at cell-instance granularity, not transistor level, so no
 number in the record is evidence about a standard cell's own devices, and
 **(b)** that `clk`/`rst_n` arrival is still driven from an ideal source, so
-the record says nothing about clock arrival at the sampler. Until such a
-record exists, **no record in this repository may be cited as full-chip
+the record says nothing about clock arrival at the sampler. Building that
+generation is [#232](https://github.com/2AMLogic/gf180-trng/issues/232);
+until it lands, **no record in this repository may be cited as full-chip
 post-layout evidence.**
 
 [DR-0024]: ../spec/decision-records/DR-0024-extracted-netlist-record-level.md
