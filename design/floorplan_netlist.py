@@ -49,14 +49,11 @@ What is declared, per net (`INTER_REGION_NETS`)
   (`REGION_REFERENCES`) -- never a name invented here. `validate_inter_
   region_nets()` mechanically checks every one of these against the real
   `.SUBCKT` header of the region's own committed `.spice` file, so a typo or
-  a region's own future pin rename is caught, not eyeballed.
-- `implicit_regions` -- for the two nets (`vddd`, `vss`) that also reach
-  `digital`'s real power delivery network through a mechanism `digital`'s
-  own committed reference does not expose as a `.SUBCKT` pin at all (see
-  "The `digital` region's supply pins are not `.SUBCKT` pins" below). Not
-  mechanically checkable the same way `endpoints` is -- there is no pin to
-  check against -- so it is kept in its own field rather than silently
-  folded into `endpoints`, where it would look checkable and would not be.
+  a region's own future pin rename is caught, not eyeballed. Through
+  gf180-trng#224, `vddd`'s and `vss`'s connection *into* `digital`
+  specifically could not be declared this way -- see "`digital`'s supply
+  pins are real `.SUBCKT` pins, since #224" below for why that is no longer
+  true.
 - `spans_regions` -- for `ro1` only: the one net whose physical routing path
   (phase 2's job) is not a single-channel hop between adjacent regions.
 - `layer_role` -- a target metal-layer *role* (not yet a GDS layer number),
@@ -78,34 +75,37 @@ block's own supply pad. `validate_inter_region_nets()` asserts this
 mechanically (four distinct names, no two supply nets sharing an endpoint or
 a region) so a future edit cannot merge them without this check failing.
 
-The `digital` region's supply pins are not `.SUBCKT` pins
---------------------------------------------------------------
-`layout/digital/trng_top.lvs_reference.spice`'s own `.SUBCKT trng_top`
-header declares 109 pins (verified directly, at run time, by `reference_
-top_pins()` below -- not restated as a constant here; #219's own "~12-pin"
-note is a caution about trusting a stale figure instead of re-deriving it,
-and this module follows that caution rather than repeating it) -- none of
-them `vddd` or `vss`. That is deliberate, not an oversight:
-`layout/digital/lvs.py`'s own module docstring ("Neither side promotes a
-supply to a *top-level* pin", "`run_extract`'s `--pins` declares the 109
-real chip I/O nets and nothing else") and `layout/digital/README.md#power`
-both record that `digital`'s real, placed-and-routed power delivery network
-is real (its `SPECIALNETS` section names `vddd`/`vss`, and the *DEF's own*
-`PINS` section -- the physical layout, not this reference netlist's
-`.SUBCKT` header -- carries 111 entries, the same 109 chip I/O plus those 2
-supply pins), but the *reference netlist* that standalone digital LVS run
-built keeps `vddd`/`vss` off both sides' `.SUBCKT trng_top` interface so the
-two interfaces still match each other. This module's own `INTER_REGION_NETS`
-declares `vddd`'s and `vss`'s connection into `digital` via `implicit_
-regions` rather than `endpoints` for exactly that reason: there is no
-`.SUBCKT` pin to name. `generate_lvs_reference()` below therefore cannot
-wire either net into `digital`'s own `X`-card (the card only has as many
-positions as the reference's own header declares) -- `vddd` is written as a
-top-level `trng_floorplan` pin with no real wire beneath it in this
-generated file, and `vss` is written wired to `ring1`/`ring2`/
-`combiner_sampler` only. Both are flagged in the generated file's own header
-comment. Reconciling this (if phase 2 needs to) is that follow-up issue's
-problem, not this declaration's.
+`digital`'s supply pins are real `.SUBCKT` pins, since #224
+------------------------------------------------------------------
+Through gf180-trng#221/#222, `layout/digital/trng_top.lvs_reference.spice`'s
+own `.SUBCKT trng_top` header declared 109 pins and none of them were `vddd`
+or `vss`, even though `digital`'s real, placed-and-routed power delivery
+network is real (its `SPECIALNETS` section names `vddd`/`vss`, and the
+*DEF's own* `PINS` section has carried 111 entries -- the same 109 chip I/O
+plus those 2 supply pins -- since #171). The *reference netlist* that
+standalone digital LVS run built kept `vddd`/`vss` off both sides'
+`.SUBCKT trng_top` interface so the two interfaces still matched each other,
+so this module could not declare either connection as an ordinary
+`endpoints` entry -- there was no pin to check against -- and instead
+carried both under a separate, not-mechanically-checkable `implicit_regions`
+field.
+
+gf180-trng#224 closed that gap on the reference side: `layout/digital/
+lvs.py` now promotes both net names (read from the committed `place_and_
+route.json`'s own `power` block, `vddd`/`vss` as of this writing) to real
+`.SUBCKT trng_top` pins on both sides of `digital`'s own standalone LVS (see
+that script's own module docstring's "`vddd`/`vss` are real top-level pins
+too" section). `reference_top_pins()` below now reads a 111-pin header for
+`digital`, not 109 -- re-derived at run time, the same way this module has
+always treated `digital`'s own pin count (#219's own "~12-pin" note is a
+caution about trusting a stale figure instead of re-deriving it, and this
+module follows that caution rather than repeating it) -- so `vddd` and `vss`
+are ordinary `endpoints` entries below like any other net, and `implicit_
+regions` no longer exists as a field: there is no longer a connection this
+module cannot mechanically check. `layout/floorplan/interregion.py` draws
+both ties (a Metal5 route into `digital`'s own PDN strap, since that
+mechanism's own reach is real geometry, not an internal net any more) -- see
+that module's own "The `digital` PDN tie" docstring section.
 
 The substrate net `vsubs` (not in issue #219/#221's own inter-region table)
 --------------------------------------------------------------------------------
@@ -224,17 +224,6 @@ REGION_REFERENCES: dict[str, tuple[Path, str]] = {
 #: left to right -- `ro1`'s `spans_regions` below is meaningful only against
 #: this order (see the module docstring's "long-haul route" section).
 REGION_ORDER: tuple[str, ...] = ("ring1", "ring2", "combiner_sampler", "digital")
-
-#: `(net name, specialnet name)` pairs `digital`'s own real power delivery
-#: network carries that its committed reference `.SUBCKT trng_top` header
-#: does not expose as a pin -- see the module docstring's "The `digital`
-#: region's supply pins are not `.SUBCKT` pins" section. Any `implicit_
-#: regions` entry naming `digital` must use one of these two net names, or
-#: `validate_inter_region_nets()` rejects it: this is the *only* documented
-#: reason a declared connection is allowed to skip the mechanical
-#: `.SUBCKT`-pin check.
-DIGITAL_IMPLICIT_SPECIALNETS: tuple[str, ...] = ("vddd", "vss")
-
 
 # --------------------------------------------------------------------------- #
 # The inter-region net list -- the data this module exists to declare.
@@ -441,18 +430,18 @@ INTER_REGION_NETS: list[dict] = [
         "name": "vddd",
         "role": "supply",
         "chip_pin": True,
-        "endpoints": [],
-        "implicit_regions": [("digital", "vddd")],
-        "layer_role": "metal4_5_pdn_transition",
+        "endpoints": [("digital", "vddd")],
+        "layer_role": "metal5_pdn_strap",
         "rationale": (
-            "digital's own star branch. Not an `endpoints` entry: digital's "
-            "committed reference `.SUBCKT trng_top` does not declare a "
-            "`vddd` pin at all (see the module docstring's 'digital region's "
-            "supply pins are not .SUBCKT pins' section) -- this connection "
-            "is real in the actual layout (`layout/digital/README.md#power`'s "
-            "own `SPECIALNETS`/PDN grid, Metal1 followpins + Metal4/Metal5 "
-            "straps) but not expressible against the current reference "
-            "netlist's own pin list."
+            "digital's own star branch. An ordinary `endpoints` entry since "
+            "gf180-trng#224: digital's committed reference `.SUBCKT trng_top` "
+            "now declares a real `vddd` pin (layout/digital/lvs.py promotes "
+            "it from the committed place_and_route.json's own power block), "
+            "so this connection -- always real in the actual layout "
+            "(layout/digital/README.md#power's own SPECIALNETS/PDN grid, "
+            "Metal1 followpins + Metal4/Metal5 straps) -- is now expressible "
+            "and drawn (layout/floorplan/interregion.py's own Metal5 tie "
+            "into the lowest of digital's own PDN straps)."
         ),
     },
     {
@@ -463,16 +452,17 @@ INTER_REGION_NETS: list[dict] = [
             ("ring1", "vss"),
             ("ring2", "vss"),
             ("combiner_sampler", "vss"),
+            ("digital", "vss"),
         ],
-        "implicit_regions": [("digital", "vss")],
-        "layer_role": "metal2_plus_digital_pdn_transition",
+        "layer_role": "metal5_pdn_strap",
         "rationale": (
             "The one deliberately shared net (Mechanism 2): every region's "
             "own guard ring taps to its own `vss` return, and all four "
             "regions' returns converge at one point. ring1/ring2/combiner_"
-            "sampler each declare a real `vss` pin; digital's does not (same "
-            "implicit-SPECIALNETS reason as vddd) -- the wiring `digital` "
-            "side is documented, not mechanically checked."
+            "sampler each declare a real `vss` pin; since gf180-trng#224, "
+            "digital does too (same reference-promotion mechanism as `vddd` "
+            "above), so all four are now ordinary `endpoints` and the wiring "
+            "into digital is drawn, not just documented."
         ),
     },
     {
@@ -595,28 +585,6 @@ def validate_inter_region_nets() -> list[str]:
                 )
             claimed_pins[(rid, pin)] = name
 
-        for rid, specialnet in net.get("implicit_regions", ()):
-            if rid != "digital":
-                problems.append(
-                    f"net {name!r} declares an `implicit_regions` entry for "
-                    f"region {rid!r} -- only 'digital' has undeclared "
-                    "SPECIALNETS-only supply pins (see DIGITAL_IMPLICIT_"
-                    "SPECIALNETS's own docstring)"
-                )
-            if specialnet not in DIGITAL_IMPLICIT_SPECIALNETS:
-                problems.append(
-                    f"net {name!r} declares an `implicit_regions` entry "
-                    f"naming {specialnet!r}, which is not one of "
-                    f"DIGITAL_IMPLICIT_SPECIALNETS {DIGITAL_IMPLICIT_SPECIALNETS}"
-                )
-            if specialnet != name:
-                problems.append(
-                    f"net {name!r}'s own `implicit_regions` entry names "
-                    f"specialnet {specialnet!r}, which does not match this "
-                    "net's own name -- an implicit connection should always "
-                    "be declared under the net it is a connection *of*"
-                )
-
         for rid in net.get("spans_regions", ()):
             if rid not in REGION_REFERENCES:
                 problems.append(
@@ -652,7 +620,6 @@ def validate_inter_region_nets() -> list[str]:
     supply_regions: dict[str, str] = {}
     for net in supply_nets:
         regions = {rid for rid, _ in net.get("endpoints", ())}
-        regions |= {rid for rid, _ in net.get("implicit_regions", ())}
         for rid in regions:
             prior = supply_regions.get(rid)
             if prior is not None and prior != net["name"]:
@@ -749,12 +716,10 @@ def generate_lvs_reference() -> str:
         "* trng_floorplan pin-count change, and running klt lvs against this",
         "* file are phase 2's work (a separate, follow-up issue), not done here.",
         "*",
-        "* vddd is written as a top-level pin below with no wire beneath it:",
-        "* digital's own committed reference (layout/digital/trng_top.lvs_",
-        "* reference.spice) does not declare a vddd .SUBCKT pin (SPECIALNETS-",
-        "* only -- see design/floorplan_netlist.py's own module docstring).",
-        "* vss is wired to ring1/ring2/combiner_sampler only for the same",
-        "* reason; digital's own vss return is real but not expressible here.",
+        "* vddd/vss both wire into digital's own X-card too, since gf180-",
+        "* trng#224 promoted them to real .SUBCKT trng_top pins on digital's",
+        "* own committed reference (layout/digital/trng_top.lvs_reference.",
+        "* spice) -- see design/floorplan_netlist.py's own module docstring.",
         "*",
         "* Each region's own reference is pulled in by .INCLUDE rather than",
         "* copied a second time (digital's own reference alone is ~8700",

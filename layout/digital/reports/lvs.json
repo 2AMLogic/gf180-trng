@@ -16,9 +16,9 @@
       "matched": 0
     },
     "pins": {
-      "layout": 109,
-      "reference": 109,
-      "matched": 558
+      "layout": 111,
+      "reference": 111,
+      "matched": 560
     }
   },
   "device_classes": null,
@@ -135,9 +135,11 @@
       "str_data[8]",
       "str_data[9]",
       "str_ready",
-      "str_valid"
+      "str_valid",
+      "vddd",
+      "vss"
     ],
-    "top_pin_count": 109,
+    "top_pin_count": 111,
     "instance_count": 2502,
     "distinct_cell_types": 74,
     "physical_only_instance_count": 6136,
@@ -160,8 +162,8 @@
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.12",
-    "layout_sha256": "3b379cd9e2866f5b05d4447165e40eae0b43f4d1134130698a390e20593dee7e",
-    "reference_sha256": "2dc8c93c2dfd5c487f5c0bf92b2f64d99041cf92d263ef413bb4a13b84637339",
+    "layout_sha256": "27459b17eb2bc45a0638efd3281e0a390e319fd42ce056d6cb340567578bc9f9",
+    "reference_sha256": "33ab9c671a8b4dd63f094754ddb64de110dfd985faf56828aecebab3f0406bef",
     "extracted_netlist": null
   }
 }
