@@ -65,6 +65,32 @@ period inside one session updates every slack correctly but leaves
 `report_power`'s switching term at the old rate. `run_sta.py`'s `_tcl`
 docstring records the live evidence for that.
 
+## The six `digital`-facing inter-region trunks (#233)
+
+Every session also carries the inter-region trunks that terminate on
+`trng_top`'s own pins — `clk`, `rst_n`, `raw_bit`, `raw_valid`,
+`ring_bit[0]`, `ring_bit[1]` as the DEF names them — as a
+`set_input_transition` per port, derived at run time from
+`layout/floorplan/reports/interregion.json`'s as-built `trunk_length_um` and
+[DR-0025]'s Metal4 coefficients. It is **permanent**, not a flag-gated
+scenario: re-deriving costs nothing per run, and a pinned constant would go
+stale the moment #222's routing moves. Each record's `interface_loads:` block
+states the per-port R, C and stated transition, and the convention they are
+stated in (the deck's own `slew_*_threshold_pct` / `slew_derate_from_library`).
+
+`set_load` — the construct #233 was filed expecting — is deliberately not
+used: all six ports are `DIRECTION INPUT` on `trng_top` with no driver inside
+this single-region netlist, so there is no driver arc for a load to attach to,
+and OpenSTA reports bit-identical slack, slew and power with no `set_load`,
+with the trunks' as-built 15.6–30.7 fF, and with 10 pF.
+
+```sh
+# the comparison behind that choice, and the slew-domain check behind
+# SlewConvention -- one corner, two minutes, no records minted
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
+python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
+```
+
 Each record's raw output is the generated Tcl and the full OpenROAD log for
 both sessions. The SPEF (3.3 MB per corner) is **not** committed; its sha256,
 byte size and summed capacitance are, so a re-run is checkable against the
@@ -96,3 +122,4 @@ every figure in that document from the records themselves.
 
 [DR-0003]: ../../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0021]: ../../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
+[DR-0025]: ../../../spec/decision-records/DR-0025-full-chip-pex-scope.md
