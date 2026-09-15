@@ -355,12 +355,14 @@ class RecordedTableTests(unittest.TestCase):
             self.assertIn("/", net, net)
 
     def test_the_recorded_residual_still_closes_setup(self):
-        # The entire accepted-risk argument is that these paths have margin;
-        # a RECORDED table that pinned a negative number would be pinning a
-        # failure as the expected state.
-        self.assertGreater(
-            probe.RECORDED["worst_setup_slack_through_violators_ns"], 0.0
-        )
+        # `None` means "no residual to bound" ([#240]'s clean state, the
+        # current RECORDED value) and is fine on its own terms. If a residual
+        # *is* recorded, the entire accepted-risk argument is that those
+        # paths have margin -- a RECORDED table pinning a negative number
+        # would be pinning a failure as the expected state.
+        value = probe.RECORDED["worst_setup_slack_through_violators_ns"]
+        if value is not None:
+            self.assertGreater(value, 0.0)
 
     def test_the_pnr_corner_matches_the_build_flows_own(self):
         # `pnr_corner_target` is only meaningful if it names the deck

@@ -35,9 +35,13 @@ this tool refuses to present it as if it were.
 **Design rules.** The library's own `max_transition` check across the
 family — how many corners violate it, the worst corner and slack, and how
 many violating pins sit on one of #233's six inter-region trunk nets
-(none). This is #237's accepted residual, pinned in ``RECORDED`` so the
-acceptance is an enforced invariant rather than a paragraph in the document;
-the per-net decomposition behind it needs the PDK and lives in
+(none). #237 found nine of the fifteen corners violating this and accepted
+it as a bounded residual because the build flow could not yet state a
+`set_max_transition`; #240 landed that constraint once klayout-tools#1860
+made it expressible, and the rebuilt DEF now violates at zero corners.
+`RECORDED` pins the *current* (fixed) state so it is an enforced invariant
+rather than a paragraph in the document; the per-net decomposition behind
+it needs the PDK and lives in
 ``sim/tb/digital-sta-power/max_transition_probe.py``.
 
 **Power.** Per-corner total, per-group and leakage power at two operating
@@ -95,31 +99,36 @@ RATIFIED_RATE_HZ = 1e6
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 21.935,
+    "setup_binding_slack_ns": 24.876,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.712,
-    "fmax_floor_mhz": 35.631,
+    "hold_binding_slack_ns": 0.7071,
+    "fmax_floor_mhz": 39.803,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 116_000.6,
-    "area_ratio_vs_inventory": 1.5574,
-    "power_1mhz_max_w": 7.1236e-4,
+    "cell_area_um2": 118_975.4,
+    "area_ratio_vs_inventory": 1.5973,
+    "power_1mhz_max_w": 7.1241e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 1.42052e-5,
+    "leakage_max_w": 1.46243e-5,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 3.94589e-6,
-    # Section 2a's accepted residual (#237). The design violates the
-    # library's own `max_transition` at nine of the fifteen corners, and that
-    # was decided to be *accepted and bounded* rather than fixed, because the
-    # constraint that would fix it cannot be stated through the build flow's
-    # only interface today. Pinned here so the acceptance is an enforced
-    # invariant rather than a paragraph: a re-built DEF that moves any of
-    # these fails this gate and forces section 2a to be re-read.
-    "max_transition_violating_corners": 9,
-    "max_transition_worst_slack_ns": -1.5930,
-    "max_transition_worst_corner": "tt_025C_3v30/rc-max",
-    "max_transition_worst_violating_pins": 94,
+    "leakage_max_current_a": 4.06231e-6,
+    # [#240] stated `max_transition_ns`/`max_capacitance_pf` to
+    # `layout/digital/build.py`'s `CONSTRAINTS` and rebuilt once
+    # klayout-tools#1860 made that expressible. That closed #237's accepted
+    # residual rather than merely bounding it: the design violates the
+    # library's own `max_transition` at **zero** of the fifteen corners
+    # today (was nine), and `max_transition_worst_slack_ns` below is now the
+    # worst remaining *margin*, not a violation depth. Pinned here so the
+    # fixed state is an enforced invariant rather than a paragraph: a
+    # re-built DEF that reintroduces a violation fails this gate and forces
+    # section 2a to be re-read.
+    "max_transition_violating_corners": 0,
+    "max_transition_worst_slack_ns": 1.71936,
+    "max_transition_worst_corner": "ff_125C_3v60/rc-max",
+    "max_transition_worst_violating_pins": 0,
     # No violating pin is on one of the six #233 trunk nets, at any corner --
-    # the evidence that this is pre-existing and not the interface load's.
+    # true before #240 (when it mattered because a residual existed to check
+    # this against) and trivially true now that there is no violating pin at
+    # all.
     "interface_load_max_slew_violations": 0,
 }
 
@@ -608,7 +617,7 @@ def report(records: list[Record], with_estimate: bool) -> None:
     print()
 
     m = max_transition(records)
-    print("== The library's own max_transition check (section 2a, #237) ==")
+    print("== The library's own max_transition check (section 2a, #237/#240) ==")
     if not m["rows"]:
         print("  no live record carries the check -- it postdates this family")
     else:
@@ -623,9 +632,15 @@ def report(records: list[Record], with_estimate: bool) -> None:
               f"ns ({m['worst_violating_pins']} pins)")
         print(f"  on a #233 trunk net, worst corner: {m['on_trunk_nets_max']} "
               "(pre-existing, not the interface load's)")
-        print("  accepted and bounded, not fixed -- see section 2a, and")
-        print("  `python3 sim/tb/digital-sta-power/max_transition_probe.py` for")
-        print("  the per-net decomposition this summary is the record-side half of.")
+        if m["violating_corners"] == 0:
+            print("  fixed, not merely bounded -- #240 stated max_transition_ns/")
+            print("  max_capacitance_pf to layout/digital/build.py once")
+            print("  klayout-tools#1860 landed; see section 2a and")
+            print("  `python3 sim/tb/digital-sta-power/max_transition_probe.py --check`.")
+        else:
+            print("  accepted and bounded, not fixed -- see section 2a, and")
+            print("  `python3 sim/tb/digital-sta-power/max_transition_probe.py` for")
+            print("  the per-net decomposition this summary is the record-side half of.")
     print()
 
     print("== Area (standard-cell area; NOT die area) ==")
@@ -772,10 +787,12 @@ def check(records: list[Record]) -> list[str]:
             f"RECORDED says the {RECORDED['leakage_max_corner']} liberty corner"
         )
 
-    # Section 2a's accepted residual (#237). Gated in both directions on
-    # purpose: fewer violations than recorded is good news that still makes
-    # the document wrong, and a document that overstates a known defect is
-    # no more trustworthy than one that understates it.
+    # Section 2a's max_transition/max_capacitance finding (#237, fixed by
+    # #240). Gated in both directions on purpose: a violation count that
+    # moves away from RECORDED in *either* direction means the document no
+    # longer describes the committed records -- a document that understates
+    # a regression is no more trustworthy than one that overstates a residual
+    # that no longer exists.
     m = max_transition(records)
     if m["records_with_check"] != len(records):
         fails.append(

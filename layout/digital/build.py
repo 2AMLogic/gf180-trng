@@ -240,44 +240,95 @@ POWER = {
 
 #: The timing constraints this run is placed and routed against.
 #:
-#: **There is no `set_max_transition` / `set_max_fanout` entry here, and its
-#: absence is a recorded decision (#237), not an oversight.** The routed DEF
-#: this script commits violates the library's own `max_transition` at nine of
-#: the fifteen corners `sim/tb/digital-sta-power/run_sta.py` sweeps -- four
-#: high-fanout nets inside `u_interface`/`u_conditioner`, measured per net and
-#: per corner by `sim/tb/digital-sta-power/max_transition_probe.py` and
-#: written up in `sim/characterization-digital-sta-area-power.md` section 2a.
-#: OpenROAD's own `repair_design` (which `klt place-and-route` runs after
-#: global placement) would fix exactly that, given a tighter target than the
-#: `CORNER` deck's own 13.2 ns limit: the probe derives the number it would
-#: need, 11.21 ns at this corner, from the measured cross-corner slews.
+#: **`max_transition_ns`/`max_capacitance_pf` are stated here, and that is a
+#: recorded decision (#237, #240), not always the case.** #237 found the
+#: routed DEF this script used to commit violating the library's own
+#: `max_transition` at nine of the fifteen corners
+#: `sim/tb/digital-sta-power/run_sta.py` sweeps -- four high-fanout nets
+#: inside `u_interface`/`u_conditioner`, measured per net and per corner by
+#: `sim/tb/digital-sta-power/max_transition_probe.py` and written up in
+#: `sim/characterization-digital-sta-area-power.md` section 2a. OpenROAD's
+#: own `repair_design` (which `klt place-and-route` runs after global
+#: placement) fixes exactly that, given a tighter target than the `CORNER`
+#: deck's own 13.2 ns limit: the probe derived the number it would need,
+#: 11.21 ns at this corner, from the measured cross-corner slews, binding at
+#: `ff_125C_3v60`/`rc-min`. The same probe found the library's sibling
+#: `max_capacitance` check violated by the identical four nets, at eleven of
+#: the fifteen corners -- the same drive-strength shape, not a separate
+#: structure.
 #:
-#: It cannot be stated. `klt place-and-route`'s request contract exposes
-#: exactly two constraint fields -- `clock_port` and `clock_period_ns` --
-#: with no SDC passthrough and no design-rule constraint of any kind (its own
-#: `_validate_constraints` accepts nothing else, and nothing else is ever
-#: emitted into the Tcl it generates). Filed generically upstream as
-#: klayout-tools#1709. When it lands, #240 is the follow-up that adds the
-#: constraint here, re-runs this script, and re-mints the sweep against the
-#: new DEF; do not hand-edit the committed DEF to get there.
+#: It could not be stated until klayout-tools#1709 landed (merged via
+#: klayout-tools#1860, 2026-09-15): `klt place-and-route`'s request contract
+#: used to expose exactly two constraint fields -- `clock_port` and
+#: `clock_period_ns` -- with no SDC passthrough and no design-rule constraint
+#: of any kind. #1860 adds `max_transition_ns` -> `set_max_transition <ns>
+#: [current_design]` and `max_capacitance_pf` -> `set_max_capacitance <pf>
+#: [current_design]` (plus `max_fanout`, deliberately not used here -- see
+#: below), each threaded through `repair_design` the same way `_clock_lines`
+#: already reaches every P&R stage.
 #:
-#: `design/synth.py` cannot state it on this script's behalf either: `klt
-#: synthesize`'s `request.constraints` reads exactly one field,
-#: `clock_period_ns` (ABC's `-D` delay target), and the `abc -constr` file it
-#: writes is two fixed lines from `klt`'s own per-library table. That is the
-#: right place for the gap to be, though -- the violation is a placement and
+#: **`max_transition_ns: 8.0`** is the number a real run against this flow
+#: needed, not the naive guard-band under the 11.21 ns derived above: this
+#: value was reached in two rebuilds, not one, because "verify, don't
+#: assume" (#240's own framing of the risk) turned out to matter in
+#: practice. The first attempt used `10.0` ns -- below 11.21 ns by
+#: approximately the same margin #237's own derivation carried, and a
+#: reasonable guess given `repair_design` optimises against
+#: placement-estimated parasitics rather than the post-route extraction the
+#: 11.21 ns figure is built from. Re-running the full fifteen-corner
+#: `digital-sta-power` sweep against that DEF (not assuming it worked)
+#: found it was not enough: `max_slew_violations` was still 13 at two of
+#: the fifteen corners (`tt_025C_3v30`/`rc-max`, `ff_125C_3v60`/`rc-max`).
+#: Tightening to `8.0` ns (60.6 % of this deck's own 13.2 ns limit) and
+#: rebuilding a second time cleared it everywhere: the re-minted sweep
+#: reports `max_slew_violations: 0` at all fifteen corners, confirmed
+#: independently by
+#: `sim/tb/digital-sta-power/max_transition_probe.py --check`.
+#:
+#: **`max_capacitance_pf: 0.35`** is stated alongside it, but is not shown to
+#: be the lever that cleared the `max_capacitance` violations on this DEF:
+#: the library's own per-pin `max_capacitance` limit (an attribute of
+#: whichever driving cell ends up worst, not a single corner-wide number)
+#: measures well under 0.35 pF at every corner of the rebuilt DEF (roughly
+#: 0.12-0.20 pF, per `max_transition_probe.py`'s own per-corner table) --
+#: so it is the same slew-driven buffering that clears `max_transition`
+#: which clears `max_capacitance` too, as a byproduct of fixing one
+#: drive-strength shape shared by the same four nets, not because this
+#: value bound anything. It is kept stated rather than dropped: it costs
+#: nothing today, and it is the knob `repair_design` would have to use if a
+#: future net violated `max_capacitance` without a `max_transition`
+#: violation alongside it. The rebuilt DEF's own measured
+#: `max_capacitance_violations` (0 at every corner, not this comment) is
+#: the actual answer for this run.
+#:
+#: `design/synth.py` cannot state either constraint on this script's behalf:
+#: `klt synthesize`'s `request.constraints` still reads exactly one field,
+#: `clock_period_ns` (ABC's `-D` delay target, unaffected by #1860, which
+#: only touches `place-and-route`), and the `abc -constr` file it writes is
+#: two fixed lines from `klt`'s own per-library table. That is the right
+#: place for the gap to stay, though -- the violation is a placement and
 #: drive-strength outcome, and `repair_design` is where the flow first has
 #: the parasitics to repair it.
 #:
 #: A `set_max_fanout` is *separately* not wanted, on this library's own
 #: evidence rather than on availability: `gf180mcu_fd_sc_mcu9t5v0` declares no
-#: `default_max_fanout` and no per-pin `max_fanout` at all, and this design's
-#: highest-fanout net (`rst_n`, 201 loads -- nearly six times the largest of
-#: the four offenders) is clean at every corner while a 13-load net violates
-#: at seven. Fanout does not predict the violation here; load capacitance
-#: against drive strength does, which is what `max_transition` already
-#: measures.
-CONSTRAINTS = {"clock_port": "clk", "clock_period_ns": 50.0}
+#: `default_max_fanout` and no per-pin `max_fanout` at all, and on the DEF
+#: this decision was made against, this design's highest-fanout net
+#: (`rst_n`, 201 loads -- nearly six times the largest of the four
+#: offenders) was clean at every corner while a 13-load net violated at
+#: seven. Fanout did not predict the violation; load capacitance against
+#: drive strength did, which is what `max_transition`/`max_capacitance`
+#: measure directly. (The buffering `max_transition_ns: 8.0` triggers
+#: touches more than the original four nets -- it also reshapes `rst_n`
+#: itself, so the rebuilt DEF's own worst-fanout net is smaller and
+#: different; that is a topology side effect of the fix, not a change to
+#: this reasoning.)
+CONSTRAINTS = {
+    "clock_port": "clk",
+    "clock_period_ns": 50.0,
+    "max_transition_ns": 8.0,
+    "max_capacitance_pf": 0.35,
+}
 SEED = 1
 TARGET_STAGE = "route"
 

@@ -7,6 +7,18 @@ measurement rather than an assertion.
     python3 sim/tb/digital-sta-power/max_transition_probe.py --check   # gate it
     python3 sim/tb/digital-sta-power/max_transition_probe.py --liberty tt_025C_3v30 --rc max
 
+Status ([#240])
+---------------
+[#237] found the violation this module describes and accepted it as a bounded
+residual because the build flow could not yet state a `set_max_transition`.
+[#240] landed that constraint (`layout/digital/build.py`'s `CONSTRAINTS`)
+once `klt place-and-route` could express it, and the rebuilt DEF this module
+now measures reports **zero** `max_transition`/`max_capacitance` violations
+at all fifteen corners -- `RECORDED` below reflects that clean state, not
+the accepted-residual one the rest of this docstring narrates historically.
+`--check` still exists and still matters: it is the gate against a *future*
+rebuild reintroducing the violation, not evidence that one exists today.
+
 Why this exists
 ---------------
 `run_sta.py` asks OpenSTA for the library's own max-transition check
@@ -65,6 +77,7 @@ it deliberately rather than silently.
 
 [#233]: https://github.com/2AMLogic/gf180-trng/issues/233
 [#237]: https://github.com/2AMLogic/gf180-trng/issues/237
+[#240]: https://github.com/2AMLogic/gf180-trng/issues/240
 """
 
 from __future__ import annotations
@@ -98,40 +111,49 @@ PNR_CORNER = "ss_125C_3v00"
 #: `sim/tools/digital_corner_characterization.py`'s own `RECORDED` table and
 #: `sim/tools/sampler_bit_bias_variants.py`'s `RECORDED_VERDICT` use.
 #: ``--check`` fails if the committed DEF stops supporting them.
+#:
+#: [#240] rebuilt the DEF this probe measures with `max_transition_ns`/
+#: `max_capacitance_pf` stated to `repair_design`, and every field below now
+#: describes the clean state that rebuild produced (zero violations, zero
+#: violating nets) -- it does **not** describe #237's original accepted
+#: residual any more. The comments keep the historical numbers for context
+#: where useful, but the recorded values themselves are today's.
 RECORDED = {
-    # Every pin the max-transition check names, at every corner, is on one of
-    # these four nets. Named rather than counted: the verdict is that this is
-    # *one structure* (four high-fanout nets built by synthesis + P&R), not a
-    # corner-dependent scatter, and a net appearing here that is not in this
-    # set would break that reading.
-    "violating_nets": (
-        "u_conditioner/_095_",
-        "u_interface/_0606_",
-        "u_interface/_0999_",
-        "u_interface/_1190_",
-    ),
-    # Corners with at least one violating pin, of the 15.
-    "violating_corners": 9,
-    # The worst setup slack, over all corners, of any path passing through a
-    # max-transition-violating pin. Positive: those paths still close against
-    # the 50 ns constraint, which is what bounds the residual risk. It is also
-    # exactly this repository's headline setup margin (section 2, +21.935 ns at
-    # ss_125C_3v00/rc-max), because at every violating corner the design's
-    # critical path *is* a path through a violating pin.
-    "worst_setup_slack_through_violators_ns": 21.935,
-    # The violating instances' share of total power, worst over all corners
-    # (ff_125C_3v60/rc-max).
-    "power_share_max": 0.0184,
-    # The library's sibling max_capacitance check, which nothing in this
-    # repository had asked for either until this probe. Worst corner
-    # (ff_125C_3v60/rc-max) -- non-zero, and part of the accepted residual.
-    "max_capacitance_violations": 6,
-    # The design's worst net fanout, in load pins (`rst_n`). Measured from
-    # topology rather than checked against the library, which declares no
-    # max_fanout of any kind -- see `_tcl` below. Quoted in section 2a because
-    # it is clean at every corner while a 13-load net violates at seven, which
-    # is what rules `set_max_fanout` out as the lever here.
-    "max_net_fanout": 201,
+    # #237 found every violating pin, at every corner, on one of four nets
+    # (a drive-strength/fanout shape, not a corner-dependent scatter):
+    # u_conditioner/_095_, u_interface/_0606_, u_interface/_0999_,
+    # u_interface/_1190_. [#240]'s rebuild (max_transition_ns: 8.0,
+    # max_capacitance_pf: 0.35) buffered all four; none violates anywhere in
+    # the fifteen-corner grid today, so this is empty rather than that list.
+    # A net appearing here again would mean the fix regressed.
+    "violating_nets": (),
+    # Corners with at least one violating pin, of the 15. Was 9 before #240.
+    "violating_corners": 0,
+    # No violating pin exists post-#240, so there is no "path through a
+    # violator" to bound -- `None` here means "not applicable", not "unknown".
+    # #237's accepted-residual bound was +21.935 ns (this repository's
+    # headline setup margin at the time, ss_125C_3v00/rc-max); that number no
+    # longer describes anything now that the extrapolated path it qualified
+    # does not exist.
+    "worst_setup_slack_through_violators_ns": None,
+    # The violating instances' share of total power. Zero: there are no
+    # violating instances left to own a share of it. Was 1.84 % (worst
+    # corner ff_125C_3v60/rc-max) before #240.
+    "power_share_max": 0.0,
+    # The library's sibling max_capacitance check. Zero at every corner,
+    # confirming #237's reading that both checks were the same drive-strength
+    # symptom: fixing max_transition's cause fixed this one too. Was 6
+    # (worst corner ff_125C_3v60/rc-max) before #240.
+    "max_capacitance_violations": 0,
+    # The design's worst net fanout, in load pins. Measured from topology
+    # rather than checked against the library, which declares no max_fanout
+    # of any kind -- see `_tcl` below. This number is topology, not a
+    # design-rule check, so it moved even though it was never the lever:
+    # #240's buffering reshaped `rst_n` (the pre-#240 worst-fanout net, 201
+    # loads) along with the four originally-violating nets, and the design's
+    # new worst-fanout net is `u_interface/_0862_` at 33 loads. `set_max_fanout`
+    # is still not wanted -- see `layout/digital/build.py`'s own comment.
+    "max_net_fanout": 33,
 }
 
 #: Fractional tolerance for the numeric gates above -- the same 1 % and the
@@ -665,7 +687,19 @@ def check(result: dict) -> list[str]:
         row["worst_setup_slack_through_violators_ns"] for row in result["corners"]
         if row["worst_setup_slack_through_violators_ns"] is not None
     ]
-    if not through:
+    if RECORDED["worst_setup_slack_through_violators_ns"] is None:
+        # #240's clean state: RECORDED expects no violator to have a timing
+        # path through it at all. If one now exists, that is a real violating
+        # net the "unexpected" check above will already have named; restated
+        # here so this specific gate does not silently pass a regression too.
+        if through:
+            fails.append(
+                f"a max-transition-violating pin now has a timing path through "
+                f"it (worst {min(through):.4f} ns setup slack), though RECORDED "
+                "expects none -- re-read the measurement before trusting "
+                "section 2a's 'fully resolved' reading"
+            )
+    elif not through:
         fails.append(
             "no corner reports a timing path through a violating pin -- the "
             "residual-risk bound section 2a states cannot be re-derived"
@@ -771,10 +805,15 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    print("\nOK: section 2a's max-transition verdict still holds -- the "
-          f"violation is confined to {len(RECORDED['violating_nets'])} nets, "
-          "no trunk net is involved, and every path through a violating pin "
-          "still closes setup.")
+    if RECORDED["violating_nets"]:
+        print("\nOK: section 2a's max-transition verdict still holds -- the "
+              f"violation is confined to {len(RECORDED['violating_nets'])} nets, "
+              "no trunk net is involved, and every path through a violating pin "
+              "still closes setup.")
+    else:
+        print("\nOK: section 2a's max-transition verdict still holds -- zero "
+              "max_transition/max_capacitance violations at all fifteen "
+              "corners, per #240's constraint.")
     return 0
 
 

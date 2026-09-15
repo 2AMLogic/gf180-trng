@@ -6,30 +6,31 @@ T1 checklist items **5** (full corner verification) and **8**
 one-line reason: *no static timing analysis exists at all, no real-layout
 area, and no power across corners.* Also carries [#233]'s answer to
 [DR-0025]'s deferred question about the six inter-region trunks that land on
-this block's own pins — see §2a, including the pre-existing max-transition
-violation ([#237]) that asking it uncovered.
+this block's own pins — see §2a, including the max-transition violation
+([#237]) that asking it uncovered and [#240] closed (2026-09-15).
 
 All three now exist, from one measurement pass over one fixed piece of
 geometry — the committed routed DEF `layout/digital/trng_top.def` ([#111],
-[#171]), re-timed at fifteen corners with real extracted parasitics. Four
-findings:
+[#171], [#240]), re-timed at fifteen corners with real extracted parasitics.
+Four findings:
 
 1. **Timing closes at every corner of the set**, with the worst setup slack
-   +21.94 ns against the 50 ns constraint it was built to, binding at
-   `ss_125C_3v00` with `max` interconnect. Fmax floor **35.63 MHz**, 1.8× the
-   20 MHz the design was implemented at and 35.6× [DR-0003]'s ratified > 1 MHz
-   raw rate. Hold closes everywhere too, worst +0.712 ns at `ff_n40C_3v60`
+   +24.88 ns against the 50 ns constraint it was built to, binding at
+   `ss_125C_3v00` with `max` interconnect. Fmax floor **39.80 MHz**, 2.0× the
+   20 MHz the design was implemented at and 39.8× [DR-0003]'s ratified > 1 MHz
+   raw rate. Hold closes everywhere too, worst +0.707 ns at `ff_n40C_3v60`
    with `min` interconnect.
-2. **The real placed standard-cell area is 116 001 µm²** — **1.56×** the
-   pre-synthesis inventory estimate of 74 485 µm², and **232 %** of the whole
-   `< 0.05 mm²` README row on digital cell area alone. The 1.56× splits
-   cleanly: ×1.21 from cell count/mix, ×1.26 from 9-track rather than 7-track
+2. **The real placed standard-cell area is 118 975 µm²** — **1.60×** the
+   pre-synthesis inventory estimate of 74 485 µm², and **238 %** of the whole
+   `< 0.05 mm²` README row on digital cell area alone. The 1.60× splits
+   cleanly: ×1.24 from cell count/mix, ×1.26 from 9-track rather than 7-track
    rows — plus a small, new third term: [#171]'s tapcell/endcap/filler
    population, priced by OpenROAD's own `report_design_area` but invisible to
-   that per-cell decomposition (§3).
+   that per-cell decomposition (§3). [#240]'s buffering (below) accounts for
+   28 of the logical instances in this figure.
 3. **Measured power is 11–14× the library-based estimate** at the same corner,
    the same 1 MHz rate and the same switching-activity assumption. **Leakage
-   no longer tracks the estimate as tightly as it did**: 0.89–3.76× of it,
+   no longer tracks the estimate as tightly as it did**: 0.92–3.75× of it,
    against 0.63–1.32× before [#171] added a tapcell/endcap/filler population
    to the DEF — real cells with their own leakage that the estimate was never
    asked to price, and whose *relative* contribution is largest exactly where
@@ -38,26 +39,28 @@ findings:
    synthesis existed: it prices a flip-flop's clock-edge internal energy at
    the *data* activity, and a flop pays that energy on every clock edge
    whether its data moves or not.
-4. **The six digital-facing inter-region trunks ([#233]) are not the
-   problem — but something else is.** The trunks' own Metal4 RC, stated as a
-   `set_input_transition` on `clk`/`rst_n`/`raw_bit`/`raw_valid`/
-   `ring_bit[0]`/`ring_bit[1]` and derived from the as-built geometry, is
-   2.1–8.2 **ps** against a library `max_transition` of 4.4–13.2 ns: **none
-   of the six violates at any of the fifteen corners**, with ≥ 535× margin
-   at the tightest of them, and neither Fmax nor worst slack moves
-   measurably (§2a). Asking that question for the first time, however, also
-   asked OpenSTA for the design's *own* max-transition check — and **9 of
-   the 15 corners violate it, at 33–94 internal pins, worst −1.59 ns at
-   `tt_025C_3v30`/`max`** (§2a). That is pre-existing, present with no
-   interface load at all, and on none of the six trunk nets. [#237] then
-   measured it per net and per corner: **four high-fanout nets** across
-   `u_interface` and `u_conditioner`, carrying ≤ 1.84 % of total power — but
-   the design's critical path passes through them at every violating corner,
-   so §2's +21.94 ns margin is a margin on an *extrapolated* path. The
-   verdict is **constrain, but the flow cannot state the constraint today**
-   (§2a): it is accepted, bounded, and gated in both directions rather than
-   fixed, with [klayout-tools#1709][klt1709] upstream and [#240] the
-   follow-up here.
+4. **The six digital-facing inter-region trunks ([#233]) were never the
+   problem — and the something else that was is now fixed.** The trunks' own
+   Metal4 RC, stated as a `set_input_transition` on
+   `clk`/`rst_n`/`raw_bit`/`raw_valid`/`ring_bit[0]`/`ring_bit[1]` and derived
+   from the as-built geometry, is 2.1–8.2 **ps** against a library
+   `max_transition` of 4.4–13.2 ns: **none of the six violates at any of the
+   fifteen corners**, with ≥ 535× margin at the tightest of them, and neither
+   Fmax nor worst slack moves measurably (§2a). Asking that question for the
+   first time, however, also asked OpenSTA for the design's *own*
+   max-transition check — and, on the DEF committed before [#240], **9 of the
+   15 corners violated it, at 33–94 internal pins, worst −1.59 ns at
+   `tt_025C_3v30`/`max`** (§2a). That was pre-existing, present with no
+   interface load at all, and on none of the six trunk nets. [#237] measured
+   it per net and per corner: **four high-fanout nets** across `u_interface`
+   and `u_conditioner`, carrying ≤ 1.84 % of total power — but the design's
+   critical path passed through them at every violating corner, so §2's old
+   +21.94 ns margin was a margin on an *extrapolated* path. [#240] stated
+   `max_transition_ns`/`max_capacitance_pf` to `layout/digital/build.py`
+   once [klayout-tools#1860][klt1860] made that expressible, rebuilt, and
+   the re-minted fifteen-corner family reports **zero** `max_transition`/
+   `max_capacitance` violations at every corner — closed, not merely bounded
+   (§2a).
 
 **This document is an ordinary summary, not evidence.** Every number below
 cites the `sim/records/` stem family that produced it or the committed
@@ -81,7 +84,7 @@ number to be decided against instead of an estimate.
 
 | | |
 |---|---|
-| DUT | `layout/digital/trng_top.def` — the committed routed DEF from [#111]/[#172], re-placed and re-CTS'd by [#171] to add the vddd/vss power delivery network (tapcells, endcaps and filler), unchanged and never re-placed by this sweep. 8638 DEF `COMPONENTS`: 2502 logical instances + 6136 tapcell/endcap/filler cells, all `gf180mcu_fd_sc_mcu9t5v0` |
+| DUT | `layout/digital/trng_top.def` — the committed routed DEF from [#111]/[#172], re-placed and re-CTS'd by [#171] to add the vddd/vss power delivery network (tapcells, endcaps and filler), then rebuilt again by [#240] (2026-09-15) to state `max_transition_ns`/`max_capacitance_pf` to `repair_design` and clear the residual §2a describes. 8594 DEF `COMPONENTS`: 2533 logical instances + 6061 tapcell/endcap/filler cells, all `gf180mcu_fd_sc_mcu9t5v0` |
 | Driver | `sim/tb/digital-sta-power/run_sta.py` (gate-level testbench, [DR-0021]) |
 | Engine | OpenSTA + OpenRCX inside OpenROAD `26Q3-1278-g4421880472` ([#145]'s original pass; [#233]'s re-run below used `26Q3-1510-g6cb3f2b704`, an unrelated later OpenROAD build — see each record's own `tool:` field) |
 | PDK | `gf180mcuD @ c6d73a35f524070e85faff4a6a9eef49553ebc2b` |
@@ -89,7 +92,7 @@ number to be decided against instead of an estimate.
 | Clock | `clk`, **propagated** through the CTS-built tree in the DEF (not ideal), 50 ns / 20 MHz — the P&R run's own constraint |
 | Interface load | [#233]: `set_input_transition` on the six `digital`-facing inter-region trunks, derived from `layout/floorplan/reports/interregion.json` at run time — permanent, every run (§2a). Trunk-only Metal4 arithmetic; per [#232]/[#242] and §8.5 of [the full-chip PEX characterization](characterization-post-layout-extracted.md), this is a **floor**, not the measured load — see §2a's own caveat below |
 | Grid | 5 liberty decks × 3 interconnect decks = **15 corners**, one record each |
-| Records | `sim/records/2026-09-12-digital-sta-power-{01..15}.md` ([#233]: interface load added, max-transition checks added, nothing else), superseding `sim/records/2026-08-18-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#233] SDC they name — §2a), which itself superseded `sim/records/2026-08-17-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#171] DEF they name — [#183]) |
+| Records | `sim/records/2026-09-15-digital-sta-power-{01..15}.md` ([#240]: rebuilt DEF, `max_transition`/`max_capacitance` violations cleared, nothing else), superseding `sim/records/2026-09-12-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#240] DEF they name — §2a), which itself superseded `sim/records/2026-08-18-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#233] SDC they name — §2a), which itself superseded `sim/records/2026-08-17-digital-sta-power-{01..15}.md` (still committed, still accurate about the pre-[#171] DEF they name — [#183]) |
 
 The liberty decks are the five `gf180mcu_fd_sc_mcu9t5v0` characterises in the
 block's ratified 3.3 V family: `ss_125C_3v00`, `ss_n40C_3v00`, `tt_025C_3v30`,
@@ -124,29 +127,36 @@ DEF/netlist) and [klayout-tools#1100][klt1100] (parasitic-corner selection).
 
 ---
 
-## 2. Timing: it closes everywhere, and Fmax has a floor of 35.6 MHz
+## 2. Timing: it closes everywhere, and Fmax has a floor of 39.8 MHz
+
+Status: re-measured against the [#240] rebuild (2026-09-15); see §2a for why
+the DEF changed and §3/§4 for the area/power consequences.
 
 | corner | setup slack | hold slack | clock skew | Fmax |
 |---|---:|---:|---:|---:|
-| **`ss_125C_3v00` / `max`** — setup binds | **+21.935 ns** | +2.440 ns | 0.201 ns | **35.63 MHz** |
-| `ss_125C_3v00` / `nom` | +22.898 ns | +2.431 ns | 0.171 ns | 36.90 MHz |
-| `ss_125C_3v00` / `min` | +23.686 ns | +2.425 ns | 0.153 ns | 38.00 MHz |
-| `ss_n40C_3v00` / `max` | +30.925 ns | +1.699 ns | 0.151 ns | 52.42 MHz |
-| `ss_n40C_3v00` / `nom` | +31.595 ns | +1.693 ns | 0.128 ns | 54.33 MHz |
-| `ss_n40C_3v00` / `min` | +32.143 ns | +1.688 ns | 0.113 ns | 56.00 MHz |
-| `tt_025C_3v30` / `max` | +35.853 ns | +1.234 ns | 0.113 ns | 70.69 MHz |
-| `tt_025C_3v30` / `nom` | +36.355 ns | +1.230 ns | 0.096 ns | 73.29 MHz |
-| `tt_025C_3v30` / `min` | +36.763 ns | +1.226 ns | 0.084 ns | 75.54 MHz |
-| `ff_125C_3v60` / `max` | +37.876 ns | +1.029 ns | 0.094 ns | 82.48 MHz |
-| `ff_125C_3v60` / `nom` | +38.301 ns | +1.026 ns | 0.079 ns | 85.47 MHz |
-| `ff_125C_3v60` / `min` | +38.646 ns | +1.022 ns | 0.070 ns | 88.07 MHz |
-| `ff_n40C_3v60` / `max` | +41.788 ns | +0.717 ns | 0.071 ns | 121.76 MHz |
-| `ff_n40C_3v60` / `nom` | +42.084 ns | +0.714 ns | 0.060 ns | 126.32 MHz |
-| **`ff_n40C_3v60` / `min`** — hold binds | +42.321 ns | **+0.712 ns** | 0.054 ns | 130.22 MHz |
+| **`ss_125C_3v00` / `max`** — setup binds | **+24.876 ns** | +2.422 ns | −0.142 ns | **39.80 MHz** |
+| `ss_125C_3v00` / `nom` | +25.503 ns | +2.416 ns | −0.122 ns | 40.82 MHz |
+| `ss_125C_3v00` / `min` | +26.018 ns | +2.412 ns | −0.105 ns | 41.70 MHz |
+| `ss_n40C_3v00` / `max` | +32.895 ns | +1.684 ns | −0.105 ns | 58.46 MHz |
+| `ss_n40C_3v00` / `nom` | +33.416 ns | +1.680 ns | −0.089 ns | 60.30 MHz |
+| `ss_n40C_3v00` / `min` | +33.772 ns | +1.678 ns | −0.077 ns | 61.62 MHz |
+| `tt_025C_3v30` / `max` | +37.331 ns | +1.223 ns | −0.078 ns | 78.93 MHz |
+| `tt_025C_3v30` / `nom` | +37.657 ns | +1.220 ns | −0.067 ns | 81.01 MHz |
+| `tt_025C_3v30` / `min` | +37.924 ns | +1.218 ns | −0.058 ns | 82.81 MHz |
+| `ff_125C_3v60` / `max` | +39.013 ns | +1.020 ns | −0.065 ns | 91.02 MHz |
+| `ff_125C_3v60` / `nom` | +39.301 ns | +1.018 ns | −0.056 ns | 93.46 MHz |
+| `ff_125C_3v60` / `min` | +39.537 ns | +1.016 ns | −0.048 ns | 95.58 MHz |
+| `ff_n40C_3v60` / `max` | +42.616 ns | +0.710 ns | −0.049 ns | 135.42 MHz |
+| `ff_n40C_3v60` / `nom` | +42.811 ns | +0.709 ns | −0.042 ns | 139.11 MHz |
+| **`ff_n40C_3v60` / `min`** — hold binds | +42.972 ns | **+0.707 ns** | −0.036 ns | 142.27 MHz |
 
 Total negative slack is **0 ns on both the setup and the hold side at all
 fifteen corners**, so those two columns are the whole verdict: there is no
-violating path anywhere in the set, not merely a positive worst case.
+violating path anywhere in the set, not merely a positive worst case. Clock
+skew is negative at every corner of this rebuild (it was positive at every
+corner of the pre-[#240] DEF) — a property of which specific flops the CTS
+tree the rebuild produced favors, not a regression: skew this small next to
+tens of nanoseconds of setup margin does not move any verdict on this page.
 
 **The two binding corners are different corners, and always will be.** Setup
 binds slow/hot/low-supply with the heaviest wires (`ss_125C_3v00`/`max`);
@@ -160,41 +170,46 @@ entropy-binding corners (`sim/characterization-worst-corner-and-mc-mismatch.md`
 the clock period for the smallest one at which worst setup slack is still
 ≥ 0, to 1 ps. The conventional `1/(T − WNS)` extrapolation (what the P&R
 flow's own `report_fmax_metric` reports) agrees with the bisection to
-**0.0082 %** worst case over the fifteen corners — which is the evidence that
+**0.0070 %** worst case over the fifteen corners — which is the evidence that
 licenses quoting either. `--check` fails if that agreement ever exceeds 1 %,
 because a design whose slack is no longer linear in the clock period is one
 where the extrapolated number has quietly stopped meaning anything.
 
-The Fmax spread over the set is **35.63 → 130.22 MHz, 3.65×**, and the
-interconnect axis alone moves it 6.2 % at the slow corner (38.00 → 35.63 MHz)
+The Fmax spread over the set is **39.80 → 142.27 MHz, 3.57×**, and the
+interconnect axis alone moves it 4.6 % at the slow corner (41.70 → 39.80 MHz)
 against the liberty axis's 3.4×. Wires matter here; devices matter much more.
 
 ### Reconciling with the place-and-route report
 
-`layout/digital/reports/place_and_route.json` — rebuilt by [#171] alongside
-the DEF, so this is the post-PDN report — reports **+27.7656 ns** at
-`ss_125C_3v00`, and this sweep reports **+22.898 ns** at the same liberty
-corner with `nom` interconnect. Both are right; they are different
-measurements, and each record carries the intermediate figure that separates
-them:
+`layout/digital/reports/place_and_route.json` — rebuilt by [#240] alongside
+the DEF — reports **+28.434 ns** at `ss_125C_3v00` (`worst_slack_ns`, the
+single-corner figure at the request's own corner —
+`layout/digital/README.md` explains why that is a different metric from the
+same report's swept `worst_setup_slack_ns`), and this sweep reports
+**+25.503 ns** at the same liberty corner with `nom` interconnect. Both are
+right; they are different measurements, and each record carries the
+intermediate figure that separates them:
 
 | | slack at `ss_125C_3v00` |
 |---|---:|
-| P&R report — ideal clock, global-routing-*estimated* parasitics | +27.766 ns |
-| this sweep, ideal clock, OpenRCX-*extracted* parasitics (`worst_setup_slack_ideal_clock_ns`) | +22.998 ns |
-| this sweep, propagated clock, extracted parasitics (the headline) | +22.898 ns |
+| P&R report — ideal clock, global-routing-*estimated* parasitics | +28.434 ns |
+| this sweep, ideal clock, OpenRCX-*extracted* parasitics (`worst_setup_slack_ideal_clock_ns`) | +25.535 ns |
+| this sweep, propagated clock, extracted parasitics (the headline) | +25.503 ns |
 
-So of the 4.87 ns difference, **4.77 ns is extraction versus estimation** and
-**0.100 ns is the real clock tree** (`clock_tree_cost_ns`, the largest such
-cost in the set is 0.119 ns). Real extraction is materially more pessimistic
-than the router's own RC estimate at this corner, and the CTS tree is nearly
-free — which is worth knowing before anyone tries to explain a slack
-difference by the clock model. Both terms moved from the pre-[#171]
-measurement (which found 3.83 ns / 0.145 ns at the same corner) — [#171]'s
-re-run is a genuinely different placement and clock tree, not the same layout
-with rails added (`layout/digital/README.md`'s "The power distribution
-network" section), so a shift here is expected and is not read as a
-regression.
+So of the 2.930 ns difference, **2.899 ns is extraction versus estimation**
+and **0.031 ns is the real clock tree** (`clock_tree_cost_ns`, the largest
+such cost in the set is 0.062 ns). Real extraction is materially more
+pessimistic than the router's own RC estimate at this corner, and the CTS
+tree is nearly free — which is worth knowing before anyone tries to explain a
+slack difference by the clock model. Both terms moved from the pre-[#240]
+measurement (which found 4.768 ns / 0.100 ns at the same corner,
+2026-09-12 family, against that family's own +27.766 ns P&R-report figure) —
+[#240]'s rebuild adds buffering on top of the same placement (§2a, §3), not a
+fresh placement from scratch, so a shift here is expected and is not read as
+a regression. [#171]'s own earlier re-run (a genuinely different placement
+and clock tree, not the same layout with rails added — `layout/digital/
+README.md`'s "The power distribution network" section) is a deeper layer of
+the same history and is not re-derived here.
 
 ### What is not timed
 
@@ -318,6 +333,16 @@ fails if any of it stops holding.
 
 ### Result: no violation, ≥ 536× margin, no measurable slack cost
 
+Status: the controlled with/without comparison below is against the DEF
+committed at the time ([#233], pre-[#240]) — a fixed binary and a fixed DEF
+is the point of a controlled comparison, and the trunk-load figures
+(ports/transition/margin/violations) are unaffected by [#240]'s rebuild
+either way (they are geometry- and library-derived, not a function of
+internal buffering). The Fmax-floor/setup/hold row is quoted as it read
+*then*; §2 carries what those two figures read today (39.80 MHz /
++24.876 ns / +0.707 ns, post-[#240]) — this table is not the place to look
+for the current headline number.
+
 | | value |
 |---|---|
 | Ports priced this way | **6 of 6**, at all 15 corners (`interface_load_ports`) |
@@ -325,8 +350,8 @@ fails if any of it stops holding.
 | Library `max_transition` | 13.2 ns (`ss_125C_3v00`), 11.2, 6.0, 5.2, **4.4 ns** (`ff_n40C_3v60`) |
 | Margin at the tightest deck | **4.3918 ns — a factor of 536** (`interface_load_transition_margin_ns`) |
 | Trunk ports violating it | **0 of 6, at every one of the 15 corners** (`interface_load_max_slew_violations`) |
-| Fmax floor | **35.63 MHz, unmoved** (`ss_125C_3v00`/`max`) |
-| Worst setup / hold slack | **+21.935 ns / +0.712 ns, unmoved** |
+| Fmax floor (pre-[#240] DEF) | **35.63 MHz, unmoved by turning the interface load on** (`ss_125C_3v00`/`max`) |
+| Worst setup / hold slack (pre-[#240] DEF) | **+21.935 ns / +0.712 ns, unmoved by turning the interface load on** |
 
 The slack columns cannot move much, and the reason is structural rather
 than lucky: `raw_bit`/`raw_valid`/`ring_bit[0]`/`ring_bit[1]` carry no
@@ -353,6 +378,12 @@ corner, one DEF.
 
 ### What asking the question uncovered: 9 of 15 corners already violate `max_transition`
 
+**Status: fixed by [#240] (2026-09-15) — this subsection is history, kept for
+how the finding was made.** The DEF and table below are the pre-fix ones
+[#233]/[#237] measured; "### The verdict" further down describes the current,
+post-fix state and is the section to read for what is true of the design
+today.
+
 Answering [#233]'s third acceptance criterion meant asking OpenSTA for the
 library's own max-transition check (`report_check_types -max_slew`) for the
 first time in this repository. The six trunk ports are clean. The design is
@@ -377,69 +408,94 @@ about before. Per [#233]'s fourth acceptance criterion it was written up with
 its own follow-up, [#237], rather than absorbed here; the next subsection is
 that follow-up's answer.
 
-### The verdict ([#237]): constrain — and the flow cannot say it yet
+### The verdict ([#237], fixed by [#240]): constrained, rebuilt, re-verified — zero violations at every corner
+
+**Status (2026-09-15).** [#237] measured the finding below and could not act
+on it: `klt place-and-route`'s request contract had no design-rule constraint
+field at all. [klayout-tools#1860][klt1860] added
+`max_transition_ns`/`max_capacitance_pf`/`max_fanout` to that contract on
+2026-09-15, and [#240] used it the same day: `layout/digital/build.py`'s
+`CONSTRAINTS` now states `max_transition_ns: 8.0` and
+`max_capacitance_pf: 0.35`, the DEF was rebuilt, and the full fifteen-corner
+`digital-sta-power` family was re-minted against it
+(`sim/records/2026-09-15-digital-sta-power-{01..15}.md`, superseding
+`2026-09-12` for [DR-0021]'s "latest per corner wins" rule — the
+`2026-09-12` records stay committed and still accurately describe the DEF
+they name). The result: **`max_slew_violations` is 0 and
+`max_capacitance_violations` is 0 at all fifteen corners** — not a bounded
+residual, a closed one. `sim/tb/digital-sta-power/max_transition_probe.py
+--check` and `sim/tools/digital_corner_characterization.py --check` both
+gate this state now, the same way they gated the residual before.
 
 A violation count says which corners are unhappy and nothing else. Deciding
 what to do needed four more things — which nets, whether the reported timing
 and power ride on them, what it costs, and what a constraint would have to
-say — so [#237] measured them.
+say — so [#237] measured them, and that measurement is what [#240] acted on.
 `sim/tb/digital-sta-power/max_transition_probe.py` is that measurement: one
-OpenROAD session per corner over the same committed DEF, the same 50 ns
+OpenROAD session per corner over the committed DEF, the same 50 ns
 constraint and the same six trunk `set_input_transition` lines the sweep
 itself uses, reproducing every record's `max_slew_slack_ns` to the digit and
-then decomposing it. `--check` gates the findings below.
+then decomposing it.
 
-**One structure, four nets — and not all of it is in `u_interface`.** Every
-violating pin at every corner resolves to one of four nets, each a
-single-cell driver into a large load-pin count:
+**One structure, four nets — and not all of it was in `u_interface`.** Every
+violating pin, at every corner of the *pre-fix* DEF, resolved to one of four
+nets, each a single-cell driver into a large load-pin count:
 
-| net | pins on net | driver | corners it violates at | worst violating pins |
+| net | pins on net | driver | corners it violated at (pre-fix) | worst violating pins (pre-fix) |
 |---|---:|---|---:|---:|
 | `u_interface/_0999_` | 34 | `u_interface/_1760_/Z` (`or2_1`) | 2 | 34 |
 | `u_interface/_1190_` | 33 | `u_interface/_2212_/ZN` (`nor2_2`) | **9** | 33 |
 | `u_conditioner/_095_` | 14 | `u_conditioner/_209_/ZN` (`xnor2_1`) | 2 | 14 |
 | `u_interface/_0606_` | 13 | `u_interface/_1304_/ZN` (`nor2_1`) | 7 | 13 |
 
-`u_interface/_1190_` — the `mux2_1` select net [#237] traced by hand — is the
-one that violates everywhere; the other three join it as the corner tightens,
-and the 94-pin worst corners are exactly 34 + 33 + 14 + 13. [#237]'s own
-issue text called the violators "internal to `u_interface`", which the
-measurement corrects: `u_conditioner/_095_` is not. What the four have in
-common is not a sub-block but a shape — a low-drive cell into a wide fanout —
-which is a drive-strength outcome of synthesis + place-and-route, not of any
-spec row or RTL structure.
+`u_interface/_1190_` — the `mux2_1` select net [#237] traced by hand — was the
+one that violated everywhere; the other three joined it as the corner
+tightened, and the 94-pin worst corners were exactly 34 + 33 + 14 + 13.
+[#237]'s own issue text called the violators "internal to `u_interface`",
+which the measurement corrected: `u_conditioner/_095_` was not. What the four
+had in common was not a sub-block but a shape — a low-drive cell into a wide
+fanout — which is a drive-strength outcome of synthesis + place-and-route,
+not of any spec row or RTL structure. None of the four violates
+`max_transition` anywhere in the rebuilt DEF.
 
-**The design's critical path *is* an extrapolated path.** At all nine
-violating corners, the worst setup slack of any path passing through a
-violating pin (`report_checks -through`, over the whole violator set) equals
-the design-wide worst setup slack to every digit — including the +21.935 ns
-at `ss_125C_3v00`/`rc-max` that §2 quotes as this design's timing margin. So
-the honest reading of that margin is not "21.9 ns of slack on a path we
-understand"; it is "21.9 ns of slack on a path whose cell delays are
-looked up outside the range the library characterises". It is still a large
-margin — a delay error would have to consume 44 % of the 50 ns period to
-close it — but the qualifier belongs on the number.
+**The design's critical path *was* an extrapolated path — and no longer is.**
+At all nine pre-fix violating corners, the worst setup slack of any path
+passing through a violating pin (`report_checks -through`, over the whole
+violator set) equalled the design-wide worst setup slack to every digit —
+including the +21.935 ns at `ss_125C_3v00`/`rc-max` that §2 used to quote as
+this design's timing margin. So the honest reading of that margin used to be
+not "21.9 ns of slack on a path we understand" but "21.9 ns of slack on a
+path whose cell delays are looked up outside the range the library
+characterises". Post-fix, no pin violates `max_transition` anywhere, so there
+is no violator for a path to pass through and no qualifier left to carry —
+§2's current +24.876 ns margin (rebuilt DEF, ss_125C_3v00/rc-max) is an
+ordinary margin on a path inside the library's characterised range.
 
-**The cost, priced.** The instances owning a violating pin (plus the four
-drivers) carry at most **1.84 %** of total power (`ff_125C_3v60`/`rc-max`),
-so the extrapolated internal-energy tables cannot move §4's figures
-materially. The same probe finds the library's sibling `max_capacitance`
-check violated too, at **11 of 15 corners** (worst 6 pins, −0.154 pF against
-a 0.373 pF limit at `ff_125C_3v60`/`rc-max`) — the same four nets, the same
-cause, and equally never asked about before.
+**The cost, priced — before the fix.** The instances owning a violating pin
+(plus the four drivers) carried at most **1.84 %** of total power
+(`ff_125C_3v60`/`rc-max`) on the pre-fix DEF, so the extrapolated
+internal-energy tables could not have moved §4's figures materially even
+unfixed. The same probe found the library's sibling `max_capacitance` check
+violated too, at **11 of 15 corners** (worst 6 pins, −0.154 pF against a
+0.373 pF limit at `ff_125C_3v60`/`rc-max`) — the same four nets, the same
+cause, and equally never asked about before [#237]. Both checks are 0
+violations at every corner on the rebuilt DEF.
 
-**What a constraint would have to say.** `layout/digital/build.py` reads
-exactly one liberty deck (`ss_125C_3v00`), so OpenROAD's `repair_design` —
-which the flow already runs after global placement, and which exists to fix
-precisely this — only ever sees that deck's own 13.2 ns limit. Meeting it is
-not enough, because the limit and the slew do not scale together across the
-shipped decks: the probe derives, from the measured per-corner slews, that
+**What the constraint says, and what it took to find the right number.**
+`layout/digital/build.py` reads exactly one liberty deck (`ss_125C_3v00`), so
+OpenROAD's `repair_design` — which the flow already runs after global
+placement, and which exists to fix precisely this — only ever sees that
+deck's own 13.2 ns limit stated on top of whatever `max_transition_ns` this
+script adds. Meeting the library's own limit would not have been enough,
+because the limit and the slew do not scale together across the shipped
+decks: the probe derived, from the pre-fix measured per-corner slews, that
 the slew at `ss_125C_3v00` would have to be held to **11.21 ns** for every
-corner to come out clean, binding at `ff_125C_3v60`/`rc-min`. That is 84.9 %
+corner to come out clean, binding at `ff_125C_3v60`/`rc-min`. That was 84.9 %
 of the implementation deck's own limit — a derived, guard-banded number, not
-a library constant.
+a library constant, and (per [#240]'s own test plan) a number to verify
+against, not assume:
 
-| corner | limit | worst slew | slew ÷ P&R corner | required P&R-corner slew |
+| corner | limit | worst slew (pre-fix) | slew ÷ P&R corner | required P&R-corner slew |
 |---|---:|---:|---:|---:|
 | `ss_125C_3v00`/`min,nom,max` | 13.2 ns | 13.04 … 14.65 ns | 1.000 | 13.20 ns |
 | `ss_n40C_3v00`/`min,nom,max` | 11.2 ns | 8.41 … 9.46 ns | 0.645 … 0.646 | 17.33 … 17.36 ns |
@@ -447,71 +503,82 @@ a library constant.
 | `ff_125C_3v60`/`min,nom,max` | 5.2 ns | 6.05 … 6.79 ns | 0.463 … 0.464 | **11.21 … 11.22 ns** |
 | `ff_n40C_3v60`/`min,nom,max` | 4.4 ns | 3.95 … 4.42 ns | 0.302 … 0.303 | 14.53 … 14.59 ns |
 
-**The verdict: constrain — and it cannot be stated today.** The right
-treatment is a `set_max_transition` at the implementation corner, below the
-11.21 ns derived above (`repair_design` optimises against
-placement-estimated parasitics, not the post-route extraction this table is
-built from, so the real run needs margin under that number and then has to
-verify rather than assume). `klt place-and-route`'s request contract exposes
-exactly two constraint fields, `clock_port` and `clock_period_ns`, with no
-SDC passthrough and no design-rule constraint of any kind — the optimiser
-that would act on it is in the generated flow and cannot be aimed at
-anything. Filed generically upstream as [klayout-tools#1709][klt1709] — whose
-third option, a multi-corner `repair_design`, would remove the need to derive
-a scalar by hand at all; [#240] is the follow-up here that states the
-constraint, rebuilds and re-mints once it lands.
-`layout/digital/build.py`'s `CONSTRAINTS` block carries the same note at the
-point of use.
+[#240] took two rebuilds, not one, because the "verify, don't assume" caveat
+above turned out to matter: a first attempt at `max_transition_ns: 10.0`
+(below the 11.21 ns derived above by roughly the same margin, and a
+reasonable guess given `repair_design` optimises against placement-estimated
+parasitics rather than the post-route extraction that 11.21 ns figure is
+built from) was re-verified against a full re-mint of the fifteen-corner
+family rather than trusted, and the re-mint found it was not enough:
+`max_slew_violations` was still 13 at two corners
+(`tt_025C_3v30`/`rc-max`, `ff_125C_3v60`/`rc-max`). Tightening to
+`max_transition_ns: 8.0` (60.6 % of the implementation deck's own 13.2 ns
+limit) and rebuilding a second time cleared it everywhere.
+`max_capacitance_pf: 0.35` was stated alongside it but is not shown to be the
+lever that cleared `max_capacitance`'s violations: the library's own per-pin
+limit already measures below 0.35 pF at every corner of the rebuilt DEF, so
+it is the same slew-driven buffering that clears both checks, as a byproduct
+of one drive-strength fix rather than two independent ones.
+`layout/digital/build.py`'s `CONSTRAINTS` comment carries the same account,
+in full, at the point of use.
 
-**Nor can the synthesis stage say it instead.** [#237] asks about
+**Nor could the synthesis stage have said it instead.** [#237] asked about
 "synthesis/P&R time", so `design/synth.py`'s side was checked too, and it is
-the same answer for the same reason: `klt synthesize`'s
-`request.constraints` reads exactly one field, `clock_period_ns`, which it
-turns into ABC's `-D` picosecond delay target. The `abc -constr` file the
-command writes is two fixed lines (`set_driving_cell` / `set_load`) built
-from `klt`'s own per-library table, not from anything the request can
-influence — so there is no synthesis-side surface for a design-rule
-constraint either. That is the correct place for it to be missing, in any
-case: the violation is created by drive-strength and placement decisions
-that the mapped netlist does not fix, and `repair_design` after global
-placement is where the flow already has the information to repair it.
+the same answer for the same reason, unchanged by [#240] (which only touches
+`place-and-route`): `klt synthesize`'s `request.constraints` reads exactly
+one field, `clock_period_ns`, which it turns into ABC's `-D` picosecond delay
+target. The `abc -constr` file the command writes is two fixed lines
+(`set_driving_cell` / `set_load`) built from `klt`'s own per-library table,
+not from anything the request can influence — so there is no synthesis-side
+surface for a design-rule constraint either. That is the correct place for
+it to be missing, in any case: the violation was created by drive-strength
+and placement decisions that the mapped netlist does not fix, and
+`repair_design` after global placement is where the flow has the information
+to repair it.
 
-**`set_max_fanout` is rejected on its own merits, not on availability.**
-`gf180mcu_fd_sc_mcu9t5v0` declares no `default_max_fanout` and no per-pin
-`max_fanout` anywhere, so there is no library limit to enforce and
-`sta::max_fanout_check_limit` returns the 1e30 sentinel. More to the point,
-fanout does not predict this violation: the design's highest-fanout net is
-`rst_n` at **201 load pins** — nearly six times the largest of the four —
-and it is clean at every corner, while a 13-load net violates at seven
-(77 nets carry ≥ 16 loads in all). What binds is load
-capacitance against drive strength, which is what `max_transition` already
-measures. (`sta::max_fanout_violation_count` is also not safe to call — it
-takes OpenROAD down with SIGSEGV inside `sta::CheckFanouts::check` on this
-design at every corner, which is why the probe walks the topology instead;
-noted in the upstream issue.)
+**`set_max_fanout` was rejected on its own merits, not on availability — and
+[klayout-tools#1860][klt1860] shipped it anyway, unused here.**
+`gf180mcu_fd_sc_mcu9t5v0` declares
+no `default_max_fanout` and no per-pin `max_fanout` anywhere, so there is no
+library limit to enforce and `sta::max_fanout_check_limit` returns the 1e30
+sentinel. More to the point, fanout did not predict this violation on the
+pre-fix DEF: its highest-fanout net was `rst_n` at **201 load pins** — nearly
+six times the largest of the four offenders — and it was clean at every
+corner, while a 13-load net violated at seven (77 nets carried ≥ 16 loads in
+all). What bound was load capacitance against drive strength, which is what
+`max_transition`/`max_capacitance` measure directly, and `layout/digital/
+build.py` does not set `max_fanout` even though
+[klayout-tools#1860][klt1860] added the field.
+(`sta::max_fanout_violation_count` is also still not safe to call — it takes
+OpenROAD down with SIGSEGV inside `sta::CheckFanouts::check` on this design
+at every corner, which is why the probe walks the topology instead; noted in
+the upstream issue.) One topology fact moved anyway, as a side effect rather
+than a lever: `max_transition_ns: 8.0`'s buffering reshaped `rst_n` along
+with the four originally-violating nets, and the rebuilt DEF's own
+worst-fanout net is smaller and different — `u_interface/_0862_` at 33 loads.
 
-**What the accepted residual is, and what holds it in place.** No spec row is
-affected: setup and hold close at every corner, and [DR-0003]'s ratified raw
-rate needs 1 MHz against a 35.6 MHz Fmax floor. The affected nets sit inside
-`u_interface`'s register-file logic and `u_conditioner`'s CRC32 — both
-*downstream* of the raw tap that rate is defined at, and none of them on the
-sampler's own path. What is accepted is narrower and precise: the timing and
-power this document reports on paths through those pins are read from the
-library outside the slew range it characterises, and the design's critical
-path is one of them. That acceptance
-is gated rather than asserted, in both halves and in both directions —
-`max_transition_probe.py --check` fails if the violation spreads to a net
-outside the four, lands on a trunk net, stops closing setup, or grows its
-power share; `sim/tools/digital_corner_characterization.py --check` (the
-PDK-free gate CI runs) fails if the record family's violating-corner count,
-worst corner, worst slack or worst pin count moves *in either direction*,
-because a document that overstates a known defect is no more trustworthy
-than one that understates it.
-
-No new record family is minted by this verdict, and that is the point: the
-decision was not to rebuild, so the DEF under test is unchanged and the
-2026-09-12 records still describe it exactly. [#240] is where a new family
-gets minted.
+**What closing this changes, and what it does not.** No spec row was ever at
+risk: setup and hold closed at every corner before the fix and close with
+more margin after it (§2), and [DR-0003]'s ratified raw rate needs 1 MHz
+against an Fmax floor that moved from 35.6 MHz to **39.8 MHz**. The
+previously-affected nets sat inside `u_interface`'s register-file logic and
+`u_conditioner`'s CRC32 — both *downstream* of the raw tap that rate is
+defined at, and none of them on the sampler's own path — so the fix changes
+a signoff-quality qualifier on already-passing numbers, not a pass/fail
+verdict. What moved measurably is cost: §3's area is up from 116 001 to
+**118 975 µm²** (2 974.8 µm², 2.6 %, +31 logical instances against the
+pre-fix DEF) and §4's power moved by well under 1 % at
+the binding corner, both because clearing four nets' drive-strength
+violation — plus `rst_n`'s topology as a side effect — costs area and
+switching power, which §3/§4 now quote directly rather than assume
+unchanged. The closure is gated rather than asserted, same as the residual
+was: `max_transition_probe.py --check` fails if a violation reappears on any
+net, at any corner, or on a trunk net;
+`sim/tools/digital_corner_characterization.py --check` (the PDK-free gate CI
+runs) fails if the record family's violation count, worst corner, worst
+slack or worst pin count moves away from zero in either the record-file or
+the derived-summary sense — a document that fails to notice a regression is
+no more trustworthy than one that overstated a defect that no longer exists.
 
 ### Permanent, not a one-off scenario
 
@@ -528,71 +595,81 @@ timing the design without its interface load.
 
 ---
 
-## 3. Area: 116 001 µm² placed, 1.56× the inventory estimate
+## 3. Area: 118 975 µm² placed, 1.60× the inventory estimate
+
+Status: re-measured against the [#240] rebuild (`max_transition_ns`/
+`max_capacitance_pf` stated to `layout/digital/build.py`'s `CONSTRAINTS`,
+2026-09-15). The area moved because buffering four high-fanout nets — and,
+as a topology side effect, `rst_n` — adds cells; per [#240]'s own test plan,
+this is re-stated rather than assumed unchanged from the pre-fix figures
+this section used to quote.
 
 | | cell area | cells | library |
 |---|---:|---:|---|
-| **Measured** — OpenROAD `report_design_area` over the routed DEF | **116 000.6 µm²** | 8638 DEF `COMPONENTS` (2502 logical + 6136 tapcell/endcap/filler, [#171]) | `mcu9t5v0` (9-track) |
+| **Measured** — OpenROAD `report_design_area` over the routed DEF | **118 975.4 µm²** | 8594 DEF `COMPONENTS` (2533 logical + 6061 tapcell/endcap/filler, [#171]) | `mcu9t5v0` (9-track) |
 | Estimate — `layout/floorplan/reports/area.json`, region `digital` | 74 485.3 µm² | 1655 inventoried cells | `mcu7t5v0` (7-track) |
-| Delta | **+41 515.3 µm² = ×1.557** | +847 logical | — |
+| Delta | **+44 490.1 µm² = ×1.597** | +878 logical | — |
 
 Both figures are *standard-cell* area, which is what makes them comparable.
-The **die** figure in the place-and-route report (301 198 µm²) is not
+The **die** figure in the place-and-route report (301 209 µm²) is not
 comparable to either: it follows arithmetically from that run's own 40 %
 utilization target, which was chosen to leave routing headroom on a first
 attempt, and `layout/digital/README.md` says so at length. This document does
 not difference it against anything.
 
-**Where the 1.56× comes from.** Pricing the *same as-built netlist* against
+**Where the 1.60× comes from.** Pricing the *same as-built netlist* against
 the 7-track library separates the two axes that moved at once — but only over
-the **2502 logical** instances in `trng_top.pnr.v`; [#171]'s 6136
+the **2533 logical** instances in `trng_top.pnr.v`; [#171]'s 6061
 tapcell/endcap/filler cells have no functional pins and so never appear in a
 gate-level Verilog netlist, and are handled separately below:
 
 | | cell area | µm²/cell | step |
 |---|---:|---:|---|
 | inventory estimate, 7-track | 74 485.3 µm² | 45.01 | — |
-| as-built **logical** netlist priced 7-track | 90 244.7 µm² | 36.07 | **×1.212** cell count / mix |
-| as-built **logical** netlist, 9-track (what was built) | 113 330.6 µm² | 45.30 | **×1.256** track height |
-| + [#171]'s tapcell/endcap/filler population | +2 670.0 µm² | n/a (no logical netlist entry) | **×1.024** PDN population |
-| = measured, `report_design_area` | 116 000.6 µm² | — | **×1.557** total |
+| as-built **logical** netlist priced 7-track | 92 560.6 µm² | 36.54 | **×1.243** cell count / mix |
+| as-built **logical** netlist, 9-track (what was built) | 116 305.5 µm² | 45.92 | **×1.257** track height |
+| + [#171]'s tapcell/endcap/filler population | +2 669.9 µm² | n/a (no logical netlist entry) | **×1.023** PDN population |
+| = measured, `report_design_area` | 118 975.4 µm² | — | **×1.597** total |
 
 Three things follow, and the tapcell/endcap/filler term is the one that did
-not exist before [#171]:
+not exist before [#171] (the [#240] rebuild moved the numbers on this row,
+not the shape of the argument):
 
-- **The inventory under-counted cells by 51 %** (1655 → 2502) but
-  **over-priced the average cell by 25 %** (45.01 vs 36.07 µm² in like-for-like
+- **The inventory under-counted cells by 53 %** (1655 → 2533) but
+  **over-priced the average cell by 23 %** (45.01 vs 36.54 µm² in like-for-like
   7-track terms). Those errors partly cancel, which is why the naive
-  per-instance averages (45.01 estimated, 45.30 measured) look like a
+  per-instance averages (45.01 estimated, 45.92 measured) look like a
   vindication of the estimate and are not one. A bottom-up inventory built
   from RTL `reg` declarations plus a structural guess at the combinational
   logic got the *shape* of the block right and the *count* wrong in a way no
-  amount of care would have fixed without running a synthesiser.
-- **The 9-track library costs 25.6 % more area than the 7-track one for
+  amount of care would have fixed without running a synthesiser -- and [#240]
+  adds 28 buffer instances on top of that gap (2533 logical vs 2505
+  synthesized, per `layout/digital/reports/place_and_route.json`), the price
+  of clearing `max_transition`/`max_capacitance` at every corner.
+- **The 9-track library costs 25.7 % more area than the 7-track one for
   identical logic.** That is a pure library choice, not a design property, and
   it is the one term on this list that could be recovered by changing a
   parameter — `mcu7t5v0` is what `design/conditioner/area_estimate.py` and the
   floorplan already assume, and `mcu9t5v0` is what [#143] synthesized against
   and [#111] placed. Nothing in this repository has decided that question; it
   is recorded here so that it is decided rather than inherited.
-- **[#171]'s power-delivery cells cost a further 2.4 % on top.** 6136
-  tapcell/endcap/filler instances (75 % of the DEF's 8638 `COMPONENTS`, by
+- **[#171]'s power-delivery cells cost a further 2.3 % on top.** 6061
+  tapcell/endcap/filler instances (71 % of the DEF's 8594 `COMPONENTS`, by
   count) are placement/DRC infrastructure, not logic, so they carry no port
   list and are invisible to a netlist-driven crosscheck — this is why the
-  "as-built logical netlist, 9-track" row above (113 330.6 µm², summed from
-  `trng_top.pnr.v`'s instances against the liberty deck) no longer equals
-  OpenROAD's own `report_design_area` (116 000.6 µm²) the way it did before
-  [#171]: they agreed to rounding when the DEF carried no `SPECIALNETS` and no
-  fill; now they are 2.30 % apart, and the gap is entirely those 6136 cells.
+  "as-built logical netlist, 9-track" row above (116 305.5 µm², summed from
+  `trng_top.pnr.v`'s instances against the liberty deck) does not equal
+  OpenROAD's own `report_design_area` (118 975.4 µm²): they are 2.24 % apart,
+  and the gap is entirely those 6061 cells.
   `sim/tools/digital_corner_characterization.py --estimate` prints this gap as
   "liberty sum vs OpenROAD's own `report_design_area`" so a future re-run
   cannot silently start treating the two figures as interchangeable again.
 
 **Against the ratified row.** The `< 0.05 mm²` README row is 50 000 µm² for
 the *whole block*. The digital section's placed cell area alone is
-**232.0 %** of it (the estimate was 149 %), and at a realistic 60 % / 80 %
-placement utilization the digital section alone implies **193 334 / 145 001
-µm²**, i.e. 387 % / 290 % of the row. The entropy source, samplers, guard
+**238.0 %** of it (the estimate was 149 %), and at a realistic 60 % / 80 %
+placement utilization the digital section alone implies **198 292 / 148 719
+µm²**, i.e. 397 % / 297 % of the row. The entropy source, samplers, guard
 rings and isolation channels together are 13.1 % of the row
 (`layout/floorplan/README.md`).
 
@@ -600,7 +677,7 @@ The row is **not edited, and no design change is proposed here.** [DR-0019]
 (`Proposed`) already routes this miss and prices the available responses
 against FIFO depth; [DR-0020] (`Proposed`) proposes the depth change itself;
 [#150] owns the row. What this section adds is that the miss is now measured
-rather than estimated, and 55.7 % larger than the estimate [DR-0019] was
+rather than estimated, and 59.7 % larger than the estimate [DR-0019] was
 written against — so whichever response is chosen, it has to close a bigger
 gap than that record's own sensitivity table assumed. Re-deriving [DR-0019]'s
 depth table against this measurement is that record's follow-up, not this
@@ -609,6 +686,11 @@ document's.
 ---
 
 ## 4. Power: 11–14× the estimate on dynamic, and leakage now carries a PDN term
+
+Status: re-measured against the [#240] rebuild (2026-09-15). Every power
+figure below is re-stated, not assumed unchanged, per that issue's own test
+plan — buffering four high-fanout nets (and, as a topology side effect,
+`rst_n`) moves cell count, and cell count moves power.
 
 Every power figure carries a **declared, uniform switching activity of 0.25
 transitions per net per clock cycle at 50 % duty** — deliberately the same
@@ -625,13 +707,13 @@ interconnect axis moves total power by under 3 % end to end):
 
 | liberty corner | total @ 1 MHz | total @ 20 MHz | clock group @ 1 MHz | leakage | leakage current |
 |---|---:|---:|---:|---:|---:|
-| `ss_n40C_3v00` | 401.7 µW | 8.03 mW | 90.5 µW | 314.8 nW | 104.9 nA |
-| `ss_125C_3v00` | 431.8 µW | 8.56 mW | 98.6 µW | 3.950 µW | 1.317 µA |
-| `tt_025C_3v30` | 517.7 µW | 10.35 mW | 117.4 µW | 409.2 nW | 124.0 nA |
-| `ff_n40C_3v60` | 635.5 µW | 12.70 mW | 145.4 µW | 473.4 nW | 131.5 nA |
-| **`ff_125C_3v60`** — both maxima | **698.4 µW** | **13.70 mW** | 158.9 µW | **14.21 µW** | **3.946 µA** |
+| `ss_n40C_3v00` | 408.6 µW | 8.17 mW | 91.0 µW | 318.5 nW | 106.2 nA |
+| `ss_125C_3v00` | 437.6 µW | 8.68 mW | 99.1 µW | 3.941 µW | 1.314 µA |
+| `tt_025C_3v30` | 522.8 µW | 10.45 mW | 118.1 µW | 413.8 nW | 125.4 nA |
+| `ff_n40C_3v60` | 638.6 µW | 12.76 mW | 146.2 µW | 478.9 nW | 133.0 nA |
+| **`ff_125C_3v60`** — both maxima | **699.4 µW** | **13.71 mW** | 159.8 µW | **14.62 µW** | **4.062 µA** |
 
-Active power binds at `ff_125C_3v60`/`max` (712.4 µW at 1 MHz, 13.98 mW at
+Active power binds at `ff_125C_3v60`/`max` (712.4 µW at 1 MHz, 13.97 mW at
 20 MHz) and leakage binds at the same liberty corner — hot, fast,
 high-supply, which is where the README's Power row already binds its idle
 half (`ff` / +10 % / +125 °C). Its active half names `ff` / +10 % without a
@@ -640,7 +722,7 @@ decks for total power as well, by 10 %. Leakage is interconnect-independent,
 as it must be, so its binding corner is a liberty corner rather than a pair.
 
 **Two things this does not say.** It does not say the block's active power is
-698 µW: the digital section is one of three contributors and the whole-block
+699 µW: the digital section is one of three contributors and the whole-block
 rollup (`sim/tools/power_rollup.py`) is what adds them up. And it does not
 supersede that rollup's own digital term today — see §4.4.
 
@@ -648,21 +730,24 @@ supersede that rollup's own digital term today — see §4.4.
 and attributes it to ungated standard-cell leakage in the digital section,
 from the same library-based estimate (4.43 µA of digital idle leakage at
 `ff` / +125 °C / 3.60 V, the row's own binding corner). The measurement at
-that corner is **3.946 µA — 395 % of the row**, i.e. the miss is real and
-unchanged in kind, and now **0.89× the size** the estimate predicted (was
-0.63× against the pre-[#171] DEF). The whole of that shift — leakage 42 %
-higher at this corner, and a much larger *relative* jump at the slow/cold
-corners (§4.2) — is [#171]'s tapcell/endcap/filler population: those cells
-are real, placed, laid-out gf180mcu instances with their own leakage, and
-OpenSTA's `report_power` prices every cell OpenROAD placed, not only the ones
-with a functional pin `trng_top.pnr.v` names. Two caveats before either
-number is used anywhere: it is the library's state-independent default
-leakage, where the estimate carries an input-state range (2.86 .. 4.43 µA);
-and the measurement covers the whole synthesized digital section *plus* its
+that corner is **4.062 µA — 406 % of the row**, i.e. the miss is real and
+unchanged in kind, and now **0.92× the size** the estimate predicted (was
+0.63× against the pre-[#171] DEF, 0.89× against the pre-[#240] DEF — [#240]'s
+28 added buffer/inverter instances cost a further sliver of leakage on top of
+[#171]'s tapcell/endcap/filler term, not a new mechanism). The whole of that
+shift — leakage 42 % higher than the pre-[#171] DEF at this corner, and a much
+larger *relative* jump at the slow/cold corners (§4.2) — is still principally
+[#171]'s tapcell/endcap/filler population: those cells are real, placed,
+laid-out gf180mcu instances with their own leakage, and OpenSTA's
+`report_power` prices every cell OpenROAD placed, not only the ones with a
+functional pin `trng_top.pnr.v` names. Two caveats before either number is
+used anywhere: it is the library's state-independent default leakage, where
+the estimate carries an input-state range (2.86 .. 4.43 µA); and the
+measurement covers the whole synthesized digital section *plus* its
 power-delivery infrastructure, a broader scope than the estimate's
-three-block logic-only inventory in both the [#171] direction (extra cells)
-and the pre-[#171] direction (no PDN estimate exists to compare against).
-[DR-0017] remains the record that routes this row, and its proposed
+three-block logic-only inventory in both the [#171]/[#240] direction (extra
+cells) and the pre-[#171] direction (no PDN estimate exists to compare
+against). [DR-0017] remains the record that routes this row, and its proposed
 replacement figure was set from the estimate, not from this.
 
 ### 4.2 Measured versus the library-based estimate
@@ -671,11 +756,11 @@ Both at 1 MHz, both at the same liberty corner, both at 0.25 transitions/cycle:
 
 | corner | measured | estimate (headline) | estimate (ungated) | ×headline | ×ungated | leakage ratio |
 |---|---:|---:|---:|---:|---:|---:|
-| `ss_n40C_3v00` | 401.7 µW | 15.29 µW | 29.57 µW | 26.3× | 13.6× | 1.42× |
-| `ss_125C_3v00` | 431.8 µW | 16.69 µW | 31.59 µW | 25.9× | 13.7× | 3.76× |
-| `tt_025C_3v30` | 517.7 µW | 19.13 µW | 36.79 µW | 27.1× | 14.1× | 1.45× |
-| `ff_n40C_3v60` | 635.5 µW | 23.12 µW | 44.33 µW | 27.5× | 14.3× | 1.54× |
-| `ff_125C_3v60` | 698.4 µW | 39.38 µW | 65.77 µW | 17.7× | 10.6× | 0.89× |
+| `ss_n40C_3v00` | 408.6 µW | 15.29 µW | 29.57 µW | 26.7× | 13.8× | 1.44× |
+| `ss_125C_3v00` | 437.6 µW | 16.69 µW | 31.59 µW | 26.2× | 13.9× | 3.75× |
+| `tt_025C_3v30` | 522.8 µW | 19.13 µW | 36.79 µW | 27.3× | 14.2× | 1.47× |
+| `ff_n40C_3v60` | 638.6 µW | 23.12 µW | 44.33 µW | 27.6× | 14.4× | 1.56× |
+| `ff_125C_3v60` | 699.4 µW | 39.38 µW | 65.77 µW | 17.8× | 10.6× | 0.92× |
 
 **Why two estimate columns.** `design/digital_power_estimate.py`'s headline
 credits the two output FIFOs with clock gating — `clock_duty` of 1/256 and
@@ -693,31 +778,31 @@ cannot be read as turning on which one is picked.
 has no modelling freedom in it — it is read straight out of characterised
 library data for the 1655 inventoried *logic* cells — and before [#171] that
 made it the column that agreed best with measurement (0.63× to 1.32×). It no
-longer does: 0.89× to **3.76×**, and the spread is not noise. [#171] added
-6136 tapcell/endcap/filler instances to the DEF that the estimate has no way
-to know about (it inventories logic, not power-delivery infrastructure), and
-their leakage is a roughly *fixed* addition per corner (the same physical
-cells regardless of liberty deck) landing on top of a logic leakage that
-itself varies by three orders of magnitude across the corner set (314.8 nW at
-`ss_n40C_3v00` to 14.21 µW at `ff_125C_3v60`, §4.1). A fixed addition is a
-small fraction of a large number and a large fraction of a small one — which
-is exactly the pattern above: the ratio is worst (3.76×) at `ss_125C_3v00`,
-where the logic's own leakage is smallest among the corners this table shows,
-and closest to holding (0.89×) at `ff_125C_3v60`, where it is largest. The
-dynamic-power gap, below, is unaffected by any of this: it was never a
-leakage question.
+longer does: 0.92× to **3.75×**, and the spread is not noise. [#171] added
+(and [#240]'s rebuild carries) 6061 tapcell/endcap/filler instances to the DEF
+that the estimate has no way to know about (it inventories logic, not
+power-delivery infrastructure), and their leakage is a roughly *fixed*
+addition per corner (the same physical cells regardless of liberty deck)
+landing on top of a logic leakage that itself varies by three orders of
+magnitude across the corner set (318.5 nW at `ss_n40C_3v00` to 14.62 µW at
+`ff_125C_3v60`, §4.1). A fixed addition is a small fraction of a large number
+and a large fraction of a small one — which is exactly the pattern above: the
+ratio is worst (3.75×) at `ss_125C_3v00`, where the logic's own leakage is
+smallest among the corners this table shows, and closest to holding (0.92×)
+at `ff_125C_3v60`, where it is largest. The dynamic-power gap, below, is
+unaffected by any of this: it was never a leakage question.
 
 ### 4.3 Where the dynamic gap is
 
-At `tt_025C_3v30`/`nom`, 1 MHz, measured 517.7 µW against the ungated estimate's
+At `tt_025C_3v30`/`nom`, 1 MHz, measured 522.8 µW against the ungated estimate's
 36.79 µW:
 
 | term | measured | estimate (ungated) | ratio |
 |---|---:|---:|---:|
-| cell internal energy (`Sequential` + `Combinational` internal) | 316.5 µW | 4.50 µW (`p_internal`) | 70× |
-| clock delivery (`Clock` group: tree buffers + clock net) | 117.4 µW | 24.05 µW (`p_clock`) | 4.9× |
-| data-net switching (`Sequential` + `Combinational` switching) | 83.5 µW | 7.91 µW (`p_data`) | 10.6× |
-| leakage | 0.409 µW | 0.324 µW | 1.26× |
+| cell internal energy (`Sequential` + `Combinational` internal) | 316.1 µW | 4.50 µW (`p_internal`) | 70× |
+| clock delivery (`Clock` group: tree buffers + clock net) | 118.1 µW | 24.05 µW (`p_clock`) | 4.9× |
+| data-net switching (`Sequential` + `Combinational` switching) | 88.4 µW | 7.91 µW (`p_data`) | 11.2× |
+| leakage | 0.414 µW | 0.324 µW | 1.28× |
 
 The two partitions are not identical — OpenSTA attributes a flop's clock-pin
 capacitance to the clock net's driver and its clock-edge energy to the flop —
@@ -727,9 +812,10 @@ against the library:
 
 > `gf180mcu_fd_sc_mcu9t5v0__dffq_1`'s `CLK` pin declares an `internal_power`
 > table of **0.111 pJ rise + 0.167 pJ fall = 0.278 pJ per clock cycle**,
-> unconditional on `D`. The netlist has **708 flip-flops**. At 1 MHz that is
-> **196.8 µW before anything toggles** — on its own, 5.3× the estimate's entire
-> ungated active figure.
+> unconditional on `D`. The netlist has **708 flip-flops**, unchanged by
+> [#240] (`repair_design`'s buffering adds combinational buffer/inverter
+> cells, not flops). At 1 MHz that is **196.8 µW before anything toggles** —
+> on its own, 5.3× the estimate's entire ungated active figure.
 
 The estimate multiplies each cell's internal energy by the *data* activity
 (`p_internal += n * sec_activity * mean_int * freq`), i.e. it charges a flop
@@ -741,14 +827,17 @@ together can say what each flop costs per edge.
 
 The clock-delivery term's 4.9× has the same character: the estimate priced the
 flops' own clock-pin capacitance plus a flat 2 fF-per-net wiring allowance,
-against a real clock tree — 101 buffer and inverter cells inserted by CTS
-(`clkbuf_*`/`clkload_*` in the as-built netlist; [#171]'s re-run built a
-slightly different tree than the 100 cells the pre-[#171] DEF carried) —
-driving real routed wire. The extracted wiring is **4.98 fF per net** at
-`nom` (4.39 at `min`, 5.81 at `max`), i.e. the flat allowance was low by
-~2–3×, plus 15.7 pF of inter-net coupling capacitance the estimate had no
-term for at all. The leakage row's 1.26× is §4.2's PDN-leakage story again at
-this one corner, not a new effect.
+against a real clock tree — 100 buffer and inverter cells inserted by CTS
+(`clkbuf_*`/`clkload_*` in the as-built netlist; [#240]'s rebuild landed at
+100, versus 101 for [#171]'s own rebuild and 100 for the DEF before either —
+CTS tree size is not claimed stable run to run, and none of these differences
+change the argument) — driving real routed wire. The extracted wiring is
+**4.95 fF per net** at `nom` (4.36 at `min`, 5.77 at `max`), i.e. the flat
+allowance was low by ~2–3×, plus 16.1 pF of inter-net coupling capacitance the
+estimate had no term for at all. The data-net switching term's ratio moved
+from 10.6× to **11.2×** because [#240]'s buffering adds switching nets to
+drive; the leakage row's 1.28× is §4.2's PDN-leakage story again at this one
+corner, not a new effect.
 
 ### 4.4 What this does and does not change downstream
 
@@ -766,6 +855,15 @@ this one corner, not a new effect.
 > ratified target text is unedited either way. See [DR-0023] for the decision
 > and its reasoning, and `README.md`'s Power row for the current evidenced
 > figures.
+
+> **Update — [#240] (2026-09-15) moved the digital leakage term the rollup
+> reads.** The active-row verdict is unchanged ("missed, 224.5 %" — the
+> binding corner's 1 MHz digital term happens to barely move, §4.1). The
+> idle miss widens slightly from **3.979 µA/~4.0×** to **4.095 µA/~4.1×**:
+> [#240]'s 28 added buffer/inverter instances (§3) carry a small amount of
+> their own leakage on top of [#171]'s tapcell/endcap/filler term, at the
+> same `ff_125C_3v60` binding corner. `npm run check:spec` passes against
+> this arithmetic too.
 
 `sim/tools/power_rollup.py` still uses `design/digital_power_estimate.py` for
 its digital term, and `npm run check:spec` still passes unchanged. That is
@@ -802,14 +900,20 @@ of which are now facing measured numbers instead of estimates.
   side and remains owed"* — is closed, with a level ([DR-0021]) and a citation
   rule for the evidence it produces.
 - The digital section **closes timing at every corner of the covered set**,
-  with 21.9 ns of setup margin and 0.7 ns of hold margin at the respective
-  binding corners, and an Fmax floor of 35.6 MHz — 35.6× [DR-0003]'s ratified
-  raw-rate row and 8.9× its stretch row.
+  with 24.9 ns of setup margin and 0.7 ns of hold margin at the respective
+  binding corners, and an Fmax floor of 39.8 MHz — 39.8× [DR-0003]'s ratified
+  raw-rate row and 9.95× its stretch row.
 - The six inter-region trunks that land on this block's pins are **priced from
   as-built geometry and carried permanently**, and none of them violates the
   library's max-transition constraint at any corner ([#233], §2a) — which is
   what [DR-0025] deferred to this path rather than to an ngspice run.
-- The digital section's **area is measured**: 116 001 µm² of placed cell
+- The digital section itself is now clean against the library's own
+  design-rule checks too: **zero `max_transition`/`max_capacitance`
+  violations at any of the fifteen corners** ([#237] found nine corners
+  violating; [#240] constrained, rebuilt and closed it, §2a) — a
+  signoff-quality gap this document itself surfaced is now resolved rather
+  than merely bounded.
+- The digital section's **area is measured**: 118 975 µm² of placed cell
   area, decomposed into a cell-count term, a library-track term, and (new
   since [#171]) a power-delivery-cell term.
 - The digital section's **power is swept across the corner set** from the
@@ -834,12 +938,15 @@ of which are now facing measured numbers instead of estimates.
   nothing upstream of it — it is not an arrival/required-time contract for
   those ports, and the four `combiner_sampler`-driven ones still start no
   timed path (§2a).
-- **Not a clean max-transition result.** The six trunk ports pass the
-  library's `max_transition` check with ≥ 536× margin, but the design itself
-  violates it at 9 of the 15 corners on internal `u_interface` pins, worst
-  −1.59 ns ([#237], §2a). Pre-existing, unrelated to [#233]'s interface load,
-  and on those paths every delay and energy figure above is a library-table
-  extrapolation rather than an interpolation.
+- **A clean max-transition result, as of [#240] — but read the caveats
+  anyway.** The six trunk ports pass the library's `max_transition` check
+  with ≥ 536× margin, and (since [#240]'s 2026-09-15 rebuild) so does every
+  other pin in the design at every one of the fifteen corners: zero
+  violations, where nine of fifteen corners violated before ([#237], §2a).
+  This removes one extrapolation caveat this document used to carry — every
+  delay and energy figure above is now inside the library's characterised
+  slew range — but does not change any of the other "does not establish"
+  items on this list.
 - **Not a supply-current measurement.** Liberty power under a declared uniform
   activity. The real design's activity is data-dependent and, for a TRNG,
   deliberately unpredictable; a switching-activity annotation from the
@@ -851,7 +958,7 @@ of which are now facing measured numbers instead of estimates.
 - **Not a claim about the RTL.** Every number is a property of *this*
   synthesis, *this* placement and *this* routing. A different synthesis run,
   a different utilization target or a different standard-cell library moves
-  all three legs — the ×1.256 track-height term in §3 is that sensitivity
+  all three legs — the ×1.257 track-height term in §3 is that sensitivity
   made explicit.
 - **Not corner coverage equal to the analog side's.** Five liberty decks, not
   27 P/V/T points, and `fs`/`sf` remain uncovered here as they are there
@@ -921,23 +1028,28 @@ python3 sim/tools/digital_corner_characterization.py --check
 python3 sim/tb/digital-sta-power/sdc_treatment_probe.py
 python3 sim/tb/digital-sta-power/sdc_treatment_probe.py --check
 
-# §2a's max-transition verdict (#237), per net and per corner: which nets,
-# what a constraint would have to say, and what the residual costs
+# §2a's max-transition verdict (#237, closed by #240), per net and per
+# corner: which nets violated, what the constraint had to say, and that the
+# rebuilt DEF now reports zero violations everywhere
 # (~4 min, all 15 corners; needs openroad + the PDK)
 python3 sim/tb/digital-sta-power/max_transition_probe.py
 python3 sim/tb/digital-sta-power/max_transition_probe.py --check
 ```
 
-Records: `sim/records/2026-09-12-digital-sta-power-{01..15}.md`, one per
+Records: `sim/records/2026-09-15-digital-sta-power-{01..15}.md`, one per
 corner, each with the generated Tcl and the full OpenROAD log as committed raw
 output. The SPEF is not committed (3.3 MB × 15); each record carries its
 sha256, byte count and summed capacitance so a re-run can be checked against
-it. The pre-[#233] `sim/records/2026-08-18-digital-sta-power-{01..15}.md`
+it. The pre-[#240] `sim/records/2026-09-12-digital-sta-power-{01..15}.md`
+remain committed as append-only evidence about the DEF before
+`max_transition_ns`/`max_capacitance_pf` were stated to `repair_design`
+(§2a). The pre-[#233] `sim/records/2026-08-18-digital-sta-power-{01..15}.md`
 remain committed as append-only evidence about the pre-interface-load SDC,
-and every slack, Fmax and area figure they carry is identical to the digits
-reported (§2a — the two families were produced by different OpenROAD builds,
-so that is a reconciliation rather than a controlled comparison; the
-controlled one is `sdc_treatment_probe.py`'s). The pre-[#171] `sim/records/2026-08-17-digital-sta-power-{01..15}.md`
+and every slack, Fmax and area figure they carry (against the pre-[#240] DEF)
+is identical to the digits reported by the pre-[#240] family (§2a — the two
+families were produced by different OpenROAD builds, so that is a
+reconciliation rather than a controlled comparison; the controlled one is
+`sdc_treatment_probe.py`'s). The pre-[#171] `sim/records/2026-08-17-digital-sta-power-{01..15}.md`
 remain committed as append-only evidence about the DEF they name and hash,
 but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 
@@ -961,6 +1073,7 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
 [klt1709]: https://github.com/2AMLogic/klayout-tools/issues/1709
+[klt1860]: https://github.com/2AMLogic/klayout-tools/pull/1860
 [DR-0003]: ../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0006]: ../spec/decision-records/DR-0006-ro-jitter-characterization-pvt-sampling-strategy.md
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
