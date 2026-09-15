@@ -40,7 +40,7 @@ against it rather than assumed identical to it.
 | | |
 |---|---|
 | Input | `design/trng_top/trng_top.synth.v` — 2505 instances mapped against `gf180mcu_fd_sc_mcu9t5v0` (#143) |
-| Tool | `klt place-and-route` → OpenROAD `26Q3-1260-g06a5a02279`, `target_stage: route` |
+| Tool | `klt place-and-route` → OpenROAD `26Q3-1510-g6cb3f2b704`, `target_stage: route` |
 | Liberty corner | `gf180mcu_fd_sc_mcu9t5v0__ss_125C_3v00` (see [Corners](#corners)) |
 | Constraint | `clk`, 50 ns period (20 MHz) — see [Timing](#timing) |
 | Floorplan | 40 % target utilization, aspect ratio 1.0, 10 µm core margin, site `GF018hv5v_green_sc9` |
@@ -70,13 +70,13 @@ extraction, no SPEF, no back-annotation:
 
 | | |
 |---|---|
-| Worst slack at `ss_125C_3v00`, 50 ns period | **+27.8 ns** |
+| Worst slack at `ss_125C_3v00`, 50 ns period | **+28.4 ns** |
 | Total negative slack | 0 ns |
-| `fmax_mhz` (OpenROAD's own report) | 45.0 MHz |
+| `fmax_mhz` (OpenROAD's own report) | 46.4 MHz |
 | Setup / hold violations at that corner | 0 / 0 |
-| Clock skew after CTS | 0.35 ns |
+| Clock skew after CTS | 0.11 ns |
 | Swept worst **hold** slack, all 15 shipped `.lib` corners | **+0.52 ns** |
-| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−29.2 ns** |
+| Swept worst **setup** slack, all 15 shipped `.lib` corners | **−22.7 ns** |
 
 The last two rows are the ones that need reading carefully, because a
 positive worst slack sitting next to a strongly negative *swept* setup slack
@@ -96,12 +96,12 @@ point this block is specified for. The 1.62 / 1.80 / 1.98 V decks are also
 the slowest the library ships — `ss_125C_1v62`'s own `inv_1` `cell_fall`
 table starts at 0.154 ns against `ss_125C_3v00`'s 0.073 ns at the same
 slew/load index point, 2.1× before the extra interconnect delay a weaker
-driver pays — so the −29.2 ns is very probably theirs. "Very probably" is as
+driver pays — so the −22.7 ns is very probably theirs. "Very probably" is as
 far as the recorded evidence goes: `klt` returns one number for the whole
 sweep and never names the corner that produced it, filed generically upstream
 as [klayout-tools#1092][klt1092]. What the recorded evidence does say
 outright is that it is *not* the corner this block is implemented and
-specified at, which closes with +27.8 ns.
+specified at, which closes with +28.4 ns.
 
 What the sweep *does* establish outright is the hold result: **+0.52 ns worst
 hold slack across all 15 decks**, including the fastest ones — and the fast
@@ -113,7 +113,7 @@ this run's own input, not a spec row: no issue in this repository has set a
 digital-section Fmax requirement. The ratified requirement the clock rate
 has to satisfy is the raw-rate row (`README.md`, [DR-0003][dr3]): > 1 Mbps
 sustained at the sampler output, one raw bit per `clk` edge, so > 1 MHz, with
-the stretch row at > 4 MHz. This run closes at 20 MHz with 27.8 ns of slack
+the stretch row at > 4 MHz. This run closes at 20 MHz with 28.4 ns of slack
 at a slow-process/hot/−10 %-supply corner, which is 5–20× the rate the spec
 asks for — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
@@ -122,12 +122,12 @@ deliverable, and it is #145 that gets to state them.
 **It has**: [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
 re-times this directory's committed DEF at fifteen corners (five 3.3 V liberty
 decks × three interconnect decks) with OpenRCX-extracted parasitics and a
-*propagated* clock, and reports an Fmax floor of **35.63 MHz** at
+*propagated* clock, and reports an Fmax floor of **39.80 MHz** at
 `ss_125C_3v00` with `max` interconnect, positive setup and hold slack and zero
-TNS at every corner. It also reconciles the +27.8 ns this directory reports
-above with its own +22.9 ns at the same liberty corner: 4.77 ns of that
-is extraction versus the global-routing estimate, 0.100 ns is the real clock
-tree.
+TNS at every corner. It also reconciles the +28.4 ns this directory reports
+above with its own +25.5 ns at the same liberty corner (`nom` interconnect):
+2.899 ns of that is extraction versus the global-routing estimate, 0.031 ns is
+the real clock tree.
 
 **This characterization runs against the powered DEF ([#171][gf171]).**
 #171 re-ran place-and-route to build the PDN, which changed the placement and
@@ -207,11 +207,11 @@ netlist.
 
 | | |
 |---|---|
-| Die (from the request's own 40 % utilization target) | 548.8 × 548.8 µm = **301 198 µm²** |
+| Die (from the request's own 40 % utilization target) | 548.8 × 548.8 µm = **301 209 µm²** |
 | Core | 277 092 µm² |
-| Achieved utilization | 41.9 % |
-| Standard-cell area inside the core | ≈ 112 000 µm² (logical cells only; the 6136 tapcell/endcap/filler instances [#171][gf171] adds fill the rows' remaining gaps and do not enlarge the die) |
-| Routed wirelength | 165 732 µm |
+| Achieved utilization | 42.9 % |
+| Standard-cell area inside the core | ≈ 116 000 µm² (logical cells only; the 6061 tapcell/endcap/filler instances [#171][gf171] adds fill the rows' remaining gaps and do not enlarge the die) |
+| Routed wirelength | 168 038 µm |
 
 **The die figure is an input, not a result.** It follows arithmetically from
 the 40 % utilization this run asked for, chosen to leave routing headroom on
@@ -220,24 +220,25 @@ compare it against the `< 0.05 mm²` README row; the number to compare is the
 cell area, and even that comparison has caveats:
 [`layout/floorplan/README.md`](../floorplan/README.md)'s bottom-up inventory
 estimate prices the digital region at 74 485 µm² of cell area from **1655
-cells in the 7-track library**, while this run places **2502 logical
+cells in the 7-track library**, while this run places **2533 logical
 instances of 9-track cells** (`checks.components.logical_placed`, 2505
-synthesized minus 3 optimized away during placement/CTS; the DEF's own
-`COMPONENTS` count of 8638 is that plus the 6136 physical-only
+synthesized plus 28 added by `repair_design`'s buffering during
+placement/CTS — `checks.components.delta_vs_synthesized`; the DEF's own
+`COMPONENTS` count of 8594 is that plus the 6061 physical-only
 tapcell/endcap/filler instances [#171][gf171] inserts, which
 `checks.components` subtracts before comparing against the netlist) — taller rows, and a different (post-synthesis,
 real) cell count. The two numbers are not like-for-like, and reconciling them against
 the ratified area row is #145's job (with [#150][gf150] owning the row
 itself). What can be said here: real synthesis and placement land the digital
-section's cell area ~1.5× above the inventory estimate, and the estimate was
+section's cell area ~1.6× above the inventory estimate, and the estimate was
 already 2.5× the whole-block budget.
 
 **#145 has since done that reconciliation**
 ([`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md)
 §3): the placed cell area (logical instances plus [#171][gf171]'s
-tapcell/endcap/filler population) is **116 000.6 µm²**, ×1.557 the inventory
-estimate, splitting into ×1.212 from cell count/mix, ×1.256 from 9-track
-rather than 7-track rows, and a further ×1.024 from the power-delivery cells
+tapcell/endcap/filler population) is **118 975.4 µm²**, ×1.597 the inventory
+estimate, splitting into ×1.243 from cell count/mix, ×1.257 from 9-track
+rather than 7-track rows, and a further ×1.023 from the power-delivery cells
 that logical-instance count above excludes. The area row itself is still
 [#150][gf150]'s.
 
@@ -258,7 +259,7 @@ place-and-route`'s `request.power` block ([klayout-tools#1120][klt1120],
 | Straps | `Metal4` 4.48 µm / 44.8 µm pitch / 22.4 µm offset; `Metal5` 4.48 µm / 89.6 µm pitch / 44.8 µm offset |
 | Well/substrate ties | 265 × `gf180mcu_fd_sc_mcu9t5v0__filltie` at OpenROAD's `tapcell -distance 100` |
 | Row ends | 208 × `gf180mcu_fd_sc_mcu9t5v0__endcap` |
-| Fillers | 5663 instances across the library's seven `fill_*` widths |
+| Fillers | 5588 instances across the library's seven `fill_*` widths |
 | `SPECIALNETS` in the DEF | 2 nets (`checks.def.special_nets: true`, was `false`) |
 | Top-level supply pins | `vddd`, `vss` — the DEF's `PINS` count goes 109 → 111 |
 
@@ -320,7 +321,7 @@ that terminates at its own `vddd`/`vss` pins and nowhere else.
 
 ### Estimated power
 
-`estimated_power_mw: 6.4` — OpenROAD's own `report_power` at
+`estimated_power_mw: 6.6` — OpenROAD's own `report_power` at
 `ss_125C_3v00` with estimated (not extracted) parasitics and no activity
 annotation beyond its defaults. It is recorded because the tool reports it;
 it is **not** a power result, it does not supersede
@@ -533,11 +534,11 @@ no continuous supply net for the reference's design intent to match, and
 reference net. #171 removes both halves of that. `lvs.py` now reads the
 supply net names from [`reports/place_and_route.json`](reports/place_and_route.json)'s
 own `power` block — the record of how the committed GDS was actually built —
-and ties every instance's `VDD`/`VSS` to them, and it recovers the 6136
+and ties every instance's `VDD`/`VSS` to them, and it recovers the 6061
 physical-only tapcell/endcap/filler instances out of the committed DEF's
 `COMPONENTS` section, because `write_verilog -remove_cells` strips them from
 `trng_top.pnr.v` while they remain real drawn geometry in the GDS. Both
-sides now carry the same 8638 instances with identical per-master counts
+sides now carry the same 8594 instances with identical per-master counts
 (verified directly), and the `net.split`/`net.merged` cascade is gone.
 
 **What the original 8 residuals were, and what #186 fixed.** Six of the
@@ -819,7 +820,7 @@ always wins). The pin:
 |---|---|
 | Image | `openroad/orfs:26Q3-296-gda37dce1c` |
 | Digest | `sha256:ebc8142da6d65d1a1e9a528aa2cedcde356243465dd859af8d3ade51075f8cb2` |
-| `openroad -version` inside it | `26Q3-1260-g06a5a02279` |
+| `openroad -version` inside it | `26Q3-1510-g6cb3f2b704` |
 
 The wrapper bind-mounts the working directory **and** the resolved PDK root
 at their own absolute host paths, because the generated Tcl carries absolute
