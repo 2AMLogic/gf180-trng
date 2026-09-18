@@ -32,7 +32,6 @@ These tests hold that claim two ways:
 from __future__ import annotations
 
 import json
-import re
 import sys
 import unittest
 from pathlib import Path
