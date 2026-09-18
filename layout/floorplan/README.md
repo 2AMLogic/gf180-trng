@@ -477,8 +477,34 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 | Entropy ring 1 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
 | Entropy ring 2 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
 | XOR combiner + 2 buffers + 4 samplers | 7 | 342.4 µm² | 570.8 µm² | 5 434.1 µm² |
-| Conditioner + health tests + interface | 1655 | 74 485.3 µm² | 124 142.2 µm² | 303 397.2 µm² |
-| **total** | | **75 277.9 µm²** | **125 463.2 µm²** | **309 923.6 µm²** |
+| Conditioner + health tests + interface | 863 | 33 654.6 µm² | 56 091.0 µm² | 303 408.2 µm² |
+| **total** | | **34 447.2 µm²** | **57 412.0 µm²** | **309 934.6 µm²** |
+
+> **The digital row halved in issue [#254], and the guarded column did not.**
+> [DR-0020]'s `FIFO_DEPTH = 2` is now the shipped RTL/regmap value, so this
+> estimate's own inventory (`design/digital_power_estimate.py`, which this
+> script reads) prices **863 cells / 33 654.6 µm²** where it used to price
+> 1655 / 74 485.3 — the interface alone drops from 63 098.8 µm² to
+> 22 268.1 µm², i.e. **40 830.7 µm²**: 40 356.6 µm² of FIFO storage, read mux
+> and per-word clock gates (leaving 11 625.8 µm², exactly the 11 626 µm²
+> [DR-0019] projected for this depth) plus 474.2 µm² of pointer flops and
+> increment logic that narrow with it (`PTR_W` 3 → 1 bits). The **guarded**
+> column is
+> unmoved on purpose: since issues [#209]/[#210] the `digital` region is sized
+> from the composed `layout/digital/trng_top.gds`, which is still the depth-8
+> place-and-route, and re-running synthesis and P&R at the new depth is
+> explicitly outside #254's scope. So every *composed* figure below —
+> including `reports/area.json`'s own `share_of_budget_pct` — is still a
+> depth-8 number, while every *estimate* figure is now a depth-2 one. The two
+> bases are separated explicitly in the next table rather than averaged.
+>
+> The one **guarded** figure that did move is not a depth effect either: the
+> `digital` region's measured bbox reads 548.825 µm on the `klt 0.5.0` build
+> this regeneration ran against, against the 548.815 µm the committed report
+> carried, so its guarded area moves by 11.0 µm² (0.004 %) and the channel
+> beside it by 0.2 µm². That is the same class of tool-version drift this
+> document already records for the starve devices above, not a design change —
+> the GDS it is measured from is byte-identical.
 
 > Two of these columns moved for reasons that have nothing to do with the
 > inter-region routing this document's [own section](#inter-region-routing--issue-222)
@@ -529,6 +555,61 @@ uniformly bigger.
 | **Entropy source + samplers + all isolation structures** | **6 535.2 µm²** | **13.07 %** |
 | Digital section | 125 556.8 µm² | 251.1 % |
 | **Floorplan total** | **139 178.8 µm²** = 0.13918 mm² | **278.4 %** |
+
+> **Update — re-derived at [DR-0020]'s `FIFO_DEPTH = 2` (issue [#254]):
+> 278.4 % → 137.7 %.** The table above is the depth-8 estimate and is left as
+> written, for the same reason the [synthesis
+> comparison](#the-digital-region-has-since-been-synthesized-placed-and-measured)
+> below is: it is what this script produced when the number was quoted into
+> [DR-0019]. On the **same basis** — every region sized by the
+> area/utilisation estimate, which is how this table's 278.4 % was produced —
+> the depth-2 re-run gives:
+>
+> | | area | share of the `< 0.05 mm²` row |
+> |---|---:|---:|
+> | Entropy source + samplers + every isolation structure but the one to `digital` | 7 026.4 µm² | 14.05 % |
+> | Digital section, guard ring included | 57 044.6 µm² | 114.09 % |
+> | `combiner_sampler` \| `digital` isolation channel | 4 776.8 µm² | 9.55 % |
+> | **Floorplan total** | **68 847.8 µm²** = 0.06885 mm² | **137.7 %** |
+>
+> Every input is in [`reports/area.json`](reports/area.json) and the
+> arithmetic is [DR-0019]'s own stated method (cell area / utilisation,
+> squared up, plus a 1 µm guard ring per side, plus the isolation channels):
+> the digital region's estimate square is `sqrt(33 654.61 / 0.6) = 236.84 µm`
+> (the report states it, under `footprint_source.note`), its guard ring adds
+> 1 µm per side → `238.84² = 57 044.6 µm²`, and the channel to it is
+> `20 µm × 238.84 µm`. The first row is the three analog regions' committed
+> guarded footprints plus the two channels between them — no depth change
+> touches it, and the script prints it directly (`entropy source + isolation:
+> 7 026.4 µm² = 14.05 %`).
+>
+> **Recomputed the same way today, the depth-8 row is 279.3 %, not 278.4 %** —
+> and the 0.9-point gap is not a depth effect. The identical arithmetic on the
+> committed depth-8 cell area reproduces this table's **Digital section row
+> exactly** (125 556.8 µm², 251.1 %) and its channel exactly (7 086.8 µm²);
+> what it does not reproduce is the first row, which the table still carries
+> at 6 535.2 µm² — transcribed before #135/[#209]/[#210] grew
+> `combiner_sampler`'s guarded footprint, where `reports/area.json` now gives
+> 7 026.4 µm². So like-for-like the re-run is **279.3 % → 137.7 %** (×2.03);
+> against the published 278.4 % it is 137.7 % (×2.02). Neither framing changes
+> the verdict.
+>
+> **137.7 %, not [DR-0019]'s 129.4 %.** That record's depth-2 row was computed
+> against the older 269.4 % baseline, before issues #119/#135 resized the
+> analog regions; re-derived against the 278.4 % baseline above it lands
+> higher. It is also computed against a marginally *smaller* digital cell area
+> than DR-0019 projected (33 654.6 µm² vs 34 129 µm²), because this run also
+> narrows the FIFO pointers (`PTR_W` 3 → 1 bits) that DR-0019 deliberately
+> held at their depth-8 widths — worth 474.2 µm², which is the whole of that
+> difference. **The row is still missed, now by 1.4× rather than 2.8×.**
+>
+> **What did *not* move: the composed total.** `reports/area.json`'s own
+> `share_of_budget_pct` stays at **642.9 %**, because since [#209]/[#210] the
+> `digital` region's guarded footprint is measured from the composed
+> `layout/digital/trng_top.gds` — the depth-8 place-and-route — and #254 does
+> not re-synthesize it. The 137.7 % above is therefore a re-derivation of
+> *this estimate*, not a claim about the composed floorplan; closing that gap
+> needs a depth-2 synthesis and P&R, which is separate work.
 
 Two findings, and they point in opposite directions.
 
@@ -593,11 +674,17 @@ rejected a depth reduction because it never gets the idle current under 1 µA at
 any depth, whereas on area it is most of an answer. **[DR-0019]'s ratified
 Decision (option C) holds the `< 0.05 mm²` row as written rather than editing
 it**, and the joint `FIFO_DEPTH` decision it deferred to is itself now ratified
-as [DR-0020] (`Accepted` 2026-09-07, same mechanism): `FIFO_DEPTH = 2`. Neither
-this floorplan's own numbers above nor the shipped RTL reflect that value yet —
-[DR-0020] ratifies the decision, not the implementation, and its own Follow-up
-section names the still-unfiled regmap/RTL change that would bring this
-document's figures down to the 129.4 % row above.
+as [DR-0020] (`Accepted` 2026-09-07, same mechanism): `FIFO_DEPTH = 2`.
+
+That follow-up has since landed: issue [#254] set `FIFO_DEPTH = 2` in the
+regmap, the RTL parameter default and both inventory estimates, and re-ran this
+script. **The re-derived depth-2 figure is 137.7 %, not DR-0019's 129.4 %** —
+see the update block under the summary table above for the derivation, for why
+the two differ, and for the one figure the re-run does *not* move (the composed
+642.9 %, which is measured from the still-depth-8 `layout/digital/trng_top.gds`).
+The row is still missed — by 1.4× where it was 2.8× — so DR-0019's held-row
+Decision is unaffected; what the re-run supplies is the number a successor
+record needs.
 
 ### The digital region has since been synthesized, placed and measured
 
@@ -1590,3 +1677,6 @@ would not block that separate question.
 [#111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [#143]: https://github.com/2AMLogic/gf180-trng/issues/143
 [#145]: https://github.com/2AMLogic/gf180-trng/issues/145
+[#209]: https://github.com/2AMLogic/gf180-trng/issues/209
+[#210]: https://github.com/2AMLogic/gf180-trng/issues/210
+[#254]: https://github.com/2AMLogic/gf180-trng/issues/254

@@ -76,7 +76,15 @@ module tb_rtl_equivalence;
 
     always #5 clk = ~clk;
 
-    trng_interface #(.FIFO_DEPTH(8)) dut (
+    // Instantiated at the RTL's OWN default FIFO_DEPTH, deliberately not
+    // overridden here. design/interface/regmap.py is the one place the depth
+    // is decided (DR-0020: 2), the Python model reads it from there, and
+    // trng_interface.v's parameter default carries the same value; an
+    // override in this testbench would be a third copy, and the first depth
+    // change to miss it would make this equivalence check compare a model at
+    // one depth against RTL at another -- the exact drift the check exists to
+    // catch. sim/tests/test_power_rollups.py guards the RTL default itself.
+    trng_interface dut (
         .clk             (clk),
         .rst_n           (rst_n),
         .raw_bit         (raw_bit),

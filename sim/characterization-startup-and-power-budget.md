@@ -53,6 +53,28 @@ here decides anything.
 > #78 update above gives; `python3 sim/tools/power_rollup.py` is the current
 > source of truth.
 
+> **Update — the interface's output FIFOs are now 2 words deep, not 8, so
+> `design/digital_power_estimate.py`'s side of this document is a different
+> estimate than the one recorded below (#254 /
+> [`DR-0020`](../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md),
+> `Accepted`).** The estimate's interface inventory now scales with
+> `FIFO_DEPTH`, and at the ratified depth of 2 it reports **184 interface
+> flops (658 → 270 shipped flops in total)** and a digital idle figure of
+> **2.03 µA, 202.7 % of the `< 1 µA` row**, against the **4.43 µA / 442 %**
+> recorded below at depth 8 — close to the 2.04 µA [DR-0017] §B projected for
+> this depth, the small remainder being that this run also narrows the FIFO
+> pointers (`PTR_W` 3 → 1 bits), which that projection deliberately held
+> fixed. **The row is still missed by 2.0×**, exactly as [DR-0017] said no
+> depth could fix, and no row is edited here. Two things this does *not*
+> change: every measured number below (all transistor-level, and none of them
+> FIFO-dependent), and the **measured gate-level** digital term
+> `power_rollup.py` has read since #174/[DR-0023] — that comes from
+> `design/trng_top/trng_top.synth.v` and `layout/digital/trng_top.def`, which
+> are still the depth-8 synthesis and placement, since re-synthesising at the
+> new depth is explicitly outside #254. So the headline verdicts in this
+> document are unchanged; what moved is the pre-synthesis estimate that is now
+> quoted as context.
+
 ---
 
 ## Headline

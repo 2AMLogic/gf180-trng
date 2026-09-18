@@ -183,17 +183,23 @@ DRBG supplies its own and treats this block as the seed source.
 >   [DR-0007]'s separate conflict — that its first-cut array size projected far
 >   more active power than this row allows — was resolved by [DR-0010]
 >   shrinking the array to N = 2, which is the 415 µW measured above.
-> - **Area: no measurement, and the standing estimate misses by 2.7×.** The
+> - **Area: no measurement, and the standing estimate misses by 1.4×.** The
 >   row is `< 0.05 mm²` and no layout exists to measure, but #16's floorplan
 >   work priced the block bottom-up against the PDK's own standard-cell LEF:
->   **0.1350 mm², 270.0 % of the row**
+>   **0.06885 mm², 137.7 % of the row** at the shipped `FIFO_DEPTH = 2`
+>   (**0.13918 mm², 278.4 %** at the depth-8 default the paragraph below and
+>   [DR-0019] were written against)
 >   ([`layout/floorplan/reports/area.json`](layout/floorplan/reports/area.json),
 >   breakdown under *Area against the `< 0.05 mm²` row* in
 >   [`layout/floorplan/README.md`](layout/floorplan/README.md)).
 >   The split matters — the isolated entropy source, samplers, guard rings and
->   isolation channels together are **4.7 %** of the row, and the whole miss is
+>   isolation channels together are **14.05 %** of the row (the 4.7 % this line
+>   used to quote predates #135/#209/#210's analog-region resizes; the figure
+>   here is what the same re-run prints), and the whole miss is
 >   the digital section at **251 %**, of which the two 8 × 32-bit output FIFOs
->   are 69.8 %. That is the same structure [DR-0017] blames for the idle-current
+>   are 69.8 % (both figures at depth 8; at depth 2 the digital section is
+>   114.1 % of the row and the FIFOs are 11 626 µm², 34.5 % of its cell area).
+>   That is the same structure [DR-0017] blames for the idle-current
 >   miss: one design decision showing up on two rows. It is an inventory
 >   estimate with a stated method — no synthesiser, placer or router has run on
 >   this block — so it is not a measurement, and per `CLAUDE.md` the row is not
@@ -206,11 +212,20 @@ DRBG supplies its own and treats this block as the seed source.
 >   row rather than moving it, and sequences the response behind the
 >   `FIFO_DEPTH` decision jointly owned with [DR-0017] and [DR-0013]. That
 >   joint decision is itself now [DR-0020] (also `Accepted` 2026-09-07,
->   same mechanism): `FIFO_DEPTH = 2`, which brings the estimate above from
->   270.0 % of the row down to **129.4 %** — still a miss, and still not
->   carried into the shipped design or this section's own 0.1350 mm² figure,
->   both of which remain at the pre-ratification `FIFO_DEPTH = 8` pending the
->   RTL/regmap follow-up [DR-0020] names and does not itself perform.
+>   same mechanism): `FIFO_DEPTH = 2`. **That value is now shipped** — issue
+>   #254 carried it into `design/interface/regmap.py`, the RTL parameter
+>   default and both inventory estimates — and re-running the floorplan at it
+>   brings the estimate from **278.4 % to 137.7 %** of the row (0.13918 mm² →
+>   **0.06885 mm²**; the digital section's own cell area falls 74 485 µm² →
+>   33 655 µm², and 40 357 µm² of that 40 831 µm² drop is FIFO storage, read
+>   mux and per-word clock gates). Two caveats the re-run does not
+>   let us drop: **it is still a miss, by 1.4×**, and it moves the *estimate*
+>   only — `layout/floorplan/reports/area.json`'s composed figure is still
+>   **642.9 %**, because that one is measured from `layout/digital/
+>   trng_top.gds`, the depth-8 place-and-route, which #254 did not
+>   re-synthesize. The 129.4 % [DR-0020] itself quotes is superseded by the
+>   137.7 % above: that figure predated issues #119/#135's analog-region
+>   resizes and was computed against the older 269.4 % baseline.
 >
 > Note also that rows bind at **different** corners, and none at nominal: rate
 > at the slowest-RO corner, min-entropy per bit at the *least*-jitter

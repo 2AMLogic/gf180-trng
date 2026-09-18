@@ -52,9 +52,24 @@ ADDR_W = 2
 
 #: Output-FIFO depth, in 32-bit words, for each of the two paths. A parameter
 #: of the RTL; this is the default the model and the shipped RTL both use.
-FIFO_DEPTH = 8
+#: Fixed at 2 by
+#: ``spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md``
+#: (`Accepted` 2026-09-07), which decided the depth once with the idle-power,
+#: area and 500 bps streaming consequences all in view. Not a free parameter:
+#: changing it changes a ratified decision, not just a default.
+FIFO_DEPTH = 2
 
 #: Width of the `*_LEVEL` STATUS fields -- enough for 0..FIFO_DEPTH inclusive.
+#: **Deliberately left at 4** rather than narrowed to the 2 bits DR-0020's
+#: depth now needs: `trng_interface.v` derives `raw_bit_count`'s width from
+#: `TRNG_LEVEL_BITS` even though what that counter actually counts is
+#: `RAW_PACK_BITS` (0..31) raw samples, which has nothing to do with FIFO
+#: depth. DR-0020 §"Follow-up required" flags narrowing this constant as a
+#: silent-truncation hazard for exactly that reason. Oversized is not wrong
+#: here -- the field still reads back 0..FIFO_DEPTH correctly -- so the depth
+#: change is taken without dragging an unrelated counter's width behind it.
+#: Anyone who does narrow it must re-derive `raw_bit_count` from
+#: `RAW_PACK_BITS` first.
 LEVEL_BITS = 4
 
 #: Raw samples packed into one streaming/`RAW_DATA` word, LSB first.

@@ -552,11 +552,18 @@ class InventoryStalenessTests(unittest.TestCase):
         self.assertEqual(_flops(dpe.LIVENESS_INVENTORY), 18)     # 2 x (1 + 7 + 1)
 
     def test_interface_parameters_are_the_ones_the_inventory_assumes(self):
-        self.assertEqual(_param(RTL["interface"], "FIFO_DEPTH"), 8)
+        # 2 is DR-0020's ratified depth (issue #254), not a default anyone may
+        # retune: moving it moves a decision record, this inventory, and the
+        # floorplan's own area rollup together.
+        self.assertEqual(_param(RTL["interface"], "FIFO_DEPTH"), 2)
+        # TRNG_LEVEL_BITS stays 4 although 2 would now cover 0..FIFO_DEPTH:
+        # trng_interface.v sizes raw_bit_count (a 0..31 RAW_PACK_BITS counter)
+        # off it, so narrowing it would silently truncate that counter --
+        # DR-0020's own sizing hazard. See design/interface/regmap.py.
         self.assertEqual(_param(RTL["regmap"], "TRNG_LEVEL_BITS"), 4)
         self.assertEqual(_param(RTL["regmap"], "TRNG_RAW_PACK_BITS"), 32)
-        # 2 x 8 x 32 FIFO + 6 head + 8 count + 32 shift + 6 bitcount + 8 ctrl
-        self.assertEqual(_flops(dpe.INTERFACE_INVENTORY), 572)
+        # 2 x 2 x 32 FIFO + 2 head + 8 count + 32 shift + 6 bitcount + 8 ctrl
+        self.assertEqual(_flops(dpe.INTERFACE_INVENTORY), 184)
 
     def test_conditioner_inventory_is_the_one_area_estimate_ships(self):
         import area_estimate
