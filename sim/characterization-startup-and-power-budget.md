@@ -74,6 +74,16 @@ here decides anything.
 > new depth is explicitly outside #254. So the headline verdicts in this
 > document are unchanged; what moved is the pre-synthesis estimate that is now
 > quoted as context.
+>
+> **Every figure this document quotes from that script now carries the
+> `FIFO_DEPTH` it was produced at, inline at the point of quotation, with its
+> depth-2 counterpart beside it (#257).** The estimate's active-side figure
+> moves the same way as its idle one: **23.1 µW → 20.6 µW** at the active row's
+> binding corner. The depth-8 numbers are kept beside the depth-2 ones rather
+> than overwritten, for the same reason the two updates above keep what they
+> superseded — they are what issue #14 computed and what [DR-0017] reasons
+> about — but no estimate below can now be read without its depth, which is
+> exactly how this document went stale silently the first time.
 
 ---
 
@@ -82,8 +92,8 @@ here decides anything.
 | Row | Ratified target | Measured / estimated | Binding corner | Verdict |
 |---|---|---|---|---|
 | Time-to-first-valid | ≥ ~1.28 ms at 1 Mbps (an arithmetic floor) | **1.281 ms** | `ss`/+125 °C/2.97 V, but see below — the corner barely matters | **Met**, and the floor is confirmed as a floor |
-| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated**) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array, digital still **estimated**; **1.122 mW (224.5 %)** since #174/[DR-0023], digital now **measured-at-gate-level** | `ff`/−40 °C/3.63 V | pre-#174: **Met**, 86.6 % of the row. Since #174/[DR-0023] (Proposed): **Missed, 2.2×** |
-| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated**); **3.979 µA** since #174/[DR-0023], digital now **measured-at-gate-level** | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017]; narrowed to **~4.0×** since #174/[DR-0023] |
+| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated at `FIFO_DEPTH = 8`**; that estimate term is **20.6 µW** at [DR-0020]'s ratified `FIFO_DEPTH = 2`, for **451.7 µW / 90.3 %** on the same rollup) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array, digital still **estimated**; **1.122 mW (224.5 %)** since #174/[DR-0023], digital now **measured-at-gate-level** (that measured term is depth-8 synthesis, #255) | `ff`/−40 °C/3.63 V | pre-#174: **Met**, 86.6 % of the row. Since #174/[DR-0023] (Proposed): **Missed, 2.2×** |
+| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated at `FIFO_DEPTH = 8`**; that estimate term is **2.03 µA** at the ratified `FIFO_DEPTH = 2`, for **2.06 µA / 206 %** on the same rollup); **3.979 µA** since #174/[DR-0023], digital now **measured-at-gate-level** (depth-8 synthesis, #255) | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017]; **2.1×** on the depth-2 estimate; narrowed to **~4.0×** since #174/[DR-0023] |
 
 ---
 
@@ -108,6 +118,16 @@ ngspice. `design/digital_power_estimate.py` is the substitute: a gate-level
 inventory of each block's RTL evaluated against the `gf180mcu_fd_sc_mcu7t5v0`
 Liberty library that ships with the PDK. It is a [DR-0004] Tier 2 estimate and
 is labelled as one everywhere it appears.
+
+**That inventory scales with the interface's `FIFO_DEPTH`**, which [DR-0020]
+ratified at 2 and #254 carried into the RTL, the register map and the script
+itself. Every figure below that comes from this script therefore carries the
+depth it was computed at — issue #14's `FIFO_DEPTH = 8` numbers and the shipped
+`FIFO_DEPTH = 2` numbers side by side — and nothing here quotes a depth-free
+estimate. `sim/tests/test_power_rollups.py` holds the script's own
+`FIFO_DEPTH` to `design/interface/trng_interface.v`'s, so the two cannot drift
+apart again without a test failing; it cannot, however, tell that this prose
+has gone stale, which is what the depth labels are for.
 
 That script does **not** mint a `sim/records/` entry, deliberately. It runs no
 simulation: `sim/records/` is simulation evidence, and a library lookup dressed
@@ -213,7 +233,7 @@ floor did not count. The oscillator contributes one part in 10⁵.
 
 ## Power
 
-### Active: met, at 90.8 % of the row
+### Active: met, at 90.8 % of the row (90.3 % with the estimate at the shipped FIFO depth)
 
 At the binding corner `ff`/−40 °C/3.63 V, from
 `python3 sim/tools/power_rollup.py`:
@@ -223,16 +243,26 @@ At the binding corner `ff`/−40 °C/3.63 V, from
 | Entropy array (2 rings + XOR combiner) | 415.3 µW | 83.1 % | **measured**, `…-ro-array-core-power-04.md` / `…-pvt-q-*` |
 | Sampler, data term | 15.7 µW | 3.1 % | **measured**, `…-sampler-dff-active-current-*` × that corner's `xo_trans_per_s` |
 | Sampler, clock term | 60.3 nW | 0.01 % | **measured**, same family |
-| Conditioner + health tests + interface | 23.1 µW | 4.6 % | **ESTIMATE**, `design/digital_power_estimate.py` |
+| Conditioner + health tests + interface, 1655 cells at `FIFO_DEPTH = 8` | 23.1 µW | 4.6 % | **ESTIMATE**, `design/digital_power_estimate.py` |
 | **Total** | **454.2 µW** | **90.8 %** | |
+
+**At [DR-0020]'s ratified `FIFO_DEPTH = 2`** (#254, the depth the RTL now
+ships) the estimate row is **20.6 µW, 4.1 %** of the row — 863 cells instead of
+1655 — and the same rollup totals **451.7 µW, 90.3 %**. The row's verdict does
+not move: the estimate is 4–5 % of it at either depth, and since
+#174/[DR-0023] the digital term that actually feeds `power_rollup.py` is the
+measured gate-level one (still depth-8 synthesis — #255), not this estimate.
+`python3 sim/tools/power_rollup.py` prints the depth-2 estimate beside the
+measured term as context.
 
 DR-0010 §Consequences stated the risk precisely: "the entropy source uses 83 %
 of the active budget … leaving ~85 µW for the sampler, health tests,
 conditioner and register file — none of which exist or are measured. That is a
 tight allocation and it is stated here rather than discovered later." That
 allocation now has numbers behind it: **everything downstream of the array
-needs 38.9 µW of the 84.7 µW available, i.e. 45.9 % of the headroom.** The
-allocation holds, with roughly a factor of two in hand.
+needs 38.9 µW of the 84.7 µW available, i.e. 45.9 % of the headroom** at
+`FIFO_DEPTH = 8`, **36.4 µW / 43.0 % at the ratified `FIFO_DEPTH = 2`**. The
+allocation holds at either depth, with roughly a factor of two in hand.
 
 #### The sampler burns power at the entropy node's rate, not the clock's
 
@@ -258,15 +288,23 @@ anyone quoted it against a different `xo` rate, which is exactly what
 [DR-0010]'s rate change does. Only `xsb` (whose D is `xo`) pays the data term;
 `xsv`'s D is tied to `vdd` and pays the clock term alone.
 
-### Idle: missed by 4.5×, and the analog side is not the reason
+### Idle: missed by 4.5× at `FIFO_DEPTH = 8`, 2.1× at the shipped depth of 2 — and the analog side is not the reason either way
 
 At the binding corner `ff`/+125 °C/3.63 V:
 
 | Term | Current | Share of the < 1 µA row | Source |
 |---|---|---|---|
 | Whole `sampler_core` — 2 rings + XOR + both flops, clamped, reset released, clock parked | **32.8 nA** | 3.3 % | **measured**, `…-sampler-core-idle-leakage-*` |
-| Conditioner + health tests + interface, 658 flops / 1655 cells, no power gating | **4.43 µA** | 442.5 % | **ESTIMATE**, `design/digital_power_estimate.py` |
+| Conditioner + health tests + interface, 658 flops / 1655 cells at `FIFO_DEPTH = 8`, no power gating | **4.43 µA** | 442.5 % | **ESTIMATE**, `design/digital_power_estimate.py` |
 | **Total** | **4.46 µA** | **446 %** | |
+
+**At [DR-0020]'s ratified `FIFO_DEPTH = 2`** (#254) the same estimate is
+**2.03 µA, 202.7 %** of the row — 270 flops / 863 cells — and the same total is
+**2.06 µA, 206 %**. The row is still missed, by **2.1×** instead of 4.5×, which
+is what [DR-0017] §B already priced: it projected 2.04 µA for this depth and
+called no depth sufficient. Everything else in this section is unchanged by the
+depth — the analog term is measured, transistor-level and contains no FIFO —
+so the finding below survives the change with a smaller number in front of it.
 
 Two separate findings, and they point in opposite directions:
 
@@ -280,7 +318,14 @@ Two separate findings, and they point in opposite directions:
   the flops.
 - **The digital section blows the row on standard-cell leakage alone**, before
   any dynamic activity at all. Even the most favourable input-state assumption
-  in the Liberty library gives 1.85 µA, still 1.8× over.
+  in the Liberty library gives 1.85 µA, still 1.8× over — at
+  `FIFO_DEPTH = 8`. At the ratified `FIFO_DEPTH = 2` the default-state figure
+  is 2.03 µA (2.0× over) and that most-favourable-state bound drops to
+  **793 nA, 0.79× — under the row**. That bound is not an operating point: it
+  is what the section would leak if every cell in it sat simultaneously in its
+  own lowest-leakage input state, which no reachable state produces. The
+  binding number is still the default-state 2.03 µA, and the row is still
+  missed.
 
 The README's own ratification note predicted this in words — "the < 1 µA idle
 figure is order-of-magnitude questionable for an ungated few-kGE digital
@@ -293,37 +338,69 @@ FIFOs, moving the row) against this evidence. **No row is edited here.**
 #### How much of that estimate could be wrong
 
 The idle miss rests on an estimate, so its uncertainty matters more than the
-active number's does. The estimate splits almost exactly in half, and the two
+active number's does. The estimate splits almost exactly in half at either
+`FIFO_DEPTH` (51 : 49 at depth 8, 45 : 55 at the shipped depth 2), and the two
 halves have very different standing:
 
-| Contribution | Leakage | Share of the < 1 µA row | Standing |
+| Contribution | at `FIFO_DEPTH = 8` (what issue #14 computed) | at `FIFO_DEPTH = 2` ([DR-0020], shipped) | Standing |
 |---|---|---|---|
-| 658 flip-flops | 8.06 µW = **2.24 µA** | 224 % | **Enumerated.** Not an estimate. |
-| 997 combinational cells | 7.87 µW = **2.19 µA** | 219 % | Structural estimate. |
-| Total | 15.93 µW = **4.43 µA** | 442 % | |
+| Flip-flops | 658 flops, 8.06 µW = **2.24 µA** (224 %) | 270 flops, 3.31 µW = **918 nA** (92 %) | **Enumerated.** Not an estimate. |
+| Combinational cells | 997 cells, 7.87 µW = **2.19 µA** (219 %) | 593 cells, 3.99 µW = **1.11 µA** (111 %) | Structural estimate. |
+| Total | 1655 cells, 15.93 µW = **4.43 µA** (442 %) | 863 cells, 7.30 µW = **2.03 µA** (203 %) | |
 
-- **The flop count is not an estimate.** 41 + 45 + 572 = 658 is read directly
-  off the three modules' `reg` declarations at their shipped default
-  parameters, and `sim/tests/test_power_rollups.py` fails if any parameter the
-  count depends on (`FIFO_DEPTH`, `TRNG_LEVEL_BITS`, `C_RCT`, `W`, K) moves
-  without the inventory being revisited. 512 of the 658 are the interface's
-  two 8 × 32-bit output FIFOs.
+Both columns are the same corner (`ff`/+125 °C, the library's `ff_125C_3v60`)
+and the same method; only the interface's FIFO-dependent inventory differs.
+Reproduce either with `python3 design/digital_power_estimate.py` — it computes
+at whatever `FIFO_DEPTH` the RTL currently declares, which is 2.
+
+- **The flop count is not an estimate.** At `FIFO_DEPTH = 8`,
+  41 + 45 + 572 = 658; at the ratified `FIFO_DEPTH = 2`,
+  **41 + 45 + 184 = 270**. Either way it is read directly off the three
+  modules' `reg` declarations at their shipped default parameters, and
+  `sim/tests/test_power_rollups.py` fails if any parameter the count depends on
+  (`FIFO_DEPTH`, `TRNG_LEVEL_BITS`, `C_RCT`, `W`, K) moves without the
+  inventory being revisited — it now also asserts the script's `FIFO_DEPTH`
+  against the RTL's. 512 of the 658 were the interface's two 8 × 32-bit output
+  FIFOs; **128 of the 270 are the same two FIFOs at 2 × 32 bits**, which is
+  where essentially the whole reduction comes from.
 - **Per-cell leakage is characterised library data**, not a model — read out of
   the PDK's own `ff_125C_3v60` Liberty file, which is exactly the row's binding
   corner. The library is characterised at 3.60 V against the envelope's
   3.63 V; that 0.8 % gap is far below the estimate's own uncertainty and is not
   corrected for.
-- **The combinational half is soft, and it is not the load-bearing half.** Its
-  largest single item is the FIFO read path: 576 `mux2_1` cells (two 32-bit 8:1
-  read muxes, the 4:1 `reg_rdata` mux and the streaming mux) at 6.28 µW, which
-  a synthesiser might implement more cheaply than a mux tree. **Delete every
-  combinational cell in all three blocks and the flops alone still miss the row
-  by 2.2×**; double every combinational count instead and the total goes to
-  6.6 µA.
+- **The combinational half is soft, and at `FIFO_DEPTH = 8` it is not the
+  load-bearing half.** Its largest single item is the FIFO read path: 576
+  `mux2_1` cells (two 32-bit 8:1 read muxes, the 4:1 `reg_rdata` mux and the
+  streaming mux) at 6.28 µW, which a synthesiser might implement more cheaply
+  than a mux tree. **Delete every combinational cell in all three blocks and
+  the flops alone still miss the row by 2.2×**; double every combinational
+  count instead and the total goes to 6.6 µA. **At `FIFO_DEPTH = 2` the same
+  three items are 192 `mux2_1` cells** — the read muxes go 2 × 32 × 7 = 448 to
+  2 × 32 × 1 = 64, the 96-cell `reg_rdata` mux and the 32-cell streaming mux
+  are depth-independent — still the largest single combinational item, at about
+  a third of its depth-8 size.
+- **Which half is load-bearing does change with the depth, and this is the one
+  conclusion here that the depth-2 numbers genuinely move.** At
+  `FIFO_DEPTH = 2` the enumerated flops alone are 918 nA, **92 % of the row —
+  just under it**, not 2.2× over. Deleting every combinational cell would
+  therefore no longer miss the row on the enumerated half alone; the miss at
+  depth 2 rests on flops *plus* the soft combinational half (2.03 µA together),
+  and doubling every combinational count instead gives 3.14 µA rather than
+  6.6 µA. The estimate's uncertainty consequently matters more at the shipped
+  depth than it did at depth 8.
 
 Getting from 4.46 µA to under 1 µA is therefore not a matter of tightening the
-estimate — the part of it that is not an estimate already misses by 2.2×. It
-needs a design change, which is what DR-0017 is for.
+estimate — at `FIFO_DEPTH = 8` the part of it that is not an estimate already
+misses by 2.2×. At the ratified `FIFO_DEPTH = 2` the total is 2.06 µA, still
+2.1× over, and the enumerated half no longer carries the miss on its own — but
+the soft half would have to be all but eliminated rather than merely tightened
+for that to matter: halve the 1.11 µA combinational estimate and the total is
+still 1.51 µA, and only deleting it outright brings the block to 951 nA
+(95 % of the row, with no margin for anything the inventory has not
+enumerated). Shrinking the FIFOs was exactly [DR-0017] §B's lever, and this is
+what pulling it was worth: a 2.2× improvement that does not reach the row,
+which is what §B predicted when it rejected the option. It still needs a design
+change, which is what DR-0017 is for.
 
 ### Two taps that are not in the total
 
@@ -387,7 +464,9 @@ python3 sim/tools/power_rollup.py
 python3 sim/tools/time_to_first_valid.py --check
 python3 sim/tools/power_rollup.py --check
 
-# The digital estimate on its own, at every characterised corner:
+# The digital estimate on its own, at every characterised corner. It computes
+# at whatever FIFO_DEPTH design/interface/trng_interface.v declares -- 2, per
+# DR-0020 -- so this reproduces the depth-2 column above, not the depth-8 one:
 python3 design/digital_power_estimate.py --all-corners
 
 # The three testbenches (needs ngspice + the gf180mcu PDK):
@@ -405,4 +484,5 @@ python3 sim/run_corners.py sampler-core-idle-leakage
 [DR-0012]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0016]: ../spec/decision-records/DR-0016-per-ring-liveness-monitor.md
 [DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
+[DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
