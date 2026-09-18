@@ -62,6 +62,7 @@ tool supplies the measurement, states it against the row, and stops there.
 [DR-0003]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
+[DR-0020]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: ../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 """
 
@@ -89,6 +90,43 @@ AREA_BUDGET_UM2 = 50_000.0
 #: [DR-0003]'s ratified raw rate. The operating point the power comparison is
 #: made at, because it is the one the library-based estimate prices.
 RATIFIED_RATE_HZ = 1e6
+
+#: The interface ``FIFO_DEPTH`` the MEASURED netlist was synthesized at.
+#:
+#: The area comparison below is measured-9-track-placed against
+#: estimated-7-track-inventory, and it only means anything if both sides price
+#: the *same design*. Issue #254 set [DR-0020]'s ratified ``FIFO_DEPTH = 2`` in
+#: the regmap, the RTL and the inventory estimate, but deliberately did not
+#: re-synthesize ``design/trng_top/trng_top.synth.v`` /
+#: ``layout/digital/trng_top.def`` -- so as of that issue the two sides are at
+#: different depths, and dividing one by the other would report the x1.597
+#: cell-count/library gap this document records as an x3.535 one.
+#:
+#: While they differ, the estimate side of the ratio is pinned to the figures
+#: ``reports/area.json`` carried at the measured depth (the ones
+#: ``sim/characterization-digital-sta-area-power.md`` records); the live
+#: depth-2 figures are still reported alongside, never hidden. A depth-2
+#: re-synthesis makes the depths agree again and retires the pin
+#: automatically -- nothing here has to be remembered.
+MEASURED_NETLIST_FIFO_DEPTH = 8
+ESTIMATE_CELL_AREA_AT_MEASURED_DEPTH_UM2 = 74_485.33
+ESTIMATE_CELLS_AT_MEASURED_DEPTH = 1655
+ESTIMATE_PLACED_60PCT_AT_MEASURED_DEPTH_UM2 = 124_142.22
+
+_FIFO_DEPTH_RE = re.compile(r"^FIFO_DEPTH\s*=\s*(\d+)\s*$", re.M)
+
+
+def estimate_fifo_depth() -> int:
+    """The ``FIFO_DEPTH`` ``design/digital_power_estimate.py``'s inventory --
+    and therefore ``reports/area.json``'s digital region -- is built at."""
+    m = _FIFO_DEPTH_RE.search(ESTIMATE_SCRIPT.read_text())
+    if m is None:
+        raise RecordError(
+            f"{ESTIMATE_SCRIPT.name}: no FIFO_DEPTH constant found; the area "
+            "cross-check cannot tell which depth the inventory prices"
+        )
+    return int(m.group(1))
+
 
 #: The findings the committed records support, as recorded in
 #: ``sim/characterization-digital-sta-area-power.md``. ``--check`` gates on
@@ -360,18 +398,42 @@ def area(records: list[Record]) -> dict:
     fp = json.loads(FLOORPLAN_AREA.read_text())
     digital = next(r for r in fp["regions"] if r["id"] == "digital")
     pnr = json.loads(PNR_REPORT.read_text())
+
+    # Both sides must price the same design for the ratio to mean anything.
+    # While the inventory is at a FIFO_DEPTH the measured netlist was not
+    # synthesized at (#254), the estimate side is the figure the report
+    # carried at the MEASURED depth; the live figures are reported alongside
+    # rather than hidden, and a re-synthesis at the shipped depth makes the
+    # depths agree and drops the pin without anyone having to remember it.
+    est_depth = estimate_fifo_depth()
+    depths_agree = est_depth == MEASURED_NETLIST_FIFO_DEPTH
+    if depths_agree:
+        est_cell_area = digital["cell_area_um2"]
+        est_cells = digital["cell_count"]
+        est_placed_60 = digital["placed_area_um2"]["60pct"]
+    else:
+        est_cell_area = ESTIMATE_CELL_AREA_AT_MEASURED_DEPTH_UM2
+        est_cells = ESTIMATE_CELLS_AT_MEASURED_DEPTH
+        est_placed_60 = ESTIMATE_PLACED_60PCT_AT_MEASURED_DEPTH_UM2
+
     return {
         "measured_cell_area_um2": cell_area,
         "measured_utilization_pct": records[0].v("utilization_pct"),
         "measured_instances": pnr["checks"]["components"]["placed"],
         "measured_library": "gf180mcu_fd_sc_mcu9t5v0 (9-track)",
-        "estimate_cell_area_um2": digital["cell_area_um2"],
-        "estimate_cells": digital["cell_count"],
+        "measured_netlist_fifo_depth": MEASURED_NETLIST_FIFO_DEPTH,
+        "estimate_fifo_depth": est_depth,
+        "estimate_depths_agree": depths_agree,
+        "estimate_cell_area_um2": est_cell_area,
+        "estimate_cells": est_cells,
         "estimate_library": f"{fp['stdcell_library']} (7-track)",
-        "estimate_placed_60pct_um2": digital["placed_area_um2"]["60pct"],
+        "estimate_placed_60pct_um2": est_placed_60,
         "estimate_guarded_um2": digital["guarded_area_um2"],
-        "ratio": cell_area / digital["cell_area_um2"],
-        "delta_um2": cell_area - digital["cell_area_um2"],
+        "live_estimate_cell_area_um2": digital["cell_area_um2"],
+        "live_estimate_cells": digital["cell_count"],
+        "live_estimate_placed_60pct_um2": digital["placed_area_um2"]["60pct"],
+        "ratio": cell_area / est_cell_area,
+        "delta_um2": cell_area - est_cell_area,
         "die_area_um2": pnr["die_area_um2"],
         "die_utilization_target_pct": pnr["request"]["floorplan"]["utilization_pct"],
         "budget_um2": AREA_BUDGET_UM2,
@@ -651,6 +713,18 @@ def report(records: list[Record], with_estimate: bool) -> None:
           f"({a['estimate_cells']} cells, {a['estimate_library']})")
     print(f"  delta             {a['delta_um2']:+10.1f} um^2  "
           f"= {a['ratio']:.3f}x the estimate")
+    if not a["estimate_depths_agree"]:
+        print(f"  both sides above are at FIFO_DEPTH = "
+              f"{a['measured_netlist_fifo_depth']}, which is what the measured "
+              "netlist was synthesized at.")
+        print(f"  the inventory now prices FIFO_DEPTH = "
+              f"{a['estimate_fifo_depth']} (DR-0020, issue #254): "
+              f"{a['live_estimate_cell_area_um2']:.1f} um^2 in "
+              f"{a['live_estimate_cells']} cells. Not divided into the "
+              "measurement -- that")
+        print("  would report a depth change as a library/cell-count gap. A "
+              "re-synthesis at the shipped depth makes the two comparable "
+              "again.")
     print(f"  vs the < 0.05 mm^2 README row: {a['share_of_budget_pct']:.1f} % on "
           f"cell area alone (row untouched -- #150/DR-0019)")
     print(f"  implied die at 60/80 % utilization: "
@@ -711,6 +785,15 @@ def report(records: list[Record], with_estimate: bool) -> None:
     print("  two output FIFOs); 'ungated' is its own per-flop-feedback-mux")
     print("  variant, which is what synthesis actually built -- the netlist")
     print("  contains no integrated clock gates at all.")
+    if not a["estimate_depths_agree"]:
+        print(f"  NOTE: the estimate column prices FIFO_DEPTH = "
+              f"{a['estimate_fifo_depth']} and the measured column a "
+              f"FIFO_DEPTH = {a['measured_netlist_fifo_depth']} netlist "
+              "(#254), so these")
+        print("  ratios are smaller than the like-for-like ones this table "
+              "recorded before; the ratios quoted in "
+              "sim/characterization-digital-sta-area-power.md are the "
+              "like-for-like ones.")
 
 
 # --------------------------------------------------------------------------- #

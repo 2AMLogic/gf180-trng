@@ -233,8 +233,8 @@
       "title": "Conditioner + health tests + interface",
       "supply": "vddd",
       "role": "deterministic",
-      "contents": "1655 standard cells",
-      "cell_count": 1655,
+      "contents": "863 standard cells",
+      "cell_count": 863,
       "breakdown": [
         {
           "cell": "conditioner (#8)",
@@ -250,8 +250,8 @@
         },
         {
           "cell": "interface (#26)",
-          "count": 1323,
-          "area_um2": 63098.83,
+          "count": 531,
+          "area_um2": 22268.11,
           "shipped": true
         },
         {
@@ -261,43 +261,43 @@
           "shipped": false
         }
       ],
-      "cell_area_um2": 74485.33,
+      "cell_area_um2": 33654.61,
       "placed_area_um2": {
-        "60pct": 124142.22,
-        "80pct": 93106.66
+        "60pct": 56091.02,
+        "80pct": 42068.26
       },
       "footprint_source": {
         "kind": "assembled_gds",
-        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (352.34 x 352.34 um)",
+        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (236.84 x 236.84 um)",
         "gds": "layout/digital/trng_top.gds",
         "cell_name": "trng_top",
         "bbox_um": {
           "x0": 0.0,
           "y0": 0.0,
-          "x1": 548.815,
-          "y1": 548.815
+          "x1": 548.825,
+          "y1": 548.825
         }
       },
-      "inner_w_um": 549.615,
-      "inner_h_um": 549.615,
+      "inner_w_um": 549.625,
+      "inner_h_um": 549.625,
       "ring_placement_clearance_um": 0.4,
       "ring_band_width_um": 0.6,
-      "guarded_w_um": 550.815,
-      "guarded_h_um": 550.815,
-      "guarded_area_um2": 303397.16,
+      "guarded_w_um": 550.825,
+      "guarded_h_um": 550.825,
+      "guarded_area_um2": 303408.18,
       "guard_taps": 1100,
       "ring_content_report": "fp_ring_content_digital.json",
       "ring_content_bbox_um": {
         "x0": 0.0,
         "y0": 0.0,
-        "x1": 548.815,
-        "y1": 548.815
+        "x1": 548.825,
+        "y1": 548.825
       }
     }
   ],
   "rollup": {
     "budget_um2": 50000.0,
-    "cell_area_um2": 75277.9,
+    "cell_area_um2": 34447.18,
     "isolation_channel_um": 20.0,
     "channels": [
       {
@@ -324,20 +324,20 @@
           "digital"
         ],
         "width_um": 20.0,
-        "span_um": 550.815,
-        "area_um2": 11016.3
+        "span_um": 550.825,
+        "area_um2": 11016.5
       }
     ],
-    "guarded_region_area_um2": 309923.56,
-    "isolation_channel_area_um2": 11516.3,
-    "floorplan_area_um2": 321439.86,
+    "guarded_region_area_um2": 309934.58,
+    "isolation_channel_area_um2": 11516.5,
+    "floorplan_area_um2": 321451.08,
     "row_bbox_um": {
-      "w": 1070.395,
-      "h": 561.965
+      "w": 1070.405,
+      "h": 561.975
     },
     "placed_area_um2": {
-      "60pct": 125463.19,
-      "80pct": 94097.38
+      "60pct": 57411.99,
+      "80pct": 43058.98
     },
     "subtotals": {
       "analog": {
@@ -356,11 +356,11 @@
         "regions": [
           "digital"
         ],
-        "cell_area_um2": 74485.33,
-        "guarded_area_um2": 303397.16,
+        "cell_area_um2": 33654.61,
+        "guarded_area_um2": 303408.18,
         "isolation_channel_area_um2": 0,
-        "area_um2": 303397.16,
-        "share_of_budget_pct": 606.79
+        "area_um2": 303408.18,
+        "share_of_budget_pct": 606.82
       }
     },
     "share_of_budget_pct": 642.9,

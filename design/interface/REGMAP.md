@@ -132,7 +132,7 @@ block-to-block signals inside `trng_top`.
 
 | Parameter | Value | Meaning |
 |---|---|---|
-| `FIFO_DEPTH` | 8 | words in each output FIFO |
+| `FIFO_DEPTH` | 2 | words in each output FIFO |
 | `REG_BITS` | 32 | register / streaming word width |
 | `ADDR_W` | 2 | register address width (word index) |
 | `RAW_PACK_BITS` | 32 | raw samples packed per word, LSB first |

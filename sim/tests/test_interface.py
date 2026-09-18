@@ -259,11 +259,24 @@ class RawPathTests(unittest.TestCase):
         self.assertEqual(iface.word_to_raw_bits(dut.raw_fifo[0]), bits)
 
     def test_raw_reads_are_undecimated_and_in_order(self):
-        bits = pattern_bits(32 * 5, seed=6)
-        vectors = raw_cycles(bits) + [iface.reg_read(RAW_DATA)] * 5
-        outs, _ = run_model(vectors)
-        words = [o.reg_rdata for o in outs[-5:]]
-        recovered = [b for w in words for b in iface.word_to_raw_bits(w)]
+        """Five words, drained as each one completes.
+
+        The reader keeps up here deliberately, so the property under test --
+        every packed word reaches the reader, in order, none decimated -- is
+        stated independently of `FIFO_DEPTH` (DR-0020 set it to 2; buffering
+        more words than that is
+        `test_raw_overflow_drops_the_incoming_word_and_flags_it`'s job, not
+        this one's). Before DR-0020 this test read five words out of a depth-8
+        FIFO in one burst, which measured the depth as much as the property.
+        """
+        words = 5
+        bits = pattern_bits(32 * words, seed=6)
+        dut = iface.Interface()
+        recovered = []
+        for i in range(words):
+            run_model(raw_cycles(bits[32 * i:32 * (i + 1)]), dut)
+            out = dut.step(**iface.reg_read(RAW_DATA))
+            recovered += iface.word_to_raw_bits(out.reg_rdata)
         self.assertEqual(recovered, bits)
 
     def test_raw_data_is_not_gated_by_a_health_test_failure(self):
@@ -327,11 +340,15 @@ class ConditionedPathTests(unittest.TestCase):
         self.assertEqual(len(dut.cond_fifo), 0)
 
     def test_data_read_pops_exactly_one_word(self):
+        """A full FIFO's worth, so the burst never overflows at the ratified
+        depth (DR-0020: 2) -- one read must pop exactly one word, in order,
+        and the read after the last one must read back 0."""
+        words = list(range(1, regmap.FIFO_DEPTH + 1))
         dut = self._running()
-        for word in (1, 2, 3):
+        for word in words:
             dut.step(cond_word=word, cond_valid=True)
-        seen = [dut.step(**iface.reg_read(DATA)).reg_rdata for _ in range(3)]
-        self.assertEqual(seen, [1, 2, 3])
+        seen = [dut.step(**iface.reg_read(DATA)).reg_rdata for _ in words]
+        self.assertEqual(seen, words)
         self.assertEqual(dut.step(**iface.reg_read(DATA)).reg_rdata, 0)
 
     def test_streaming_and_register_read_never_pop_the_same_word_twice(self):

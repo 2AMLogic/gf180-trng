@@ -64,16 +64,26 @@ here rather than silently corrected, because this script's value is now as the
 
 1. **The clock gating this script's headline assumes was never synthesized.**
    The ``clock_duty`` overrides below credit the two output FIFOs with gating
-   at 1/256 and 1/2048; the as-built netlist contains **no integrated clock
-   gates at all** (Yosys mapped the write enables to 553 ``mux2`` cells
-   instead). The ``interface_mux_feedback`` variant this script already
-   computes is therefore the like-for-like row, not the headline.
+   at ``1 / (32 x FIFO_DEPTH)`` and ``1 / (256 x FIFO_DEPTH)``; the as-built
+   netlist contains **no integrated clock gates at all** (Yosys mapped the
+   write enables to 553 ``mux2`` cells instead). The
+   ``interface_mux_feedback`` variant this script already computes is
+   therefore the like-for-like row, not the headline.
 2. **A flip-flop's clock-edge internal energy is priced at the *data*
    activity** (``p_internal += n * sec_activity * mean_int * freq``). A flop
    pays that energy on every clock edge regardless of D: the library's own
    ``dffq_1`` CLK table is 0.278 pJ per cycle unconditional, so the netlist's
    706 flops cost ~196 uW at 1 MHz before anything toggles -- 5x this script's
    entire ungated active figure. This is the single largest term in the gap.
+
+Both comparisons above were made at ``FIFO_DEPTH = 8``, on both sides. This
+script now estimates at DR-0020's ratified ``FIFO_DEPTH = 2`` (issue #254),
+while ``design/trng_top/trng_top.synth.v`` and ``layout/digital/trng_top.def``
+are still the depth-8 netlist and placement -- re-synthesising them is
+explicitly not part of that follow-up. So the ratios quoted above remain
+correct *as recorded*, against the depth-8 estimate they were measured
+against, and a like-for-like check of the depth-2 estimate needs a depth-2
+re-synthesis first. No measured number here is restated at the new depth.
 
 Nothing here is changed to chase those. Per [DR-0023] (Proposed, issue #174),
 ``sim/tools/power_rollup.py`` now reads its digital term from the MEASURED
@@ -147,9 +157,9 @@ RAW_RATE_HZ = 1e6
 #               actually see a clock edge. 1.0 unless the section sits behind
 #               an integrated clock gate, in which case it is the rate at which
 #               that gate opens. Getting this wrong is the single largest error
-#               available in the dynamic term: charging all 512 clock-gated FIFO
-#               flops at the full sample rate overstates the interface's
-#               dynamic power by more than an order of magnitude.
+#               available in the dynamic term: charging all 2 x 32 x FIFO_DEPTH
+#               clock-gated FIFO flops at the full sample rate overstates the
+#               interface's dynamic power by more than an order of magnitude.
 #   activity    expected 0->1 transitions per net per sample-clock cycle for
 #               this section, overriding the global default. Used where a
 #               section is plainly not driven at the sample rate -- a FIFO word
@@ -167,8 +177,25 @@ RAW_RATE_HZ = 1e6
 COND_WORD_PERIOD = 256
 #: Raw samples per packed raw output word (TRNG_RAW_PACK_BITS).
 RAW_WORD_PERIOD = 32
-#: Words in each FIFO (trng_interface FIFO_DEPTH).
-FIFO_DEPTH = 8
+#: Bits in one FIFO word / one register (TRNG_REG_BITS).
+REG_BITS_PER_WORD = 32
+#: Words in each FIFO (trng_interface FIFO_DEPTH). Fixed at 2 by DR-0020
+#: (`Accepted` 2026-09-07), which decided the depth once against idle power,
+#: area and the 500 bps streaming cost together; `sim/tests/test_power_rollups
+#: .py` fails if this and the RTL parameter default disagree.
+FIFO_DEPTH = 2
+
+#: `trng_interface.v`'s own `PTR_W`: the FIFO read/write pointer width, 1 bit
+#: for a depth of 1 or 2 and ceil(log2(FIFO_DEPTH)) above that. The pointer
+#: flops and their increment logic below are enumerated from it, so a depth
+#: change moves them the way it moves the storage itself.
+FIFO_PTR_W = 1 if FIFO_DEPTH <= 2 else (FIFO_DEPTH - 1).bit_length()
+
+#: `CNT_W` in the same module: the occupancy counters are `TRNG_LEVEL_BITS`
+#: wide, which regmap.py deliberately holds at 4 rather than narrowing it to
+#: fit the smaller depth -- see that file's own note on the `raw_bit_count`
+#: sizing hazard DR-0020 flags.
+FIFO_CNT_W = 4
 
 #: design/health_test/rct_apt.v at the DR-0002 defaults
 #: (C_RCT = 81 -> 7-bit counter, C_APT = 824 and W = 1024 -> 11-bit counters,
@@ -259,18 +286,23 @@ LIVENESS_INVENTORY = [
     ("ring_stuck_any", {"or2_1": 1}, "OR across the per-ring strobes"),
 ]
 
-#: design/interface/trng_interface.v at FIFO_DEPTH = 8, TRNG_LEVEL_BITS = 4.
-#: 572 flops, of which 512 are the two 8 x 32-bit output FIFOs. Enable is
-#: modelled as one integrated clock gate per FIFO word plus one for the raw
-#: shift register, which is what a synthesiser does for a register-file-style
-#: FIFO; INTERFACE_MUX_FEEDBACK_DELTA below is the pessimistic bound if clock
-#: gating is disallowed.
+#: design/interface/trng_interface.v at FIFO_DEPTH = 2 (DR-0020),
+#: TRNG_LEVEL_BITS = 4. 184 flops, of which 128 are the two 2 x 32-bit output
+#: FIFOs. Every FIFO-dependent count below is written as an expression in
+#: FIFO_DEPTH/FIFO_PTR_W rather than as a literal, so a future depth decision
+#: moves the inventory with the parameter instead of leaving it stale -- the
+#: failure mode `sim/tests/test_power_rollups.py`'s staleness guards exist to
+#: catch. Enable is modelled as one integrated clock gate per FIFO word plus
+#: one for the raw shift register, which is what a synthesiser does for a
+#: register-file-style FIFO; INTERFACE_MUX_FEEDBACK_DELTA below is the
+#: pessimistic bound if clock gating is disallowed.
 INTERFACE_INVENTORY = [
     (
         "conditioned FIFO storage",
-        {"dffrnq_1": 256},
-        "cond_mem[0:7], 32 bits each; one word written per 256 raw samples "
-        "(K = 8), so any given word's clock gate opens once per 2048",
+        {"dffrnq_1": REG_BITS_PER_WORD * FIFO_DEPTH},
+        f"cond_mem[0:{FIFO_DEPTH - 1}], 32 bits each; one word written per "
+        f"{COND_WORD_PERIOD} raw samples (K = 8), so any given word's clock "
+        f"gate opens once per {COND_WORD_PERIOD * FIFO_DEPTH}",
         {
             "clock_duty": 1.0 / (COND_WORD_PERIOD * FIFO_DEPTH),
             "activity": 0.25 / (COND_WORD_PERIOD * FIFO_DEPTH),
@@ -278,33 +310,51 @@ INTERFACE_INVENTORY = [
     ),
     (
         "raw FIFO storage",
-        {"dffrnq_1": 256},
-        "raw_mem[0:7], 32 bits each; one word written per 32 raw samples, so "
-        "any given word's clock gate opens once per 256",
+        {"dffrnq_1": REG_BITS_PER_WORD * FIFO_DEPTH},
+        f"raw_mem[0:{FIFO_DEPTH - 1}], 32 bits each; one word written per "
+        f"{RAW_WORD_PERIOD} raw samples, so any given word's clock gate opens "
+        f"once per {RAW_WORD_PERIOD * FIFO_DEPTH}",
         {
             "clock_duty": 1.0 / (RAW_WORD_PERIOD * FIFO_DEPTH),
             "activity": 0.25 / (RAW_WORD_PERIOD * FIFO_DEPTH),
         },
     ),
-    ("FIFO word clock gates", {"icgtp_1": 16}, "one per FIFO word, both FIFOs"),
-    ("FIFO head pointers", {"dffrnq_1": 6}, "cond_head, raw_head, 3 bits each (PTR_W)"),
+    (
+        "FIFO word clock gates",
+        {"icgtp_1": 2 * FIFO_DEPTH},
+        "one per FIFO word, both FIFOs",
+    ),
+    (
+        "FIFO head pointers",
+        {"dffrnq_1": 2 * FIFO_PTR_W},
+        f"cond_head, raw_head, {FIFO_PTR_W} bit(s) each (PTR_W)",
+    ),
     (
         "FIFO occupancy counters",
-        {"dffrnq_1": 8},
-        "cond_count, raw_count_w, 4 bits each (CNT_W = TRNG_LEVEL_BITS)",
+        {"dffrnq_1": 2 * FIFO_CNT_W},
+        f"cond_count, raw_count_w, {FIFO_CNT_W} bits each "
+        "(CNT_W = TRNG_LEVEL_BITS)",
     ),
     (
         "pointer / counter arithmetic",
-        {"xor2_1": 18, "and2_1": 18, "mux2_1": 14},
-        "two 3-bit head increments and two 4-bit up/down counters with hold",
+        {
+            # Two PTR_W-bit head increments (one xor/and pair per bit) plus
+            # two CNT_W-bit up/down occupancy counters, priced at one
+            # increment plus one decrement chain each.
+            "xor2_1": 2 * FIFO_PTR_W + 4 * (FIFO_CNT_W - 1),
+            "and2_1": 2 * FIFO_PTR_W + 4 * (FIFO_CNT_W - 1),
+            "mux2_1": 2 * (FIFO_CNT_W + 3),
+        },
+        f"two {FIFO_PTR_W}-bit head increments and two {FIFO_CNT_W}-bit "
+        "up/down counters with hold",
     ),
     (
         "FIFO read multiplexers",
-        {"mux2_1": 448},
-        "two 32-bit 8:1 read muxes (cond_mem[cond_head], raw_mem[raw_head]) "
-        "-- 7 mux2 per bit per FIFO. Combinational: their output moves when a "
-        "head pointer advances, i.e. once a word is consumed, not once a "
-        "sample arrives",
+        {"mux2_1": 2 * REG_BITS_PER_WORD * (FIFO_DEPTH - 1)},
+        f"two 32-bit {FIFO_DEPTH}:1 read muxes (cond_mem[cond_head], "
+        f"raw_mem[raw_head]) -- {FIFO_DEPTH - 1} mux2 per bit per FIFO. "
+        "Combinational: their output moves when a head pointer advances, i.e. "
+        "once a word is consumed, not once a sample arrives",
         {"activity": 0.25 / RAW_WORD_PERIOD},
     ),
     (
@@ -350,7 +400,14 @@ INTERFACE_INVENTORY = [
 #: The two FIFOs and the raw shift register with per-flop feedback muxes
 #: instead of clock gates -- the pessimistic bound if clock gating is
 #: disallowed, mirroring area_estimate.MUX_FEEDBACK_DELTA.
-INTERFACE_MUX_FEEDBACK_DELTA = {"icgtp_1": -17, "mux2_1": 544}
+INTERFACE_MUX_FEEDBACK_DELTA = {
+    # Every clock gate the inventory credits (2 x FIFO_DEPTH FIFO-word gates
+    # plus the raw shift register's one) removed, and one feedback mux added
+    # per flop it was gating (2 x 32 x FIFO_DEPTH FIFO bits plus the 32-bit
+    # raw shift register).
+    "icgtp_1": -(2 * FIFO_DEPTH + 1),
+    "mux2_1": 2 * REG_BITS_PER_WORD * FIFO_DEPTH + REG_BITS_PER_WORD,
+}
 
 BLOCKS = [
     ("conditioner (#8)", area_estimate.INVENTORY, True),

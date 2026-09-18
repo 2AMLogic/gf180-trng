@@ -610,6 +610,21 @@ this section used to quote.
 | Estimate — `layout/floorplan/reports/area.json`, region `digital` | 74 485.3 µm² | 1655 inventoried cells | `mcu7t5v0` (7-track) |
 | Delta | **+44 490.1 µm² = ×1.597** | +878 logical | — |
 
+> **The estimate row is the figure `reports/area.json` carried at the
+> *measured* depth, and that is now a pin.** Issue [#254] set [DR-0020]'s
+> ratified `FIFO_DEPTH = 2` in the regmap, the RTL parameter default and the
+> inventory estimate, so that report's `digital` region now prices **33 654.6
+> µm² in 863 cells** — but `layout/digital/trng_top.def`, which the measured
+> column is read from, is still the depth-8 synthesis and placement, because
+> re-synthesizing at the new depth is explicitly outside #254. Dividing one
+> into the other would report a depth change as a library/cell-count gap
+> (×3.54 instead of ×1.597), so `sim/tools/digital_corner_characterization.py`
+> holds the estimate side of this comparison at the depth-8 figures above
+> while the two disagree, prints the live depth-2 figures alongside them, and
+> drops the pin by itself once a depth-2 re-synthesis makes the depths agree.
+> **No measured number in this document moved**, and none of the three terms
+> in the decomposition below is FIFO-depth-dependent on the measured side.
+
 Both figures are *standard-cell* area, which is what makes them comparable.
 The **die** figure in the place-and-route report (301 209 µm²) is not
 comparable to either: it follows arithmetically from that run's own 40 %
@@ -1069,6 +1084,7 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#237]: https://github.com/2AMLogic/gf180-trng/issues/237
 [#240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [#242]: https://github.com/2AMLogic/gf180-trng/issues/242
+[#254]: https://github.com/2AMLogic/gf180-trng/issues/254
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100

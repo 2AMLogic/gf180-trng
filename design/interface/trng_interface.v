@@ -34,7 +34,11 @@
 
 module trng_interface #(
     // Words in each of the two output FIFOs. Must be a power of two.
-    parameter integer FIFO_DEPTH = 8
+    // 2 is the value DR-0020 decided (`Accepted` 2026-09-07), weighing idle
+    // power, area and the OUT_MODE drain cost at DR-0010's 500 bps together;
+    // design/interface/regmap.py carries the same constant for the model and
+    // the documented map.
+    parameter integer FIFO_DEPTH = 2
 ) (
     input  wire        clk,              // sampler clock (DR-0012: fixed external)
     input  wire        rst_n,            // async power-on reset, active low
@@ -100,7 +104,14 @@ module trng_interface #(
     reg [CNT_W-1:0] cond_count, raw_count_w;
 
     reg [31:0] raw_shift;
-    reg [TRNG_LEVEL_BITS+1:0] raw_bit_count;  // 0..RAW_PACK_BITS-1
+    // 0..RAW_PACK_BITS-1. NOTE the width below is spelled in TRNG_LEVEL_BITS
+    // but what this counter counts is raw samples per packed word
+    // (TRNG_RAW_PACK_BITS = 32, so it needs 6 bits), NOT FIFO occupancy. The
+    // two coincide only because TRNG_LEVEL_BITS is 4. DR-0020 flags this:
+    // narrowing TRNG_LEVEL_BITS to fit FIFO_DEPTH = 2 would silently truncate
+    // this counter, so regmap.py deliberately leaves LEVEL_BITS at 4. Anyone
+    // narrowing it must re-derive this width from TRNG_RAW_PACK_BITS first.
+    reg [TRNG_LEVEL_BITS+1:0] raw_bit_count;
 
     // ---------------------------------------------------------------- decode
     wire reg_read_c  = reg_sel && !reg_write;
