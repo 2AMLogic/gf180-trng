@@ -371,8 +371,16 @@ at whatever `FIFO_DEPTH` the RTL currently declares, which is 2.
 - **The combinational half is soft, and at `FIFO_DEPTH = 8` it is not the
   load-bearing half.** Its largest single item is the FIFO read path: 576
   `mux2_1` cells (two 32-bit 8:1 read muxes, the 4:1 `reg_rdata` mux and the
-  streaming mux) at 6.28 µW, which a synthesiser might implement more cheaply
-  than a mux tree. **Delete every combinational cell in all three blocks and
+  streaming mux) at **5.60 µW** — default-state leakage read straight out of
+  `ff_125C_3v60` (9.724 nW/cell × 576, the same per-cell figure and method as
+  the table above), which a synthesiser might implement more cheaply than a
+  mux tree. (This bullet previously said 6.28 µW; #262 found that number does
+  not reproduce from the Liberty library at any leakage state, from
+  `design/digital_power_estimate.py`'s leakage-plus-dynamic total for these
+  three items (6.42 µW), or from any FIFO read-path cell count on record in
+  this repository's history, and restated it here as a corrected figure
+  rather than preserving it under this document's supersession convention.)
+  **Delete every combinational cell in all three blocks and
   the flops alone still miss the row by 2.2×**; double every combinational
   count instead and the total goes to 6.6 µA. **At `FIFO_DEPTH = 2` the same
   three items are 192 `mux2_1` cells** — the read muxes go 2 × 32 × 7 = 448 to
