@@ -1,307 +1,238 @@
 {
   "schema_version": 1,
   "engine": "openroad",
-  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "engine_version": "26Q3-2276-g4a7cf9b22a",
   "hdl_toplevel": "trng_top",
   "status": "ok",
   "stage_reached": "route",
   "seed": 1,
   "interconnect_corner": "nom",
-  "die_area_um2": 301209,
-  "core_area_um2": 277092,
-  "utilization_pct": 42.9372,
-  "wirelength_um": 168038,
-  "worst_slack_ns": 28.4339,
+  "die_area_um2": 159117,
+  "core_area_um2": 143096,
+  "utilization_pct": 41.5562,
+  "wirelength_um": 72050,
+  "worst_slack_ns": 28.4669,
   "total_negative_slack_ns": 0,
-  "fmax_mhz": 46.369,
+  "fmax_mhz": 46.44,
   "setup_violation_count": 0,
   "hold_violation_count": 0,
-  "nominal_hold_slack_ns": 2.34448,
   "antenna_violation_count": 0,
   "route_drc_violation_count": 0,
-  "estimated_power_mw": 6.5833,
-  "clock_skew_ns": 0.11368,
-  "worst_setup_slack_ns": -22.7433,
-  "worst_hold_slack_ns": 0.51864,
+  "estimated_power_mw": 3.0562,
+  "clock_skew_ns": 0.36325,
+  "worst_setup_slack_ns": -25.0471,
+  "worst_hold_slack_ns": 0.50131,
   "corners": [
     {
       "name": "ff_125C_1v98",
-      "setup_slack_ns": 31.3722,
-      "hold_slack_ns": 1.9161,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 30.9806,
+      "hold_slack_ns": 1.85534
     },
     {
       "name": "ff_125C_3v60",
-      "setup_slack_ns": 40.2215,
-      "hold_slack_ns": 1.00009,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 40.0121,
+      "hold_slack_ns": 0.97079
     },
     {
       "name": "ff_125C_5v50",
-      "setup_slack_ns": 42.8242,
-      "hold_slack_ns": 0.73494,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 42.679,
+      "hold_slack_ns": 0.71359
     },
     {
       "name": "ff_n40C_1v98",
-      "setup_slack_ns": 36.4598,
-      "hold_slack_ns": 1.41922,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 0
+      "setup_slack_ns": 35.776,
+      "hold_slack_ns": 1.37394
     },
     {
       "name": "ff_n40C_3v60",
-      "setup_slack_ns": 43.4335,
-      "hold_slack_ns": 0.69147,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 42.9774,
+      "hold_slack_ns": 0.66879
     },
     {
       "name": "ff_n40C_5v50",
-      "setup_slack_ns": 45.0935,
-      "hold_slack_ns": 0.51864,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 44.716,
+      "hold_slack_ns": 0.50131
     },
     {
       "name": "ss_125C_1v62",
-      "setup_slack_ns": -22.7433,
-      "hold_slack_ns": 7.34934,
-      "max_transition_violation_count": 361,
-      "max_capacitance_violation_count": 0
+      "setup_slack_ns": -25.0471,
+      "hold_slack_ns": 7.1366
     },
     {
       "name": "ss_125C_3v00",
-      "setup_slack_ns": 27.5115,
-      "hold_slack_ns": 2.36747,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 3
+      "setup_slack_ns": 26.8716,
+      "hold_slack_ns": 2.29534
     },
     {
       "name": "ss_125C_4v50",
-      "setup_slack_ns": 35.6901,
-      "hold_slack_ns": 1.50424,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 5
+      "setup_slack_ns": 35.309,
+      "hold_slack_ns": 1.45951
     },
     {
       "name": "ss_n40C_1v62",
-      "setup_slack_ns": -17.6033,
-      "hold_slack_ns": 6.72787,
-      "max_transition_violation_count": 251,
-      "max_capacitance_violation_count": 0
+      "setup_slack_ns": -23.2174,
+      "hold_slack_ns": 6.52352
     },
     {
       "name": "ss_n40C_3v00",
-      "setup_slack_ns": 34.8069,
-      "hold_slack_ns": 1.65191,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 33.9339,
+      "hold_slack_ns": 1.60075
     },
     {
       "name": "ss_n40C_4v50",
-      "setup_slack_ns": 40.4626,
-      "hold_slack_ns": 1.04454,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 4
+      "setup_slack_ns": 39.8235,
+      "hold_slack_ns": 1.01202
     },
     {
       "name": "tt_025C_1v80",
-      "setup_slack_ns": 20.5137,
-      "hold_slack_ns": 3.04474,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 0
+      "setup_slack_ns": 19.3431,
+      "hold_slack_ns": 2.95094
     },
     {
       "name": "tt_025C_3v30",
-      "setup_slack_ns": 38.6921,
-      "hold_slack_ns": 1.19219,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 1
+      "setup_slack_ns": 38.157,
+      "hold_slack_ns": 1.15413
     },
     {
       "name": "tt_025C_5v00",
-      "setup_slack_ns": 42.2129,
-      "hold_slack_ns": 0.82266,
-      "max_transition_violation_count": 0,
-      "max_capacitance_violation_count": 4
+      "setup_slack_ns": 41.815,
+      "hold_slack_ns": 0.79669
     }
   ],
-  "max_transition_violation_count": 361,
-  "max_capacitance_violation_count": 5,
   "stages": [
     {
       "name": "floorplan",
-      "die_area_um2": 301209,
-      "core_area_um2": 277092,
-      "utilization_pct": 41.3339,
-      "worst_slack_ns": 34.0585,
+      "die_area_um2": 159117,
+      "core_area_um2": 143096,
+      "utilization_pct": 41.1755,
+      "worst_slack_ns": 33.6767,
       "total_negative_slack_ns": 0
     },
     {
       "name": "place",
-      "die_area_um2": 301209,
-      "core_area_um2": 277092,
-      "utilization_pct": 41.8269,
-      "worst_slack_ns": 28.2777,
+      "die_area_um2": 159117,
+      "core_area_um2": 143096,
+      "utilization_pct": 40.4556,
+      "worst_slack_ns": 27.6158,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 114048,
-      "fmax_mhz": 46.0356,
-      "estimated_power_mw": 4.84,
+      "wirelength_um": 50768.2,
+      "fmax_mhz": 44.6744,
+      "estimated_power_mw": 2.2209,
       "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "nominal_hold_slack_ns": 2.32968
+      "hold_violation_count": 0
     },
     {
       "name": "cts",
-      "die_area_um2": 301209,
-      "core_area_um2": 277092,
-      "utilization_pct": 42.9372,
-      "worst_slack_ns": 28.0407,
+      "die_area_um2": 159117,
+      "core_area_um2": 143096,
+      "utilization_pct": 41.5562,
+      "worst_slack_ns": 27.571,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 121992,
-      "fmax_mhz": 45.5388,
-      "estimated_power_mw": 6.552,
-      "clock_skew_ns": 0.07465,
+      "wirelength_um": 54541.9,
+      "fmax_mhz": 44.5851,
+      "estimated_power_mw": 3.0492,
+      "clock_skew_ns": 0.10613,
       "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "nominal_hold_slack_ns": 2.39578
+      "hold_violation_count": 0
     },
     {
       "name": "route",
-      "die_area_um2": 301209,
-      "core_area_um2": 277092,
-      "utilization_pct": 42.9372,
-      "worst_slack_ns": 28.4339,
+      "die_area_um2": 159117,
+      "core_area_um2": 143096,
+      "utilization_pct": 41.5562,
+      "worst_slack_ns": 28.4669,
       "total_negative_slack_ns": 0,
-      "wirelength_um": 168038,
-      "fmax_mhz": 46.369,
-      "estimated_power_mw": 6.5833,
-      "clock_skew_ns": 0.11368,
+      "wirelength_um": 72050,
+      "fmax_mhz": 46.44,
+      "estimated_power_mw": 3.0562,
+      "clock_skew_ns": 0.36325,
       "setup_violation_count": 0,
       "hold_violation_count": 0,
-      "nominal_hold_slack_ns": 2.34448,
       "antenna_violation_count": 0,
       "route_drc_violation_count": 0,
-      "worst_setup_slack_ns": -22.7433,
-      "worst_hold_slack_ns": 0.51864,
+      "worst_setup_slack_ns": -25.0471,
+      "worst_hold_slack_ns": 0.50131,
       "corners": [
         {
           "name": "ff_125C_1v98",
-          "setup_slack_ns": 31.3722,
-          "hold_slack_ns": 1.9161,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 30.9806,
+          "hold_slack_ns": 1.85534
         },
         {
           "name": "ff_125C_3v60",
-          "setup_slack_ns": 40.2215,
-          "hold_slack_ns": 1.00009,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 40.0121,
+          "hold_slack_ns": 0.97079
         },
         {
           "name": "ff_125C_5v50",
-          "setup_slack_ns": 42.8242,
-          "hold_slack_ns": 0.73494,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 42.679,
+          "hold_slack_ns": 0.71359
         },
         {
           "name": "ff_n40C_1v98",
-          "setup_slack_ns": 36.4598,
-          "hold_slack_ns": 1.41922,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 0
+          "setup_slack_ns": 35.776,
+          "hold_slack_ns": 1.37394
         },
         {
           "name": "ff_n40C_3v60",
-          "setup_slack_ns": 43.4335,
-          "hold_slack_ns": 0.69147,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 42.9774,
+          "hold_slack_ns": 0.66879
         },
         {
           "name": "ff_n40C_5v50",
-          "setup_slack_ns": 45.0935,
-          "hold_slack_ns": 0.51864,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 44.716,
+          "hold_slack_ns": 0.50131
         },
         {
           "name": "ss_125C_1v62",
-          "setup_slack_ns": -22.7433,
-          "hold_slack_ns": 7.34934,
-          "max_transition_violation_count": 361,
-          "max_capacitance_violation_count": 0
+          "setup_slack_ns": -25.0471,
+          "hold_slack_ns": 7.1366
         },
         {
           "name": "ss_125C_3v00",
-          "setup_slack_ns": 27.5115,
-          "hold_slack_ns": 2.36747,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 3
+          "setup_slack_ns": 26.8716,
+          "hold_slack_ns": 2.29534
         },
         {
           "name": "ss_125C_4v50",
-          "setup_slack_ns": 35.6901,
-          "hold_slack_ns": 1.50424,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 5
+          "setup_slack_ns": 35.309,
+          "hold_slack_ns": 1.45951
         },
         {
           "name": "ss_n40C_1v62",
-          "setup_slack_ns": -17.6033,
-          "hold_slack_ns": 6.72787,
-          "max_transition_violation_count": 251,
-          "max_capacitance_violation_count": 0
+          "setup_slack_ns": -23.2174,
+          "hold_slack_ns": 6.52352
         },
         {
           "name": "ss_n40C_3v00",
-          "setup_slack_ns": 34.8069,
-          "hold_slack_ns": 1.65191,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 33.9339,
+          "hold_slack_ns": 1.60075
         },
         {
           "name": "ss_n40C_4v50",
-          "setup_slack_ns": 40.4626,
-          "hold_slack_ns": 1.04454,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 4
+          "setup_slack_ns": 39.8235,
+          "hold_slack_ns": 1.01202
         },
         {
           "name": "tt_025C_1v80",
-          "setup_slack_ns": 20.5137,
-          "hold_slack_ns": 3.04474,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 0
+          "setup_slack_ns": 19.3431,
+          "hold_slack_ns": 2.95094
         },
         {
           "name": "tt_025C_3v30",
-          "setup_slack_ns": 38.6921,
-          "hold_slack_ns": 1.19219,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 1
+          "setup_slack_ns": 38.157,
+          "hold_slack_ns": 1.15413
         },
         {
           "name": "tt_025C_5v00",
-          "setup_slack_ns": 42.2129,
-          "hold_slack_ns": 0.82266,
-          "max_transition_violation_count": 0,
-          "max_capacitance_violation_count": 4
+          "setup_slack_ns": 41.815,
+          "hold_slack_ns": 0.79669
         }
-      ],
-      "max_transition_violation_count": 361,
-      "max_capacitance_violation_count": 5
+      ]
     }
   ],
   "macros": [],
   "def_path": "layout/digital/trng_top.def",
-  "unrouted_def_path": null,
   "gds_path": "layout/digital/trng_top.gds",
   "layer_map": {
     "resolution": "family"
@@ -371,7 +302,7 @@
     }
   },
   "provenance": {
-    "klt_version": "0.5.0",
+    "klt_version": "0.4.0",
     "klayout_version": "0.30.12",
     "pdk": {
       "name": "gf180mcuD",
@@ -383,7 +314,7 @@
       "released": false
     },
     "input": {
-      "content_hash": "sha256:748750588c408fd2e57da199119fa2697b681f72ad733f97533016141660d767"
+      "content_hash": "sha256:224d01d503eb6e8ed5b5594b07ad32b8d1cc9ebaacf141035a3307c6fa193cb2"
     }
   },
   "request": {
@@ -438,30 +369,30 @@
   "checks": {
     "def": {
       "database_units_per_um": 2000,
-      "component_count": 8594,
-      "die_width_um": 548.825,
-      "die_height_um": 548.825,
+      "component_count": 4436,
+      "die_width_um": 398.895,
+      "die_height_um": 398.895,
       "special_nets": true
     },
     "components": {
       "status": "ok",
-      "placed": 8594,
-      "physical_only_instance_count": 6061,
+      "placed": 4436,
+      "physical_only_instance_count": 2978,
       "physical_only_by_master": {
-        "gf180mcu_fd_sc_mcu9t5v0__filltie": 265,
-        "gf180mcu_fd_sc_mcu9t5v0__endcap": 208,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_64": 315,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_32": 298,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_16": 724,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_8": 890,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_4": 1042,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_2": 1135,
-        "gf180mcu_fd_sc_mcu9t5v0__fill_1": 1184
+        "gf180mcu_fd_sc_mcu9t5v0__filltie": 115,
+        "gf180mcu_fd_sc_mcu9t5v0__endcap": 150,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_64": 199,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_32": 145,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_16": 312,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_8": 456,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_4": 487,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_2": 553,
+        "gf180mcu_fd_sc_mcu9t5v0__fill_1": 561
       },
-      "logical_placed": 2533,
-      "as_built_netlist": 2533,
-      "synthesized": 2505,
-      "delta_vs_synthesized": 28
+      "logical_placed": 1458,
+      "as_built_netlist": 1458,
+      "synthesized": 1459,
+      "delta_vs_synthesized": -1
     },
     "power_isolation": {
       "status": "ok",
@@ -484,12 +415,12 @@
     "gds_geometry": {
       "status": "ok",
       "def_die_um": [
-        548.825,
-        548.825
+        398.895,
+        398.895
       ],
       "gds_extent_um": [
-        548.825,
-        548.825
+        398.895,
+        398.895
       ],
       "gds_over_def_ratio": [
         1.0,

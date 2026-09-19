@@ -10,6 +10,35 @@ flip-flops** ([`design/trng_top/trng_top.synth.json`](../../design/trng_top/trng
 issue #143). That is a place-and-route problem, and this directory is where
 it is solved — [#111][gf111].
 
+> **Update — re-synthesized and re-placed-and-routed at [dr20]'s ratified
+> `FIFO_DEPTH = 2` (issue [gf255]).** Everything quoted below this notice —
+> instance counts, timing, area and power — describes the `FIFO_DEPTH = 8`
+> build this directory shipped before #255, kept as the append-only record
+> of that run (the same treatment the "Two defects this bring-up found"
+> section already gives the pre-#170/#171 numbers). The committed artefacts
+> themselves are **not** that build any more: `trng_top.gds`/`.def`/
+> `.pnr.v`/`.sdf` are the depth-2 P&R, LVS-matched against their own
+> as-built netlist (`reports/lvs.json`: `status: match`, `mismatch_count:
+> 0`, up from the depth-8 build's `mismatch_count: 6`).
+>
+> | | `FIFO_DEPTH = 8` (below, historical) | `FIFO_DEPTH = 2` (current, [gf255]) |
+> |---|---:|---:|
+> | Synthesized instances | 2505 | 1459 |
+> | Placed logical instances | 2502–2533 (varied by rebuild) | 1458 |
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 8594 | 4436 |
+> | Die (40 % utilization target) | 548.8 × 548.8 µm = 301 209 µm² | 398.895 × 398.895 µm = 159 117 µm² |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +28.4 ns | +28.5 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −22.7 / +0.52 ns | −25.0 / +0.50 ns |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+>
+> The corner-swept, extraction-based STA/area/power figures this directory's
+> own Timing/Area/Power sections point to
+> (`sim/characterization-digital-sta-area-power.md`) are likewise re-run at
+> depth 2 — see that document's own §0 for the full comparison, including a
+> real regression the smaller design's different net topology introduced
+> (`layout/digital/build.py`'s `CONSTRAINTS`, tuned for the depth-8 design,
+> no longer clear the library's `max_transition` check at every corner).
+
 ## The one command
 
 ```sh
@@ -838,6 +867,7 @@ boundary.
 [gf186]: https://github.com/2AMLogic/gf180-trng/issues/186
 [gf187]: https://github.com/2AMLogic/gf180-trng/issues/187
 [gf224]: https://github.com/2AMLogic/gf180-trng/issues/224
+[gf255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
@@ -853,3 +883,4 @@ boundary.
 [klt1310]: https://github.com/2AMLogic/klayout-tools/pull/1310
 [klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[dr20]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md

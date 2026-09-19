@@ -35,13 +35,19 @@ this tool refuses to present it as if it were.
 **Design rules.** The library's own `max_transition` check across the
 family — how many corners violate it, the worst corner and slack, and how
 many violating pins sit on one of #233's six inter-region trunk nets
-(none). #237 found nine of the fifteen corners violating this and accepted
-it as a bounded residual because the build flow could not yet state a
-`set_max_transition`; #240 landed that constraint once klayout-tools#1860
-made it expressible, and the rebuilt DEF now violates at zero corners.
-`RECORDED` pins the *current* (fixed) state so it is an enforced invariant
-rather than a paragraph in the document; the per-net decomposition behind
-it needs the PDK and lives in
+(none, at any depth so far). #237 found nine of the fifteen corners
+violating this at `FIFO_DEPTH = 8` and accepted it as a bounded residual
+because the build flow could not yet state a `set_max_transition`; #240
+landed that constraint once klayout-tools#1860 made it expressible, and the
+rebuilt depth-8 DEF violated at zero corners. #255's depth-2 re-synthesis
+and re-place-and-route (DR-0020) reused the same fixed
+`max_transition_ns`/`max_capacitance_pf` pair from `layout/digital/
+build.py`'s `CONSTRAINTS` — tuned against the depth-8 topology, not
+re-derived for the smaller depth-2 one — and the depth-2 DEF violates at
+**eleven** of the fifteen corners, worse than the nine #237 found and #240
+closed. `RECORDED` pins the *current* (regressed, still-bounded) state so a
+future change is an enforced invariant rather than a paragraph in the
+document; the per-net decomposition behind it needs the PDK and lives in
 ``sim/tb/digital-sta-power/max_transition_probe.py``.
 
 **Power.** Per-corner total, per-group and leakage power at two operating
@@ -97,18 +103,24 @@ RATIFIED_RATE_HZ = 1e6
 #: estimated-7-track-inventory, and it only means anything if both sides price
 #: the *same design*. Issue #254 set [DR-0020]'s ratified ``FIFO_DEPTH = 2`` in
 #: the regmap, the RTL and the inventory estimate, but deliberately did not
-#: re-synthesize ``design/trng_top/trng_top.synth.v`` /
-#: ``layout/digital/trng_top.def`` -- so as of that issue the two sides are at
-#: different depths, and dividing one by the other would report the x1.597
-#: cell-count/library gap this document records as an x3.535 one.
+#: re-synthesize ``design/trng_top/trng_top.synth.v`` / ``layout/digital/
+#: trng_top.def`` -- so as of that issue the two sides were at different
+#: depths, and dividing one by the other would have reported the x1.597
+#: cell-count/library gap this document used to record as an x3.535 one.
 #:
-#: While they differ, the estimate side of the ratio is pinned to the figures
-#: ``reports/area.json`` carried at the measured depth (the ones
-#: ``sim/characterization-digital-sta-area-power.md`` records); the live
-#: depth-2 figures are still reported alongside, never hidden. A depth-2
-#: re-synthesis makes the depths agree again and retires the pin
-#: automatically -- nothing here has to be remembered.
-MEASURED_NETLIST_FIFO_DEPTH = 8
+#: Issue #255 did that re-synthesis and re-place-and-route, so the two sides
+#: agree again as of this constant's value below: both are ``FIFO_DEPTH = 2``.
+#: The pin this comment used to describe (holding the estimate side at the
+#: depth-8 figures while the two disagreed) is retired automatically now that
+#: ``depths_agree`` is ``True`` -- ``area()`` reads the *live*
+#: ``reports/area.json`` figures unconditionally in that case, and the three
+#: constants below stop being read. They are kept, unused, as the depth-8
+#: comparison basis this document's own historical section (`sim/
+#: characterization-digital-sta-area-power.md` section 3, retained verbatim
+#: as the depth-8 record) still cites -- so a future reader who diffs this
+#: file against a depth-8 checkout can see where those numbers came from
+#: without reconstructing them.
+MEASURED_NETLIST_FIFO_DEPTH = 2
 ESTIMATE_CELL_AREA_AT_MEASURED_DEPTH_UM2 = 74_485.33
 ESTIMATE_CELLS_AT_MEASURED_DEPTH = 1655
 ESTIMATE_PLACED_60PCT_AT_MEASURED_DEPTH_UM2 = 124_142.22
@@ -137,32 +149,36 @@ def estimate_fifo_depth() -> int:
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 24.876,
+    "setup_binding_slack_ns": 23.8801,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.7071,
-    "fmax_floor_mhz": 39.803,
+    "hold_binding_slack_ns": 0.69348,
+    "fmax_floor_mhz": 38.284,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 118_975.4,
-    "area_ratio_vs_inventory": 1.5973,
-    "power_1mhz_max_w": 7.1241e-4,
+    "cell_area_um2": 59_465.14,
+    "area_ratio_vs_inventory": 1.76692,
+    "power_1mhz_max_w": 3.58459e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 1.46243e-5,
+    "leakage_max_w": 7.1067e-6,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 4.06231e-6,
-    # [#240] stated `max_transition_ns`/`max_capacitance_pf` to
-    # `layout/digital/build.py`'s `CONSTRAINTS` and rebuilt once
-    # klayout-tools#1860 made that expressible. That closed #237's accepted
-    # residual rather than merely bounding it: the design violates the
-    # library's own `max_transition` at **zero** of the fifteen corners
-    # today (was nine), and `max_transition_worst_slack_ns` below is now the
-    # worst remaining *margin*, not a violation depth. Pinned here so the
-    # fixed state is an enforced invariant rather than a paragraph: a
-    # re-built DEF that reintroduces a violation fails this gate and forces
-    # section 2a to be re-read.
-    "max_transition_violating_corners": 0,
-    "max_transition_worst_slack_ns": 1.71936,
-    "max_transition_worst_corner": "ff_125C_3v60/rc-max",
-    "max_transition_worst_violating_pins": 0,
+    "leakage_max_current_a": 1.97408e-6,
+    # [#255] re-synthesized and re-placed-and-routed at DR-0020's ratified
+    # `FIFO_DEPTH = 2`, reusing `layout/digital/build.py`'s existing
+    # `CONSTRAINTS` (`max_transition_ns`/`max_capacitance_pf`, [#240]) --
+    # tuned against the depth-8 topology, not re-derived here. The depth-2
+    # DEF violates the library's own `max_transition` at **eleven** of the
+    # fifteen corners, more than the nine [#237] found (and [#240] closed)
+    # at depth 8: a real, measured regression from re-using a depth-8-tuned
+    # constant on a smaller design with a different net topology, not a
+    # depth effect on its own. Accepted and bounded here, exactly as [#237]'s
+    # own residual once was -- re-tuning `CONSTRAINTS` for the depth-2
+    # topology is follow-up work, not this issue's. Pinned here so the
+    # current (regressed) state is an enforced invariant rather than a
+    # paragraph: a re-built DEF that moves this count fails this gate and
+    # forces section 2a to be re-read.
+    "max_transition_violating_corners": 11,
+    "max_transition_worst_slack_ns": -1.6041,
+    "max_transition_worst_corner": "tt_025C_3v30/rc-max",
+    "max_transition_worst_violating_pins": 75,
     # No violating pin is on one of the six #233 trunk nets, at any corner --
     # true before #240 (when it mattered because a residual existed to check
     # this against) and trivially true now that there is no violating pin at
