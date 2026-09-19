@@ -714,6 +714,41 @@ of DR-0019's depth-sensitivity table should use. This section exists so that a
 reader of the table above cannot mistake a pre-synthesis estimate for the
 current state of knowledge.
 
+> **Update — re-measured at [DR-0020]'s `FIFO_DEPTH = 2` (issue [#255]).**
+> The table above is the `FIFO_DEPTH = 8` measurement ([#111], `sim/records/
+> 2026-08-17-digital-sta-power-*`) and is left as written, for the same
+> reason [DR-0019]'s own estimate table above is. Issue [#255]
+> re-synthesized and re-placed-and-routed the digital section at the new,
+> ratified depth — `design/trng_top/trng_top.synth.v`,
+> `layout/digital/trng_top.gds`/`.def`/`.pnr.v`/`.sdf` are now all
+> `FIFO_DEPTH = 2` artefacts, LVS-matched against their own as-built
+> netlist (`layout/digital/reports/lvs.json`: `status: match`,
+> `mismatch_count: 0`) — and re-ran the fifteen-corner sweep this table's
+> figure is drawn from (`sim/records/2026-09-19-digital-sta-power-*`,
+> `sim/characterization-digital-sta-area-power.md` §0):
+>
+> | | cell area | cells | library |
+> |---|---:|---:|---|
+> | This table's estimate, now at `FIFO_DEPTH = 2` (`reports/area.json`, region `digital`) | 33 654.6 µm² | 863 inventoried | `mcu7t5v0` (7-track) |
+> | Measured, placed ([#255]) | **59 465.1 µm²** | 1458 logical + 2978 tapcell/endcap/filler = 4436 DEF `COMPONENTS` | `mcu9t5v0` (9-track) |
+> | | **×1.767** | — | |
+>
+> **This replaces the *measurement* side of the comparison, not the
+> `digital` region's own guarded footprint in `reports/area.json`.** Since
+> issues [#209]/[#210] that footprint is sized from `layout/digital/
+> trng_top.gds`'s own real bbox via `klt stats` — and this issue committed a
+> new, smaller `trng_top.gds` without re-running that composition step,
+> which is the sibling issue [#256]'s job (additionally gated on
+> [DR-0026]'s klt-build question). Until [#256] lands, every *composed*
+> figure elsewhere in this document — the 548.815 µm guarded-footprint
+> figure, the 642.9 % `share_of_budget_pct`, the 1070.4 × 550.8 µm composed
+> row bbox — still describes the depth-8 `trng_top.gds` that
+> `reports/area.json` was actually measured from, now stale relative to
+> the depth-2 GDS this update names. The 59 465.1 µm² cell-area figure above
+> is real and current; the composed floorplan figures that depend on the
+> GDS's own bounding box are not, until [#256] re-runs `klt stats` against
+> it.
+
 The other three regions are unaffected: they are analog cells with no
 synthesis path, drawn by hand, and `ring1`/`ring2`/`combiner_sampler` already
 take their guarded footprints from committed assembled geometry rather than
@@ -1671,6 +1706,7 @@ would not block that separate question.
 [DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0020]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
+[DR-0026]: ../../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md
 [DR-0018]: ../../spec/decision-records/DR-0018-adopt-per-ring-output-buffer.md
 [DR-0019]: ../../spec/decision-records/DR-0019-area-row-versus-output-fifo-dominated-digital-section.md
 [DR-0025]: ../../spec/decision-records/DR-0025-full-chip-pex-scope.md
@@ -1680,3 +1716,5 @@ would not block that separate question.
 [#209]: https://github.com/2AMLogic/gf180-trng/issues/209
 [#210]: https://github.com/2AMLogic/gf180-trng/issues/210
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
+[#255]: https://github.com/2AMLogic/gf180-trng/issues/255
+[#256]: https://github.com/2AMLogic/gf180-trng/issues/256

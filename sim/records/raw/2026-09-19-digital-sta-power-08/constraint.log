@@ -1,0 +1,348 @@
+OpenROAD 26Q3-2276-g4a7cf9b22a 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: /Users/rwalters/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/techlef/gf180mcu_fd_sc_mcu9t5v0__nom.tlef, created 15 layers, 56 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /Users/rwalters/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef at line 2.
+
+[INFO ODB-0227] LEF file: /Users/rwalters/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef, created 229 library cells
+[INFO ODB-0127] Reading DEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-255/layout/digital/trng_top.def
+[INFO ODB-0128] Design: trng_top
+[INFO ODB-0130]     Created 111 pins.
+[INFO ODB-0131]     Created 4436 components and 22412 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 17214 connections.
+[INFO ODB-0133]     Created 1479 nets and 5176 connections.
+[INFO ODB-0134] Finished DEF file: /Users/rwalters/GitHub/gf180-trng/.loom/worktrees/issue-255/layout/digital/trng_top.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[WARNING RCX-0514] The ext_model_file option is deprecated. Use set_extraction_rules_file command instead.
+[INFO RCX-0435] Reading extraction model file /Users/rwalters/.ciel/gf180mcuD/libs.tech/librelane/rules.openrcx.gf180mcuD.nom ...
+[INFO RCX-0436] RC segment generation trng_top (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 6231 rc segments
+[INFO RCX-0439] Coupling Cap extraction trng_top ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 53% of 14745 wires extracted
+[INFO RCX-0442] 100% of 14745 wires extracted
+[INFO RCX-0045] Extract 1479 nets, 7678 rsegs, 7678 caps, 15015 ccs
+[INFO RCX-0443] 1479 nets finished
+STA_METRIC worst_setup_slack_ideal_s 3.694431072176485e-8
+STA_METRIC worst_hold_slack_ideal_s 1.160012752521311e-9
+STA_METRIC period_ns 50.0
+STA_METRIC worst_setup_slack_s 3.6955938753635564e-8
+STA_METRIC worst_hold_slack_s 1.1981488023948828e-9
+STA_METRIC tns_setup_s 0.0
+STA_METRIC tns_hold_s 0.0
+STA_METRIC clock_skew_setup_s -9.571565762200862e-11
+STA_METRIC clock_skew_hold_s -9.571565762200862e-11
+STA_METRIC cell_area_m2 5.9465143920078845e-8
+STA_METRIC utilization 0.4155621301775118
+worst slack max 36.9559
+worst slack min 1.1981
+tns max 0.0000
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_1308_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1356_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   36.9559
+u_interface/_1308_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1351_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   36.9577
+u_interface/_1308_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1357_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   36.9627
+u_interface/_1308_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1360_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   36.9627
+u_interface/_1308_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1372_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)   36.9645
+
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_1423_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1423_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.1981
+u_interface/_1275_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1275_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.1993
+u_interface/_1441_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1441_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2002
+u_interface/_1413_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1413_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2009
+u_interface/_1296_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1296_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2023
+
+Clock clk
+ 1.5523 source latency u_conditioner/_427_/CLK ^
+-1.6480 target latency u_conditioner/_434_/CLK ^
+ 0.0000 CRPR
+--------------
+-0.0957 setup skew
+
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           2.530946e-03 2.031968e-04 6.994966e-08 2.734213e-03  52.5%
+Combinational        6.440090e-04 6.887992e-04 6.449169e-08 1.332873e-03  25.6%
+Clock                4.146365e-04 7.228987e-04 6.854816e-08 1.137604e-03  21.9%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                3.589589e-03 1.614894e-03 2.029882e-07 5.204686e-03 100.0%
+                            69.0%        31.0%         0.0%
+Design area 59465 um^2 42% utilization.
+Warning: There are 42 input ports missing set_input_delay.
+Warning: There are 66 output ports missing set_output_delay.
+Warning: There are 68 unconstrained endpoints.
+STA_METRIC max_slew_limit_ns 6.0
+STA_METRIC max_slew_slack_ns -1.312535047531128
+STA_METRIC max_slew_violations 42
+STA_IFACE_PIN clk clkbuf_0_clk/I
+STA_IFACE_PIN rst_n fanout4/I
+STA_IFACE_PIN rst_n u_conditioner/fanout3/I
+STA_IFACE_PIN rst_n fanout2/I
+STA_IFACE_PIN rst_n fanout1/I
+STA_IFACE_PIN rst_n u_ring_liveness/_177_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_175_/RN
+STA_IFACE_PIN rst_n u_interface/_1453_/RN
+STA_IFACE_PIN rst_n u_interface/_1451_/RN
+STA_IFACE_PIN raw_bit u_interface/_1172_/I1
+STA_IFACE_PIN raw_bit u_interface/_1171_/I1
+STA_IFACE_PIN raw_bit u_interface/_1153_/A1
+STA_IFACE_PIN raw_bit u_health_test/_387_/I0
+STA_IFACE_PIN raw_bit u_health_test/_386_/I1
+STA_IFACE_PIN raw_bit u_health_test/_242_/A1
+STA_IFACE_PIN raw_bit u_health_test/_207_/A1
+STA_IFACE_PIN raw_bit u_conditioner/_349_/A2
+STA_IFACE_PIN raw_bit u_conditioner/_209_/A2
+STA_IFACE_PIN raw_valid u_interface/_1034_/A2
+STA_IFACE_PIN raw_valid u_interface/_1030_/A2
+STA_IFACE_PIN raw_valid u_interface/_1028_/A2
+STA_IFACE_PIN raw_valid u_interface/_1025_/A2
+STA_IFACE_PIN raw_valid u_interface/_0922_/A2
+STA_IFACE_PIN raw_valid u_health_test/_377_/A1
+STA_IFACE_PIN raw_valid u_health_test/_375_/A1
+STA_IFACE_PIN raw_valid u_health_test/_282_/A2
+STA_IFACE_PIN raw_valid u_health_test/_279_/A1
+STA_IFACE_PIN raw_valid u_health_test/_270_/I
+STA_IFACE_PIN raw_valid u_health_test/_230_/A2
+STA_IFACE_PIN raw_valid u_conditioner/_219_/A1
+STA_IFACE_PIN raw_valid u_conditioner/_206_/I
+STA_IFACE_PIN raw_valid u_conditioner/_203_/A3
+STA_IFACE_PIN raw_valid u_conditioner/_195_/A4
+STA_IFACE_PIN raw_valid u_conditioner/_181_/I
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_176_/D
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_137_/A1
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_089_/A1
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_177_/D
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_100_/A1
+STA_MAX_SLEW_VIOLATORS_BEGIN
+max slew
+
+Pin u_ring_liveness/_170_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_169_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_168_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_167_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_172_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_173_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1448_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1305_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_176_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_174_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_ring_liveness/_171_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1306_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1304_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1303_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_0965_/I ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1302_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1446_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_419_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_422_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_423_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_420_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_interface/_1452_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_421_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_418_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_413_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_414_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_424_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_434_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_417_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_412_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_416_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_415_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_411_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_410_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_409_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_425_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_408_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_395_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_396_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_406_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin u_conditioner/_407_/RN ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+Pin fanout4/Z ^
+max slew    6.00
+slew        7.31
+----------------
+Slack      -1.31 (VIOLATED)
+
+STA_MAX_SLEW_VIOLATORS_END
+STA_METRIC bisect_slack_at_lo_s -1.294406093421685e-8
+STA_METRIC min_period_ns 13.044792175292967
+STA_METRIC min_period_slack_s 7.309708394132031e-13
+STA_METRIC min_period_hold_slack_s 1.1981488023948828e-9

@@ -1,14 +1,12 @@
 {
   "status": "match",
-  "mismatch_count": 6,
-  "category_counts": {
-    "topology": 6
-  },
+  "mismatch_count": 0,
+  "category_counts": {},
   "counts": {
     "nets": {
-      "layout": 2547,
-      "reference": 2547,
-      "matched": 2996
+      "layout": 1503,
+      "reference": 1503,
+      "matched": 2015
     },
     "devices": {
       "layout": 0,
@@ -18,7 +16,7 @@
     "pins": {
       "layout": 111,
       "reference": 111,
-      "matched": 560
+      "matched": 623
     }
   },
   "device_classes": null,
@@ -140,9 +138,9 @@
       "vss"
     ],
     "top_pin_count": 111,
-    "instance_count": 2502,
-    "distinct_cell_types": 74,
-    "physical_only_instance_count": 6136,
+    "instance_count": 1458,
+    "distinct_cell_types": 83,
+    "physical_only_instance_count": 2978,
     "physical_only_cell_types": [
       "gf180mcu_fd_sc_mcu9t5v0__endcap",
       "gf180mcu_fd_sc_mcu9t5v0__fill_1",
@@ -162,8 +160,8 @@
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.12",
-    "layout_sha256": "27459b17eb2bc45a0638efd3281e0a390e319fd42ce056d6cb340567578bc9f9",
-    "reference_sha256": "33ab9c671a8b4dd63f094754ddb64de110dfd985faf56828aecebab3f0406bef",
+    "layout_sha256": "6b7bf76c472b27cde83449990c3668e0ab17a7f02d51a43c95c1e3fbf9ea45a6",
+    "reference_sha256": "6f08a02e267d87d224b996033bf3f97f53cad39ecda1797cdf9d1b40766ca4b9",
     "extracted_netlist": null
   }
 }

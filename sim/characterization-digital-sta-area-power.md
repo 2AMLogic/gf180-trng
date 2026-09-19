@@ -80,6 +80,75 @@ number to be decided against instead of an estimate.
 
 ---
 
+## 0. Update — re-measured at DR-0020's `FIFO_DEPTH = 2` (issue [#255])
+
+**Sections 1–5a below describe the `FIFO_DEPTH = 8` build** (the `sim/
+records/2026-09-15-digital-sta-power-*.md` family, [#111]/[#171]/[#240]'s
+DEF). They are retained verbatim as an append-only historical record, the
+same treatment `layout/digital/README.md` gives the pre-[#171]/pre-[#240]
+numbers — they no longer describe `layout/digital/`'s current committed
+artefacts.
+
+[#254] set [DR-0020]'s ratified `FIFO_DEPTH = 2` in the regmap, the RTL
+parameter default and the pre-synthesis inventory estimate, but deliberately
+did not re-synthesize or re-place-and-route — that was this issue's own job.
+[#255] regenerated `design/trng_top/trng_top.synth.v` (`design/synth.py`)
+and `layout/digital/trng_top.def`/`.gds`/`.pnr.v`/`.sdf`
+(`layout/digital/build.py`, `gen_sdf.py`) at the new depth, LVS-matched the
+new layout against its own as-built netlist (`layout/digital/lvs.py`,
+`status: match`, `mismatch_count: 0`), and re-ran this document's own
+fifteen-corner sweep against the new DEF. New records:
+`sim/records/2026-09-19-digital-sta-power-{01..15}.md`.
+
+| | depth 8 (§1–§4, historical) | depth 2 (current) |
+|---|---:|---:|
+| Placed instances | 8594 DEF `COMPONENTS` (2533 logical) | 4436 DEF `COMPONENTS` (1458 logical) |
+| Setup binding slack | +24.876 ns at `ss_125C_3v00`/`max` | +23.880 ns at `ss_125C_3v00`/`max` |
+| Hold binding slack | +0.7071 ns at `ff_n40C_3v60`/`min` | +0.6935 ns at `ff_n40C_3v60`/`min` |
+| Fmax floor | 39.803 MHz at `ss_125C_3v00`/`max` | 38.284 MHz at `ss_125C_3v00`/`max` |
+| Placed cell area | 118 975.4 µm² | **59 465.1 µm²** |
+| vs the pre-synthesis inventory (now depth-2, 863 cells, 33 654.6 µm²) | ×1.597 (vs the depth-8, 1655-cell, 74 485.3 µm² inventory) | **×1.767** |
+| Active power @ 1 MHz (max) | 712.4 µW at `ff_125C_3v60`/`max` | **358.5 µW** at `ff_125C_3v60`/`max` |
+| Leakage (max) | 14.62 µW / 4.062 µA at `ff_125C_3v60` | **7.107 µW / 1.974 µA** at `ff_125C_3v60` |
+| Library `max_transition` violations | 0 of 15 corners ([#240] closed [#237]'s 9-of-15 residual) | **11 of 15 corners** — see below |
+| #233 trunk-net `max_transition` violations | 0 of 15 corners | 0 of 15 corners (unchanged) |
+
+**The area ratio moved from ×1.597 to ×1.767 even though both sides are now
+priced at the same depth.** That is expected, not a regression: §3's own
+decomposition (cell-count/mix term, 9-track-vs-7-track term) is a property of
+*how* the estimate under- or over-counts a design's shape, not of its raw
+size, and a much smaller FIFO removes area from both sides unevenly (the two
+FIFOs' `dffrnq_1`/`mux2_1`/`icgtp_1` rows are a smaller share of a depth-2
+design's total logic than of a depth-8 one). Re-deriving §3's full
+cell-count/track-height/PDN-population split for the depth-2 netlist is
+follow-up work, not repeated here in the summary.
+
+**The library's own `max_transition` check regressed: 0 → 11 of 15
+corners.** `layout/digital/build.py`'s `CONSTRAINTS` (`max_transition_ns:
+8.0`, `max_capacitance_pf: 0.35`, [#240]) were tuned against the depth-8
+topology's own four high-fanout nets and reused unchanged for this
+depth-2 re-place-and-route. They no longer clear every corner on the smaller
+design's different net topology: the depth-2 DEF violates at **11 of 15**
+corners, worst −1.6041 ns at `tt_025C_3v30`/`max` with 75 violating pins
+(records' own `max_slew_slack_ns`/`max_slew_violations` fields) — worse than
+the nine corners [#237] originally found and [#240] closed at depth 8. The
+one invariant that does still hold: **none of the six #233 trunk-net pins
+violates, at any of the fifteen corners** (`interface_load_max_slew_violations:
+0` in every one of the fifteen new records) — the regression is
+internal to the design, not on the inter-region interface. Re-tuning
+`CONSTRAINTS` for the depth-2 topology (the same lever [#240] pulled for
+depth 8) is a natural follow-up, not performed here: this issue's job was to
+regenerate the physical artefacts and characterize what they measure, not to
+re-close a design-rule residual its own predecessor issue already accepted
+once as bounded rather than eliminated.
+
+`sim/tools/digital_corner_characterization.py`'s `RECORDED` table and
+`MEASURED_NETLIST_FIFO_DEPTH` constant now reflect this depth-2 family;
+`--check` (wired into `npm run check:spec`) gates on it, not on the
+historical depth-8 figures sections 1–5a quote.
+
+---
+
 ## 1. What ran
 
 | | |
@@ -1051,11 +1120,15 @@ python3 sim/tb/digital-sta-power/max_transition_probe.py
 python3 sim/tb/digital-sta-power/max_transition_probe.py --check
 ```
 
-Records: `sim/records/2026-09-15-digital-sta-power-{01..15}.md`, one per
-corner, each with the generated Tcl and the full OpenROAD log as committed raw
-output. The SPEF is not committed (3.3 MB × 15); each record carries its
-sha256, byte count and summed capacitance so a re-run can be checked against
-it. The pre-[#240] `sim/records/2026-09-12-digital-sta-power-{01..15}.md`
+Records: `sim/records/2026-09-19-digital-sta-power-{01..15}.md`, the current
+`FIFO_DEPTH = 2` family ([#255], §0), one per corner, each with the generated
+Tcl and the full OpenROAD log as committed raw output. The SPEF is not
+committed (3.3 MB × 15); each record carries its sha256, byte count and
+summed capacitance so a re-run can be checked against it. The pre-[#255]
+`sim/records/2026-09-15-digital-sta-power-{01..15}.md` remain committed as
+append-only evidence about the `FIFO_DEPTH = 8` DEF they name and hash, but
+no longer describe `layout/digital/`'s current committed artefacts (§0). The
+pre-[#240] `sim/records/2026-09-12-digital-sta-power-{01..15}.md`
 remain committed as append-only evidence about the DEF before
 `max_transition_ns`/`max_capacitance_pf` were stated to `repair_design`
 (§2a). The pre-[#233] `sim/records/2026-08-18-digital-sta-power-{01..15}.md`
@@ -1085,6 +1158,7 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [#242]: https://github.com/2AMLogic/gf180-trng/issues/242
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
+[#255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
