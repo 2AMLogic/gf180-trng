@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "lint": "python3 -m compileall -q sim design layout && bash -n sim/selftest.sh && python3 design/netlist.py --lint",
+    "lint": "python3 -m compileall -q sim design layout signoff && bash -n sim/selftest.sh && python3 design/netlist.py --lint",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests",
     "test:layout": "python3 -m unittest discover -s layout/tests -t layout/tests",
     "check:spec": "python3 sim/tools/jitter_energy_law.py --check && python3 sim/tools/starved_cell_jitter_energy.py --check && python3 sim/tools/array_sizing.py --check && python3 sim/tools/worst_corner_entropy.py --check && python3 sim/tools/array_coupling_variants.py --check && python3 sim/tools/array_coupling_buffer_variant.py --check && python3 sim/tools/liveness_tap_phase_variants.py --check && python3 sim/tools/array_liveness_tap_phase_variants.py --check && python3 sim/tools/sampler_bit_bias_variants.py --check && python3 sim/tools/time_to_first_valid.py --check && python3 sim/tools/power_rollup.py --check && python3 sim/tools/digital_corner_characterization.py --check && python3 sim/tools/vss_trunk_ir_drop.py --check",
@@ -16,7 +16,8 @@
     "check:fixtures": "python3 layout/testcells/build.py --check",
     "check:layout": "python3 layout/verify.py",
     "check:floorplan": "python3 layout/floorplan/floorplan.py",
-    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:layout && npm run check:floorplan && sim/selftest.sh",
-    "check:all": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:netlist && npm run check:digital-netlist && npm run check:digital-sdf && python3 layout/verify.py --require-tools && python3 layout/floorplan/floorplan.py --require-tools && sim/selftest.sh --require-pdk"
+    "check:signoff": "python3 signoff/check.py",
+    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:layout && npm run check:floorplan && npm run check:signoff && sim/selftest.sh",
+    "check:all": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:netlist && npm run check:digital-netlist && npm run check:digital-sdf && python3 layout/verify.py --require-tools && python3 layout/floorplan/floorplan.py --require-tools && python3 signoff/check.py --require-tools && sim/selftest.sh --require-pdk"
   }
 }
