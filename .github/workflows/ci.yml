@@ -160,6 +160,28 @@ name: CI
 #       pass, so exercising the skip path itself is still worth a green check
 #       here; `npm run check:all` runs the latter two with --require-tools.
 #
+#   signoff/check.py (T1 tier-report re-grade + evidence-freshness gate)
+#       RUN on every push/PR, in its own `signoff` job below, with
+#       --require-tools. It is not in the `harness` matrix because it is the
+#       one check here that installs a third-party tool (klayout-tools, the
+#       grader), and paying that install twice over the Python matrix buys
+#       nothing. Two halves, both PR-blocking:
+#         1. stdlib-only, no tool needed -- re-hash every input artifact a
+#            cited evidence envelope names (a GDS, a Markdown characterization
+#            record) and fail if it no longer matches the digest that envelope
+#            recorded. `klt signoff` compares the manifest's pin against the
+#            envelope's own provenance block and never opens the artifact
+#            underneath, so without this step two committed files could agree
+#            with each other while both described a revision that no longer
+#            exists.
+#         2. re-run `klt signoff --manifest signoff/block-manifest.json` and
+#            fail if signoff/records/t1-tier-report.json -- this block's T1
+#            verdict of record, cited by the gap-to-T1 tracker (#124) -- no
+#            longer matches. That is what stops the verdict from rotting back
+#            into prose the way a hand-maintained checkbox list does.
+#       The grader needs no PDK and no KLayout GUI; it only reads JSON
+#       envelopes already committed here. See signoff/README.md.
+#
 #   sim/run_corners.py evidence runs (sim/records/)
 #       EXCLUDED from both workflows. Recording evidence is a deliberate,
 #       PDK-bound act performed by a human or agent with the PDK installed;
@@ -348,3 +370,45 @@ jobs:
       # script exits 0 on this runner).
       - name: Harness acceptance test (PDK stages self-skip on a hosted runner)
         run: sim/selftest.sh
+
+  # ---------------------------------------------------------------------------
+  # T1 evidence signoff. Separate job because it is the only check here that
+  # installs a third-party tool; see the self-check inventory above.
+  # ---------------------------------------------------------------------------
+  signoff:
+    name: T1 tier report (klt signoff --manifest, no PDK required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # signoff/check.py pins the klayout-tools release that GRADES this
+      # block, and that pin is load-bearing rather than incidental: `klt
+      # signoff` parses the T1 item list out of klayout-tools' own
+      # docs/design-evidence-tiers.md, bundled inside the wheel, so the tool
+      # version IS the yardstick. 0.5.0 renders a ten-item checklist with no
+      # item-11 row at all (T1 item 11, "Power delivery (structural)",
+      # klayout-tools#2025, landed after that release); 0.6.0 renders eleven.
+      # Keep this version in step with signoff/check.py's KLT_PIN -- the
+      # committed record carries build.version, so a mismatch fails loudly at
+      # the record diff rather than grading against the wrong checklist in
+      # silence.
+      #
+      # This is deliberately a DIFFERENT pin from pdk-nightly.yml's
+      # klayout-tools commit, which pins the build that PRODUCES layout
+      # evidence (DRC/LVS/extraction). The two have different jobs and move on
+      # different clocks: bumping the producer means re-running DRC/LVS and
+      # re-committing evidence, bumping the grader re-reads existing evidence
+      # and produces none.
+      - name: Install the pinned signoff grader (klt; no PDK, no KLayout GUI)
+        run: pip install "klayout-tools==0.6.0"
+
+      # Runs with --require-tools so the tool-absent self-skip path can never
+      # stand in for a pass here. Fails on evidence rot (a cited envelope's
+      # input artifact changed underneath it) or verdict rot (a fresh
+      # `klt signoff` run no longer matches the committed record).
+      - name: T1 manifest re-grade and evidence-freshness gate
+        run: python3 signoff/check.py --require-tools

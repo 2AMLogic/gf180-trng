@@ -292,6 +292,20 @@ The SP 800-90B validation claim attaches to the last rung, not the first
 ([DR-0004]) — a simulated min-entropy estimate is not an entropy assessment,
 and this repository will not let one be read as the other.
 
+Where this block stands against the klayout-tools design-evidence ladder is
+**graded, not asserted**: [`signoff/records/t1-tier-report.json`](signoff/records/t1-tier-report.json)
+is the verdict of record, produced by `klt signoff --manifest` from
+[`signoff/block-manifest.json`](signoff/block-manifest.json) and re-run by CI
+on every push. Today it reads `tier: null`, **T1 3 of 22 items met** (a
+`mixed-signal` block is graded once per partition, so the eleven-item T1
+checklist renders 22 rows). That is a stricter reading than "which work has
+been done", because it counts only evidence a third party can re-grade from a
+committed `klt` JSON envelope — most of this repo's verification evidence is
+in its own Markdown record format and is invisible to the grader.
+[`signoff/README.md`](signoff/README.md) reads every row, states the
+disclosures the grader structurally cannot check, and lists what would move
+the needle.
+
 ## Layout
 
 ```
@@ -299,6 +313,7 @@ spec/          spec + decision records
 design/        analog schematics / netlists (xschem) + digital blocks
 sim/           testbenches + PVT corner results (ngspice)
 layout/        DRC/LVS flow + drawn cells + digital P&R          — composed (#209/#210)
+signoff/       T1 evidence manifest + graded tier report         — `klt signoff --manifest`
 measurements/  silicon characterization                          — empty until tape-out
 ```
 
