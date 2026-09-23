@@ -43,11 +43,14 @@ rebuilt depth-8 DEF violated at zero corners. #255's depth-2 re-synthesis
 and re-place-and-route (DR-0020) reused the same fixed
 `max_transition_ns`/`max_capacitance_pf` pair from `layout/digital/
 build.py`'s `CONSTRAINTS` — tuned against the depth-8 topology, not
-re-derived for the smaller depth-2 one — and the depth-2 DEF violates at
+re-derived for the smaller depth-2 one — and the depth-2 DEF violated at
 **eleven** of the fifteen corners, worse than the nine #237 found and #240
-closed. `RECORDED` pins the *current* (regressed, still-bounded) state so a
-future change is an enforced invariant rather than a paragraph in the
-document; the per-net decomposition behind it needs the PDK and lives in
+closed. #264 re-derived `CONSTRAINTS.max_transition_ns` for the depth-2
+topology (`sim/tb/digital-sta-power/max_transition_probe.py`'s per-net
+decomposition, same method #240 used at depth 8) and rebuilt: the current
+DEF violates at zero of the fifteen corners again. `RECORDED` pins that
+clean state so a future change is an enforced invariant rather than a
+paragraph in the document; the per-net decomposition lives in
 ``sim/tb/digital-sta-power/max_transition_probe.py``.
 
 **Power.** Per-corner total, per-group and leakage power at two operating
@@ -149,40 +152,60 @@ def estimate_fifo_depth() -> int:
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 23.8801,
+    "setup_binding_slack_ns": 31.41296,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.69348,
-    "fmax_floor_mhz": 38.284,
+    "hold_binding_slack_ns": 0.69017,
+    "fmax_floor_mhz": 53.8007,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 59_465.14,
-    "area_ratio_vs_inventory": 1.76692,
-    "power_1mhz_max_w": 3.58459e-4,
+    "cell_area_um2": 61_692.02,
+    "area_ratio_vs_inventory": 1.83309,
+    "power_1mhz_max_w": 3.45572e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 7.1067e-6,
+    "leakage_max_w": 7.51499e-6,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 1.97408e-6,
+    "leakage_max_current_a": 2.0875e-6,
     # [#255] re-synthesized and re-placed-and-routed at DR-0020's ratified
     # `FIFO_DEPTH = 2`, reusing `layout/digital/build.py`'s existing
     # `CONSTRAINTS` (`max_transition_ns`/`max_capacitance_pf`, [#240]) --
-    # tuned against the depth-8 topology, not re-derived here. The depth-2
-    # DEF violates the library's own `max_transition` at **eleven** of the
-    # fifteen corners, more than the nine [#237] found (and [#240] closed)
-    # at depth 8: a real, measured regression from re-using a depth-8-tuned
-    # constant on a smaller design with a different net topology, not a
-    # depth effect on its own. Accepted and bounded here, exactly as [#237]'s
-    # own residual once was -- re-tuning `CONSTRAINTS` for the depth-2
-    # topology is follow-up work, not this issue's. Pinned here so the
-    # current (regressed) state is an enforced invariant rather than a
-    # paragraph: a re-built DEF that moves this count fails this gate and
-    # forces section 2a to be re-read.
-    "max_transition_violating_corners": 11,
-    "max_transition_worst_slack_ns": -1.6041,
-    "max_transition_worst_corner": "tt_025C_3v30/rc-max",
-    "max_transition_worst_violating_pins": 75,
+    # tuned against the depth-8 topology, not re-derived for the smaller
+    # depth-2 one -- and that reuse violated the library's own
+    # `max_transition` at eleven of the fifteen corners, worse than the nine
+    # [#237] found (and [#240] closed) at depth 8. [#264] re-derived the
+    # constraint for the depth-2 topology the same way [#240] did at depth 8
+    # (`sim/tb/digital-sta-power/max_transition_probe.py`'s per-net
+    # decomposition over the depth-2 DEF, which found the residual confined
+    # to two nets -- `net4`, a 42-load reset-tree fanout net driven by a
+    # `dlyd_1` delay cell, and `u_interface/_0519_`, a 33-load net driven by
+    # an `and4_1` gate -- neither on a #233 trunk): tightening
+    # `max_transition_ns` from 8.0 ns (the depth-8 value, 60.6 % of the
+    # `ss_125C_3v00` P&R corner's own 13.2 ns limit) to 4.0 ns (30.3 % of
+    # that same limit -- chosen to match the tightest corner the family
+    # sweeps, `ff_n40C_3v60` at 4.4 ns, rather than the smaller naive
+    # guard-band the probe's own `pnr_corner_target` computed against the
+    # *unfixed* DEF, 10.99 ns, which itself proved insufficient once
+    # measured: the unfixed DEF's own `ss_125C_3v00` worst slew was already
+    # 14.1 ns against an 8.0 ns target, so the placement-estimated-vs.
+    # extracted-parasitics gap #240's own docstring describes is wider for
+    # this topology's two nets than it was for depth-8's four) rebuilt clean
+    # on the first attempt, at a modest area cost (measured cell area
+    # 61,692.02 um^2 vs the violating build's 59,465.14 um^2, +3.7 %, from
+    # design-wide `repair_design` buffering, not only on the two named nets
+    # -- `layout/digital/build.py`'s
+    # own `place_and_route.json` puts the achieved utilization at 43.11 %
+    # against the violating build's 41.56 %, the same +3.7 % relative move,
+    # inside one unchanged 159,117 um^2 die since the floorplan's own 40 %
+    # utilization target, not the cell count, sets that). Pinned here so
+    # this clean state is an enforced invariant rather than a paragraph: a
+    # re-built DEF that moves this count fails this gate and forces section
+    # 2a to be re-read.
+    "max_transition_violating_corners": 0,
+    "max_transition_worst_slack_ns": 3.13035,
+    "max_transition_worst_corner": "ff_n40C_3v60/rc-max",
+    "max_transition_worst_violating_pins": 0,
     # No violating pin is on one of the six #233 trunk nets, at any corner --
     # true before #240 (when it mattered because a residual existed to check
-    # this against) and trivially true now that there is no violating pin at
-    # all.
+    # this against), true through #255's depth-2 regression, and true again
+    # after #264's fix.
     "interface_load_max_slew_violations": 0,
 }
 

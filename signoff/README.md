@@ -215,22 +215,22 @@ warnings, and they are listed here rather than folded into the word "match".
 `sim/characterization-digital-sta-area-power.md` is the one aggregated,
 current artifact item 8 asks a digital partition for: Fmax, placed area and
 power across all fifteen corners, each number naming the `sim/records/`
-evidence record it rests on, with §0 carrying the `FIFO_DEPTH = 2`
-re-measurement (issue #255) that supersedes the depth-8 sections retained
-below it as append-only history.
+evidence record it rests on, with §0/§0a carrying the `FIFO_DEPTH = 2`
+re-measurement (issues #255 and #264) that supersedes the depth-8 sections
+retained below them as append-only history.
 
 Item 8 asks for that aggregation artifact to exist and be current. It does
 **not** ask for every row in it to pass, and this `met` verdict must not be
 read as if it did. The disclosed exceptions, which travel with the claim
-rather than being omitted from it: placed cell area is 59 465.1 µm², ×1.767
+rather than being omitted from it: placed cell area is 61 692.0 µm², ×1.833
 of the depth-2 pre-synthesis inventory and still over the ratified
-`< 0.05 mm²` row on digital cells alone; measured power remains well above
-the library-based estimate at the same corner and rate; and the library
-`max_transition` check regressed from 0 of 15 corners violating to 11 of 15
-at depth 2, tracked as open issue
-[#264](https://github.com/2AMLogic/gf180-trng/issues/264) (the six #233
-inter-region trunk nets are not among the violators). All three are item 5's
-subject matter, and item 5 is `unmet` above. One met row out of 22 is not a
+`< 0.05 mm²` row on digital cells alone; and measured power remains well
+above the library-based estimate at the same corner and rate. Both are item
+5's subject matter, and item 5 is `unmet` above. (A third exception this
+paragraph used to carry is closed: #255's first depth-2 build regressed the
+library `max_transition` check to 11 of 15 corners, and
+[#264](https://github.com/2AMLogic/gf180-trng/issues/264) re-tuned the
+place-and-route constraint and rebuilt. The current DEF violates at 0 of 15.) One met row out of 22 is not a
 claim about this block's performance.
 
 **Item 8 analog is uncited on purpose.** The analog partition has fourteen

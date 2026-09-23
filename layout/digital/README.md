@@ -39,6 +39,35 @@ it is solved — [#111][gf111].
 > (`layout/digital/build.py`'s `CONSTRAINTS`, tuned for the depth-8 design,
 > no longer clear the library's `max_transition` check at every corner).
 
+> **Update — `max_transition_ns` re-tuned for the depth-2 topology (issue
+> [gf264]).** The regression the box above flags was real: reusing
+> `CONSTRAINTS.max_transition_ns: 8.0` unchanged from the depth-8 tuning
+> ([gf240]) left the depth-2 DEF violating the library's own `max_transition`
+> check at 11 of the 15 corners (`sim/characterization-digital-sta-area-power.md`
+> §0). This issue re-derived the constraint for the depth-2 topology the same
+> way [gf240] derived it at depth 8 —
+> `sim/tb/digital-sta-power/max_transition_probe.py`'s per-net decomposition,
+> this time over the depth-2 DEF — and rebuilt with `max_transition_ns: 4.0`,
+> clearing all fifteen corners (§0a of the same document). The committed
+> artefacts are *this* rebuild, so the depth-2 figures the box above quotes
+> (from [gf255]'s original depth-2 build) are themselves now superseded:
+>
+> | | [gf255] depth-2 (superseded) | [gf264] depth-2 (current) |
+> |---|---:|---:|
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4436 | 4483 |
+> | Placed logical instances | 1458 | 1488 |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +28.5 ns | +32.6 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −25.0 / +0.50 ns | −7.4 / +0.50 ns |
+> | Library `max_transition` violations (`sim/`-side sweep) | 11 of 15 corners | **0 of 15 corners** |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+>
+> The swept worst-setup-slack row's own large negative number, both before
+> and after this rebuild, is unrelated to `max_transition`: it comes from the
+> two 1.62 V-family `.lib` corners this block does not run at
+> (`ss_125C_1v62`/`ss_n40C_1v62`), included in that sweep because it walks
+> every `.lib` file the library ships, not the block's own ratified 3.3 V
+> corner set — see [Timing](#timing) below.
+
 ## The one command
 
 ```sh
@@ -867,7 +896,9 @@ boundary.
 [gf186]: https://github.com/2AMLogic/gf180-trng/issues/186
 [gf187]: https://github.com/2AMLogic/gf180-trng/issues/187
 [gf224]: https://github.com/2AMLogic/gf180-trng/issues/224
+[gf240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [gf255]: https://github.com/2AMLogic/gf180-trng/issues/255
+[gf264]: https://github.com/2AMLogic/gf180-trng/issues/264
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
