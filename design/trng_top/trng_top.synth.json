@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "engine": "yosys",
-  "engine_version": "0.69+post",
+  "engine_version": "0.69",
   "hdl_toplevel": "trng_top",
   "status": "ok",
   "instance_count": 1459,
-  "area_um2": 57424.5504,
+  "area_um2": 57435.84,
   "sequential_area_um2": 27478.8864,
   "instance_counts_by_type": {
     "gf180mcu_fd_sc_mcu9t5v0__and2_1": 31,
@@ -49,8 +49,8 @@
     "gf180mcu_fd_sc_mcu9t5v0__nand4_1": 25,
     "gf180mcu_fd_sc_mcu9t5v0__nand4_2": 1,
     "gf180mcu_fd_sc_mcu9t5v0__nand4_4": 3,
-    "gf180mcu_fd_sc_mcu9t5v0__nor2_1": 49,
-    "gf180mcu_fd_sc_mcu9t5v0__nor2_2": 7,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_1": 48,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_2": 8,
     "gf180mcu_fd_sc_mcu9t5v0__nor2_4": 2,
     "gf180mcu_fd_sc_mcu9t5v0__nor3_1": 18,
     "gf180mcu_fd_sc_mcu9t5v0__nor3_2": 2,
@@ -87,12 +87,7 @@
     "gf180mcu_fd_sc_mcu9t5v0__xor2_1": 9,
     "gf180mcu_fd_sc_mcu9t5v0__xor2_2": 4
   },
-  "timing": {
-    "source": "abc_stime",
-    "wire_load": null,
-    "critical_path_ps": 6449.6,
-    "delay_target_ps": null
-  },
+  "timing": null,
   "sta": null,
   "netlist_path": "design/trng_top/trng_top.synth.v",
   "script_path": null,
