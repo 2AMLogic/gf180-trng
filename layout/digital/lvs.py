@@ -139,9 +139,13 @@ Pipeline
    read from the DEF, with `VDD`/`VSS` on the two supply nets per the
    section above.
 4. `klt lvs` compares the two, `layout.top`/`reference.top` both pinned to
-   `trng_top` explicitly. The report lands at `reports/lvs.json`, the same
-   "verdict plus counts, not a full per-mismatch dump" shape `build.py`'s
-   own `_drc_summary` uses for the DRC side of this directory.
+   `trng_top` explicitly. The report lands at `reports/lvs.json` as the
+   **full `klt lvs` envelope** -- `schema_version`, `mismatches`,
+   `provenance` and all -- the same shape `build.py` commits for the DRC
+   side of this directory, and the same shape `layout/verify.py` has always
+   committed for the analog partition. Both sides of this directory used to
+   commit a reduced digest instead; `_committed_view`'s own docstring
+   records what that cost (#273).
 """
 
 from __future__ import annotations
@@ -659,20 +663,63 @@ def run_lvs() -> dict:
 
 
 def _committed_view(payload: dict, reference_summary: dict) -> dict:
-    return {
-        "status": payload.get("status"),
-        "mismatch_count": payload.get("mismatch_count"),
-        "category_counts": payload.get("category_counts"),
-        "counts": payload.get("counts"),
-        "device_classes": payload.get("device_classes"),
-        "reference": {
-            "path": str(REFERENCE_PATH.relative_to(REPO_ROOT)),
-            "source": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),
-            "generator": "layout/digital/lvs.py",
-            **reference_summary,
-        },
-        "environment": payload.get("environment"),
+    """The committed view of a `klt lvs` payload: the **whole envelope**,
+    with the two netlist-path fields restated repo-root-relative and this
+    script's own reference-generation record appended beside them.
+
+    From #170 until #273 this returned a five-field digest instead --
+    `{"status": "match", "mismatch_count": 0, "category_counts": {},
+    "counts": ..., "device_classes": ...}` plus a `reference` block
+    describing the generated netlist. Every verdict-bearing number was
+    there, and it is still there below; what was missing was everything
+    `klt signoff` reads to classify a cited file as an *LVS envelope* at
+    all: `schema_version`, the `mismatches` array, and the `provenance`
+    block. So T1 item 4 graded `unmet`/`no_evidence` on the digital
+    partition despite a committed, clean `status: match` run -- while the
+    analog partition's own `klt lvs` envelope
+    (`layout/reports/combiner_sampler.lvs.json`) graded `met`. The envelope
+    also carries `provenance.input.content_hash`, which is what
+    `signoff/block-manifest.json` pins a citation to and what
+    `signoff/check.py` re-hashes against `trng_top.extracted.spice` on
+    disk; a digest could silently go stale against the netlist it described.
+
+    **Two path fields are restated, and nothing else is touched.** `klt lvs`
+    echoes `layout`/`reference` exactly as the request named them --
+    relative to the *request's* own directory (`layout/digital/`), because
+    that is where `trng_top.lvs-request.json` lives. The committed report
+    lands one directory further down, in `layout/digital/reports/`, so those
+    two strings resolve from neither the repo root nor the report's own
+    directory, and a consumer that re-hashes the input an envelope names
+    (`signoff/check.py`'s freshness gate; `klt signoff`'s own
+    `citation.input_verified`) would find nothing there. Restating them
+    repo-root-relative makes them resolvable from the repo root, which is
+    the directory both of those consumers run from. This is the same "restate
+    the one field that names a location the committed report cannot resolve"
+    discipline `build.py`'s own `_committed_view` and `layout/verify.py`'s
+    apply; the digests those paths point at (`environment.layout_sha256`,
+    `environment.reference_sha256`, `provenance.input.content_hash`) are
+    left exactly as `klt` wrote them.
+
+    **`reference_generation` is additive, and is not `klt`'s.** The
+    envelope's own top-level `reference` field is the reference netlist's
+    path, so this script's record of *how that netlist was generated* (which
+    Verilog it transcribes, how many instances, which supply nets) cannot
+    share the key -- before #273 it did, and shadowed the envelope field.
+    It moves to its own key rather than being dropped: it is the only record
+    of the fact that this reference is a mechanical transcription of
+    `trng_top.pnr.v` rather than a hand-written schematic netlist, which is
+    the single most important caveat on this item's `match` verdict.
+    """
+    restated = dict(payload)
+    restated["layout"] = str(EXTRACTED_PATH.relative_to(REPO_ROOT))
+    restated["reference"] = str(REFERENCE_PATH.relative_to(REPO_ROOT))
+    restated["reference_generation"] = {
+        "path": str(REFERENCE_PATH.relative_to(REPO_ROOT)),
+        "source": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),
+        "generator": "layout/digital/lvs.py",
+        **reference_summary,
     }
+    return restated
 
 
 def build() -> int:
