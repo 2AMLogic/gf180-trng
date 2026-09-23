@@ -241,65 +241,68 @@ POWER = {
 #: The timing constraints this run is placed and routed against.
 #:
 #: **`max_transition_ns`/`max_capacitance_pf` are stated here, and that is a
-#: recorded decision (#237, #240), not always the case.** #237 found the
-#: routed DEF this script used to commit violating the library's own
-#: `max_transition` at nine of the fifteen corners
+#: recorded decision (#237, #240, #264), not always the case.** #237 found
+#: the `FIFO_DEPTH = 8` routed DEF this script used to commit violating the
+#: library's own `max_transition` at nine of the fifteen corners
 #: `sim/tb/digital-sta-power/run_sta.py` sweeps -- four high-fanout nets
-#: inside `u_interface`/`u_conditioner`, measured per net and per corner by
-#: `sim/tb/digital-sta-power/max_transition_probe.py` and written up in
-#: `sim/characterization-digital-sta-area-power.md` section 2a. OpenROAD's
-#: own `repair_design` (which `klt place-and-route` runs after global
-#: placement) fixes exactly that, given a tighter target than the `CORNER`
-#: deck's own 13.2 ns limit: the probe derived the number it would need,
-#: 11.21 ns at this corner, from the measured cross-corner slews, binding at
-#: `ff_125C_3v60`/`rc-min`. The same probe found the library's sibling
-#: `max_capacitance` check violated by the identical four nets, at eleven of
-#: the fifteen corners -- the same drive-strength shape, not a separate
-#: structure.
+#: inside `u_interface`/`u_conditioner` -- and #240 landed the
+#: `max_transition_ns: 8.0`/`max_capacitance_pf: 0.35` pair below (via two
+#: rebuilds: a naive `10.0` ns guess proved insufficient once re-measured,
+#: `8.0` ns cleared it) once klayout-tools#1860 (merged 2026-09-15) made
+#: `set_max_transition`/`set_max_capacitance` expressible through
+#: `repair_design` at all. See `sim/characterization-digital-sta-area-power.md`
+#: section 2a and `sim/tb/digital-sta-power/max_transition_probe.py` (the
+#: per-net decomposition tool both #240 and #264 below used) for the full
+#: depth-8 derivation.
 #:
-#: It could not be stated until klayout-tools#1709 landed (merged via
-#: klayout-tools#1860, 2026-09-15): `klt place-and-route`'s request contract
-#: used to expose exactly two constraint fields -- `clock_port` and
-#: `clock_period_ns` -- with no SDC passthrough and no design-rule constraint
-#: of any kind. #1860 adds `max_transition_ns` -> `set_max_transition <ns>
-#: [current_design]` and `max_capacitance_pf` -> `set_max_capacitance <pf>
-#: [current_design]` (plus `max_fanout`, deliberately not used here -- see
-#: below), each threaded through `repair_design` the same way `_clock_lines`
-#: already reaches every P&R stage.
+#: **#255's `FIFO_DEPTH = 2` re-synthesis and re-place-and-route reused that
+#: same `8.0`/`0.35` pair unchanged, and it did not carry over: the depth-2
+#: DEF's different net topology violated `max_transition` at eleven of the
+#: fifteen corners** (worse than the nine #237 found), on two nets, not
+#: four -- `net4` (42 pins, driven by a `dlyd_1` delay cell) and
+#: `u_interface/_0519_` (33 pins, driven by an `and4_1` gate). Neither is the
+#: design's own highest-fanout net at that constraint (`net1`, 50 loads, was
+#: clean at every corner) -- the same "fanout does not predict the
+#: violation" reading #240's derivation reached at depth 8, reached again
+#: independently at depth 2.
 #:
-#: **`max_transition_ns: 8.0`** is the number a real run against this flow
-#: needed, not the naive guard-band under the 11.21 ns derived above: this
-#: value was reached in two rebuilds, not one, because "verify, don't
-#: assume" (#240's own framing of the risk) turned out to matter in
-#: practice. The first attempt used `10.0` ns -- below 11.21 ns by
-#: approximately the same margin #237's own derivation carried, and a
-#: reasonable guess given `repair_design` optimises against
-#: placement-estimated parasitics rather than the post-route extraction the
-#: 11.21 ns figure is built from. Re-running the full fifteen-corner
-#: `digital-sta-power` sweep against that DEF (not assuming it worked)
-#: found it was not enough: `max_slew_violations` was still 13 at two of
-#: the fifteen corners (`tt_025C_3v30`/`rc-max`, `ff_125C_3v60`/`rc-max`).
-#: Tightening to `8.0` ns (60.6 % of this deck's own 13.2 ns limit) and
-#: rebuilding a second time cleared it everywhere: the re-minted sweep
-#: reports `max_slew_violations: 0` at all fifteen corners, confirmed
-#: independently by
-#: `sim/tb/digital-sta-power/max_transition_probe.py --check`.
+#: **#264 re-derived the constraint for the depth-2 topology and landed on
+#: `max_transition_ns: 4.0`.** `max_transition_probe.py`'s
+#: `pnr_corner_target` computed a naive required figure of 10.99 ns
+#: (binding at `ff_125C_3v60`/`rc-min`) from the violating DEF's own
+#: cross-corner slews -- but that DEF's own P&R corner (`ss_125C_3v00`)
+#: already measured a worst slew of 14.1 ns against the *existing* `8.0` ns
+#: target, meaning the gap between what `repair_design` is handed and what
+#: the fully-extracted DEF measures is wider for these two nets than it was
+#: for depth-8's four, and the naive figure could not be trusted without
+#: rebuilding against it and re-measuring. Rather than iterate the naive
+#: figure down as #240 did (`10.0` -> `8.0` ns), this rebuild went straight
+#: to the family's own tightest corner limit (`ff_n40C_3v60`, 4.4 ns) and
+#: cleared on the first attempt: the re-minted fifteen-corner sweep reports
+#: `max_slew_violations: 0` at every corner, confirmed independently by
+#: `sim/tb/digital-sta-power/max_transition_probe.py --check`, at a modest
+#: area cost (+3.7 % placed cell area, +30 logical instances; `repair_design`
+#: applies the target design-wide, so that buffering is not confined to the
+#: two named nets).
 #:
 #: **`max_capacitance_pf: 0.35`** is stated alongside it, but is not shown to
-#: be the lever that cleared the `max_capacitance` violations on this DEF:
-#: the library's own per-pin `max_capacitance` limit (an attribute of
-#: whichever driving cell ends up worst, not a single corner-wide number)
-#: measures well under 0.35 pF at every corner of the rebuilt DEF (roughly
-#: 0.12-0.20 pF, per `max_transition_probe.py`'s own per-corner table) --
-#: so it is the same slew-driven buffering that clears `max_transition`
-#: which clears `max_capacitance` too, as a byproduct of fixing one
-#: drive-strength shape shared by the same four nets, not because this
-#: value bound anything. It is kept stated rather than dropped: it costs
-#: nothing today, and it is the knob `repair_design` would have to use if a
-#: future net violated `max_capacitance` without a `max_transition`
+#: be the lever that clears the `max_capacitance` violations on either
+#: topology measured so far: the library's own per-pin `max_capacitance`
+#: limit (an attribute of whichever driving cell ends up worst, not a single
+#: corner-wide number) measures well under 0.35 pF at every corner of the
+#: #264 rebuild (roughly 0.09-0.15 pF, per `max_transition_probe.py`'s own
+#: per-corner table) -- so it is the same slew-driven buffering that clears
+#: `max_transition` which clears `max_capacitance` too, as a byproduct, not
+#: because this value bound anything. It is kept stated rather than dropped:
+#: it costs nothing today, and it is the knob `repair_design` would have to
+#: use if a future net violated `max_capacitance` without a `max_transition`
 #: violation alongside it. The rebuilt DEF's own measured
 #: `max_capacitance_violations` (0 at every corner, not this comment) is
-#: the actual answer for this run.
+#: the actual answer for this run. (`reports/place_and_route.json`'s own
+#: per-corner `max_capacitance_violation_count` is a different check: it
+#: compares against this 0.35 pF value, not the library limit. It flags 1-3
+#: buffers that `repair_design` inserted itself, driving 0.35-0.38 pF. See
+#: `sim/characterization-digital-sta-area-power.md` section 0a.)
 #:
 #: `design/synth.py` cannot state either constraint on this script's behalf:
 #: `klt synthesize`'s `request.constraints` still reads exactly one field,
@@ -312,21 +315,22 @@ POWER = {
 #:
 #: A `set_max_fanout` is *separately* not wanted, on this library's own
 #: evidence rather than on availability: `gf180mcu_fd_sc_mcu9t5v0` declares no
-#: `default_max_fanout` and no per-pin `max_fanout` at all, and on the DEF
-#: this decision was made against, this design's highest-fanout net
-#: (`rst_n`, 201 loads -- nearly six times the largest of the four
-#: offenders) was clean at every corner while a 13-load net violated at
-#: seven. Fanout did not predict the violation; load capacitance against
-#: drive strength did, which is what `max_transition`/`max_capacitance`
-#: measure directly. (The buffering `max_transition_ns: 8.0` triggers
-#: touches more than the original four nets -- it also reshapes `rst_n`
-#: itself, so the rebuilt DEF's own worst-fanout net is smaller and
-#: different; that is a topology side effect of the fix, not a change to
-#: this reasoning.)
+#: `default_max_fanout` and no per-pin `max_fanout` at all, and at both
+#: depths measured so far the design's highest-fanout net was clean while a
+#: lower-fanout net violated (depth 8: `rst_n` at 201 loads clean, a 13-load
+#: net violated at seven corners; depth 2, pre-#264: `net1` at 50 loads
+#: clean, `net4` at 42 loads violated at every corner). Fanout does not
+#: predict the violation; load capacitance against drive strength does,
+#: which is what `max_transition`/`max_capacitance` measure directly. (The
+#: buffering each rebuild's own `max_transition_ns` triggers touches more
+#: than the originally-violating nets alone -- #240's depth-8 rebuild also
+#: reshaped `rst_n`; #264's depth-2 rebuild lands on yet another worst-fanout
+#: net, `u_interface/net71` at 38 loads -- a topology side effect of each
+#: fix, not a change to this reasoning.)
 CONSTRAINTS = {
     "clock_port": "clk",
     "clock_period_ns": 50.0,
-    "max_transition_ns": 8.0,
+    "max_transition_ns": 4.0,
     "max_capacitance_pf": 0.35,
 }
 SEED = 1

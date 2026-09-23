@@ -7,17 +7,34 @@ measurement rather than an assertion.
     python3 sim/tb/digital-sta-power/max_transition_probe.py --check   # gate it
     python3 sim/tb/digital-sta-power/max_transition_probe.py --liberty tt_025C_3v30 --rc max
 
-Status ([#240])
+Status ([#264])
 ---------------
-[#237] found the violation this module describes and accepted it as a bounded
-residual because the build flow could not yet state a `set_max_transition`.
-[#240] landed that constraint (`layout/digital/build.py`'s `CONSTRAINTS`)
-once `klt place-and-route` could express it, and the rebuilt DEF this module
-now measures reports **zero** `max_transition`/`max_capacitance` violations
-at all fifteen corners -- `RECORDED` below reflects that clean state, not
-the accepted-residual one the rest of this docstring narrates historically.
-`--check` still exists and still matters: it is the gate against a *future*
-rebuild reintroducing the violation, not evidence that one exists today.
+[#237] found the violation this module describes, at the `FIFO_DEPTH = 8`
+topology, and accepted it as a bounded residual because the build flow could
+not yet state a `set_max_transition`. [#240] landed that constraint
+(`layout/digital/build.py`'s `CONSTRAINTS`, `max_transition_ns: 8.0`) once
+`klt place-and-route` could express it, and the rebuilt depth-8 DEF reported
+zero violations at all fifteen corners. [#255] re-synthesized and
+re-placed-and-routed at [DR-0020]'s ratified `FIFO_DEPTH = 2`, reusing that
+same `max_transition_ns: 8.0` unchanged -- and the depth-2 DEF's different
+net topology (two high-fanout nets, not [#237]'s original four) violated at
+11 of the 15 corners, worse than the nine [#237] originally found. [#264]
+re-derived the constraint for the depth-2 topology the same way [#240] did
+at depth 8 -- this module's own per-net decomposition -- and found the
+naive required figure (~11 ns, the same arithmetic `pnr_corner_target`
+below computes) insufficient in practice, because the gap between what
+`repair_design` is handed and what the fully-extracted DEF measures is
+wider for these two nets than it was for the original four. Tightening to
+`max_transition_ns: 4.0` (the family's own tightest corner limit,
+`ff_n40C_3v60` at 4.4 ns) and rebuilding cleared the design on the first
+attempt: the DEF this module now measures reports **zero**
+`max_transition`/`max_capacitance` violations at all fifteen corners --
+`RECORDED` below reflects that clean state, not the accepted-residual one
+the rest of this docstring narrates historically. `--check` still exists
+and still matters: it is the gate against a *future* rebuild reintroducing
+the violation, not evidence that one exists today.
+
+[DR-0020]: ../../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 
 Why this exists
 ---------------
@@ -78,6 +95,8 @@ it deliberately rather than silently.
 [#233]: https://github.com/2AMLogic/gf180-trng/issues/233
 [#237]: https://github.com/2AMLogic/gf180-trng/issues/237
 [#240]: https://github.com/2AMLogic/gf180-trng/issues/240
+[#255]: https://github.com/2AMLogic/gf180-trng/issues/255
+[#264]: https://github.com/2AMLogic/gf180-trng/issues/264
 """
 
 from __future__ import annotations
@@ -112,24 +131,32 @@ PNR_CORNER = "ss_125C_3v00"
 #: `sim/tools/sampler_bit_bias_variants.py`'s `RECORDED_VERDICT` use.
 #: ``--check`` fails if the committed DEF stops supporting them.
 #:
-#: [#240] rebuilt the DEF this probe measures with `max_transition_ns`/
-#: `max_capacitance_pf` stated to `repair_design`, and every field below now
-#: describes the clean state that rebuild produced (zero violations, zero
-#: violating nets) -- it does **not** describe #237's original accepted
-#: residual any more. The comments keep the historical numbers for context
-#: where useful, but the recorded values themselves are today's.
+#: [#264] rebuilt the depth-2 DEF this probe measures with a re-tuned
+#: `max_transition_ns` (4.0, down from #255's reused-from-depth-8 8.0)
+#: stated to `repair_design`, and every field below now describes the clean
+#: state that rebuild produced (zero violations, zero violating nets) -- it
+#: does **not** describe #237's original depth-8 residual, nor #255's
+#: depth-2 regression, any more. The comments keep the historical numbers
+#: for context where useful, but the recorded values themselves are today's.
 RECORDED = {
-    # #237 found every violating pin, at every corner, on one of four nets
-    # (a drive-strength/fanout shape, not a corner-dependent scatter):
-    # u_conditioner/_095_, u_interface/_0606_, u_interface/_0999_,
-    # u_interface/_1190_. [#240]'s rebuild (max_transition_ns: 8.0,
-    # max_capacitance_pf: 0.35) buffered all four; none violates anywhere in
-    # the fifteen-corner grid today, so this is empty rather than that list.
-    # A net appearing here again would mean the fix regressed.
+    # #237 found every violating pin, at every corner, on one of four nets at
+    # the depth-8 topology (a drive-strength/fanout shape, not a
+    # corner-dependent scatter): u_conditioner/_095_, u_interface/_0606_,
+    # u_interface/_0999_, u_interface/_1190_. [#240]'s depth-8 rebuild
+    # (max_transition_ns: 8.0, max_capacitance_pf: 0.35) buffered all four.
+    # [#255]'s depth-2 re-place-and-route reused that same constraint
+    # unchanged and found a *different* two-net residual instead: net4 (42
+    # pins, driven by fanout4/Z, a dlyd_1 delay cell) and u_interface/_0519_
+    # (33 pins, driven by u_interface/_0975_/Z, an and4_1 gate). [#264]'s
+    # rebuild (max_transition_ns: 4.0) buffered both; none violates anywhere
+    # in the fifteen-corner grid today, so this is empty rather than either
+    # historical list. A net appearing here again would mean the fix
+    # regressed.
     "violating_nets": (),
-    # Corners with at least one violating pin, of the 15. Was 9 before #240.
+    # Corners with at least one violating pin, of the 15. Was 9 before #240
+    # (depth 8); was 11 after #255's depth-2 regression, before #264.
     "violating_corners": 0,
-    # No violating pin exists post-#240, so there is no "path through a
+    # No violating pin exists post-#264, so there is no "path through a
     # violator" to bound -- `None` here means "not applicable", not "unknown".
     # #237's accepted-residual bound was +21.935 ns (this repository's
     # headline setup margin at the time, ss_125C_3v00/rc-max); that number no
@@ -138,22 +165,28 @@ RECORDED = {
     "worst_setup_slack_through_violators_ns": None,
     # The violating instances' share of total power. Zero: there are no
     # violating instances left to own a share of it. Was 1.84 % (worst
-    # corner ff_125C_3v60/rc-max) before #240.
+    # corner ff_125C_3v60/rc-max) before #240 (depth 8); was 8.702 % (worst
+    # corner tt_025C_3v30/rc-max) after #255's depth-2 regression, before
+    # #264.
     "power_share_max": 0.0,
     # The library's sibling max_capacitance check. Zero at every corner,
     # confirming #237's reading that both checks were the same drive-strength
-    # symptom: fixing max_transition's cause fixed this one too. Was 6
-    # (worst corner ff_125C_3v60/rc-max) before #240.
+    # symptom: fixing max_transition's cause fixes this one too, at both
+    # depths measured so far. Was 6 (worst corner ff_125C_3v60/rc-max) before
+    # #240 (depth 8); was 3 (worst corner ff_125C_3v60/rc-max) after #255's
+    # depth-2 regression, before #264.
     "max_capacitance_violations": 0,
     # The design's worst net fanout, in load pins. Measured from topology
     # rather than checked against the library, which declares no max_fanout
     # of any kind -- see `_tcl` below. This number is topology, not a
-    # design-rule check, so it moved even though it was never the lever:
-    # #240's buffering reshaped `rst_n` (the pre-#240 worst-fanout net, 201
-    # loads) along with the four originally-violating nets, and the design's
-    # new worst-fanout net is `u_interface/_0862_` at 33 loads. `set_max_fanout`
-    # is still not wanted -- see `layout/digital/build.py`'s own comment.
-    "max_net_fanout": 33,
+    # design-rule check, so it moves with every rebuild even though it was
+    # never the lever: #240's depth-8 buffering reshaped `rst_n` (that
+    # topology's own pre-fix worst-fanout net, 201 loads) along with its four
+    # originally-violating nets, landing on `u_interface/_0862_` at 33 loads.
+    # #264's depth-2 rebuild lands on a different net again,
+    # `u_interface/net71` at 38 loads. `set_max_fanout` is still not wanted
+    # -- see `layout/digital/build.py`'s own comment.
+    "max_net_fanout": 38,
 }
 
 #: Fractional tolerance for the numeric gates above -- the same 1 % and the
@@ -813,7 +846,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("\nOK: section 2a's max-transition verdict still holds -- zero "
               "max_transition/max_capacitance violations at all fifteen "
-              "corners, per #240's constraint.")
+              "corners, per #264's constraint.")
     return 0
 
 
