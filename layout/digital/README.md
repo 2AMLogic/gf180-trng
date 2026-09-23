@@ -113,7 +113,7 @@ Committed artefacts:
 | [`trng_top.pnr.v`](trng_top.pnr.v) | the **as-built** gate-level netlist (`write_verilog` after CTS and resizing): the netlist a post-route gate-level simulation (#147) or a golden-reference LVS run must use, *not* `klt synthesize`'s pre-CTS one |
 | [`trng_top.gds`](trng_top.gds) | the DEF merged with the standard cells' own GDS views — committed as of #170, once the merge's database-unit defect ([klayout-tools#1090][klt1090]) was fixed upstream; see [GDS, DRC and LVS](#gds-drc-and-lvs) |
 | [`reports/place_and_route.json`](reports/place_and_route.json) | the full response, the request that produced it, provenance, and this script's own checks (`checks.gds_geometry.status: "ok"`) |
-| [`reports/drc.json`](reports/drc.json) | `klt drc` over `trng_top.gds` — verdict and per-rule counts |
+| [`reports/drc.json`](reports/drc.json) | `klt drc` over `trng_top.gds` — the **full envelope**, `schema_version`/`violations`/`coverage`/`provenance` included ([#273][gf273]) |
 
 `layout/digital/lvs.py` (below) writes three more committed artefacts — the
 mechanically-generated LVS reference SPICE, the extracted layout-side SPICE,
@@ -530,12 +530,20 @@ in this repository is checked against — `layout/README.md`'s
 ["Baseline-relative, not absolute"](../README.md) conventions apply here as
 everywhere else.
 
-The full per-violation dump is *not* what
-[`reports/drc.json`](reports/drc.json) commits — it keeps the verdict and
-per-rule counts only, the same choice `_drc_summary`'s own docstring makes
-for every DRC report in this directory, since the dump runs to megabytes
-over a design this size. Re-derive it with `klt drc trng_top.gds --deck
-gf180mcu --format json`.
+[`reports/drc.json`](reports/drc.json) commits the **whole `klt drc`
+envelope**, per-violation `violations` array included. Until [#273][gf273]
+it committed a four-field digest instead (verdict, deck, violation count,
+rule counts), on the reasoning that the per-violation dump "runs to megabytes
+over a design this size". That reasoning only holds for a *dirty* run: this
+one is clean, so `violations` is an empty array and the whole envelope is
+5.4 KB. What the digest cost, meanwhile, was real — with no
+`schema_version`, no `violations` array and no `provenance` block, `klt
+signoff` could not classify the file as DRC evidence at all, so this clean
+run graded `unmet`/`no_evidence` on T1 item 3 (see
+[`signoff/README.md`](../../signoff/README.md)). Re-emit it at any time with
+`python3 layout/digital/build.py --drc-only`, which re-runs `klt drc` over
+the *committed* `trng_top.gds` without re-deriving it through a fresh
+(stochastic, hours-long) place-and-route.
 
 **What a clean verdict here does not mean.** It is a *deck-relative*
 statement: the gf180mcu deck this repository pins does not model every rule
@@ -557,7 +565,13 @@ mapping) into the black-box SPICE shape `klt extract --abstract-cells`
 already resolves for the layout side, then runs `klt lvs` between the two —
 see the script's own module docstring for the full pipeline and the
 reasoning for a cell-instance-granularity comparison rather than a
-transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
+transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json) — the
+**full `klt lvs` envelope** since [#273][gf273], `schema_version`/
+`mismatches`/`power_connectivity`/`body_verification`/`provenance` included,
+where it used to be a five-field digest; this script's own record of how the
+reference netlist was generated keeps its place in the report under
+`reference_generation`, beside rather than shadowing the envelope's own
+`reference` field):
 
 | | | #170 |
 |---|---|---|
@@ -899,6 +913,7 @@ boundary.
 [gf240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [gf255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [gf264]: https://github.com/2AMLogic/gf180-trng/issues/264
+[gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092

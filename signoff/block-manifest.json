@@ -10,8 +10,16 @@
       "file": "layout/reports/combiner_sampler.drc.json",
       "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
     },
+    "3.digital": {
+      "file": "layout/digital/reports/drc.json",
+      "content_hash": "sha256:b766425e0440fe58ed16c3d50d88b0ea469d9c16a0e723462c66e325a47816a9"
+    },
     "4.analog": {
       "file": "layout/reports/combiner_sampler.lvs.json"
+    },
+    "4.digital": {
+      "file": "layout/digital/reports/lvs.json",
+      "content_hash": "sha256:26983bc32446e4ad076429bc83a960fb23c6ed8db1be02d6786817d78292f0fb"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-digital.generic.json",
