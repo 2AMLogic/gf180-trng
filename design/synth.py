@@ -324,7 +324,27 @@ def synthesize(work_dir: Path) -> tuple[dict, Path]:
     except FlowError as exc:
         raise SynthError(str(exc)) from exc
 
-    netlist_path = Path(payload["netlist_path"])
+    netlist_field = payload["netlist_path"]
+    if not isinstance(netlist_field, dict):
+        raise SynthError(
+            "klt synthesize returned an unrecognized netlist_path shape: "
+            f"{netlist_field!r}"
+        )
+    # klt schema v2 ("fix(synthesize): report artifact paths as
+    # {path, scope}, drop absolute paths from .ys", klayout-tools#1844):
+    # {"path": "<repo-relative POSIX path>", "scope": "repo"} when the
+    # artifact lives inside this repo (always true here, since WORK_DIR is
+    # repo-local -- see the module docstring), or {"path": None,
+    # "scope": "external"/"absent"} when there is no usable repo-relative
+    # path to report.
+    scope = netlist_field.get("scope")
+    path = netlist_field.get("path")
+    if scope != "repo" or not path:
+        raise SynthError(
+            "klt synthesize returned netlist_path with scope="
+            f"{scope!r} -- no usable path"
+        )
+    netlist_path = REPO_ROOT / path
     if not netlist_path.is_file():
         raise SynthError(
             f"klt synthesize reported netlist_path={netlist_path} but it "
