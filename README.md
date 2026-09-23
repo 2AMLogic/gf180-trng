@@ -110,7 +110,7 @@ that should be legible too.
 | Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
 | Health tests | continuous RCT + APT on the **raw** stream, α = 2⁻⁴⁰, APT window W = 1024, cutoffs as formulas in min-entropy H (at H₀ = 0.5 → `C_RCT` = 81, `C_APT` = 824); failure latches a flag and gates the conditioned path until explicit clear + start-up test. The parameterization has a hard floor: **no valid APT cutoff exists at H ≤ 0.03** ([DR-0002]) | — |
 | Time-to-first-valid | **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7). **Now measured (#14): 1.281 ms**, the floor plus one sampler clock plus a 4.1–12.4 ns oscillator start-up (4.4–13.4 ns before #78's buffer adoption) — the row is met and the floor is confirmed as a floor ([`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md)) | — |
-| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, and #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, which #145's fifteen-corner `level: gate` sweep was then re-run against): active 768.5 µW — missed by 1.5×, at 153.7 % of the row. Idle 2.007 µA — missed by ~2.0×**, and the cause on both halves is still the synthesized-and-placed digital section (358.5 µW active / 1.974 µA leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run updates the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below | — |
+| Power | < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, and #264/#277's re-tune of that depth-2 build's `max_transition_ns` (8.0 → 4.0) and rebuild, with #145's fifteen-corner `level: gate` sweep re-run against each rebuild — the current family is `sim/records/2026-09-22-digital-sta-power-{01..15}.md`): active 755.6 µW — missed by 1.5×, at 151.1 % of the row. Idle 2.12 µA — missed by ~2.1×**, and the cause on both halves is still the synthesized-and-placed digital section (345.6 µW active / 7.515 µW — 2.087 µA — leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](sim/characterization-startup-and-power-budget.md), §0a of [`sim/characterization-digital-sta-area-power.md`](sim/characterization-digital-sta-area-power.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run and #264/#277's re-tuned rebuild update the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below | — |
 | Area | < 0.05 mm² | — |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — |
 | Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013]) | — |
@@ -151,34 +151,49 @@ DRBG supplies its own and treats this block as the seed source.
 >   `FIFO_DEPTH = 8` build #145 measured, and **#255/#266 then re-synthesized
 >   and re-placed-and-routed the digital section at [DR-0020]'s ratified
 >   `FIFO_DEPTH = 2`** — the depth actually shipped since #254 — **and re-ran
->   #145's same fifteen-corner sweep against it, which `power_rollup.py` picks
->   up automatically because its digital term already reads live from the
->   committed record family ([DR-0023]). Both halves are still missed, by a
->   materially narrower margin**:
->   - **Active: missed, by 1.5×** (was 2.2×). 768.5 µW at `ff`/−40 °C/3.63 V —
+>   #145's same fifteen-corner sweep against it**. That first depth-2 build
+>   violated the library's own `max_transition` check at 11 of the 15 corners,
+>   so **#264/#277 re-tuned `max_transition_ns` (8.0 → 4.0) for the depth-2
+>   topology, rebuilt, and re-ran the same sweep once more** — the clean build
+>   is the committed
+>   `sim/records/2026-09-22-digital-sta-power-{01..15}.md` family, and
+>   `power_rollup.py` picks each of these up automatically because its digital
+>   term already reads live from that family ([DR-0023], §0a of
+>   [`sim/characterization-digital-sta-area-power.md`](sim/characterization-digital-sta-area-power.md)).
+>   **Both halves are still missed, by a materially narrower active margin
+>   than at depth 8 — and, on the idle half, by a slightly wider one than the
+>   violating depth-2 build showed**:
+>   - **Active: missed, by 1.5×** (was 2.2×). 755.6 µW at `ff`/−40 °C/3.63 V —
 >     entropy source 393 µW (measured), sampler 16.9 µW (measured), digital
->     section 358.5 µW (**MEASURED-at-gate-level** at its own worst corner,
->     `ff_125C_3v60`/`rc-max`, [DR-0021]; down from 712.4 µW at the depth-8
->     build, and from a [DR-0004] Tier 2 pre-synthesis estimate of 23 µW
->     before any netlist existed to synthesize). [DR-0010]'s stated worry,
+>     section 345.6 µW (**MEASURED-at-gate-level** at its own worst corner,
+>     `ff_125C_3v60`/`rc-max`, [DR-0021]; down from 358.5 µW at #255/#266's
+>     violating depth-2 build, from 712.4 µW at the depth-8 build, and from a
+>     [DR-0004] Tier 2 pre-synthesis estimate of 23 µW before any netlist
+>     existed to synthesize). [DR-0010]'s stated worry,
 >     that the array leaves only ~85 µW for everything downstream, is still
 >     realized rather than merely tight, just less severely: the digital
->     section alone is now 3.4× everything the array leaves, versus 6.7× at
+>     section alone is now 3.2× everything the array leaves, versus 6.7× at
 >     depth 8. #14 first measured this row at **454 µW** (entropy source
 >     415 µW, digital still estimated); #78 then adopted the per-ring output
 >     buffer ([DR-0018]), which *returns* power rather than spending it,
 >     moving the row to **433 µW (met, at 86.6 %)**; #174/[DR-0023] then
 >     replaced the digital estimate with the depth-8 measured gate-level
 >     figure (1.122 mW, 224.5 %, missed by 2.2×); #255/#266's depth-2
->     re-synthesis is the number above and the reason the miss narrows. The
+>     re-synthesis (768.5 µW, 153.7 %) is the reason the miss narrows, and
+>     #264/#277's re-tuned rebuild is the number above. The
 >     entropy source's own share (393 + 17 µW) is unchanged by any of these
->     substitutions — the digital section's own depth is the only thing that
+>     substitutions — the digital section's own build is the only thing that
 >     moved.
->   - **Idle: missed, by ~2.0×** (was ~4.1×, was 4.5×). 2.007 µA at
+>   - **Idle: missed, by ~2.1×** (was ~2.0× at the violating depth-2 build,
+>     ~4.1× at depth 8, 4.5× estimated). 2.12 µA at
 >     `ff`/+125 °C/3.63 V — analog block 32.8 nA (3.3 % of the row, measured
->     across 45 corners, unchanged), digital leakage 1.974 µA
->     (**MEASURED-at-gate-level**, down from 4.062 µA at the depth-8 build,
->     and from 4.43 µA estimated before any netlist existed). The
+>     across 45 corners, unchanged), digital leakage 2.087 µA / 7.515 µW
+>     (**MEASURED-at-gate-level**, down from 4.062 µA at the depth-8 build and
+>     from 4.43 µA estimated before any netlist existed, but *up* from the
+>     1.974 µA #255/#266's violating depth-2 build measured: #264/#277's
+>     tighter transition target buys its clean `max_transition` and its lower
+>     dynamic power with +30 logical instances and +3.7 % placed cell area,
+>     which is static current the earlier build did not pay). The
 >     ratification note above guessed the cause exactly — the entire
 >     remaining miss is standard-cell leakage in the conditioner, health
 >     tests, interface and #171's power-delivery cells. `gf180mcu_fd_sc_mcu7t5v0`
