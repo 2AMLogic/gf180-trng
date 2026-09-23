@@ -359,8 +359,9 @@ declared synthetic per-ring streams, per DR-0009.
 python3 sim/tb/{SLUG}/run_demo.py --scenario {r['scenario']} --no-write
 ```
 
-Add `--record` (the default) to mint a new record. Records are append-only:
-a re-run mints a new stem, it never overwrites this one.
+Minting a record is the default; pass `--no-write` to print the results
+without one. Records are append-only: a re-run mints a new stem, it never
+overwrites this one.
 
 ## Caveats
 
@@ -424,7 +425,6 @@ def main(argv=None) -> int:
         action="store_true",
         help="print the results without minting evidence records",
     )
-    parser.add_argument("--record", action="store_true", help="mint records (the default)")
     args = parser.parse_args(argv)
 
     names = args.scenario or list(SCENARIOS)
