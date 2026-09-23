@@ -158,7 +158,7 @@ requires of the claimant rather than of the tool.
 | 8 Characterization | `unmet` / `no_evidence` | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog is uncited — see below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
-| 11 Power delivery | `unmet` / `no_evidence` | `unmet` / `no_evidence` | No `klt erc` supply spec and no ERC report exist anywhere in this repo. Tracked as [#268](https://github.com/2AMLogic/gf180-trng/issues/268). The item has a row here, `unmet`, rather than being silently absent: it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
+| 11 Power delivery | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. The row still reads `unmet`/`no_evidence` because `signoff/block-manifest.json` cites no `11.analog`/`11.digital` evidence yet, and — independent of that — the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above). The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
 
 ### Item 3 is `met` on both partitions — and here are each one's coverage gaps
 
@@ -317,7 +317,8 @@ this repo standing in for it.
     compare, in other words, but not via the field a reader might look at
     first. **T1 item 11's Digital column requires `power_connectivity.status:
     "match"` specifically, and `"unchecked"` does not satisfy it** — this row
-    does not advance item 11, which remains `unmet` and tracked as #268.
+    does not advance item 11, which remains `unmet` (see "Item 11's `ties[]`"
+    above for the current state and #124 for the general tracker).
   - `body_verification` is `unchecked` because the request uses the
     pre-extracted `layout.netlist` form with no `layout.deck`, so nothing
     establishes this layout's substrate/well-tap convention. The envelope
@@ -376,6 +377,46 @@ table" combination.
 Item 8 is also the only T1 item a `generic` envelope may satisfy. Every other
 item rejects `"kind": "generic"` outright, so this hand-rolled wrapper cannot
 be pointed at items 3–7 to make their rows go green.
+
+### Item 11's `ties[]` is now declared and computed, and the item is still unmet
+
+`layout/digital/erc-supply-spec.json` previously declared no `ties[]` at
+all: klayout-tools#2169 made a declared tie collapse this routed
+standard-cell design into one electrical island and report a false
+`erc.supply_short`, so the spec omitted `ties[]` and carried a top-level
+`ties_disclosure` (`kind: "tool_limitation"`) instead, standing in on
+place-and-route's `power.tapcell_master` evidence and a matching LVS run.
+klayout-tools#2186 (merged 2026-09-20, shipped in 0.6.0) scopes a tie's
+well conduction to its own tap sites instead of registering the whole well
+region as one blanket conductor, closing that gap. [#276](https://github.com/2AMLogic/gf180-trng/issues/276)
+re-ran the spec on that build and declared two ties, one per well this GDS
+draws:
+
+- `nwell_tap` — `well_layer` 21/0 (Nwell), `tap_layer` 22/0 (Comp) narrowed
+  by `tap_requires` 32/0 (Nplus): the `Comp ∩ Nplus` N+ well-strap boolean,
+  connected to `Metal1`'s `VDD` rail.
+- `pwell_tap` — `well_layer` 204/0 (LVPWELL, the PDK's own name for the
+  P-type body-region marker this library draws per row), `tap_layer` 22/0
+  narrowed by `tap_requires` 31/0 (Pplus): the mirror-image `Comp ∩ Pplus`
+  boolean, connected to `Metal1`'s `VSS` rail.
+
+The re-run (`layout/digital/reports/erc-supply.json`, `provenance.klt_version:
+"0.6.0"`) reports both ties in `erc_coverage.checked` (not
+`erc_coverage.skipped`, so neither is degenerate), `erc.missing_tie`
+computed and zero, `erc_status: "clean"`, and `erc_findings: []` — the same
+zero `erc.unconnected_net`/`erc.supply_short` on `VDD`/`VSS` the spec
+already required. `ties_disclosure` is now `null`: the tie is declared, not
+disclosed as omitted.
+
+**This does not move item 11 to `met`.** Two separate gaps remain, neither
+touched by this change: `signoff/block-manifest.json` does not yet cite any
+`11.analog`/`11.digital` evidence (wiring that in is future work, not yet
+tracked by a dedicated issue — see [#124](https://github.com/2AMLogic/gf180-trng/issues/124),
+this repo's general gap-to-T1 tracker), and the digital column's own
+additional requirement — `power_connectivity.status: "match"` on item 4's
+LVS citation — stays `"unchecked"`, for the reason "Item 4 is `met` twice"
+above already documents. A `met` supply-spec run is necessary for item 11's
+digital column; it was never sufficient on its own.
 
 ### Items 1, 2, 9 and 10 are uncited on purpose
 
@@ -459,12 +500,22 @@ In dependency order, not effort order:
 4. **A `klt yield` report** over the Monte Carlo campaign that already exists
    (item 6), and **a `klt pex` report** over the post-layout extraction that
    already exists (item 7).
-5. **A `klt erc` supply spec and run** (item 11, tracked as #268).
+5. ~~**A `klt erc` supply spec and run**~~ **Done, in two steps** — the spec
+   and report first landed via [#268](https://github.com/2AMLogic/gf180-trng/issues/268),
+   and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
+   the spec's `ties[]` once klayout-tools#2186 shipped, so `erc.missing_tie`
+   is now computed and zero. Item 11 still does not read `met` — see "Item
+   11's `ties[]`" above for the two remaining gaps (no `11.analog`/
+   `11.digital` citation in `signoff/block-manifest.json` yet, and the
+   digital column's `power_connectivity.status: "match"` requirement, which
+   stays `"unchecked"`).
 
 Items 1, 2, 9 and 10 need nothing built — only an honest artifact to cite, if
 one ever exists.
 
 Items 1 and 2 are tracked here as part of this block's own evidence-format
-gap; item 11 is tracked as #268. Tool-side friction this surfaces is filed at
+gap; item 11's remaining gaps are tracked under
+[#124](https://github.com/2AMLogic/gf180-trng/issues/124), this repo's
+general gap-to-T1 tracker. Tool-side friction this surfaces is filed at
 `2AMLogic/klayout-tools`, per this repo's friction protocol (`CLAUDE.md`) —
 so far klayout-tools#2342.
