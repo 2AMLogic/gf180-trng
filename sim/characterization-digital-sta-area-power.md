@@ -80,6 +80,218 @@ number to be decided against instead of an estimate.
 
 ---
 
+## 0. Update — re-measured at DR-0020's `FIFO_DEPTH = 2` (issue [#255])
+
+> **Superseded in part by §0a ([#264]).** The "depth 2" column below
+> describes [#255]'s first depth-2 build, which violated the library's own
+> `max_transition` check. [#264] rebuilt it with a re-tuned constraint; §0a
+> carries the figures for the DEF committed today. This section is kept
+> verbatim as append-only history.
+
+**Sections 1–5a below describe the `FIFO_DEPTH = 8` build** (the `sim/
+records/2026-09-15-digital-sta-power-*.md` family, [#111]/[#171]/[#240]'s
+DEF). They are retained verbatim as an append-only historical record, the
+same treatment `layout/digital/README.md` gives the pre-[#171]/pre-[#240]
+numbers — they no longer describe `layout/digital/`'s current committed
+artefacts.
+
+[#254] set [DR-0020]'s ratified `FIFO_DEPTH = 2` in the regmap, the RTL
+parameter default and the pre-synthesis inventory estimate, but deliberately
+did not re-synthesize or re-place-and-route — that was this issue's own job.
+[#255] regenerated `design/trng_top/trng_top.synth.v` (`design/synth.py`)
+and `layout/digital/trng_top.def`/`.gds`/`.pnr.v`/`.sdf`
+(`layout/digital/build.py`, `gen_sdf.py`) at the new depth, LVS-matched the
+new layout against its own as-built netlist (`layout/digital/lvs.py`,
+`status: match`, `mismatch_count: 0`), and re-ran this document's own
+fifteen-corner sweep against the new DEF. New records:
+`sim/records/2026-09-19-digital-sta-power-{01..15}.md`.
+
+| | depth 8 (§1–§4, historical) | depth 2 (current) |
+|---|---:|---:|
+| Placed instances | 8594 DEF `COMPONENTS` (2533 logical) | 4436 DEF `COMPONENTS` (1458 logical) |
+| Setup binding slack | +24.876 ns at `ss_125C_3v00`/`max` | +23.880 ns at `ss_125C_3v00`/`max` |
+| Hold binding slack | +0.7071 ns at `ff_n40C_3v60`/`min` | +0.6935 ns at `ff_n40C_3v60`/`min` |
+| Fmax floor | 39.803 MHz at `ss_125C_3v00`/`max` | 38.284 MHz at `ss_125C_3v00`/`max` |
+| Placed cell area | 118 975.4 µm² | **59 465.1 µm²** |
+| vs the pre-synthesis inventory (now depth-2, 863 cells, 33 654.6 µm²) | ×1.597 (vs the depth-8, 1655-cell, 74 485.3 µm² inventory) | **×1.767** |
+| Active power @ 1 MHz (max) | 712.4 µW at `ff_125C_3v60`/`max` | **358.5 µW** at `ff_125C_3v60`/`max` |
+| Leakage (max) | 14.62 µW / 4.062 µA at `ff_125C_3v60` | **7.107 µW / 1.974 µA** at `ff_125C_3v60` |
+| Library `max_transition` violations | 0 of 15 corners ([#240] closed [#237]'s 9-of-15 residual) | **11 of 15 corners** — see below |
+| #233 trunk-net `max_transition` violations | 0 of 15 corners | 0 of 15 corners (unchanged) |
+
+**The area ratio moved from ×1.597 to ×1.767 even though both sides are now
+priced at the same depth.** That is expected, not a regression: §3's own
+decomposition (cell-count/mix term, 9-track-vs-7-track term) is a property of
+*how* the estimate under- or over-counts a design's shape, not of its raw
+size, and a much smaller FIFO removes area from both sides unevenly (the two
+FIFOs' `dffrnq_1`/`mux2_1`/`icgtp_1` rows are a smaller share of a depth-2
+design's total logic than of a depth-8 one). Re-deriving §3's full
+cell-count/track-height/PDN-population split for the depth-2 netlist is
+follow-up work, not repeated here in the summary.
+
+**The library's own `max_transition` check regressed: 0 → 11 of 15
+corners.** `layout/digital/build.py`'s `CONSTRAINTS` (`max_transition_ns:
+8.0`, `max_capacitance_pf: 0.35`, [#240]) were tuned against the depth-8
+topology's own four high-fanout nets and reused unchanged for this
+depth-2 re-place-and-route. They no longer clear every corner on the smaller
+design's different net topology: the depth-2 DEF violates at **11 of 15**
+corners, worst −1.6041 ns at `tt_025C_3v30`/`max` with 75 violating pins
+(records' own `max_slew_slack_ns`/`max_slew_violations` fields) — worse than
+the nine corners [#237] originally found and [#240] closed at depth 8. The
+one invariant that does still hold: **none of the six #233 trunk-net pins
+violates, at any of the fifteen corners** (`interface_load_max_slew_violations:
+0` in every one of the fifteen new records) — the regression is
+internal to the design, not on the inter-region interface. Re-tuning
+`CONSTRAINTS` for the depth-2 topology (the same lever [#240] pulled for
+depth 8) is a natural follow-up, not performed here: this issue's job was to
+regenerate the physical artefacts and characterize what they measure, not to
+re-close a design-rule residual its own predecessor issue already accepted
+once as bounded rather than eliminated.
+
+`sim/tools/digital_corner_characterization.py`'s `RECORDED` table and
+`MEASURED_NETLIST_FIFO_DEPTH` constant now reflect this depth-2 family;
+`--check` (wired into `npm run check:spec`) gates on it, not on the
+historical depth-8 figures sections 1–5a quote.
+
+---
+
+## 0a. Update — `max_transition` re-tuned for the depth-2 topology (issue [#264])
+
+**§0 above found the depth-2 re-place-and-route ([#255]) violating the
+library's own `max_transition` at 11 of the 15 corners**, because it reused
+`layout/digital/build.py`'s `CONSTRAINTS` (`max_transition_ns: 8.0`,
+`max_capacitance_pf: 0.35`) unchanged from [#240]'s depth-8 tuning. This
+issue re-derives `max_transition_ns` for the depth-2 topology, the same way
+[#240] derived it at depth 8 — per-net decomposition over the committed DEF,
+via `sim/tb/digital-sta-power/max_transition_probe.py` — and rebuilds.
+
+### What the probe found on the (still-violating) depth-2 DEF
+
+The residual was two nets, not [#237]'s original four:
+
+| net | pins | driver | driver cell |
+|---|---:|---|---|
+| `net4` | 42 | `fanout4/Z` | `gf180mcu_fd_sc_mcu9t5v0__dlyd_1` |
+| `u_interface/_0519_` | 33 | `u_interface/_0975_/Z` | `gf180mcu_fd_sc_mcu9t5v0__and4_1` |
+
+Neither is on one of [#233]'s six trunk nets. The probe's own
+`pnr_corner_target` derivation (the same arithmetic [#240]'s docstring
+walks through) computed a naive required `set_max_transition` at the P&R
+corner (`ss_125C_3v00`) of **10.99 ns**, binding at `ff_125C_3v60`/`rc-min`
+— but that number describes what the *measured* slew would need to be, not
+what value to hand `repair_design`, and the existing `8.0 ns` constraint was
+already tighter than 10.99 ns while still leaving the design's own P&R
+corner measuring a worst slew of **14.1 ns** (above its own 13.2 ns limit).
+That gap between the constraint `repair_design` is handed and the slew the
+rebuilt, fully-extracted DEF actually measures — the same
+placement-estimate-versus-extracted-parasitics gap [#240]'s own docstring
+describes — is wider for this topology's two nets than it was for depth-8's
+four, so the naive figure could not be used directly.
+
+### The fix: `max_transition_ns: 8.0` → `4.0`, unchanged `max_capacitance_pf: 0.35`
+
+Rather than iterate from the naive 10.99 ns figure, `layout/digital/
+build.py`'s `CONSTRAINTS.max_transition_ns` was tightened directly to
+**4.0 ns** — chosen to match the family's own tightest corner limit
+(`ff_n40C_3v60`, 4.4 ns) rather than a fraction of the P&R corner's 13.2 ns
+limit the way [#240]'s 8.0 ns (60.6 % of that limit) was. Rebuilding once
+against that target cleared the design on the first attempt:
+`sim/tb/digital-sta-power/max_transition_probe.py`'s post-rebuild survey
+reports **zero** `max_transition` and **zero** `max_capacitance` violations
+at all fifteen corners, with the worst measured slew at 21–39 % of its
+corner's own limit (lowest `ss_n40C_3v00/rc-min`: 2.34 ns against 11.2 ns;
+highest `ff_125C_3v60/rc-max`: 2.04 ns against 5.2 ns; the P&R corner
+`ss_125C_3v00/rc-max`: 4.11 ns against 13.2 ns).
+
+The pre-rebuild figures above (the two nets and the 10.99 ns derivation)
+can be reproduced by running `max_transition_probe.py` without `--check`
+against [#255]'s DEF (the parent commit of this change). The 14.1 ns
+figure is [#255]'s own `ss_125C_3v00`/`max` record: a 13.2 ns limit with
+−0.905 ns slack.
+
+### What `layout/digital/reports/place_and_route.json`'s per-corner counts mean
+
+The klt version used for this rebuild adds per-corner
+`max_transition_violation_count`/`max_capacitance_violation_count` fields
+to the place-and-route report. Its aggregate reads 720 and 3. **These are
+not the library check this section gates on, and they do not contradict
+the zero above.** klt's retained OpenROAD logs show both counts are checked
+against the **design-level limits this build stated to `repair_design`**
+(`set_max_transition 4.0`, `set_max_capacitance 0.35`), using klt's own
+nominal-interconnect parasitics, across every `.lib` deck the library
+ships:
+
+- **Transition (720):** every violating pin is at a 1.62 V or 1.80 V deck
+  (`ss_125C_1v62` 720, `ss_n40C_1v62` 554, `tt_025C_1v80` 20). This block
+  does not run at those voltages. At the other twelve decks, including all
+  five in this block's 3.3 V family, the count is 0 against the 4.0 ns
+  target.
+- **Capacitance (3):** 1–3 pins at 11 of the 15 decks, always from the
+  same three buffers that `repair_design` inserted itself
+  (`u_interface/place67`, `u_interface/max_cap68`, `u_interface/max_cap69`).
+  Each drives 0.35–0.38 pF against the 0.35 pF target, which misses by at
+  most 0.03 pF. Those pins' own library `max_capacitance` limits are not
+  exceeded at any of the fifteen swept corners, per the probe's table.
+
+So this rebuild clears the library's own checks everywhere. It misses its
+own self-imposed `max_capacitance_pf: 0.35` guard-band by up to 0.03 pF on
+three inserted buffers. That target was never binding (see
+`layout/digital/build.py`'s comment), so this is recorded here rather than
+treated as a residual to fix. The report itself does not say which limit
+its counts were checked against; the only way to tell is to read the raw
+OpenROAD logs. That is filed as a tool gap, [klt2357].
+
+The re-minted fifteen-corner family this document's own sweep produces is
+`sim/records/2026-09-22-digital-sta-power-{01..15}.md`; every one reports
+`max_slew_violations: 0` and `interface_load_max_slew_violations: 0`.
+
+### Cost of the tighter constraint
+
+The extra buffering the tighter target adds is small (+30 logical
+instances). `repair_design` applies the tighter target design-wide, so the
+buffering is not guaranteed to land only on the two nets the probe named:
+the rebuild's worst-fanout net moved too (to `u_interface/net71`, 38 loads).
+
+| | before (#255, `max_transition_ns: 8.0`, violating) | after (#264, `max_transition_ns: 4.0`, clean) |
+|---|---:|---:|
+| Placed cell area | 59 465.1 µm² | 61 692.0 µm² (+3.7 %) |
+| Achieved utilization | 41.56 % | 43.11 % (+3.7 %, same die) |
+| Routed wirelength | 72 050 µm | 72 152 µm (+0.14 %) |
+| Die area | 159 117 µm² (unchanged — set by the floorplan's 40 % utilization target, not by cell count) | 159 117 µm² |
+| Library `max_transition` violations | 11 of 15 corners | **0 of 15 corners** |
+| #233 trunk-net `max_transition` violations | 0 of 15 corners | 0 of 15 corners (unchanged) |
+
+### Current depth-2 figures (supersede §0's "depth 2" column)
+
+Every timing, area and power figure moved with the rebuild, not just the
+`max_transition` fields. Records:
+`sim/records/2026-09-22-digital-sta-power-{01..15}.md`.
+
+| | [#255] depth 2 (§0, superseded) | [#264] depth 2 (current) |
+|---|---:|---:|
+| Placed instances | 4436 DEF `COMPONENTS` (1458 logical) | 4483 DEF `COMPONENTS` (1488 logical) |
+| Setup binding slack | +23.880 ns at `ss_125C_3v00`/`max` | +31.413 ns at `ss_125C_3v00`/`max` |
+| Hold binding slack | +0.6935 ns at `ff_n40C_3v60`/`min` | +0.6902 ns at `ff_n40C_3v60`/`min` |
+| Fmax floor | 38.284 MHz at `ss_125C_3v00`/`max` | **53.801 MHz** at `ss_125C_3v00`/`max` |
+| Placed cell area | 59 465.1 µm² | **61 692.0 µm²** |
+| vs the pre-synthesis inventory (depth-2, 863 cells, 33 654.6 µm²) | ×1.767 | **×1.833** |
+| Active power @ 1 MHz (max) | 358.5 µW at `ff_125C_3v60`/`max` | **345.6 µW** at `ff_125C_3v60`/`max` |
+| Leakage (max) | 7.107 µW / 1.974 µA at `ff_125C_3v60` | **7.515 µW / 2.088 µA** at `ff_125C_3v60` |
+| Library `max_transition` violations | 11 of 15 corners | **0 of 15 corners** |
+
+The Fmax floor rose by about 40 %. That fits §2a's depth-8 reading, where the
+critical path ran through the slew-violating nets: fixing their transitions
+also shortens the binding setup path. This document does not break that down
+path by path. The placed area moved *away* from the `< 0.05 mm²` README row,
+not toward it. That row's disposition stays with [#150]/[DR-0019], as the
+header above says; this issue does not touch it.
+
+`sim/tools/digital_corner_characterization.py`'s `RECORDED` table now
+reflects this rebuilt depth-2 DEF, and `--check` (wired into
+`npm run check:spec`) gates on it.
+
+---
+
 ## 1. What ran
 
 | | |
@@ -1051,11 +1263,18 @@ python3 sim/tb/digital-sta-power/max_transition_probe.py
 python3 sim/tb/digital-sta-power/max_transition_probe.py --check
 ```
 
-Records: `sim/records/2026-09-15-digital-sta-power-{01..15}.md`, one per
-corner, each with the generated Tcl and the full OpenROAD log as committed raw
-output. The SPEF is not committed (3.3 MB × 15); each record carries its
-sha256, byte count and summed capacitance so a re-run can be checked against
-it. The pre-[#240] `sim/records/2026-09-12-digital-sta-power-{01..15}.md`
+Records: `sim/records/2026-09-22-digital-sta-power-{01..15}.md`, the current
+`FIFO_DEPTH = 2` family ([#264], §0a), one per corner, each with the generated
+Tcl and the full OpenROAD log as committed raw output. The SPEF is not
+committed (3.3 MB × 15); each record carries its sha256, byte count and
+summed capacitance so a re-run can be checked against it. The pre-[#264]
+`sim/records/2026-09-19-digital-sta-power-{01..15}.md` ([#255], §0) remain
+committed as append-only evidence about the first depth-2 DEF (the one that
+violated `max_transition` at 11 of 15 corners). The pre-[#255]
+`sim/records/2026-09-15-digital-sta-power-{01..15}.md` remain committed as
+append-only evidence about the `FIFO_DEPTH = 8` DEF they name and hash, but
+no longer describe `layout/digital/`'s current committed artefacts (§0). The
+pre-[#240] `sim/records/2026-09-12-digital-sta-power-{01..15}.md`
 remain committed as append-only evidence about the DEF before
 `max_transition_ns`/`max_capacitance_pf` were stated to `repair_design`
 (§2a). The pre-[#233] `sim/records/2026-08-18-digital-sta-power-{01..15}.md`
@@ -1085,11 +1304,14 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [#242]: https://github.com/2AMLogic/gf180-trng/issues/242
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
+[#255]: https://github.com/2AMLogic/gf180-trng/issues/255
+[#264]: https://github.com/2AMLogic/gf180-trng/issues/264
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
 [klt1709]: https://github.com/2AMLogic/klayout-tools/issues/1709
 [klt1860]: https://github.com/2AMLogic/klayout-tools/pull/1860
+[klt2357]: https://github.com/2AMLogic/klayout-tools/issues/2357
 [DR-0003]: ../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0006]: ../spec/decision-records/DR-0006-ro-jitter-characterization-pvt-sampling-strategy.md
 [DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md

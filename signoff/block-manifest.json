@@ -1,0 +1,29 @@
+{
+  "block": "gf180-trng",
+  "kind": "mixed-signal",
+  "partition_boundary": {
+    "analog": "Regions ring1 (cell ro_ring11), ring2 (cell ro_ring11_ring2) and combiner_sampler (cell combiner_sampler, containing both DR-0018 ro_buf instances xb1/xb2). Sources: hand-captured xschem schematics under design/xschem/, netlisted by design/netlist.py. Layout: hand-drawn GDS under layout/cells/, layout/rings/, layout/blocks/. Supplies vddr1 (ring1), vddr2 (ring2) and vdd (combiner_sampler) are analog-side star branches that never reach the digital region; vsubs is these three regions' guard-ring substrate tap. Pins this side exposes at the boundary: combiner_sampler's clk, rst_n, raw_bit, raw_valid, ring_bit1, ring_bit2, plus the shared vss return.",
+    "digital": "Region digital, top cell trng_top: Verilog RTL under design/trng_top/, synthesized by design/synth.py (yosys) and placed-and-routed by layout/digital/build.py (klt place-and-route) to layout/digital/trng_top.def/.gds. Supply vddd is digital-only. Pins this side exposes at the boundary: clk, rst_n, raw_bit, raw_valid, ring_bit[0], ring_bit[1], plus the shared vss return. Every crossing net is declared endpoint-by-endpoint in design/floorplan_netlist.py's INTER_REGION_NETS and machine-checked against both sides' committed reference netlists by `npm run check:floorplan-netlist`: clk and rst_n run chip pin -> digital -> combiner_sampler, raw_bit/raw_valid run combiner_sampler -> digital, ring_bit1/ring_bit2 map to this side's ring_bit[0]/ring_bit[1], and vss is the one deliberately shared net all four regions return to."
+  },
+  "evidence": {
+    "3.analog": {
+      "file": "layout/reports/combiner_sampler.drc.json",
+      "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+    },
+    "3.digital": {
+      "file": "layout/digital/reports/drc.json",
+      "content_hash": "sha256:b766425e0440fe58ed16c3d50d88b0ea469d9c16a0e723462c66e325a47816a9"
+    },
+    "4.analog": {
+      "file": "layout/reports/combiner_sampler.lvs.json"
+    },
+    "4.digital": {
+      "file": "layout/digital/reports/lvs.json",
+      "content_hash": "sha256:26983bc32446e4ad076429bc83a960fb23c6ed8db1be02d6786817d78292f0fb"
+    },
+    "8.digital": {
+      "file": "signoff/evidence/characterization-digital.generic.json",
+      "content_hash": "sha256:e45eeed3d048909084524b8c27677434490bfddd3fb2d4b3cf670265ae000f85"
+    }
+  }
+}

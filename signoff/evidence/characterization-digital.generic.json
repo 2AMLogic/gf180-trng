@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "summary": "T1 item 8, digital partition: sim/characterization-digital-sta-area-power.md is the one aggregated, current artifact summarizing the digital partition's per-spec-row performance across the corner set, and it names the sim/records/ evidence record behind every number. It reports Fmax, placed area and power across all fifteen corners (the depth-2 family sim/records/2026-09-22-digital-sta-power-{01..15}.md, issue #264), which is exactly what item 8 asks a digital partition for, and its sections 0/0a carry the FIFO_DEPTH = 2 re-measurement that supersedes the depth-8 sections 1-5a retained below them as append-only history. This envelope asserts that the aggregation artifact required by item 8 EXISTS and is CURRENT for the pinned revision of that document -- it does NOT assert that every row in it passes. Disclosed exceptions that travel with this claim rather than being omitted from it: (a) the placed cell area is 61 692.0 um^2, x1.833 of the depth-2 pre-synthesis inventory and still over the ratified < 0.05 mm^2 README row on digital cells alone; (b) measured power remains well above the library-based estimate at the same corner and rate. (The library max_transition regression #255 introduced at depth 2, 11 of 15 corners, was closed by #264: 0 of 15 corners violate on the current DEF.) Both exceptions are T1 item 5's subject matter, and item 5 is unmet in this manifest. See signoff/README.md for the full reading.",
+  "source": "sim/characterization-digital-sta-area-power.md",
+  "provenance": {
+    "klt_version": null,
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:e45eeed3d048909084524b8c27677434490bfddd3fb2d4b3cf670265ae000f85"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 place-and-route` against gf180mcu, check what came back, and commit it.
 
     python3 layout/digital/build.py            # run P&R, check, write the report
+    python3 layout/digital/build.py --drc-only # re-check the COMMITTED GDS only
 
 This is issue #111's own bring-up: `design/trng_top/trng_top.synth.v`
 (`design/synth.py`, #143 -- 2505 standard-cell instances mapped against
@@ -241,65 +242,68 @@ POWER = {
 #: The timing constraints this run is placed and routed against.
 #:
 #: **`max_transition_ns`/`max_capacitance_pf` are stated here, and that is a
-#: recorded decision (#237, #240), not always the case.** #237 found the
-#: routed DEF this script used to commit violating the library's own
-#: `max_transition` at nine of the fifteen corners
+#: recorded decision (#237, #240, #264), not always the case.** #237 found
+#: the `FIFO_DEPTH = 8` routed DEF this script used to commit violating the
+#: library's own `max_transition` at nine of the fifteen corners
 #: `sim/tb/digital-sta-power/run_sta.py` sweeps -- four high-fanout nets
-#: inside `u_interface`/`u_conditioner`, measured per net and per corner by
-#: `sim/tb/digital-sta-power/max_transition_probe.py` and written up in
-#: `sim/characterization-digital-sta-area-power.md` section 2a. OpenROAD's
-#: own `repair_design` (which `klt place-and-route` runs after global
-#: placement) fixes exactly that, given a tighter target than the `CORNER`
-#: deck's own 13.2 ns limit: the probe derived the number it would need,
-#: 11.21 ns at this corner, from the measured cross-corner slews, binding at
-#: `ff_125C_3v60`/`rc-min`. The same probe found the library's sibling
-#: `max_capacitance` check violated by the identical four nets, at eleven of
-#: the fifteen corners -- the same drive-strength shape, not a separate
-#: structure.
+#: inside `u_interface`/`u_conditioner` -- and #240 landed the
+#: `max_transition_ns: 8.0`/`max_capacitance_pf: 0.35` pair below (via two
+#: rebuilds: a naive `10.0` ns guess proved insufficient once re-measured,
+#: `8.0` ns cleared it) once klayout-tools#1860 (merged 2026-09-15) made
+#: `set_max_transition`/`set_max_capacitance` expressible through
+#: `repair_design` at all. See `sim/characterization-digital-sta-area-power.md`
+#: section 2a and `sim/tb/digital-sta-power/max_transition_probe.py` (the
+#: per-net decomposition tool both #240 and #264 below used) for the full
+#: depth-8 derivation.
 #:
-#: It could not be stated until klayout-tools#1709 landed (merged via
-#: klayout-tools#1860, 2026-09-15): `klt place-and-route`'s request contract
-#: used to expose exactly two constraint fields -- `clock_port` and
-#: `clock_period_ns` -- with no SDC passthrough and no design-rule constraint
-#: of any kind. #1860 adds `max_transition_ns` -> `set_max_transition <ns>
-#: [current_design]` and `max_capacitance_pf` -> `set_max_capacitance <pf>
-#: [current_design]` (plus `max_fanout`, deliberately not used here -- see
-#: below), each threaded through `repair_design` the same way `_clock_lines`
-#: already reaches every P&R stage.
+#: **#255's `FIFO_DEPTH = 2` re-synthesis and re-place-and-route reused that
+#: same `8.0`/`0.35` pair unchanged, and it did not carry over: the depth-2
+#: DEF's different net topology violated `max_transition` at eleven of the
+#: fifteen corners** (worse than the nine #237 found), on two nets, not
+#: four -- `net4` (42 pins, driven by a `dlyd_1` delay cell) and
+#: `u_interface/_0519_` (33 pins, driven by an `and4_1` gate). Neither is the
+#: design's own highest-fanout net at that constraint (`net1`, 50 loads, was
+#: clean at every corner) -- the same "fanout does not predict the
+#: violation" reading #240's derivation reached at depth 8, reached again
+#: independently at depth 2.
 #:
-#: **`max_transition_ns: 8.0`** is the number a real run against this flow
-#: needed, not the naive guard-band under the 11.21 ns derived above: this
-#: value was reached in two rebuilds, not one, because "verify, don't
-#: assume" (#240's own framing of the risk) turned out to matter in
-#: practice. The first attempt used `10.0` ns -- below 11.21 ns by
-#: approximately the same margin #237's own derivation carried, and a
-#: reasonable guess given `repair_design` optimises against
-#: placement-estimated parasitics rather than the post-route extraction the
-#: 11.21 ns figure is built from. Re-running the full fifteen-corner
-#: `digital-sta-power` sweep against that DEF (not assuming it worked)
-#: found it was not enough: `max_slew_violations` was still 13 at two of
-#: the fifteen corners (`tt_025C_3v30`/`rc-max`, `ff_125C_3v60`/`rc-max`).
-#: Tightening to `8.0` ns (60.6 % of this deck's own 13.2 ns limit) and
-#: rebuilding a second time cleared it everywhere: the re-minted sweep
-#: reports `max_slew_violations: 0` at all fifteen corners, confirmed
-#: independently by
-#: `sim/tb/digital-sta-power/max_transition_probe.py --check`.
+#: **#264 re-derived the constraint for the depth-2 topology and landed on
+#: `max_transition_ns: 4.0`.** `max_transition_probe.py`'s
+#: `pnr_corner_target` computed a naive required figure of 10.99 ns
+#: (binding at `ff_125C_3v60`/`rc-min`) from the violating DEF's own
+#: cross-corner slews -- but that DEF's own P&R corner (`ss_125C_3v00`)
+#: already measured a worst slew of 14.1 ns against the *existing* `8.0` ns
+#: target, meaning the gap between what `repair_design` is handed and what
+#: the fully-extracted DEF measures is wider for these two nets than it was
+#: for depth-8's four, and the naive figure could not be trusted without
+#: rebuilding against it and re-measuring. Rather than iterate the naive
+#: figure down as #240 did (`10.0` -> `8.0` ns), this rebuild went straight
+#: to the family's own tightest corner limit (`ff_n40C_3v60`, 4.4 ns) and
+#: cleared on the first attempt: the re-minted fifteen-corner sweep reports
+#: `max_slew_violations: 0` at every corner, confirmed independently by
+#: `sim/tb/digital-sta-power/max_transition_probe.py --check`, at a modest
+#: area cost (+3.7 % placed cell area, +30 logical instances; `repair_design`
+#: applies the target design-wide, so that buffering is not confined to the
+#: two named nets).
 #:
 #: **`max_capacitance_pf: 0.35`** is stated alongside it, but is not shown to
-#: be the lever that cleared the `max_capacitance` violations on this DEF:
-#: the library's own per-pin `max_capacitance` limit (an attribute of
-#: whichever driving cell ends up worst, not a single corner-wide number)
-#: measures well under 0.35 pF at every corner of the rebuilt DEF (roughly
-#: 0.12-0.20 pF, per `max_transition_probe.py`'s own per-corner table) --
-#: so it is the same slew-driven buffering that clears `max_transition`
-#: which clears `max_capacitance` too, as a byproduct of fixing one
-#: drive-strength shape shared by the same four nets, not because this
-#: value bound anything. It is kept stated rather than dropped: it costs
-#: nothing today, and it is the knob `repair_design` would have to use if a
-#: future net violated `max_capacitance` without a `max_transition`
+#: be the lever that clears the `max_capacitance` violations on either
+#: topology measured so far: the library's own per-pin `max_capacitance`
+#: limit (an attribute of whichever driving cell ends up worst, not a single
+#: corner-wide number) measures well under 0.35 pF at every corner of the
+#: #264 rebuild (roughly 0.09-0.15 pF, per `max_transition_probe.py`'s own
+#: per-corner table) -- so it is the same slew-driven buffering that clears
+#: `max_transition` which clears `max_capacitance` too, as a byproduct, not
+#: because this value bound anything. It is kept stated rather than dropped:
+#: it costs nothing today, and it is the knob `repair_design` would have to
+#: use if a future net violated `max_capacitance` without a `max_transition`
 #: violation alongside it. The rebuilt DEF's own measured
 #: `max_capacitance_violations` (0 at every corner, not this comment) is
-#: the actual answer for this run.
+#: the actual answer for this run. (`reports/place_and_route.json`'s own
+#: per-corner `max_capacitance_violation_count` is a different check: it
+#: compares against this 0.35 pF value, not the library limit. It flags 1-3
+#: buffers that `repair_design` inserted itself, driving 0.35-0.38 pF. See
+#: `sim/characterization-digital-sta-area-power.md` section 0a.)
 #:
 #: `design/synth.py` cannot state either constraint on this script's behalf:
 #: `klt synthesize`'s `request.constraints` still reads exactly one field,
@@ -312,21 +316,22 @@ POWER = {
 #:
 #: A `set_max_fanout` is *separately* not wanted, on this library's own
 #: evidence rather than on availability: `gf180mcu_fd_sc_mcu9t5v0` declares no
-#: `default_max_fanout` and no per-pin `max_fanout` at all, and on the DEF
-#: this decision was made against, this design's highest-fanout net
-#: (`rst_n`, 201 loads -- nearly six times the largest of the four
-#: offenders) was clean at every corner while a 13-load net violated at
-#: seven. Fanout did not predict the violation; load capacitance against
-#: drive strength did, which is what `max_transition`/`max_capacitance`
-#: measure directly. (The buffering `max_transition_ns: 8.0` triggers
-#: touches more than the original four nets -- it also reshapes `rst_n`
-#: itself, so the rebuilt DEF's own worst-fanout net is smaller and
-#: different; that is a topology side effect of the fix, not a change to
-#: this reasoning.)
+#: `default_max_fanout` and no per-pin `max_fanout` at all, and at both
+#: depths measured so far the design's highest-fanout net was clean while a
+#: lower-fanout net violated (depth 8: `rst_n` at 201 loads clean, a 13-load
+#: net violated at seven corners; depth 2, pre-#264: `net1` at 50 loads
+#: clean, `net4` at 42 loads violated at every corner). Fanout does not
+#: predict the violation; load capacitance against drive strength does,
+#: which is what `max_transition`/`max_capacitance` measure directly. (The
+#: buffering each rebuild's own `max_transition_ns` triggers touches more
+#: than the originally-violating nets alone -- #240's depth-8 rebuild also
+#: reshaped `rst_n`; #264's depth-2 rebuild lands on yet another worst-fanout
+#: net, `u_interface/net71` at 38 loads -- a topology side effect of each
+#: fix, not a change to this reasoning.)
 CONSTRAINTS = {
     "clock_port": "clk",
     "clock_period_ns": 50.0,
-    "max_transition_ns": 8.0,
+    "max_transition_ns": 4.0,
     "max_capacitance_pf": 0.35,
 }
 SEED = 1
@@ -719,16 +724,54 @@ def run_drc(gds_path: Path) -> dict:
 
 
 def _drc_summary(payload: dict) -> dict:
-    """The committed view of a `klt drc` payload: the verdict and the
-    per-rule counts, without the full per-violation polygon dump (which runs
-    to megabytes over a design this size and says nothing a rule count and a
-    re-run do not)."""
+    """The verdict-and-counts digest of a `klt drc` payload.
+
+    This is what `reports/place_and_route.json`'s own nested `drc` field
+    carries -- a one-line answer to "did the stream this run committed pass
+    DRC?" next to the rest of that run's record. It is **not** what
+    `reports/drc.json` carries any more: see `_drc_committed_view`.
+    """
     return {
         "status": payload.get("status"),
         "deck": payload.get("deck"),
         "violation_count": payload.get("violation_count"),
         "rule_counts": payload.get("rule_counts"),
     }
+
+
+def _drc_committed_view(payload: dict) -> dict:
+    """The committed view of a `klt drc` payload: the **whole envelope**.
+
+    From #170 until #273 this function did not exist, and `reports/drc.json`
+    was `_drc_summary`'s four-field digest instead -- `{"status": "clean",
+    "deck": ..., "violation_count": 0, "rule_counts": {}}`, on the stated
+    reasoning that the per-violation polygon dump "runs to megabytes over a
+    design this size and says nothing a rule count and a re-run do not".
+
+    Two things were wrong with that. The first is arithmetic: the dump is
+    only large when the run is *dirty*. This run is clean, so `violations`
+    is an empty array and the whole envelope is 5.4 KB.
+
+    The second is the one that actually cost something. A four-field digest
+    carries no `schema_version`, no `violations` array and no `provenance`
+    block, and those three are exactly what `klt signoff` reads to decide
+    what kind of evidence a cited file *is*. So the digital partition's DRC
+    run -- which has been clean since #170 and was re-run clean at
+    `FIFO_DEPTH = 2` by #255/#266 -- graded `unmet`/`no_evidence` on T1
+    item 3 for want of a file shape, while the analog partition's own
+    `klt drc` envelope (`layout/reports/combiner_sampler.drc.json`, written
+    by `layout/verify.py`, which never reduced anything) graded `met`. The
+    digest was also unpinnable: `provenance.input.content_hash` is the field
+    `signoff/block-manifest.json` pins a citation to and `signoff/check.py`
+    re-hashes against `trng_top.gds` on disk, so a summary could silently go
+    stale against the stream it described.
+
+    The envelope is therefore committed verbatim, with nothing dropped --
+    including `coverage` (which deck layers and rules this run actually
+    checked, and which layers in the stream no rule covers), the disclosure
+    a reader needs to know what "clean" did and did not cover.
+    """
+    return dict(payload)
 
 
 # --------------------------------------------------------------------------- #
@@ -891,9 +934,12 @@ def build() -> int:
             # placement/routing is not claimed byte-reproducible beyond that.
             GDS_PATH.write_bytes(normalise_gds(gds_path.read_bytes()))
             written.append(GDS_PATH)
-            drc = _drc_summary(run_drc(GDS_PATH))
-            DRC_REPORT_PATH.write_text(json.dumps(drc, indent=2) + "\n")
+            drc_payload = run_drc(GDS_PATH)
+            DRC_REPORT_PATH.write_text(
+                json.dumps(_drc_committed_view(drc_payload), indent=2) + "\n"
+            )
             written.append(DRC_REPORT_PATH)
+            drc = _drc_summary(drc_payload)
             if drc.get("status") != "clean":
                 warnings.append(
                     f"klt drc over the merged GDS: {drc.get('status')} "
@@ -937,6 +983,87 @@ def build() -> int:
     return EXIT_OK
 
 
+def drc_only() -> int:
+    """Re-run `klt drc` over the **already-committed** `trng_top.gds` and
+    rewrite `reports/drc.json`, without touching place-and-route.
+
+    Why this mode exists (#273). DRC is a check over a committed stream, and
+    is independent of whatever built that stream -- so re-emitting the DRC
+    evidence (a newer `klt`, a newer deck, or a report shape that `klt
+    signoff` can actually grade) should not require re-deriving the stream.
+    Requiring it would, because `build()` runs the whole flow: OpenROAD via
+    the pinned Docker image, hours of wall clock, and -- per the module
+    docstring -- a *stochastic* placement and routing that is not claimed
+    byte-reproducible. Re-running it to refresh a DRC report would throw
+    away the committed, already-verified `trng_top.def`/`.gds`/`.pnr.v`
+    triple and replace it with a different one, invalidating every
+    downstream artefact keyed to it (`reports/lvs.json`,
+    `sim/tb/digital-sta-power/`, `layout/floorplan/`) for no verification
+    gain at all.
+
+    What this mode may and may not be used for: it re-verifies the
+    *committed* stream and says so in the envelope's own
+    `provenance.input.content_hash`. It cannot refresh anything derived from
+    the P&R run itself (`stage_reached`, slacks, the `checks` block) -- those
+    stay as `build()` last recorded them, which is correct, because the
+    stream they describe has not moved. `reports/place_and_route.json`'s
+    nested `drc` digest is refreshed alongside, so the two committed files
+    can never disagree about the same run's verdict.
+    """
+    if not GDS_PATH.is_file():
+        print(
+            f"ERROR  {GDS_PATH.relative_to(REPO_ROOT)} is missing -- there is "
+            "no committed stream to re-check; run `python3 "
+            "layout/digital/build.py` first",
+            file=sys.stderr,
+        )
+        return EXIT_ENVIRONMENT
+    if klt_version() is None:
+        print("ERROR  klayout-tools (`klt`) is not on PATH", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        payload = run_drc(GDS_PATH)
+    except FlowError as exc:
+        print(f"FAILED  klt drc: {exc}", file=sys.stderr)
+        return EXIT_FLOW_FAILURE
+
+    DRC_REPORT_PATH.write_text(
+        json.dumps(_drc_committed_view(payload), indent=2) + "\n"
+    )
+    summary = _drc_summary(payload)
+
+    # Keep place_and_route.json's nested `drc` digest in step with the
+    # envelope, so a reader cannot be handed two committed answers to the
+    # same question. Everything else in that report describes the P&R run
+    # and is left exactly as it was.
+    if REPORT_PATH.is_file():
+        report = json.loads(REPORT_PATH.read_text())
+        report["drc"] = summary
+        REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n")
+
+    origin = klt_origin()
+    commit = (origin or {}).get("commit")
+    print(f"klt:  {klt_version()}" + (f" (built from {commit})" if commit else ""))
+    print(f"input: {GDS_PATH.relative_to(REPO_ROOT)}")
+    print(
+        f"drc:  status={summary.get('status')}  "
+        f"violation_count={summary.get('violation_count')}  "
+        f"rule_counts={summary.get('rule_counts')}"
+    )
+    print(f"wrote  {DRC_REPORT_PATH.relative_to(REPO_ROOT)}")
+    if REPORT_PATH.is_file():
+        print(f"wrote  {REPORT_PATH.relative_to(REPO_ROOT)} (nested `drc` digest)")
+    if summary.get("status") != "clean":
+        print(
+            f"WARNING  klt drc over the committed GDS: {summary.get('status')} "
+            f"({summary.get('violation_count')} violations)",
+            file=sys.stderr,
+        )
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="build.py",
@@ -945,8 +1072,17 @@ def main(argv: list[str] | None = None) -> int:
             "gf180mcu (#111), check the artefacts, and commit the result."
         ),
     )
-    parser.parse_args(argv)
-    return build()
+    parser.add_argument(
+        "--drc-only",
+        action="store_true",
+        help=(
+            "skip place-and-route entirely: re-run `klt drc` over the "
+            "already-committed trng_top.gds and rewrite reports/drc.json "
+            "(see drc_only()'s docstring, #273)"
+        ),
+    )
+    args = parser.parse_args(argv)
+    return drc_only() if args.drc_only else build()
 
 
 if __name__ == "__main__":

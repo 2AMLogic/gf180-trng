@@ -85,6 +85,40 @@ here decides anything.
 > about — but no estimate below can now be read without its depth, which is
 > exactly how this document went stale silently the first time.
 
+> **Update — the measured gate-level digital term is no longer depth-8
+> synthesis either (#255/#266,
+> [`DR-0020`](../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md)).**
+> The previous update noted that `power_rollup.py`'s **measured**
+> (not estimated) digital term still came from the depth-8
+> `design/trng_top/trng_top.synth.v` / `layout/digital/trng_top.def` build,
+> because re-synthesising at the shipped depth was explicitly outside #254's
+> scope. #255 did that re-synthesis and re-place-and-route at
+> [DR-0020]'s ratified `FIFO_DEPTH = 2` and reran #145's same fifteen-corner
+> `level: gate` sweep ([DR-0021]) against it; #266 carried the result into
+> the committed `sim/records/*-digital-sta-power-*.md` family.
+> `sim/tools/power_rollup.py`'s digital term already reads that family live
+> via `sim/tools/digital_corner_characterization.py` (no code changed by
+> #255/#266), so the rollup's own arithmetic reflects the new figures without
+> a tool edit — only this document's frozen headline numbers needed a
+> pointer. At the digital section's own worst corners:
+>
+> | | depth-8 (#145, superseded) | depth-2 (#255/#266, current) |
+> |---|---:|---:|
+> | Digital active, `ff_125C_3v60`/`rc-max` | 712.4 µW | **358.5 µW** |
+> | Digital idle leakage, `ff_125C_3v60` | 4.062 µA | **1.974 µA** |
+>
+> which moves the whole-block headline to **active 768.5 µW, 153.7 % of the
+> row** (entropy array 393.2 µW + sampler 16.9 µW + digital 358.5 µW,
+> missed by 1.5× instead of 2.2×) and **idle 2.007 µA, 201 % of the row**
+> (analog 32.8 nA + digital 1.974 µA, missed by ~2.0× instead of ~4.1×). Both
+> rows are still missed — [DR-0017] §B already priced the FIFO-depth lever
+> as insufficient on idle current at any depth, and that prediction holds.
+> No new decision record supersedes [DR-0023] or [DR-0017]: this is the same
+> digital-term substitution those records already ratified, re-run against
+> [DR-0020]'s own depth, not a new decision. As with every update above, the
+> numbers in the sections below are left in the state they were measured in;
+> `python3 sim/tools/power_rollup.py` is the current source of truth.
+
 ---
 
 ## Headline
@@ -92,8 +126,8 @@ here decides anything.
 | Row | Ratified target | Measured / estimated | Binding corner | Verdict |
 |---|---|---|---|---|
 | Time-to-first-valid | ≥ ~1.28 ms at 1 Mbps (an arithmetic floor) | **1.281 ms** | `ss`/+125 °C/2.97 V, but see below — the corner barely matters | **Met**, and the floor is confirmed as a floor |
-| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated at `FIFO_DEPTH = 8`**; that estimate term is **20.6 µW** at [DR-0020]'s ratified `FIFO_DEPTH = 2`, for **451.7 µW / 90.3 %** on the same rollup) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array, digital still **estimated**; **1.122 mW (224.5 %)** since #174/[DR-0023], digital now **measured-at-gate-level** (that measured term is depth-8 synthesis, #255) | `ff`/−40 °C/3.63 V | pre-#174: **Met**, 86.6 % of the row. Since #174/[DR-0023] (Proposed): **Missed, 2.2×** |
-| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated at `FIFO_DEPTH = 8`**; that estimate term is **2.03 µA** at the ratified `FIFO_DEPTH = 2`, for **2.06 µA / 206 %** on the same rollup); **3.979 µA** since #174/[DR-0023], digital now **measured-at-gate-level** (depth-8 synthesis, #255) | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017]; **2.1×** on the depth-2 estimate; narrowed to **~4.0×** since #174/[DR-0023] |
+| Power — active | < 500 µW | **454.2 µW** (415.3 measured + 15.8 measured + 23.1 **estimated at `FIFO_DEPTH = 8`**; that estimate term is **20.6 µW** at [DR-0020]'s ratified `FIFO_DEPTH = 2`, for **451.7 µW / 90.3 %** on the same rollup) — pre-#78, see the update above; **433.2 µW (86.6 %)** against the buffered array, digital still **estimated**; **1.122 mW (224.5 %)** since #174/[DR-0023], digital now **measured-at-gate-level** (that measured term was depth-8 synthesis); **768.5 µW (153.7 %)** since #255/#266 re-ran the same measured-at-gate-level sweep at the shipped depth-2 synthesis (see the update above) | `ff`/−40 °C/3.63 V | pre-#174: **Met**, 86.6 % of the row. #174/[DR-0023] (depth-8 measured): **Missed, 2.2×**. #255/#266 (depth-2 measured, current): **Missed, 1.5×** |
+| Power — idle | < 1 µA | **4.46 µA** (32.8 nA measured + 4.43 µA **estimated at `FIFO_DEPTH = 8`**; that estimate term is **2.03 µA** at the ratified `FIFO_DEPTH = 2`, for **2.06 µA / 206 %** on the same rollup); **3.979 µA** since #174/[DR-0023], digital now **measured-at-gate-level** (depth-8 synthesis); **2.007 µA (201 %)** since #255/#266 re-ran the same measured-at-gate-level sweep at the shipped depth-2 synthesis (see the update above) | `ff`/+125 °C/3.63 V | **Missed, 4.5×** → [DR-0017]; **2.1×** on the depth-2 estimate; narrowed to **~4.0×** since #174/[DR-0023] (depth-8 measured); **~2.0×** since #255/#266 (depth-2 measured, current) |
 
 ---
 
@@ -251,9 +285,9 @@ ships) the estimate row is **20.6 µW, 4.1 %** of the row — 863 cells instead 
 1655 — and the same rollup totals **451.7 µW, 90.3 %**. The row's verdict does
 not move: the estimate is 4–5 % of it at either depth, and since
 #174/[DR-0023] the digital term that actually feeds `power_rollup.py` is the
-measured gate-level one (still depth-8 synthesis — #255), not this estimate.
-`python3 sim/tools/power_rollup.py` prints the depth-2 estimate beside the
-measured term as context.
+measured gate-level one — depth-2 synthesis as of #255/#266 (see the update
+above), not this estimate. `python3 sim/tools/power_rollup.py` prints the
+depth-2 estimate beside the measured term as context.
 
 DR-0010 §Consequences stated the risk precisely: "the entropy source uses 83 %
 of the active budget … leaving ~85 µW for the sampler, health tests,

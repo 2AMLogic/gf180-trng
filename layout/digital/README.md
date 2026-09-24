@@ -10,6 +10,64 @@ flip-flops** ([`design/trng_top/trng_top.synth.json`](../../design/trng_top/trng
 issue #143). That is a place-and-route problem, and this directory is where
 it is solved — [#111][gf111].
 
+> **Update — re-synthesized and re-placed-and-routed at [dr20]'s ratified
+> `FIFO_DEPTH = 2` (issue [gf255]).** Everything quoted below this notice —
+> instance counts, timing, area and power — describes the `FIFO_DEPTH = 8`
+> build this directory shipped before #255, kept as the append-only record
+> of that run (the same treatment the "Two defects this bring-up found"
+> section already gives the pre-#170/#171 numbers). The committed artefacts
+> themselves are **not** that build any more: `trng_top.gds`/`.def`/
+> `.pnr.v`/`.sdf` are the depth-2 P&R, LVS-matched against their own
+> as-built netlist (`reports/lvs.json`: `status: match`, `mismatch_count:
+> 0`, up from the depth-8 build's `mismatch_count: 6`).
+>
+> | | `FIFO_DEPTH = 8` (below, historical) | `FIFO_DEPTH = 2` (current, [gf255]) |
+> |---|---:|---:|
+> | Synthesized instances | 2505 | 1459 |
+> | Placed logical instances | 2502–2533 (varied by rebuild) | 1458 |
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 8594 | 4436 |
+> | Die (40 % utilization target) | 548.8 × 548.8 µm = 301 209 µm² | 398.895 × 398.895 µm = 159 117 µm² |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +28.4 ns | +28.5 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −22.7 / +0.52 ns | −25.0 / +0.50 ns |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+>
+> The corner-swept, extraction-based STA/area/power figures this directory's
+> own Timing/Area/Power sections point to
+> (`sim/characterization-digital-sta-area-power.md`) are likewise re-run at
+> depth 2 — see that document's own §0 for the full comparison, including a
+> real regression the smaller design's different net topology introduced
+> (`layout/digital/build.py`'s `CONSTRAINTS`, tuned for the depth-8 design,
+> no longer clear the library's `max_transition` check at every corner).
+
+> **Update — `max_transition_ns` re-tuned for the depth-2 topology (issue
+> [gf264]).** The regression the box above flags was real: reusing
+> `CONSTRAINTS.max_transition_ns: 8.0` unchanged from the depth-8 tuning
+> ([gf240]) left the depth-2 DEF violating the library's own `max_transition`
+> check at 11 of the 15 corners (`sim/characterization-digital-sta-area-power.md`
+> §0). This issue re-derived the constraint for the depth-2 topology the same
+> way [gf240] derived it at depth 8 —
+> `sim/tb/digital-sta-power/max_transition_probe.py`'s per-net decomposition,
+> this time over the depth-2 DEF — and rebuilt with `max_transition_ns: 4.0`,
+> clearing all fifteen corners (§0a of the same document). The committed
+> artefacts are *this* rebuild, so the depth-2 figures the box above quotes
+> (from [gf255]'s original depth-2 build) are themselves now superseded:
+>
+> | | [gf255] depth-2 (superseded) | [gf264] depth-2 (current) |
+> |---|---:|---:|
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4436 | 4483 |
+> | Placed logical instances | 1458 | 1488 |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +28.5 ns | +32.6 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −25.0 / +0.50 ns | −7.4 / +0.50 ns |
+> | Library `max_transition` violations (`sim/`-side sweep) | 11 of 15 corners | **0 of 15 corners** |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+>
+> The swept worst-setup-slack row's own large negative number, both before
+> and after this rebuild, is unrelated to `max_transition`: it comes from the
+> two 1.62 V-family `.lib` corners this block does not run at
+> (`ss_125C_1v62`/`ss_n40C_1v62`), included in that sweep because it walks
+> every `.lib` file the library ships, not the block's own ratified 3.3 V
+> corner set — see [Timing](#timing) below.
+
 ## The one command
 
 ```sh
@@ -55,7 +113,7 @@ Committed artefacts:
 | [`trng_top.pnr.v`](trng_top.pnr.v) | the **as-built** gate-level netlist (`write_verilog` after CTS and resizing): the netlist a post-route gate-level simulation (#147) or a golden-reference LVS run must use, *not* `klt synthesize`'s pre-CTS one |
 | [`trng_top.gds`](trng_top.gds) | the DEF merged with the standard cells' own GDS views — committed as of #170, once the merge's database-unit defect ([klayout-tools#1090][klt1090]) was fixed upstream; see [GDS, DRC and LVS](#gds-drc-and-lvs) |
 | [`reports/place_and_route.json`](reports/place_and_route.json) | the full response, the request that produced it, provenance, and this script's own checks (`checks.gds_geometry.status: "ok"`) |
-| [`reports/drc.json`](reports/drc.json) | `klt drc` over `trng_top.gds` — verdict and per-rule counts |
+| [`reports/drc.json`](reports/drc.json) | `klt drc` over `trng_top.gds` — the **full envelope**, `schema_version`/`violations`/`coverage`/`provenance` included ([#273][gf273]) |
 
 `layout/digital/lvs.py` (below) writes three more committed artefacts — the
 mechanically-generated LVS reference SPICE, the extracted layout-side SPICE,
@@ -472,12 +530,20 @@ in this repository is checked against — `layout/README.md`'s
 ["Baseline-relative, not absolute"](../README.md) conventions apply here as
 everywhere else.
 
-The full per-violation dump is *not* what
-[`reports/drc.json`](reports/drc.json) commits — it keeps the verdict and
-per-rule counts only, the same choice `_drc_summary`'s own docstring makes
-for every DRC report in this directory, since the dump runs to megabytes
-over a design this size. Re-derive it with `klt drc trng_top.gds --deck
-gf180mcu --format json`.
+[`reports/drc.json`](reports/drc.json) commits the **whole `klt drc`
+envelope**, per-violation `violations` array included. Until [#273][gf273]
+it committed a four-field digest instead (verdict, deck, violation count,
+rule counts), on the reasoning that the per-violation dump "runs to megabytes
+over a design this size". That reasoning only holds for a *dirty* run: this
+one is clean, so `violations` is an empty array and the whole envelope is
+5.4 KB. What the digest cost, meanwhile, was real — with no
+`schema_version`, no `violations` array and no `provenance` block, `klt
+signoff` could not classify the file as DRC evidence at all, so this clean
+run graded `unmet`/`no_evidence` on T1 item 3 (see
+[`signoff/README.md`](../../signoff/README.md)). Re-emit it at any time with
+`python3 layout/digital/build.py --drc-only`, which re-runs `klt drc` over
+the *committed* `trng_top.gds` without re-deriving it through a fresh
+(stochastic, hours-long) place-and-route.
 
 **What a clean verdict here does not mean.** It is a *deck-relative*
 statement: the gf180mcu deck this repository pins does not model every rule
@@ -499,7 +565,13 @@ mapping) into the black-box SPICE shape `klt extract --abstract-cells`
 already resolves for the layout side, then runs `klt lvs` between the two —
 see the script's own module docstring for the full pipeline and the
 reasoning for a cell-instance-granularity comparison rather than a
-transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json)):
+transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json) — the
+**full `klt lvs` envelope** since [#273][gf273], `schema_version`/
+`mismatches`/`power_connectivity`/`body_verification`/`provenance` included,
+where it used to be a five-field digest; this script's own record of how the
+reference netlist was generated keeps its place in the report under
+`reference_generation`, beside rather than shadowing the envelope's own
+`reference` field):
 
 | | | #170 |
 |---|---|---|
@@ -838,6 +910,10 @@ boundary.
 [gf186]: https://github.com/2AMLogic/gf180-trng/issues/186
 [gf187]: https://github.com/2AMLogic/gf180-trng/issues/187
 [gf224]: https://github.com/2AMLogic/gf180-trng/issues/224
+[gf240]: https://github.com/2AMLogic/gf180-trng/issues/240
+[gf255]: https://github.com/2AMLogic/gf180-trng/issues/255
+[gf264]: https://github.com/2AMLogic/gf180-trng/issues/264
+[gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
@@ -853,3 +929,4 @@ boundary.
 [klt1310]: https://github.com/2AMLogic/klayout-tools/pull/1310
 [klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[dr20]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md

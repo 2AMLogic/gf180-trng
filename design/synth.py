@@ -151,6 +151,33 @@ script's own constants below plus `layout/_klt.py`'s PDK resolution, so
 committing it would duplicate information already in this file without
 adding anything a reader could not regenerate with
 `python3 design/synth.py`.
+
+netlist_path, two schemas
+-------------------------
+That one field is also reported two different ways depending on which
+`klt` is installed, and `synthesize()` below accepts both:
+
+- **schema v1** (`klt < 0.6.0`) reports a plain, absolute path string;
+- **schema v2** (`klt >= 0.6.0`, klayout-tools#1844) reports a
+  `{"path": "<repo-relative POSIX path>", "scope": "repo"}` envelope,
+  introduced upstream so machine-local absolute paths stop leaking into
+  committed evidence records.
+
+Accepting both is deliberate, not a transitional shim. The two live
+consumers of this script genuinely disagree about which `klt` is in force:
+`.github/workflows/pdk-nightly.yml` installs a build pinned per DR-0026,
+which is v1, while `signoff/check.py`'s own `KLT_PIN` and a current
+developer install are v2. Reading only one of them has now broken this
+script in both directions within two changes -- #278 (v1-only reader,
+uncaught `TypeError` under v2) and #288 (v2-only reader, `SynthError` with
+exit 3 under the pinned v1 build, which silently disabled the nightly
+staleness guard until someone read the log). Since `_committed_view()`
+above restates this field to the committed path either way, which schema
+answered has no bearing on what gets committed -- so there is nothing to
+gain by rejecting either one. Anything that is neither shape still raises
+`SynthError` naming the offending value: widening the accepted set is not
+the same as accepting everything. `layout/tests/test_synth.py` holds all
+three of those cases.
 """
 
 from __future__ import annotations
@@ -324,7 +351,44 @@ def synthesize(work_dir: Path) -> tuple[dict, Path]:
     except FlowError as exc:
         raise SynthError(str(exc)) from exc
 
-    netlist_path = Path(payload["netlist_path"])
+    # Two `klt` schemas report `netlist_path` two different ways, and this
+    # reader accepts both -- see the module docstring's "netlist_path, two
+    # schemas" section for why that is deliberate rather than transitional.
+    netlist_field = payload["netlist_path"]
+    if isinstance(netlist_field, dict):
+        # klt schema v2, klt >= 0.6.0 ("fix(synthesize): report artifact
+        # paths as {path, scope}, drop absolute paths from .ys",
+        # klayout-tools#1844): {"path": "<repo-relative POSIX path>",
+        # "scope": "repo"} when the artifact lives inside this repo (always
+        # true here, since WORK_DIR is repo-local -- see the module
+        # docstring), or {"path": None, "scope": "external"/"absent"} when
+        # there is no usable repo-relative path to report.
+        scope = netlist_field.get("scope")
+        path = netlist_field.get("path")
+        if scope != "repo" or not path:
+            raise SynthError(
+                "klt synthesize returned netlist_path with scope="
+                f"{scope!r} -- no usable path"
+            )
+    elif isinstance(netlist_field, str):
+        # klt schema v1, klt < 0.6.0: a plain (absolute) path string.
+        path = netlist_field
+        if not path:
+            raise SynthError(
+                "klt synthesize returned an empty netlist_path -- no usable path"
+            )
+    else:
+        raise SynthError(
+            "klt synthesize returned an unrecognized netlist_path shape: "
+            f"{netlist_field!r}"
+        )
+    # `REPO_ROOT / path` is right for both shapes: v2's path is
+    # repo-relative by construction, and v1's is absolute, which pathlib's
+    # `/` returns unchanged (`Path("/a") / "/b" == Path("/b")`). Either way
+    # the caller-visible result below -- and `_committed_view()`'s
+    # restatement of this field to the committed path -- is identical, so
+    # the committed report does not record which klt schema produced it.
+    netlist_path = REPO_ROOT / path
     if not netlist_path.is_file():
         raise SynthError(
             f"klt synthesize reported netlist_path={netlist_path} but it "
