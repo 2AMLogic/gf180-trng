@@ -152,8 +152,8 @@ requires of the claimant rather than of the tool.
 | 2 Layout | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Both layouts exist and are committed (`layout/cells/`, `layout/rings/`, `layout/blocks/`, `layout/digital/trng_top.gds`, composed into `layout/floorplan/`). Same reason: uncited on purpose, not absent. |
 | 3 DRC clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.drc.json`, digital cites `layout/digital/reports/drc.json` — both `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 2`, warnings only); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 0`). Only the digital citation carries a freshness pin — see "Item 4 is `met` twice, and only one of the two is pinned" for that and for what each compare did *not* verify. |
-| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). Separately, item 5 accepts only a `klt sim` envelope (analog) or `klt sta`/`klt functional-verification`/`klt sim` (digital); this repo's ~950 corner records under `sim/records/` are its own Markdown format, and the fifteen-corner digital STA sweep is likewise recorded as Markdown. Nothing here is gradeable yet. |
-| 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists. |
+| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, which is ordinary unperformed work. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
+| 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Real post-layout work exists on both sides — device- *and* routing-level parasitic re-simulation (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232) and an SDF-annotated post-route gate-level functional run (`sim/tb/trng-top-post-route/`, #147). Item 7 accepts only a `klt pex` envelope (analog) or `klt pex`/an SDF-annotated `klt functional-verification` envelope (digital), and neither exists in envelope form: `layout/pex/build.py` drives `klt extract --parasitics` and composes the result itself rather than emitting a `klt pex` report. |
 | 8 Characterization | `unmet` / `no_evidence` | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog is uncited — see below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
@@ -264,6 +264,22 @@ it is not a mechanical regeneration: it is entangled with
 stale at 0.6.0. The DRC verdict, at least, is measured not to move: #273's
 re-run under 0.6.0 reproduced `reports/place_and_route.json`'s existing
 nested `drc` digest byte for byte.
+
+**The grader pin has its own drift, measured the same way DR-0026 and #281
+measure the producer pins'.** `v0.6.0..main` is 102 commits, of which 9 touch
+`docs/design-evidence-tiers.md` — the document `klt signoff` parses the item
+list from — moving both `build.grading_ruleset_id`
+(`sha256:0d8cc27c…` → `sha256:88fdfb17…`) and `source_doc_content_hash`
+(`sha256:63eeec72…` → `sha256:584c0c75…`) in the rendered report.
+`signoff/check.py` compares a fresh grade *under the pinned build* against
+the committed record, so it structurally cannot notice this drift on its
+own: re-grading this block under upstream `main`
+(`0.6.0+gd18467ec57b1`) reproduces `tier: null` and 5 of 22 with
+byte-identical per-item statuses, so no graded row here is wrong — but the
+yardstick behind the row text has moved further than a version string
+discloses. Tracked upstream as klayout-tools#2526 ("a pinned klayout-tools
+version does not pin the grading ruleset, so a committed verdict-of-record
+cannot be re-verified").
 
 ### Item 4 is `met` twice, and only one of the two is pinned
 
@@ -494,12 +510,21 @@ In dependency order, not effort order:
    partitions — it strengthens a citation that is currently the only unpinned
    one in the manifest. It is blocked on DR-0026, which is `Proposed`, and
    whose zero-verdict-change measurement #281 shows has gone stale.
-3. **Emit corner evidence as `klt sim`/`klt sta` envelopes** alongside this
-   repo's Markdown records. Item 5's *design* gap (four ratified rows still
-   missed) is real and separate, but today the item cannot even be graded.
-4. **A `klt yield` report** over the Monte Carlo campaign that already exists
-   (item 6), and **a `klt pex` report** over the post-layout extraction that
-   already exists (item 7).
+3. **Emit corner evidence as a `klt sta`/`klt functional-verification`
+   envelope** for the digital half, alongside this repo's Markdown records —
+   genuinely producible, not yet done. Item 5's *design* gap (four ratified
+   rows still missed) is real and separate. The analog half is not on this
+   list as work this block can do today: `klt sim` is uncitable for a spec
+   needing caller-side post-processing until klayout-tools#2533 resolves —
+   see item 5's row above.
+4. **A `klt pex` report** over the post-layout extraction that already
+   exists (item 7). Item 6's `klt yield` report does not appear here as
+   something this block can produce: it requires the `klt_yield_native` Rust
+   extension, which is not reachable from any published klayout-tools
+   release (klayout-tools#2531, and #2474 for the upstream item-6 text) —
+   closing it needs a wheel upstream, not additional work here. Once one
+   exists, klayout-tools#2480's sample-size and negative-control grading
+   inputs still apply to the resulting report.
 5. ~~**A `klt erc` supply spec and run**~~ **Done, in two steps** — the spec
    and report first landed via [#268](https://github.com/2AMLogic/gf180-trng/issues/268),
    and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
@@ -518,4 +543,7 @@ gap; item 11's remaining gaps are tracked under
 [#124](https://github.com/2AMLogic/gf180-trng/issues/124), this repo's
 general gap-to-T1 tracker. Tool-side friction this surfaces is filed at
 `2AMLogic/klayout-tools`, per this repo's friction protocol (`CLAUDE.md`) —
-so far klayout-tools#2342.
+so far klayout-tools#2342, #2531 (item 6's `klt yield` unreachable from any
+published release), #2533 (item 5's analog half uncitable at any release)
+and #2526 (a pinned klayout-tools version does not pin the grading
+ruleset).
