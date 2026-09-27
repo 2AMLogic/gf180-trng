@@ -35,6 +35,7 @@ design/.work/
 .loom-in-use
 .loom-checkpoint
 .loom-managed
+.loom-cargo-target-dir
 .no-changes-needed
 .snapshots/
 .loom/.daemon.pid
