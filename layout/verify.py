@@ -802,11 +802,12 @@ def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
 def _stable(payload: dict) -> dict:
     """Strip the fields that legitimately move between machines.
 
-    Exactly three fields are dropped, each because it records *where this
-    machine happened to find something*, not *what was verified*. Every
-    field beside these three -- including every content hash, every verdict,
-    every count, and the PDK's own `variant`/`version` -- stays in the
-    comparison, so a real change still trips the gate:
+    Four fields are dropped, each because it records *where this machine
+    happened to find something* or *how this run happened to number
+    something*, not *what was verified*. Every field beside these four --
+    including every content hash, every verdict, every count, and the PDK's
+    own `variant`/`version` -- stays in the comparison, so a real change
+    still trips the gate:
 
     - `environment.engine_version` (`klt lvs` reports): an engine upgrade
       changes this without changing any verdict. The rest of that block --
@@ -829,6 +830,40 @@ def _stable(payload: dict) -> dict:
       var, an explicit `--pdk-root` flag), which describes the invocation's
       environment, not the PDK. `provenance.pdk.name`/`.version` stay, for
       the same reason `pdk.variant`/`.version` do above.
+
+    - `nets[].net_id` (`klt extract` reports), but *only* for a `nets[]`
+      entry whose `name` is not shared with any other entry in the same
+      report. `net_id` is klt's own per-net cluster id, added by
+      klayout-tools#1543 specifically to disambiguate multiple `nets[]`
+      entries that collide on the same `name` -- `ro_ring11`'s own ten
+      genuinely distinct internal `a|y` chain nodes, all sharing that one
+      literal string, are exactly the case it exists for (see
+      `layout/pex/build.py`'s "Why leaf cells" section). Where a net's
+      `name` is unique in the report, `name` alone already identifies it
+      completely and `net_id` adds no distinguishing information -- so a
+      swap between two uniquely-named nets' `net_id` values changes nothing
+      any consumer reads by identity. Confirmed empirically (issue #294):
+      pinning klt/PDK bit-for-bit identical (`klayout-tools@3fbb4478`,
+      `klayout==0.30.12`, gf180mcu `f6eeac7d`) and running `klt extract` on
+      the committed `ro_ring11.gds` under both this repository's macOS
+      arm64 development host and a Linux x86_64 container matching
+      `pdk-nightly.yml`'s runner produced reports differing in exactly two
+      fields -- the uniquely-named `en` and `vss` nets' `net_id` values
+      (`1`/`2`, swapped) -- with every other field, including
+      `netlist_sha256`, `device_count`/`net_count`, every device's own
+      `nets{}` mapping, and both `a|y`-collision-group nets' own `net_id`
+      values, byte-identical across repeated runs on each host (three
+      independent runs on the macOS host, three more on the Linux
+      container, each run its own process). The sibling `ro_ring11_ring2`
+      fixture (same wiring geometry, same
+      `build.py` technique, only its leaf cells' device widths differ --
+      see that module's own docstring) showed zero difference across the
+      same two hosts, which is why only `ro_ring11` ever tripped this gate:
+      the tie this net-numbering pass has to break only exists for ring1's
+      own sizing. `net_id` for a *collided*-name net is deliberately NOT
+      stripped -- a regression that scrambled `net_id` there would silently
+      break the one thing `layout/pex/build.py`'s routing-level composition
+      path actually depends on it for, and this gate must still catch that.
 
     Verified empirically (issue #148): running `klt extract` twice over the
     same `.gds`, identical in every argument except `--pdk-root` pointed at
@@ -874,6 +909,20 @@ def _stable(payload: dict) -> dict:
             provenance_pdk.pop("source", None)
             provenance["pdk"] = provenance_pdk
         trimmed["provenance"] = provenance
+
+    nets = trimmed.get("nets")
+    if isinstance(nets, list):
+        name_counts: dict = {}
+        for net in nets:
+            if isinstance(net, dict):
+                name_counts[net.get("name")] = name_counts.get(net.get("name"), 0) + 1
+        stripped_nets = []
+        for net in nets:
+            if isinstance(net, dict) and name_counts.get(net.get("name")) == 1:
+                net = dict(net)
+                net.pop("net_id", None)
+            stripped_nets.append(net)
+        trimmed["nets"] = stripped_nets
 
     return trimmed
 
