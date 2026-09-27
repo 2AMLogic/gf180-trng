@@ -11,6 +11,13 @@
   "runtimes": {
     "default": "claude"
   },
+  "autonomous": {
+    "workFinder": {
+      "noopCooldown": {
+        "cooldownSecs": 21600
+      }
+    }
+  },
   "safehouse": {
     "enabled": false,
     "socket": null,
