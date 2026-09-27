@@ -88,6 +88,19 @@ def _extract_payload(stem: str = "ro_stage") -> dict:
     }
 
 
+#: A representative `nets[]` list -- one net whose name is unique in the
+#: report (`en`) and two whose name collides (`a|y`, the case
+#: klayout-tools#1543's `net_id` exists to disambiguate -- see `_stable()`'s
+#: own docstring, issue #294). Trimmed to the fields `_stable()` actually
+#: looks at, same convention as `_extract_payload()` above.
+def _nets_list() -> list[dict]:
+    return [
+        {"name": "en", "pin": True, "device_count": 2, "net_id": 1, "pin_index": 0},
+        {"name": "a|y", "pin": False, "device_count": 4, "net_id": 2, "pin_index": None},
+        {"name": "a|y", "pin": False, "device_count": 4, "net_id": 3, "pin_index": None},
+    ]
+
+
 def _lvs_payload() -> dict:
     return {
         "schema_version": 1,
@@ -138,6 +151,34 @@ class StableMachineLocalFieldsTests(unittest.TestCase):
         b = copy.deepcopy(a)
         b["environment"]["engine_version"] = "0.31.0"
         self.assertEqual(verify._stable(a), verify._stable(b))
+
+    def test_differing_net_id_on_a_uniquely_named_net_compares_equal(self):
+        # issue #294: reproduced with klt/PDK pinned bit-for-bit identical
+        # to `pdk-nightly.yml` on both a macOS arm64 host and a Linux x86_64
+        # host matching the CI runner -- the two hosts' `klt extract` runs
+        # over the same committed `ro_ring11.gds` agreed on every field
+        # except the uniquely-named `en`/`vss` nets' own `net_id` values,
+        # which came out swapped. `name` alone already identifies a
+        # uniquely-named net completely, so this must not trip the gate.
+        a = _extract_payload()
+        a["nets"] = _nets_list()
+        b = copy.deepcopy(a)
+        b["nets"][0]["net_id"] = 999  # "en" is the only net named "en"
+        self.assertEqual(verify._stable(a), verify._stable(b))
+
+    def test_differing_net_id_on_a_collided_name_net_compares_unequal(self):
+        # The other half of #294's fix: `net_id` is klt's own disambiguator
+        # for nets that share a `name` (klayout-tools#1543,
+        # `ro_ring11`'s own ten internal `a|y` chain nodes) -- widening the
+        # tolerance to those too would hide a real positional-identity
+        # regression `layout/pex/build.py`'s routing-level composition path
+        # depends on, exactly the "no-op gate" failure mode #148 warns
+        # against.
+        a = _extract_payload()
+        a["nets"] = _nets_list()
+        b = copy.deepcopy(a)
+        b["nets"][1]["net_id"] = 999  # "a|y" is shared by two entries
+        self.assertNotEqual(verify._stable(a), verify._stable(b))
 
     def test_drc_report_with_no_pdk_block_is_unaffected(self):
         # DRC reports never carry `pdk` / non-null `provenance.pdk` -- this
@@ -204,6 +245,16 @@ class StableContentFieldsStillCompareTests(unittest.TestCase):
         a = _extract_payload()
         b = copy.deepcopy(a)
         b["pdk"]["version"] = "open_pdks 0000000000000000000000000000000000000000"
+        self.assertNotEqual(verify._stable(a), verify._stable(b))
+
+    def test_differing_net_device_count_compares_unequal(self):
+        # A uniquely-named net's `net_id` is tolerated (issue #294), but its
+        # `device_count` is real content -- how many devices touch it --
+        # and must still trip the gate even for that same net.
+        a = _extract_payload()
+        a["nets"] = _nets_list()
+        b = copy.deepcopy(a)
+        b["nets"][0]["device_count"] = 3  # "en" is the uniquely-named net
         self.assertNotEqual(verify._stable(a), verify._stable(b))
 
     def test_differing_lvs_status_compares_unequal(self):
