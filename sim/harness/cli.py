@@ -27,7 +27,6 @@ WORK_DIR = SIM_DIR / ".work"
 
 EXIT_OK = 0
 EXIT_CHECK_FAILED = 1
-EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
 # Records were written but their raw.files checksums no longer match the
 # files on disk -- the evidence is not trustworthy and must not be committed.
