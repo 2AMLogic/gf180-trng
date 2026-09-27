@@ -42,23 +42,18 @@ Two kinds of per-ring stream:
 
 from __future__ import annotations
 
-import hashlib
-import struct
-
-from harness.bits import pack_lsb_first  # noqa: F401 -- re-exported for source_model.<name> callers
+from harness.bits import (  # noqa: F401 -- re-exported for source_model.<name> callers
+    pack_lsb_first,
+    uniform_words as _harness_uniform_words,
+)
 
 _UINT32 = 1 << 32
+_DOMAIN = "gf180-trng/ring-liveness-fault-injection"
 
 
 def uniform_words(label: str, seed: int):
     """Endless stream of uniform 32-bit words from SHA-256 counter mode."""
-    counter = 0
-    prefix = f"gf180-trng/ring-liveness-fault-injection|{label}|{seed}|".encode()
-    while True:
-        digest = hashlib.sha256(prefix + str(counter).encode()).digest()
-        for word in struct.unpack("<8I", digest):
-            yield word
-        counter += 1
+    return _harness_uniform_words(_DOMAIN, label, seed)
 
 
 def healthy_ring_bits(label: str, seed: int, n_bits: int) -> list[int]:

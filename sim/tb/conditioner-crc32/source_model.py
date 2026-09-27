@@ -26,37 +26,25 @@ what ``sim/README.md``'s "no seed, no evidence" rule is actually asking for.
 
 from __future__ import annotations
 
-import hashlib
-import struct
-
 from harness.bits import (  # noqa: F401 -- re-exported for source_model.<name> callers
+    biased_bits as _harness_biased_bits,
     min_entropy_for_p_one,
     p_one_for_min_entropy,
     pack_lsb_first,
+    uniform_words as _harness_uniform_words,
 )
 
-_UINT32 = 1 << 32
+_DOMAIN = "gf180-trng/conditioner-crc32"
 
 
 def uniform_words(label: str, seed: int):
     """Endless stream of uniform 32-bit words from SHA-256 counter mode."""
-    counter = 0
-    prefix = f"gf180-trng/conditioner-crc32|{label}|{seed}|".encode()
-    while True:
-        digest = hashlib.sha256(prefix + str(counter).encode()).digest()
-        for word in struct.unpack("<8I", digest):
-            yield word
-        counter += 1
+    return _harness_uniform_words(_DOMAIN, label, seed)
 
 
 def biased_bits(label: str, seed: int, n_bits: int, h_per_bit):
     """``n_bits`` IID bits whose per-sample min-entropy is ``h_per_bit``."""
-    p_one = p_one_for_min_entropy(h_per_bit)
-    # Threshold in the 32-bit uniform domain. The quantisation error is
-    # < 2**-32 in probability and is reported alongside the stream.
-    threshold = int((p_one * _UINT32).to_integral_value())
-    stream = uniform_words(label, seed)
-    return [1 if next(stream) < threshold else 0 for _ in range(n_bits)], p_one, threshold
+    return _harness_biased_bits(_DOMAIN, label, seed, n_bits, h_per_bit)
 
 
 def constant_bits(value: int, n_bits: int):
