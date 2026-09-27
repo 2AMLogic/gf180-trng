@@ -1,37 +1,47 @@
 #!/usr/bin/env python3
-"""Shared bit-source math for ``sim/tb/*`` testbenches (issue #191).
+"""Shared bit-source math for ``sim/tb/*`` testbenches (issues #191, #298).
 
 Every declared synthetic source model under ``sim/tb/`` -- the demonstration
 sources that stand in for a not-yet-affordable transistor-level bitstream
-(see DR-0009) -- needed the same two pieces of math: converting between a
+(see DR-0009) -- needed the same pieces of math: converting between a
 binary source's per-sample min-entropy and its bias (``p_one_for_min_entropy``
-/ ``min_entropy_for_p_one``), and packing a bit list into bytes in the
-stream's LSB-first convention (``pack_lsb_first``). Before this module
-existed, three modules (``sim/tb/conditioner-crc32/source_model.py``,
+/ ``min_entropy_for_p_one``), packing a bit list into bytes in the stream's
+LSB-first convention (``pack_lsb_first``), generating an endless SHA-256
+counter-mode stream of uniform 32-bit words (``uniform_words``), and drawing
+``n_bits`` IID bits at a declared min-entropy from that stream
+(``biased_bits``). Before this module existed, three modules
+(``sim/tb/conditioner-crc32/source_model.py``,
 ``sim/tb/ring-liveness-fault-injection/ring_source_model.py``,
 ``sim/tb/health-test-fault-injection/fault_injection.py``) each carried a
-byte-identical copy of ``pack_lsb_first``, and two of them
+byte-identical copy of ``pack_lsb_first`` and ``uniform_words`` (the latter
+parameterized here by a ``domain`` argument that replaces each file's
+previously-hardcoded domain-separation string), and two of them
 (``conditioner-crc32/source_model.py`` and
 ``health-test-fault-injection/fault_injection.py``) also each carried a
-byte-identical copy of the min-entropy/bias conversions.
+byte-identical copy of the min-entropy/bias conversions and ``biased_bits``.
 
 This is the same category of duplication that #190 consolidated on the
 *reading* side (``sim/tools/_record_parsing.py``) -- this module is the
 *writing*-side (bit-source math) equivalent, scoped to ``sim/tb/``.
 
 This is pure code motion: every function here is moved verbatim (docstring
-included) from ``sim/tb/conditioner-crc32/source_model.py``, with no
-behaviour change. Each of the three testbench modules re-exports these names
-so existing ``source_model.pack_lsb_first(...)`` / ``fault_injection.<name>``
-call sites (via each directory's ``source_model``-aliased import convention)
-keep working unchanged.
+included, modulo the ``domain`` parameterization) from
+``sim/tb/conditioner-crc32/source_model.py``, with no behaviour change. Each
+of the three testbench modules re-exports these names so existing
+``source_model.pack_lsb_first(...)`` / ``fault_injection.<name>`` call sites
+(via each directory's ``source_model``-aliased import convention) keep
+working unchanged.
 """
 
 from __future__ import annotations
 
+import hashlib
+import struct
 from decimal import Decimal, getcontext
 
 getcontext().prec = 60
+
+_UINT32 = 1 << 32
 
 
 def p_one_for_min_entropy(h_per_bit) -> Decimal:
@@ -61,3 +71,31 @@ def pack_lsb_first(bits) -> bytes:
         if bit:
             out[i >> 3] |= 1 << (i & 7)
     return bytes(out)
+
+
+def uniform_words(domain: str, label: str, seed: int):
+    """Endless stream of uniform 32-bit words from SHA-256 counter mode.
+
+    ``domain`` is the caller's domain-separation prefix (conventionally the
+    calling testbench directory's ``gf180-trng/<directory-name>`` string) so
+    that identical ``(label, seed)`` pairs used by different callers never
+    collide on the same byte stream.
+    """
+    counter = 0
+    prefix = f"{domain}|{label}|{seed}|".encode()
+    while True:
+        digest = hashlib.sha256(prefix + str(counter).encode()).digest()
+        for word in struct.unpack("<8I", digest):
+            yield word
+        counter += 1
+
+
+def biased_bits(domain: str, label: str, seed: int, n_bits: int, h_per_bit):
+    """``n_bits`` IID bits whose per-sample min-entropy is ``h_per_bit``."""
+    p_one = p_one_for_min_entropy(h_per_bit)
+    # Threshold in the 32-bit uniform domain. The quantisation error is
+    # < 2**-32 in probability and is negligible next to the alpha values in
+    # play.
+    threshold = int((p_one * _UINT32).to_integral_value())
+    stream = uniform_words(domain, label, seed)
+    return [1 if next(stream) < threshold else 0 for _ in range(n_bits)], p_one, threshold
