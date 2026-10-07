@@ -11,7 +11,7 @@ convention, [twenty-one decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
 harness — plus, since #145, a gate-level static-timing and power flow over the
 placed digital netlist. Between them they produce twelve characterization
-summaries (`sim/characterization-*.md`) resting on 859 append-only evidence
+summaries (`sim/characterization-*.md`) resting on 975 append-only evidence
 records under [`sim/records/`](sim/records/).
 `design/` holds the analog entropy source and sampler as xschem schematics with
 a deterministic SPICE netlist export, plus four digital directories —
@@ -31,16 +31,16 @@ own guarded regions in the floorplan. Since #170, the digital section
 (conditioner, health tests, interface) also has its own standalone layout —
 [`layout/digital/trng_top.gds`](layout/digital/), a placed-and-routed,
 DRC-clean gate-level GDS, and its LVS now reports `status: match`
-(`mismatch_count: 6`, all `severity: warning` on benign, unrouted
-constant-tie nets; `error_count: 0` — see
+(`mismatch_count: 0`, `error_count: 0` after the rebuild in #306 — see
 [`layout/digital/README.md`'s LVS section](layout/digital/README.md#lvs)
-and #187). Since #209/#210, that digital section is composed into the same
+and #306). Since #209/#210, that digital section is composed into the same
 floorplan too: [`layout/floorplan/trng_floorplan.gds`](layout/floorplan/)
 now places `layout/digital/trng_top.gds` inside its own guarded `digital`
 region alongside `ring1`/`ring2`/`combiner_sampler`, DRC-clean (0
 violations introduced by the fit) and LVS-matching against the digital
 section's own reference netlist (`status: match`, `mismatch_count: 6`, the
-same benign residual cited above) — a single whole-block GDS with the
+six benign warnings from the earlier digital build; this composed evidence
+awaits regeneration under #256) — a single whole-block GDS with the
 entropy source and the digital section placed together, per
 [`layout/floorplan/reports/ring_fit.json`](layout/floorplan/reports/ring_fit.json).
 Since #221/#222 those four regions are also **wired to each other**: the
@@ -308,7 +308,7 @@ seat → measured silicon over temperature. **The block is on the first rung.**
 Layout work has started on both halves — the entropy source and sampler are
 placed, DRC-clean and LVS-matching, and the digital section has a
 standalone placed-and-routed, DRC-clean GDS (#170), and, since #187, a
-clean LVS (`status: match`, six benign warning-severity mismatches). Since
+clean LVS (`status: match`, zero mismatches after #306). Since
 #209/#210 the two are composed into one whole-block layout too
 (`layout/floorplan/trng_floorplan.gds`, DRC-clean and LVS-matching for all
 four regions) — see
