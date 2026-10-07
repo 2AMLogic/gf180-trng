@@ -277,5 +277,30 @@ class ManifestCitationTests(unittest.TestCase):
                 )
 
 
+class InputNetlistGuardTests(unittest.TestCase):
+    """`build.py --check-input` (#293): the committed P&R report's recorded
+    input hash must be the committed synthesized netlist's hash."""
+
+    def test_committed_report_pins_the_committed_netlist(self):
+        report = json.loads((REPORTS_DIR / "place_and_route.json").read_text())
+        self.assertEqual(
+            report["provenance"]["input"]["content_hash"],
+            _sha256(build.NETLIST_PATH),
+        )
+
+    def test_guard_passes_on_the_committed_tree(self):
+        self.assertEqual(build.check_input(), 0)
+
+    def test_guard_fails_on_a_deliberately_staled_netlist(self):
+        import tempfile
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = Path(tmp) / "trng_top.synth.v"
+            stale.write_bytes(build.NETLIST_PATH.read_bytes() + b"// stale\n")
+            with mock.patch.object(build, "NETLIST_PATH", stale):
+                self.assertEqual(build.check_input(), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -51,9 +51,9 @@
   "category_error_counts": {},
   "counts": {
     "nets": {
-      "layout": 1533,
-      "reference": 1533,
-      "matched": 2053
+      "layout": 1535,
+      "reference": 1535,
+      "matched": 2047
     },
     "devices": {
       "layout": 0,
@@ -63,15 +63,15 @@
     "pins": {
       "layout": 111,
       "reference": 111,
-      "matched": 631
+      "matched": 623
     }
   },
   "device_classes": null,
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.12",
-    "layout_sha256": "26983bc32446e4ad076429bc83a960fb23c6ed8db1be02d6786817d78292f0fb",
-    "reference_sha256": "6dc4be186fd66bec648d0b23edf61bce0704291237ac33c0c0c7cae2b94a3ad0",
+    "layout_sha256": "d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
+    "reference_sha256": "9278db8a8545a2a00b4094c17afc4d3a5d381814bea3dab8143b8df655396c0b",
     "extracted_netlist": null
   },
   "provenance": {
@@ -80,7 +80,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:26983bc32446e4ad076429bc83a960fb23c6ed8db1be02d6786817d78292f0fb",
+      "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
       "role": "netlist"
     },
     "klayout_version_mismatch": true
@@ -1603,16 +1603,6 @@
       "pin": true
     },
     {
-      "layout": "I",
-      "reference": "I",
-      "pin": true
-    },
-    {
-      "layout": "I",
-      "reference": "I",
-      "pin": true
-    },
-    {
       "layout": "I0",
       "reference": "I0",
       "pin": true
@@ -1633,8 +1623,8 @@
       "pin": true
     },
     {
-      "layout": "NET1",
-      "reference": "NET1",
+      "layout": "NET2",
+      "reference": "NET2",
       "pin": false
     },
     {
@@ -1643,13 +1633,23 @@
       "pin": false
     },
     {
-      "layout": "NET7",
-      "reference": "NET7",
+      "layout": "NET41",
+      "reference": "NET41",
       "pin": false
     },
     {
-      "layout": "NET8",
-      "reference": "NET8",
+      "layout": "NET42",
+      "reference": "NET42",
+      "pin": false
+    },
+    {
+      "layout": "NET5",
+      "reference": "NET5",
+      "pin": false
+    },
+    {
+      "layout": "NET6",
+      "reference": "NET6",
       "pin": false
     },
     {
@@ -2283,13 +2283,13 @@
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET43",
-      "reference": "U_CONDITIONER/NET43",
+      "layout": "U_CONDITIONER/NET4",
+      "reference": "U_CONDITIONER/NET4",
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET44",
-      "reference": "U_CONDITIONER/NET44",
+      "layout": "U_CONDITIONER/NET40",
+      "reference": "U_CONDITIONER/NET40",
       "pin": false
     },
     {
@@ -2298,33 +2298,28 @@
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET47",
-      "reference": "U_CONDITIONER/NET47",
-      "pin": false
-    },
-    {
       "layout": "U_CONDITIONER/NET48",
       "reference": "U_CONDITIONER/NET48",
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET5",
-      "reference": "U_CONDITIONER/NET5",
+      "layout": "U_CONDITIONER/NET49",
+      "reference": "U_CONDITIONER/NET49",
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET6",
-      "reference": "U_CONDITIONER/NET6",
+      "layout": "U_CONDITIONER/NET50",
+      "reference": "U_CONDITIONER/NET50",
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET63",
-      "reference": "U_CONDITIONER/NET63",
+      "layout": "U_CONDITIONER/NET67",
+      "reference": "U_CONDITIONER/NET67",
       "pin": false
     },
     {
-      "layout": "U_CONDITIONER/NET70",
-      "reference": "U_CONDITIONER/NET70",
+      "layout": "U_CONDITIONER/NET74",
+      "reference": "U_CONDITIONER/NET74",
       "pin": false
     },
     {
@@ -3453,23 +3448,28 @@
       "pin": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET4",
-      "reference": "U_HEALTH_TEST/NET4",
+      "layout": "U_HEALTH_TEST/NET1",
+      "reference": "U_HEALTH_TEST/NET1",
       "pin": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET50",
-      "reference": "U_HEALTH_TEST/NET50",
+      "layout": "U_HEALTH_TEST/NET52",
+      "reference": "U_HEALTH_TEST/NET52",
       "pin": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET54",
-      "reference": "U_HEALTH_TEST/NET54",
+      "layout": "U_HEALTH_TEST/NET56",
+      "reference": "U_HEALTH_TEST/NET56",
       "pin": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET61",
-      "reference": "U_HEALTH_TEST/NET61",
+      "layout": "U_HEALTH_TEST/NET57",
+      "reference": "U_HEALTH_TEST/NET57",
+      "pin": false
+    },
+    {
+      "layout": "U_HEALTH_TEST/NET65",
+      "reference": "U_HEALTH_TEST/NET65",
       "pin": false
     },
     {
@@ -4953,23 +4953,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/NET2",
-      "reference": "U_INTERFACE/NET2",
+      "layout": "U_INTERFACE/NET43",
+      "reference": "U_INTERFACE/NET43",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/NET40",
-      "reference": "U_INTERFACE/NET40",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET41",
-      "reference": "U_INTERFACE/NET41",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET42",
-      "reference": "U_INTERFACE/NET42",
+      "layout": "U_INTERFACE/NET44",
+      "reference": "U_INTERFACE/NET44",
       "pin": false
     },
     {
@@ -4978,8 +4968,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/NET49",
-      "reference": "U_INTERFACE/NET49",
+      "layout": "U_INTERFACE/NET47",
+      "reference": "U_INTERFACE/NET47",
       "pin": false
     },
     {
@@ -4988,28 +4978,18 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/NET52",
-      "reference": "U_INTERFACE/NET52",
-      "pin": false
-    },
-    {
       "layout": "U_INTERFACE/NET53",
       "reference": "U_INTERFACE/NET53",
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/NET54",
+      "reference": "U_INTERFACE/NET54",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/NET55",
       "reference": "U_INTERFACE/NET55",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET56",
-      "reference": "U_INTERFACE/NET56",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET57",
-      "reference": "U_INTERFACE/NET57",
       "pin": false
     },
     {
@@ -5028,23 +5008,23 @@
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/NET61",
+      "reference": "U_INTERFACE/NET61",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/NET62",
+      "reference": "U_INTERFACE/NET62",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/NET63",
+      "reference": "U_INTERFACE/NET63",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/NET64",
       "reference": "U_INTERFACE/NET64",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET65",
-      "reference": "U_INTERFACE/NET65",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET66",
-      "reference": "U_INTERFACE/NET66",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/NET67",
-      "reference": "U_INTERFACE/NET67",
       "pin": false
     },
     {
@@ -5058,6 +5038,11 @@
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/NET70",
+      "reference": "U_INTERFACE/NET70",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/NET71",
       "reference": "U_INTERFACE/NET71",
       "pin": false
@@ -5065,6 +5050,21 @@
     {
       "layout": "U_INTERFACE/NET72",
       "reference": "U_INTERFACE/NET72",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/NET73",
+      "reference": "U_INTERFACE/NET73",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/NET75",
+      "reference": "U_INTERFACE/NET75",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/NET76",
+      "reference": "U_INTERFACE/NET76",
       "pin": false
     },
     {
@@ -6513,13 +6513,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0177_",
-      "reference": "U_INTERFACE/_0177_",
+      "layout": "U_INTERFACE/_0178_",
+      "reference": "U_INTERFACE/_0178_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0179_",
-      "reference": "U_INTERFACE/_0179_",
+      "layout": "U_INTERFACE/_0180_",
+      "reference": "U_INTERFACE/_0180_",
       "pin": false
     },
     {
@@ -6748,16 +6748,6 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0226_",
-      "reference": "U_INTERFACE/_0226_",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/_0231_",
-      "reference": "U_INTERFACE/_0231_",
-      "pin": false
-    },
-    {
       "layout": "U_INTERFACE/_0232_",
       "reference": "U_INTERFACE/_0232_",
       "pin": false
@@ -6788,13 +6778,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0241_",
-      "reference": "U_INTERFACE/_0241_",
+      "layout": "U_INTERFACE/_0238_",
+      "reference": "U_INTERFACE/_0238_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0243_",
-      "reference": "U_INTERFACE/_0243_",
+      "layout": "U_INTERFACE/_0242_",
+      "reference": "U_INTERFACE/_0242_",
       "pin": false
     },
     {
@@ -6823,8 +6813,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0251_",
-      "reference": "U_INTERFACE/_0251_",
+      "layout": "U_INTERFACE/_0249_",
+      "reference": "U_INTERFACE/_0249_",
       "pin": false
     },
     {
@@ -6853,18 +6843,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0258_",
-      "reference": "U_INTERFACE/_0258_",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/_0259_",
-      "reference": "U_INTERFACE/_0259_",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/_0260_",
-      "reference": "U_INTERFACE/_0260_",
+      "layout": "U_INTERFACE/_0257_",
+      "reference": "U_INTERFACE/_0257_",
       "pin": false
     },
     {
@@ -6878,8 +6858,18 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0266_",
-      "reference": "U_INTERFACE/_0266_",
+      "layout": "U_INTERFACE/_0263_",
+      "reference": "U_INTERFACE/_0263_",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/_0264_",
+      "reference": "U_INTERFACE/_0264_",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/_0265_",
+      "reference": "U_INTERFACE/_0265_",
       "pin": false
     },
     {
@@ -7003,8 +6993,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0294_",
-      "reference": "U_INTERFACE/_0294_",
+      "layout": "U_INTERFACE/_0291_",
+      "reference": "U_INTERFACE/_0291_",
       "pin": false
     },
     {
@@ -7013,8 +7003,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0297_",
-      "reference": "U_INTERFACE/_0297_",
+      "layout": "U_INTERFACE/_0296_",
+      "reference": "U_INTERFACE/_0296_",
       "pin": false
     },
     {
@@ -7038,8 +7028,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0303_",
-      "reference": "U_INTERFACE/_0303_",
+      "layout": "U_INTERFACE/_0302_",
+      "reference": "U_INTERFACE/_0302_",
       "pin": false
     },
     {
@@ -7058,13 +7048,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0308_",
-      "reference": "U_INTERFACE/_0308_",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/_0309_",
-      "reference": "U_INTERFACE/_0309_",
+      "layout": "U_INTERFACE/_0307_",
+      "reference": "U_INTERFACE/_0307_",
       "pin": false
     },
     {
@@ -7093,13 +7078,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0316_",
-      "reference": "U_INTERFACE/_0316_",
+      "layout": "U_INTERFACE/_0315_",
+      "reference": "U_INTERFACE/_0315_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0317_",
-      "reference": "U_INTERFACE/_0317_",
+      "layout": "U_INTERFACE/_0316_",
+      "reference": "U_INTERFACE/_0316_",
       "pin": false
     },
     {
@@ -7218,13 +7203,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0342_",
-      "reference": "U_INTERFACE/_0342_",
+      "layout": "U_INTERFACE/_0341_",
+      "reference": "U_INTERFACE/_0341_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0343_",
-      "reference": "U_INTERFACE/_0343_",
+      "layout": "U_INTERFACE/_0342_",
+      "reference": "U_INTERFACE/_0342_",
       "pin": false
     },
     {
@@ -7303,6 +7288,11 @@
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/_0359_",
+      "reference": "U_INTERFACE/_0359_",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/_0360_",
       "reference": "U_INTERFACE/_0360_",
       "pin": false
@@ -7353,8 +7343,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0373_",
-      "reference": "U_INTERFACE/_0373_",
+      "layout": "U_INTERFACE/_0370_",
+      "reference": "U_INTERFACE/_0370_",
       "pin": false
     },
     {
@@ -7373,8 +7363,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0378_",
-      "reference": "U_INTERFACE/_0378_",
+      "layout": "U_INTERFACE/_0377_",
+      "reference": "U_INTERFACE/_0377_",
       "pin": false
     },
     {
@@ -7403,8 +7393,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0386_",
-      "reference": "U_INTERFACE/_0386_",
+      "layout": "U_INTERFACE/_0384_",
+      "reference": "U_INTERFACE/_0384_",
       "pin": false
     },
     {
@@ -8023,6 +8013,11 @@
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/_0510_",
+      "reference": "U_INTERFACE/_0510_",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/_0512_",
       "reference": "U_INTERFACE/_0512_",
       "pin": false
@@ -8048,13 +8043,18 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0519_",
-      "reference": "U_INTERFACE/_0519_",
+      "layout": "U_INTERFACE/_0518_",
+      "reference": "U_INTERFACE/_0518_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0522_",
-      "reference": "U_INTERFACE/_0522_",
+      "layout": "U_INTERFACE/_0520_",
+      "reference": "U_INTERFACE/_0520_",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/_0521_",
+      "reference": "U_INTERFACE/_0521_",
       "pin": false
     },
     {
@@ -8063,8 +8063,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0525_",
-      "reference": "U_INTERFACE/_0525_",
+      "layout": "U_INTERFACE/_0526_",
+      "reference": "U_INTERFACE/_0526_",
       "pin": false
     },
     {
@@ -8098,18 +8098,18 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0533_",
-      "reference": "U_INTERFACE/_0533_",
+      "layout": "U_INTERFACE/_0534_",
+      "reference": "U_INTERFACE/_0534_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0535_",
-      "reference": "U_INTERFACE/_0535_",
+      "layout": "U_INTERFACE/_0536_",
+      "reference": "U_INTERFACE/_0536_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0537_",
-      "reference": "U_INTERFACE/_0537_",
+      "layout": "U_INTERFACE/_0538_",
+      "reference": "U_INTERFACE/_0538_",
       "pin": false
     },
     {
@@ -8118,8 +8118,18 @@
       "pin": false
     },
     {
+      "layout": "U_INTERFACE/_0540_",
+      "reference": "U_INTERFACE/_0540_",
+      "pin": false
+    },
+    {
       "layout": "U_INTERFACE/_0541_",
       "reference": "U_INTERFACE/_0541_",
+      "pin": false
+    },
+    {
+      "layout": "U_INTERFACE/_0542_",
+      "reference": "U_INTERFACE/_0542_",
       "pin": false
     },
     {
@@ -8188,23 +8198,13 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0556_",
-      "reference": "U_INTERFACE/_0556_",
-      "pin": false
-    },
-    {
       "layout": "U_INTERFACE/_0557_",
       "reference": "U_INTERFACE/_0557_",
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0558_",
-      "reference": "U_INTERFACE/_0558_",
-      "pin": false
-    },
-    {
-      "layout": "U_INTERFACE/_0560_",
-      "reference": "U_INTERFACE/_0560_",
+      "layout": "U_INTERFACE/_0559_",
+      "reference": "U_INTERFACE/_0559_",
       "pin": false
     },
     {
@@ -8363,8 +8363,8 @@
       "pin": false
     },
     {
-      "layout": "U_INTERFACE/_0592_",
-      "reference": "U_INTERFACE/_0592_",
+      "layout": "U_INTERFACE/_0593_",
+      "reference": "U_INTERFACE/_0593_",
       "pin": false
     },
     {
@@ -8398,8 +8398,8 @@
       "pin": false
     },
     {
-      "layout": "U_RING_LIVENESS/NET62",
-      "reference": "U_RING_LIVENESS/NET62",
+      "layout": "U_RING_LIVENESS/NET66",
+      "reference": "U_RING_LIVENESS/NET66",
       "pin": false
     },
     {
@@ -9343,16 +9343,6 @@
       "pin": true
     },
     {
-      "layout": "VDD",
-      "reference": "VDD",
-      "pin": true
-    },
-    {
-      "layout": "VDD",
-      "reference": "VDD",
-      "pin": true
-    },
-    {
       "layout": "VDDD",
       "reference": "VDDD",
       "pin": true
@@ -9823,16 +9813,6 @@
       "pin": true
     },
     {
-      "layout": "VSS",
-      "reference": "VSS",
-      "pin": true
-    },
-    {
-      "layout": "VSS",
-      "reference": "VSS",
-      "pin": true
-    },
-    {
       "layout": "Z",
       "reference": "Z",
       "pin": true
@@ -9958,12 +9938,7 @@
       "pin": true
     },
     {
-      "layout": "Z",
-      "reference": "Z",
-      "pin": true
-    },
-    {
-      "layout": "\\$2631",
+      "layout": "\\$2474",
       "reference": "Z$CLKLOAD0",
       "pin": false
     },
@@ -10243,112 +10218,107 @@
       "pin": true
     },
     {
-      "layout": "ZN",
-      "reference": "ZN",
-      "pin": true
-    },
-    {
-      "layout": "\\$2033",
+      "layout": "\\$1623",
       "reference": "ZN$CLKLOAD1",
       "pin": false
     },
     {
-      "layout": "\\$1022",
+      "layout": "\\$269",
       "reference": "ZN$CLKLOAD10",
       "pin": false
     },
     {
-      "layout": "\\$3150",
+      "layout": "\\$1158",
       "reference": "ZN$CLKLOAD11",
       "pin": false
     },
     {
-      "layout": "\\$4594",
+      "layout": "\\$4135",
       "reference": "ZN$CLKLOAD12",
       "pin": false
     },
     {
-      "layout": "\\$4439",
+      "layout": "\\$4800",
       "reference": "ZN$CLKLOAD13",
       "pin": false
     },
     {
-      "layout": "\\$3473",
+      "layout": "\\$2985",
       "reference": "ZN$CLKLOAD14",
       "pin": false
     },
     {
-      "layout": "\\$2590",
+      "layout": "\\$2968",
       "reference": "ZN$CLKLOAD15",
       "pin": false
     },
     {
-      "layout": "\\$2979",
+      "layout": "\\$2101",
       "reference": "ZN$CLKLOAD16",
       "pin": false
     },
     {
-      "layout": "\\$1527",
+      "layout": "\\$1445",
       "reference": "ZN$CLKLOAD17",
       "pin": false
     },
     {
-      "layout": "\\$1555",
+      "layout": "\\$1379",
       "reference": "ZN$CLKLOAD18",
       "pin": false
     },
     {
-      "layout": "\\$828",
+      "layout": "\\$783",
       "reference": "ZN$CLKLOAD19",
       "pin": false
     },
     {
-      "layout": "\\$2926",
+      "layout": "\\$2450",
       "reference": "ZN$CLKLOAD2",
       "pin": false
     },
     {
-      "layout": "\\$814",
+      "layout": "\\$875",
       "reference": "ZN$CLKLOAD20",
       "pin": false
     },
     {
-      "layout": "\\$1428",
+      "layout": "\\$1439",
       "reference": "ZN$CLKLOAD21",
       "pin": false
     },
     {
-      "layout": "\\$3768",
+      "layout": "\\$2555",
       "reference": "ZN$CLKLOAD3",
       "pin": false
     },
     {
-      "layout": "\\$4704",
+      "layout": "\\$3247",
       "reference": "ZN$CLKLOAD4",
       "pin": false
     },
     {
-      "layout": "\\$4775",
+      "layout": "\\$3929",
       "reference": "ZN$CLKLOAD5",
       "pin": false
     },
     {
-      "layout": "\\$4866",
+      "layout": "\\$4939",
       "reference": "ZN$CLKLOAD6",
       "pin": false
     },
     {
-      "layout": "\\$3956",
+      "layout": "\\$4598",
       "reference": "ZN$CLKLOAD7",
       "pin": false
     },
     {
-      "layout": "\\$632",
+      "layout": "\\$3590",
       "reference": "ZN$CLKLOAD8",
       "pin": false
     },
     {
-      "layout": "\\$141",
+      "layout": "\\$477",
       "reference": "ZN$CLKLOAD9",
       "pin": false
     }
@@ -10471,9 +10441,9 @@
       "vss"
     ],
     "top_pin_count": 111,
-    "instance_count": 1488,
-    "distinct_cell_types": 85,
-    "physical_only_instance_count": 2995,
+    "instance_count": 1490,
+    "distinct_cell_types": 83,
+    "physical_only_instance_count": 3470,
     "physical_only_cell_types": [
       "gf180mcu_fd_sc_mcu9t5v0__endcap",
       "gf180mcu_fd_sc_mcu9t5v0__fill_1",

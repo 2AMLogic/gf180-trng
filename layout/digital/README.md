@@ -68,6 +68,42 @@ it is solved — [#111][gf111].
 > every `.lib` file the library ships, not the block's own ratified 3.3 V
 > corner set — see [Timing](#timing) below.
 
+> **Update — re-placed-and-routed from the re-baselined netlist (issue
+> [gf293]).** [gf292] re-synthesized `design/trng_top/trng_top.synth.v` (one
+> `nor2_1` → `nor2_2` drive-strength swap, same 1459 instances) without
+> re-running this directory, so the [gf264] artefacts above were built from a
+> netlist that was no longer in `design/`. `reports/place_and_route.json`'s
+> `provenance.input.content_hash` recorded the old netlist's hash, and no
+> check compared it with the new one. Every artefact here is now rebuilt
+> from the current netlist: `trng_top.def`/`.gds`/`.pnr.v`/`.sdf`,
+> `trng_top.lvs_reference.spice`/`.extracted.spice`, and
+> `reports/{place_and_route,drc,lvs,erc-supply,sdf_export}.json`.
+>
+> | | [gf264] (pre-[gf292] netlist, superseded) | [gf293] (current netlist, current) |
+> |---|---:|---:|
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4483 | 4960 |
+> | Placed logical instances | 1488 | 1490 |
+> | Die (40 % utilization target) | 398.895 × 398.895 µm = 159 117 µm² | 398.93 × 398.93 µm = 159 145 µm² |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +32.6 ns | +32.7 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −7.4 / +0.50 ns | −7.0 / +0.50 ns |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+> | `klt lvs` against `trng_top.pnr.v` | match, 0 mismatches | match, 0 mismatches |
+> | `klt erc` supply spec | `erc_status: clean`, 0 findings | `erc_status: clean`, 0 findings |
+>
+> This rebuild ran on a different OpenROAD build (26Q3-1510 from the
+> digest-pinned `openroad/orfs` Docker image, versus the native 26Q3-2276
+> build [gf264] used), so the netlist was not the only input that changed.
+> `sim/characterization-digital-sta-area-power.md` §0b separates the two with
+> a control run (the old netlist through the same 26Q3-1510 build). Most of
+> each move comes from the OpenROAD build. The netlist's own effect is
+> +62 µm² placed cell area (+0.10 %) and the 0.035 µm wider die.
+>
+> `python3 layout/digital/build.py --check-input` (in `npm run check:ci`)
+> now re-hashes `trng_top.synth.v` and fails if it differs from the hash
+> `reports/place_and_route.json` recorded as its input. It does not claim
+> the placement is reproducible. It checks only that the committed
+> implementation was built from the committed netlist.
+
 ## The one command
 
 ```sh
@@ -913,6 +949,8 @@ boundary.
 [gf240]: https://github.com/2AMLogic/gf180-trng/issues/240
 [gf255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [gf264]: https://github.com/2AMLogic/gf180-trng/issues/264
+[gf292]: https://github.com/2AMLogic/gf180-trng/pull/292
+[gf293]: https://github.com/2AMLogic/gf180-trng/issues/293
 [gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091

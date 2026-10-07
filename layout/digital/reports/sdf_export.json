@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "engine": "opensta",
-  "engine_version": "26Q3-2276-g4a7cf9b22a",
-  "klt_version": "klt 0.5.0+g32f69f811682",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "klt_version": "klt 0.6.0",
   "hdl_toplevel": "trng_top",
   "netlist_path": "layout/digital/trng_top.pnr.v",
   "sdf_path": "layout/digital/trng_top.sdf",
@@ -24,6 +24,6 @@
     "icarus_unsupported_cells_dropped_entirely": 49,
     "top_level_interconnect_block_dropped": true
   },
-  "sdf_sha256": "bf06abd6f68d1fc08708cb7f05734e05f9ce7a9626268219c734fcb318f616ce",
-  "sdf_content_sha256": "dbe8c0bdfd3411bb7d41dfd19ad076f732a49c89b23be0afbebe5d41d0e01bb4"
+  "sdf_sha256": "137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af",
+  "sdf_content_sha256": "3fd7eeb5be8443f18ce0ab18def3b7316735956830f5bb4d040c8343f72c5fe6"
 }

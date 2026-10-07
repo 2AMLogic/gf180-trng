@@ -4,6 +4,7 @@ place-and-route` against gf180mcu, check what came back, and commit it.
 
     python3 layout/digital/build.py            # run P&R, check, write the report
     python3 layout/digital/build.py --drc-only # re-check the COMMITTED GDS only
+    python3 layout/digital/build.py --check-input  # recorded input hash vs design/ netlist
 
 This is issue #111's own bring-up: `design/trng_top/trng_top.synth.v`
 (`design/synth.py`, #143 -- 2505 standard-cell instances mapped against
@@ -60,6 +61,14 @@ deterministic synthesis pass. What is committed is the result of one
 recorded run, with enough provenance (`openroad` version + pinned Docker
 image digest, `klt` version, resolved PDK, liberty corner, `seed`) that a
 different run can be compared against it, not assumed identical to it.
+
+What *can* be checked cheaply is the report's recorded **input**: `--check-input`
+re-hashes `design/trng_top/trng_top.synth.v` and compares it with
+`reports/place_and_route.json`'s `provenance.input.content_hash` (#293 -- PR
+#292 re-synthesized the netlist and nothing noticed that the committed
+implementation still descended from the old one). It does not claim the
+placement is reproducible, only that the netlist it was built from is the one
+in `design/`.
 
 OpenROAD provisioning
 ----------------------
@@ -983,6 +992,60 @@ def build() -> int:
     return EXIT_OK
 
 
+def check_input() -> int:
+    """Hold `reports/place_and_route.json`'s recorded input to the committed
+    netlist (#293).
+
+    `--check` in the `design/synth.py` sense (re-run the tool, diff the
+    output) is not available here: place-and-route is stochastic and hours
+    long (module docstring). What *is* cheap and deterministic is the one
+    edge the report records about its input: `provenance.input.content_hash`,
+    the sha256 of the `NETLIST_PATH` file `klt place-and-route` consumed. This
+    mode re-hashes that file and fails if it no longer matches, i.e. if
+    `design/trng_top/trng_top.synth.v` has been re-synthesized (PR #292
+    re-baselined it) without the implementation downstream of it being
+    re-run. Stdlib only: no `klt`, no PDK, no OpenROAD -- so it runs on the
+    PR-blocking path (`npm run check:digital-input`, part of `check:ci`).
+    """
+    report_path = REPORTS_DIR / "place_and_route.json"
+    try:
+        report = json.loads(report_path.read_text())
+    except (OSError, ValueError) as exc:
+        print(f"ERROR  cannot read {report_path.relative_to(REPO_ROOT)}: {exc}")
+        return 1
+    recorded = ((report.get("provenance") or {}).get("input") or {}).get(
+        "content_hash"
+    )
+    try:
+        netlist_name = NETLIST_PATH.relative_to(REPO_ROOT)
+    except ValueError:
+        netlist_name = NETLIST_PATH
+    if not NETLIST_PATH.is_file():
+        print(f"ERROR  {netlist_name} is missing")
+        return 1
+    import hashlib
+
+    actual = "sha256:" + hashlib.sha256(NETLIST_PATH.read_bytes()).hexdigest()
+    if recorded != actual:
+        print(
+            f"STALE  {report_path.relative_to(REPO_ROOT)} records "
+            f"provenance.input.content_hash {recorded}, but "
+            f"{netlist_name} hashes to {actual}.\n"
+            "       The committed place-and-route (DEF/GDS/pnr.v/reports and the "
+            "digital-sta-power record family) descends from a different "
+            "netlist than the one in design/. Re-run `python3 "
+            "layout/digital/build.py`, `python3 layout/digital/lvs.py` and "
+            "`python3 sim/tb/digital-sta-power/run_sta.py`, then propagate "
+            "every figure that moves."
+        )
+        return 1
+    print(
+        f"OK     {report_path.relative_to(REPO_ROOT)} input hash matches "
+        f"{netlist_name} ({actual})"
+    )
+    return 0
+
+
 def drc_only() -> int:
     """Re-run `klt drc` over the **already-committed** `trng_top.gds` and
     rewrite `reports/drc.json`, without touching place-and-route.
@@ -1081,7 +1144,19 @@ def main(argv: list[str] | None = None) -> int:
             "(see drc_only()'s docstring, #273)"
         ),
     )
+    parser.add_argument(
+        "--check-input",
+        action="store_true",
+        help=(
+            "stdlib-only staleness guard: fail unless "
+            "reports/place_and_route.json's provenance.input.content_hash "
+            "equals the sha256 of the committed trng_top.synth.v (#293); "
+            "runs no tool and rebuilds nothing"
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.check_input:
+        return check_input()
     return drc_only() if args.drc_only else build()
 
 
