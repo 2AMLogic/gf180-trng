@@ -748,6 +748,15 @@ current state of knowledge.
 > is real and current; the composed floorplan figures that depend on the
 > GDS's own bounding box are not, until [#256] re-runs `klt stats` against
 > it.
+>
+> *Later correction:* the 59 465.1 µm² figure in that table is no longer
+> current either. Two later rebuilds of the digital section moved it. #264
+> re-tuned `max_transition_ns` and rebuilt, giving 61 692.0 µm² (×1.833).
+> #293 re-ran place-and-route on #292's re-baselined netlist, giving
+> **62 081.5 µm² (×1.845)** from `sim/records/2026-10-07-digital-sta-power-*`.
+> See `sim/characterization-digital-sta-area-power.md` §0a/§0b. The die moved
+> too, from 398.895 µm to 398.93 µm square. That is another
+> `trng_top.gds` bbox change that [#256]'s composition re-run will pick up.
 
 The other three regions are unaffected: they are analog cells with no
 synthesis path, drawn by hand, and `ring1`/`ring2`/`combiner_sampler` already

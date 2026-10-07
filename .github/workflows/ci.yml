@@ -343,6 +343,14 @@ jobs:
       - name: Layout test-cell staleness guard
         run: npm run check:fixtures
 
+      # The input edge of the committed digital implementation (#293):
+      # layout/digital/reports/place_and_route.json records the sha256 of the
+      # netlist place-and-route consumed, and this fails if
+      # design/trng_top/trng_top.synth.v has since been re-synthesized without
+      # the implementation being re-run. Pure stdlib -- no OpenROAD, no klt.
+      - name: Digital P&R input-netlist staleness guard
+        run: npm run check:digital-input
+
       # Runs the DRC/LVS flow when klayout-tools and the PDK are present, and
       # self-skips with exit 0 when they are not (this runner has neither).
       # Included for the same reason selftest.sh is: it covers the driver's own

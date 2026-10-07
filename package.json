@@ -12,12 +12,13 @@
     "check:netlist": "python3 design/netlist.py --check",
     "check:floorplan-netlist": "python3 design/floorplan_netlist.py --check",
     "check:digital-netlist": "python3 design/synth.py --check",
+    "check:digital-input": "python3 layout/digital/build.py --check-input",
     "check:digital-sdf": "python3 layout/digital/gen_sdf.py --check",
     "check:fixtures": "python3 layout/testcells/build.py --check",
     "check:layout": "python3 layout/verify.py",
     "check:floorplan": "python3 layout/floorplan/floorplan.py",
     "check:signoff": "python3 signoff/check.py",
-    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:layout && npm run check:floorplan && npm run check:signoff && sim/selftest.sh",
-    "check:all": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:netlist && npm run check:digital-netlist && npm run check:digital-sdf && python3 layout/verify.py --require-tools && python3 layout/floorplan/floorplan.py --require-tools && python3 signoff/check.py --require-tools && sim/selftest.sh --require-pdk"
+    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:digital-input && npm run check:layout && npm run check:floorplan && npm run check:signoff && sim/selftest.sh",
+    "check:all": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:netlist && npm run check:digital-netlist && npm run check:digital-input && npm run check:digital-sdf && python3 layout/verify.py --require-tools && python3 layout/floorplan/floorplan.py --require-tools && python3 signoff/check.py --require-tools && sim/selftest.sh --require-pdk"
   }
 }

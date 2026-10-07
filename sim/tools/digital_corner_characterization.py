@@ -152,18 +152,18 @@ def estimate_fifo_depth() -> int:
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 31.41296,
+    "setup_binding_slack_ns": 31.22029,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.69017,
-    "fmax_floor_mhz": 53.8007,
+    "hold_binding_slack_ns": 0.69456,
+    "fmax_floor_mhz": 53.2488,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 61_692.02,
-    "area_ratio_vs_inventory": 1.83309,
-    "power_1mhz_max_w": 3.45572e-4,
+    "cell_area_um2": 62_081.51,
+    "area_ratio_vs_inventory": 1.84467,
+    "power_1mhz_max_w": 3.48190e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 7.51499e-6,
+    "leakage_max_w": 7.84212e-6,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 2.0875e-6,
+    "leakage_max_current_a": 2.17837e-6,
     # [#255] re-synthesized and re-placed-and-routed at DR-0020's ratified
     # `FIFO_DEPTH = 2`, reusing `layout/digital/build.py`'s existing
     # `CONSTRAINTS` (`max_transition_ns`/`max_capacitance_pf`, [#240]) --
@@ -198,9 +198,21 @@ RECORDED = {
     # this clean state is an enforced invariant rather than a paragraph: a
     # re-built DEF that moves this count fails this gate and forces section
     # 2a to be re-read.
+    #
+    # [#293] re-ran the same place-and-route on the re-baselined
+    # `design/trng_top/trng_top.synth.v` (#292: one `nor2_1` -> `nor2_2`
+    # drive-strength swap, +11.29 um^2 synthesized) under a different
+    # OpenROAD build (26Q3-1510, the pinned-digest Docker image, vs the
+    # 26Q3-2276 native build #264 used). Every figure above moved by < 3 %
+    # (the leakage pair by +4.4 %), and the max_transition count stays 0;
+    # the worst-slack *corner* moved from `ff_n40C_3v60/rc-max` to
+    # `ff_125C_3v60/rc-max`, both still clean with > 3 ns of slack. A control
+    # run (pre-#292 netlist, same OpenROAD build) attributes most of each move
+    # to the OpenROAD build rather than to the netlist -- see the document's
+    # section 0b for the three-way table.
     "max_transition_violating_corners": 0,
-    "max_transition_worst_slack_ns": 3.13035,
-    "max_transition_worst_corner": "ff_n40C_3v60/rc-max",
+    "max_transition_worst_slack_ns": 3.00899,
+    "max_transition_worst_corner": "ff_125C_3v60/rc-max",
     "max_transition_worst_violating_pins": 0,
     # No violating pin is on one of the six #233 trunk nets, at any corner --
     # true before #240 (when it mattered because a residual existed to check

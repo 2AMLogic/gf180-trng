@@ -306,11 +306,28 @@ what moves when it is.
 
 **Digital is pinned.** `4.digital` cites
 `layout/digital/reports/lvs.json` with
-`content_hash: sha256:26983bc3…`, matching the envelope's own
+`content_hash: sha256:d661d025…`, matching the envelope's own
 `provenance.input.content_hash` and `environment.layout_sha256`, all three
 naming `layout/digital/trng_top.extracted.spice` — so `klt signoff`'s own
 staleness gate reaches this row (`citation.input_verified: true`) rather than
 this repo standing in for it.
+
+**The edge above these reports is guarded by this repo, not by `klt
+signoff`.** The DRC, LVS and ERC envelopes each pin their own input (the GDS
+or the extracted netlist). None of them pins the synthesized netlist the
+layout was placed and routed from. That edge is recorded in one place only,
+`layout/digital/reports/place_and_route.json`'s
+`provenance.input.content_hash`, and nothing compared it with
+`design/trng_top/trng_top.synth.v` until
+[#293](https://github.com/2AMLogic/gf180-trng/issues/293). PR #292
+re-synthesized that netlist without rebuilding the layout, and its summary
+said no committed report recorded a hash of `trng_top.synth.v`. That was
+wrong: `place_and_route.json` did. #293 re-ran the digital chain on the
+current netlist. It also added a standing guard,
+`python3 layout/digital/build.py --check-input`, which runs in
+`npm run check:ci` and in the PR-blocking CI workflow. It is stdlib-only and
+fails when the two hashes disagree. The rows these envelopes grade did not
+change verdict: DRC clean, LVS match, ERC clean.
 
 **What each compare did and did not verify.**
 
@@ -361,14 +378,14 @@ match an independently-authored golden netlist?".
 `sim/characterization-digital-sta-area-power.md` is the one aggregated,
 current artifact item 8 asks a digital partition for: Fmax, placed area and
 power across all fifteen corners, each number naming the `sim/records/`
-evidence record it rests on, with §0/§0a carrying the `FIFO_DEPTH = 2`
-re-measurement (issues #255 and #264) that supersedes the depth-8 sections
+evidence record it rests on, with §0/§0a/§0b carrying the `FIFO_DEPTH = 2`
+re-measurement (issues #255, #264 and #293) that supersedes the depth-8 sections
 retained below them as append-only history.
 
 Item 8 asks for that aggregation artifact to exist and be current. It does
 **not** ask for every row in it to pass, and this `met` verdict must not be
 read as if it did. The disclosed exceptions, which travel with the claim
-rather than being omitted from it: placed cell area is 61 692.0 µm², ×1.833
+rather than being omitted from it: placed cell area is 62 081.5 µm², ×1.845
 of the depth-2 pre-synthesis inventory and still over the ratified
 `< 0.05 mm²` row on digital cells alone; and measured power remains well
 above the library-based estimate at the same corner and rate. Both are item

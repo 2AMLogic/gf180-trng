@@ -290,6 +290,112 @@ header above says; this issue does not touch it.
 reflects this rebuilt depth-2 DEF, and `--check` (wired into
 `npm run check:spec`) gates on it.
 
+> **Superseded in part by §0b ([#293]).** The "current" column above
+> describes the DEF [#264] committed. That DEF was placed and routed from the
+> pre-[#292] `trng_top.synth.v`; §0b carries the figures for the DEF
+> re-built from today's netlist. This section is kept as append-only history.
+
+---
+
+## 0b. Update — re-placed-and-routed from the re-baselined netlist (issue [#293])
+
+[#292] re-synthesized `design/trng_top/trng_top.synth.v` on the nightly
+workflow's pinned toolchain. The netlist delta is one drive-strength swap
+(`nor2_1` 49 → 48, `nor2_2` 7 → 8, +11.29 µm² synthesized area, +0.02 %),
+plus ABC net renumbering, at an unchanged 1459 instances. #292 did not re-run
+`layout/digital/build.py`, so the DEF that §0a measured still descended from
+the old netlist: `layout/digital/reports/place_and_route.json`'s
+`provenance.input.content_hash` read `sha256:224d01d5…` (pre-#292) while the
+committed netlist hashes to `sha256:a370c452…`. Nothing checked that edge.
+
+This update re-runs the whole chain on the current netlist: `build.py`
+(place and route, `klt drc`), `lvs.py`, `klt erc` against the supply spec,
+`gen_sdf.py`, and this document's fifteen-corner sweep. The new family is
+`sim/records/2026-10-07-digital-sta-power-{01..15}.md`. The 2026-09-22
+family stays as append-only evidence for #264's DEF. `build.py
+--check-input` (wired into `npm run check:ci`) now fails if the recorded
+input hash and the committed netlist disagree again.
+
+### Two things changed at once, so a control run separates them
+
+The rebuild changed two inputs, not one:
+
+1. **the netlist** (pre-#292 → post-#292), which is the change this issue is about;
+2. **the OpenROAD build.** #264's DEF was produced by a native OpenROAD
+   `26Q3-2276-g4a7cf9b22a`. This rebuild used `26Q3-1510-g6cb3f2b704` from
+   the `openroad/orfs` Docker image, pinned by digest
+   (`sha256:bb7f3169…`), because that is the build provisioned on the host
+   that ran it. `klt` was the 0.6.0 release in both cases. The PDK was
+   open_pdks `f6eeac7d` in both cases.
+
+`build.py`'s own docstring already says place-and-route is not bit-identical
+across OpenROAD builds. To keep the build change from being read as the
+netlist's effect, the **pre-#292 netlist was also re-run through the same
+26Q3-1510 build** (a scratch copy of the tree with only `trng_top.synth.v`
+reverted to commit `35ef2ff`'s version, then `build.py` and `run_sta.py
+--no-write`). That control run is not committed as a record family. Its DEF
+is not the committed DUT, and minting it would put a second "latest" family
+in front of `sim/tools/power_rollup.py`. Its figures appear only in the
+middle column below, with the command to reproduce them.
+
+| | #264 DEF (pre-#292 netlist, OpenROAD 2276) | control (pre-#292 netlist, OpenROAD 1510) | **#293 DEF (post-#292 netlist, OpenROAD 1510)** |
+|---|---:|---:|---:|
+| Placed logical instances | 1488 | 1489 | **1490** |
+| DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4483 | 4954 | **4960** |
+| Die | 398.895 µm square, 159 117 µm² | 398.895 µm square, 159 117 µm² | **398.93 µm square, 159 145 µm²** |
+| Achieved utilization | 43.11 % | 43.34 % | **43.38 %** |
+| Routed wirelength | 72 152 µm | 77 184 µm | **77 781 µm** |
+| Placed cell area | 61 692.0 µm² | 62 019.4 µm² | **62 081.5 µm²** |
+| vs the pre-synthesis inventory (33 654.6 µm²) | ×1.833 | ×1.843 | **×1.845** |
+| Setup binding slack (`ss_125C_3v00`/`max`) | +31.413 ns | +30.909 ns | **+31.220 ns** |
+| Hold binding slack (`ff_n40C_3v60`/`min`) | +0.6902 ns | +0.6943 ns | **+0.6946 ns** |
+| Fmax floor (`ss_125C_3v00`/`max`) | 53.801 MHz | 52.380 MHz | **53.249 MHz** |
+| Active power @ 1 MHz, max (`ff_125C_3v60`/`max`) | 345.6 µW | 346.8 µW | **348.2 µW** |
+| Leakage, max (`ff_125C_3v60`) | 7.515 µW / 2.088 µA | 7.827 µW / 2.174 µA | **7.842 µW / 2.178 µA** |
+| Library `max_transition` violations | 0 of 15 corners | 0 of 15 corners | **0 of 15 corners** |
+| `klt drc` / `klt lvs` | clean / match | clean / not run | **clean / match** |
+
+How to read it:
+
+- **The netlist's own effect** is the right-hand column minus the middle
+  one: +62.1 µm² placed cell area (+0.10 %), +1 logical instance, +0.87 MHz
+  on the Fmax floor, +1.4 µW active, +0.015 µW leakage. The 0.035 µm wider
+  die also comes from the netlist: the control run on the old netlist kept
+  #264's exact 398.895 µm die, and the floorplan sizes the die from
+  synthesized area at a fixed 40 % utilization target. These are single
+  samples of a stochastic flow. A difference this size is
+  not evidence that either netlist places better.
+- **The OpenROAD build's effect** is the middle column minus the left one.
+  It is most of the move: +327 µm² cell area, −1.42 MHz Fmax, +0.31 µW
+  leakage, and +7 % routed wirelength.
+- **Every ratified-row verdict is unchanged.** Timing still closes at all
+  fifteen corners with ≥ +0.69 ns hold and ≥ +31 ns setup at 20 MHz.
+  `max_transition` is still clean everywhere. The worst-slack corner moved
+  from `ff_n40C_3v60`/`max` to `ff_125C_3v60`/`max`, at +3.009 ns. The
+  power and area rows were missed before and are still missed by about the
+  same margin (see `README.md`'s Power row: active 758.2 µW = 151.6 %, idle
+  2.211 µA = 221 %, from 755.6 µW / 2.12 µA).
+
+The OpenROAD build also changed what `place_and_route.json`'s own per-deck
+counts read (see §0a for what they mean): 660 transition and 2 capacitance
+pins against the stated `repair_design` targets, down from 720 and 3.
+These are all still at the 1.62 V/1.80 V decks or on the inserted buffers,
+as §0a describes, and none is a library violation at any of the fifteen
+swept corners. The design's worst-fanout net moved again, to
+`u_interface/net75` at 34 loads.
+
+**Reproducing the control column:**
+
+```sh
+mkdir /tmp/ctrl && git archive HEAD | tar -x -C /tmp/ctrl
+git show 35ef2ff:design/trng_top/trng_top.synth.v > /tmp/ctrl/design/trng_top/trng_top.synth.v
+cd /tmp/ctrl && python3 layout/digital/build.py && python3 sim/tb/digital-sta-power/run_sta.py --no-write
+```
+
+`sim/tools/digital_corner_characterization.py`'s `RECORDED` table and
+`sim/tb/digital-sta-power/max_transition_probe.py`'s `RECORDED` table now
+describe the #293 DEF.
+
 ---
 
 ## 1. What ran
@@ -1263,11 +1369,14 @@ python3 sim/tb/digital-sta-power/max_transition_probe.py
 python3 sim/tb/digital-sta-power/max_transition_probe.py --check
 ```
 
-Records: `sim/records/2026-09-22-digital-sta-power-{01..15}.md`, the current
-`FIFO_DEPTH = 2` family ([#264], §0a), one per corner, each with the generated
+Records: `sim/records/2026-10-07-digital-sta-power-{01..15}.md`, the current
+`FIFO_DEPTH = 2` family ([#293], §0b), one per corner, each with the generated
 Tcl and the full OpenROAD log as committed raw output. The SPEF is not
 committed (3.3 MB × 15); each record carries its sha256, byte count and
-summed capacitance so a re-run can be checked against it. The pre-[#264]
+summed capacitance so a re-run can be checked against it. The pre-[#293]
+`sim/records/2026-09-22-digital-sta-power-{01..15}.md` ([#264], §0a) remain
+committed as append-only evidence about the DEF built from the pre-[#292]
+netlist. The pre-[#264]
 `sim/records/2026-09-19-digital-sta-power-{01..15}.md` ([#255], §0) remain
 committed as append-only evidence about the first depth-2 DEF (the one that
 violated `max_transition` at 11 of 15 corners). The pre-[#255]
@@ -1306,6 +1415,8 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
 [#255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [#264]: https://github.com/2AMLogic/gf180-trng/issues/264
+[#292]: https://github.com/2AMLogic/gf180-trng/pull/292
+[#293]: https://github.com/2AMLogic/gf180-trng/issues/293
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1099]: https://github.com/2AMLogic/klayout-tools/issues/1099
 [klt1100]: https://github.com/2AMLogic/klayout-tools/issues/1100
