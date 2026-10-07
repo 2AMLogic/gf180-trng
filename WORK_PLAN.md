@@ -20,13 +20,13 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#293**: Digital P&R evidence records a superseded input netlist: place_and_route.json pins the pre-#292 trng_top.synth.v hash
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#293**: Digital P&R evidence records a superseded input netlist: place_and_route.json pins the pre-#292 trng_top.synth.v hash
 
 ## PRs Awaiting Review
 
@@ -60,8 +60,8 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 1 |
