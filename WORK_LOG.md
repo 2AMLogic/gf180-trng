@@ -4,6 +4,11 @@ Merged PRs and closed issues from the 30-day window ending 2026-10-07.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
+### 2026-10-07
+
+- **PR #306**: fix(digital): rebuild place-and-route from the re-baselined netlist, guard the input hash (#293)
+- **Issue #293** (closed): Digital P&R evidence records a superseded input netlist: place_and_route.json pins the pre-#292 trng_top.synth.v hash
+
 ### 2026-10-01
 
 - **Issue #294** (closed): ci: pdk-nightly's layout DRC/LVS staleness check fails on ro_ring11.extract.json (new step reached after #291)
