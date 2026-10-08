@@ -98,6 +98,14 @@ EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence"
 
 #: The klayout-tools release that grades this block. See the module docstring.
 KLT_PIN = "0.6.0"
+#: The KLayout engine release KLT_PIN is installed with (DR-0026): the engine
+#: the release records it was tested against. Not checked by this script --
+#: `klt signoff` does not depend on it -- but it is half of the normative
+#: build, so it is defined here next to KLT_PIN. Every `klayout-tools==` /
+#: `klayout==` pin restated in workflows, READMEs and docstrings is held to
+#: these two constants by sim/tools/klt_pin_sites.py --check (npm run
+#: check:spec); a pin bump edits them here first, then the sites it lists.
+KLAYOUT_PIN = "0.30.10"
 KLT_INSTALL_HINT = f'pip install "klayout-tools=={KLT_PIN}"'
 
 #: `klt signoff` exit codes that mean "the grader ran fine".

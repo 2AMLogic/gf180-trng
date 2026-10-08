@@ -908,9 +908,10 @@ def _stable(payload: dict) -> dict:
       swap between two uniquely-named nets' `net_id` values changes nothing
       any consumer reads by identity. Confirmed empirically (issue #294):
       pinning klt/PDK bit-for-bit identical (`klayout-tools@3fbb4478`,
-      `klayout==0.30.12`, gf180mcu `f6eeac7d`) and running `klt extract` on
-      the committed `ro_ring11.gds` under both this repository's macOS
-      arm64 development host and a Linux x86_64 container matching
+      `klayout==0.30.12` (klt-pin: historical), gf180mcu `f6eeac7d`) and
+      running `klt extract` on the committed `ro_ring11.gds` under both
+      this repository's macOS arm64 development host and a Linux x86_64
+      container matching
       `pdk-nightly.yml`'s runner produced reports differing in exactly two
       fields -- the uniquely-named `en` and `vss` nets' `net_id` values
       (`1`/`2`, swapped) -- with every other field, including
