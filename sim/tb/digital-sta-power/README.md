@@ -127,6 +127,14 @@ cannot be stated through `klt place-and-route`'s request contract today
 `sim/tools/digital_corner_characterization.py --check` gates the record-side
 half with no PDK needed.
 
+The aggregation (and the whole-block power rollup's measured digital term)
+accepts only a complete fifteen-corner family whose `netlist.sha` equals the
+git blob SHA of the committed `layout/digital/trng_top.def`; a partial re-run
+of a new DEF fails with the missing corners rather than borrowing older
+records (#341). Records of earlier DEF revisions stay on disk and can be read
+with `digital_corner_characterization.py --historical` (record-only, never a
+current-layout claim, refused with `--check`).
+
 Each record's raw output is the generated Tcl and the full OpenROAD log for
 both sessions. The SPEF (3.3 MB per corner) is **not** committed; its sha256,
 byte size and summed capacitance are, so a re-run is checkable against the

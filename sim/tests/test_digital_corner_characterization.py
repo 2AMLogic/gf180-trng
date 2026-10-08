@@ -67,6 +67,7 @@ def synthetic_record(
     p_1mhz_w: float = 5e-4,
     leakage_w: float = 1e-6,
     max_slew: tuple[float, float, int, int] | None = None,
+    dut_sha: str | None = "1111111111111111111111111111111111111111",
 ) -> str:
     """One record in the shape ``run_sta.py`` writes, with only the fields
     this tool reads. Deliberately hand-written rather than generated from the
@@ -77,6 +78,7 @@ def synthetic_record(
     and defaults to **absent**, matching the ``2026-08-17``/``2026-08-18``
     families that predate the library max-transition check (#233): a record
     without it is a legitimate record, not a malformed one."""
+    dut_line = f"  sha: {dut_sha}\n" if dut_sha else ""
     return f"""---
 record: {stem}
 date: 2026-08-17T00:00:00Z
@@ -89,8 +91,7 @@ testbench:
   sha: 0000000000000000000000000000000000000000
 netlist:
   path: layout/digital/trng_top.def
-  sha: 1111111111111111111111111111111111111111
-repo_commit: 2222222222222222222222222222222222222222
+{dut_line}repo_commit: 2222222222222222222222222222222222222222
 
 tool:
   openroad: "26Q3-0000-gtest"
@@ -157,7 +158,7 @@ class SyntheticRecordTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "ff_n40C_3v60",
                              "min", setup_ns=40.0, hold_ns=0.3, fmax_mhz=120.0),
         ])
-        t = dcc.timing(dcc.load(tmp))
+        t = dcc.timing(dcc.load_historical(tmp))
         # Setup binds slow, hold binds fast -- two different corners, which is
         # the whole reason both are reported.
         self.assertEqual(t["setup_binding"], "ss_125C_3v00/rc-max")
@@ -173,7 +174,7 @@ class SyntheticRecordTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "ff_n40C_3v60",
                              "min", hold_ns=-0.05),
         ])
-        records = dcc.load(tmp)
+        records = dcc.load_historical(tmp)
         self.assertFalse(dcc.timing(records)["closes_everywhere"])
         self.assertTrue(any("positive setup AND hold" in f
                             for f in dcc.check(records)))
@@ -184,7 +185,7 @@ class SyntheticRecordTests(unittest.TestCase):
                              "nom", level="behavioral"),
         ])
         with self.assertRaises(dcc.RecordError):
-            dcc.load(tmp)
+            dcc.load_historical(tmp)
 
     def test_records_disagreeing_on_cell_area_are_refused(self):
         # Cell area is corner-independent. Two different values mean two
@@ -197,7 +198,7 @@ class SyntheticRecordTests(unittest.TestCase):
                              "max", cell_area_um2=98_000.0),
         ])
         with self.assertRaises(dcc.RecordError):
-            dcc.area(dcc.load(tmp))
+            dcc.area(dcc.load_historical(tmp))
 
     def test_superseded_records_are_not_aggregated(self):
         tmp = self._dir([
@@ -206,7 +207,7 @@ class SyntheticRecordTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "tt_025C_3v30",
                              "nom", setup_ns=30.0),
         ])
-        records = dcc.load(tmp)
+        records = dcc.load_historical(tmp)
         self.assertEqual(len(records), 1)
         self.assertAlmostEqual(
             dcc.timing(records)["setup_binding_slack_ns"], 30.0
@@ -222,9 +223,134 @@ class SyntheticRecordTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "ff_n40C_3v60",
                              "min", p_1mhz_w=7.0e-4, leakage_w=3.0e-7),
         ])
-        p = dcc.power(dcc.load(tmp))
+        p = dcc.power(dcc.load_historical(tmp))
         self.assertEqual(p["max_1mhz_corner"], "ff_n40C_3v60/rc-min")
         self.assertEqual(p["max_leakage_corner"], "ff_125C_3v60/rc-max")
+
+
+class CurrentDutProvenanceTests(unittest.TestCase):
+    """#341: a current-layout claim needs one complete family for the
+    committed routed DEF, never one stitched from several DUT revisions."""
+
+    OLD = "a" * 40
+    OTHER = "b" * 40
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.def_path = self.tmp / "trng_top.def"
+        self.def_path.write_bytes(b"VERSION 5.8 ;\nEND DESIGN\n")
+        self.sha = dcc.blob_sha(self.def_path)
+        self.records = self.tmp / "records"
+        self.records.mkdir()
+        self.n = 0
+
+    def _write(self, corner: str, dut_sha: str | None, status: str = "valid"):
+        lib, rc = corner.split("/rc-")
+        self.n += 1
+        stem = f"2026-10-08-digital-sta-power-{self.n:02d}"
+        (self.records / f"{stem}.md").write_text(
+            synthetic_record(stem, lib, rc, dut_sha=dut_sha, status=status)
+        )
+        return stem
+
+    def _family(self, dut_sha, corners=dcc.EXPECTED_CORNERS):
+        return [self._write(c, dut_sha) for c in corners]
+
+    def _load(self):
+        return dcc.load(self.records, self.def_path)
+
+    def test_blob_sha_matches_git_hash_object(self):
+        import subprocess
+        want = subprocess.run(
+            ["git", "hash-object", str(self.def_path)],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        self.assertEqual(self.sha, want)
+
+    def test_complete_matching_family_loads(self):
+        self._family(self.OLD)  # earlier revision stays on disk, unused
+        self._family(self.sha)
+        records = self._load()
+        self.assertEqual(sorted(r.corner for r in records),
+                         sorted(dcc.EXPECTED_CORNERS))
+        self.assertTrue(all(r.fields["netlist_sha"] == self.sha for r in records))
+        self.assertEqual(dcc.dut_provenance_failures(records, self.sha), [])
+
+    def test_one_new_corner_among_old_records_is_refused(self):
+        self._family(self.OLD)
+        self._write("tt_025C_3v30/rc-nom", self.sha)
+        with self.assertRaises(dcc.RecordError) as cm:
+            self._load()
+        msg = str(cm.exception)
+        self.assertIn("incomplete family", msg)
+        self.assertIn("1 of 15", msg)
+        self.assertIn(self.OLD, msg)
+        self.assertIn("ss_125C_3v00/rc-min", msg)
+
+    def test_all_old_dut_records_are_refused_as_stale(self):
+        self._family(self.OLD)
+        with self.assertRaises(dcc.RecordError) as cm:
+            self._load()
+        msg = str(cm.exception)
+        self.assertIn(self.sha, msg)
+        self.assertIn(self.OLD, msg)
+
+    def test_missing_identity_is_refused_with_the_stem(self):
+        self._family(self.sha, dcc.EXPECTED_CORNERS[1:])
+        bad = self._write(dcc.EXPECTED_CORNERS[0], None)
+        with self.assertRaises(dcc.RecordError) as cm:
+            self._load()
+        self.assertIn("no DUT identity", str(cm.exception))
+        self.assertIn(bad, str(cm.exception))
+
+    def test_incomplete_current_family_is_not_filled_from_old(self):
+        self._family(self.OLD)
+        self._family(self.sha, dcc.EXPECTED_CORNERS[:-2])
+        with self.assertRaises(dcc.RecordError) as cm:
+            self._load()
+        self.assertIn(dcc.EXPECTED_CORNERS[-1], str(cm.exception))
+        self.assertIn("13 of 15", str(cm.exception))
+
+    def test_latest_current_record_wins_per_corner(self):
+        self._family(self.sha)
+        self._write("tt_025C_3v30/rc-nom", self.sha)
+        records = self._load()
+        self.assertEqual(len(records), 15)
+        by = {r.corner: r.stem for r in records}
+        self.assertTrue(by["tt_025C_3v30/rc-nom"].endswith("-16"))
+
+    def test_historical_path_still_reads_a_mixed_family(self):
+        self._family(self.OLD)
+        self._write("tt_025C_3v30/rc-nom", self.OTHER)
+        records = dcc.load_historical(self.records)
+        self.assertEqual(len(records), 15)
+        shas = {r.fields["netlist_sha"] for r in records}
+        self.assertEqual(shas, {self.OLD, self.OTHER})
+        # ...and the gate's provenance check names every offender.
+        fails = dcc.dut_provenance_failures(records, self.sha)
+        self.assertEqual(len([f for f in fails if "describes DUT" in f]), 15)
+
+    def test_check_reports_provenance_for_historical_records(self):
+        self._family(self.OLD)
+        records = dcc.load_historical(self.records)
+        fails = dcc.dut_provenance_failures(records, self.sha)
+        self.assertTrue(any("describes DUT" in f for f in fails))
+        self.assertTrue(any("0 of 15" in f for f in fails))
+
+
+class PowerRollupCannotBypassTests(unittest.TestCase):
+    def test_rollup_digital_term_refuses_a_stale_dut(self):
+        import power_rollup
+        from unittest import mock
+        # Pretend the committed DEF changed: every committed record is now
+        # for an old revision, so the measured digital term must refuse.
+        with mock.patch.object(dcc, "blob_sha", return_value="f" * 40):
+            with self.assertRaises(dcc.RecordError):
+                power_rollup.digital_measured(1e6)
+
+    def test_rollup_digital_term_accepts_the_committed_family(self):
+        import power_rollup
+        self.assertEqual(power_rollup.digital_measured(1e6)["n_corners"], 15)
 
 
 class MaxTransitionTests(unittest.TestCase):
@@ -238,7 +364,7 @@ class MaxTransitionTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
                              "nom"),
         ])
-        m = dcc.max_transition(dcc.load(tmp))
+        m = dcc.max_transition(dcc.load_historical(tmp))
         self.assertEqual(m["records_with_check"], 0)
         self.assertEqual(m["records_total"], 1)
         self.assertIsNone(m["worst_corner"])
@@ -251,7 +377,7 @@ class MaxTransitionTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "ss_125C_3v00",
                              "max"),
         ])
-        fails = dcc.check(dcc.load(tmp))
+        fails = dcc.check(dcc.load_historical(tmp))
         self.assertTrue(any("live records carry" in f for f in fails), fails)
 
     def test_worst_corner_is_the_minimum_slack_not_the_most_pins(self):
@@ -264,7 +390,7 @@ class MaxTransitionTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-02", "ff_125C_3v60",
                              "max", max_slew=(5.2, -1.588, 94, 0)),
         ])
-        m = dcc.max_transition(dcc.load(tmp))
+        m = dcc.max_transition(dcc.load_historical(tmp))
         self.assertEqual(m["worst_corner"], "tt_025C_3v30/rc-nom")
         self.assertAlmostEqual(m["worst_slack_ns"], -1.593)
         self.assertEqual(m["worst_violating_pins"], 94)
@@ -275,7 +401,7 @@ class MaxTransitionTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-01", "tt_025C_3v30",
                              "nom", max_slew=(6.0, -1.593, 46, 0)),
         ])
-        row = dcc.max_transition(dcc.load(tmp))["rows"][0]
+        row = dcc.max_transition(dcc.load_historical(tmp))["rows"][0]
         self.assertAlmostEqual(row["worst_slew_ns"], 7.593)
 
     def test_a_clean_corner_is_not_counted_as_violating(self):
@@ -283,7 +409,7 @@ class MaxTransitionTests(unittest.TestCase):
             synthetic_record("2026-08-17-digital-sta-power-01", "ss_n40C_3v00",
                              "min", max_slew=(11.2, 2.7907, 0, 0)),
         ])
-        self.assertEqual(dcc.max_transition(dcc.load(tmp))["violating_corners"], 0)
+        self.assertEqual(dcc.max_transition(dcc.load_historical(tmp))["violating_corners"], 0)
 
     def _dir(self, records: list[str]) -> Path:
         tmp = Path(tempfile.mkdtemp())
