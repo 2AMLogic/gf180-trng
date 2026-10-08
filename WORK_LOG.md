@@ -1,8 +1,20 @@
 # Work Log
 
-Merged PRs and closed issues from the 30-day window ending 2026-10-07.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-08.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-08
+
+- **PR #318**: Cite an aggregated analog characterization summary as T1 item 8 analog
+- **PR #317**: feat(signoff): publish post-route functional run as T1 item 7 digital citation (#314)
+- **PR #316**: floorplan: derive the composed interface for klt 0.6.0 and compare it by name (#309)
+- **PR #311**: Ratify DR-0026 amended to klayout-tools 0.6.0; re-produce layout/reports/ and pin 4.analog
+- **Issue #314** (closed): Publish native post-route functional evidence for the T1 digital item-7 citation
+- **Issue #313** (closed): Aggregate analog characterization into a pinned T1 item-8 evidence artifact
+- **Issue #309** (closed): floorplan.py's inter-region pin-count expectation (107) is stale: klt 0.6.0 extracts 114, naming the five pins the formula subtracts as unnameable
+- **Issue #308** (closed): Auditor Capability Request: Python 3 unavailable for local validation
+- **Issue #281** (closed): Re-run the analog LVS under a settled producer pin, so item 4's analog citation carries a freshness pin and real power_connectivity/body_verification verdicts
 
 ### 2026-10-07
 
