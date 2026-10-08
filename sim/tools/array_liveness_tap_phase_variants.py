@@ -84,7 +84,6 @@ physical jitter and no entropy claim may be built on them (DR-0004 tiering).
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
@@ -92,11 +91,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
+    VariantBase,
     RecordError,
     _lags,
-    _loglog_slope,
     reference_spread,
-    window_geometry,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -214,50 +212,17 @@ RECORDED_SHIPPED_VERDICT: str | None = "bound-confirmed-residual-remains"
 RECORDED_XSB_VERDICT: str | None = "unreachable"
 
 
-class Variant:
+class Variant(VariantBase):
     """One DUT variant's record at :data:`CORNER`, with its window geometry."""
 
     def __init__(self, label: str, record: Record, manifest: Path, difference: str) -> None:
-        self.label = label
+        super().__init__(label, record, manifest, difference)
         self.key = label.split(maxsplit=1)[1]
-        self.rec = record
-        self.difference = difference
-        self.discarded, self.n_periods = window_geometry(manifest)
-        self.period = record.values["period"]
-
-        self.lags = _lags(record)
-        self.sigma = {L: record.values[f"sigma_{L}"] for L in self.lags}
-        self.exponent = _loglog_slope(
-            [float(L) for L in self.lags], [self.sigma[L] for L in self.lags]
-        )
 
         r2_lags = _lags(record, "sigma_r2_")
         self.r2_lags = r2_lags
         self.sigma_r2 = {L: record.values[f"sigma_r2_{L}"] for L in r2_lags}
         self.period_r2 = record.values.get("period_r2", float("nan"))
-
-        self.blocks = [
-            record.values[k]
-            for k in sorted(k for k in record.values if re.fullmatch(r"period_b\d+", k))
-        ]
-
-    @property
-    def spread_1(self) -> float | None:
-        return self.rec.spread("sigma_1")
-
-    @property
-    def block_swing(self) -> float:
-        """``(max - min)`` of the per-block mean periods, as a fraction of this
-        variant's own mean period.
-
-        This is the diagnostic that does not use the sigma estimator at all: a
-        clk that toggles on a microsecond scale shows up here as blocks
-        alternating between two levels, where a random walk shows only
-        estimator scatter.
-        """
-        if not self.blocks:
-            return float("nan")
-        return (max(self.blocks) - min(self.blocks)) / self.period
 
 
 def _load(spec, *, required: bool = True) -> Variant | None:

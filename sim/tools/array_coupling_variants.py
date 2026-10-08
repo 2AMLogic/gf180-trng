@@ -75,11 +75,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
-    _lags,
+    VariantBase,
     _loglog_slope,
     load_variants_by_glob,
     reference_spread,
-    window_geometry,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -163,43 +162,12 @@ EXCESS_FACTOR = 10.0
 RECORDED_VERDICT: str | None = "coupling"
 
 
-class Variant:
+class Variant(VariantBase):
     """One DUT variant's record at :data:`CORNER`, with both windows."""
 
     def __init__(self, label: str, record: Record, manifest: Path, difference: str) -> None:
-        self.label = label
-        self.rec = record
-        self.difference = difference
-        self.discarded, self.n_periods = window_geometry(manifest)
-        self.period = record.values["period"]
+        super().__init__(label, record, manifest, difference)
         self.period_r2 = record.values.get("period_r2")
-
-        self.lags = _lags(record)
-        self.sigma = {L: record.values[f"sigma_{L}"] for L in self.lags}
-        self.exponent = _loglog_slope(
-            [float(L) for L in self.lags], [self.sigma[L] for L in self.lags]
-        )
-        tail = [L for L in self.lags if L >= max(self.lags) // 8]
-        self.tail_lags = tail
-        self.exponent_tail = _loglog_slope(
-            [float(L) for L in tail], [self.sigma[L] for L in tail]
-        )
-
-        s_lags = _lags(record, "sigma_startup16_")
-        self.startup_lags = s_lags
-        self.startup_sigma = {L: record.values[f"sigma_startup16_{L}"] for L in s_lags}
-        self.startup_period = record.values.get("period_startup16", float("nan"))
-        self.startup_exponent = (
-            _loglog_slope(
-                [float(L) for L in s_lags], [self.startup_sigma[L] for L in s_lags]
-            )
-            if len(s_lags) > 1
-            else float("nan")
-        )
-
-    @property
-    def spread_1(self) -> float | None:
-        return self.rec.spread("sigma_1")
 
     @property
     def startup_spread_1(self) -> float | None:
