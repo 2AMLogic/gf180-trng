@@ -211,7 +211,7 @@ requires of the claimant rather than of the tool.
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
-| 11 Power delivery | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. The row still reads `unmet`/`no_evidence` because `signoff/block-manifest.json` cites no `11.analog`/`11.digital` evidence yet, and — independent of that — the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above). The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
+| 11 Power delivery | `unmet` / `no_evidence` | `unmet` / `wrong_kind` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. `signoff/block-manifest.json` cites `11.digital` (the `erc-supply.json` report alone, pinned to the GDS it ran on) as of [#321](https://github.com/2AMLogic/gf180-trng/issues/321); no `11.analog` is cited. The digital column therefore reads `unmet` / `wrong_kind`, not `no_evidence`: item 11 is a compound claim, and the grader wants an `erc` envelope *and* an `lvs` one (and, for an RTL-flow block, a `place-and-route` one) in the same list, so a lone ERC citation is the wrong set rather than a missing one. The analog column is unchanged at `unmet` / `no_evidence`. Independent of the citation shape, the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above) — see "Item 11's `ties[]`" below. The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
 
 ### Item 3 is `met` on both partitions — and here are each one's coverage gaps
 
@@ -565,15 +565,35 @@ zero `erc.unconnected_net`/`erc.supply_short` on `VDD`/`VSS` the spec
 already required. `ties_disclosure` is now `null`: the tie is declared, not
 disclosed as omitted.
 
-**This does not move item 11 to `met`.** Two separate gaps remain, neither
-touched by this change: `signoff/block-manifest.json` does not yet cite any
-`11.analog`/`11.digital` evidence (wiring that in is future work, not yet
-tracked by a dedicated issue — see [#124](https://github.com/2AMLogic/gf180-trng/issues/124),
-this repo's general gap-to-T1 tracker), and the digital column's own
-additional requirement — `power_connectivity.status: "match"` on item 4's
-LVS citation — stays `"unchecked"`, for the reason "Item 4 is `met` twice"
-above already documents. A `met` supply-spec run is necessary for item 11's
-digital column; it was never sufficient on its own.
+**This does not move item 11 to `met`.** As of
+[#321](https://github.com/2AMLogic/gf180-trng/issues/321),
+`signoff/block-manifest.json` cites `11.digital` as a single evidence
+object: `layout/digital/reports/erc-supply.json`, pinned to the
+`provenance.input.content_hash` of the GDS it ran on (the same
+`sha256:b164476c...` the digital DRC citation pins). Under klt 0.6.0 the
+grader's reading of the digital column moved from `unmet` / `no_evidence` to
+`unmet` / `wrong_kind`. That is not progress toward `met`: it only says the
+item is now cited, and cited with the wrong shape. Item 11's manifest entry
+is a compound *list*; the grader needs an `erc`, an `lvs`, and (for an
+RTL-flow block) a `place-and-route` part, and finding only the `erc` part it
+reports `wrong_kind` without grading the ERC report's contents at all. So
+the zero `erc.missing_tie` and clean supply nets above are not yet a graded
+result.
+
+Three things remain, none touched by this change:
+
+- The compound list itself. A trial list of the ERC, LVS and
+  place-and-route reports graded `unmet` / `lvs_supply_unproven`, i.e. it
+  reaches the same `power_connectivity` gap below. It was not committed:
+  `layout/digital/reports/place_and_route.json` names no input artifact, so
+  `signoff/check.py`'s freshness step rejects it, and that report embeds an
+  absolute worktree path. Citing it needs a check.py decision first.
+- `11.analog` is still uncited. The analog column's requirement is a supply
+  spec for the analog regions, which this repo has not run.
+- The digital column's additional requirement, `power_connectivity.status:
+  "match"` on item 4's LVS citation, stays `"unchecked"`, for the reason
+  "Item 4 is `met` twice" above already documents. A `met` supply-spec run
+  is necessary for item 11's digital column; it was never sufficient.
 
 ### Items 1, 2, 9 and 10 are uncited on purpose
 
@@ -674,11 +694,10 @@ In dependency order, not effort order:
    and report first landed via [#268](https://github.com/2AMLogic/gf180-trng/issues/268),
    and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
    the spec's `ties[]` once klayout-tools#2186 shipped, so `erc.missing_tie`
-   is now computed and zero. Item 11 still does not read `met` — see "Item
-   11's `ties[]`" above for the two remaining gaps (no `11.analog`/
-   `11.digital` citation in `signoff/block-manifest.json` yet, and the
-   digital column's `power_connectivity.status: "match"` requirement, which
-   stays `"unchecked"`).
+   is now computed and zero. Item 11 still does not read `met`: `11.digital` is cited
+   (#321) as a lone ERC report and reads `unmet` / `wrong_kind`, `11.analog`
+   is uncited, and the digital column's `power_connectivity.status: "match"`
+   requirement stays `"unchecked"` — see "Item 11's `ties[]`" above.
 
 Items 1, 2, 9 and 10 need nothing built — only an honest artifact to cite, if
 one ever exists.
