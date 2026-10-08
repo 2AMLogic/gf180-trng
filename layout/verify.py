@@ -41,7 +41,6 @@ import importlib.util
 import json
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -62,7 +61,13 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTCELL_DIR))
 
 import build as testcells  # noqa: E402  (layout/testcells/build.py)
-from layout._klt import FlowError, _run_klt, klt_version, resolve_pdk  # noqa: E402
+from layout._klt import (  # noqa: E402
+    FlowError,
+    _run_klt,
+    klt_origin,
+    klt_version,
+    resolve_pdk,
+)
 
 
 def _load_build_module(name: str, path: Path):
@@ -594,110 +599,6 @@ EXPECTATIONS: dict[str, dict] = {
 # --------------------------------------------------------------------------- #
 # Environment
 # --------------------------------------------------------------------------- #
-
-
-#: Asks the `klt` venv's own interpreter what it installed. `importlib.metadata`
-#: only sees distributions on the interpreter running it, and `klt` lives in its
-#: own pipx/uv venv, so the question has to be asked over there.
-_KLT_ORIGIN_PROBE = (
-    "import importlib.metadata as m;"
-    "print(m.distribution('klayout-tools').read_text('direct_url.json') or '')"
-)
-
-
-def klt_origin() -> dict | None:
-    """Return what a `klt` install was built from, or None if unknowable.
-
-    `klt --version` reports `0.1.0` for every build of klayout-tools to date,
-    including installs straight off the tip of its main branch -- which is
-    what `pipx install klayout-tools` / `uv tool install klayout-tools` from
-    the repository URL gives you. So the version string does not identify a
-    build, and on 2026-08-02 two `0.1.0` installs produced different LVS
-    reports for the same fixture (#73). The commit does identify it.
-
-    Two sources, in order:
-
-    1. The distribution's own `direct_url.json` -- present for an install
-       from a git URL (`pip install "klayout-tools @ git+...@<sha>"`), and
-       naming the URL and the resolved commit.
-    2. `klt version --format json` -- for an install from a package index
-       (`pip install "klayout-tools==0.6.0"`, the form
-       `.github/workflows/pdk-nightly.yml` pins since #281), which has no
-       `direct_url.json`. klayout-tools records the commit, tag and dirty
-       state its wheel was built from at build time (klayout-tools#1202),
-       and reports them there. `url` is then `None` -- the index a wheel
-       came from is not recorded anywhere this can read -- and `tag` /
-       `is_release` say which release the commit is.
-
-    Best effort by construction: a build that records neither, or a layout
-    this does not recognise, reports nothing rather than guessing. A None
-    here means "not recorded", never "the same as last time".
-    """
-    executable = shutil.which("klt")
-    if executable is None:
-        return None
-    origin = _direct_url_origin(executable)
-    if origin is not None and origin.get("commit"):
-        return origin
-    return _build_identity_origin(executable) or origin
-
-
-def _direct_url_origin(executable: str) -> dict | None:
-    """`klt_origin()`'s first source: the install's `direct_url.json`."""
-    try:
-        # The console script's shebang names the interpreter of the venv the
-        # distribution is installed into -- the one that can answer.
-        script = Path(executable).resolve().read_text(errors="replace")
-    except OSError:
-        return None
-    shebang = script.split("\n", 1)[0]
-    if not shebang.startswith("#!"):
-        return None
-    try:
-        done = subprocess.run(
-            [shebang[2:].strip(), "-c", _KLT_ORIGIN_PROBE],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        record = json.loads(done.stdout.strip())
-    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
-        return None
-    if not isinstance(record, dict):
-        return None
-    return {
-        "url": record.get("url"),
-        "commit": (record.get("vcs_info") or {}).get("commit_id"),
-    }
-
-
-def _build_identity_origin(executable: str) -> dict | None:
-    """`klt_origin()`'s second source: `klt version --format json`.
-
-    Only a *clean* recorded build identity is returned: a `dirty` build's
-    commit does not describe what ran, so it reports nothing.
-    """
-    try:
-        done = subprocess.run(
-            [executable, "version", "--format", "json"],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        record = json.loads(done.stdout.strip())
-    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
-        return None
-    if not isinstance(record, dict):
-        return None
-    commit = record.get("git_commit")
-    if not isinstance(commit, str) or not commit or record.get("dirty") is not False:
-        return None
-    return {
-        "url": None,
-        "commit": commit,
-        "tag": record.get("git_tag"),
-        "is_release": record.get("is_release"),
-    }
 
 
 def environment_report() -> dict:
