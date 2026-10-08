@@ -9,7 +9,7 @@
   "tier": null,
   "t1_item_count": 22,
   "build_t1_item_count": 22,
-  "t1_met_count": 7,
+  "t1_met_count": 8,
   "source_doc": "docs/design-evidence-tiers.md",
   "source_doc_content_hash": "sha256:63eeec72e3d849761cf32dcf091af5728b069b1515e32bb3138e9454303671e5",
   "build": {
@@ -301,10 +301,35 @@
       "notes": [
         "A `klt pex` citation is only as good as the **device-body bias** of the netlist it ran on (#1983). A device body left on an anonymous, deck-synthesized net has no DC bias path at all, which makes a resimulation of that extracted netlist *physically wrong, not merely imprecise* (`docs/cli/extract.md` \u2192 \"Coverage\") \u2014 the run converges and reports numbers, and those numbers are not comparable to the schematic leg they are being diffed against. A `klt pex` report states the condition in its own `body_bias` block (`docs/cli/pex.md`), and `klt signoff` surfaces it verbatim on this item's citation (`citation.body_bias`). **It does not grade on it**: an item-7 citation whose `body_bias.status` is `\"unbiased\"` still renders `met`, because the condition is a deck-coverage property some PDKs produce on every layout they extract, not a defect this command can adjudicate. So a claim citing item 7 must read that field and state whether its post-layout numbers were measured on a properly-biased netlist \u2014 claimant-enforced, exactly like item 3's DRC-coverage disclosure. The same discipline applies upstream at item 4: `klt lvs`'s `body_verification` block says whether the compare verified the body ties at all, and `\"unchecked\"` (a pre-extracted netlist) is not `\"verified\"`."
       ],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/evidence/post-layout/ro_ring11.pex.json",
+        "command": null,
+        "kind": "pex",
+        "check_status": "pass",
+        "content_hash": "sha256:f204887a0a8bd41ee571acde05be227e6588940176ab41e303ca28b8c5daccbb",
+        "input_verified": true,
+        "exit_status": 0,
+        "body_bias": {
+          "status": "unbiased",
+          "unbiased_device_count": 23,
+          "unbiased_nets": [
+            "\\$28",
+            "\\$30",
+            "\\$32",
+            "\\$34",
+            "\\$36",
+            "\\$38",
+            "\\$40",
+            "\\$42",
+            "\\$44",
+            "\\$46",
+            "\\$48"
+          ]
+        }
+      }
     },
     {
       "tier": "T1",

@@ -15,18 +15,22 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-**Today: `tier: null`, T1 7 of 22 items met.** A `mixed-signal` block is
+**Today: `tier: null`, T1 8 of 22 items met.** A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The seven met are item 3 (DRC), item 4 (LVS) and item 8
-(characterization report) on **both** partitions, and item 7 (post-layout
-verification) on the digital partition. Item 7 digital is
+22 rows. The eight met are item 3 (DRC), item 4 (LVS), item 7 (post-layout
+verification) and item 8 (characterization report) on **both** partitions.
+Item 7 digital is
 [#314](https://github.com/2AMLogic/gf180-trng/issues/314): see "Item 7 digital"
-below for what that citation does and does not mean. Item 8 analog is
+below for what that citation does and does not mean. Item 7 analog is
+[#326](https://github.com/2AMLogic/gf180-trng/issues/326), and its `met` is
+the weakest in this file: it cites ring1 alone, and the cited report's own
+`body_bias.status` is `"unbiased"` — see "Item 7 analog" below before
+reading anything into it. Item 8 analog is
 [#313](https://github.com/2AMLogic/gf180-trng/issues/313): see "Item 8 is
 `met` on both partitions" below. An item-8 `met` means a current aggregate
 exists, not that the rows in it pass.
 That is the honest state of the block; the rest of this file is why each of
-the other fifteen reads the way it does.
+the other fourteen reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -61,6 +65,10 @@ signoff/
   evidence/post-route/gate_klt_response.json       item 7 (digital)'s native klt functional-verification response
   evidence/post-route/publication.json            its freshness pins (netlist, SDF, raw evidence) and coverage limits
   publish_item7.py                                 publishes a successful post-route run as the 7.digital citation
+  evidence/post-layout/ro_ring11.pex.json          item 7 (analog)'s native klt pex response over ring1's layout
+  evidence/post-layout/ro_ring11.extracted.spice   the netlist that klt pex run extracted and simulated
+  evidence/post-layout/publication.json            its testbench-side pins (request, testbench body, schematic DUT) and body_bias status
+  publish_item7_analog.py                          runs klt pex over ring1 and publishes it as the 7.analog citation
   check.py                                         re-grade + freshness gate (CI runs this)
 ```
 
@@ -132,12 +140,16 @@ not inferred from the date on it.
    klayout-tools#2196 the grader also re-hashes the artifact itself where it
    can (`citation.input_verified`), but only for a citation that both pins a
    hash and names a resolvable path: in the committed record that is `true`
-   for four of the six pinned citations — `4.analog` joined them in
-   [#281](https://github.com/2AMLogic/gf180-trng/issues/281) (see "Item 4 is
-   `met` twice" below) — and `null` for `8.digital` and `8.analog`, the two
-   `generic` envelopes, whose backing documents the grader does not re-hash.
+   for every pinned citation of a met item except `8.digital` and
+   `8.analog`, the two `generic` envelopes, whose backing documents the
+   grader does not re-hash (`4.analog` joined the verified set in
+   [#281](https://github.com/2AMLogic/gf180-trng/issues/281), `7.analog` in
+   [#326](https://github.com/2AMLogic/gf180-trng/issues/326)).
    `check.py` covers the whole set regardless of envelope kind — it
-   verified 7 of 7 on the run (the seventh is the item-7 publication, checked by its own pins, see "Item 7 digital") that produced the committed record. Edit
+   verified 12 of 12 on the run that produced the committed record (one of
+   them the 7.digital publication, checked by its own pins, see "Item 7
+   digital"; the 7.analog publication's testbench-side pins are checked on
+   top, see "Item 7 analog"). Edit
    `layout/blocks/combiner_sampler/combiner_sampler.gds`,
    `layout/digital/trng_top.gds`, `layout/digital/trng_top.extracted.spice`,
    `sim/characterization-digital-sta-area-power.md` or
@@ -192,6 +204,81 @@ library default delay. Functional equivalence with applied delays is narrower
 than timing signoff, which stays with OpenROAD STA. The citation's `klt pex`
 `body_bias` disclosure does not apply (no extracted netlist is simulated).
 
+## Item 7 analog
+
+The citation is the **native** JSON response of one `klt pex` run (#326),
+copied byte for byte by `publish_item7_analog.py`. The pinned grader grades
+it `met`: kind `pex`, `status: "pass"`, `content_hash` pinned to
+`layout/rings/ro_ring11/ro_ring11.gds`, `input_verified: true`.
+
+**What `klt pex` requires (0.6.0), and what that allowed.** A layout, an
+extraction deck, and one or more `klt sim` request files. Each request's
+testbench body must carry exactly one `.include`, naming a schematic DUT;
+`klt pex` runs the request as written, then again with only that line
+re-pointed at the netlist it extracted, and reuses the testbench's `xdut`
+line byte for byte on both sides. So the schematic DUT has to declare the
+extraction's own port list, position for position. Three consequences
+shaped the run:
+
+- *Which cell.* Ring1 (`ro_ring11`). Its extraction promotes fifteen ports
+  — the eleven ring nodes, flat-named `a|y` .. `a|y$10`, then `en`, `vddr`,
+  `vss`, `vsubs` — and each ring node is identified from the extracted
+  netlist's own device geometry (`sim/tb/ro-ring11-pex/build_dut.py`), so a
+  schematic DUT with the same header can be generated from
+  `design/ro_array_core.spice`. The rows (period, supply current, swing) are
+  ones the existing routing-level work already measures, at DR-0006's
+  27-point grid. `combiner_sampler` would need a clocked two-ring stimulus
+  and a schematic exposing internal buffer/XOR nets as ports, and is not
+  attempted; ring2 is not run either.
+- *One `.include`.* `design.ngspice`'s switch parameters cannot be a second
+  include, and folding them into the DUT drops them from the extracted side;
+  they are restated as a `.param` card in the testbench body
+  (klayout-tools#2871).
+- *What the envelope pins.* Only the layout. The testbench request, body and
+  schematic DUT are not fingerprinted (klayout-tools#2875), so
+  `evidence/post-layout/publication.json` pins them and `check.py`
+  re-verifies them, along with the committed extracted netlist's hash
+  against the envelope's `extraction.netlist_sha256` and its ring positions
+  against the DUT header. The envelope also drops each side's `klt sim`
+  environment, so the backend and batch job ids are not in the evidence
+  (klayout-tools#2876).
+
+**What it says.** 27 corners x 3 rows, all 81 rows measured on both sides.
+Ring1's period is **+86 % to +93 %** longer extracted than schematic at every
+corner, the same order as the routing-level re-run (§7 of
+`sim/characterization-post-layout-extracted.md`); average supply current
+magnitude is 3 % to 15 % lower; the swing on `ro` is 5–6 % lower. No row
+has a `limits` block, so `pass` means "measured on both sides", not "met a
+spec": none of the three is a ratified spec row.
+
+**`body_bias`, verbatim from the cited envelope** (only the 23-entry
+`unbiased_pmos_body_nets` list is abridged):
+
+```json
+"body_bias": {
+  "status": "unbiased",
+  "unbiased_device_count": 23,
+  "unbiased_nets": ["\\$28", "\\$30", "\\$32", "\\$34", "\\$36", "\\$38", "\\$40", "\\$42", "\\$44", "\\$46", "\\$48"],
+  "unbiased_pmos_body_nets": [ ... 23 entries, one per PMOS device ... ]
+}
+```
+
+Every PMOS device in ring1 (23 of 23) has its body on one of eleven
+anonymous n-well nets, one per stage, with no DC path to anything: the
+layout draws no well ties (layout/README.md, "Both bulk terminals are
+approximated"). The schematic side ties PMOS bulk to `vddr`. `klt`'s own
+documentation calls a re-simulation of such a netlist physically wrong, not
+merely imprecise, and neither `klt pex` nor `klt signoff` grades on it. So
+this `met` says that a full two-sided comparison over the real ring1 layout
+ran at all 27 corners; it does **not** say the extracted-side numbers are
+what silicon with this layout would do. The committed `layout/pex/`
+netlists behind the Markdown records have the same floating wells.
+[#339](https://github.com/2AMLogic/gf180-trng/issues/339) tracks measuring
+how much that matters.
+
+Cold start: see `sim/tb/ro-ring11-pex/README.md`, then
+`python3 signoff/publish_item7_analog.py && python3 signoff/check.py --write`.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
@@ -207,7 +294,7 @@ requires of the claimant rather than of the tool.
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 0`). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies power connectivity or body ties: `power_connectivity.status` is `"unchecked"` on both, and `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
 | 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
-| 7 Post-layout | `unmet` / `no_evidence` | **`met`** | **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. **Analog** is uncited. Real post-layout work exists on both sides — device- *and* routing-level parasitic re-simulation (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232) and an SDF-annotated post-route gate-level functional run (`sim/tb/trng-top-post-route/`, #147). Item 7 accepts only a `klt pex` envelope (analog) or `klt pex`/an SDF-annotated `klt functional-verification` envelope (digital), and for the analog side no such envelope exists: `layout/pex/build.py` drives `klt extract --parasitics` and composes the result itself rather than emitting a `klt pex` report. |
+| 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
@@ -638,10 +725,11 @@ names this as the safest default.
   `klt pex` citation whose `body_bias.status` is `"unbiased"` still renders
   `met`, and a re-simulation of an unbiased extracted netlist is physically
   wrong rather than merely imprecise. **Not applicable** to the digital
-  citation (a `klt functional-verification` response, no extracted netlist);
-  the analog side is `unmet` with no citation. Note that this repo's own extraction reports
-  already carry an `unbiased_pmos_body_nets` field, so a future item-7 claim
-  has to read it and state what it says.
+  citation (a `klt functional-verification` response, no extracted netlist).
+  **The analog citation's reads `"unbiased"`**: `unbiased_device_count: 23`,
+  eleven anonymous well nets, every PMOS body in ring1. Its `met` is a
+  completed two-sided comparison on a netlist whose wells float, not a
+  physically valid post-layout result. See "Item 7 analog".
 - **Item 4's `power_connectivity` and `body_verification`** —
   `power_connectivity` is `"unchecked"` on both citations;
   `body_verification` is `"unverified"` on the analog one (104 of 104 MOS
@@ -744,8 +832,13 @@ In dependency order, not effort order:
    list as work this block can do today: `klt sim` is uncitable for a spec
    needing caller-side post-processing until klayout-tools#2533 resolves --
    see item 5's row above.
-4. **A `klt pex` report** over the post-layout extraction that already
-   exists (item 7). Item 6's `klt yield` report does not appear here as
+4. ~~**A `klt pex` report** over the post-layout extraction that already
+   exists (item 7).~~ **Done for ring1 only** —
+   [#326](https://github.com/2AMLogic/gf180-trng/issues/326) cites a native
+   `klt pex` report as `7.analog` and moved the verdict of record from 7 to
+   8 of 22. Its `body_bias.status` is `"unbiased"`, so the number that would
+   actually move the needle is a re-run on a layout with drawn well ties
+   (see "Item 7 analog"). Item 6's `klt yield` report does not appear here as
    something this block can produce: it requires the `klt_yield_native` Rust
    extension, which is not reachable from any published klayout-tools
    release (klayout-tools#2531, and #2474 for the upstream item-6 text) —

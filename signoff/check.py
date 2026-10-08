@@ -35,7 +35,10 @@ separable conditions, in order, so a red build says which one:
      an older klt 0.4.0 envelope leaves `provenance.input` null and is still
      checkable here through `environment.layout_sha256` alone;
    - a `generic` envelope names its backing record in `source` and pins it in
-     `provenance.input.content_hash`.
+     `provenance.input.content_hash`;
+   - a `pex` envelope names its stream as a `{path, scope}` object in
+     `layout` and pins it in `provenance.input.content_hash`. Its testbench
+     side is not fingerprinted by the envelope at all; see ITEM7A_* below.
 
    Edit `layout/blocks/combiner_sampler/combiner_sampler.gds` or
    `sim/characterization-digital-sta-area-power.md` without re-running the
@@ -211,6 +214,120 @@ def verify_item7_publication(manifest: dict) -> list[str]:
     return item7_problems(json.loads(pub_path.read_text()), json.loads(env_path.read_text()))
 
 
+#: T1 item 7 (analog): the native `klt pex` response over ring1's layout
+#: (layout/rings/ro_ring11/ro_ring11.gds), published by
+#: signoff/publish_item7_analog.py. Unlike the digital citation this envelope
+#: does carry provenance.input.content_hash (the GDS), so the manifest pins it.
+#: That pin covers the layout only: the envelope fingerprints neither its
+#: testbench request, its testbench body nor its schematic DUT. The sidecar
+#: below pins those, plus the extracted netlist the run wrote, and
+#: verify_item7_analog_publication() re-checks them on every run.
+ITEM7A_DIR = "signoff/evidence/post-layout"
+ITEM7A_ENVELOPE = f"{ITEM7A_DIR}/ro_ring11.pex.json"
+ITEM7A_PUBLICATION = f"{ITEM7A_DIR}/publication.json"
+ITEM7A_NETLIST = f"{ITEM7A_DIR}/ro_ring11.extracted.spice"
+ITEM7A_TB_DIR = "sim/tb/ro-ring11-pex"
+ITEM7A_INPUTS = (
+    f"{ITEM7A_TB_DIR}/request.json",
+    f"{ITEM7A_TB_DIR}/tb_ro_ring11_pex.sp",
+    f"{ITEM7A_TB_DIR}/ro_ring11_schematic.spice",
+)
+#: {tt, ff, ss} x {2.97, 3.30, 3.63} V x {-40, 27, 125} C -- DR-0006's grid.
+ITEM7A_CORNERS = 27
+
+
+def _ring_port_check(netlist: Path) -> str | None:
+    """Re-derive the extracted netlist's ring positions with the producer's
+    own build_dut.py and require they match the schematic DUT's header."""
+    import importlib.util
+
+    path = REPO_ROOT / ITEM7A_TB_DIR / "build_dut.py"
+    spec = importlib.util.spec_from_file_location("ro_ring11_pex_build_dut", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    try:
+        got = mod.extraction_port_map(netlist.read_text())
+        want = mod.dut_header(mod.DUT.read_text())
+    except mod.BuildError as exc:
+        return str(exc)
+    if got != want:
+        return f"extracted ring positions {got} != schematic DUT header {want}"
+    return None
+
+
+def item7_analog_problems(pub: dict, envelope: dict) -> list[str]:
+    """Every reason the 7.analog publication must not be treated as current."""
+    out: list[str] = []
+    if envelope.get("status") != "pass":
+        out.append(f"klt pex status is {envelope.get('status')!r}, not 'pass'")
+    # The 0.6.0 release predates `measurement` (klayout-tools#2478); absent
+    # means testbench mode. A caller-measured run is not what this cites.
+    if (envelope.get("measurement") or {}).get("mode", "testbench") != "testbench":
+        out.append("klt pex measurement.mode is not 'testbench'")
+    for key in ("pin_count_mismatch", "flat_dut_mismatch"):
+        if envelope.get(key) is not None:
+            out.append(f"klt pex reports {key}")
+    if envelope.get("corner_count") != ITEM7A_CORNERS:
+        out.append(f"corner_count is {envelope.get('corner_count')}, not {ITEM7A_CORNERS}")
+    names = [n for tb in envelope.get("testbenches") or [] for n in tb.get("measurement_names") or []]
+    delta = envelope.get("delta") or []
+    if not names or len(delta) != ITEM7A_CORNERS * len(names):
+        out.append(f"delta has {len(delta)} rows, expected {ITEM7A_CORNERS} x {len(names)}")
+    for row in delta:
+        if row.get("status") != "pass" or row.get("schematic_value") is None or row.get("extracted_value") is None:
+            out.append(f"delta row {row.get('corner_id')}/{row.get('spec_row')} is not a two-sided pass")
+    bias = envelope.get("body_bias")
+    if not isinstance(bias, dict) or "status" not in bias:
+        out.append("envelope carries no body_bias block")
+    elif pub.get("body_bias_status") != bias["status"]:
+        out.append(
+            f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
+            f"the envelope says {bias['status']!r}"
+        )
+    netlist = REPO_ROOT / ITEM7A_NETLIST
+    if not netlist.is_file():
+        out.append(f"{ITEM7A_NETLIST} is missing")
+    else:
+        recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
+        if sha256_file(netlist) != f"sha256:{recorded}":
+            out.append(f"{ITEM7A_NETLIST} is not the netlist this klt pex run extracted")
+        problem = _ring_port_check(netlist)
+        if problem:
+            out.append(f"ring port positions: {problem}")
+    pinned = pub.get("inputs_sha256") or {}
+    for rel in ITEM7A_INPUTS:
+        path = REPO_ROOT / rel
+        if rel not in pinned or not path.is_file():
+            out.append(f"input {rel}: not pinned or missing")
+        elif sha256_file(path) != pinned[rel]:
+            out.append(
+                f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
+                f"{sha256_file(path)} today; re-run signoff/publish_item7_analog.py"
+            )
+    env_path = REPO_ROOT / ITEM7A_ENVELOPE
+    if env_path.is_file() and (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
+        out.append("published envelope differs from the sha256 in publication.json")
+    return out
+
+
+def verify_item7_analog_publication(manifest: dict) -> list[str]:
+    """Freshness gate for the `7.analog` citation (stdlib only, always runs)."""
+    entry = (manifest.get("evidence") or {}).get("7.analog")
+    if entry is None:
+        return []
+    if not isinstance(entry, dict) or entry.get("file") != ITEM7A_ENVELOPE:
+        return [f"manifest 7.analog must cite {ITEM7A_ENVELOPE}"]
+    if not entry.get("content_hash"):
+        return ["manifest 7.analog must pin the envelope's provenance.input.content_hash"]
+    pub_path = REPO_ROOT / ITEM7A_PUBLICATION
+    env_path = REPO_ROOT / ITEM7A_ENVELOPE
+    if not pub_path.is_file() or not env_path.is_file():
+        return [f"{ITEM7A_ENVELOPE} / {ITEM7A_PUBLICATION} not both present"]
+    return item7_analog_problems(
+        json.loads(pub_path.read_text()), json.loads(env_path.read_text())
+    )
+
+
 def sha256_file(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -250,6 +367,11 @@ def check_envelope_against_its_input(
 
     for name_field, digest_field in kind_hints:
         named = envelope.get(name_field)
+        if name_field == "layout" and isinstance(named, dict):
+            # `klt pex` (schema 2) writes `layout` as a `{path, scope}` object
+            # and pins the stream it extracted in provenance.input.content_hash.
+            named = named.get("path") if named.get("scope") == "repo" else None
+            digest_field = "provenance.input.content_hash"
         if not isinstance(named, str) or not named:
             continue
 
@@ -346,6 +468,10 @@ def freshness_gate(manifest: dict) -> int:
     failures += [f"7.digital: {p}" for p in item7]
     if (manifest.get("evidence") or {}).get("7.digital") and not item7:
         verified += 1
+
+    # Step 1c: the 7.analog citation's testbench-side pins (see ITEM7A_*). Its
+    # layout pin is already covered by steps 1 and 2 above.
+    failures += [f"7.analog: {p}" for p in verify_item7_analog_publication(manifest)]
 
     if failures:
         print("signoff/check.py: freshness verification FAILED", file=sys.stderr)

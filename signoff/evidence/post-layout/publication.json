@@ -1,0 +1,16 @@
+{
+  "schema": "gf180-trng/item7-analog-publication/1",
+  "producer": "klt pex layout/rings/ro_ring11/ro_ring11.gds sim/tb/ro-ring11-pex/request.json --deck gf180mcu --pdk gf180mcuD --top ro_ring11 -o signoff/evidence/post-layout/ro_ring11.extracted.spice --outdir sim/.work/ro-ring11-pex --format json",
+  "producer_build": "0.6.0",
+  "layout_content_hash": "sha256:f204887a0a8bd41ee571acde05be227e6588940176ab41e303ca28b8c5daccbb",
+  "inputs_sha256": {
+    "sim/tb/ro-ring11-pex/request.json": "sha256:b87d0357ef7680061725a62704568ba87c3c01c4fb9f8035b0c1c2e477c8ae2c",
+    "sim/tb/ro-ring11-pex/tb_ro_ring11_pex.sp": "sha256:b17054c889c886fbe821627e7d41ae82d2a06c87a1e5c0b6ac279e3354ea052a",
+    "sim/tb/ro-ring11-pex/ro_ring11_schematic.spice": "sha256:3ac8760678e0576b50756888464794a7aa8eca629abfdafecf8d07d0b241e5ca"
+  },
+  "body_bias_status": "unbiased",
+  "envelope": {
+    "file": "signoff/evidence/post-layout/ro_ring11.pex.json",
+    "sha256": "sha256:64142305833931f0ae97cc25dc1b2132bcdd2331d28a6194c8cfa7f2134f45ec"
+  }
+}
