@@ -215,6 +215,10 @@ jobs:
         python-version: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the evidence-history step below needs the PR base
+          # (or pushed-from) commit and a merge-base with HEAD.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -318,6 +322,30 @@ jobs:
       # redundant belt-and-suspenders early check.
       - name: Record checksum verification (sim/records/ raw.files)
         run: python3 sim/tools/verify_record_checksums.py --quiet
+
+      # Append-only enforcement (the checksum step above only proves the
+      # CURRENT tree is self-consistent; a rewritten record with matching
+      # hashes, or a deleted record + raw directory, would still pass it).
+      # Compares sim/records/ at HEAD with the base: the PR base SHA for
+      # pull_request, the pre-push SHA for push. Any other event, or a base
+      # that cannot be loaded (all-zero SHA on a first push, missing history),
+      # is a failure rather than an empty diff -- see sim/README.md.
+      - name: Evidence history is append-only (sim/records/ vs base)
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          case "$EVENT_NAME" in
+            pull_request) base="$PR_BASE_SHA" ;;
+            push) base="$PUSH_BEFORE_SHA" ;;
+            *) base="origin/main" ;;
+          esac
+          if [ -z "$base" ]; then
+            echo "ERROR: no base revision for event $EVENT_NAME" >&2
+            exit 2
+          fi
+          python3 sim/tools/verify_evidence_history.py --base "$base"
 
       # The digital half's equivalent of design/netlist.py --check: the
       # interface block's Verilog header and pinout document are generated
