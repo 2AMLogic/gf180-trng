@@ -346,13 +346,32 @@ def _read_all(records_dir: Path) -> list[Record]:
     return [r for r in records if r.valid]
 
 
-def load_historical(records_dir: Path = RECORDS) -> list[Record]:
+def load_historical(records_dir: Path | None = None) -> list[Record]:
     """Record-only loading: the newest valid record per corner, whatever DUT
     revision each one describes. Use for historical analysis ONLY -- the
     result may mix routed-DUT revisions, so it must never back a claim about
-    the current layout. ``load`` is the current-layout path."""
-    by_corner = _latest_per_corner(_read_all(records_dir))
+    the current layout. ``load`` is the current-layout path.
+
+    ``records_dir`` defaults to ``RECORDS``, resolved at call time."""
+    by_corner = _latest_per_corner(
+        _read_all(RECORDS if records_dir is None else records_dir))
     return [by_corner[k] for k in sorted(by_corner)]
+
+
+def dut_revisions(records: list[Record]) -> dict[str, list[str]]:
+    """Each distinct DUT identity (``netlist.sha``) among ``records``, mapped
+    to the corners it covers. A record with no identity is listed under
+    ``"unknown"``. Ordered by first appearance in ``records``."""
+    out: dict[str, list[str]] = {}
+    for r in records:
+        out.setdefault(r.fields["netlist_sha"] or "unknown", []).append(r.corner)
+    return out
+
+
+#: First line of every ``--historical`` text report.
+HISTORICAL_BANNER = ("HISTORICAL (record-only, not a current-layout claim): "
+                     "newest valid record per corner, whatever routed-DUT "
+                     "revision it describes")
 
 
 def dut_provenance_failures(
@@ -816,16 +835,34 @@ def _a(x: float) -> str:
     return f"{x:.3g} A"
 
 
-def report(records: list[Record], with_estimate: bool) -> None:
+def report(records: list[Record], with_estimate: bool,
+           historical: bool = False) -> None:
     t = timing(records)
     a = area(records)
     p = power(records)
 
-    print(f"digital section, {len(records)} gate-level corners "
-          f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
-    print(f"DUT: layout/digital/trng_top.def @ {records[0].fields['netlist_sha'][:12]} "
-          f"-- {a['measured_instances']} placed instances, {a['measured_library']}")
-    print()
+    if historical:
+        # A historical family may mix routed-DUT revisions, so no single SHA
+        # can stand for it: say so up front and list every revision present.
+        revisions = dut_revisions(records)
+        print(HISTORICAL_BANNER)
+        print(f"digital section, {len(records)} gate-level corners "
+              f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
+        print(f"DUT: layout/digital/trng_top.def, {len(revisions)} revision(s) "
+              f"across these records -- {a['measured_instances']} placed "
+              f"instances, {a['measured_library']}")
+        for sha, corners in revisions.items():
+            print(f"  @ {sha[:12]}  {len(corners):2d} corner(s): "
+                  + ", ".join(corners))
+        print()
+    else:
+        print(f"digital section, {len(records)} gate-level corners "
+              f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
+        print(f"DUT: layout/digital/trng_top.def @ "
+              f"{records[0].fields['netlist_sha'][:12]} "
+              f"-- {a['measured_instances']} placed instances, "
+              f"{a['measured_library']}")
+        print()
 
     print(f"== Timing (constraint {t['constraint_ns']:g} ns = "
           f"{t['constraint_mhz']:g} MHz, propagated clock, extracted parasitics) ==")
@@ -1096,7 +1133,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.json:
-        payload = {
+        payload = {}
+        if args.historical:
+            # Present only in --historical mode, so the current-layout JSON
+            # stays byte-identical.
+            payload["historical"] = True
+            payload["dut_revisions"] = dut_revisions(records)
+        payload |= {
             "timing": timing(records),
             "max_transition": max_transition(records),
             "area": area(records),
@@ -1114,7 +1157,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not args.check:
-        report(records, with_estimate=args.estimate)
+        report(records, with_estimate=args.estimate,
+               historical=args.historical)
         return 0
 
     fails = check(records)

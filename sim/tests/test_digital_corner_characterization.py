@@ -337,6 +337,76 @@ class CurrentDutProvenanceTests(unittest.TestCase):
         self.assertTrue(any("describes DUT" in f for f in fails))
         self.assertTrue(any("0 of 15" in f for f in fails))
 
+    def _main(self, argv: list[str]) -> tuple[int, str]:
+        import contextlib
+        import io
+        from unittest import mock
+        out = io.StringIO()
+        with mock.patch.object(dcc, "RECORDS", self.records), \
+                contextlib.redirect_stdout(out):
+            rc = dcc.main(argv)
+        return rc, out.getvalue()
+
+    def _mixed_family(self) -> None:
+        self._family(self.OLD)
+        self._write("tt_025C_3v30/rc-nom", self.OTHER)
+
+    def test_historical_text_report_is_bannered_and_lists_every_revision(self):
+        self._mixed_family()
+        rc, out = self._main(["--historical"])
+        self.assertEqual(rc, 0)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], dcc.HISTORICAL_BANNER)
+        self.assertIn("not a current-layout claim", lines[0])
+        self.assertIn("2 revision(s)", out)
+        # Each revision appears with the corners it covers; the single-SHA
+        # header of the current-layout report must not.
+        old_line = next(l for l in lines if l.strip().startswith(f"@ {self.OLD[:12]}"))
+        new_line = next(l for l in lines if l.strip().startswith(f"@ {self.OTHER[:12]}"))
+        self.assertIn("14 corner(s)", old_line)
+        self.assertNotIn("tt_025C_3v30/rc-nom", old_line)
+        self.assertIn("1 corner(s): tt_025C_3v30/rc-nom", new_line)
+        self.assertFalse(any(l.startswith("DUT: layout/digital/trng_top.def @ ")
+                             for l in lines))
+
+    def test_historical_json_is_marked_and_lists_every_revision(self):
+        import json
+        self._mixed_family()
+        rc, out = self._main(["--historical", "--json"])
+        self.assertEqual(rc, 0)
+        payload = json.loads(out)
+        self.assertIs(payload["historical"], True)
+        revs = payload["dut_revisions"]
+        self.assertEqual(set(revs), {self.OLD, self.OTHER})
+        self.assertEqual(revs[self.OTHER], ["tt_025C_3v30/rc-nom"])
+        self.assertEqual(len(revs[self.OLD]), 14)
+
+    def test_check_itself_rejects_a_family_for_another_dut(self):
+        # check() must apply the provenance guard on its own, not rely on
+        # load() having filtered first. The committed family passes check()
+        # as-is; pretend the committed DEF changed and it must not.
+        from unittest import mock
+        records = dcc.load()
+        self.assertFalse(any("describes DUT" in f for f in dcc.check(records)))
+        with mock.patch.object(dcc, "blob_sha", return_value="f" * 40):
+            fails = dcc.check(records)
+        stale = [f for f in fails if "describes DUT" in f]
+        self.assertEqual(len(stale), len(records))
+        self.assertTrue(any("0 of 15" in f for f in fails))
+
+
+class CurrentReportUnchangedTests(unittest.TestCase):
+    def test_current_layout_output_carries_no_historical_marking(self):
+        import contextlib
+        import io
+        import json
+        for argv in ([], ["--json"]):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(dcc.main(argv), 0)
+            self.assertNotIn("HISTORICAL", out.getvalue())
+        self.assertNotIn("historical", json.loads(out.getvalue()))
+
 
 class PowerRollupCannotBypassTests(unittest.TestCase):
     def test_rollup_digital_term_refuses_a_stale_dut(self):

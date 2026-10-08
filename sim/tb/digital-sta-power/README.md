@@ -131,9 +131,14 @@ The aggregation (and the whole-block power rollup's measured digital term)
 accepts only a complete fifteen-corner family whose `netlist.sha` equals the
 git blob SHA of the committed `layout/digital/trng_top.def`; a partial re-run
 of a new DEF fails with the missing corners rather than borrowing older
-records (#341). Records of earlier DEF revisions stay on disk and can be read
+records (#341). A valid record that carries no `netlist.sha` at all is
+rejected by name, whatever DEF it was run against, because nothing shows it
+is older. Records of earlier DEF revisions stay on disk and can be read
 with `digital_corner_characterization.py --historical` (record-only, never a
-current-layout claim, refused with `--check`).
+current-layout claim, refused with `--check`). Its text report opens with a
+`HISTORICAL` banner and lists each `netlist.sha` present with the corners it
+covers; its `--json` output carries `"historical": true` and the same
+`dut_revisions` map.
 
 Each record's raw output is the generated Tcl and the full OpenROAD log for
 both sessions. The SPEF (3.3 MB per corner) is **not** committed; its sha256,
