@@ -6,6 +6,9 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-08
 
+- **PR #334**: Enforce append-only simulation evidence against the PR base in CI
+- **PR #333**: Consolidate duplicated Variant scaffold across sim/tools --check scripts
+- **PR #332**: Cite 11.analog supply-ERC reports in the T1 manifest (#327)
 - **PR #329**: Record why the digital STA sweep is not cited as a klt sta envelope (#322)
 - **PR #324**: Cite 11.digital supply-ERC report in the T1 manifest (#321)
 - **PR #323**: Guard the corpus totals quoted in README.md against the tree
@@ -13,6 +16,9 @@ not independent verification of the claims in issue or PR titles.
 - **PR #317**: feat(signoff): publish post-route functional run as T1 item 7 digital citation (#314)
 - **PR #316**: floorplan: derive the composed interface for klt 0.6.0 and compare it by name (#309)
 - **PR #311**: Ratify DR-0026 amended to klayout-tools 0.6.0; re-produce layout/reports/ and pin 4.analog
+- **Issue #330** (closed): Consolidate duplicated Variant scaffold across sim/tools --check scripts
+- **Issue #328** (closed): Enforce append-only simulation evidence against the PR base in CI
+- **Issue #327** (closed): T1 item 11 (analog): write and run a klt erc supply spec for the analog regions and cite it
 - **Issue #322** (closed): T1 item 5 (digital): emit the fifteen-corner STA sweep as a graded klt envelope and cite it
 - **Issue #321** (closed): T1 item 11: cite the committed digital supply-ERC report in signoff/block-manifest.json so the grader sees it
 - **Issue #320** (closed): Guard the corpus counts quoted in README.md (decision records, characterization summaries, evidence records) against the tree
