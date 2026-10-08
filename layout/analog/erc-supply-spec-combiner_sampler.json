@@ -1,0 +1,64 @@
+{
+  "stackup": [
+    {
+      "name": "poly2",
+      "layer": "30/0",
+      "role": "gate",
+      "active_layer": "22/0"
+    },
+    {
+      "name": "Metal1",
+      "layer": "34/0",
+      "label_layer": "34/10"
+    },
+    {
+      "name": "Metal2",
+      "layer": "36/0",
+      "label_layer": "36/10"
+    },
+    {
+      "name": "Metal3",
+      "layer": "42/0"
+    }
+  ],
+  "vias": [
+    {
+      "name": "Contact",
+      "layer": "33/0",
+      "between": [
+        "poly2",
+        "Metal1"
+      ]
+    },
+    {
+      "name": "Via1",
+      "layer": "35/0",
+      "between": [
+        "Metal1",
+        "Metal2"
+      ]
+    },
+    {
+      "name": "Via2",
+      "layer": "38/0",
+      "between": [
+        "Metal2",
+        "Metal3"
+      ]
+    }
+  ],
+  "nets": [
+    {
+      "name": "vdd",
+      "kind": "supply"
+    },
+    {
+      "name": "vss",
+      "kind": "supply"
+    }
+  ],
+  "ties_disclosure": {
+    "kind": "unexpressible",
+    "reason": "This stream draws no Nplus/Pplus (31/0, 32/0) or LVPWELL (204/0) layer, so a well tap cannot be told from source/drain diffusion by layer, and the committed reference netlist (layout/blocks/combiner_sampler/combiner_sampler.spice) gives every PMOS an anonymous floating well (NWELL_FLOAT_*) and every NMOS the deck's vsubs global, so no drawn well tie exists to check. No ties[] is declared and erc.missing_tie is not computed: well-tie coverage and the vsubs body connection are unverified for this region, not passed."
+  }
+}
