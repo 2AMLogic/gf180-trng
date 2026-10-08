@@ -133,6 +133,7 @@ ITEM7_RAW_FILES = (
     "rtl_klt_response.json",
     "rtl_request.json",
     "rtl_transcript_digest.json",
+    "sources.json",
     "verdict.json",
 )
 ITEM7_LIMITS = (
@@ -143,8 +144,43 @@ ITEM7_LIMITS = (
     "qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/"
     "toggle) run at library default delay. Functional equivalence with the "
     "applied delays is not timing signoff; see "
-    "sim/tb/trng-top-post-route/README.md."
+    "sim/tb/trng-top-post-route/README.md. Local source files the run "
+    "consumed (RTL, included headers, behavioural model, testbench and "
+    "stimulus, with their local imports) are pinned by sha256; the cell "
+    "library, PDK, simulator and klt versions are not source-pinned."
 )
+
+
+def _item7_source_problems(pub: dict) -> list[str]:
+    """Freshness of the RTL/testbench/model sources the run consumed (#350)."""
+    pinned = pub.get("sources")
+    if not isinstance(pinned, dict) or not pinned:
+        return [
+            "sources: no source inventory pinned (a run that predates source "
+            "pinning cannot be published; re-run run_demo.py)"
+        ]
+    out: list[str] = []
+    for rel, sha in sorted(pinned.items()):
+        path = (REPO_ROOT / rel).resolve()
+        if Path(rel).is_absolute() or REPO_ROOT.resolve() not in path.parents:
+            out.append(f"source {rel}: not a repository-relative path")
+        elif not path.is_file():
+            out.append(f"source {rel}: missing")
+        elif sha256_file(path) != sha:
+            out.append(
+                f"source {rel}: STALE -- the run used {sha}, but it hashes to "
+                f"{sha256_file(path)} today; re-run sim/tb/trng-top-post-route/"
+                f"run_demo.py and re-publish"
+            )
+    sj = REPO_ROOT / str(pub.get("raw_dir", "")) / "sources.json"
+    if sj.is_file():
+        try:
+            recorded = json.loads(sj.read_text()).get("files")
+        except ValueError:
+            recorded = None
+        if recorded != pinned:
+            out.append("sources: publication differs from the raw run's sources.json")
+    return out
 
 
 def item7_problems(pub: dict, envelope: dict) -> list[str]:
@@ -170,6 +206,8 @@ def item7_problems(pub: dict, envelope: dict) -> list[str]:
                 f"{sha256_file(path)} today; re-run sim/tb/trng-top-post-route/"
                 f"run_demo.py and re-publish"
             )
+    # Source inputs of both legs, as hashed by the run itself (sources.json).
+    out += _item7_source_problems(pub)
     # Raw evidence: the independent comparison and annotation controls.
     raw = REPO_ROOT / str(pub.get("raw_dir", ""))
     pinned_raw = pub.get("raw_sha256") or {}

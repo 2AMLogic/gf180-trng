@@ -11,6 +11,14 @@ python3 sim/tb/trng-top-post-route/run_demo.py --check-env   # what this needs, 
 python3 sim/tb/trng-top-post-route/run_demo.py --no-write    # run both legs, print, mint nothing
 python3 sim/tb/trng-top-post-route/run_demo.py               # run both legs and mint a record
 ```
+Each minted run also writes `sources.json` to its raw directory: the sha256 of
+every local source it consumed (RTL, headers reached by `include`, the
+behavioural model, the testbench and stimulus, and their local imports),
+derived by `input_inventory.py` rather than listed by hand. `signoff/check.py`
+re-hashes them, so changing any of those makes the published item-7 digital
+citation stale until both legs are re-run and re-published. Cell library, PDK,
+simulator and klt versions are not source-pinned.
+
 
 Like every other testbench under `sim/tb/`, this one has **no `tb.json`**: it
 is not an ngspice testbench, so `sim/run_corners.py` cannot discover it and
