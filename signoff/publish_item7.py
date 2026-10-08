@@ -107,7 +107,15 @@ def main() -> int:
             "file": check.ITEM7_ENVELOPE,
             "sha256": check.sha256_file(envelope_src),
         }
-        failures += check.item7_problems(pub, json.loads(envelope_src.read_text()))
+        # The envelope currently on disk is the one this publication is about
+        # to replace, so "differs from the sha256 in publication.json" is
+        # expected here (pub is the new publication) and is not a refusal;
+        # check.py re-verifies it after the copy below.
+        failures += [
+            p
+            for p in check.item7_problems(pub, json.loads(envelope_src.read_text()))
+            if p != "published envelope differs from the sha256 in publication.json"
+        ]
     if failures:
         print("publish_item7: refusing to publish -- nothing written", file=sys.stderr)
         for f in failures:
