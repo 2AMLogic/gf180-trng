@@ -9,7 +9,7 @@
   "tier": null,
   "t1_item_count": 22,
   "build_t1_item_count": 22,
-  "t1_met_count": 6,
+  "t1_met_count": 7,
   "source_doc": "docs/design-evidence-tiers.md",
   "source_doc_content_hash": "sha256:63eeec72e3d849761cf32dcf091af5728b069b1515e32bb3138e9454303671e5",
   "build": {
@@ -337,10 +337,18 @@
       "partition_boundary": "Regions ring1 (cell ro_ring11), ring2 (cell ro_ring11_ring2) and combiner_sampler (cell combiner_sampler, containing both DR-0018 ro_buf instances xb1/xb2). Sources: hand-captured xschem schematics under design/xschem/, netlisted by design/netlist.py. Layout: hand-drawn GDS under layout/cells/, layout/rings/, layout/blocks/. Supplies vddr1 (ring1), vddr2 (ring2) and vdd (combiner_sampler) are analog-side star branches that never reach the digital region; vsubs is these three regions' guard-ring substrate tap. Pins this side exposes at the boundary: combiner_sampler's clk, rst_n, raw_bit, raw_valid, ring_bit1, ring_bit2, plus the shared vss return.",
       "text": "one aggregated, current artifact summarizing per-spec-row performance across conditions, with the evidence record each verdict rests on (#309 tracks the aggregation tool). For a digital or mixed-signal digital partition this includes Fmax, area, and power across the corner set, not just functional pass/fail. Unlike every other T1 item, this one names no specific `klt` verb \u2014 there is no dedicated aggregation command, and its evidence may be a hand-assembled record (e.g. a committed Markdown characterization report) rather than one `klt` verb's own JSON output. `klt signoff --manifest` grades it via an opt-in **generic evidence envelope** (`\"kind\": \"generic\"`, issue #1152) \u2014 a minimal, hand-rolled JSON wrapper asserting `status: \"pass\"|\"fail\"` for whatever record backs it \u2014 and, unlike every other item, item 8 is the *only* T1 item this generic kind may satisfy: see `docs/cli/signoff.md`'s \"Generic evidence (opt-in, non-`klt`-native)\" section for the envelope shape and why items 3\u20137 keep rejecting it.",
       "notes": [],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/evidence/characterization-analog.generic.json",
+        "command": null,
+        "kind": "generic",
+        "check_status": "pass",
+        "content_hash": "sha256:8b4544104da3c7fde82b54b5a322d4a61f945cb1ca8d9a8cccaa70379c5b20f7",
+        "input_verified": null,
+        "exit_status": 0
+      }
     },
     {
       "tier": "T1",

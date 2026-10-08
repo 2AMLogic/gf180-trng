@@ -15,15 +15,18 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-**Today: `tier: null`, T1 6 of 22 items met.** A `mixed-signal` block is
+**Today: `tier: null`, T1 7 of 22 items met.** A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The six met are item 3 (DRC) and item 4 (LVS) on **both**
-partitions, and item 7 (post-layout verification) and item 8
-(characterization report) on the digital partition. Item 7 digital is
+22 rows. The seven met are item 3 (DRC), item 4 (LVS) and item 8
+(characterization report) on **both** partitions, and item 7 (post-layout
+verification) on the digital partition. Item 7 digital is
 [#314](https://github.com/2AMLogic/gf180-trng/issues/314): see "Item 7 digital"
-below for what that citation does and does not mean.
+below for what that citation does and does not mean. Item 8 analog is
+[#313](https://github.com/2AMLogic/gf180-trng/issues/313): see "Item 8 is
+`met` on both partitions" below. An item-8 `met` means a current aggregate
+exists, not that the rows in it pass.
 That is the honest state of the block; the rest of this file is why each of
-the other sixteen reads the way it does.
+the other fifteen reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -53,6 +56,7 @@ would move the needle" at the end: almost every gap below is an evidence-
 signoff/
   block-manifest.json                              the manifest: block, kind, per-item evidence
   evidence/characterization-digital.generic.json   item 8 (digital)'s generic evidence envelope
+  evidence/characterization-analog.generic.json    item 8 (analog)'s generic evidence envelope
   records/t1-tier-report.json                      the verdict of record (generated)
   evidence/post-route/gate_klt_response.json       item 7 (digital)'s native klt functional-verification response
   evidence/post-route/publication.json            its freshness pins (netlist, SDF, raw evidence) and coverage limits
@@ -128,15 +132,16 @@ not inferred from the date on it.
    klayout-tools#2196 the grader also re-hashes the artifact itself where it
    can (`citation.input_verified`), but only for a citation that both pins a
    hash and names a resolvable path: in the committed record that is `true`
-   for four of the five citations — `4.analog` joined them in
+   for four of the six pinned citations — `4.analog` joined them in
    [#281](https://github.com/2AMLogic/gf180-trng/issues/281) (see "Item 4 is
-   `met` twice" below) — and `null` only for `8.digital`, a `generic`
-   envelope whose backing record the grader does not re-hash. `check.py`
-   covers the whole set regardless of envelope kind — it
-   verified 6 of 6 on the run (the sixth is the item-7 publication, checked by its own pins, see "Item 7 digital") that produced the committed record. Edit
+   `met` twice" below) — and `null` for `8.digital` and `8.analog`, the two
+   `generic` envelopes, whose backing documents the grader does not re-hash.
+   `check.py` covers the whole set regardless of envelope kind — it
+   verified 7 of 7 on the run (the seventh is the item-7 publication, checked by its own pins, see "Item 7 digital") that produced the committed record. Edit
    `layout/blocks/combiner_sampler/combiner_sampler.gds`,
-   `layout/digital/trng_top.gds`, `layout/digital/trng_top.extracted.spice`
-   or `sim/characterization-digital-sta-area-power.md` without re-running the
+   `layout/digital/trng_top.gds`, `layout/digital/trng_top.extracted.spice`,
+   `sim/characterization-digital-sta-area-power.md` or
+   `sim/characterization-analog-summary.md` without re-running the
    evidence behind them and this fails.
 2. **The manifest and the envelope disagree about the pin**, so a
    half-finished re-pin fails loudly instead of silently rendering the item
@@ -203,7 +208,7 @@ requires of the claimant rather than of the tool.
 | 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, which is ordinary unperformed work. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | `unmet` / `no_evidence` | **`met`** | **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. **Analog** is uncited. Real post-layout work exists on both sides — device- *and* routing-level parasitic re-simulation (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232) and an SDF-annotated post-route gate-level functional run (`sim/tb/trng-top-post-route/`, #147). Item 7 accepts only a `klt pex` envelope (analog) or `klt pex`/an SDF-annotated `klt functional-verification` envelope (digital), and for the analog side no such envelope exists: `layout/pex/build.py` drives `klt extract --parasitics` and composes the result itself rather than emitting a `klt pex` report. |
-| 8 Characterization | `unmet` / `no_evidence` | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog is uncited — see below. |
+| 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
 | 11 Power delivery | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. The row still reads `unmet`/`no_evidence` because `signoff/block-manifest.json` cites no `11.analog`/`11.digital` evidence yet, and — independent of that — the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above). The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
@@ -465,9 +470,9 @@ answers "does the routed layout's cell-to-cell connectivity match what P&R
 actually built?" — a real and necessary question — and not "does the layout
 match an independently-authored golden netlist?".
 
-### Item 8 is `met` for the digital partition only
+### Item 8 is `met` on both partitions, and neither means the rows pass
 
-`sim/characterization-digital-sta-area-power.md` is the one aggregated,
+**Digital.** `sim/characterization-digital-sta-area-power.md` is the one aggregated,
 current artifact item 8 asks a digital partition for: Fmax, placed area and
 power across all fifteen corners, each number naming the `sim/records/`
 evidence record it rests on, with §0/§0a/§0b carrying the `FIFO_DEPTH = 2`
@@ -485,19 +490,46 @@ above the library-based estimate at the same corner and rate. Both are item
 paragraph used to carry is closed: #255's first depth-2 build regressed the
 library `max_transition` check to 11 of 15 corners, and
 [#264](https://github.com/2AMLogic/gf180-trng/issues/264) re-tuned the
-place-and-route constraint and rebuilt. The current DEF violates at 0 of 15.) One met row out of 22 is not a
-claim about this block's performance.
+place-and-route constraint and rebuilt. The current DEF violates at 0 of 15.)
 
-**Item 8 analog is uncited on purpose.** The analog partition has fourteen
-per-topic characterization documents under `sim/` and a cross-cutting spec
-table in the top-level README, but no single aggregated per-spec-row
-characterization artifact of its own. Item 8 asks for *one aggregated,
-current artifact*; fourteen topic reports plus a README section is not that,
-and wrapping the README in a generic envelope would pin the manifest to a
-file that changes for unrelated reasons several times a week. This row is the
-clearest example of the machine reading being stricter than the hand read:
-issue #124 recorded item 8 as a pass on exactly the "digital doc + README
-table" combination.
+**Analog** ([#313](https://github.com/2AMLogic/gf180-trng/issues/313)).
+`sim/characterization-analog-summary.md` is the analog partition's
+aggregate. It is organized by the ratified spec rows, not by the fourteen
+per-topic documents under `sim/` it draws on. For each applicable row it
+gives the analog-partition result, its corner or scope, the `sim/records/`
+evidence and `sim/tools/` derivation behind it, an evidence class
+(measured, measured-extracted, derived, target arithmetic, estimate or
+unmeasured) and its claim limit. It also states the partition boundary and
+the post-layout extraction scope. `8.analog` cites
+`evidence/characterization-analog.generic.json`, which pins that document's
+sha256 in `provenance.input.content_hash`. The manifest pins the same
+digest. Editing the summary without re-pinning both fails `check.py` step 1.
+Re-pinning only one of the two fails step 2.
+
+The pin proves the document has not changed since it was cited. It does not
+prove the document still agrees with the evidence. That second guard is
+`sim/tests/test_analog_characterization_summary.py` (`npm run test`), which
+re-runs `power_rollup.py`, `time_to_first_valid.py` and
+`worst_corner_entropy.py` and fails if any figure the summary quotes is no
+longer what those tools print.
+
+The same reading applies as on the digital side: **`met` means the
+aggregate exists and is current, not that its rows pass.** Exactly one
+analog-facing row is met (time-to-first-valid, 1.281 ms). The disclosed
+exceptions travel with the claim. The DR-0007 sizing law holds at the
+entropy-binding corner only up to 678–9412 bps, against the ratified 1 Mbps
+raw rate. Raw min-entropy is unmeasured and cannot be measured by
+transistor-level simulation at the rates under consideration, so the Tier 2
+quality estimate is not delivered. The analog power and area terms fit
+inside their rows, but the whole-block power and area rows are missed. All
+of it is simulation, none of it is silicon, and none of it is an SP 800-90B
+assessment. The README is still not cited: wrapping it would pin the
+manifest to a file that changes for unrelated reasons several times a week,
+which is why a dedicated document was written instead. Items 5, 6 and 7
+stay `unmet` on the analog partition. The aggregate does not make any of
+them gradeable.
+
+Seven met rows out of 22 are not a claim about this block's performance.
 
 Item 8 is also the only T1 item a `generic` envelope may satisfy. Every other
 item rejects `"kind": "generic"` outright, so this hand-rolled wrapper cannot
