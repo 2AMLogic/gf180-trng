@@ -125,7 +125,7 @@ the tip of its main branch — which is what both commands above give you. Two
 installs reporting the same string can be months of development apart.
 
 **Releasing `0.2.0` did not fix that.** Verified on 2026-08-16, on one
-machine, on the same day: a `pip install klayout-tools==0.2.0` and a
+machine, on the same day: a `pip install klayout-tools==0.2.0` and a <!-- klt-pin: historical -->
 `uv tool install` from `git+…@373181f` both report `klt 0.2.0` from
 `klt --version` *and* from `provenance.klt_version`, yet disagree on
 `provenance.deck.content_hash` (`sha256:1256c45b…` vs `sha256:457480f1…`) and
