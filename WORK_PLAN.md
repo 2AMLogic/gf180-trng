@@ -20,16 +20,13 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it
-- **#327**: T1 item 11 (analog): write and run a klt erc supply spec for the analog regions and cite it
-- **#328**: Enforce append-only simulation evidence against the PR base in CI
-- **#330**: Consolidate duplicated Variant scaffold across sim/tools --check scripts
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it
 
 ## PRs Awaiting Review
 
@@ -47,11 +44,13 @@ _None._
 
 Issues carrying `loom:curated`.
 
-_None._
+- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#336**: ci.yml self-check inventory quotes test counts that are ~7x stale (71/43 vs 540/121) *(architect)*
+- **#337**: Unit-test the signoff freshness gate (check_envelope_against_its_input) against its failure branches *(architect)*
+- **#335**: Consolidate duplicate klt_origin(): verify.py fork vs layout/_klt.py *(hermit)*
 
 ## Epics
 
@@ -63,11 +62,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 4 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 0 |
-| Architect / Hermit proposals | 0 |
+| Curated | 1 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
