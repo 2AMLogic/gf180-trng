@@ -26,13 +26,13 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#281**: Re-run the analog LVS under a settled producer pin, so item 4's analog citation carries a freshness pin and real power_connectivity/body_verification verdicts
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#311**: Ratify DR-0026 amended to klayout-tools 0.6.0; re-produce layout/reports/ and pin 4.analog
 
 ## Approved (Awaiting Merge)
 
@@ -61,8 +61,8 @@ _None._
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 0 |
 | Architect / Hermit proposals | 0 |
