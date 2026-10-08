@@ -95,7 +95,6 @@ them (DR-0004 tiering).
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
@@ -103,11 +102,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
-    _lags,
-    _loglog_slope,
+    VariantBase,
     load_variants_by_glob,
     reference_spread,
-    window_geometry,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -210,56 +207,12 @@ RECORDED_VERDICT: str | None = "clk-locked"
 RECORDED_BUFFER_VERDICT: str | None = "reduced"
 
 
-class Variant:
+class Variant(VariantBase):
     """One DUT variant's record at :data:`CORNER`, with both windows."""
 
     def __init__(self, label: str, record: Record, manifest: Path, difference: str) -> None:
-        self.label = label
+        super().__init__(label, record, manifest, difference)
         self.key = label.split()[1]
-        self.rec = record
-        self.difference = difference
-        self.discarded, self.n_periods = window_geometry(manifest)
-        self.period = record.values["period"]
-
-        self.lags = _lags(record)
-        self.sigma = {L: record.values[f"sigma_{L}"] for L in self.lags}
-        self.exponent = _loglog_slope(
-            [float(L) for L in self.lags], [self.sigma[L] for L in self.lags]
-        )
-        tail = [L for L in self.lags if L >= max(self.lags) // 8]
-        self.tail_lags = tail
-        self.exponent_tail = _loglog_slope(
-            [float(L) for L in tail], [self.sigma[L] for L in tail]
-        )
-
-        s_lags = _lags(record, "sigma_startup16_")
-        self.startup_lags = s_lags
-        self.startup_sigma = {L: record.values[f"sigma_startup16_{L}"] for L in s_lags}
-        self.startup_period = record.values.get("period_startup16", float("nan"))
-
-        self.blocks = [
-            record.values[k]
-            for k in sorted(k for k in record.values if re.fullmatch(r"period_b\d+", k))
-        ]
-
-    @property
-    def spread_1(self) -> float | None:
-        return self.rec.spread("sigma_1")
-
-    @property
-    def block_swing(self) -> float:
-        """``(max - min)`` of the 16 per-block mean periods, as a fraction of
-        this variant's own mean period.
-
-        Each block is 48 consecutive periods (~150 ns), so a clk that toggles
-        on a microsecond scale shows up here directly as blocks alternating
-        between two levels, where a random walk shows only estimator scatter.
-        This is the diagnostic that does not depend on the sigma estimator at
-        all.
-        """
-        if not self.blocks:
-            return float("nan")
-        return (max(self.blocks) - min(self.blocks)) / self.period
 
 
 def load_variants() -> list[Variant]:

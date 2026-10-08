@@ -246,6 +246,71 @@ def _loglog_slope(xs: list[float], ys: list[float]) -> float:
     return num / den
 
 
+class VariantBase:
+    """Shared scaffold of a ``--check`` script's per-variant record view.
+
+    Holds what every variant-comparison script reads off one record the same
+    way: the window geometry (from the testbench manifest), the mean
+    ``period``, the lag-indexed ``sigma`` and its log-log ``exponent`` (whole
+    range and top-octave tail), the 16-period start-up window, and the
+    per-block mean periods with their :attr:`block_swing`. Subclasses add only
+    what is specific to their experiment (a ``key``, a second ring, a beat).
+    """
+
+    def __init__(self, label: str, record: Record, manifest: Path, difference: str) -> None:
+        self.label = label
+        self.rec = record
+        self.difference = difference
+        self.discarded, self.n_periods = window_geometry(manifest)
+        self.period = record.values["period"]
+
+        self.lags = _lags(record)
+        self.sigma = {L: record.values[f"sigma_{L}"] for L in self.lags}
+        self.exponent = _loglog_slope(
+            [float(L) for L in self.lags], [self.sigma[L] for L in self.lags]
+        )
+        tail = [L for L in self.lags if L >= max(self.lags) // 8]
+        self.tail_lags = tail
+        self.exponent_tail = _loglog_slope(
+            [float(L) for L in tail], [self.sigma[L] for L in tail]
+        )
+
+        s_lags = _lags(record, "sigma_startup16_")
+        self.startup_lags = s_lags
+        self.startup_sigma = {L: record.values[f"sigma_startup16_{L}"] for L in s_lags}
+        self.startup_period = record.values.get("period_startup16", float("nan"))
+        self.startup_exponent = (
+            _loglog_slope(
+                [float(L) for L in s_lags], [self.startup_sigma[L] for L in s_lags]
+            )
+            if len(s_lags) > 1
+            else float("nan")
+        )
+
+        self.blocks = [
+            record.values[k]
+            for k in sorted(k for k in record.values if re.fullmatch(r"period_b\d+", k))
+        ]
+
+    @property
+    def spread_1(self) -> float | None:
+        return self.rec.spread("sigma_1")
+
+    @property
+    def block_swing(self) -> float:
+        """``(max - min)`` of the per-block mean periods, as a fraction of this
+        variant's own mean period.
+
+        A clk that toggles on a microsecond scale shows up here as blocks
+        alternating between two levels, where a random walk shows only
+        estimator scatter, so this diagnostic does not depend on the sigma
+        estimator at all.
+        """
+        if not self.blocks:
+            return float("nan")
+        return (max(self.blocks) - min(self.blocks)) / self.period
+
+
 class Point:
     """One PVT point of the starved cell: jitter, power and noise density."""
 
