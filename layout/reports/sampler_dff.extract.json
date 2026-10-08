@@ -43,7 +43,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$10",
@@ -61,7 +62,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$11",
@@ -79,7 +81,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$12",
@@ -97,7 +100,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$13",
@@ -115,7 +119,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$14",
@@ -133,7 +138,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$15",
@@ -151,7 +157,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$16",
@@ -169,7 +176,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$17",
@@ -187,7 +195,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$18",
@@ -205,7 +214,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$19",
@@ -223,7 +233,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$2",
@@ -241,7 +252,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$20",
@@ -259,7 +271,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$21",
@@ -277,7 +290,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$22",
@@ -295,7 +309,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$3",
@@ -313,7 +328,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$4",
@@ -331,7 +347,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$5",
@@ -349,7 +366,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$6",
@@ -367,7 +385,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$7",
@@ -385,7 +404,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$8",
@@ -403,7 +423,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$9",
@@ -421,7 +442,8 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": []
     }
   ],
   "nets": [
@@ -656,22 +678,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42"
+      "content_hash": "sha256:eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 22,
+    "extract__net__count": 16,
+    "extract__pin__count": 7
+  }
 }

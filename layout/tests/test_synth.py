@@ -202,5 +202,48 @@ class UnrecognizedShapeTests(_SynthesizeHarness):
         self.assertIn("does not exist", str(ctx.exception))
 
 
+class RunBookkeepingTests(unittest.TestCase):
+    """klt >= 0.6.0's per-invocation `run_id`/`run_script_path` (#281)."""
+
+    def _view(self, **extra):
+        payload = _payload({"path": COMMITTED_NETLIST_REL, "scope": "repo"})
+        payload.update(extra)
+        with mock.patch.object(synth, "_rtl_sources", return_value=[]):
+            return synth._committed_view(payload)
+
+    def test_two_runs_differing_only_in_run_scoped_names_commit_identically(self):
+        """Two runs of one request mint different run ids; the committed
+        report must not see that, or `--check` can never pass."""
+        a = self._view(
+            run_id="run-aaaa",
+            run_script_path={
+                "path": "design/.work/.klt/synthesize/run-aaaa/x.run.ys",
+                "scope": "repo",
+            },
+        )
+        b = self._view(
+            run_id="run-bbbb",
+            run_script_path={
+                "path": "design/.work/.klt/synthesize/run-bbbb/x.run.ys",
+                "scope": "repo",
+            },
+        )
+        self.assertEqual(a, b)
+        self.assertIsNone(a["run_id"])
+        self.assertIsNone(a["run_script_path"])
+
+    def test_absent_bookkeeping_keys_are_not_added(self):
+        """A klt that emits none of them commits no new keys."""
+        view = self._view()
+        self.assertNotIn("run_id", view)
+        self.assertNotIn("run_script_path", view)
+
+    def test_verdict_bearing_fields_still_differ(self):
+        """Restating bookkeeping must not hide a real change."""
+        a = self._view(run_id="run-aaaa", instance_count=1)
+        b = self._view(run_id="run-bbbb", instance_count=2)
+        self.assertNotEqual(a, b)
+
+
 if __name__ == "__main__":
     unittest.main()

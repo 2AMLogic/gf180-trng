@@ -27,11 +27,13 @@ separable conditions, in order, so a red build says which one:
 
    - a `drc`/`extract` envelope names its stream in `file` and pins
      `provenance.input.content_hash`;
-   - an `lvs` envelope produced by klt 0.4.0 (which is what this repo's
-     committed LVS reports are) leaves `provenance.input` null but still
-     records the same digest as `environment.layout_sha256`, so the freshness
-     claim is checkable here even though `klt signoff`'s own pin cannot reach
-     it -- see signoff/README.md, "Item 4 is cited without a pin";
+   - an `lvs` envelope names its stream in `layout` and records its digest as
+     `environment.layout_sha256`, which is what this step re-hashes. Since
+     #281 every committed LVS report here is produced by klt 0.6.0, which also
+     populates `provenance.input.content_hash` (klayout-tools#1969), so the
+     manifest pins it and `klt signoff`'s own staleness gate reaches it too;
+     an older klt 0.4.0 envelope leaves `provenance.input` null and is still
+     checkable here through `environment.layout_sha256` alone;
    - a `generic` envelope names its backing record in `source` and pins it in
      `provenance.input.content_hash`.
 

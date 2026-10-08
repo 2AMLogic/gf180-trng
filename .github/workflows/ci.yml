@@ -405,12 +405,14 @@ jobs:
       # the record diff rather than grading against the wrong checklist in
       # silence.
       #
-      # This is deliberately a DIFFERENT pin from pdk-nightly.yml's
-      # klayout-tools commit, which pins the build that PRODUCES layout
-      # evidence (DRC/LVS/extraction). The two have different jobs and move on
-      # different clocks: bumping the producer means re-running DRC/LVS and
-      # re-committing evidence, bumping the grader re-reads existing evidence
-      # and produces none.
+      # This is deliberately a SEPARATE pin from pdk-nightly.yml's
+      # klayout-tools pin, which pins the build that PRODUCES layout
+      # evidence (DRC/LVS/extraction). Since #281 (DR-0026, as amended) both
+      # happen to name the 0.6.0 release, but they still have different jobs
+      # and move on different clocks: bumping the producer means re-running
+      # DRC/LVS and re-committing evidence, bumping the grader re-reads
+      # existing evidence and produces none. Do not move one because the
+      # other moved.
       - name: Install the pinned signoff grader (klt; no PDK, no KLayout GUI)
         run: pip install "klayout-tools==0.6.0"
 

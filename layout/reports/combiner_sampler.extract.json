@@ -43,7 +43,13 @@
         "ad_um2": 0.308,
         "ps_um": 2.28,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xb1__ro_buf",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$10",
@@ -61,7 +67,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$100",
@@ -79,7 +91,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$101",
@@ -97,7 +115,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$102",
@@ -115,7 +139,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$103",
@@ -133,7 +163,13 @@
         "ad_um2": 0.308,
         "ps_um": 2.28,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xb1__ro_buf",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$104",
@@ -151,7 +187,13 @@
         "ad_um2": 0.308,
         "ps_um": 2.28,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xb2__ro_buf",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$11",
@@ -169,7 +211,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$12",
@@ -187,7 +235,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$13",
@@ -205,7 +259,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$14",
@@ -223,7 +283,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$15",
@@ -241,7 +307,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$16",
@@ -259,7 +331,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$17",
@@ -277,7 +355,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$18",
@@ -295,7 +379,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$19",
@@ -313,7 +403,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$2",
@@ -331,7 +427,13 @@
         "ad_um2": 0.308,
         "ps_um": 2.28,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xb2__ro_buf",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$20",
@@ -349,7 +451,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$21",
@@ -367,7 +475,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$22",
@@ -385,7 +499,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$23",
@@ -403,7 +523,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$24",
@@ -421,7 +547,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$25",
@@ -439,7 +571,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$26",
@@ -457,7 +595,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$27",
@@ -475,7 +619,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$28",
@@ -493,7 +643,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$29",
@@ -511,7 +667,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$3",
@@ -529,7 +691,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$30",
@@ -547,7 +715,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$31",
@@ -565,7 +739,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$32",
@@ -583,7 +763,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$33",
@@ -601,7 +787,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$34",
@@ -619,7 +811,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$35",
@@ -637,7 +835,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$36",
@@ -655,7 +859,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$37",
@@ -673,7 +883,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$38",
@@ -691,7 +907,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$39",
@@ -709,7 +931,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$4",
@@ -727,7 +955,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$40",
@@ -745,7 +979,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$41",
@@ -763,7 +1003,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$42",
@@ -781,7 +1027,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$43",
@@ -799,7 +1051,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$44",
@@ -817,7 +1075,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$45",
@@ -835,7 +1099,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$46",
@@ -853,7 +1123,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$47",
@@ -871,7 +1147,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$48",
@@ -889,7 +1171,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$49",
@@ -907,7 +1195,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$5",
@@ -925,7 +1219,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$50",
@@ -943,7 +1243,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$51",
@@ -961,7 +1267,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$52",
@@ -979,7 +1291,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$53",
@@ -997,7 +1315,13 @@
         "ad_um2": 0.7744,
         "ps_um": 3.52,
         "pd_um": 3.52
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$54",
@@ -1015,7 +1339,13 @@
         "ad_um2": 0.7744,
         "ps_um": 3.52,
         "pd_um": 3.52
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$55",
@@ -1033,7 +1363,13 @@
         "ad_um2": 0.7744,
         "ps_um": 3.52,
         "pd_um": 3.52
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$56",
@@ -1051,7 +1387,13 @@
         "ad_um2": 0.7744,
         "ps_um": 3.52,
         "pd_um": 3.52
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$57",
@@ -1069,7 +1411,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$58",
@@ -1087,7 +1435,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$59",
@@ -1105,7 +1459,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$6",
@@ -1123,7 +1483,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xa1__xor2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$60",
@@ -1141,7 +1507,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$61",
@@ -1159,7 +1531,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$62",
@@ -1177,7 +1555,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$63",
@@ -1195,7 +1579,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$64",
@@ -1213,7 +1603,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$65",
@@ -1231,7 +1627,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$66",
@@ -1249,7 +1651,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$67",
@@ -1267,7 +1675,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$68",
@@ -1285,7 +1699,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$69",
@@ -1303,7 +1723,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$7",
@@ -1321,7 +1747,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$70",
@@ -1339,7 +1771,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$71",
@@ -1357,7 +1795,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$72",
@@ -1375,7 +1819,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$73",
@@ -1393,7 +1843,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$74",
@@ -1411,7 +1867,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$75",
@@ -1429,7 +1891,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$76",
@@ -1447,7 +1915,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$77",
@@ -1465,7 +1939,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$78",
@@ -1483,7 +1963,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$79",
@@ -1501,7 +1987,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$8",
@@ -1519,7 +2011,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$80",
@@ -1537,7 +2035,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsv__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$81",
@@ -1555,7 +2059,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$82",
@@ -1573,7 +2083,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$83",
@@ -1591,7 +2107,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$84",
@@ -1609,7 +2131,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$85",
@@ -1627,7 +2155,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$86",
@@ -1645,7 +2179,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$87",
@@ -1663,7 +2203,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$88",
@@ -1681,7 +2227,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$89",
@@ -1699,7 +2251,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$9",
@@ -1717,7 +2275,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsb__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$90",
@@ -1735,7 +2299,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$91",
@@ -1753,7 +2323,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr1__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$92",
@@ -1771,7 +2347,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$93",
@@ -1789,7 +2371,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$94",
@@ -1807,7 +2395,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$95",
@@ -1825,7 +2419,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$96",
@@ -1843,7 +2443,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$97",
@@ -1861,7 +2467,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$98",
@@ -1879,7 +2491,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$99",
@@ -1897,7 +2515,13 @@
         "ad_um2": 0.3872,
         "ps_um": 2.64,
         "pd_um": 2.64
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xsr2__sampler_dff",
+          "array_index": null
+        }
+      ]
     }
   ],
   "nets": [
@@ -2844,22 +3468,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+      "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 104,
+    "extract__net__count": 58,
+    "extract__pin__count": 14
+  }
 }

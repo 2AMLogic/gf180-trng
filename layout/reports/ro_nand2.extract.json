@@ -43,7 +43,8 @@
         "ad_um2": 0.308,
         "ps_um": 1.24,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$2",
@@ -61,7 +62,8 @@
         "ad_um2": 0.176,
         "ps_um": 2.28,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$3",
@@ -79,7 +81,8 @@
         "ad_um2": 0.176,
         "ps_um": 1.24,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$4",
@@ -97,7 +100,8 @@
         "ad_um2": 0.176,
         "ps_um": 2.28,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$5",
@@ -115,7 +119,8 @@
         "ad_um2": 0.176,
         "ps_um": 1.24,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$6",
@@ -133,7 +138,8 @@
         "ad_um2": 0.352,
         "ps_um": 1.24,
         "pd_um": 2.48
-      }
+      },
+      "instance_path": []
     }
   ],
   "nets": [
@@ -282,22 +288,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:f769791b1d5702aeb633c6ea3e1f231fae25282e135e64fe33deab7ceb44b915"
+      "content_hash": "sha256:f769791b1d5702aeb633c6ea3e1f231fae25282e135e64fe33deab7ceb44b915",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 6,
+    "extract__net__count": 10,
+    "extract__pin__count": 6
+  }
 }

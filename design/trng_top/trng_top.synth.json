@@ -1,8 +1,9 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "engine": "yosys",
   "engine_version": "0.69",
   "hdl_toplevel": "trng_top",
+  "run_id": null,
   "status": "ok",
   "instance_count": 1459,
   "area_um2": 57435.84,
@@ -87,13 +88,43 @@
     "gf180mcu_fd_sc_mcu9t5v0__xor2_1": 9,
     "gf180mcu_fd_sc_mcu9t5v0__xor2_2": 4
   },
+  "leakage_power_nw": null,
+  "leakage_by_type_nw": null,
   "timing": null,
   "sta": null,
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "warnings": {
+    "total": 6,
+    "by_category": {
+      "other": 5,
+      "timing_unavailable": 1
+    },
+    "representatives": [
+      {
+        "category": "other",
+        "count": 5,
+        "text": "Encountered `translate_off' comment! Such legacy hot comments are supported by Yosys, but are not part of any formal language specification. Using a portable and standards-compliant construct such as `ifdef is recommended!"
+      },
+      {
+        "category": "timing_unavailable",
+        "count": 1,
+        "text": "The current invocation's ABC log has no readable stime summary; timing is null and any requested clock target remains unverified."
+      }
+    ]
+  },
   "netlist_path": "design/trng_top/trng_top.synth.v",
   "script_path": null,
+  "run_script_path": null,
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
@@ -104,11 +135,14 @@
       "released": false
     },
     "input": {
-      "content_hash": "sha256:3f8cff88948b5e97881c6cf9e3dd7708361f6ed3d33e59de7a9bd264e71e8d3b"
+      "content_hash": "sha256:3f8cff88948b5e97881c6cf9e3dd7708361f6ed3d33e59de7a9bd264e71e8d3b",
+      "role": "source"
     }
   },
   "equivalence": null,
   "restructuring": null,
+  "arithmetic": null,
+  "baseline": null,
   "rtl_sources": [
     {
       "path": "design/trng_top/trng_top.v",
