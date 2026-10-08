@@ -203,8 +203,11 @@ jobs:
       # and layout/reports/ needs regenerating with `layout/verify.py --write`.
       # That is the point of committing the reports.
       #
-      # Pinned to an explicit git ref/SHA rather than a PyPI release: the
-      # latest published release (v0.2.0, 2026-08-04) predates the gf180mcu
+      # (History: until #281 this was pinned to an explicit git ref/SHA, for
+      # the reason below; see the last paragraph of this block for the
+      # current, released pin.) Pinned to an explicit git ref/SHA rather than
+      # a PyPI release: the latest published release (v0.2.0, 2026-08-04)
+      # predates the gf180mcu
       # digital synthesize/place-and-route flow, `klt pex`, and `klt yield`
       # (#142). `klt --version` alone cannot distinguish this build from the
       # PyPI one -- see layout/README.md's "Pinning the tool" section --
@@ -312,12 +315,41 @@ jobs:
       # (issue #217, on top of #17's leaf-cell-only path) possible: see
       # that module's own docstring, "Routing-level composition", for how
       # each assembled block's true external ports are identified.
+      #
+      # klayout-tools==0.6.0 (#281, per DR-0026 as amended) supersedes the
+      # 3fbb4478 git pin above -- and ends this file's git-SHA era: 0.6.0 is a
+      # tagged PyPI release (tag v0.6.0 -> commit
+      # c622e8addb362491664d44ba4d717f354ca88bbd, 469 commits forward of
+      # 3fbb4478 with `behind_by: 0`, confirmed 2026-10-08), so the pin is
+      # reproducible with a plain `pip install` and no longer needs the
+      # "latest release predates the flow" caveat at the top of this block.
+      # The wheel records the commit it was built from (`klt version
+      # --format json` -> git_commit/git_tag/is_release, klayout-tools#1202),
+      # which is what layout/reports/environment.json's `klt_origin` now
+      # reads for a registry install. The bump exists for klayout-tools#1969
+      # (`klt lvs` populates `provenance.input.content_hash`, so
+      # signoff/block-manifest.json's `4.analog` citation can carry a pin)
+      # and brings `power_connectivity`/`body_verification` blocks into
+      # every LVS report. Measured against all 13 layout/verify.py fixtures
+      # (DR-0026's amendment records the full diff): no DRC verdict, rule
+      # count, device/net count, extracted netlist or LVS status moved;
+      # `device.body_unverified` goes 1 -> 2 per LVS fixture because
+      # klayout-tools#2048 discloses the PMOS half per device again.
+      #
+      # `klayout==0.30.10` is pinned alongside it because it is the engine
+      # this release records it was tested against (`klt version`'s
+      # `klayout_version_expected`); left floating, pip resolves 0.30.12,
+      # every report carries `provenance.klayout_version_mismatch: true`,
+      # and a future KLayout release would move `provenance.klayout_version`
+      # in every committed report. Measured: 0.30.10 vs 0.30.12 changes only
+      # those two version fields, nothing else.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@3fbb4478e3017c8d8580fba4feb08bc386b4c925"
+            "klayout-tools==0.6.0" "klayout==0.30.10"
           klt --version
+          klt version --format json
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
       # way this flow already shells out to `xschem`/`klt` -- floating

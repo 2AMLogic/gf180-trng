@@ -1,15 +1,17 @@
 {
-  "klt": "klt 0.4.0+g3fbb4478e301",
+  "klt": "klt 0.6.0",
   "klt_origin": {
-    "url": "https://github.com/2AMLogic/klayout-tools",
-    "commit": "3fbb4478e3017c8d8580fba4feb08bc386b4c925"
+    "url": null,
+    "commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
+    "tag": "v0.6.0",
+    "is_release": true
   },
   "deck": "gf180mcu",
   "pdk": {
-    "path": "/Users/rwalters/.ciel/gf180mcuD",
+    "path": "/tmp/pdk-gf180-f6eeac7d/gf180mcuD",
     "variant": "gf180mcuD",
     "open_pdks_version": "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
-    "discovered_via": "search_root:~/.ciel"
+    "discovered_via": "PDK_ROOT"
   },
-  "platform": "Darwin 25.6.0 arm64"
+  "platform": "Linux 7.0.0-1013-aws x86_64"
 }

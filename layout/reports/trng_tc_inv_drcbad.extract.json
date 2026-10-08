@@ -43,7 +43,8 @@
         "ad_um2": 0.528,
         "ps_um": 2.92,
         "pd_um": 2.92
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$2",
@@ -61,7 +62,8 @@
         "ad_um2": 0.528,
         "ps_um": 2.92,
         "pd_um": 2.92
-      }
+      },
+      "instance_path": []
     }
   ],
   "nets": [
@@ -187,22 +189,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:db7fb788a5e28ff5184ecc7dc61a3c6318b2cbaef3369bde367df1544c4f69c6"
+      "content_hash": "sha256:db7fb788a5e28ff5184ecc7dc61a3c6318b2cbaef3369bde367df1544c4f69c6",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 2,
+    "extract__net__count": 6,
+    "extract__pin__count": 5
+  }
 }

@@ -164,10 +164,12 @@ That one field is also reported two different ways depending on which
   committed evidence records.
 
 Accepting both is deliberate, not a transitional shim. The two live
-consumers of this script genuinely disagree about which `klt` is in force:
-`.github/workflows/pdk-nightly.yml` installs a build pinned per DR-0026,
-which is v1, while `signoff/check.py`'s own `KLT_PIN` and a current
-developer install are v2. Reading only one of them has now broken this
+consumers of this script disagreed about which `klt` was in force until
+#281: `.github/workflows/pdk-nightly.yml` installed a git-pinned `0.4.0`
+build, which is v1, while `signoff/check.py`'s own `KLT_PIN` and a current
+developer install are v2. Since #281 (DR-0026, as amended) the nightly pins
+the `0.6.0` release too, so both consumers are v2 today -- but a developer
+reproducing an older committed report still runs a v1 build. Reading only one of them has now broken this
 script in both directions within two changes -- #278 (v1-only reader,
 uncaught `TypeError` under v2) and #288 (v2-only reader, `SynthError` with
 exit 3 under the pinned v1 build, which silently disabled the nightly
@@ -298,6 +300,19 @@ def _write_request(request_path: Path) -> None:
     request_path.write_text(json.dumps(request, indent=2) + "\n")
 
 
+#: Per-invocation names/paths `klt synthesize` (>= 0.6.0) mints fresh on every
+#: run -- see `_committed_view()`. `netlist_path`/`script_path` are restated
+#: separately above (to the committed path / `null`), as before.
+_RUN_BOOKKEEPING_KEYS = (
+    "run_id",
+    "run_script_path",
+    "restructured_netlist_path",
+    "log_path",
+    "stage2_script_path",
+    "stage2_log_path",
+)
+
+
 def _committed_view(payload: dict) -> dict:
     """The form of `klt synthesize`'s response that belongs in the committed
     report -- see the module docstring's "Determinism" section for why
@@ -315,6 +330,18 @@ def _committed_view(payload: dict) -> dict:
     restated = dict(payload)
     restated["netlist_path"] = f"design/trng_top/{TOP}.synth.v"
     restated["script_path"] = None
+    # klt >= 0.6.0 also returns a fresh `run_id` (a uuid4 by default) per
+    # invocation and names every artifact path inside
+    # `.klt/synthesize/<run_id>/`, so two runs of the identical request
+    # disagree on these by construction. Upstream classifies exactly this
+    # set as run-scoped bookkeeping, not verdict-bearing
+    # (`klayout_tools.synthesize.RERUN_BOOKKEEPING_KEYS`, klayout-tools#2224).
+    # Committed verbatim they would make `--check` fail on every run, so
+    # they are restated to `null` -- only where present, so a klt that does
+    # not emit them commits no new keys.
+    for key in _RUN_BOOKKEEPING_KEYS:
+        if key in restated:
+            restated[key] = None
     provenance = dict(restated.get("provenance") or {})
     pdk = provenance.get("pdk")
     if isinstance(pdk, dict):

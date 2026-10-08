@@ -43,7 +43,13 @@
         "ad_um2": 0.308,
         "ps_um": 1.24,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$10",
@@ -61,7 +67,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x4__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$11",
@@ -79,7 +91,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x4__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$12",
@@ -97,7 +115,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x5__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$13",
@@ -115,7 +139,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x5__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$14",
@@ -133,7 +163,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x6__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$15",
@@ -151,7 +187,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x6__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$16",
@@ -169,7 +211,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x7__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$17",
@@ -187,7 +235,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x7__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$18",
@@ -205,7 +259,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x8__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$19",
@@ -223,7 +283,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x8__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$2",
@@ -241,7 +307,13 @@
         "ad_um2": 0.176,
         "ps_um": 2.28,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$20",
@@ -259,7 +331,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x9__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$21",
@@ -277,7 +355,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x9__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$22",
@@ -295,7 +379,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x10__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$23",
@@ -313,7 +403,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x10__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$24",
@@ -331,7 +427,13 @@
         "ad_um2": 0.176,
         "ps_um": 2.28,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$25",
@@ -349,7 +451,13 @@
         "ad_um2": 0.176,
         "ps_um": 1.24,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$26",
@@ -367,7 +475,13 @@
         "ad_um2": 0.352,
         "ps_um": 1.24,
         "pd_um": 2.48
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$27",
@@ -385,7 +499,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x1__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$28",
@@ -403,7 +523,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x1__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$29",
@@ -421,7 +547,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x2__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$3",
@@ -439,7 +571,13 @@
         "ad_um2": 0.176,
         "ps_um": 1.24,
         "pd_um": 1.24
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "xg__ro_nand2_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$30",
@@ -457,7 +595,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x2__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$31",
@@ -475,7 +619,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x3__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$32",
@@ -493,7 +643,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x3__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$33",
@@ -511,7 +667,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x4__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$34",
@@ -529,7 +691,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x4__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$35",
@@ -547,7 +715,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x5__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$36",
@@ -565,7 +739,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x5__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$37",
@@ -583,7 +763,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x6__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$38",
@@ -601,7 +787,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x6__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$39",
@@ -619,7 +811,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x7__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$4",
@@ -637,7 +835,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x1__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$40",
@@ -655,7 +859,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x7__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$41",
@@ -673,7 +883,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x8__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$42",
@@ -691,7 +907,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x8__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$43",
@@ -709,7 +931,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x9__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$44",
@@ -727,7 +955,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x9__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$45",
@@ -745,7 +979,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x10__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$46",
@@ -763,7 +1003,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x10__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$5",
@@ -781,7 +1027,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x1__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$6",
@@ -799,7 +1051,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x2__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$7",
@@ -817,7 +1075,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x2__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$8",
@@ -835,7 +1099,13 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x3__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     },
     {
       "name": "$9",
@@ -853,7 +1123,13 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": [
+        {
+          "cell": "x3__ro_stage_ring2",
+          "array_index": null
+        }
+      ]
     }
   ],
   "nets": [
@@ -1693,22 +1969,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:bdfc897e6d75e801d055dbb0f9153ad73863ba349227b657f063a3559ea71d27"
+      "content_hash": "sha256:bdfc897e6d75e801d055dbb0f9153ad73863ba349227b657f063a3559ea71d27",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 46,
+    "extract__net__count": 49,
+    "extract__pin__count": 15
+  }
 }

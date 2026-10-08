@@ -43,7 +43,8 @@
         "ad_um2": 0.044,
         "ps_um": 2.28,
         "pd_um": 0.62
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$2",
@@ -61,7 +62,8 @@
         "ad_um2": 0.044,
         "ps_um": 2.28,
         "pd_um": 0.62
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$3",
@@ -79,7 +81,8 @@
         "ad_um2": 0.308,
         "ps_um": 0.84,
         "pd_um": 2.28
-      }
+      },
+      "instance_path": []
     },
     {
       "name": "$4",
@@ -97,7 +100,8 @@
         "ad_um2": 0.088,
         "ps_um": 2.28,
         "pd_um": 0.84
-      }
+      },
+      "instance_path": []
     }
   ],
   "nets": [
@@ -220,22 +224,29 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.4.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:79e71a1e7d84be3cfc82e4c70afbdf7b743ac1f361fb8e981f57831014d2e8b0",
-      "released": true
+      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
+      "released": false
     },
     "input": {
-      "content_hash": "sha256:af3b89821987c609f2f66c1f6fae4d787a9e74eeb3219943789df7290eb75375"
+      "content_hash": "sha256:af3b89821987c609f2f66c1f6fae4d787a9e74eeb3219943789df7290eb75375",
+      "role": "layout"
     }
   },
   "parasitics": null,
-  "spef_path": null
+  "spef_path": null,
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 4,
+    "extract__net__count": 8,
+    "extract__pin__count": 5
+  }
 }

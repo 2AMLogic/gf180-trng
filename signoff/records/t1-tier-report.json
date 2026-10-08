@@ -105,6 +105,8 @@
             "metal3.enclosing.via3.1",
             "metal4.enclosing.via3.1",
             "metal4.enclosing.via4.1",
+            "metal4.space.1",
+            "metal4.width.1",
             "metal5.enclosing.via4.1",
             "metal5.space.1",
             "metal5.width.1",
@@ -207,8 +209,8 @@
         "command": null,
         "kind": "lvs",
         "check_status": "match",
-        "content_hash": null,
-        "input_verified": null,
+        "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd",
+        "input_verified": true,
         "exit_status": 0
       }
     },
