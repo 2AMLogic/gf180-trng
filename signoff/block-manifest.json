@@ -22,6 +22,9 @@
       "file": "layout/digital/reports/lvs.json",
       "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80"
     },
+    "7.digital": {
+      "file": "signoff/evidence/post-route/gate_klt_response.json"
+    },
     "8.digital": {
       "file": "signoff/evidence/characterization-digital.generic.json",
       "content_hash": "sha256:05cd74bc01bf9993ec2ae30d484161fd19cdac887ce9a544dda485b7c5fbe850"

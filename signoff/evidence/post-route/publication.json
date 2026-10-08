@@ -1,0 +1,30 @@
+{
+  "schema": "gf180-trng/item7-publication/1",
+  "record": "sim/records/2026-10-08-trng-top-post-route-01.md",
+  "raw_dir": "sim/records/raw/2026-10-08-trng-top-post-route-01",
+  "raw_sha256": {
+    "environment.json": "sha256:d678455835de98322d176c3d15c638ef8be8c6ec216ef257a96d3de1d3603e6a",
+    "gate_comparison.json": "sha256:e8512e5b12df89fde3baa5e1389f7c3fcec466b666d62ee069fce17fa86663b3",
+    "gate_klt_response.json": "sha256:bdcce47e0896a8513b26d07f22b8aaf62bed61fe371074441581ab3d0fe51edf",
+    "gate_request.json": "sha256:996298b516aa64ffb5eb3b4957923aa4329a39af9ddba3ee5f9d04325a8346ba",
+    "gate_transcript_digest.json": "sha256:6f984afe6a3612c372690b0cf3bc064e21b439303e456c36fb317560fc87cd3a",
+    "rtl_comparison.json": "sha256:d000593567f2033604030824d67fc5f0c40d8a67e0a55c3bb31372f828d31ae3",
+    "rtl_klt_response.json": "sha256:f6abf1ef7c457c89da5b3f514c20862e57110bb2ac08e4ea63e95c037a0333c1",
+    "rtl_request.json": "sha256:b0a5ce3a9d300034aa7401afdc5d4b49c492b97532e3ad77b71f35ee6145752b",
+    "rtl_transcript_digest.json": "sha256:92062f9d95cc19291c3d257fdfe816d4a6ceabdb6fb58e247ec8aee24ca2185f",
+    "verdict.json": "sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9"
+  },
+  "netlist": {
+    "path": "layout/digital/trng_top.pnr.v",
+    "sha256": "sha256:1342adf83949a6beb5e078ba82b9bafe69fe11166d61971187856ca7cba7a8e0"
+  },
+  "sdf": {
+    "path": "layout/digital/trng_top.sdf",
+    "sha256": "sha256:137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af"
+  },
+  "limits": "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no timing violation is reported or ruled out. IOPATH arcs of ifnone-qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/toggle) run at library default delay. Functional equivalence with the applied delays is not timing signoff; see sim/tb/trng-top-post-route/README.md.",
+  "envelope": {
+    "file": "signoff/evidence/post-route/gate_klt_response.json",
+    "sha256": "sha256:bdcce47e0896a8513b26d07f22b8aaf62bed61fe371074441581ab3d0fe51edf"
+  }
+}

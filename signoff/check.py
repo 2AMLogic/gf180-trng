@@ -102,6 +102,115 @@ KLT_INSTALL_HINT = f'pip install "klayout-tools=={KLT_PIN}"'
 CLEAN_EXITS = (0, 3)
 
 
+#: T1 item 7 (digital): the native `klt functional-verification` response of a
+#: post-route, SDF-annotated gate run, published by signoff/publish_item7.py.
+#: That envelope has no `provenance` block, so the manifest cannot pin it; the
+#: sidecar below carries the freshness pins and verify_item7_publication()
+#: re-checks them (see its docstring).
+ITEM7_DIR = "signoff/evidence/post-route"
+ITEM7_ENVELOPE = f"{ITEM7_DIR}/gate_klt_response.json"
+ITEM7_PUBLICATION = f"{ITEM7_DIR}/publication.json"
+ITEM7_NETLIST = "layout/digital/trng_top.pnr.v"
+ITEM7_SDF = "layout/digital/trng_top.sdf"
+ITEM7_RAW_FILES = (
+    "environment.json",
+    "gate_comparison.json",
+    "gate_klt_response.json",
+    "gate_request.json",
+    "gate_transcript_digest.json",
+    "rtl_comparison.json",
+    "rtl_klt_response.json",
+    "rtl_request.json",
+    "rtl_transcript_digest.json",
+    "verdict.json",
+)
+ITEM7_LIMITS = (
+    "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT "
+    "claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 "
+    "enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no "
+    "timing violation is reported or ruled out. IOPATH arcs of ifnone-"
+    "qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/"
+    "toggle) run at library default delay. Functional equivalence with the "
+    "applied delays is not timing signoff; see "
+    "sim/tb/trng-top-post-route/README.md."
+)
+
+
+def item7_problems(pub: dict, envelope: dict) -> list[str]:
+    """Every reason this publication must not be treated as current evidence."""
+    out: list[str] = []
+    env = envelope.get("environment") or {}
+    sdf = env.get("sdf") if isinstance(env.get("sdf"), dict) else {}
+    if envelope.get("status") != "pass" or envelope.get("failed_count") != 0:
+        out.append("gate response is not a pass")
+    if sdf.get("annotated") is not True:
+        out.append("gate response is not SDF-annotated (environment.sdf.annotated)")
+    # Freshness of BOTH inputs: the envelope can pin neither, so we do.
+    for key, rel in (("netlist", ITEM7_NETLIST), ("sdf", ITEM7_SDF)):
+        pinned = (pub.get(key) or {}).get("sha256")
+        path = REPO_ROOT / rel
+        if not pinned:
+            out.append(f"{key}: no sha256 pinned")
+        elif not path.is_file():
+            out.append(f"{key}: {rel} is missing")
+        elif sha256_file(path) != pinned:
+            out.append(
+                f"{key}: STALE -- the run used {pinned}, but {rel} hashes to "
+                f"{sha256_file(path)} today; re-run sim/tb/trng-top-post-route/"
+                f"run_demo.py and re-publish"
+            )
+    # Raw evidence: the independent comparison and annotation controls.
+    raw = REPO_ROOT / str(pub.get("raw_dir", ""))
+    pinned_raw = pub.get("raw_sha256") or {}
+    for name in ITEM7_RAW_FILES:
+        f = raw / name
+        if name not in pinned_raw or not f.is_file():
+            out.append(f"raw evidence {name}: missing from {pub.get('raw_dir')}")
+        elif sha256_file(f) != pinned_raw[name]:
+            out.append(f"raw evidence {name}: changed since publication")
+    if (raw / "verdict.json").is_file():
+        verdict = json.loads((raw / "verdict.json").read_text())
+        if verdict.get("pass") is not True:
+            out.append("verdict.json: pass is not true")
+        for name, ok in sorted((verdict.get("checks") or {}).items()):
+            if ok is not True:
+                out.append(f"verdict.json: check {name} did not hold")
+        if not verdict.get("checks"):
+            out.append("verdict.json: records no checks")
+    rtl = raw / "rtl_klt_response.json"
+    if rtl.is_file() and json.loads(rtl.read_text()).get("status") != "pass":
+        out.append("RTL reference leg is not a pass")
+    pinned_env = (pub.get("envelope") or {}).get("sha256")
+    env_path = REPO_ROOT / ITEM7_ENVELOPE
+    if env_path.is_file() and pinned_env != sha256_file(env_path):
+        out.append("published envelope differs from the sha256 in publication.json")
+    if pinned_raw.get("gate_klt_response.json") != pinned_env:
+        out.append("published envelope is not the raw run's gate_klt_response.json")
+    return out
+
+
+def verify_item7_publication(manifest: dict) -> list[str]:
+    """Freshness gate for the `7.digital` citation (stdlib only, always runs).
+
+    `klt functional-verification` responses carry no provenance block, so a
+    manifest `content_hash` for one renders `unverifiable_provenance`. The
+    pins live in publication.json instead, covering the post-route netlist
+    and the SDF separately, and the manifest entry must not pin a hash.
+    """
+    entry = (manifest.get("evidence") or {}).get("7.digital")
+    if entry is None:
+        return []
+    if not isinstance(entry, dict) or entry.get("file") != ITEM7_ENVELOPE:
+        return [f"manifest 7.digital must cite {ITEM7_ENVELOPE}"]
+    if entry.get("content_hash"):
+        return ["manifest 7.digital pins content_hash, which the envelope cannot carry"]
+    pub_path = REPO_ROOT / ITEM7_PUBLICATION
+    env_path = REPO_ROOT / ITEM7_ENVELOPE
+    if not pub_path.is_file() or not env_path.is_file():
+        return [f"{ITEM7_ENVELOPE} / {ITEM7_PUBLICATION} not both present"]
+    return item7_problems(json.loads(pub_path.read_text()), json.loads(env_path.read_text()))
+
+
 def sha256_file(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -202,7 +311,7 @@ def freshness_gate(manifest: dict) -> int:
     cited: list[Path] = []
     for _key, part in manifest_entries(manifest):
         named = part.get("file")
-        if named:
+        if named and named != ITEM7_ENVELOPE:
             cited.append(REPO_ROOT / named)
     for path in sorted(set(cited) | set(EVIDENCE_DIR.glob("*.json"))):
         if not path.is_file():
@@ -231,6 +340,12 @@ def freshness_gate(manifest: dict) -> int:
                 f"manifest item {key}: pins {pinned} for {named!r}, but that "
                 f"envelope's own provenance.input.content_hash is {own}"
             )
+
+    # Step 1b: the item-7 citation (no provenance block; see ITEM7_*).
+    item7 = verify_item7_publication(manifest)
+    failures += [f"7.digital: {p}" for p in item7]
+    if (manifest.get("evidence") or {}).get("7.digital") and not item7:
+        verified += 1
 
     if failures:
         print("signoff/check.py: freshness verification FAILED", file=sys.stderr)

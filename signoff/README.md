@@ -15,12 +15,15 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-**Today: `tier: null`, T1 5 of 22 items met.** A `mixed-signal` block is
+**Today: `tier: null`, T1 6 of 22 items met.** A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The five met are item 3 (DRC) and item 4 (LVS) on **both**
-partitions, and item 8 (characterization report) on the digital partition.
+22 rows. The six met are item 3 (DRC) and item 4 (LVS) on **both**
+partitions, and item 7 (post-layout verification) and item 8
+(characterization report) on the digital partition. Item 7 digital is
+[#314](https://github.com/2AMLogic/gf180-trng/issues/314): see "Item 7 digital"
+below for what that citation does and does not mean.
 That is the honest state of the block; the rest of this file is why each of
-the other seventeen reads the way it does.
+the other sixteen reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -51,6 +54,9 @@ signoff/
   block-manifest.json                              the manifest: block, kind, per-item evidence
   evidence/characterization-digital.generic.json   item 8 (digital)'s generic evidence envelope
   records/t1-tier-report.json                      the verdict of record (generated)
+  evidence/post-route/gate_klt_response.json       item 7 (digital)'s native klt functional-verification response
+  evidence/post-route/publication.json            its freshness pins (netlist, SDF, raw evidence) and coverage limits
+  publish_item7.py                                 publishes a successful post-route run as the 7.digital citation
   check.py                                         re-grade + freshness gate (CI runs this)
 ```
 
@@ -127,7 +133,7 @@ not inferred from the date on it.
    `met` twice" below) — and `null` only for `8.digital`, a `generic`
    envelope whose backing record the grader does not re-hash. `check.py`
    covers the whole set regardless of envelope kind — it
-   verified 5 of 5 on the run that produced the committed record. Edit
+   verified 6 of 6 on the run (the sixth is the item-7 publication, checked by its own pins, see "Item 7 digital") that produced the committed record. Edit
    `layout/blocks/combiner_sampler/combiner_sampler.gds`,
    `layout/digital/trng_top.gds`, `layout/digital/trng_top.extracted.spice`
    or `sim/characterization-digital-sta-area-power.md` without re-running the
@@ -140,6 +146,46 @@ not inferred from the date on it.
 4. **The committed record no longer matches a fresh run.** Either this block's
    evidence moved, or the checklist did, or the grader did. All three are real
    news, and none should be discoverable only by someone re-reading prose.
+
+## Item 7 digital
+
+The citation is the **native** response of `klt functional-verification` from
+the SDF-annotated gate leg of `sim/tb/trng-top-post-route/` (8 of 8 scenarios
+passed, `environment.sdf.annotated: true`), copied byte for byte. The pinned
+grader (klt 0.6.0) grades it `met`: kind `functional-verification`, status
+`pass`, annotated.
+
+**Schema limitation.** That envelope carries no `provenance` block, so the
+manifest cannot pin a `content_hash` for it (the grader would render
+`unverifiable_provenance`), and the grader reports `input_verified: null`. The
+entry is therefore unpinned, and freshness is enforced by `check.py` instead
+(`verify_item7_publication`, always run, stdlib only): `publication.json` pins
+the post-route netlist **and** the SDF separately by sha256, plus the raw
+evidence of the run (both legs' responses, comparisons, transcripts, requests
+and `verdict.json`). `check.py` fails if either input changed since the run,
+if any raw file changed, if the verdict or any of its checks (gate-vs-RTL
+equivalence, SDF annotation applied, annotation control fired, no X on a pin)
+is not true, or if the envelope is not a pass or not annotated.
+`publish_item7.py` refuses to write anything under the same conditions, so a
+failed comparison or failed annotation control cannot become current evidence.
+
+Cold start (the producer needs a cocotb-capable `klt`, see the testbench
+README):
+
+```bash
+TRNG_POST_ROUTE_KLT=<venv>/bin/klt python3 sim/tb/trng-top-post-route/run_demo.py
+python3 signoff/publish_item7.py
+python3 signoff/check.py --write
+```
+
+**What it does not claim.** One corner (SDF `typ` from the `ss_125C_3v00`
+liberty) — not a PVT claim. Cell `IOPATH` delay only; no interconnect delay.
+Icarus 13.0 enforces no setup/hold/width check and drops SDF `TIMINGCHECK`, so
+a timing violation not reported is not evidence of none. `ifnone`-qualified
+edge-sensitive arcs (`xor`/`xnor`/`mux`/`addf`/`addh` select/toggle) run at the
+library default delay. Functional equivalence with applied delays is narrower
+than timing signoff, which stays with OpenROAD STA. The citation's `klt pex`
+`body_bias` disclosure does not apply (no extracted netlist is simulated).
 
 ## Why each item reads the way it does
 
@@ -156,7 +202,7 @@ requires of the claimant rather than of the tool.
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 0`). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies power connectivity or body ties: `power_connectivity.status` is `"unchecked"` on both, and `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
 | 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, which is ordinary unperformed work. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
-| 7 Post-layout | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Real post-layout work exists on both sides — device- *and* routing-level parasitic re-simulation (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232) and an SDF-annotated post-route gate-level functional run (`sim/tb/trng-top-post-route/`, #147). Item 7 accepts only a `klt pex` envelope (analog) or `klt pex`/an SDF-annotated `klt functional-verification` envelope (digital), and neither exists in envelope form: `layout/pex/build.py` drives `klt extract --parasitics` and composes the result itself rather than emitting a `klt pex` report. |
+| 7 Post-layout | `unmet` / `no_evidence` | **`met`** | **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. **Analog** is uncited. Real post-layout work exists on both sides — device- *and* routing-level parasitic re-simulation (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232) and an SDF-annotated post-route gate-level functional run (`sim/tb/trng-top-post-route/`, #147). Item 7 accepts only a `klt pex` envelope (analog) or `klt pex`/an SDF-annotated `klt functional-verification` envelope (digital), and for the analog side no such envelope exists: `layout/pex/build.py` drives `klt extract --parasitics` and composes the result itself rather than emitting a `klt pex` report. |
 | 8 Characterization | `unmet` / `no_evidence` | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog is uncited — see below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
@@ -519,8 +565,9 @@ names this as the safest default.
 - **Item 7's `body_bias`** is *reported* by `klt signoff` and never graded: a
   `klt pex` citation whose `body_bias.status` is `"unbiased"` still renders
   `met`, and a re-simulation of an unbiased extracted netlist is physically
-  wrong rather than merely imprecise. **Not applicable yet** — item 7 is
-  `unmet` with no citation. Note that this repo's own extraction reports
+  wrong rather than merely imprecise. **Not applicable** to the digital
+  citation (a `klt functional-verification` response, no extracted netlist);
+  the analog side is `unmet` with no citation. Note that this repo's own extraction reports
   already carry an `unbiased_pmos_body_nets` field, so a future item-7 claim
   has to read it and state what it says.
 - **Item 4's `power_connectivity` and `body_verification`** —
