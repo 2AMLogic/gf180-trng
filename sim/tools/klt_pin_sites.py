@@ -31,7 +31,7 @@ version alone) are not pins and are not matched.
 Historical mentions
 -------------------
 Some text deliberately narrates an older build, e.g. a past experiment run
-under ``klayout-tools==0.2.0``. Mark such a line with the literal token
+under klayout-tools 0.2.0. Mark such a line with the literal token
 
   klt-pin: historical
 
