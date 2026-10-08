@@ -17,6 +17,11 @@ is not an ngspice testbench, so `sim/run_corners.py` cannot discover it and
 must not sweep it over a PVT grid it has no meaning on
 ([DR-0009][dr9] rule 7).
 
+The gate leg's native `klt functional-verification` response is the citation
+for T1 item 7 (digital) in `signoff/block-manifest.json`; publish a successful
+run with `python3 signoff/publish_item7.py` (it refuses a failed or stale run).
+See `signoff/README.md`, "Item 7 digital", for the freshness pins and limits.
+
 ## What is under test, and against what
 
 ```

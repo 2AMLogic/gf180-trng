@@ -73,6 +73,9 @@ SIM_DIR = TB_DIR.parents[1]
 REPO_ROOT = SIM_DIR.parent
 
 for _path in (
+    # `harness.bits` (sim/harness/) is imported by the source models below;
+    # under cocotb nothing else puts sim/ on the path.
+    SIM_DIR,
     REPO_ROOT / "design" / "conditioner",
     REPO_ROOT / "design" / "health_test",
     REPO_ROOT / "design" / "interface",
