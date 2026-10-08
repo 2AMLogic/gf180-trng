@@ -6,10 +6,16 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-08
 
+- **PR #329**: Record why the digital STA sweep is not cited as a klt sta envelope (#322)
+- **PR #324**: Cite 11.digital supply-ERC report in the T1 manifest (#321)
+- **PR #323**: Guard the corpus totals quoted in README.md against the tree
 - **PR #318**: Cite an aggregated analog characterization summary as T1 item 8 analog
 - **PR #317**: feat(signoff): publish post-route functional run as T1 item 7 digital citation (#314)
 - **PR #316**: floorplan: derive the composed interface for klt 0.6.0 and compare it by name (#309)
 - **PR #311**: Ratify DR-0026 amended to klayout-tools 0.6.0; re-produce layout/reports/ and pin 4.analog
+- **Issue #322** (closed): T1 item 5 (digital): emit the fifteen-corner STA sweep as a graded klt envelope and cite it
+- **Issue #321** (closed): T1 item 11: cite the committed digital supply-ERC report in signoff/block-manifest.json so the grader sees it
+- **Issue #320** (closed): Guard the corpus counts quoted in README.md (decision records, characterization summaries, evidence records) against the tree
 - **Issue #314** (closed): Publish native post-route functional evidence for the T1 digital item-7 citation
 - **Issue #313** (closed): Aggregate analog characterization into a pinned T1 item-8 evidence artifact
 - **Issue #309** (closed): floorplan.py's inter-region pin-count expectation (107) is stale: klt 0.6.0 extracts 114, naming the five pins the formula subtracts as unnameable

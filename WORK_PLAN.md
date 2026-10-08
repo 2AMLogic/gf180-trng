@@ -20,7 +20,10 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it
+- **#327**: T1 item 11 (analog): write and run a klt erc supply spec for the analog regions and cite it
+- **#328**: Enforce append-only simulation evidence against the PR base in CI
+- **#330**: Consolidate duplicated Variant scaffold across sim/tools --check scripts
 
 ## In Progress
 
@@ -60,7 +63,7 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 0 |
+| Ready (`loom:issue`) | 4 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
