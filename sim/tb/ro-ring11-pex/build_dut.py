@@ -3,6 +3,8 @@
 
     python3 sim/tb/ro-ring11-pex/build_dut.py            # extract, write ro_ring11_schematic.spice
     python3 sim/tb/ro-ring11-pex/build_dut.py --check    # extract to scratch, fail if it would change
+    python3 sim/tb/ro-ring11-pex/build_dut.py --check-source
+                                                         # offline: DUT vs design source, no klt
     python3 sim/tb/ro-ring11-pex/build_dut.py --verify-netlist <extracted.spice>
                                                          # hold a klt-pex-written netlist to the DUT
 
@@ -43,6 +45,18 @@ committed DUT header exactly. That is what makes the positional match a
 checked property of the evidence rather than an assumption about the
 extractor's port ordering being stable between two runs.
 
+Source identity
+---------------
+`source_identity()` hashes `consumed_source()`: the `ro_ring11`, `ro_nand2`
+and `ro_stage` subcircuits (comments and whitespace normalised away) plus the
+`xr1` sizing -- the consumed circuit sections, not the whole file, so edits to
+other cells or to ring2 do not invalidate evidence. Three identities are kept
+distinct: the source identity (this hash, current design), the generated
+fixture identity (sha256 of the committed DUT, pinned in publication.json) and
+the simulated fixture identity (what the `klt pex` run hashed). `--check-source`
+and signoff/check.py require the committed DUT to equal `render_dut()` of the
+current source, and `RING1_PARAMS` to equal `xr1`'s own sizing.
+
 What the schematic side is
 --------------------------
 `vsubs` has no schematic counterpart (the schematic ties NMOS bulk to `vss`
@@ -57,6 +71,7 @@ of the comparison.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import subprocess
 import sys
@@ -173,8 +188,83 @@ def extraction_port_map(netlist_text: str) -> list[str]:
     return [names.get(p, p) for p in header]
 
 
-def render_dut(port_names: list[str]) -> str:
-    design = DESIGN.read_text()
+#: Subcircuits of design/ro_array_core.spice the DUT body is transcribed from.
+CONSUMED_SUBCKTS = ("ro_ring11", "ro_nand2", "ro_stage")
+#: The canonical instance whose sizing RING1_PARAMS restates.
+RING1_INSTANCE = "xr1"
+
+
+def ring1_instance_params(design: str) -> str:
+    """The `xr1` instance's parameter tokens, as written in the design source."""
+    for line in _logical_lines(design):
+        toks = line.split()
+        if toks and toks[0].lower() == RING1_INSTANCE and TOP in toks:
+            return " ".join(t for t in toks[toks.index(TOP) + 1 :] if "=" in t)
+    raise BuildError(f"{DESIGN.relative_to(REPO_ROOT)}: no {RING1_INSTANCE} {TOP} instance")
+
+
+def audit_ring1_params(design: str) -> None:
+    """Fail unless RING1_PARAMS equals the canonical `xr1` sizing."""
+    canonical = ring1_instance_params(design)
+    if canonical.split() != RING1_PARAMS.split():
+        raise BuildError(
+            f"RING1_PARAMS {RING1_PARAMS!r} disagrees with {RING1_INSTANCE} in "
+            f"{DESIGN.relative_to(REPO_ROOT)}: {canonical!r}"
+        )
+
+
+def consumed_source(design: str) -> str:
+    """Canonical text of the source the DUT is built from.
+
+    Scope: the `.subckt` blocks named in CONSUMED_SUBCKTS plus the `xr1`
+    sizing -- NOT the whole file. Comments, blank lines, continuation layout
+    and the order of other subcircuits do not matter, so an unrelated edit to
+    design/ro_array_core.spice (another cell, the ring2 instance, a comment)
+    leaves the identity unchanged; any change to a consumed device or to
+    ring1's sizing changes it.
+    """
+    parts = [f"{RING1_INSTANCE}: {ring1_instance_params(design)}"]
+    for name in CONSUMED_SUBCKTS:
+        block = _logical_lines("\n".join(_subckt_block(design, name)))
+        parts += [" ".join(l.split()) for l in block if l.strip() and not l.lstrip().startswith("*")]
+    return "\n".join(parts) + "\n"
+
+
+def source_identity(design: str | None = None) -> str:
+    """`sha256:<hex>` of consumed_source() for the current (or given) design."""
+    text = DESIGN.read_text() if design is None else design
+    return "sha256:" + hashlib.sha256(consumed_source(text).encode()).hexdigest()
+
+
+def dut_source_problem(dut_text: str | None = None, design: str | None = None) -> str | None:
+    """None if the committed DUT is exactly what render_dut() produces from the
+    current source at the DUT's own header; otherwise a diagnostic. Needs no
+    klt, ngspice or PDK: the header is read back from the committed DUT."""
+    try:
+        dut = DUT.read_text() if dut_text is None else dut_text
+        design_text = DESIGN.read_text() if design is None else design
+        want = render_dut(dut_header(dut), design_text)
+    except BuildError as exc:
+        return str(exc)
+    if dut == want:
+        return None
+    import difflib
+
+    diff = [
+        l for l in difflib.unified_diff(
+            dut.splitlines(), want.splitlines(), "committed DUT", "rendered from source", lineterm="", n=0
+        ) if not l.startswith(("---", "+++", "@@"))
+    ]
+    return (
+        f"{DUT.relative_to(REPO_ROOT)} does not match {DESIGN.relative_to(REPO_ROOT)} "
+        f"(first differences: {'; '.join(diff[:4])}); re-run build_dut.py, then "
+        f"signoff/publish_item7_analog.py"
+    )
+
+
+def render_dut(port_names: list[str], design: str | None = None) -> str:
+    design = DESIGN.read_text() if design is None else design
+    audit_ring1_params(design)
     ring = _subckt_block(design, "ro_ring11")
     body = [l for l in _logical_lines("\n".join(ring[1:-1])) if l and not l.startswith("*")]
     out = [
@@ -233,8 +323,18 @@ def main(argv: list[str] | None = None) -> int:
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--verify-netlist", type=Path)
+    mode.add_argument(
+        "--check-source", action="store_true",
+        help="offline: hold the committed DUT to design/ro_array_core.spice (no klt)",
+    )
     args = ap.parse_args(argv)
     try:
+        if args.check_source:
+            problem = dut_source_problem()
+            if problem:
+                raise BuildError(problem)
+            print(f"build_dut: {DUT.relative_to(REPO_ROOT)} matches source {source_identity()}")
+            return 0
         if args.verify_netlist:
             got = extraction_port_map(args.verify_netlist.read_text())
             want = dut_header(DUT.read_text())

@@ -24,7 +24,12 @@ What it does, and refuses to do:
   request, the testbench body and the schematic DUT, by sha256, plus the
   envelope itself and the envelope's own `body_bias.status`, copied verbatim
   so nobody can read the citation without meeting it.
-* It refuses to publish unless check.item7_analog_problems() is empty: a
+* `source_sha256` records the identity of the consumed design-source sections
+  (ro_ring11, ro_nand2, ro_stage and xr1's sizing -- not the whole file; see
+  build_dut.py) the DUT was rendered from. It is checked against current
+  source; it is never attached to older evidence.
+* It refuses to run or publish unless the committed DUT equals
+  build_dut.render_dut() of the current source, and refuses to publish unless check.item7_analog_problems() is empty: a
   `pass` status, no pin-count or flat-DUT mismatch, all 27 corners, every
   delta row measured on both sides, the committed extracted netlist is the
   one the run hashed, and its ring positions re-derive to the schematic
@@ -57,6 +62,10 @@ KLT_PEX_ARGS = [
 ]
 
 
+def _build_dut():
+    return check._load_build_dut()
+
+
 def run_pex() -> Path:
     SCRATCH.mkdir(parents=True, exist_ok=True)
     out = SCRATCH / "klt_pex_response.json"
@@ -70,6 +79,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--envelope", type=Path, help="an existing `klt pex` stdout to publish")
     args = ap.parse_args()
+    # Refuse before spending a 27-corner grid on a fixture that no longer
+    # represents the design source.
+    stale = check.item7_analog_dut_source_problems()
+    if stale:
+        print("publish_item7_analog: schematic DUT is stale -- nothing run", file=sys.stderr)
+        for f in stale:
+            print(f"  - {f}", file=sys.stderr)
+        return 1
     src = args.envelope.resolve() if args.envelope else run_pex()
     raw = src.read_bytes()
     envelope = json.loads(raw)
@@ -79,6 +96,7 @@ def main() -> int:
         "producer": "klt " + shlex.join(KLT_PEX_ARGS),
         "producer_build": (envelope.get("provenance") or {}).get("klt_version"),
         "layout_content_hash": check.pinned_input_hash(envelope),
+        "source_sha256": _build_dut().source_identity(),
         "inputs_sha256": {rel: check.sha256_file(REPO_ROOT / rel) for rel in check.ITEM7A_INPUTS},
         "body_bias_status": (envelope.get("body_bias") or {}).get("status"),
         "envelope": {"file": check.ITEM7A_ENVELOPE},
