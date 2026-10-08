@@ -1158,6 +1158,14 @@ def check_ring_fit(region: dict, gds_path: Path, variant: str) -> dict:
 #: stays an empty table: `check_interregion` below still reads this
 #: unconditionally, and a future net could reintroduce a genuine multi-label
 #: promotion the same way this one existed from #222 to #224.
+#:
+#: Not a place to absorb an observed extra pin (gf180-trng#309): under klt
+#: 0.6.0 the composed stream reported two more pins than the declared
+#: interface, a second `clk` and a second `rst_n`. Those are `digital`'s own
+#: clock-tree and reset nets, labelled by its pin text at the far edge of the
+#: block and *not joined* to the drawn trunk -- the unjoined-endpoint signature
+#: this check exists to fail on, so they are reported as problems, never
+#: listed here.
 DUPLICATE_PIN_NAME_PROMOTIONS: tuple[str, ...] = ()
 
 #: The four supply branches that must never merge (phase 1's own "DO NOT
@@ -1182,7 +1190,11 @@ def run_extract_composed(pins: list[str]) -> dict:
 
     `--pins` is given the composed reference's own `.SUBCKT trng_floorplan`
     header verbatim, so the layout is held to exactly the interface the
-    reference declares rather than to a list restated here.
+    reference declares rather than to a list restated here. From klt 0.6.0
+    (klayout-tools#1687) a declared name matches a net carrying it as any
+    one component of a `'|'`-joined label set, so `en1` is promoted as
+    `en|en1`, `vdd` as `d|vdd`, and so on (`expected_interface`); the
+    superseded producers could not name those five and left them internal.
     """
     output = WORK_DIR / "trng_floorplan.extracted.spice"
     return _run_klt([
@@ -1194,6 +1206,90 @@ def run_extract_composed(pins: list[str]) -> dict:
         "--def-net-names",
         "-o", str(output.relative_to(REPO_ROOT)),
     ])
+
+
+def expected_interface(
+    declared: list[str],
+    promotions: tuple[str, ...] | None = None,
+) -> tuple[Counter, dict[str, str], list[str]]:
+    """The top-level pins `klt extract --pins <declared>` should promote on
+    the composed, routed floorplan, derived from the declaration alone.
+
+    Returns `(expected_names, joined_pins, problems)`:
+
+    * `expected_names` -- `Counter` of promoted pin names. Each declared pin
+      is one net, named by `interregion.extracted_net_name` (its predicted
+      label set, `'|'`-joined and sorted; a pin whose net carries no other
+      label keeps its own name), because klt 0.6.0 matches `--pins` against
+      any one component label of a joined net (klayout-tools#1687) and
+      reports that net under the *joined* name. Each `promotions` entry (a
+      drawn net two electrically separate nets legitimately carry, default
+      `DUPLICATE_PIN_NAME_PROMOTIONS`) adds one more net of that name.
+    * `joined_pins` -- `{declared pin: joined extracted name}` for the pins
+      whose net is reported under a name other than their own.
+    * `problems` -- the declaration contradicting itself: two declared pins
+      predicted onto the same net would be promoted once, not twice, so the
+      derivation above would over-count.
+    """
+    if promotions is None:
+        promotions = DUPLICATE_PIN_NAME_PROMOTIONS
+    names: Counter = Counter()
+    joined: dict[str, str] = {}
+    owner: dict[str, str] = {}
+    problems: list[str] = []
+    for pin in declared:
+        extracted_name = interregion.extracted_net_name(pin)
+        names[extracted_name] += 1
+        if extracted_name != pin:
+            joined[pin] = extracted_name
+        for label in interregion.extracted_label_set(pin) & set(declared):
+            if label in owner and owner[label] != pin:
+                problems.append(
+                    f"declared pins {owner[label]!r} and {pin!r} are predicted onto "
+                    f"the same net (shared label {label!r}); the interface "
+                    "derivation would count one promoted net twice"
+                )
+            owner.setdefault(label, pin)
+    for pin in promotions:
+        names[interregion.extracted_net_name(pin)] += 1
+    return names, dict(sorted(joined.items())), problems
+
+
+def compare_interface(extracted: dict, expected_names: Counter, pin_count) -> list[str]:
+    """Hold an extraction report to the derived interface, exactly: the
+    reported `pin_count`, and the multiset of promoted net names (every net
+    flagged `pin`) against `expected_names`. An unexpected extra pin or an
+    omitted one is reported by name, never absorbed into a count."""
+    problems: list[str] = []
+    expected_total = sum(expected_names.values())
+    nets = extracted.get("nets")
+    if nets is not None:
+        actual = Counter(net.get("name") or "" for net in nets if net.get("pin"))
+        extra = actual - expected_names
+        missing = expected_names - actual
+        if extra:
+            problems.append(
+                "klt extract promoted top-level pin(s) the declared interface "
+                f"does not predict: {dict(sorted(extra.items()))} -- a name "
+                "appearing more often than predicted is a second net carrying "
+                "the same label (its endpoints are not electrically joined), "
+                "not a legitimate promotion unless it is listed in "
+                "DUPLICATE_PIN_NAME_PROMOTIONS"
+            )
+        if missing:
+            problems.append(
+                "klt extract did not promote declared pin(s) "
+                f"{dict(sorted(missing.items()))} (a declared name that is "
+                "absent from the layout, or carried under a different joined "
+                "label set than interregion.REGION_CELL_LABELS predicts)"
+            )
+    if pin_count != expected_total:
+        problems.append(
+            f"klt extract --top trng_floorplan reports {pin_count} top-level "
+            f"pin(s); the declared interface predicts {expected_total} "
+            "(one per declared pin, plus DUPLICATE_PIN_NAME_PROMOTIONS)"
+        )
+    return problems
 
 
 def check_interregion(wiring_plan: dict) -> dict:
@@ -1224,24 +1320,26 @@ def check_interregion(wiring_plan: dict) -> dict:
        the reference is four `.SUBCKT` instantiations, so neither can pair
        against the other hierarchically.
 
-    The expected pin count is *derived*, not asserted from a remembered
-    number: it is the reference's own declared pin count, minus the pins
-    `klt extract --pins` structurally cannot name (see
-    `interregion.extracted_net_name` -- KLayout joins every label on one net
-    into a single comma-separated name, and `--pins` takes a
-    comma-separated *list*, so a multiply-labelled net's name cannot be
-    written in it at all), plus `DUPLICATE_PIN_NAME_PROMOTIONS`.
+    The expected top-level interface is *derived*, not asserted from a
+    remembered or observed number (`expected_interface`): each declared pin
+    is one promoted net, named by its predicted label set
+    (`interregion.extracted_net_name`, KLayout's `'|'`-joined, sorted
+    convention -- `en1` -> `en|en1`, `vdd` -> `d|vdd`), plus one extra net
+    per `DUPLICATE_PIN_NAME_PROMOTIONS` entry. Since klayout-tools#1687
+    (shipped in the DR-0026 producer, klt 0.6.0), `--pins` matches a declared
+    name against any one component label of a joined net, so those five
+    joined nets are promoted and *counted*; before it they could not be
+    named and were subtracted (112 - 5 = 107). Both the count and the
+    promoted pin *names* are compared exactly, so an unexpected extra pin
+    (for instance a second net carrying the label `clk`) or a missing one
+    fails with its identity rather than as a bare count.
     """
     ref_path = floorplan_netlist.LVS_REFERENCE_PATH
     ref_top = floorplan_netlist.TOP_CELL
     declared = _reference_top_pins(ref_path, ref_top)
 
-    unnameable = sorted(
-        pin for pin in declared if "|" in interregion.extracted_net_name(pin)
-    )
-    expected_pins = (
-        len(declared) - len(unnameable) + len(DUPLICATE_PIN_NAME_PROMOTIONS)
-    )
+    expected_names, joined_pins, interface_problems = expected_interface(declared)
+    expected_pins = sum(expected_names.values())
 
     extracted = run_extract_composed(declared)
     net_names = [net.get("name") or "" for net in extracted.get("nets") or ()]
@@ -1319,15 +1417,8 @@ def check_interregion(wiring_plan: dict) -> dict:
         )
 
     pin_count = extracted.get("pin_count")
-    if pin_count != expected_pins:
-        problems.append(
-            f"klt extract --top trng_floorplan reports {pin_count} top-level "
-            f"pin(s); the composed reference declares {len(declared)} and "
-            f"{len(unnameable)} of those ({unnameable}) cannot be named "
-            "through `klt extract --pins` at all, plus "
-            f"{len(DUPLICATE_PIN_NAME_PROMOTIONS)} duplicate-name promotion(s) "
-            f"{list(DUPLICATE_PIN_NAME_PROMOTIONS)} -- expected {expected_pins}"
-        )
+    problems.extend(interface_problems)
+    problems.extend(compare_interface(extracted, expected_names, pin_count))
 
     lvs = run_lvs(
         None, "trng_floorplan", ref_path, ref_top, "trng_floorplan",
@@ -1345,7 +1436,7 @@ def check_interregion(wiring_plan: dict) -> dict:
 
     return {
         "declared_pins": len(declared),
-        "pins_unnameable_by_klt_extract": unnameable,
+        "joined_name_pins": joined_pins,
         "duplicate_pin_name_promotions": list(DUPLICATE_PIN_NAME_PROMOTIONS),
         "expected_pin_count": expected_pins,
         "extract": {

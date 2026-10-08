@@ -1332,6 +1332,51 @@ expected number and fails if the extraction disagrees:
   `--pins` would need to express. 112 − 5 + 0 = **107**, verified directly
   against `klt extract`'s own reported count.
 
+#### Under klt 0.6.0 the expectation is 112, not 107 (gf180-trng#309, 2026-10-08)
+
+Everything above this heading is the **historical** account (the 107 was
+measured under the producers that predate klayout-tools#1687, and it stays
+as written). The normative producer is now klt 0.6.0 (DR-0026, amended in
+#281), and `--pins` there matches a declared name against **any one
+component** of a `'|'`-joined net label instead of the whole string. The five
+joined nets are therefore promoted, under their joined names, and counted:
+
+| declared pin | promoted as |
+|---|---|
+| `en1` | `en|en1` |
+| `en2` | `en|en2` |
+| `vdd` | `d|vdd` |
+| `vddr1` | `vddr|vddr1` |
+| `vddr2` | `vddr|vddr2` |
+
+`floorplan.py` derives the expectation as one promoted net per declared pin
+(`expected_interface`), named by its predicted label set, plus one per
+`DUPLICATE_PIN_NAME_PROMOTIONS` entry (still empty): 112 declared -> **112**
+expected. It compares both the count and the promoted *names*, exactly, so an
+unexpected or missing pin fails by name.
+
+**What the check measured on 2026-10-08** (klt `0.6.0+g3a75c3ae705b`,
+gf180mcuD at open_pdks `c6d73a35...` from the local volare install -- *not*
+the `f6eeac7d...` commit `pdk-nightly.yml` pins, see #310; committed tree at
+`main` `1944e2b`): the composed stream promotes **114** pins. The 112
+predicted names are all present, including the five joined ones. The other
+**two are a second `clk` and a second `rst_n`** (reported by the SPICE writer
+as `clk$1`/`rst_n$1`): `digital`'s own clock-tree root and reset-fan-out
+nets, each carrying only `digital`'s pin text (at y = 399.67 um, the far end
+of the block) and no trunk label. They are not legitimate promotions and are
+deliberately *not* added to `DUPLICATE_PIN_NAME_PROMOTIONS`; they are the
+"two nets named `clk` / `rst_n`" unjoined-endpoint signature described below.
+`raw_bit` and `raw_valid` show the same split (a `digital`-side net next to
+`q|raw_bit`/`q|raw_valid`; they are not declared pins, so they are not
+promoted, but the connectivity check reports them). Cause: `digital` was
+re-placed-and-routed (#266/#277/#293) and its `clk`, `rst_n`, `raw_bit`,
+`raw_valid` and `ring_bit[*]` pins moved from the bottom edge (y = 0.26 um in
+the DEF) to the top edge (y = 398.67 um); `interregion.py`'s `digital_pin`
+stub is drawn at the bottom edge and does not read the pin's y. Fixing the
+wiring is tracked in gf180-trng#315; it is separate work from the pin-count expectation; until it lands
+`--require-tools` fails these checks for that real reason, and the expectation
+is not loosened to hide it.
+
 Both remaining gaps are filed generically upstream — see [Tool
 friction](#tool-friction).
 
@@ -1631,8 +1676,10 @@ mitigation possible and are recorded here only until fixed upstream):
    which matches). `--def-pins` already solved exactly this by matching on
    any one component label; `--pins` has no equivalent, and `--pins` is the
    only option when the pin list comes from a reference netlist's `.SUBCKT`
-   header rather than from a DEF. This is what makes the routed floorplan
-   report 108 pins against the reference's declared 112 — see [What `klt
+   header rather than from a DEF. This is what made the routed floorplan
+   report 108 pins against the reference's declared 112 (historical:
+   klayout-tools#1687 since fixed the matching in klt 0.6.0, which now
+   promotes the joined nets -- see "Under klt 0.6.0" above) — see [What `klt
    extract` reports, and why](#what-klt-extract-reports-and-why).
    `floorplan.py` works around it by *deriving* the expected count (declared
    pins, minus the ones whose extracted name is a multi-label join, plus the
