@@ -21,12 +21,11 @@ name: CI
 # Every self-check that exists in this repo is either run below or excluded
 # here with a reason:
 #
-#   sim/tests/*.py (unittest, 71 cases)
+#   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
 #       `npm run test`.
 #
-#   layout/tests/*.py (unittest, 43 cases across test_verify.py/test_klt.py/
-#   test_pex_noise_tap.py/test_floorplan_netlist.py)
+#   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
 #       `npm run test:layout`. test_verify.py holds layout/verify.py's
 #       freshness-gate comparison (`_stable()` / `compare_reports()`, issue
