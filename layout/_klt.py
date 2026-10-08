@@ -17,12 +17,10 @@ golden artefacts are byte-comparable across runs -- see
 
 `klt_origin()` (what commit a `klt` install was built from -- `klt --version`
 alone cannot tell two builds apart, see its own docstring) is added here
-rather than only living in `layout/verify.py`'s own copy (issue #143):
+(issue #143, consolidated with `layout/verify.py`'s richer fork in #335):
 `design/synth.py` needs the identical provenance record
-`layout/reports/environment.json` already carries, and this module is where
-that kind of shared plumbing belongs. `layout/verify.py` keeps its own
-existing copy for now -- consolidating that one is unrelated cleanup, not
-this issue's scope.
+`layout/reports/environment.json` carries, and this module is where that
+kind of shared plumbing belongs.
 
 `_rect()` (issue #215) is the one-line helper that turns a layer/bbox into
 `klt draw`'s own wiring-shape JSON dict. `layout/rings/ro_ring11/build.py`,
@@ -152,14 +150,35 @@ def klt_origin() -> dict | None:
     build, and on 2026-08-02 two `0.1.0` installs produced different LVS
     reports for the same fixture (#73). The commit does identify it.
 
-    Best effort by construction: an install from a wheel has no upstream
-    commit to report, and a layout this does not recognise reports nothing
-    rather than guessing. A None here means "not recorded", never "the same
-    as last time".
+    Two sources, in order:
+
+    1. The distribution's own `direct_url.json` -- present for an install
+       from a git URL (`pip install "klayout-tools @ git+...@<sha>"`), and
+       naming the URL and the resolved commit.
+    2. `klt version --format json` -- for an install from a package index
+       (`pip install "klayout-tools==0.6.0"`, the form
+       `.github/workflows/pdk-nightly.yml` pins since #281), which has no
+       `direct_url.json`. klayout-tools records the commit, tag and dirty
+       state its wheel was built from at build time (klayout-tools#1202),
+       and reports them there. `url` is then `None` -- the index a wheel
+       came from is not recorded anywhere this can read -- and `tag` /
+       `is_release` say which release the commit is.
+
+    Best effort by construction: a build that records neither, or a layout
+    this does not recognise, reports nothing rather than guessing. A None
+    here means "not recorded", never "the same as last time".
     """
     executable = shutil.which("klt")
     if executable is None:
         return None
+    origin = _direct_url_origin(executable)
+    if origin is not None and origin.get("commit"):
+        return origin
+    return _build_identity_origin(executable) or origin
+
+
+def _direct_url_origin(executable: str) -> dict | None:
+    """`klt_origin()`'s first source: the install's `direct_url.json`."""
     try:
         # The console script's shebang names the interpreter of the venv the
         # distribution is installed into -- the one that can answer.
@@ -171,7 +190,7 @@ def klt_origin() -> dict | None:
         return None
     try:
         done = subprocess.run(
-            [shebang[2:].strip(), "-c", _KLT_ORIGIN_PROBE],
+            [*shebang[2:].split(), "-c", _KLT_ORIGIN_PROBE],
             capture_output=True,
             text=True,
             timeout=60,
@@ -184,6 +203,35 @@ def klt_origin() -> dict | None:
     return {
         "url": record.get("url"),
         "commit": (record.get("vcs_info") or {}).get("commit_id"),
+    }
+
+
+def _build_identity_origin(executable: str) -> dict | None:
+    """`klt_origin()`'s second source: `klt version --format json`.
+
+    Only a *clean* recorded build identity is returned: a `dirty` build's
+    commit does not describe what ran, so it reports nothing.
+    """
+    try:
+        done = subprocess.run(
+            [executable, "version", "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        record = json.loads(done.stdout.strip())
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    commit = record.get("git_commit")
+    if not isinstance(commit, str) or not commit or record.get("dirty") is not False:
+        return None
+    return {
+        "url": None,
+        "commit": commit,
+        "tag": record.get("git_tag"),
+        "is_release": record.get("is_release"),
     }
 
 
