@@ -31,13 +31,16 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+from collections import Counter
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design"))
 
 import floorplan_netlist  # noqa: E402
+from layout.floorplan import floorplan  # noqa: E402
 from layout.floorplan import interregion  # noqa: E402
 
 COMPOSE_REPORT = REPO_ROOT / "layout" / "floorplan" / "reports" / "compose.json"
@@ -210,6 +213,185 @@ class CompositionCarriesTheWiring(unittest.TestCase):
             "composed unconnected again (issue #222)",
         )
         self.assertIn("trng_interregion", request["placement"]["order"])
+
+
+# --------------------------------------------------------------------------- #
+# The composed top-level interface (gf180-trng#309)
+# --------------------------------------------------------------------------- #
+
+#: The five declared chip pins whose nets also carry a region cell's own
+#: label, with the name klt 0.6.0 (klayout-tools#1687) reports each under.
+#: Written out, not derived from `interregion`, so the table itself is checked.
+JOINED_PINS = {
+    "en1": "en|en1",
+    "en2": "en|en2",
+    "vdd": "d|vdd",
+    "vddr1": "vddr|vddr1",
+    "vddr2": "vddr|vddr2",
+}
+
+_MATCH = {"status": "match", "mismatch_count": 2, "category_counts": {"topology.flattened": 2}}
+
+
+def _declared() -> list[str]:
+    return floorplan._reference_top_pins(
+        floorplan_netlist.LVS_REFERENCE_PATH, floorplan_netlist.TOP_CELL
+    )
+
+
+def _fake_extraction(declared: list[str], plan: dict, *, drop=(), extra=()) -> dict:
+    """A hand-built `klt extract` report: one promoted net per declared pin
+    under its joined name (what the 0.6.0 producer does), the drawn
+    non-chip-pin nets joined to their cell labels but not promoted. `drop`
+    removes promoted net names, `extra` adds more (name, pin?) nets. The
+    pin count is the number of promoted nets -- never a literal."""
+    nets = [
+        {"name": interregion.extracted_net_name(pin), "pin": True}
+        for pin in declared
+    ]
+    for route in plan["routes"]:
+        if not route["chip_pin"]:
+            nets.append({"name": f"q|{route['net']}", "pin": False})
+    nets = [net for net in nets if net["name"] not in drop]
+    nets.extend({"name": name, "pin": is_pin} for name, is_pin in extra)
+    return {
+        "status": "ok", "device_count": 196, "net_count": len(nets),
+        "pin_count": sum(1 for net in nets if net["pin"]),
+        "nets": nets, "abstracted_cells": [],
+    }
+
+
+class ComposedInterfaceExpectation(unittest.TestCase):
+    """`floorplan.expected_interface`/`check_interregion` hold the composed
+    extraction to the interface derived from the declaration -- exactly."""
+
+    def setUp(self):
+        self.declared = _declared()
+        self.plan = _plan()
+
+    def _check(self, extraction, lvs=_MATCH):
+        with mock.patch.object(floorplan, "run_extract_composed", return_value=extraction), \
+                mock.patch.object(floorplan, "run_lvs", return_value=lvs):
+            return floorplan.check_interregion(self.plan)
+
+    def test_the_five_joined_chip_pins_are_named_by_their_joined_labels(self):
+        names, joined, problems = floorplan.expected_interface(self.declared)
+        self.assertEqual(joined, JOINED_PINS)
+        self.assertEqual(problems, [])
+        for joined_name in JOINED_PINS.values():
+            self.assertEqual(names[joined_name], 1)
+        # every joined name is '|'-separated, never comma-separated
+        self.assertTrue(all("," not in name for name in names))
+
+    def test_the_expectation_counts_the_joined_pins_instead_of_subtracting_them(self):
+        names, _, _ = floorplan.expected_interface(self.declared)
+        # one promoted net per declared pin: 112 declared -> 112 expected,
+        # not 107 (the superseded producers subtracted the five joined pins)
+        self.assertEqual(sum(names.values()), len(self.declared))
+        self.assertEqual(floorplan.DUPLICATE_PIN_NAME_PROMOTIONS, ())
+
+    def test_a_promotion_adds_exactly_one_expected_net_of_that_name(self):
+        names, _, _ = floorplan.expected_interface(self.declared, promotions=("vss",))
+        self.assertEqual(names["vss"], 2)
+        self.assertEqual(sum(names.values()), len(self.declared) + 1)
+
+    def test_two_declared_pins_on_one_predicted_net_are_a_declaration_problem(self):
+        with mock.patch.dict(interregion.REGION_CELL_LABELS, {"en1": ("en", "en2")}):
+            _, _, problems = floorplan.expected_interface(self.declared)
+        self.assertTrue(any("same net" in p for p in problems), problems)
+
+    def test_the_normative_extraction_shape_passes_with_no_problems(self):
+        check = self._check(_fake_extraction(self.declared, self.plan))
+        self.assertEqual(check["problems"], [])
+        self.assertEqual(check["expected_pin_count"], len(self.declared))
+        self.assertEqual(check["extract"]["pin_count"], check["expected_pin_count"])
+        self.assertEqual(check["joined_name_pins"], JOINED_PINS)
+
+    def test_an_unexpected_extra_pin_fails_by_name(self):
+        # a second net carrying `clk` -- an unjoined endpoint, not a promotion
+        check = self._check(_fake_extraction(
+            self.declared, self.plan, extra=[("clk", True), ("rst_n", True)]))
+        text = "\n".join(check["problems"])
+        self.assertIn("{'clk': 1, 'rst_n': 1}", text)
+        self.assertIn(f"reports {len(self.declared) + 2} top-level pin(s)", text)
+        # and the connectivity check sees the second carrier too
+        self.assertIn("drawn net 'clk' is carried by 2", text)
+        self.assertIn("drawn net 'rst_n' is carried by 2", text)
+
+    def test_an_unknown_extra_pin_fails(self):
+        check = self._check(_fake_extraction(
+            self.declared, self.plan, extra=[("stray_label", True)]))
+        self.assertTrue(any("stray_label" in p for p in check["problems"]))
+
+    def test_an_omitted_joined_pin_fails_by_name(self):
+        for joined_name in JOINED_PINS.values():
+            with self.subTest(pin=joined_name):
+                check = self._check(_fake_extraction(
+                    self.declared, self.plan, drop={joined_name}))
+                text = "\n".join(check["problems"])
+                self.assertIn(f"{joined_name!r}", text)
+                self.assertIn("did not promote", text)
+                self.assertIn(f"reports {len(self.declared) - 1} top-level", text)
+
+    def test_the_count_is_exact_even_when_the_names_agree(self):
+        extraction = _fake_extraction(self.declared, self.plan)
+        extraction["pin_count"] += 1
+        check = self._check(extraction)
+        self.assertTrue(any("top-level pin(s)" in p for p in check["problems"]))
+
+    def test_a_legitimate_duplicate_promotion_is_accounted_exactly(self):
+        extraction = _fake_extraction(self.declared, self.plan, extra=[("vss", True)])
+        with mock.patch.object(floorplan, "DUPLICATE_PIN_NAME_PROMOTIONS", ("vss",)):
+            check = self._check(extraction)
+            self.assertEqual(check["problems"], [])
+            self.assertEqual(check["expected_pin_count"], len(self.declared) + 1)
+            # a third `vss` net is still caught
+            three = _fake_extraction(
+                self.declared, self.plan, extra=[("vss", True), ("vss", True)])
+            self.assertTrue(self._check(three)["problems"])
+
+    def test_several_labels_on_one_net_are_one_carrier(self):
+        # `en|en1` carries two labels but is a single net for the route `en1`
+        extraction = _fake_extraction(self.declared, self.plan)
+        carriers = [n for n in extraction["nets"] if "en1" in n["name"].split("|")]
+        self.assertEqual(len(carriers), 1)
+        self.assertEqual(self._check(extraction)["problems"], [])
+
+    def test_a_disconnected_route_still_fails(self):
+        extraction = _fake_extraction(
+            self.declared, self.plan, extra=[("raw_bit", False)])
+        text = "\n".join(self._check(extraction)["problems"])
+        self.assertIn("drawn net 'raw_bit' is carried by 2", text)
+
+    def test_a_wrong_chip_pin_label_set_still_fails(self):
+        extraction = _fake_extraction(self.declared, self.plan)
+        for net in extraction["nets"]:
+            if net["name"] == "en|en1":
+                net["name"] = "en|en1|zz"
+        text = "\n".join(self._check(extraction)["problems"])
+        self.assertIn("came back labelled", text)
+
+    def test_merged_supply_branches_still_fail(self):
+        extraction = _fake_extraction(self.declared, self.plan)
+        for net in extraction["nets"]:
+            if net["name"] == "vddd":
+                net["name"] = "vdd|vddd"
+        text = "\n".join(self._check(extraction)["problems"])
+        self.assertIn("two supply-branch labels", text)
+
+    def test_an_unexpected_lvs_category_still_fails(self):
+        lvs = {"status": "match", "mismatch_count": 1,
+               "category_counts": {"net.split": 1}}
+        text = "\n".join(self._check(
+            _fake_extraction(self.declared, self.plan), lvs)["problems"])
+        self.assertIn("composed LVS", text)
+
+    def test_compare_interface_reports_extras_and_omissions_together(self):
+        expected = Counter({"a": 1, "b": 1})
+        report = {"nets": [{"name": "a", "pin": True}, {"name": "c", "pin": True}]}
+        text = "\n".join(floorplan.compare_interface(report, expected, 2))
+        self.assertIn("{'c': 1}", text)
+        self.assertIn("{'b': 1}", text)
 
 
 if __name__ == "__main__":

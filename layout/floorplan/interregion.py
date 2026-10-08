@@ -971,13 +971,14 @@ def wiring_plan(origins: dict[str, dict[str, float]],
 #: NETS`) and `layout/cells/sampler_dff` labels that pin `d`.
 #:
 #: This matters because `klt extract --pins` matches a declared pin name
-#: against that joined string *exactly*, and cannot express a name
-#: containing a comma at all (klayout-tools#1687, unlike `--def-pins`, which
-#: matches any one component label). It is what makes the routed floorplan
-#: report fewer top-level pins than the reference's own declared count (107
-#: against 112, since gf180-trng#224 -- `en1`/`en2`/`vdd`/`vddr1`/`vddr2`
-#: are the five still-unnameable pins) -- see `layout/floorplan/README.md`'s
-#: "What `klt extract` reports, and why".
+#: against the joined name's *components* (klayout-tools#1687, shipped in klt
+#: 0.6.0): `en1` is promoted, as the joined net `en|en1`, so the five pins
+#: `en1`/`en2`/`vdd`/`vddr1`/`vddr2` count toward the extracted interface
+#: under their joined names (112 declared pins -> 112 promoted nets). The
+#: superseded producers matched the whole joined string exactly and could not
+#: express it in a comma-separated list, so those five stayed internal nets
+#: and the count read 107 -- see `layout/floorplan/README.md`'s "What `klt
+#: extract` reports, and why" (historical 107 measurements preserved there).
 #:
 #: **This table is checked, not assumed.** `floorplan.py`'s own
 #: `check_interregion()` compares each chip-pin net's predicted label set
@@ -1023,5 +1024,6 @@ def extracted_label_set(net_name: str) -> set[str]:
 def extracted_net_name(net_name: str) -> str:
     """The name `klt extract` reports for a drawn chip-pin net -- its label
     set, `'|'`-separated and sorted, which is KLayout's own convention for a
-    multiply-labelled net."""
+    multiply-labelled net (the same convention `klt extract` reports it
+    under)."""
     return "|".join(sorted(extracted_label_set(net_name)))
