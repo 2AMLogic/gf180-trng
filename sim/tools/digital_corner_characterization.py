@@ -78,6 +78,7 @@ tool supplies the measurement, states it against the row, and stops there.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -304,19 +305,153 @@ def resolve_pdk_root() -> Path:
     return Path(found.path)
 
 
-def load(records_dir: Path = RECORDS) -> list[Record]:
+#: The routed DUT this tool's current-layout claims are about.
+DUT_DEF = REPO_ROOT / "layout" / "digital" / "trng_top.def"
+
+#: The swept grid: 5 liberty decks x 3 interconnect decks.
+LIBERTY_CORNERS = ("ss_125C_3v00", "ss_n40C_3v00", "tt_025C_3v30",
+                   "ff_125C_3v60", "ff_n40C_3v60")
+RC_CORNERS = ("min", "nom", "max")
+EXPECTED_CORNERS = tuple(
+    f"{lib}/rc-{rc}" for lib in LIBERTY_CORNERS for rc in RC_CORNERS
+)
+
+
+def blob_sha(path: Path) -> str:
+    """Git blob SHA of ``path``'s content, computed in-process.
+
+    Same value as ``git hash-object`` / ``git rev-parse HEAD:<path>`` (the
+    convention ``run_sta.py`` records as ``netlist.sha``), without needing
+    git or a committed file."""
+    data = path.read_bytes()
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
+def _latest_per_corner(records: list[Record]) -> dict[str, Record]:
+    # Latest record per corner wins: a re-run mints a new stem (append-only),
+    # and sorted() puts it later.
+    by_corner: dict[str, Record] = {}
+    for rec in records:
+        by_corner[rec.corner] = rec
+    return by_corner
+
+
+def _read_all(records_dir: Path) -> list[Record]:
     records = [Record(p) for p in sorted(records_dir.glob(RECORD_GLOB))]
     if not records:
         raise RecordError(
             f"no records matching {RECORD_GLOB} under {records_dir} -- run "
             "`python3 sim/tb/digital-sta-power/run_sta.py` first"
         )
-    live = [r for r in records if r.valid]
-    # Latest record per corner wins: a re-run mints a new stem (append-only),
-    # and sorted() puts it later.
-    by_corner: dict[str, Record] = {}
-    for rec in live:
-        by_corner[rec.corner] = rec
+    return [r for r in records if r.valid]
+
+
+def load_historical(records_dir: Path | None = None) -> list[Record]:
+    """Record-only loading: the newest valid record per corner, whatever DUT
+    revision each one describes. Use for historical analysis ONLY -- the
+    result may mix routed-DUT revisions, so it must never back a claim about
+    the current layout. ``load`` is the current-layout path.
+
+    ``records_dir`` defaults to ``RECORDS``, resolved at call time."""
+    by_corner = _latest_per_corner(
+        _read_all(RECORDS if records_dir is None else records_dir))
+    return [by_corner[k] for k in sorted(by_corner)]
+
+
+def dut_revisions(records: list[Record]) -> dict[str, list[str]]:
+    """Each distinct DUT identity (``netlist.sha``) among ``records``, mapped
+    to the corners it covers. A record with no identity is listed under
+    ``"unknown"``. Ordered by first appearance in ``records``."""
+    out: dict[str, list[str]] = {}
+    for r in records:
+        out.setdefault(r.fields["netlist_sha"] or "unknown", []).append(r.corner)
+    return out
+
+
+#: First line of every ``--historical`` text report.
+HISTORICAL_BANNER = ("HISTORICAL (record-only, not a current-layout claim): "
+                     "newest valid record per corner, whatever routed-DUT "
+                     "revision it describes")
+
+
+def dut_provenance_failures(
+    records: list[Record],
+    current_sha: str,
+    expected_corners: tuple[str, ...] = EXPECTED_CORNERS,
+) -> list[str]:
+    """Why ``records`` cannot support a current-layout claim; empty if they can.
+
+    They must each carry a DUT identity equal to ``current_sha`` (the blob
+    SHA of the committed routed DEF) and cover every expected corner."""
+    fails: list[str] = []
+    missing_id = [r.stem for r in records if not r.fields["netlist_sha"]]
+    if missing_id:
+        fails.append(
+            "no DUT identity (`netlist.sha`) in: " + ", ".join(missing_id)
+        )
+    stale = [r for r in records
+             if r.fields["netlist_sha"] and r.fields["netlist_sha"] != current_sha]
+    for r in stale:
+        fails.append(
+            f"{r.stem}: describes DUT {r.fields['netlist_sha']}, the committed "
+            f"{DUT_DEF.relative_to(REPO_ROOT)} is {current_sha}"
+        )
+    have = {r.corner for r in records
+            if r.fields["netlist_sha"] == current_sha}
+    absent = [c for c in expected_corners if c not in have]
+    if absent:
+        fails.append(
+            f"{len(have)} of {len(expected_corners)} corners have a record for "
+            f"the current DUT {current_sha}; missing: {', '.join(absent)} -- "
+            "re-run `python3 sim/tb/digital-sta-power/run_sta.py` for them "
+            "(records of other DUT revisions are never substituted)"
+        )
+    return fails
+
+
+def load(
+    records_dir: Path = RECORDS,
+    def_path: Path = DUT_DEF,
+    expected_corners: tuple[str, ...] = EXPECTED_CORNERS,
+) -> list[Record]:
+    """The current-layout family: one record per expected corner, every one
+    describing the committed routed DEF. Raises ``RecordError`` naming the
+    offending stems and the expected/actual DUT identities otherwise.
+
+    Older records of earlier DUT revisions stay on disk (append-only) and are
+    simply not selected; a valid record that carries no identity at all is an
+    error, since it cannot be shown to be older. Historical analysis uses
+    ``load_historical``."""
+    live = _read_all(records_dir)
+    current_sha = blob_sha(def_path)
+    missing_id = [r.stem for r in live if not r.fields["netlist_sha"]]
+    if missing_id:
+        raise RecordError(
+            "records carry no DUT identity (`netlist.sha`), so they cannot be "
+            f"tied to the current routed DEF ({current_sha}): "
+            + ", ".join(missing_id)
+        )
+    mine = [r for r in live if r.fields["netlist_sha"] == current_sha]
+    if not mine:
+        seen = sorted({r.fields["netlist_sha"] for r in live})
+        raise RecordError(
+            f"no valid record describes the committed routed DEF "
+            f"({def_path.name} blob {current_sha}); the records are for "
+            f"{', '.join(seen)} -- re-run "
+            "`python3 sim/tb/digital-sta-power/run_sta.py`"
+        )
+    by_corner = _latest_per_corner(mine)
+    absent = [c for c in expected_corners if c not in by_corner]
+    if absent:
+        other = sorted({r.fields["netlist_sha"] for r in live} - {current_sha})
+        raise RecordError(
+            f"incomplete family for the current DUT {current_sha}: "
+            f"{len(by_corner)} of {len(expected_corners)} corners recorded "
+            f"({', '.join(sorted(r.stem for r in by_corner.values()))}); "
+            f"missing: {', '.join(absent)}. Records of other DUT revisions "
+            f"({', '.join(other) or 'none'}) are not substituted -- re-run "
+            "`python3 sim/tb/digital-sta-power/run_sta.py` for the missing corners"
+        )
     return [by_corner[k] for k in sorted(by_corner)]
 
 
@@ -700,16 +835,34 @@ def _a(x: float) -> str:
     return f"{x:.3g} A"
 
 
-def report(records: list[Record], with_estimate: bool) -> None:
+def report(records: list[Record], with_estimate: bool,
+           historical: bool = False) -> None:
     t = timing(records)
     a = area(records)
     p = power(records)
 
-    print(f"digital section, {len(records)} gate-level corners "
-          f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
-    print(f"DUT: layout/digital/trng_top.def @ {records[0].fields['netlist_sha'][:12]} "
-          f"-- {a['measured_instances']} placed instances, {a['measured_library']}")
-    print()
+    if historical:
+        # A historical family may mix routed-DUT revisions, so no single SHA
+        # can stand for it: say so up front and list every revision present.
+        revisions = dut_revisions(records)
+        print(HISTORICAL_BANNER)
+        print(f"digital section, {len(records)} gate-level corners "
+              f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
+        print(f"DUT: layout/digital/trng_top.def, {len(revisions)} revision(s) "
+              f"across these records -- {a['measured_instances']} placed "
+              f"instances, {a['measured_library']}")
+        for sha, corners in revisions.items():
+            print(f"  @ {sha[:12]}  {len(corners):2d} corner(s): "
+                  + ", ".join(corners))
+        print()
+    else:
+        print(f"digital section, {len(records)} gate-level corners "
+              f"(DR-0021), OpenROAD {records[0].fields['openroad']}")
+        print(f"DUT: layout/digital/trng_top.def @ "
+              f"{records[0].fields['netlist_sha'][:12]} "
+              f"-- {a['measured_instances']} placed instances, "
+              f"{a['measured_library']}")
+        print()
 
     print(f"== Timing (constraint {t['constraint_ns']:g} ns = "
           f"{t['constraint_mhz']:g} MHz, propagated clock, extracted parasitics) ==")
@@ -875,6 +1028,9 @@ def check(records: list[Record]) -> list[str]:
         if got != want:
             fails.append(f"{name}: records give {got!r}, RECORDED says {want!r}")
 
+    # Provenance first: numbers that agree with RECORDED prove nothing if
+    # they describe another routed-DUT revision.
+    fails.extend(dut_provenance_failures(records, blob_sha(DUT_DEF)))
     equal("corner count", len(records), RECORDED["corner_count"])
     if not t["closes_everywhere"]:
         offenders = [
@@ -959,16 +1115,31 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--estimate", action="store_true",
                     help="add the library-based estimate comparison (needs the PDK)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument("--historical", action="store_true",
+                    help="record-only view: newest valid record per corner "
+                         "whatever DUT revision it describes (may mix "
+                         "revisions; not a current-layout claim; incompatible "
+                         "with --check)")
     args = ap.parse_args(argv)
+    if args.historical and args.check:
+        print("error: --historical is not a current-layout validation and "
+              "cannot be combined with --check", file=sys.stderr)
+        return 2
 
     try:
-        records = load()
+        records = load_historical() if args.historical else load()
     except RecordError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
     if args.json:
-        payload = {
+        payload = {}
+        if args.historical:
+            # Present only in --historical mode, so the current-layout JSON
+            # stays byte-identical.
+            payload["historical"] = True
+            payload["dut_revisions"] = dut_revisions(records)
+        payload |= {
             "timing": timing(records),
             "max_transition": max_transition(records),
             "area": area(records),
@@ -986,7 +1157,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not args.check:
-        report(records, with_estimate=args.estimate)
+        report(records, with_estimate=args.estimate,
+               historical=args.historical)
         return 0
 
     fails = check(records)
