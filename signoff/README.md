@@ -211,6 +211,25 @@ copied byte for byte by `publish_item7_analog.py`. The pinned grader grades
 it `met`: kind `pex`, `status: "pass"`, `content_hash` pinned to
 `layout/rings/ro_ring11/ro_ring11.gds`, `input_verified: true`.
 
+**Schematic DUT vs design source (#351).** Three identities are kept apart:
+the *source* (`design/ro_array_core.spice`), the *generated fixture*
+(`ro_ring11_schematic.spice`, sha256-pinned in `publication.json`) and the
+*simulated fixture* (what the `klt pex` run hashed). The always-on check
+re-renders the DUT with `build_dut.py`'s deterministic renderer, using the
+port order read back from the committed DUT header, and requires an exact
+match; it needs no klt, ngspice or PDK
+(`python3 sim/tb/ro-ring11-pex/build_dut.py --check-source`). The source pin
+covers the **consumed circuit sections**, not the whole file: the
+`ro_ring11`, `ro_nand2` and `ro_stage` subcircuits (comments and whitespace
+ignored) and ring1's `xr1` sizing, which `RING1_PARAMS` must equal. Edits to
+other cells, to ring2, or to comments do not invalidate the evidence; a
+consumed device or sizing change with an unchanged DUT fails with a diff.
+`publication.json` records that identity as `source_sha256` for new
+publications (older ones are not retro-fitted). Regenerating the DUT without
+re-running `klt pex` fails the existing DUT hash pin; only a fresh
+`publish_item7_analog.py` run over the regenerated DUT restores freshness.
+This does not change the `body_bias` disclosure below (#339 is separate).
+
 **What `klt pex` requires (0.6.0), and what that allowed.** A layout, an
 extraction deck, and one or more `klt sim` request files. Each request's
 testbench body must carry exactly one `.include`, naming a schematic DUT;

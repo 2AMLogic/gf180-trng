@@ -263,9 +263,49 @@ def _ring_port_check(netlist: Path) -> str | None:
     return None
 
 
+def _load_build_dut():
+    import importlib.util
+
+    path = REPO_ROOT / ITEM7A_TB_DIR / "build_dut.py"
+    spec = importlib.util.spec_from_file_location("ro_ring11_pex_build_dut", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def item7_analog_dut_source_problems(pub: dict | None = None) -> list[str]:
+    """The generated schematic DUT must be what build_dut.py renders from the
+    current design source (stdlib only; no klt, ngspice or PDK).
+
+    Scope: the consumed circuit sections (ro_ring11, ro_nand2, ro_stage and
+    ring1's xr1 sizing), not the whole design file -- see build_dut.py. When
+    the publication records `source_sha256` it must equal today's identity;
+    publications that predate the field are not retro-fitted with one.
+    """
+    mod = _load_build_dut()
+    out: list[str] = []
+    problem = mod.dut_source_problem()
+    if problem:
+        out.append(f"schematic DUT vs source: {problem}")
+    recorded = (pub or {}).get("source_sha256")
+    if recorded is not None:
+        try:
+            current = mod.source_identity()
+        except mod.BuildError as exc:
+            out.append(f"source identity: {exc}")
+        else:
+            if recorded != current:
+                out.append(
+                    f"source identity: STALE -- the publication recorded {recorded}, the "
+                    f"consumed sections of design/ro_array_core.spice hash to {current} today; "
+                    f"re-run signoff/publish_item7_analog.py"
+                )
+    return out
+
+
 def item7_analog_problems(pub: dict, envelope: dict) -> list[str]:
     """Every reason the 7.analog publication must not be treated as current."""
-    out: list[str] = []
+    out: list[str] = item7_analog_dut_source_problems(pub)
     if envelope.get("status") != "pass":
         out.append(f"klt pex status is {envelope.get('status')!r}, not 'pass'")
     # The 0.6.0 release predates `measurement` (klayout-tools#2478); absent
