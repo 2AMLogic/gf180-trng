@@ -6,6 +6,18 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-08
 
+- **PR #349**: Guard every restated klt/klayout pin against signoff/check.py
+- **PR #348**: Drop stale test counts from ci.yml self-check header
+- **PR #347**: Require a complete current-DEF family for digital STA aggregates
+- **PR #343**: Unit-test the signoff freshness gate against its failure branches
+- **PR #342**: Consolidate duplicate klt_origin() into layout/_klt.py
+- **PR #340**: Cite a native klt pex report over ring1 as T1 item 7 analog (#326)
+- **Issue #344** (closed): Single-source the pinned klt/klayout build: guard the six restated pins against signoff/check.py KLT_PIN
+- **Issue #341** (closed): Guard digital STA aggregates against mixed and stale routed-DUT revisions
+- **Issue #337** (closed): Unit-test the signoff freshness gate (check_envelope_against_its_input) against its failure branches
+- **Issue #336** (closed): ci.yml self-check inventory quotes test counts that are ~7x stale (71/43 vs 540/121)
+- **Issue #335** (closed): Consolidate duplicate klt_origin(): verify.py fork vs layout/_klt.py
+- **Issue #326** (closed): T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it
 - **PR #334**: Enforce append-only simulation evidence against the PR base in CI
 - **PR #333**: Consolidate duplicated Variant scaffold across sim/tools --check scripts
 - **PR #332**: Cite 11.analog supply-ERC reports in the T1 manifest (#327)
