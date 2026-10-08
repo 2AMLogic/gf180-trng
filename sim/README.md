@@ -415,7 +415,8 @@ Mechanical; run through it before committing any record.
       `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.
 - [ ] No claim in the record goes beyond what this run measured.
-- [ ] No existing record was modified, except a permitted `status`/`superseded_by` edit.
+- [ ] No existing record was modified, except a permitted `status`/`superseded_by` edit —
+      `python3 sim/tools/verify_evidence_history.py --base origin/main` exits 0 (see below).
 
 ### Checking the raw-output checksums
 
@@ -434,6 +435,36 @@ directory that the record never listed, or raw output that was never `git
 add`ed (`--no-git` drops that last check). Exit 0 means the item is satisfied.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
+
+### Checking that evidence stays append-only
+
+The checksum command only proves the *current tree* is self-consistent. A record
+edited in place, raw output rewritten together with its recorded hashes, or a
+record deleted together with its raw directory would all still pass it. The
+history check compares `sim/records/` at HEAD with a base revision:
+
+```sh
+python3 sim/tools/verify_evidence_history.py                 # vs origin/main
+python3 sim/tools/verify_evidence_history.py --base <rev>    # vs another base
+npm run check:evidence-history                               # same, via npm
+```
+
+Added files (new records, new raw output) pass. Any modification, deletion,
+rename or type change of a previously committed file under `sim/records/` fails,
+with one exception: the supersession edit described under "Superseding a
+record". For a modified record the tool undoes exactly that edit (`status:
+superseded` back to `status: valid`, removing the one `superseded_by:` line)
+and requires the result to equal the base bytes, so any extra change to
+numbers, metadata or prose fails. It also requires the `superseded_by` target
+to exist at HEAD and to declare `supersedes: <old stem>`.
+
+The comparison is between the merge-base of the base and HEAD, and HEAD. The
+base must be loadable: an unknown revision, a shallow clone lacking it, or no
+shared history exits 2 rather than checking an empty diff. Fetch the base first
+(`git fetch origin main`) if `origin/main` is missing locally. CI checks out
+full history and uses the pull request's base SHA for `pull_request` events and
+the pre-push SHA for `push` events; the all-zero "before" SHA of a first push
+therefore fails loudly instead of passing.
 
 ---
 
