@@ -67,6 +67,7 @@ sys.path.insert(0, str(TB_DIR))
 from harness import report  # noqa: E402
 from layout._klt import klt_version, resolve_pdk  # noqa: E402
 
+import input_inventory  # noqa: E402
 import scenarios  # noqa: E402
 
 SLUG = "trng-top-post-route"
@@ -88,6 +89,31 @@ RTL_SOURCES = (
 )
 #: `trng_interface.v` includes the generated register-map header from here.
 RTL_INCLUDES = (REPO_ROOT / "design" / "interface",)
+
+
+
+def source_inventory() -> dict[str, str]:
+    """``{repo-relative path: sha256}`` of every local file this run consumes.
+
+    Derived from the run's own inputs (see :mod:`input_inventory`): the RTL
+    sources and the headers they include, the behavioural model and the
+    stimulus/cocotb modules with their local imports, and this directory's
+    scripts. Written to the raw ``sources.json`` and re-hashed by
+    ``signoff/check.py``.
+    """
+    return input_inventory.collect(
+        REPO_ROOT,
+        rtl_sources=list(RTL_SOURCES),
+        include_dirs=list(RTL_INCLUDES),
+        python_entries=[
+            MODEL_PATH,
+            TB_DIR / "scenarios.py",
+            TB_DIR / "post_route_tb.py",
+            TB_DIR / "model_probe.py",
+        ],
+        extra_files=sorted(TB_DIR.glob("*.py")),
+    )
+
 
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
 
@@ -1145,7 +1171,7 @@ file — a re-run or correction mints a new record and points back here via
 
 
 def write_record(env: dict, legs: dict, result: dict, records_dir: Path,
-                 git: dict, wall_s: float) -> Path:
+                 git: dict, wall_s: float, sources: dict[str, str]) -> Path:
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     def render(stem: str, raw_dir: Path) -> str:
@@ -1170,6 +1196,13 @@ def write_record(env: dict, legs: dict, result: dict, records_dir: Path,
             json.dumps(result, indent=2, sort_keys=True, default=str) + "\n"
         )
         written.append("verdict.json")
+        (raw_dir / "sources.json").write_text(
+            json.dumps(
+                {"schema": "gf180-trng/post-route-sources/1", "files": sources},
+                indent=2, sort_keys=True,
+            ) + "\n"
+        )
+        written.append("sources.json")
         raw_files = [
             (name, report.sha256_file(raw_dir / name)) for name in sorted(written)
         ]
@@ -1267,6 +1300,7 @@ def main(argv=None) -> int:
     env["pdk_version"] = getattr(pdk, "version", None) or "unknown"
 
     names = args.scenario or list(scenarios.ALL_SCENARIOS)
+    sources = source_inventory()
     started = time.time()
     try:
         # The RTL reference leg first: the post-route leg asserts against its
@@ -1277,6 +1311,13 @@ def main(argv=None) -> int:
         print(f"ERROR  {exc}", file=sys.stderr)
         return EXIT_FLOW_FAILURE
     wall_s = time.time() - started
+    if source_inventory() != sources:
+        print(
+            "ERROR  a source input changed while the legs were running; "
+            "the verdict would not describe one set of inputs -- re-run",
+            file=sys.stderr,
+        )
+        return EXIT_FLOW_FAILURE
 
     legs = {"rtl": rtl, "gate": gate}
     result = verdict(legs)
@@ -1285,7 +1326,7 @@ def main(argv=None) -> int:
     if not args.no_write:
         path = write_record(
             env, legs, result, SIM_DIR / "records",
-            report.git_provenance(REPO_ROOT), wall_s,
+            report.git_provenance(REPO_ROOT), wall_s, sources,
         )
         print(f"\nrecord: {path.relative_to(REPO_ROOT)}")
 

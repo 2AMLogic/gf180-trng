@@ -1,30 +1,5 @@
 {
-  "schema": "gf180-trng/item7-publication/1",
-  "record": "sim/records/2026-10-08-trng-top-post-route-02.md",
-  "raw_dir": "sim/records/raw/2026-10-08-trng-top-post-route-02",
-  "raw_sha256": {
-    "environment.json": "sha256:c84aa4f630f89206d1d17d3babc5489f7f96c4db122271e4c723d39c09552f77",
-    "gate_comparison.json": "sha256:9471db0c2ed97a34590bdd57b61611fcbc592ce6ee62b1b5c6082649aa041f22",
-    "gate_klt_response.json": "sha256:af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7",
-    "gate_request.json": "sha256:4da282bf9e5e8dd7bf98251c6a07b6291b204453f72a16b84486069934a741eb",
-    "gate_transcript_digest.json": "sha256:c717f67436f60fe81fee9353bfd10087312dffcaaa153015ccb08479fc66042b",
-    "rtl_comparison.json": "sha256:a086b2148515060a61eee23b5f73221eacfd064469c2ae893d9d6877d6aef17c",
-    "rtl_klt_response.json": "sha256:ab350926bd967dea1660d7f3dcf27d21810aabd63eab9b74592d655b08a5efbc",
-    "rtl_request.json": "sha256:39cd7bf23a26e03b559b9e2fd7c21f7eb745332e758a6c6eb33a4e5af4f350c0",
-    "rtl_transcript_digest.json": "sha256:81986f5fe8b015cfe550195e79eaf569bd7237486e54563f0983dfaf136b4139",
-    "sources.json": "sha256:7610a9233230b833a15a3078e8d015d383b66ae53447a759833b71a3ec34f52b",
-    "verdict.json": "sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9"
-  },
-  "netlist": {
-    "path": "layout/digital/trng_top.pnr.v",
-    "sha256": "sha256:1342adf83949a6beb5e078ba82b9bafe69fe11166d61971187856ca7cba7a8e0"
-  },
-  "sdf": {
-    "path": "layout/digital/trng_top.sdf",
-    "sha256": "sha256:137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af"
-  },
-  "limits": "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no timing violation is reported or ruled out. IOPATH arcs of ifnone-qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/toggle) run at library default delay. Functional equivalence with the applied delays is not timing signoff; see sim/tb/trng-top-post-route/README.md. Local source files the run consumed (RTL, included headers, behavioural model, testbench and stimulus, with their local imports) are pinned by sha256; the cell library, PDK, simulator and klt versions are not source-pinned.",
-  "sources": {
+  "files": {
     "design/conditioner/crc32_conditioner.py": "sha256:dcf3d44d20192e93d8c878952e61f8d764db18a8a55b219b0f1d4bb97669f232",
     "design/conditioner/crc32_conditioner.v": "sha256:d1ba83f0327e50867c5b65d8a876da8a574d63e7f16a33a96cf58c734718b808",
     "design/health_test/rct_apt.py": "sha256:dcfda0bdd19cf0c522323161901cdf933575bc119d994d1304d3874ca31903e1",
@@ -48,8 +23,5 @@
     "sim/tb/trng-top-post-route/run_demo.py": "sha256:8a85b0491e91fb8e9f7b486f4875e4ab4374e6bb660d324f73262b14c4ff559a",
     "sim/tb/trng-top-post-route/scenarios.py": "sha256:6df8801bcdc9e34af5b8710ee646568f5fbb84e11415edc72a2dff1d864602bd"
   },
-  "envelope": {
-    "file": "signoff/evidence/post-route/gate_klt_response.json",
-    "sha256": "sha256:af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7"
-  }
+  "schema": "gf180-trng/post-route-sources/1"
 }

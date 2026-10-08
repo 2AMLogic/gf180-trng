@@ -6,20 +6,8 @@
     "engine": "icarus",
     "engine_version": "13.0",
     "random_seed": 1,
-    "results_xml": "/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-350/sim/.work/trng-top-post-route/gate/.klt/functional-verification/results_icarus.xml",
-    "sdf": {
-      "annotated": true,
-      "corner": "typ",
-      "dropped": {
-        "timingcheck": {
-          "count": 320,
-          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
-        }
-      },
-      "entries": "all",
-      "file": "/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-350/layout/digital/trng_top.sdf",
-      "partial": true
-    }
+    "results_xml": "/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-350/sim/.work/trng-top-post-route/rtl/.klt/functional-verification/results_icarus.xml",
+    "sdf": null
   },
   "failed_count": 0,
   "hdl_toplevel": "trng_top",
@@ -32,49 +20,49 @@
   "tests": [
     {
       "name": "smoke",
-      "real_time_s": 0.20339465141296387,
+      "real_time_s": 0.017178058624267578,
       "sim_time_ns": 695.0,
       "status": "passed"
     },
     {
       "name": "startup_and_regfile",
-      "real_time_s": 1.6194336414337158,
+      "real_time_s": 0.42124509811401367,
       "sim_time_ns": 53645.0,
       "status": "passed"
     },
     {
       "name": "conditioner_blocks",
-      "real_time_s": 2.982477903366089,
+      "real_time_s": 0.5558152198791504,
       "sim_time_ns": 77745.0,
       "status": "passed"
     },
     {
       "name": "rct_stuck_output",
-      "real_time_s": 0.4457547664642334,
+      "real_time_s": 0.08152151107788086,
       "sim_time_ns": 16245.0,
       "status": "passed"
     },
     {
       "name": "ring1_stuck",
-      "real_time_s": 0.325974702835083,
+      "real_time_s": 0.1355900764465332,
       "sim_time_ns": 12245.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk",
-      "real_time_s": 0.17658662796020508,
+      "real_time_s": 0.02949047088623047,
       "sim_time_ns": 4945.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_early_sample",
-      "real_time_s": 0.13685989379882812,
+      "real_time_s": 0.0323030948638916,
       "sim_time_ns": 4905.100000000006,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_settle_sweep",
-      "real_time_s": 1.496854305267334,
+      "real_time_s": 0.34393811225891113,
       "sim_time_ns": 49549.0,
       "status": "passed"
     }

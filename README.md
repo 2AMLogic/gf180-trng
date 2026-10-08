@@ -11,7 +11,7 @@ convention, [twenty-six decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
 harness — plus, since #145, a gate-level static-timing and power flow over the
 placed digital netlist. Between them they produce fifteen characterization
-summaries (`sim/characterization-*.md`) resting on 976 append-only evidence
+summaries (`sim/characterization-*.md`) resting on 977 append-only evidence
 records under [`sim/records/`](sim/records/).
 `design/` holds the analog entropy source and sampler as xschem schematics with
 a deterministic SPICE netlist export, plus four digital directories —

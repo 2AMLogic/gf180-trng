@@ -22,10 +22,14 @@ What it does, and refuses to do:
   Freshness is therefore carried by ``publication.json`` next to it, which pins
   the post-route netlist **and** the SDF by sha256 together with the raw
   evidence the verdict was derived from, and ``signoff/check.py`` re-verifies
-  all of it on every run (``verify_item7_publication``).
+  all of it on every run (``verify_item7_publication``). It also pins, from
+  the run's own ``sources.json``, every local source file the run consumed
+  (RTL, included headers, behavioural model, testbench, stimulus).
 * It refuses to publish unless the run's own verdict is a pass, both legs
   passed, the gate leg was SDF-annotated, every annotation control fired, and
-  the netlist and SDF the run used still hash to what is on disk now.
+  the netlist, SDF and every pinned source the run used still hash to what is
+  on disk now (a run older than a source change, or lacking ``sources.json``,
+  is refused -- nothing is written and no hash is re-assigned).
 * It never edits ``sim/records/``: those are append-only and only read.
 """
 
@@ -83,6 +87,18 @@ def main() -> int:
             failures.append(f"{pub['record']}: records no {field}")
         else:
             pub[key]["sha256"] = "sha256:" + line
+    # The local sources the run consumed, exactly as the run hashed them: read
+    # from its sources.json, never re-hashed from today's files (which would
+    # give an old run today's identities). item7_problems() below then refuses
+    # the run if any of them has changed since.
+    sources_json = raw / "sources.json"
+    if not sources_json.is_file():
+        failures.append(
+            f"{raw}: no sources.json -- this run predates source pinning; "
+            "append a new run with run_demo.py instead of backfilling"
+        )
+    else:
+        pub["sources"] = json.loads(sources_json.read_text()).get("files")
     envelope_src = raw / "gate_klt_response.json"
     if not envelope_src.is_file():
         failures.append(f"{raw}: no gate_klt_response.json")
@@ -91,7 +107,15 @@ def main() -> int:
             "file": check.ITEM7_ENVELOPE,
             "sha256": check.sha256_file(envelope_src),
         }
-        failures += check.item7_problems(pub, json.loads(envelope_src.read_text()))
+        # The envelope currently on disk is the one this publication is about
+        # to replace, so "differs from the sha256 in publication.json" is
+        # expected here (pub is the new publication) and is not a refusal;
+        # check.py re-verifies it after the copy below.
+        failures += [
+            p
+            for p in check.item7_problems(pub, json.loads(envelope_src.read_text()))
+            if p != "published envelope differs from the sha256 in publication.json"
+        ]
     if failures:
         print("publish_item7: refusing to publish -- nothing written", file=sys.stderr)
         for f in failures:
