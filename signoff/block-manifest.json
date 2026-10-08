@@ -25,6 +25,10 @@
     "7.digital": {
       "file": "signoff/evidence/post-route/gate_klt_response.json"
     },
+    "8.analog": {
+      "file": "signoff/evidence/characterization-analog.generic.json",
+      "content_hash": "sha256:8b4544104da3c7fde82b54b5a322d4a61f945cb1ca8d9a8cccaa70379c5b20f7"
+    },
     "8.digital": {
       "file": "signoff/evidence/characterization-digital.generic.json",
       "content_hash": "sha256:05cd74bc01bf9993ec2ae30d484161fd19cdac887ce9a544dda485b7c5fbe850"
