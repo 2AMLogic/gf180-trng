@@ -283,15 +283,23 @@ row of `sim/tools/raw_min_entropy_estimate.py` (`--check` fails if any of the
 three corners lacks a record). That row reads `ones = 10 / 10`, `p1_hat = 1.0`,
 `H_hat = 0` at every seed (per-bit seed-to-seed spread zero): ten identical
 `1` bits at the same 10 ns sample interval. It is a ten-bit observation of a
-stuck-high pattern, not an entropy measurement -- at this `T_s` the array has
-not accumulated enough phase noise for any seed to move a bit, the same
-reason as at the other two corners, and a fixed pattern cannot distinguish
-that from a sampler bias at the hot/slow corner. The Q_array cross-check has
+stuck-high pattern, not an entropy measurement. It is consistent with, but
+not evidence of, the array not having accumulated enough phase noise at this
+`T_s` for any seed to move a bit (the explanation offered at the other two
+corners); a fixed all-ones pattern cannot distinguish that from a sampler
+bias at the hot/slow corner. The record's generated Caveats section says
+`ones_count` is reported "so a reader can see the bits are not all
+identical"; that boilerplate is inverted for this result, where all ten bits
+are identical (`1`). Records are append-only, so the correction lives here
+rather than in the record. The Q_array cross-check has
 no row for this corner because no `ro-array-core-power` record exists at it.
 Ring 1's period metrics are `no data` in that record: at `ss`/+125 °C the
 rings are slower (ring 2: 9.58 ns), so ring 1's 14th rising edge falls after
 `tstop` = 132 ns and the testbench's period measure is out of interval; the
-bits and ring 2's period are unaffected. The result does not change the
+bits and ring 2's period are unaffected. (The record labels those metrics
+"no data (all runs failed to converge)"; that is the harness's generic
+no-data wording, and here it means the measure fell outside the simulated
+interval, not that the transient failed to converge.) The result does not change the
 conclusion that no affordable transistor-level simulation
 reaches the entropy-supporting rate. A non-placeholder number for this row
 becomes available only from measured silicon (DR-0004 Tier 3) or from a
