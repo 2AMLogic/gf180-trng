@@ -500,6 +500,49 @@ class ComposedInterfaceExpectation(unittest.TestCase):
         text = "\n".join(self._check(extraction)["problems"])
         self.assertIn("drawn net 'raw_bit' is carried by 2", text)
 
+    # gf180-trng#315: `--def-net-names` names a net that contains `digital`'s
+    # DEF-annotated routing by its DEF net name and drops the text labels.
+    # Measured under klt 0.6.0 on the composed, routed floorplan: the joined
+    # `ring_bit1`/`ring_bit2` nets came back as `ring_bit[0]`/`ring_bit[1]`
+    # (no `ring_bit1`/`ring_bit2`/`q` component), and with `ring_bit[1]`'s
+    # Metal4 stub deleted the same extraction split it into `ring_bit[1]`
+    # and `q|ring_bit2`.
+
+    @staticmethod
+    def _def_named(extraction: dict) -> dict:
+        renames = {"q|ring_bit1": "ring_bit[0]", "q|ring_bit2": "ring_bit[1]",
+                   "q|raw_bit": "raw_bit", "q|raw_valid": "raw_valid"}
+        for net in extraction["nets"]:
+            net["name"] = renames.get(net["name"], net["name"])
+        return extraction
+
+    def test_route_labels_include_the_digital_def_net_name(self):
+        nets = {net["name"]: net for net in interregion.drawn_nets()}
+        self.assertEqual(interregion.route_net_labels(nets["ring_bit1"]),
+                         {"ring_bit1", "ring_bit[0]"})
+        self.assertEqual(interregion.route_net_labels(nets["ring_bit2"]),
+                         {"ring_bit2", "ring_bit[1]"})
+        self.assertEqual(interregion.route_net_labels(nets["clk"]), {"clk"})
+        self.assertEqual(interregion.route_net_labels(nets["ro1"]), {"ro1"})
+        # the wiring plan's own route records give the same answer
+        route = next(r for r in self.plan["routes"] if r["net"] == "ring_bit2")
+        self.assertEqual(
+            interregion.route_net_labels({"name": "ring_bit2", "endpoints": route["endpoints"]}),
+            {"ring_bit2", "ring_bit[1]"})
+
+    def test_a_joined_net_named_by_its_def_net_is_one_carrier(self):
+        check = self._check(self._def_named(_fake_extraction(self.declared, self.plan)))
+        self.assertEqual(check["problems"], [])
+
+    def test_an_unjoined_digital_endpoint_under_its_def_name_fails(self):
+        extraction = self._def_named(_fake_extraction(self.declared, self.plan))
+        for net in extraction["nets"]:
+            if net["name"] == "ring_bit[1]":
+                net["name"] = "q|ring_bit2"      # cs side + trunk
+        extraction["nets"].append({"name": "ring_bit[1]", "pin": False})  # digital side
+        text = "\n".join(self._check(extraction)["problems"])
+        self.assertIn("drawn net 'ring_bit2' is carried by 2", text)
+
     def test_a_wrong_chip_pin_label_set_still_fails(self):
         extraction = _fake_extraction(self.declared, self.plan)
         for net in extraction["nets"]:

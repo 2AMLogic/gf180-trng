@@ -1112,6 +1112,48 @@ def extracted_label_set(net_name: str) -> set[str]:
     return {net_name} | set(REGION_CELL_LABELS.get(net_name, ()))
 
 
+_DEF_PIN_NET_RE = re.compile(r"^\s*-\s+(\S+)\s+\+\s+NET\s+(\S+)", re.MULTILINE)
+
+
+def digital_pin_def_nets() -> dict[str, str]:
+    """`{pin name: DEF net name}` from `trng_top.def`'s `PINS` section
+    (`- ring_bit[0] + NET ring_bit[0] ...`)."""
+    text = DIGITAL_DEF.read_text(errors="replace")
+    start = text.find("\nPINS ")
+    end = text.find("\nEND PINS", start)
+    if start < 0 or end < 0:
+        raise WiringError(f"{DIGITAL_DEF} has no readable PINS section")
+    return dict(_DEF_PIN_NET_RE.findall(text[start:end]))
+
+
+def route_net_labels(net: dict) -> set[str]:
+    """Every label the one extracted net carrying drawn net `net` (a
+    `drawn_nets()` entry or a `wiring_plan()` route) may be reported under: its own trunk label plus
+    the DEF net name of each `digital` endpoint.
+
+    The second part is needed because `klt extract --def-net-names` (which
+    `floorplan.py`'s `run_extract_composed` passes) names a net that
+    contains `digital`'s DEF-annotated routing by that DEF net name and
+    drops the text labels -- measured under klt 0.6.0 (gf180-trng#315): the
+    joined `ring_bit1` net comes back as `ring_bit[0]`, not `ring_bit1`.
+    Counting the extracted nets that carry *any* of these labels keeps the
+    connectivity check exact either way: joined is one net, an unjoined
+    `digital` endpoint is two (`ring_bit[1]` plus `q|ring_bit2`)."""
+    labels = {net["name"]}
+    pin_nets = None
+    for endpoint in net["endpoints"]:
+        # a `drawn_nets()` `(region, pin)` pair, or a `wiring_plan()`
+        # route's `{"region": ..., "pin": ...}` endpoint record
+        rid, pin = ((endpoint["region"], endpoint["pin"])
+                    if isinstance(endpoint, dict) else endpoint)
+        if rid != "digital":
+            continue
+        if pin_nets is None:
+            pin_nets = digital_pin_def_nets()
+        labels.add(pin_nets.get(pin, pin))
+    return labels
+
+
 def extracted_net_name(net_name: str) -> str:
     """The name `klt extract` reports for a drawn chip-pin net -- its label
     set, `'|'`-separated and sorted, which is KLayout's own convention for a

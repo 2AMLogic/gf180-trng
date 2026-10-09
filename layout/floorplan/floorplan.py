@@ -1360,8 +1360,20 @@ def check_interregion(wiring_plan: dict) -> dict:
     # it means an endpoint pair never joined (the unrouted floorplan's own
     # signature: two nets named `clk`, two named `rst_n`, four named `vss`);
     # zero means the label landed on no conductor at all.
+    #
+    # A drawn net that reaches `digital` may come back under `digital`'s DEF
+    # net name instead of its trunk label (`--def-net-names`; measured under
+    # klt 0.6.0, gf180-trng#315: the joined `ring_bit1` net is reported as
+    # `ring_bit[0]`), so the carriers are the extracted nets carrying *any*
+    # label in `interregion.route_net_labels`. Counting the trunk label alone
+    # read a joined `ring_bit*` net as zero carriers and an unjoined one
+    # (`ring_bit[1]` plus `q|ring_bit2`) as one -- inverted. This is still a
+    # label check; per-endpoint conductor membership is evidenced separately
+    # (layout/floorplan/README.md, gf180-trng#315).
     for route in wiring_plan["routes"]:
-        carriers = nets_by_label.get(route["net"], [])
+        accepted = interregion.route_net_labels(
+            {"name": route["net"], "endpoints": route["endpoints"]})
+        carriers = [name for name in net_names if accepted & set(name.split("|"))]
         # One carrier each, except the one label two electrically separate
         # nets legitimately share -- see `DUPLICATE_PIN_NAME_PROMOTIONS`.
         # Even then the count is exact, so `vss`'s own three region returns
