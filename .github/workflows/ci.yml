@@ -80,12 +80,18 @@ name: CI
 #   sim/tools/vss_trunk_ir_drop.py --check
 #   sim/tools/corpus_counts.py --check
 #   sim/tools/klt_pin_sites.py --check
+#   sim/tools/jitter_estimator_calibration_check.py --check
+#   sim/tools/statistical_battery.py --check
 #       RUN on every push/PR via `npm run check:spec` (package.json is the
-#       single list of all fifteen). Every one is a pure derivation over
+#       single list of all seventeen). Every one is a pure derivation over
 #       records already committed under sim/records/ -- stdlib-only, no
 #       ngspice, no PDK, sub-second -- so a newly appended record cannot
 #       silently move a conclusion a summary document still asserts. See the
 #       "Spec arithmetic self-checks" step below for what each one guards.
+#       jitter_estimator_calibration_check.py checks the committed
+#       jitter-estimator-calibration record against its closed-form
+#       Phi(bias/NA) prediction (DR-0012); statistical_battery.py self-tests
+#       its SP 800-22-style tests and incomplete-gamma against math.erfc.
 #
 #   sim/selftest.sh stage 3 (python3 sim/run_corners.py --check-env)
 #       RUN on every push/PR. On a hosted runner it reports ngspice/PDK
@@ -247,7 +253,7 @@ jobs:
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. Run via `npm run check:spec` -- the full
-      # list of fifteen lives in package.json, not here (issue #97).
+      # list of seventeen lives in package.json, not here (issue #97).
       # jitter_energy_law.py --check fails if the three record families it
       # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
       # --check fails if the shipped array stops satisfying DR-0007 §2 at any
