@@ -26,7 +26,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#357**: Add fail-path unit tests for the untested sim tool --check spec gates
+_None._
 
 ## PRs Awaiting Review
 
@@ -44,11 +44,13 @@ _None._
 
 Issues carrying `loom:curated`.
 
-- **#357**: Add fail-path unit tests for the untested sim tool --check spec gates *(curated)*
+- **#366**: Guard telemetry: process substitution misclassified as worktree write *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#362**: Fail closed when checksum --changed cannot resolve its Git base *(architect)*
+- **#374**: Run the committed SDF regeneration guard in PDK nightly CI *(architect)*
+- **#377**: Unit-test the corner-sanity guardrail's pass/fail logic without ngspice *(architect)*
+- **#378**: Add unit tests for the shared hand-drawn layout engine layout/cells/_mos_row.py *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -62,10 +64,10 @@ _None._
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 1 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 4 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

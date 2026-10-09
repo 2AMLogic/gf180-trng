@@ -6,6 +6,20 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #376**: Add unit tests for the hand-rolled GDSII writer
+- **PR #375**: Unit-test gen_sdf SDF filter; raise SdfError on malformed input
+- **PR #371**: pdk-nightly: provision gf180mcu_fd_sc_mcu7t5v0 for the floorplan step
+- **PR #370**: Reject malformed raw provenance in the checksum gate
+- **PR #368**: Add fail-path unit tests for the coupling and tap-phase --check gates
+- **PR #364**: Fail closed when --changed record discovery cannot run git diff
+- **Issue #373** (closed): Unit-test gen_sdf's SDF filter without openroad and raise SdfError on malformed input
+- **Issue #372** (closed): Add unit tests for the hand-rolled GDSII writer in layout/testcells/gdsii.py
+- **Issue #369** (closed): Reject malformed raw provenance instead of accepting a parsed checksum prefix
+- **Issue #367** (closed): Guard telemetry: preserve fail-closed handling for computed path variables
+- **Issue #365** (closed): Auditor Capability Request: Python 3 runtime for gf180-trng validation
+- **Issue #362** (closed): Fail closed when checksum --changed cannot resolve its Git base
+- **Issue #357** (closed): Add fail-path unit tests for the untested sim tool --check spec gates
+- **Issue #310** (closed): pdk-nightly.yml does not provision gf180mcu_fd_sc_mcu7t5v0, so the floorplan step fails at the LEF lookup before checking anything
 - **PR #361**: Guard the check:spec gate count and name list restated in prose
 - **PR #358**: test(sim): fail-path tests for four spec-guarding --check gates
 - **Issue #360** (closed): Guard the check:spec gate count and name list restated in README, ci.yml and package.json (11 / 11 / 13 vs 15 actual)
