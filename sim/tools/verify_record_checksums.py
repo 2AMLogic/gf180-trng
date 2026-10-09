@@ -29,8 +29,9 @@ Usage:
   python3 sim/tools/verify_record_checksums.py --quiet         # failures only
 
 Exit 0 if every checked record verifies, 1 if one does not, 2 if `--changed`
-cannot compute its record set (bad/missing base, unrelated histories). Stdlib only; no
-ngspice and no PDK.
+cannot compute its record set (bad/missing base, unrelated histories) or if
+git cannot list the committed raw files for check (4) (not a repository, git
+missing). Stdlib only; no ngspice and no PDK.
 """
 
 from __future__ import annotations
@@ -49,6 +50,16 @@ from harness import report  # noqa: E402
 RECORDS_DIR = SIM_DIR / report.RECORDS_DIRNAME
 
 
+class GitTrackingError(RuntimeError):
+    """`git ls-files` could not say which raw files are committed.
+
+    Distinct from "nothing is committed": outside a repository, or with git
+    missing, an empty answer would report every raw file as "not committed"
+    and send the reader chasing a `git add` that is not the problem. The
+    check fails closed instead, naming git as the cause.
+    """
+
+
 def git_tracked_raw_files() -> set[str]:
     """Repo-relative paths under sim/records/raw/ that git knows about.
 
@@ -56,12 +67,22 @@ def git_tracked_raw_files() -> set[str]:
     records that difference is two minutes of process spawning versus a
     tenth of a second. Staged-but-uncommitted files count as tracked, which
     is what a pre-commit check wants.
+
+    Raises ``GitTrackingError`` if git cannot be run or exits nonzero.
     """
     raw_root = RECORDS_DIR / report.RAW_DIRNAME
-    out = subprocess.run(
-        ["git", "ls-files", "--", str(raw_root)],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
-    )
+    try:
+        out = subprocess.run(
+            ["git", "ls-files", "--", str(raw_root)],
+            cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+        )
+    except OSError as exc:
+        raise GitTrackingError(f"cannot run git in {REPO_ROOT}: {exc}") from exc
+    if out.returncode != 0:
+        detail = (out.stderr or "").strip() or "no error output"
+        raise GitTrackingError(
+            f"git ls-files in {REPO_ROOT} failed (exit {out.returncode}): {detail}"
+        )
     return {line for line in out.stdout.splitlines() if line}
 
 
@@ -150,7 +171,18 @@ def main(argv: list[str] | None = None) -> int:
         print("no records to check")
         return 0
 
-    tracked = None if args.no_git else git_tracked_raw_files()
+    tracked = None
+    if not args.no_git:
+        try:
+            tracked = git_tracked_raw_files()
+        except GitTrackingError as exc:
+            print(
+                f"FAIL: cannot check that raw output is committed: {exc}. Run "
+                "inside the repository's git checkout, or pass --no-git to skip "
+                "the committed-to-git check.",
+                file=sys.stderr,
+            )
+            return 2
 
     failures = 0
     for path in records:

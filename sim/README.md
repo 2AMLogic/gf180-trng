@@ -461,6 +461,8 @@ It re-hashes every file listed in `raw.files` and fails on a digest that no
 longer matches, a listed file that is missing, a file sitting in the raw
 directory that the record never listed, or raw output that was never `git
 add`ed (`--no-git` drops that last check). Exit 0 means the item is satisfied.
+If git itself cannot answer (not run from a checkout, git not installed), it
+exits 2 naming git as the cause rather than reporting every file uncommitted.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
 
