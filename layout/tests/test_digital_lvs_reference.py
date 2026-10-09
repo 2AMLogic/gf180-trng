@@ -119,24 +119,12 @@ class JoinSpiceContinuationsTests(unittest.TestCase):
         text = ".SUBCKT a A\n* pin note\n.ENDS a"
         self.assertEqual(lvs._join_spice_continuations(text), text)
 
-    def test_continuation_after_comment_leaves_preceding_card_intact(self):
-        """A `+` line after a comment line does not reach past the comment.
-
-        The card before the comment is left exactly as written; nothing is
-        spliced into it out of order.
-        """
-        text = ".SUBCKT a A\n* note\n+ B C\n.ENDS a"
-        joined = lvs._join_spice_continuations(text).split("\n")
-        self.assertEqual(joined[0], ".SUBCKT a A")
-        self.assertEqual(joined[-1], ".ENDS a")
-
-    @unittest.expectedFailure
     def test_continuation_after_comment_continues_the_card(self):
         """SPICE dialects (HSPICE explicitly) allow a comment line between a
         card and its `+` continuation; the continuation still belongs to the
         card. The helper currently folds it into the comment instead, so the
         continued pins vanish. Latent today -- `klt extract` does not emit an
-        interleaved comment -- and tracked as a separate issue (#387).
+        interleaved comment -- (#387).
         """
         text = ".SUBCKT a A\n* note\n+ B C\n.ENDS a"
         self.assertEqual(
@@ -148,6 +136,25 @@ class JoinSpiceContinuationsTests(unittest.TestCase):
         """Malformed input: a `+` on the very first line has nothing to join
         onto, so it is passed through rather than dropped or raising."""
         text = "+ orphan\n.SUBCKT a A\n"
+        self.assertEqual(lvs._join_spice_continuations(text), text)
+
+    def test_multiple_comments_between_card_and_continuation(self):
+        text = ".SUBCKT a A\n* one\n* two\n+ B\n+ C\n.ENDS a"
+        self.assertEqual(
+            lvs._join_spice_continuations(text),
+            ".SUBCKT a A B C\n* one\n* two\n.ENDS a",
+        )
+
+    def test_blank_line_is_not_a_comment(self):
+        """A blank line is a (empty) card, so a `+` after it attaches there
+        and the header is not extended."""
+        text = ".SUBCKT a A\n\n+ B\n.ENDS a"
+        self.assertEqual(
+            lvs._join_spice_continuations(text), ".SUBCKT a A\n B\n.ENDS a"
+        )
+
+    def test_continuation_with_only_comments_before_is_kept(self):
+        text = "* c\n+ orphan\n.SUBCKT a A"
         self.assertEqual(lvs._join_spice_continuations(text), text)
 
     def test_empty_text(self):
@@ -229,21 +236,21 @@ class BitNamesTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             lvs._bit_names({"ports": {"clk": {}}, "netnames": {}})
 
-    @unittest.expectedFailure
-    def test_unnamed_bit_falls_back_to_net_id(self):
-        """The docstring promises a `net<id>` fallback for a bit no port or
-        netname covers. The code never adds one: an uncovered bit is simply
-        absent from the map, so a cell connected to it later fails in
-        `_cell_instances` with a bare `KeyError`. Tracked separately (#388).
-        """
-        # Bit 42 is referenced only by a cell connection, never named.
+    def test_unnamed_bit_is_absent_not_invented(self):
+        """A bit no port or netname covers gets no invented name; the
+        failure surfaces in `_cell_instances` as an `LvsFlowError`."""
+        module = {"ports": {}, "netnames": {}}
+        self.assertNotIn(42, lvs._bit_names(module))
+
+    def test_cell_instances_names_instance_port_and_bit_for_unnamed_bit(self):
         module = {
-            "ports": {},
-            "netnames": {},
             "cells": {"u0": {"type": INV_1, "connections": {"I": [42]}}},
         }
-        names = lvs._bit_names(module)
-        self.assertEqual(names.get(42), "net42")
+        with self.assertRaises(lvs.LvsFlowError) as ctx:
+            lvs._cell_instances(module, {}, {INV_1: ["I", "VDD", "VSS", "ZN"]})
+        msg = str(ctx.exception)
+        for token in ("u0", "'I'", "42"):
+            self.assertIn(token, msg)
 
 
 class LibraryCellPinsTests(_TempRepoMixin, unittest.TestCase):
