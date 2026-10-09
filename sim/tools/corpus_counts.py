@@ -49,6 +49,11 @@ Adding, removing or renaming a gate without updating those prose lists fails
 the gate. No gate is added by this: the guard rides on corpus_counts.py's own
 entry in the chain.
 
+The characterization reports are also held to an index (#428). sim/README.md
+must have a "## Characterization reports" section, and the set of
+`characterization-*.md` files it links must equal the set on disk: a report
+nobody indexed fails, and so does an index entry whose file does not exist.
+
 Usage:
   python3 sim/tools/corpus_counts.py           # print derived totals
   python3 sim/tools/corpus_counts.py --check   # exit 1 on any disagreement
@@ -174,9 +179,40 @@ def check_text(document: str, text: str, counts: dict[str, int],
     return problems
 
 
+INDEX_DOCUMENT = "sim/README.md"
+_INDEX_HEADING = re.compile(r"(?m)^##\s+Characterization reports\s*$")
+_NEXT_HEADING = re.compile(r"(?m)^##\s")
+_INDEX_LINK = re.compile(
+    r"\]\((?:\./|sim/)?(characterization-[^)#\s]*\.md)(?:#[^)]*)?\)")
+
+
+def check_report_index(root: Path) -> list[str]:
+    """Diagnostics for the characterization-report index (#428)."""
+    path = root / INDEX_DOCUMENT
+    if not path.is_file():
+        return [f"{INDEX_DOCUMENT}: document missing "
+                f"(characterization report index lives there)"]
+    text = path.read_text(encoding="utf-8")
+    start = _INDEX_HEADING.search(text)
+    if start is None:
+        return [f"{INDEX_DOCUMENT}: no '## Characterization reports' section"]
+    body = text[start.end():]
+    nxt = _NEXT_HEADING.search(body)
+    if nxt is not None:
+        body = body[:nxt.start()]
+    indexed = set(_INDEX_LINK.findall(body))
+    on_disk = {p.name for p in (root / "sim").glob("characterization-*.md")
+               if p.is_file()}
+    problems = [f"{INDEX_DOCUMENT}: characterization report {name} is not "
+                f"linked from the index" for name in sorted(on_disk - indexed)]
+    problems += [f"{INDEX_DOCUMENT}: index links {name}, which does not exist"
+                 for name in sorted(indexed - on_disk)]
+    return problems
+
+
 def check_tree(root: Path) -> tuple[dict[str, int], list[str]]:
     counts = derive_counts(root)
-    problems: list[str] = []
+    problems: list[str] = check_report_index(root)
     for rel, required in DOCUMENTS:
         path = root / rel
         if not path.is_file():
