@@ -495,6 +495,91 @@ class RawFileVerificationTests(unittest.TestCase):
         self.assertEqual(raw_path, self.record["raw_path"])
         self.assertEqual(files, list(self.record["raw_files"]))
 
+    # --- malformed raw provenance (#369) -----------------------------------
+
+    def _write_text_record(self, text):
+        path = Path(self.tmp.name) / "bad-record.md"
+        path.write_text(text)
+        return path
+
+    def _good_text(self):
+        return report.render_record(self.record, self.tb, ["a caveat"])
+
+    def _entry_line(self):
+        return next(l for l in self._good_text().splitlines() if "sha256:" in l)
+
+    def test_body_only_raw_section_is_not_accepted(self):
+        text = "---\nrecord: x\nwall_time: 1\n---\n\n```\n" + "\n".join(
+            report.render_frontmatter(self.record).splitlines()[1:-1]
+        ) + "\n```\n"
+        self.assertEqual(report.parse_raw_section(text), ("", []))
+        problems = report.verify_record_file(self._write_text_record(text), Path(self.tmp.name))
+        self.assertTrue(any("no raw.path" in p for p in problems), problems)
+
+    def test_no_frontmatter_ignores_raw_in_body(self):
+        text = "\n".join(self._good_text().splitlines()[1:])
+        self.assertEqual(report.parse_raw_section(text), ("", []))
+
+    def test_unterminated_frontmatter_raises(self):
+        lines = self._good_text().splitlines()
+        text = "\n".join(lines[: lines.index("---", 1)])
+        with self.assertRaises(report.RawSectionError):
+            report.parse_raw_section(text)
+        problems = report.verify_record_file(self._write_text_record(text), Path(self.tmp.name))
+        self.assertTrue(any("malformed raw provenance" in p for p in problems), problems)
+
+    def test_duplicate_raw_declarations_raise(self):
+        text = self._good_text()
+        dup_raw = text.replace("wall_time:", "raw:\n  path: elsewhere\n  files:\nwall_time:", 1)
+        with self.assertRaises(report.RawSectionError):
+            report.parse_raw_section(dup_raw)
+        dup_path = text.replace("  files:", "  path: elsewhere\n  files:", 1)
+        with self.assertRaises(report.RawSectionError):
+            report.parse_raw_section(dup_path)
+        dup_files = text.replace("wall_time:", "  files:\nwall_time:", 1)
+        with self.assertRaises(report.RawSectionError):
+            report.parse_raw_section(dup_files)
+
+    def test_valid_checksum_then_malformed_checksum_fails(self):
+        text = self._good_text()
+        entry = self._entry_line()
+        for bad in ("    - ghost-not-on-disk.spice  sha256:abc123",
+                    "    - ghost-not-on-disk.spice",
+                    "    garbage"):
+            with self.subTest(bad=bad):
+                broken = text.replace(entry, entry + "\n" + bad, 1)
+                with self.assertRaises(report.RawSectionError):
+                    report.parse_raw_section(broken)
+                problems = report.verify_record_file(
+                    self._write_text_record(broken), Path(self.tmp.name))
+                self.assertTrue(problems)
+
+    def test_invalid_first_checksum_not_replaced_by_body_example(self):
+        text = self._good_text()
+        entry = self._entry_line()
+        broken = text.replace(entry, "    - first.spice  sha256:zzz", 1)
+        broken += "\n" + "\n".join(text.splitlines()[1:text.splitlines().index("---", 1)]) + "\n"
+        with self.assertRaises(report.RawSectionError):
+            report.parse_raw_section(broken)
+
+
+class VerifyRecordChecksumsCliTests(unittest.TestCase):
+    """The verify_record_checksums.py entry point on malformed evidence."""
+
+    def test_cli_exits_nonzero_naming_record_without_traceback(self):
+        script = Path(__file__).resolve().parents[1] / "tools" / "verify_record_checksums.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            rec = Path(tmp) / "2026-01-01-malformed-01.md"
+            rec.write_text("---\nrecord: x\nraw:\n  path: a/b\n  files:\n"
+                           "    - f.log  sha256:nothex\n---\n")
+            proc = subprocess.run(
+                [sys.executable, str(script), "--no-git", str(rec)],
+                capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 1, proc.stderr)
+        self.assertIn("2026-01-01-malformed-01.md", proc.stderr)
+        self.assertIn("malformed raw provenance", proc.stderr)
+        self.assertNotIn("Traceback", proc.stderr)
+
 
 class StochasticRecordTests(unittest.TestCase):
     """Multiple seeded runs at one PVT point aggregate into ONE record."""

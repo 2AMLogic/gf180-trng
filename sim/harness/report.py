@@ -524,35 +524,76 @@ def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[s
 RAW_FILE_LINE = re.compile(r"^\s*-\s+(?P<name>\S+)\s+sha256:(?P<digest>[0-9a-f]{64})\s*$")
 
 
+class RawSectionError(ValueError):
+    """A record's frontmatter ``raw`` provenance is malformed or ambiguous."""
+
+
 def parse_raw_section(text: str) -> tuple[str, list[tuple[str, str]]]:
     """Read ``raw.path`` and ``raw.files`` back out of a rendered record.
 
     Deliberately a small line scanner over the shape ``render_frontmatter``
     emits, not a YAML parse: the harness is stdlib-only (see README.md), and
     this is the inverse of exactly one renderer.
+
+    Strict about that shape: only the initial ``---`` ... ``---`` frontmatter
+    block is read (a ``raw:`` example in the Markdown body is ignored), and
+    anything malformed raises ``RawSectionError`` rather than yielding a
+    parsed prefix: an unterminated frontmatter block, a duplicate ``raw:`` /
+    ``path:`` / ``files:`` declaration, an unknown line inside ``raw:``, or a
+    file entry that is not ``- <name>  sha256:<64 hex>``. A record with no
+    ``raw:`` section at all returns ``("", [])``.
     """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return "", []
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
+        raise RawSectionError(
+            "frontmatter is not terminated by a closing '---' line"
+        ) from None
+    front = lines[1:end]
+
     raw_path = ""
     files: list[tuple[str, str]] = []
-    in_raw = False
-    in_files = False
-    for line in text.splitlines():
-        if line == "---" and files:
-            break
-        if line.startswith("raw:"):
-            in_raw = True
+    seen_raw = seen_path = seen_files = False
+    i = 0
+    while i < len(front):
+        line = front[i]
+        i += 1
+        if line.rstrip() != "raw:":
+            if line.startswith("raw:"):
+                raise RawSectionError(f"unsupported raw declaration: {line!r}")
             continue
-        if in_raw and line.startswith("  path:"):
-            raw_path = line.split(":", 1)[1].strip()
-            continue
-        if in_raw and line.strip() == "files:":
-            in_files = True
-            continue
-        if in_files:
-            match = RAW_FILE_LINE.match(line)
-            if match:
-                files.append((match.group("name"), match.group("digest")))
+        if seen_raw:
+            raise RawSectionError("duplicate 'raw:' declaration in frontmatter")
+        seen_raw = True
+        while i < len(front) and front[i][:1] in (" ", "\t"):
+            line = front[i]
+            i += 1
+            if not line.strip():
+                continue
+            if line.startswith("  path:") and not line.startswith("   "):
+                if seen_path:
+                    raise RawSectionError("duplicate 'raw.path' declaration")
+                seen_path = True
+                raw_path = line.split(":", 1)[1].strip()
+            elif line.rstrip() == "  files:":
+                if seen_files:
+                    raise RawSectionError("duplicate 'raw.files' declaration")
+                seen_files = True
+                while i < len(front) and front[i][:1] in (" ", "\t"):
+                    entry = front[i]
+                    i += 1
+                    match = RAW_FILE_LINE.match(entry)
+                    if not match:
+                        raise RawSectionError(
+                            f"malformed raw.files entry (want '- <name>  "
+                            f"sha256:<64 hex>'): {entry.strip()!r}"
+                        )
+                    files.append((match.group("name"), match.group("digest")))
             else:
-                in_raw = in_files = False
+                raise RawSectionError(f"unexpected line inside raw: {line.strip()!r}")
     return raw_path, files
 
 
@@ -599,7 +640,10 @@ def verify_record(record: dict, *, check_unlisted: bool = True) -> list[str]:
 
 def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = True) -> list[str]:
     """``verify_raw_files`` for a record already written to disk."""
-    raw_path, raw_files = parse_raw_section(path.read_text())
+    try:
+        raw_path, raw_files = parse_raw_section(path.read_text())
+    except RawSectionError as exc:
+        return [f"{path.name}: malformed raw provenance: {exc}"]
     if not raw_path:
         return [f"{path.name}: no raw.path in frontmatter"]
     if not raw_files:
