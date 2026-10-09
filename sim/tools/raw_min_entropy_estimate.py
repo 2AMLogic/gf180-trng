@@ -72,6 +72,17 @@ _VALUE_MEAN = re.compile(
 _BIT_KEY = re.compile(r"^b(\d+)_v$")
 
 
+# The corners this analysis is required to report: nominal, DR-0012's
+# predicted entropy-binding corner, and #13's measured full-grid worst corner
+# (ss / +125 C / 3.63 V, DR-0015). `--check` fails if any has no committed
+# record, so the "inherits the same ceiling" statement stays a computed row.
+REQUIRED_CORNERS = (
+    format_corner("tt", 27.0, 3.30),
+    format_corner("ss", -40.0, 3.63),
+    format_corner("ss", 125.0, 3.63),
+)
+
+
 class RecordError(RuntimeError):
     pass
 
@@ -122,12 +133,18 @@ def load_records() -> list[BitstreamRecord]:
     return [BitstreamRecord(p) for p in paths]
 
 
+def missing_corners(records: list[BitstreamRecord]) -> list[str]:
+    """Required corners (``REQUIRED_CORNERS``) with no committed record."""
+    have = {r.corner for r in records}
+    return [c for c in REQUIRED_CORNERS if c not in have]
+
+
 def h_hat(p1: float) -> float:
     """Most-common-value min-entropy point estimate (DR-0012 §2)."""
     p_max = max(p1, 1.0 - p1)
     if p_max <= 0:
         return float("nan")
-    return -math.log2(p_max)
+    return -math.log2(p_max) + 0.0  # + 0.0 normalizes -0.0 to 0.0
 
 
 def confidence_degradation(p1: float, n: int) -> tuple[float, float]:
@@ -200,10 +217,23 @@ def main(argv: list[str] | None = None) -> int:
         description="MCV min-entropy point estimate on the real sampler-array-digitize "
         "bitstream, cross-checked against DR-0010's jitter-energy sizing law.",
     )
-    parser.parse_args(argv)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="exit 1 if any required corner (tt/27C/3.30V, ss/-40C/3.63V, "
+        "ss/+125C/3.63V) has no committed record; prints nothing else",
+    )
+    args = parser.parse_args(argv)
 
     try:
         records = load_records()
+        if args.check:
+            missing = missing_corners(records)
+            if missing:
+                print(f"MISSING corner record(s): {', '.join(missing)}", file=sys.stderr)
+                return 1
+            print("OK: all required corners have records: " + ", ".join(REQUIRED_CORNERS))
+            return 0
         t_s = sample_period_s()
     except RecordError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
