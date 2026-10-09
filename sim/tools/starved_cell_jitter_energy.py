@@ -89,7 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner  # noqa: E402
+from _record_parsing import format_corner, parse_corner, parse_status  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -135,6 +135,7 @@ class Record:
 
     def __init__(self, path: Path) -> None:
         text = path.read_text()
+        self._text = text
         self.path = path
         self.stem = path.stem
         self.values: dict[str, float] = {}
@@ -155,11 +156,28 @@ class Record:
     def corner(self) -> str:
         return format_corner(self.process, self.temp_c, self.vdd)
 
+    @property
+    def status(self) -> str:
+        """Frontmatter lifecycle (``valid``/``superseded``), parsed on demand
+        so callers that never filter on it (the variant-comparison scripts and
+        their fixtures) need not carry one; a missing or unknown value raises
+        ``RecordError`` naming the record."""
+        return parse_status(self._text, label=self.stem, error_cls=RecordError)
+
     def spread(self, key: str) -> float | None:
         """Relative seed-to-seed standard deviation of ``key``, or None."""
         if key not in self.sd or not self.values.get(key):
             return None
         return self.sd[key] / abs(self.values[key])
+
+
+def load_family(glob: str, *, include_superseded: bool = False) -> list[Record]:
+    """Records matching ``glob``, chronologically; ``status: superseded``
+    ones are excluded unless ``include_superseded`` requests an explicit
+    historical read (issue #425). Older records that remain ``status: valid``
+    are always returned."""
+    recs = [Record(p) for p in sorted(RECORDS.glob(glob))]
+    return recs if include_superseded else [r for r in recs if r.status == "valid"]
 
 
 def window_geometry(manifest_path: Path = TB_MANIFEST) -> tuple[int, int]:
@@ -213,8 +231,7 @@ def reference_spread(lag: int, n_periods: int) -> tuple[float, int, int]:
     """
     _, ref_periods = window_geometry(PLAIN_TB_MANIFEST)
     spreads = []
-    for path in sorted(RECORDS.glob(PLAIN_GLOB)):
-        rec = Record(path)
+    for rec in load_family(PLAIN_GLOB):
         got = rec.spread(f"sigma_{lag}")
         if got is not None:
             spreads.append(got)
@@ -446,7 +463,7 @@ def load_variants_by_glob(variants, corner: str, factory):
     return out
 
 
-def load_points() -> tuple[list[Point], list[str]]:
+def load_points(*, include_superseded: bool = False) -> tuple[list[Point], list[str]]:
     """``(points, skipped)`` -- one Point per usable record, plus the stems of
     any record in the family that carries no data.
 
@@ -454,11 +471,18 @@ def load_points() -> tuple[list[Point], list[str]]:
     invalid run that is never recorded is one the next person re-derives), but
     it has no numbers to derive anything from, so it is named and skipped
     rather than crashing the derivation for the corners that did complete.
+
+    ``status: superseded`` jitter and noise records are dropped before the
+    per-corner noise map is built, so a superseded record can never win a
+    corner; ``include_superseded`` is the explicit historical read.
     """
-    jitter = [Record(p) for p in sorted(RECORDS.glob(JITTER_GLOB))]
+    jitter = load_family(JITTER_GLOB, include_superseded=include_superseded)
     if not jitter:
         raise RecordError(f"no sim/records/{JITTER_GLOB} records found")
-    noise = {r.corner: r for r in (Record(p) for p in sorted(RECORDS.glob(NOISE_GLOB)))}
+    noise = {
+        r.corner: r
+        for r in load_family(NOISE_GLOB, include_superseded=include_superseded)
+    }
     discarded, n_periods = window_geometry()
     points, skipped = [], []
     for rec in jitter:

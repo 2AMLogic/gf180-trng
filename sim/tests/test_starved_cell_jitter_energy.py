@@ -72,6 +72,10 @@ class StarvedCellTestCase(unittest.TestCase):
             self.addCleanup(p.stop)
 
     def write(self, name: str, text: str) -> Path:
+        # Loaders now require a frontmatter lifecycle (#425); a fixture that
+        # does not set one is a current (`status: valid`) record.
+        if not text.startswith("---"):
+            text = "---\nstatus: valid\n---\n" + text
         path = self.root / name
         path.write_text(text)
         return path
