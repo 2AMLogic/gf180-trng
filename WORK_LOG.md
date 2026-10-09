@@ -6,6 +6,20 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #420**: feat: combiner/sampler schematic-vs-extracted klt pex fixture (grid not yet run)
+- **PR #417**: fix(floorplan): route digital's top-edge pins around the east flank (#315)
+- **PR #419**: sim: min-entropy re-run at ss/+125C/3.63V (#406)
+- **PR #416**: Run check:evidence-history in check:all; add check:ci/check:all parity test
+- **PR #415**: fix(lvs): SPICE continuation past comments; LvsFlowError for unnamed bits (#387)
+- **PR #409**: test(sim): unit-test build_dut port map refusal branches offline
+- **Issue #315** (closed): Inter-region stubs miss digital's top-edge pins after the re-place-and-route (clk, rst_n, raw_bit, raw_valid, ring_bit unjoined)
+- **Issue #406** (closed): Resolve the README's untracked 'still owed' min-entropy re-run at ss/+125C/3.63V
+- **Issue #408** (closed): check:all omits the append-only evidence-history guard that check:ci runs
+- **Issue #387** (closed): lvs.py: fix two latent gaps (SPICE continuation after comment; _bit_names net<id> fallback)
+- **Issue #403** (closed): Unit-test build_dut.py's extraction_port_map refusal branches offline
+
+### 2026-10-09
+
 - **PR #407**: test(signoff): unit-test compare_record, _print_item_diff, resolve_artifact
 - **PR #405**: ci: wire two missing --check self-checks into check:spec
 - **PR #402**: test: unit-test corner_sanity_check's pass/fail logic without ngspice
