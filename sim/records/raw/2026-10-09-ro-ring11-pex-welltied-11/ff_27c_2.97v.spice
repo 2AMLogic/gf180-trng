@@ -1,0 +1,18 @@
+* klt sim -- generated corner deck, do not edit
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_ff
+.include /var/tmp/eda-job-klt-sim-aabfb69c043d/inputs/netlist.cir
+.temp 27
+.meas tran period_s trig v(ron) val=0.5 rise=10 targ v(ron) val=0.5 rise=11
+.meas tran supply_current_avg_a avg i(vsupply) from=300n to=1300n
+.meas tran ro_swing_v pp v(ro) from=300n to=1300n
+.control
+alter vsupply=2.97
+tran 10p 1300n
+quit
+.endc
+.end

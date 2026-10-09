@@ -451,6 +451,11 @@ circuit rather than about the extractor's output format.
   lvs` discloses the PMOS half too — with the same per-fixture count as the
   NMOS half, because every fixture here is complementary CMOS.
 
+  What the floating wells cost in a post-layout re-simulation is measured for
+  ring1 in `sim/characterization-post-layout-extracted.md` section 9 (issue
+  #339): tying the 23 PMOS bodies to `vddr` makes the ring 9.8-18.0 % slower
+  than the floating-well extraction at every one of the 27 corners.
+
 The fixtures are drawn on the curated-deck layer subset only. Implant
 (Nplus/Pplus) and the rest of the sign-off layer set are absent: adding them
 would change no result these decks produce, and drawing them would imply a

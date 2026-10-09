@@ -1,0 +1,54 @@
+{
+  "klt_sim_corner": {
+    "corner_id": "ff/3.630V/-40C",
+    "process": "ff",
+    "supply_v": {
+      "vsupply": 3.63
+    },
+    "temperature_c": -40,
+    "status": "pass",
+    "runtime_s": 10.036,
+    "measurements": [
+      {
+        "name": "period_s",
+        "value": 8.12969e-09,
+        "unit": "s",
+        "status": "pass",
+        "margin": null
+      },
+      {
+        "name": "supply_current_avg_a",
+        "value": -3.20981e-05,
+        "unit": "A",
+        "status": "pass",
+        "margin": null
+      },
+      {
+        "name": "ro_swing_v",
+        "value": 3.54912,
+        "unit": "V",
+        "status": "pass",
+        "margin": null
+      }
+    ],
+    "diagnostics": [],
+    "artifacts": {
+      "log": "/tmp/w339out/ff_3p630V_n40C/ngspice.log",
+      "raw": null,
+      "waveform": null,
+      "deck": "/tmp/w339out/ff_3p630V_n40C/corner.cir"
+    },
+    "monte_carlo": null
+  },
+  "batch_job": {
+    "provider": "aws-batch-fleet",
+    "job_id": "klt-sim-aabfb69c043d",
+    "instance_type": "c7i.8xlarge",
+    "lifecycle": "spot",
+    "spot": true,
+    "state": "done",
+    "exit_code": "0",
+    "elapsed_seconds": 76
+  },
+  "klt_version": "0.6.0"
+}

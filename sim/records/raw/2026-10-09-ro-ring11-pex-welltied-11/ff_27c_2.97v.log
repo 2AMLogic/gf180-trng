@@ -1,0 +1,164 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vddr                                      2.97
+en                                        2.97
+vss                                          0
+vsubs                                        0
+xdut.\$15                          3.40649e-07
+xdut.a|y__t0                                 0
+xdut.a|y__t02                             2.97
+xdut.vddr__t0                             2.97
+xdut.vss__t0                       9.84992e-10
+xdut.\$17                          9.52915e-08
+xdut.a|y__t32                             2.97
+xdut.a|y__t13                      1.11738e-07
+xdut.vddr__t18                            2.97
+xdut.vss__t18                      2.06362e-10
+xdut.\$18                          3.40155e-07
+xdut.a|y__t33                      1.11811e-07
+xdut.a|y__t14                             2.97
+xdut.vddr__t14                            2.97
+xdut.vss__t14                      4.89499e-10
+xdut.\$20                           9.5153e-08
+xdut.a|y__t34                             2.97
+xdut.a|y__t15                        1.116e-07
+xdut.vddr__t21                            2.97
+xdut.vss__t21                      6.78712e-11
+xdut.\$21                          3.39696e-07
+xdut.a|y__t35                      1.11672e-07
+xdut.a|y__t16                             2.97
+xdut.vddr__t13                            2.97
+xdut.vss__t13                      3.06681e-11
+xdut.\$22                          9.51571e-08
+xdut.a|y__t36                             2.97
+xdut.a|y__t17                      1.11604e-07
+xdut.vddr__t15                            2.97
+xdut.vss__t15                      7.19627e-11
+xdut.\$24                          3.40169e-07
+xdut.a|y__t37                      1.11676e-07
+xdut.a|y__t18                             2.97
+xdut.vddr__t16                            2.97
+xdut.vss__t16                      5.04193e-10
+xdut.\$23                          9.52957e-08
+xdut.a|y__t38                             2.97
+xdut.a|y__t19                      1.11742e-07
+xdut.vddr__t17                            2.97
+xdut.vss__t17                       2.1048e-10
+xdut.\$19                          3.40665e-07
+xdut.a|y__t39                      1.11815e-07
+xdut.a|y__t110                            2.97
+xdut.vddr__t19                            2.97
+xdut.vss__t19                       9.9971e-10
+xdut.\$16                          9.54344e-08
+xdut.a|y__t310                            2.97
+xdut.a|y__t311                     1.11881e-07
+xdut.vddr__t20                            2.97
+xdut.vss__t20                       3.4925e-10
+xdut.vss__t1                      -2.54947e-28
+xdut.vddr__t1                             2.97
+xdut.\$14                         -7.10142e-26
+xdut.\$13                         -7.85578e-26
+xdut.a|y__t011                     1.11965e-07
+xdut.a|y__t1                       4.11576e-29
+xdut.en__t0                               2.97
+xdut.\$27__t1                          1.36747
+xdut.vss__t2                                 0
+xdut.vddr__t2                          2.96917
+xdut.a|y__t3                       0.000151129
+xdut.a|y__t111                     1.11965e-07
+xdut.\$27__t2                          1.36747
+xdut.\$27__t0                          1.36747
+xdut.en__t1                               2.97
+xdut.a|y__t4                        3.5786e-11
+xdut.vddr__t3                             2.97
+xdut.vss__t3                                 0
+xdut.\$29                                 2.97
+xdut.a|y__t2                                 0
+xdut.a|y__t12                             2.97
+xdut.vddr__t12                            2.97
+xdut.vss__t12                                0
+xdut.\$31                                 2.97
+xdut.a|y__t22                             2.97
+xdut.a|y__t03                      1.11883e-07
+xdut.vddr__t10                            2.97
+xdut.vss__t10                                0
+xdut.\$33                                 2.97
+xdut.a|y__t23                      1.11811e-07
+xdut.a|y__t04                             2.97
+xdut.vddr__t9                             2.97
+xdut.vss__t9                                 0
+xdut.\$35                                 2.97
+xdut.a|y__t24                             2.97
+xdut.a|y__t05                      1.11745e-07
+xdut.vddr__t7                             2.97
+xdut.vss__t7                                 0
+xdut.\$37                                 2.97
+xdut.a|y__t25                      1.11672e-07
+xdut.a|y__t06                             2.97
+xdut.vddr__t6                             2.97
+xdut.vss__t6                                 0
+xdut.\$39                                 2.97
+xdut.a|y__t26                             2.97
+xdut.a|y__t07                      1.11749e-07
+xdut.vddr__t4                             2.97
+xdut.vss__t4                                 0
+xdut.\$41                                 2.97
+xdut.a|y__t27                      1.11676e-07
+xdut.a|y__t08                             2.97
+xdut.vddr__t5                             2.97
+xdut.vss__t5                                 0
+xdut.\$43                                 2.97
+xdut.a|y__t28                             2.97
+xdut.a|y__t09                      1.11887e-07
+xdut.vddr__t8                             2.97
+xdut.vss__t8                                 0
+xdut.\$45                                 2.97
+xdut.a|y__t29                      1.11815e-07
+xdut.a|y__t010                            2.97
+xdut.vddr__t11                            2.97
+xdut.vss__t11                                0
+xdut.\$47                                 2.97
+xdut.a|y__t210                            2.97
+xdut.a|y__t211                     1.12048e-07
+xdut.\$27                              1.36747
+n1                                           0
+n2                                        2.97
+n3                                 1.11811e-07
+n4                                        2.97
+n5                                 1.11672e-07
+n6                                        2.97
+n7                                 1.11676e-07
+n8                                        2.97
+n9                                 1.11815e-07
+n10                                       2.97
+ro                                 1.11965e-07
+ron                                3.76985e-08
+bron#branch                                  0
+een#branch                        -2.77556e-17
+vvsubs#branch                      1.55629e-11
+vvss#branch                        7.21804e-11
+vsupply#branch                    -8.81484e-06
+
+
+No. of Data Rows : 130008
+
+  Measurements for Transient Analysis
+
+period_s            =  1.26820e-08 targ=  1.33826e-07 trig=  1.21144e-07
+supply_current_avg_a=  -1.67769e-05 from=  3.00000e-07 to=  1.30000e-06
+ro_swing_v          =  2.90881e+00 from=  3.00000e-07 to=  1.30000e-06
+
+ngspice-46 done
