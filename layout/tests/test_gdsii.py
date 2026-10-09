@@ -248,8 +248,8 @@ class WriteGdsTests(unittest.TestCase):
             (500, 500, 570, 500, 570, 900, 500, 900, 500, 500),
         )
         # TEXT element.
-        self.assertEqual(struct.unpack(">2i", recs[18][2]), (500, 1000))
-        self.assertEqual(recs[19][2], b"A\x00")
+        self.assertEqual(struct.unpack(">2i", recs[19][2]), (500, 1000))
+        self.assertEqual(recs[20][2], b"A\x00")
         self.assertEqual(recs[-4][2], b"CELL_B")
 
     def test_empty_structure_list(self) -> None:
