@@ -16,6 +16,34 @@ rather than silently editing records or this document's rules.
 
 ---
 
+## Characterization reports
+
+One line per `sim/characterization-*.md` report: what it answers and where it
+stands. These are ordinary summaries that cite evidence records; none is
+evidence itself. Start with the analog summary, which is organized by the rows
+of the ratified target specification. `python3 sim/tools/corpus_counts.py
+--check` (part of `npm run check:spec`) fails if a report on disk is missing
+from this list or a listed file does not exist.
+
+- [`characterization-analog-summary.md`](characterization-analog-summary.md) -- Every analog-partition row of the ratified target specification, one result per row with its claim limit. Status: aggregation for #313; an ordinary summary that runs no new simulation.
+- [`characterization-array-ring-coupling.md`](characterization-array-ring-coupling.md) -- Why one ring shows ~40x more jitter inside the array deck: ring-to-ring coupling through the XOR combiner input stage. Status: complete (#51).
+- [`characterization-array-supply-ripple.md`](characterization-array-supply-ripple.md) -- Susceptibility of the buffered RO array to deterministic supply ripple. Status: campaign defined and unit-tested; simulations not yet run, so no sensitivity numbers (#414).
+- [`characterization-digital-sta-area-power.md`](characterization-digital-sta-area-power.md) -- Digital section Fmax, area and power across the corner set (Area and Power rows, digital share). Status: complete (#145), with later amendments in-document.
+- [`characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md) -- Phase cost the liveness digitizer imposes on its ring. Status: complete (#76).
+- [`characterization-post-layout-extracted.md`](characterization-post-layout-extracted.md) -- Entropy-source verification suite re-run on extracted post-layout netlists, device-level through full-chip inter-region. Status: complete (#17, extended by #217 and #232).
+- [`characterization-raw-min-entropy-and-battery.md`](characterization-raw-min-entropy-and-battery.md) -- Raw min-entropy estimation and statistical test battery (Raw min-entropy row). Status: analysis complete (#12); reports no design min-entropy figure.
+- [`characterization-ring-buffer-mitigation.md`](characterization-ring-buffer-mitigation.md) -- Whether buffering each ring output removes the combiner coupling, and its power cost. Status: complete (#75).
+- [`characterization-ro-delay-cell-jitter.md`](characterization-ro-delay-cell-jitter.md) -- Ring-oscillator delay-cell jitter, thermal and flicker noise (entropy-source architecture grounding). Status: complete (#4); carries amendments in-document.
+- [`characterization-sampler-bit-bias.md`](characterization-sampler-bit-bias.md) -- Whether the clock-locked liveness modulation reaches the sampled bit. Status: complete (#86).
+- [`characterization-shipped-array-tap-phase.md`](characterization-shipped-array-tap-phase.md) -- Clock-locked digitizer disturbance in the array as shipped. Status: complete (#87).
+- [`characterization-startup-and-power-budget.md`](characterization-startup-and-power-budget.md) -- Time-to-first-valid and whole-block Power rows. Status: complete (#14); depth-2 figures supersede depth-8 ones in-document.
+- [`characterization-starved-cell-jitter-energy.md`](characterization-starved-cell-jitter-energy.md) -- Jitter-energy law on the shipped starved delay cell. Status: complete (#46).
+- [`characterization-supply-current-and-leakage.md`](characterization-supply-current-and-leakage.md) -- Per-ring active supply current and stopped-ring leakage (Power row inputs). Status: complete (#32).
+- [`characterization-vss-trunk-ir-drop.md`](characterization-vss-trunk-ir-drop.md) -- IR drop on the shared vss return trunk, per region. Status: complete (#234); verdict: not material.
+- [`characterization-worst-corner-and-mc-mismatch.md`](characterization-worst-corner-and-mc-mismatch.md) -- Entropy-binding PVT corner over the full 27-point grid, and Monte Carlo mismatch bias. Status: complete (#13).
+
+---
+
 ## The two rules
 
 1. **Append-only.** A record is written once. Re-running a testbench —

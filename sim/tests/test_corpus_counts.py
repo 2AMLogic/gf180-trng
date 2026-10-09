@@ -57,6 +57,14 @@ def ci_yml(count: str = "three", gates=GATES) -> str:
             f"of all {count}).\n#   design/netlist.py --check (other)\n")
 
 
+def index_readme(names=("a", "b")) -> str:
+    """A sim/README.md carrying a complete characterization index."""
+    items = "".join(
+        f"- [`characterization-{n}.md`](characterization-{n}.md) -- demo.\n"
+        for n in names)
+    return f"# sim\n\n## Characterization reports\n\n{items}\n## Layout\n"
+
+
 def build_tree(root: Path, readme: str = GOOD_README,
                sim_readme: str | None = None) -> None:
     """A minimal corpus: 3 DR ids, 2 summaries, 4 records."""
@@ -79,8 +87,7 @@ def build_tree(root: Path, readme: str = GOOD_README,
     (root / "package.json").write_text(package_json())
     (root / ".github" / "workflows").mkdir(parents=True)
     (root / ".github" / "workflows" / "ci.yml").write_text(ci_yml())
-    if sim_readme is not None:
-        (sim / "README.md").write_text(sim_readme)
+    (sim / "README.md").write_text((sim_readme or "") + index_readme())
 
 
 def snapshot(root: Path) -> dict[str, str]:
@@ -314,10 +321,69 @@ class GateInventory(TreeCase):
         self.assertIn("gate list omits delta", proc.stderr)
 
 
+class ReportIndex(TreeCase):
+    """Every characterization report is indexed, and only those (#428)."""
+
+    def problems(self, sim_readme: str | None = None):
+        build_tree(self.root)
+        if sim_readme is not None:
+            (self.root / "sim" / "README.md").write_text(sim_readme)
+        return cc.check_report_index(self.root)
+
+    def test_complete_index_passes(self) -> None:
+        self.assertEqual(self.problems(), [])
+        self.assertEqual(cc.check_tree(self.root)[1], [])
+
+    def test_unindexed_report_fails(self) -> None:
+        build_tree(self.root)
+        (self.root / "sim" / "characterization-new.md").write_text("x\n")
+        problems = cc.check_report_index(self.root)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("characterization-new.md is not linked", problems[0])
+
+    def test_indexing_the_new_report_clears_it(self) -> None:
+        build_tree(self.root)
+        (self.root / "sim" / "characterization-new.md").write_text("x\n")
+        (self.root / "sim" / "README.md").write_text(
+            index_readme(("a", "b", "new")))
+        self.assertEqual(cc.check_report_index(self.root), [])
+
+    def test_indexed_missing_file_fails(self) -> None:
+        problems = self.problems(index_readme(("a", "b", "ghost")))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("characterization-ghost.md, which does not exist",
+                      problems[0])
+
+    def test_link_outside_the_section_does_not_count(self) -> None:
+        text = ("# sim\n\n## Characterization reports\n\n"
+                "- [a](characterization-a.md)\n\n## Layout\n"
+                "[b](characterization-b.md)\n")
+        problems = self.problems(text)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("characterization-b.md is not linked", problems[0])
+
+    def test_missing_section_fails(self) -> None:
+        problems = self.problems("# sim\n[a](characterization-a.md)\n")
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("no '## Characterization reports' section", problems[0])
+
+    def test_cli_exits_nonzero_on_unindexed_report(self) -> None:
+        build_tree(self.root)
+        (self.root / "sim" / "characterization-new.md").write_text("x\n")
+        proc = subprocess.run(
+            [sys.executable, str(TOOL), "--root", str(self.root), "--check"],
+            capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("characterization-new.md is not linked", proc.stderr)
+
+
 class RepositoryReadme(unittest.TestCase):
     def test_committed_readme_agrees_with_tree(self) -> None:
         counts, problems = cc.check_tree(cc.REPO_ROOT)
         self.assertEqual(problems, [], counts)
+
+    def test_committed_report_index_is_complete(self) -> None:
+        self.assertEqual(cc.check_report_index(cc.REPO_ROOT), [])
 
     def test_committed_gate_inventory_agrees_with_package_json(self) -> None:
         self.assertEqual(cc.check_gate_inventory(cc.REPO_ROOT), [])

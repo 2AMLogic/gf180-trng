@@ -5,6 +5,10 @@ designed end to end by AI agents driving an entirely open-source analog flow:
 xschem for schematics, ngspice for simulation, and
 [klayout-tools](https://github.com/2AMLogic/klayout-tools) for layout.
 
+**Evidence:** start with the
+[index of characterization reports](sim/README.md#characterization-reports),
+which says what each report answers and whether it is complete.
+
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
 convention, [twenty-six decision records](spec/decision-records/), an
