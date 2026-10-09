@@ -1,0 +1,61 @@
+{
+  "klt_sim_corner": {
+    "corner_id": "tt/3.630V/125C",
+    "process": "tt",
+    "supply_v": {
+      "vsupply": 3.63
+    },
+    "temperature_c": 125,
+    "status": "pass",
+    "runtime_s": 9.786,
+    "measurements": [
+      {
+        "name": "period_s",
+        "value": 1.60006e-08,
+        "unit": "s",
+        "status": "pass",
+        "margin": null
+      },
+      {
+        "name": "supply_current_avg_a",
+        "value": -1.716e-05,
+        "unit": "A",
+        "status": "pass",
+        "margin": null
+      },
+      {
+        "name": "ro_swing_v",
+        "value": 3.56345,
+        "unit": "V",
+        "status": "pass",
+        "margin": null
+      }
+    ],
+    "diagnostics": [],
+    "artifacts": {
+      "log": "/tmp/w339out/tt_3p630V_125C/ngspice.log",
+      "raw": null,
+      "waveform": null,
+      "deck": "/tmp/w339out/tt_3p630V_125C/corner.cir"
+    },
+    "monte_carlo": null
+  },
+  "batch_job": {
+    "provider": "aws-batch-fleet",
+    "job_id": "klt-sim-aabfb69c043d",
+    "bucket": "2am-batch-jobs-221082181346",
+    "region": "us-east-1",
+    "instance_id": "i-0f55e707261c6ac71",
+    "instance_type": "c7i.8xlarge",
+    "availability_zone": "us-east-1d",
+    "ami_id": "ami-0e40e3245f1923ac8",
+    "lifecycle": "spot",
+    "spot": true,
+    "state": "done",
+    "exit_code": "0",
+    "concurrency": "2",
+    "physical_cores": "16",
+    "elapsed_seconds": 76
+  },
+  "klt_version": "0.6.0"
+}

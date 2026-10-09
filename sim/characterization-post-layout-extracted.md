@@ -1463,6 +1463,101 @@ double-counting them.
 
 ---
 
+## 9. 2026-10-09 delta: ring1 with the PMOS wells tied (issue #339)
+
+**Question.** Every extracted-netlist re-simulation above (§1-§8, and the
+`ro-ring11-pex` envelope behind T1 item 7's analog citation) runs with its
+PMOS bodies on floating, anonymous well nets: the drawn layout has no
+`Nplus`-over-`Comp`-inside-`Nwell` tie, and `klt pex` reports
+`body_bias.status: "unbiased"` (23 of 23 PMOS, 11 wells) on
+`signoff/evidence/post-layout/ro_ring11.pex.json`. `klt` calls a
+re-simulation of such a netlist physically wrong. Which way is the error?
+
+**Method.** `sim/tb/ro-ring11-pex-welltied/build_welltied.py` copies the
+committed extracted netlist and rewires the 4th terminal of each of the 23
+`pfet_03v3` cards the envelope lists from its well net to the `vddr` port node
+(the schematic's tie, with no access resistance). It is derived from the
+envelope's `body_bias` block and raises on any device it cannot find, any
+body that is not the net the envelope names, any pfet the envelope does not
+list, a count other than 23, or a well net still referenced afterwards;
+`--check` holds the committed files to its output
+(`sim/tests/test_build_welltied.py`). The testbench is `ro-ring11-pex`'s,
+byte for byte except that the DUT include is inlined (the batch backend of
+klt 0.6.0 uploads only the testbench file, not what it includes). The same
+27-corner request (`request.json`: `{tt, ff, ss}` x `{2.97, 3.30, 3.63}` V x
+`{-40, 27, 125}` C, the same three `.meas` rows) was run through
+`klt sim --backend batch` (klt 0.6.0 client; batch job
+`klt-sim-aabfb69c043d`, ngspice-46 on the fleet): 27 of 27 corners passed with
+every row measured, so no crossing was missing at the ff/-40 C/3.63 V or
+ss/125 C/2.97 V extremes. The tt / 3.30 V / 27 C corner was also reproduced
+locally first (13.65 ns). Per-corner evidence is the 27 records
+`sim/records/2026-10-09-ro-ring11-pex-welltied-01..27`, each `level:
+extracted` with the schematic and floating-well values at the same corner
+quoted from the committed envelope (those two are not re-simulated).
+
+**Result.** The floating-well probe's direction holds at every corner: the
+floating-well re-simulation **understates** the post-layout ring slowdown, so
+it is not conservative for period.
+
+| `period_s`, % over schematic | min | max |
+|---|---|---|
+| wells floating (the cited envelope) | +86.0 | +93.2 |
+| wells tied to `vddr` | +104.3 | +119.8 |
+
+Tying the wells lengthens the period by **+9.8 % to +18.0 %** (mean +12.8 %)
+relative to the floating-well figure at the same corner. The effect is
+largest at low temperature and low supply (worst: ss / 2.97 V / -40 C,
++18.0 %) and smallest hot and at high supply (best: ff / 3.63 V / 125 C,
++9.8 %). At tt / 3.30 V / 27 C the table reproduces the issue's probe:
+6.40 ns schematic, 12.08 ns floating (+88.6 %), 13.65 ns tied (+113.2 %).
+The other two rows move little: `supply_current_avg_a` magnitude is -9.9 % to
++3.7 % of the floating figure (tied vs. schematic: -13.9 % to -11.5 %;
+floating vs. schematic: -15.3 % to -3.0 %), and `ro_swing_v` rises 0.4 % to
+1.2 % (tied vs. schematic: -5.4 % to -4.2 %). The ranges above were computed
+over all 27 corners; the table gives every one.
+
+| corner | period sch. (ns) | period float (ns) | period tied (ns) | float vs sch. (%) | tied vs sch. (%) | tied vs float (%) | \|I\| sch. (uA) | \|I\| float (uA) | \|I\| tied (uA) | swing sch. (V) | swing float (V) | swing tied (V) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| tt/2.970V/-40C | 5.69 | 10.74 | 12.45 | +88.7 | +118.8 | +16.0 | 17.60 | 16.45 | 15.25 | 3.113 | 2.934 | 2.947 |
+| tt/2.970V/27C | 7.23 | 13.69 | 15.64 | +89.4 | +116.3 | +14.2 | 14.68 | 13.25 | 12.74 | 3.096 | 2.918 | 2.937 |
+| tt/2.970V/125C | 9.63 | 18.43 | 20.39 | +91.5 | +111.8 | +10.6 | 12.06 | 10.33 | 10.53 | 3.067 | 2.896 | 2.925 |
+| tt/3.300V/-40C | 5.03 | 9.47 | 10.85 | +88.3 | +115.6 | +14.5 | 23.04 | 21.16 | 20.07 | 3.444 | 3.243 | 3.263 |
+| tt/3.300V/27C | 6.40 | 12.08 | 13.65 | +88.6 | +113.2 | +13.0 | 19.12 | 17.06 | 16.68 | 3.426 | 3.228 | 3.254 |
+| tt/3.300V/125C | 8.55 | 16.23 | 17.88 | +89.9 | +109.1 | +10.1 | 15.57 | 13.32 | 13.67 | 3.396 | 3.210 | 3.244 |
+| tt/3.630V/-40C | 4.57 | 8.55 | 9.72 | +87.1 | +112.8 | +13.7 | 28.93 | 26.33 | 25.32 | 3.774 | 3.552 | 3.579 |
+| tt/3.630V/27C | 5.80 | 10.88 | 12.22 | +87.4 | +110.6 | +12.4 | 23.97 | 21.29 | 21.04 | 3.755 | 3.539 | 3.572 |
+| tt/3.630V/125C | 7.74 | 14.57 | 16.00 | +88.3 | +106.8 | +9.8 | 19.44 | 16.66 | 17.16 | 3.725 | 3.525 | 3.563 |
+| ff/2.970V/-40C | 4.62 | 8.78 | 10.04 | +89.8 | +117.0 | +14.3 | 23.32 | 21.17 | 20.08 | 3.084 | 2.904 | 2.918 |
+| ff/2.970V/27C | 5.93 | 11.21 | 12.68 | +89.1 | +114.0 | +13.2 | 19.41 | 17.15 | 16.78 | 3.064 | 2.887 | 2.909 |
+| ff/2.970V/125C | 8.00 | 15.14 | 16.72 | +89.1 | +108.9 | +10.4 | 15.92 | 13.49 | 13.88 | 3.034 | 2.866 | 2.897 |
+| ff/3.300V/-40C | 4.17 | 7.87 | 8.93 | +88.5 | +113.8 | +13.4 | 29.84 | 26.80 | 25.87 | 3.412 | 3.212 | 3.233 |
+| ff/3.300V/27C | 5.35 | 10.04 | 11.28 | +87.8 | +111.0 | +12.4 | 24.76 | 21.75 | 21.54 | 3.392 | 3.197 | 3.225 |
+| ff/3.300V/125C | 7.22 | 13.53 | 14.89 | +87.5 | +106.4 | +10.1 | 20.19 | 17.12 | 17.71 | 3.362 | 3.180 | 3.216 |
+| ff/3.630V/-40C | 3.85 | 7.20 | 8.13 | +86.9 | +111.0 | +12.9 | 36.80 | 32.89 | 32.10 | 3.739 | 3.520 | 3.549 |
+| ff/3.630V/27C | 4.92 | 9.16 | 10.25 | +86.4 | +108.5 | +11.9 | 30.54 | 26.78 | 26.74 | 3.719 | 3.508 | 3.543 |
+| ff/3.630V/125C | 6.61 | 12.29 | 13.50 | +86.0 | +104.3 | +9.8 | 24.88 | 21.15 | 21.94 | 3.690 | 3.494 | 3.536 |
+| ss/2.970V/-40C | 7.15 | 13.31 | 15.71 | +86.2 | +119.8 | +18.0 | 13.14 | 12.75 | 11.49 | 3.136 | 2.962 | 2.974 |
+| ss/2.970V/27C | 8.99 | 16.97 | 19.59 | +88.6 | +117.9 | +15.5 | 11.00 | 10.21 | 9.62 | 3.121 | 2.946 | 2.964 |
+| ss/2.970V/125C | 11.80 | 22.79 | 25.26 | +93.2 | +114.2 | +10.9 | 9.09 | 7.92 | 7.96 | 3.097 | 2.925 | 2.951 |
+| ss/3.300V/-40C | 6.17 | 11.55 | 13.39 | +87.1 | +116.9 | +15.9 | 17.62 | 16.65 | 15.45 | 3.471 | 3.273 | 3.291 |
+| ss/3.300V/27C | 7.80 | 14.72 | 16.77 | +88.7 | +114.9 | +13.9 | 14.66 | 13.37 | 12.85 | 3.454 | 3.258 | 3.282 |
+| ss/3.300V/125C | 10.30 | 19.75 | 21.77 | +91.7 | +111.4 | +10.2 | 11.97 | 10.35 | 10.54 | 3.429 | 3.239 | 3.270 |
+| ss/3.630V/-40C | 5.51 | 10.28 | 11.79 | +86.7 | +114.2 | +14.7 | 22.55 | 20.99 | 19.85 | 3.803 | 3.583 | 3.608 |
+| ss/3.630V/27C | 6.96 | 13.08 | 14.78 | +87.9 | +112.3 | +13.0 | 18.70 | 16.88 | 16.48 | 3.786 | 3.570 | 3.600 |
+| ss/3.630V/125C | 9.20 | 17.50 | 19.23 | +90.1 | +108.9 | +9.9 | 15.18 | 13.12 | 13.44 | 3.759 | 3.554 | 3.590 |
+
+**What this does and does not say.** It is a counterfactual on ring1 alone,
+not a drawn-layout result: no cell here draws a well tie, the tie modelled is
+ideal (a drawn tie adds access resistance), and nothing about ring2, the
+buffers, the combiner or the samplers is inferred. It quantifies how far the
+floating-well numbers can be trusted for ring1's period: the ring is about
+10-18 % slower than the cited envelope says, on top of the +86-93 % the
+envelope already reports. The published T1 item 7 citation
+(`signoff/evidence/post-layout/`) is unchanged by this section; whether its
+wording should say so is a follow-up. Whether the cells should draw well ties
+(a layout change needing DRC/LVS re-runs) is a separate decision and is not
+made here. No ratified spec row is touched.
+
 ## Follow-up
 
 - ~~**Full-chip (inter-cell + inter-region routed) extraction**, once

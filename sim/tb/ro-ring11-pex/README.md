@@ -59,6 +59,12 @@ XOR nets as ports; that is not done here.
   is `"unbiased"`, and `klt`'s own documentation calls a re-simulation of
   such a netlist physically wrong, not merely imprecise. The schematic side
   ties PMOS bulk to `vddr`. See signoff/README.md, "Item 7 analog".
+  How much that moves the numbers is measured in
+  `sim/tb/ro-ring11-pex-welltied/` (issue #339): with the 23 PMOS bodies
+  rewired to `vddr` the ring period is 9.8-18.0 % longer than this
+  directory's floating-well figure at every corner, so the floating-well
+  result understates the slowdown. See
+  `sim/characterization-post-layout-extracted.md` section 9.
 - **The schematic's `cld`.** Each schematic stage output carries the
   schematic's 0.5 fF lumped wiring estimate; the extracted side has none and
   carries the drawn parasitics instead.
