@@ -1157,6 +1157,7 @@ routing goes:
 | per-net trunk | **Metal4** | east–west, under the row, one lane per net at `y = −1.2 − 0.7·k` |
 | per-endpoint riser | **Metal3** | north–south, from the trunk up to its own endpoint |
 | endpoint via stack | Via1/Via2/Via3 + a Metal2 landing pad | only at the pin itself |
+| top-edge `digital` pin (#315) | **Metal4** stub, **Metal5** track, **Metal3** flank riser | up from the pin, east above the guard ring, down the free east flank |
 
 Two layers, not one, is the load-bearing part: because trunks are Metal4 and
 risers are Metal3, a riser reaching a *deep* trunk crosses every shallower
@@ -1372,10 +1373,94 @@ promoted, but the connectivity check reports them). Cause: `digital` was
 re-placed-and-routed (#266/#277/#293) and its `clk`, `rst_n`, `raw_bit`,
 `raw_valid` and `ring_bit[*]` pins moved from the bottom edge (y = 0.26 um in
 the DEF) to the top edge (y = 398.67 um); `interregion.py`'s `digital_pin`
-stub is drawn at the bottom edge and does not read the pin's y. Fixing the
-wiring is tracked in gf180-trng#315; it is separate work from the pin-count expectation; until it lands
-`--require-tools` fails these checks for that real reason, and the expectation
-is not loosened to hide it.
+stub was drawn at the bottom edge and did not read the pin's y. The
+expectation was not loosened to hide this; the wiring was fixed instead
+(gf180-trng#315, below).
+
+**Resolution (gf180-trng#315, 2026-10-09).** `interregion.py` now reads each
+`digital` pin's edge from the DEF placement (`digital_pin_edge`): a bottom-edge
+pin keeps the original short Metal4 stub and Metal3 riser from below the row;
+a top-edge pin leaves the pin straight up on a Metal4 stub (positive-area
+overlap with the pin rectangle), turns east on its own Metal5 track above the
+guard ring (track `y` = block top + 2 um + 0.7 um per endpoint), and comes down
+`digital`'s free east flank on its own Metal3 riser (`x` = block east edge +
+2 um + 0.7 um per endpoint) to the usual Metal4 trunk. Everything outside the
+pin overlap is beyond `digital`'s footprint and guard ring, so the route never
+runs through `digital`'s internal routing; `digital` is the last region of the
+row, so the flank is otherwise empty. Metal4/Metal5/Metal3 are three distinct
+layers, so the six endpoints cross one another without sharing a layer. A pin
+on neither edge is rejected with a `WiringError` rather than routed blind.
+Re-placing the pins back on the bottom edge needs no change here. Because the
+stubs now reach the east flank, `clk` and `rst_n` trunks (and therefore their
+chip pins) sit east of `digital`'s east edge instead of at its pin; they still
+never run west of `combiner_sampler` (DR-0012).
+
+Measured with the normative producer, klt `0.6.0` (PyPI wheel in a throwaway
+venv, `klayout==0.30.10`), gf180mcuD at open_pdks `c6d73a35...` (local volare
+install), `python3 layout/floorplan/floorplan.py --require-tools`: extraction
+reports **112** pins against the 112 expected (was 114); the extra `clk$1`/
+`rst_n$1` and the split `raw_bit`/`raw_valid` nets are gone; composed DRC is
+clean (0 violations, 0 new against each region's standalone DRC); composed
+LVS is `match` (2 mismatches, no unexpected categories -- unchanged).
+`layout/tests/test_interregion.py` additionally checks, with no tool or PDK,
+that every one of the six endpoints is joined to its trunk by positive-area
+same-layer overlaps and via cuts, at the committed origin and at a translated
+one.
+
+**`check_interregion`'s label count was inverted for `ring_bit*`, and is
+fixed here.** `run_extract_composed` passes `--def-net-names`, which names a
+net that contains `digital`'s DEF-annotated routing by its DEF net name and
+drops the text labels. For `clk`/`rst_n`/`raw_bit`/`raw_valid` the DEF name
+equals the trunk label, but the joined `ring_bit1`/`ring_bit2` nets come back
+as `ring_bit[0]`/`ring_bit[1]`. Counting the trunk label alone therefore
+reported the correctly joined `ring_bit1`/`ring_bit2` as carried by **0**
+extracted nets (two failures of this flow under klt 0.6.0), and a
+disconnected `digital` endpoint as **1** carrier (measured: with
+`ring_bit[1]`'s Metal4 stub deleted, the extraction reports `ring_bit[1]` and
+`q|ring_bit2` -- one net carrying `ring_bit2`, so the old check passed). The
+carriers are now the extracted nets carrying any label in
+`interregion.route_net_labels` (the trunk label plus each `digital`
+endpoint's DEF net name): one for every drawn net on the routed floorplan,
+two for the stub-deleted control. With this fix the same run reports 6
+unmet checks, all of them committed-artefact freshness (#256), against 8
+before.
+
+**Per-endpoint extracted membership (gf180-trng#315).** The label count
+above is not membership evidence on its own, so each endpoint was also
+queried directly. A probe script ran `run_extract_composed`'s own `klt
+extract` argv in-process under klt 0.6.0 (`klayout` 0.30.10, deck
+`gf180mcu` content hash `sha256:95c2eb91...`), on the composed stream
+`layout/.work/trng_floorplan.gds` (`sha256:5d20e880...`, the stream this
+flow writes at this commit), and asked klt's own `LayoutToNetlist` object
+(`probe_net` on its registered Metal4 conductor) which extracted net holds
+the conductor (a) at `digital`'s DEF-placed pin, found by the pin text that
+`digital`'s own DEF-to-GDS merge wrote inside `trng_top`, probed 0.2 um
+below that text where only pin metal sits, and (b) under the trunk label
+`interregion.py` draws. `klt extract` has no point-to-net query, which is
+why the probe uses klt's in-process object (see [Tool
+friction](#tool-friction)):
+
+| endpoint | pin (um) | trunk label (um) | extracted net at pin | at trunk | std-cell pins on net |
+|---|---|---|---|---|---|
+| `clk` | 786.58, 399.47 | 933.51, -4.0 | `clk` (cluster 119) | same | 1 |
+| `rst_n` | 759.70, 399.47 | 934.21, -4.7 | `rst_n` (3879) | same | 17 |
+| `raw_bit` | 721.62, 399.47 | 617.71, -5.4 | `raw_bit` (1464) | same | 9 |
+| `raw_valid` | 719.38, 399.47 | 648.18, -6.1 | `raw_valid` (1197) | same | 16 |
+| `ring_bit[0]` | 758.58, 399.47 | 678.975, -6.8 | `ring_bit[0]` (99) | same | 3 |
+| `ring_bit[1]` | 707.06, 399.47 | 709.77, -7.5 | `ring_bit[1]` (107) | same | 2 |
+
+All six pins are on the same extracted net as their trunks, and the six nets
+are distinct. The standard-cell pin counts agree with the DEF `NETS` fan-out
+(for example `ring_bit[0]`: three cell pins). As a control, deleting
+`ring_bit[1]`'s Metal4 stub and re-running the same probe put that pin on a
+different net (`ring_bit[1]`, cluster 3365) from its trunk (`q|ring_bit2`,
+cluster 107), while the other five stayed joined.
+
+The committed `reports/` and `trng_floorplan.gds` were deliberately **not**
+committed `reports/` and `trng_floorplan.gds` were deliberately **not**
+regenerated here: they are stale against the current `digital` block
+(composed height, pin edge) and #256 owns that refresh, which will pick up
+this wiring.
 
 Both remaining gaps are filed generically upstream — see [Tool
 friction](#tool-friction).
@@ -1565,7 +1650,7 @@ not to read a clean DRC result as an independence argument.
 
 Per [CLAUDE.md](../../CLAUDE.md), friction found while using klayout-tools is
 filed generically against the tool — the tool gap, never this repository's
-design. This work produced ten, all filed against
+design. This work produced eleven, all filed against
 [klayout-tools][klt] and all worked around in
 [`floorplan.py`](floorplan.py)/[`interregion.py`](interregion.py) rather than
 silently absorbed (some were genuine tool defects with no caller-side
@@ -1704,6 +1789,14 @@ mitigation possible and are recorded here only until fixed upstream):
    degrade to `$<id>` placeholders, which is exactly the case where readable
    names are worth most. No caller-side workaround exists; the flag is
    passed anyway so the warning stays visible in the committed report.
+11. **[klayout-tools#2986][kt2986]** — `klt extract` has no point-to-net
+   query, so "this pin's conductor is on the same extracted net as this
+   trunk" can only be inferred from net names. Under klt 0.6.0 with
+   `--def-net-names` that inference was inverted for the `ring_bit*` routes
+   (see "Resolution (gf180-trng#315)" above). The per-endpoint membership
+   evidence for #315 was taken by calling `probe_net` on klt's own
+   in-process `LayoutToNetlist` object, which depends on klt internals and
+   is not part of this flow.
 
 Not new friction, but worth recording alongside the above: issue #110's own
 regeneration found that `layout/rings/ro_ring11/ro_ring11.gds`'s and
@@ -1742,6 +1835,7 @@ would not block that separate question.
 [kt1687]: https://github.com/2AMLogic/klayout-tools/issues/1687
 [kt1688]: https://github.com/2AMLogic/klayout-tools/issues/1688
 [kt1689]: https://github.com/2AMLogic/klayout-tools/issues/1689
+[kt2986]: https://github.com/2AMLogic/klayout-tools/issues/2986
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75

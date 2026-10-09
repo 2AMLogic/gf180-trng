@@ -220,6 +220,14 @@ def resistance_model() -> dict:
         content_origins[rid] = origins_um[content_id]
         content_bboxes[rid] = region["ring_content_bbox_um"]
 
+    # `area.json`'s `digital` bbox is a stale measurement until #256
+    # regenerates the reports, while `wiring_plan()` checks the DEF's pin
+    # placement against it. Take the block's bbox from the same DEF the pins
+    # come from. `digital` is in `SCOPED_OUT_REGIONS`, so this does not change
+    # the `vss` chain.
+    if "digital" in content_bboxes:
+        content_bboxes["digital"] = interregion.digital_die_bbox()
+
     plan = interregion.wiring_plan(content_origins, content_bboxes)
 
     route = next(r for r in plan["routes"] if r["net"] == NET)
