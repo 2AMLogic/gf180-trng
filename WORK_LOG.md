@@ -6,6 +6,9 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #361**: Guard the check:spec gate count and name list restated in prose
+- **PR #358**: test(sim): fail-path tests for four spec-guarding --check gates
+- **Issue #360** (closed): Guard the check:spec gate count and name list restated in README, ci.yml and package.json (11 / 11 / 13 vs 15 actual)
 - **PR #356**: test(sim): add direct unit tests for the shared record parser
 - **Issue #345** (closed): Unit-test the shared evidence-record parser (sim/tools/_record_parsing.py), which has no direct tests
 

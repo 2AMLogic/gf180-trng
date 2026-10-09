@@ -38,16 +38,17 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#358**: test(sim): fail-path tests for four spec-guarding --check gates
+_None._
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
-_None._
+- **#357**: Add fail-path unit tests for the untested sim tool --check spec gates *(curated)*
 
 ## Proposed (Architect / Hermit)
 
+- **#362**: Fail closed when checksum --changed cannot resolve its Git base *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -63,8 +64,8 @@ _None._
 | Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 0 |
-| Architect / Hermit proposals | 1 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
