@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #381**: test: add unit tests for the shared layout engine _mos_row
+- **Issue #378** (closed): Add unit tests for the shared hand-drawn layout engine layout/cells/_mos_row.py
 - **PR #376**: Add unit tests for the hand-rolled GDSII writer
 - **PR #375**: Unit-test gen_sdf SDF filter; raise SdfError on malformed input
 - **PR #371**: pdk-nightly: provision gf180mcu_fd_sc_mcu7t5v0 for the floorplan step
