@@ -341,7 +341,10 @@ def _bit_names(module: dict) -> dict[int, str]:
     picking one deterministically is all correctness requires -- `klt lvs`
     compares topology, not text). A bit with no covering name at all (never
     observed in this netlist -- OpenROAD's `write_verilog` names every net
-    it emits -- but not structurally impossible) falls back to `net<id>`.
+    it emits -- but not structurally impossible) is deliberately left out of
+    the returned map rather than given an invented name; `_cell_instances`
+    raises `LvsFlowError` naming the instance, port and bit if a cell
+    connects one, so an unnamed net cannot silently mask a bad netlist.
     """
     names: dict[int, str] = {}
     for port, spec in module["ports"].items():
@@ -367,7 +370,14 @@ def _bit_names(module: dict) -> dict[int, str]:
 
 
 def _join_spice_continuations(text: str) -> str:
-    """Fold every SPICE `+`-prefixed continuation line into its predecessor.
+    """Fold every SPICE `+`-prefixed continuation line into its card.
+
+    A continuation attaches to the last non-comment line, so `*` comment
+    lines between a card and its `+` line are left in place and do not
+    swallow the continued tokens (HSPICE-style). A blank line is not a
+    comment: a `+` after one attaches to the blank line, as before. A `+`
+    with no earlier non-comment line (start of file, or only comments
+    before it) has nothing to continue and is passed through unchanged.
 
     None of this design's cell-type `.SUBCKT` headers happen to wrap (the
     widest, `aoi222_1`, is 10 pins on one line, verified directly against
@@ -378,11 +388,14 @@ def _join_spice_continuations(text: str) -> str:
     logical one.
     """
     joined: list[str] = []
+    card: int | None = None  # index in `joined` of the last non-comment line
     for line in text.split("\n"):
-        if line.startswith("+") and joined:
-            joined[-1] = f"{joined[-1]} {line[1:].strip()}"
-        else:
-            joined.append(line)
+        if line.startswith("+") and card is not None:
+            joined[card] = f"{joined[card]} {line[1:].strip()}"
+            continue
+        joined.append(line)
+        if not line.startswith("*"):
+            card = len(joined) - 1
     return "\n".join(joined)
 
 
@@ -496,6 +509,13 @@ def _cell_instances(
                     "not observed in trng_top.pnr.v as of this script's "
                     "writing; add constant-net handling before trusting "
                     "this reference"
+                )
+            if bit not in bit_names:
+                raise LvsFlowError(
+                    f"instance '{inst_name}' port '{port}' is connected to "
+                    f"bit {bit}, which no top-level port or `netnames` entry "
+                    "names -- cannot give it a stable net name for the "
+                    "reference"
                 )
             connections[port] = bit_names[bit]
         library_type_pins = library_pins.get(cell_type)
