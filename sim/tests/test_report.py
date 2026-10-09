@@ -311,6 +311,97 @@ class ChangedRecordDiscoveryTests(unittest.TestCase):
             with self.subTest(path=str(path)):
                 self.assertTrue(path.is_file(), f"discovered a path that does not exist: {path}")
 
+    def test_nonzero_git_result_raises_naming_the_base(self):
+        real_run = subprocess.run
+
+        def fake_run(argv, **kwargs):
+            if argv[:2] == ["git", "diff"]:
+                return subprocess.CompletedProcess(
+                    argv, 128, stdout="", stderr="fatal: bad revision 'nope...HEAD'\n")
+            return real_run(argv, **kwargs)
+
+        self.vrc.subprocess.run = fake_run
+        self.addCleanup(setattr, self.vrc.subprocess, "run", real_run)
+        with self.assertRaises(self.vrc.ChangedDiscoveryError) as ctx:
+            self.vrc._changed_records("nope")
+        self.assertIn("nope", str(ctx.exception))
+        self.assertIn("128", str(ctx.exception))
+        self.assertIn("bad revision", str(ctx.exception))
+
+    def _git(self, repo, *args):
+        subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@example.com",
+             "-c", "commit.gpgsign=false", *args],
+            cwd=repo, check=True, capture_output=True, text=True)
+
+    def _temp_repo(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        repo = Path(tmp.name)
+        self._git(repo, "init", "-q", "-b", "main")
+        (repo / "sim" / "records").mkdir(parents=True)
+        (repo / "sim" / "records" / ".keep").write_text("")
+        self._git(repo, "add", "-A")
+        self._git(repo, "commit", "-q", "-m", "base")
+        for name, value in (("SIM_DIR", repo / "sim"), ("REPO_ROOT", repo)):
+            old = getattr(self.vrc, name)
+            setattr(self.vrc, name, value)
+            self.addCleanup(setattr, self.vrc, name, old)
+        return repo
+
+    def _run_cli(self, argv):
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self.vrc.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_cli_fails_closed_on_unknown_base(self):
+        self._temp_repo()
+        rc, out, err = self._run_cli(["--changed", "nonexistent-base"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("nonexistent-base", err)
+        self.assertNotIn("no records to check", out)
+
+    def test_cli_fails_closed_on_missing_base_history(self):
+        self._temp_repo()
+        # A base that names an object this clone does not have.
+        rc, out, err = self._run_cli(["--changed", "0123456789abcdef0123456789abcdef01234567"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("0123456789abcdef", err)
+        self.assertNotIn("no records to check", out)
+
+    def test_cli_fails_closed_on_unrelated_histories(self):
+        repo = self._temp_repo()
+        self._git(repo, "checkout", "-q", "--orphan", "other")
+        (repo / "other.txt").write_text("x\n")  # sim/records stays on disk
+        self._git(repo, "add", "-A")
+        self._git(repo, "commit", "-q", "-m", "unrelated")
+        rc, out, err = self._run_cli(["--changed", "main"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("'main'", err)
+        self.assertNotIn("no records to check", out)
+
+    def test_valid_base_with_empty_diff_succeeds(self):
+        repo = self._temp_repo()
+        (repo / "README").write_text("not a record\n")
+        self._git(repo, "add", "-A")
+        self._git(repo, "commit", "-q", "-m", "no record")
+        rc, out, err = self._run_cli(["--changed", "HEAD~1"])
+        self.assertEqual(rc, 0, err)
+        self.assertIn("no records to check", out)
+
+    def test_valid_base_with_added_record_is_discovered(self):
+        repo = self._temp_repo()
+        rec = repo / "sim" / "records" / "2026-01-01-x-01.md"
+        rec.write_text("# record\n")
+        self._git(repo, "add", "-A")
+        self._git(repo, "commit", "-q", "-m", "add record")
+        paths = self.vrc._changed_records("HEAD~1")
+        self.assertEqual([p.resolve() for p in paths], [rec.resolve()])
+
 
 class RawFileVerificationTests(unittest.TestCase):
     """A record whose raw output changed after it was hashed is not evidence.
