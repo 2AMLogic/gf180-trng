@@ -469,14 +469,16 @@ than a second list that can say something different (#97):
 - **`npm run lint`** — a Python/shell syntax check and the schematic
   text-block brace guard (`design/netlist.py --lint`, #61);
 - **`npm run test`** — the harness unit tests;
-- **`npm run check:spec`**, **eleven spec-arithmetic self-checks** — pure
+- **`npm run check:spec`**, **fifteen spec-arithmetic self-checks** — pure
   derivations over records already committed under `sim/records/`, so a newly
   appended record cannot silently move a conclusion a summary document still
   asserts: `jitter_energy_law.py`, `starved_cell_jitter_energy.py`,
   `array_sizing.py`, `worst_corner_entropy.py`, `array_coupling_variants.py`,
   `array_coupling_buffer_variant.py`, `liveness_tap_phase_variants.py`,
   `array_liveness_tap_phase_variants.py`, `sampler_bit_bias_variants.py`,
-  `time_to_first_valid.py` and `power_rollup.py`, each `--check`;
+  `time_to_first_valid.py`, `power_rollup.py`,
+  `digital_corner_characterization.py`, `vss_trunk_ir_drop.py`,
+  `corpus_counts.py` and `klt_pin_sites.py`, each `--check`;
 - `sim/tools/verify_record_checksums.py`, which re-hashes every file each
   record's `raw.files` cites against `sim/records/raw/` (#60) — run as its own
   workflow step (the stricter, git-commit-state-checking form) rather than via
