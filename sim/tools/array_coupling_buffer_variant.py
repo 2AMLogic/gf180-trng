@@ -169,7 +169,7 @@ def _power_record(glob: str, netlist_sha: str | None = None) -> pr.Record:
     glob is sorted, so the last surviving match is the newest one.
     """
     all_at_corner = [
-        rec for rec in (pr.Record(p) for p in sorted(RECORDS.glob(glob)))
+        rec for rec in pr.load(glob)  # superseded records excluded
         if rec.corner == POWER_CORNER
     ]
     matches = [

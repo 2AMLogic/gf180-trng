@@ -77,7 +77,8 @@ class ArrayPointArithmeticTests(unittest.TestCase):
 
     def point(self, text: str, a: float = sizing.A_JITTER_ENERGY):
         path = self.root / "2026-01-01-ro-array-core-power-01.md"
-        path.write_text(text)
+        # Records must carry a lifecycle status (#425).
+        path.write_text("---\nstatus: valid\n---\n" + text)
         return sizing.ArrayPoint(sizing.Record(path), a=a)
 
     def test_ring_count_and_powers_are_read_off_the_record(self) -> None:
@@ -130,7 +131,7 @@ class CheckGateTests(unittest.TestCase):
         )
 
     def write(self, name: str, text: str) -> None:
-        (self.root / name).write_text(text)
+        (self.root / name).write_text("---\nstatus: valid\n---\n" + text)
 
     def run_main(self, *args: str) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()

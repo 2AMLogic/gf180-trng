@@ -69,7 +69,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
+from _record_parsing import format_corner, parse_corner, parse_status, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -113,14 +113,22 @@ class Record:
         self.stem = path.stem
         self.values = parse_values(text)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
+        self.status = parse_status(text, label=self.stem)
 
     @property
     def corner(self) -> str:
         return format_corner(self.process, self.temp_c, self.vdd)
 
 
-def load_startup_records() -> list[Record]:
-    return [Record(p) for p in sorted(RECORDS.glob(STARTUP_GLOB))]
+def load_startup_records(*, include_superseded: bool = False) -> list[Record]:
+    """Start-up records, excluding ``status: superseded`` ones by default.
+
+    A superseded record was invalidated (see ``sim/README.md``) and must not
+    reach corner selection; ``include_superseded=True`` is the explicit
+    historical read.
+    """
+    recs = [Record(p) for p in sorted(RECORDS.glob(STARTUP_GLOB))]
+    return recs if include_superseded else [r for r in recs if r.status == "valid"]
 
 
 def dedupe_by_corner(records: list[Record]) -> list[Record]:
@@ -141,7 +149,9 @@ def dedupe_by_corner(records: list[Record]) -> list[Record]:
     them, so "later in the list" means "measured later"; the last record of a
     given corner is the newest. Superseding a record in the
     ``sim/README.md`` sense is a different operation -- it marks a run
-    *mistaken*, which these are not -- so it deliberately is not used here.
+    *mistaken*, which these are not -- so it is not used for this choice;
+    ``load_startup_records`` drops genuinely superseded records before this
+    function sees them.
     """
     best: dict[str, Record] = {}
     for rec in records:
