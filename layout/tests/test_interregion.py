@@ -202,6 +202,143 @@ class TrunkLanes(unittest.TestCase):
             )
 
 
+# Metal stack the connectivity check below walks: a via layer joins the two
+# metals it sits between.
+_VIA_JOINS = {(40, 0): ((42, 0), (46, 0)), (41, 0): ((46, 0), (81, 0))}
+_TOP_EDGE_ENDPOINTS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit[0]", "ring_bit[1]")
+
+
+def _overlap_area(a: list[float], b: list[float]) -> float:
+    w = min(a[2], b[2]) - max(a[0], b[0])
+    h = min(a[3], b[3]) - max(a[1], b[1])
+    return w * h if w > 0 and h > 0 else 0.0
+
+
+def _pin_rect(pin: str, origin: dict[str, float]) -> list[float]:
+    """The pin's drawn Metal4 rectangle at the placed DEF coordinate."""
+    lx, ly = interregion.digital_pin_positions()[pin]
+    return [lx + origin["x"] - interregion.DIGITAL_PIN_W / 2,
+            ly + origin["y"] - interregion.DIGITAL_PIN_H / 2,
+            lx + origin["x"] + interregion.DIGITAL_PIN_W / 2,
+            ly + origin["y"] + interregion.DIGITAL_PIN_H / 2]
+
+
+def _connected(shapes: list[dict], pin_rect: list[float], trunk: dict) -> bool:
+    """Is `pin_rect` (Metal4) joined to `trunk` through positive-area
+    same-layer overlaps and via cuts that sit inside both adjacent metals?"""
+    nodes = [((46, 0), pin_rect)] + [(tuple(sh["layer"]), sh["rect_um"]) for sh in shapes]
+    parent = list(range(len(nodes)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i, (la, ra) in enumerate(nodes):
+        for j in range(i + 1, len(nodes)):
+            lb, rb = nodes[j]
+            area = _overlap_area(ra, rb)
+            if not area:
+                continue
+            is_via_a, is_via_b = la in _VIA_JOINS, lb in _VIA_JOINS
+            if is_via_a and is_via_b:
+                continue
+            if is_via_a:
+                joined = lb in _VIA_JOINS[la]
+            elif is_via_b:
+                joined = la in _VIA_JOINS[lb]
+            else:
+                joined = la == lb
+            if joined:
+                parent[find(i)] = find(j)
+    trunk_idx = next(k for k, (lay, r) in enumerate(nodes)
+                     if k and lay == (46, 0) and r == trunk["rect_um"])
+    return find(0) == find(trunk_idx)
+
+
+class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
+    """gf180-trng#315: the six `digital` signal pins sit on the block's top
+    edge after the re-place-and-route; the drawn stub must reach that metal,
+    wherever the block is placed."""
+
+    def _plan_at(self, dx: float, dy: float) -> tuple[dict, dict]:
+        origins = {rid: dict(o) for rid, o in _content_origins().items()}
+        origins["digital"] = {"x": origins["digital"]["x"] + dx,
+                              "y": origins["digital"]["y"] + dy}
+        east = _combiner_sampler_east_edge(_content_origins())
+        bboxes = {"combiner_sampler": {"x0": -0.5, "y0": -0.3, "x1": east, "y1": 0.0}}
+        return interregion.wiring_plan(origins, bboxes), origins["digital"]
+
+    def _check_all_joined(self, dx: float, dy: float) -> None:
+        plan, origin = self._plan_at(dx, dy)
+        for net in floorplan_netlist.INTER_REGION_NETS:
+            for rid, pin in net.get("endpoints", ()):
+                if rid != "digital" or pin not in _TOP_EDGE_ENDPOINTS:
+                    continue
+                shapes = [sh for sh in plan["shapes"] if sh["_net"] == net["name"]]
+                trunk = next(sh for sh in shapes
+                             if tuple(sh["layer"]) == (46, 0)
+                             and sh["rect_um"][3] - sh["rect_um"][1] <= interregion.WIRE_W + 1e-9
+                             and sh["rect_um"][2] - sh["rect_um"][0] > 5.0)
+                self.assertTrue(_connected(shapes, _pin_rect(pin, origin), trunk),
+                                f"{net['name']}/{pin} is not joined to its trunk")
+
+    def test_the_committed_def_places_the_signal_pins_on_the_top_edge(self):
+        bbox = interregion.digital_die_bbox()
+        for pin in _TOP_EDGE_ENDPOINTS:
+            _, ly = interregion.digital_pin_positions()[pin]
+            self.assertEqual(interregion.digital_pin_edge(ly, bbox), "top", pin)
+
+    def test_every_top_edge_pin_is_joined_to_its_trunk(self):
+        self._check_all_joined(0.0, 0.0)
+
+    def test_translated_block_origin_stays_joined(self):
+        self._check_all_joined(37.5, 11.25)
+
+    def test_the_stub_overlaps_the_pin_with_positive_area(self):
+        plan, origin = self._plan_at(0.0, 0.0)
+        for pin in _TOP_EDGE_ENDPOINTS:
+            rect = _pin_rect(pin, origin)
+            hits = [sh for sh in plan["shapes"] if tuple(sh["layer"]) == (46, 0)
+                    and _overlap_area(sh["rect_um"], rect) > 0]
+            self.assertTrue(hits, f"no drawn Metal4 overlaps pin {pin}")
+
+    def test_no_drawn_wire_enters_the_digital_block(self):
+        """Every top-edge leg stays outside the block footprint except the
+        pin overlap itself (Metal4 stub starting at the pin's centre)."""
+        plan, origin = self._plan_at(0.0, 0.0)
+        bbox = interregion.digital_die_bbox()
+        x1 = origin["x"] + bbox["x1"]
+        y1 = origin["y"] + bbox["y1"]
+        for sh in plan["shapes"]:
+            if tuple(sh["layer"]) not in ((81, 0), (40, 0)):
+                continue
+            r = sh["rect_um"]
+            if r[0] >= origin["x"] and r[2] <= x1 and r[1] >= origin["y"] and r[3] <= y1 \
+                    and sh["_net"] in ("clk", "rst_n", "raw_bit", "raw_valid",
+                                    "ring_bit1", "ring_bit2"):
+                self.fail(f"{sh['_net']} {r} inside digital's footprint")
+
+    def test_bottom_edge_pins_are_still_supported(self):
+        bbox = {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0}
+        self.assertEqual(interregion.digital_pin_edge(0.26, bbox), "bottom")
+        with mock.patch.object(interregion, "digital_pin_positions",
+                               return_value={p: (10.0 + i * 3, 0.26)
+                                             for i, p in enumerate(_TOP_EDGE_ENDPOINTS)}):
+            plan = interregion.wiring_plan(
+                _content_origins(),
+                {"combiner_sampler": {"x0": -0.5, "y0": -0.3, "x1": 50.0, "y1": 0.0},
+                 "digital": bbox})
+        anchors = {e["anchor"] for r in plan["routes"] for e in r["endpoints"]
+                   if e["region"] == "digital" and e["pin"] in _TOP_EDGE_ENDPOINTS}
+        self.assertEqual(anchors, {"digital_pin"})
+
+    def test_a_mid_block_pin_is_rejected_before_any_geometry(self):
+        with self.assertRaises(interregion.WiringError):
+            interregion.digital_pin_edge(50.0, {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0})
+
+
 class CompositionCarriesTheWiring(unittest.TestCase):
     def test_the_committed_composition_places_the_wiring_block(self):
         request = _composition()

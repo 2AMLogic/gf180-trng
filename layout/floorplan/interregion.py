@@ -86,10 +86,11 @@ strictly more conservative one in every case phase 1 named:
   footprint at all here -- it runs under the row, two routing levels above
   `ring2`'s topmost drawn layer and outside its guarded area entirely.
 * `clk`/`rst_n` (declared "metal4_transition", with the transition itself
-  deferred to this phase) reach `digital`'s real Metal4 pins from *below*
-  the block, where the only geometry in the way is the pin's own Metal4
-  shape -- no transition down to a lower metal over `digital`'s own routing
-  is needed, and none is drawn.
+  deferred to this phase) reach `digital`'s real Metal4 pins without ever
+  crossing `digital`'s own routing: from below the block for a bottom-edge
+  pin, or around the block's top and east sides for a top-edge pin
+  (gf180-trng#315, `TOP_TRACK_CLEAR_UM`). No transition down to a lower
+  metal over `digital`'s own routing is needed, and none is drawn.
 * `en1`/`en2`/`ro2` (declared Metal1) and the supply branches (declared
   Metal2) leave their region through a via stack at the pin and immediately
   climb to Metal3/Metal4, so no drawn wire anywhere shares Metal1 with a
@@ -120,8 +121,9 @@ The `digital` PDN tie (gf180-trng#224)
 ---------------------------------------
 `vddd`'s and `vss`'s own endpoint into `digital` is not another Metal3
 riser onto a Metal4 pin the way `clk`/`rst_n` are: those two pins sit right
-at `digital`'s own bottom edge (local y in roughly 0 .. 1.3 um), reachable by
-a short riser from below the row with nothing else in the way. `trng_top.
+at `digital`'s own bottom edge (local y in roughly 0 .. 1.3 um) when that
+was written, reachable by a short riser from below the row; since
+gf180-trng#315 the stub follows the pin's DEF-placed edge instead. `trng_top.
 def`'s own PDN straps for `vddd`/`vss` are Metal5, and they run the width of
 the block at several Y heights spread across nearly the block's *entire*
 549 um height (`digital_pdn_strap_bands`) -- a Metal3 riser reaching one of
@@ -287,6 +289,36 @@ assert DIGITAL_STUB_W <= 1.12 - 2 * 0.28, "stub must clear a neighbouring pin's 
 assert DIGITAL_STUB_Y_UM + VIA_RUNOUT <= DIGITAL_STUB_VIA_Y_UM <= -VIA_RUNOUT, \
     "the stub's own via must sit inside the stub and below the row's floor"
 assert TRUNK_Y0 + WIRE_W / 2 <= DIGITAL_STUB_Y_UM - 0.28, "stub-to-trunk spacing floor"
+
+#: Top-edge `digital` pins (gf180-trng#315). The re-placed-and-routed
+#: `trng_top.def` puts `clk`, `rst_n`, `raw_bit`, `raw_valid` and
+#: `ring_bit[*]` on the block's *top* edge, which is the far side of the
+#: block from the trunks. A riser cannot cross `digital`'s dense interior, and
+#: nothing is drawn to the east of `digital` (it is the last region of the
+#: row), so these endpoints leave the pin straight up on Metal4, turn east on
+#: a per-endpoint Metal5 track above the guard ring, and come down the free
+#: east flank on a per-endpoint Metal3 riser to the usual Metal4 trunk. Every
+#: leg sits outside `digital`'s footprint and guard ring; the only conductor
+#: touching `digital` is the pin itself. Metal4 (stub), Metal5 (track) and
+#: Metal3 (flank riser) are three different layers, so the endpoints cross
+#: each other without a same-layer meeting; same-layer neighbours are held
+#: `TOP_*_PITCH_UM` apart.
+#:
+#: `TOP_TRACK_CLEAR_UM` is measured from the content bbox top edge: 1 um of
+#: guard ring plus 1 um of air. `EAST_RISER_CLEAR_UM` is the same measurement
+#: from the content bbox east edge.
+TOP_TRACK_CLEAR_UM = 2.0
+TOP_TRACK_PITCH_UM = 0.7
+EAST_RISER_CLEAR_UM = 2.0
+EAST_RISER_PITCH_UM = 0.7
+#: How close (um) a pin's drawn edge must be to the block's bbox edge to
+#: count as sitting on it.
+PIN_EDGE_TOLERANCE_UM = 0.05
+
+assert TOP_TRACK_PITCH_UM - WIRE_W >= 0.28, "top track spacing floor"
+assert EAST_RISER_PITCH_UM - WIRE_W >= 0.28, "east riser spacing floor"
+assert TOP_TRACK_CLEAR_UM > 1.0 and EAST_RISER_CLEAR_UM > 1.0, \
+    "tracks must clear the 1 um guard ring band"
 
 #: Clearance this module keeps between a riser it draws and any *other*
 #: conductor on the same layer it could not otherwise avoid -- the deck's
@@ -604,6 +636,36 @@ def digital_pin_positions() -> dict[str, tuple[float, float]]:
     return pins
 
 
+def digital_die_bbox() -> dict[str, float]:
+    """`digital`'s `DIEAREA` in its own local frame, um -- the fallback bbox
+    for `wiring_plan` when the caller supplies no measured one."""
+    text = DIGITAL_DEF.read_text(errors="replace")
+    units_match = _DEF_UNITS_RE.search(text)
+    die = re.search(r"DIEAREA\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)", text)
+    if not units_match or not die:
+        raise WiringError(f"{DIGITAL_DEF} declares no readable UNITS / DIEAREA")
+    units = float(units_match.group(1))
+    x0, y0, x1, y1 = (int(v) / units for v in die.groups())
+    return {"x0": x0, "y0": y0, "x1": x1, "y1": y1}
+
+
+def digital_pin_edge(ly: float, bbox: dict[str, float]) -> str:
+    """Which block edge a `digital` Metal4 pin centred at local `ly` sits on:
+    `"bottom"` or `"top"`. The pin is `DIGITAL_PIN_H` tall and centred on its
+    DEF placement coordinate, so it sits on an edge when its drawn extent
+    ends there. Any other placement is rejected rather than routed blind."""
+    half = DIGITAL_PIN_H / 2
+    if abs((ly - half) - bbox["y0"]) <= PIN_EDGE_TOLERANCE_UM:
+        return "bottom"
+    if abs((ly + half) - bbox["y1"]) <= PIN_EDGE_TOLERANCE_UM:
+        return "top"
+    raise WiringError(
+        f"digital pin at local y = {ly} um sits on neither the bottom "
+        f"(y0 = {bbox['y0']}) nor the top (y1 = {bbox['y1']}) edge; "
+        "this module only routes edge pins"
+    )
+
+
 #: Matches one `+ LAYER Metal5 ( x0 y0 ) ( x1 y1 )` PORT rectangle line --
 #: `digital_pdn_strap_bands`'s own reader for a `vddd`/`vss` PINS entry's
 #: several PDN-strap bands (gf180-trng#224).
@@ -792,6 +854,27 @@ def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
                             x + DIGITAL_STUB_W / 2, y1))
         shapes.append(_via(VIA3, x, DIGITAL_STUB_VIA_Y_UM))   # Metal4 stub -> Metal3
         riser_x, riser_top = x, DIGITAL_STUB_VIA_Y_UM
+    elif kind == "digital_pin_top":
+        # gf180-trng#315 -- see `TOP_TRACK_CLEAR_UM`. `top`/`east` are the
+        # block bbox's local top and east edges; `slot` numbers this
+        # endpoint among the top-edge ones so each gets its own track/riser.
+        _, lx, ly, top, east, slot = anchor
+        x = lx + origin["x"]
+        y_pin = ly + origin["y"]
+        track_y = round(origin["y"] + top + TOP_TRACK_CLEAR_UM
+                        + slot * TOP_TRACK_PITCH_UM, 4)
+        x_east = round(origin["x"] + east + EAST_RISER_CLEAR_UM
+                       + slot * EAST_RISER_PITCH_UM, 4)
+        # Metal4 stub: from the pin's centre (real overlap with the pin
+        # rectangle) straight up past the guard ring to the track.
+        shapes.append(_vrect(METAL4, x, y_pin, track_y + VIA_RUNOUT))
+        shapes.append(_via(VIA4, x, track_y))            # Metal4 stub -> Metal5
+        shapes.append(_hrect(METAL5, x - METAL5_VIA4_ENCLOSE_UM,
+                             x_east + METAL5_VIA4_ENCLOSE_UM, track_y))
+        shapes.append(_via(VIA4, x_east, track_y))       # Metal5 -> Metal4 landing
+        shapes.append(_pad(METAL4, x_east, track_y))
+        shapes.append(_via(VIA3, x_east, track_y))       # Metal4 landing -> Metal3 riser
+        riser_x, riser_top = x_east, track_y
     elif kind == "digital_pdn_strap":
         # gf180-trng#224 -- see the module docstring's "The `digital` PDN
         # tie" section. `lx_riser` is one of VSS_PDN_RISER_X_LOCAL/
@@ -839,6 +922,8 @@ def wiring_plan(origins: dict[str, dict[str, float]],
     ring_anchor_tables = {rid: ring_anchors(rid) for rid in _RING_BUILD}
     cs_table = cs_anchors(content_bboxes["combiner_sampler"]["x1"])
     digital_pins = digital_pin_positions()
+    digital_bbox = content_bboxes.get("digital") or digital_die_bbox()
+    top_slots = {"next": 0}
 
     def anchor_for(rid: str, pin: str) -> tuple:
         if rid in ring_anchor_tables:
@@ -877,7 +962,13 @@ def wiring_plan(origins: dict[str, dict[str, float]],
                     "does not place it"
                 )
             lx, ly = digital_pins[pin]
-            return ("digital_pin", lx, ly)
+            edge = digital_pin_edge(ly, digital_bbox)
+            if edge == "bottom":
+                return ("digital_pin", lx, ly)
+            slot = top_slots["next"]
+            top_slots["next"] += 1
+            return ("digital_pin_top", lx, ly, digital_bbox["y1"],
+                    digital_bbox["x1"], slot)
         raise WiringError(f"unknown region id {rid!r}")
 
     shapes: list[dict] = []
