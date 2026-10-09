@@ -250,7 +250,7 @@ class WriteGdsTests(unittest.TestCase):
         # TEXT element.
         self.assertEqual(struct.unpack(">2i", recs[19][2]), (500, 1000))
         self.assertEqual(recs[20][2], b"A\x00")
-        self.assertEqual(recs[-4][2], b"CELL_B")
+        self.assertEqual(recs[-3][2], b"CELL_B")
 
     def test_empty_structure_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
