@@ -248,7 +248,8 @@ shaped the run:
   ones the existing routing-level work already measures, at DR-0006's
   27-point grid. `combiner_sampler` would need a clocked two-ring stimulus
   and a schematic exposing internal buffer/XOR nets as ports, and is not
-  attempted; ring2 is not run either.
+  attempted; ring2 is not run either. (#418 builds that fixture as separate,
+  uncited coverage; see "Combiner/sampler post-layout coverage" below.)
 - *One `.include`.* `design.ngspice`'s switch parameters cannot be a second
   include, and folding them into the DUT drops them from the extracted side;
   they are restated as a `.param` card in the testbench body
@@ -297,6 +298,47 @@ how much that matters.
 
 Cold start: see `sim/tb/ro-ring11-pex/README.md`, then
 `python3 signoff/publish_item7_analog.py && python3 signoff/check.py --write`.
+
+## Combiner/sampler post-layout coverage
+
+Additional coverage, **not** a citation (#418). The item 7 analog citation
+above stays ring1's, with its `body_bias` disclosure and #412's open
+question unchanged; any future replacement or aggregation of that citation
+must keep both scopes and #412's findings explicit.
+
+`sim/tb/combiner-sampler-pex/` drives the assembled
+`layout/blocks/combiner_sampler/combiner_sampler.gds` — both ring-output
+buffers, the XOR combiner and all four sampling flip-flops — with a
+deterministic two-input, clock and reset schedule, and compares schematic
+against extracted through `klt pex` at DR-0006's 27-point grid. 62 rows hold
+each flip-flop output and `xo`/`ro1`/`ro2` to the block's reset, capture and
+`raw_valid` contract (90 %/10 % of supply); four more measure clock/reset-to-Q
+without limits. The schematic DUT's ports are resolved from the extraction by
+connectivity, and ambiguous or contradicting mappings are refused. Because
+`klt pex` grades only the extracted side's limits (klayout-tools#2989),
+`check.combiner_sampler_verdict()` holds both sides to them. It counts a
+missing corner or a missing value as `unmeasured`, never `pass`. The testbench
+README has the scenarios, settling windows and exclusions.
+
+When the run is published, `publish_combiner_sampler_pex.py` writes the
+native envelope byte for byte to `evidence/post-layout/combiner_sampler/`,
+with a `publication.json`. That file pins the request, testbench, DUT, source
+identity, port map, PDK/deck provenance and `body_bias`, and records the
+verdict. `check.py` re-verifies all of it on every run (step 1d) and
+recomputes the verdict, so neither can go stale or be hand-edited. A `fail`
+verdict is published and kept as evidence.
+
+**Status (2026-10-09): fixture built, grid not yet run.** Two submissions
+of the 27-corner grid to the batch backend both failed with the fleet's
+capacity refusal ("no capacity in any of the 30 pools after 3 attempt(s)").
+The first failed on the extracted side after the schematic side had
+finished; the second failed on the schematic side. `klt pex` aborts on such
+a failure and discards the side that completed (klayout-tools#2990). The
+grid was deliberately not re-run on the local backend. Nothing is published,
+so step 1d currently has nothing to check. A single-corner debug probe
+(tt / 3.30 V / 27 °C, local backend) measured all 66 rows on both sides
+within limits, and extracted clock-to-Q was about 4x the schematic value.
+That probe is a debug observation, not a PVT record.
 
 ## Why each item reads the way it does
 
