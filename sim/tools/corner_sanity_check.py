@@ -33,6 +33,39 @@ from harness.pdk import find_pdk  # noqa: E402
 MIN_SPREAD_PCT = 1.0  # ff-vs-ss must differ by at least this fraction of tt
 
 
+def evaluate(ids: dict[str, float]) -> tuple[bool, str]:
+    """Pure pass/fail decision on the ss/tt/ff drive currents (no ngspice).
+
+    Returns ``(ok, message)``. On success the message holds the spread line and
+    the PASS line; on failure it holds the FAIL line.
+    """
+    if not ids["ss"] < ids["tt"] < ids["ff"]:
+        return False, (
+            f"FAIL: expected Id(ss) < Id(tt) < Id(ff); got "
+            f"{ids['ss']:.6e} / {ids['tt']:.6e} / {ids['ff']:.6e} -- "
+            "process corner selection does not appear to be taking effect."
+        )
+
+    if ids["tt"] <= 0:
+        return False, (
+            f"FAIL: Id(tt) = {ids['tt']:.6e} is not positive, so the spread "
+            "relative to tt is undefined."
+        )
+
+    spread_pct = (ids["ff"] - ids["ss"]) / ids["tt"] * 100.0
+    if spread_pct < MIN_SPREAD_PCT:
+        return False, (
+            f"FAIL: ff-vs-ss spread is only {spread_pct:.3f}% of tt "
+            f"(floor is {MIN_SPREAD_PCT}%) -- corner selection may be silently "
+            "ignored even though the ordering happens to look right."
+        )
+
+    return True, (
+        f"spread  = {spread_pct:.2f}% (ff vs ss, relative to tt)\n"
+        "PASS: process corner selection measurably changes device behavior."
+    )
+
+
 def main() -> int:
     tb = testbench.load(SIM_DIR / "tb" / "corner-sanity-nfet-id")
     pdk = find_pdk()
@@ -56,30 +89,9 @@ def main() -> int:
     print(f"Id(tt) = {ids['tt']:.6e} A")
     print(f"Id(ff) = {ids['ff']:.6e} A")
 
-    ordered = ids["ss"] < ids["tt"] < ids["ff"]
-    spread_pct = (ids["ff"] - ids["ss"]) / ids["tt"] * 100.0
-
-    if not ordered:
-        print(
-            f"FAIL: expected Id(ss) < Id(tt) < Id(ff); got "
-            f"{ids['ss']:.6e} / {ids['tt']:.6e} / {ids['ff']:.6e} -- "
-            "process corner selection does not appear to be taking effect.",
-            file=sys.stderr,
-        )
-        return 1
-
-    if spread_pct < MIN_SPREAD_PCT:
-        print(
-            f"FAIL: ff-vs-ss spread is only {spread_pct:.3f}% of tt "
-            f"(floor is {MIN_SPREAD_PCT}%) -- corner selection may be silently "
-            "ignored even though the ordering happens to look right.",
-            file=sys.stderr,
-        )
-        return 1
-
-    print(f"spread  = {spread_pct:.2f}% (ff vs ss, relative to tt)")
-    print("PASS: process corner selection measurably changes device behavior.")
-    return 0
+    ok, message = evaluate(ids)
+    print(message, file=sys.stdout if ok else sys.stderr)
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
