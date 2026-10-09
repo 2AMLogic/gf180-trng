@@ -20,14 +20,16 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#387**: lvs.py: fix two latent gaps (SPICE continuation after comment; _bit_names net<id> fallback)
+- **#406**: Resolve the README's untracked 'still owed' min-entropy re-run at ss/+125C/3.63V
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#374**: Run the committed SDF regeneration guard in PDK nightly CI
-- **#377**: Unit-test the corner-sanity guardrail's pass/fail logic without ngspice
+- **#315**: Inter-region stubs miss digital's top-edge pins after the re-place-and-route (clk, rst_n, raw_bit, raw_valid, ring_bit unjoined)
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+- **#403**: Unit-test build_dut.py's extraction_port_map refusal branches offline
 
 ## PRs Awaiting Review
 
@@ -39,17 +41,20 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#409**: test(sim): unit-test build_dut port map refusal branches offline
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
-_None._
+- **#315**: Inter-region stubs miss digital's top-edge pins after the re-place-and-route (clk, rst_n, raw_bit, raw_valid, ring_bit unjoined) *(curated)*
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
+- **#387**: lvs.py: fix two latent gaps (SPICE continuation after comment; _bit_names net<id> fallback) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#378**: Add unit tests for the shared hand-drawn layout engine layout/cells/_mos_row.py *(architect)*
+- **#404**: Committed generated reports embed absolute host paths (home dir, worktree); add a guard *(architect)*
+- **#408**: check:all omits the append-only evidence-history guard that check:ci runs *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -62,11 +67,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 0 |
-| Architect / Hermit proposals | 2 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 3 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

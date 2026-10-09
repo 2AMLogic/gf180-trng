@@ -6,6 +6,32 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #407**: test(signoff): unit-test compare_record, _print_item_diff, resolve_artifact
+- **PR #405**: ci: wire two missing --check self-checks into check:spec
+- **PR #402**: test: unit-test corner_sanity_check's pass/fail logic without ngspice
+- **PR #401**: ci: run the SDF regeneration guard in PDK nightly (#374)
+- **PR #397**: test: unit-test combiner_sampler and ro_ring11 row/wiring geometry helpers
+- **PR #399**: test: unit-test layout/pex/build.py's port-resolution and tap helpers
+- **PR #398**: test: unit-test worst_corner_entropy.py's --check gate
+- **PR #395**: test: unit-test floorplan.py's SPICE hierarchy-expansion helpers
+- **PR #394**: test: unit-test the tap-phase launcher's stale-record cleanup
+- **PR #389**: test: unit-test the digital LVS reference-netlist helpers
+- **PR #386**: test: unit-test digital place-and-route DEF/GDS checks
+- **Issue #391** (closed): Unit-test signoff/check.py's verdict-of-record comparison (compare_record, resolve_artifact)
+- **Issue #400** (closed): Wire the DR-0012 estimator-calibration and statistical-battery self-checks into check:spec / CI
+- **Issue #388** (closed): lvs.py: _bit_names documents a net<id> fallback it does not implement
+- **Issue #377** (closed): Unit-test the corner-sanity guardrail's pass/fail logic without ngspice
+- **Issue #374** (closed): Run the committed SDF regeneration guard in PDK nightly CI
+- **Issue #392** (closed): Unit-test the combiner_sampler and ro_ring11 row/wiring geometry helpers
+- **Issue #390** (closed): Unit-test layout/pex/build.py's port-resolution and tap-position helpers
+- **Issue #396** (closed): Unit-test sim/tools/worst_corner_entropy.py's --check gate: it is only ever run against the real corpus
+- **Issue #384** (closed): Unit-test floorplan.py's SPICE hierarchy-expansion helpers
+- **Issue #393** (closed): Unit-test run_array_liveness_tap_phase.py's stale-record cleanup so it cannot delete complete evidence
+- **Issue #382** (closed): Unit-test the digital LVS reference-netlist helpers in layout/digital/lvs.py
+- **Issue #383** (closed): Unit-test the digital place-and-route DEF/GDS checks in layout/digital/build.py
+
+### 2026-10-09
+
 - **PR #381**: test: add unit tests for the shared layout engine _mos_row
 - **Issue #378** (closed): Add unit tests for the shared hand-drawn layout engine layout/cells/_mos_row.py
 - **PR #376**: Add unit tests for the hand-rolled GDSII writer
