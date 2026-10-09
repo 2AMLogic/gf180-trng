@@ -41,6 +41,32 @@ ENVELOPE = REPO_ROOT / "signoff/evidence/post-layout/ro_ring11.pex.json"
 RECORDS = REPO_ROOT / "sim" / "records"
 ROWS = ("period_s", "supply_current_avg_a", "ro_swing_v")
 
+# The only fields of klt's `environment.remote` block that reach a record. The
+# block also carries the operator's cloud-account details (storage bucket,
+# region, availability zone, machine image and instance ids); those say nothing
+# about how to reproduce the run and must never land in this public,
+# append-only corpus, so anything not listed here is dropped.
+BATCH_JOB_FIELDS = ("provider", "job_id", "instance_type", "lifecycle", "spot",
+                    "state", "exit_code", "elapsed_seconds")
+
+
+def batch_job_provenance(remote: dict) -> dict:
+    """Return the allow-listed subset of klt's `environment.remote` block."""
+    return {k: remote[k] for k in BATCH_JOB_FIELDS if k in remote}
+
+
+def report_problem(rep: dict) -> str | None:
+    """Return why `rep` is not a clean pass of the full 27-corner grid, or None.
+
+    Each condition is checked on its own: an equal-but-short report (say 26/26)
+    is as much a refusal as a partial pass.
+    """
+    passed, count, n = rep["passed"], rep["corner_count"], len(rep["corners"])
+    if rep["status"] != "pass" or passed != count or count != 27 or n != 27:
+        return (f"report is not a clean 27-corner pass: {rep['status']} "
+                f"({passed}/{count}, {n} corner entries)")
+    return None
+
 
 def fnum(v: float) -> str:
     return f"{v:.6e}" if v != 0 and (abs(v) < 1e-3 or abs(v) >= 1e5) else f"{v:.6g}"
@@ -53,11 +79,11 @@ def main(argv: list[str]) -> int:
     rep = json.loads(Path(argv[0]).read_text())
     outdir = Path(argv[1])
     env = json.loads(ENVELOPE.read_text())
-    if rep["status"] != "pass" or rep["passed"] != rep["corner_count"] != 27:
-        print(f"report is not a clean 27-corner pass: {rep['status']} "
-              f"({rep['passed']}/{rep['corner_count']})", file=sys.stderr)
+    problem = report_problem(rep)
+    if problem:
+        print(problem, file=sys.stderr)
         return 1
-    remote = rep["environment"]["remote"]
+    remote = batch_job_provenance(rep["environment"]["remote"])
     if remote.get("state") != "done":
         print(f"batch job state is {remote.get('state')!r}", file=sys.stderr)
         return 1
@@ -121,7 +147,7 @@ def main(argv: list[str]) -> int:
             "",
             "tool:",
             f"  ngspice: \"ngspice-{rep['environment']['engine_version']} (AWS batch fleet runner)\"",
-            f"  platform: \"{remote['instance_type']} {remote['lifecycle']} instance {remote['instance_id']}, job {remote['job_id']}; "
+            f"  platform: \"{remote['instance_type']} {remote['lifecycle']} instance, job {remote['job_id']}; "
             f"submitted from {platform.platform()} with klt {rep['provenance']['klt_version']}\"",
             "",
             "corner:",

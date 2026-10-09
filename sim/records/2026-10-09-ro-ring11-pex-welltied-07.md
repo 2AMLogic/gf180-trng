@@ -1,6 +1,6 @@
 ---
 record: 2026-10-09-ro-ring11-pex-welltied-07
-date: 2026-10-09T17:08:44Z
+date: 2026-10-09T17:16:00Z
 status: valid
 level: extracted
 
@@ -18,7 +18,7 @@ pdk.models:
 
 tool:
   ngspice: "ngspice-46 (AWS batch fleet runner)"
-  platform: "c7i.8xlarge spot instance i-0f55e707261c6ac71, job klt-sim-aabfb69c043d; submitted from Linux-7.0.0-1013-aws-x86_64-with-glibc2.39 with klt 0.6.0"
+  platform: "c7i.8xlarge spot instance, job klt-sim-aabfb69c043d; submitted from Linux-7.0.0-1013-aws-x86_64-with-glibc2.39 with klt 0.6.0"
 
 corner:
   process: tt
@@ -39,7 +39,7 @@ raw:
   files:
     - tt_-40c_3.63v.spice  sha256:7394e7a5f28cceebd8effd8a891a1c419cebc8df796dbdc648e724aa9a14075a
     - tt_-40c_3.63v.log  sha256:29872e6d0ff9e0ec31e9e67313627bee44fc6a51e2f464f7eb77780d060d44b9
-    - tt_-40c_3.63v.json  sha256:dbfab475666817dc0c6a21c72a25cdafb664161cdd1639b569158b0fadfa1986
+    - tt_-40c_3.63v.json  sha256:6d6706cdf60ddb7435b9ebabb49811d1c51514aa364262fc33f173d1100381dc
 wall_time: 10.441s (this corner; whole 27-corner batch job 76s)
 ---
 

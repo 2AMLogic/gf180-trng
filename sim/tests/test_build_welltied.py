@@ -1,8 +1,11 @@
 """The ring1 well-tie rewiring generator (issue #339): count, stability, failure."""
 
+import contextlib
 import copy
 import importlib.util
+import io
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -97,6 +100,74 @@ class CommittedFiles(unittest.TestCase):
             r.pop("netlist")
             r["options"].pop("keep_artifacts")
         self.assertEqual(a, b)
+
+
+_wr_spec = importlib.util.spec_from_file_location(
+    "write_records_welltied", ROOT / "sim/tb/ro-ring11-pex-welltied/write_records.py"
+)
+wr = importlib.util.module_from_spec(_wr_spec)
+_wr_spec.loader.exec_module(wr)
+
+
+class BatchJobProvenance(unittest.TestCase):
+    """Cloud-account details from klt's `environment.remote` never reach a record."""
+
+    REMOTE = {
+        "provider": "aws-batch-fleet", "job_id": "klt-sim-0", "bucket": "b-123",
+        "region": "r", "instance_id": "i-x", "instance_type": "t", "availability_zone": "z",
+        "ami_id": "ami-x", "lifecycle": "spot", "spot": True, "state": "done",
+        "exit_code": "0", "concurrency": "2", "physical_cores": "16", "elapsed_seconds": 1,
+    }
+
+    def test_allow_list_only(self):
+        out = wr.batch_job_provenance(self.REMOTE)
+        self.assertEqual(set(out), set(wr.BATCH_JOB_FIELDS))
+        for k in ("bucket", "region", "instance_id", "availability_zone", "ami_id"):
+            self.assertNotIn(k, out)
+
+    def test_committed_raw_json_is_allow_listed(self):
+        raws = sorted((ROOT / "sim/records/raw").glob("*-ro-ring11-pex-welltied-*/*.json"))
+        self.assertEqual(len(raws), 27)
+        for p in raws:
+            job = json.loads(p.read_text())["batch_job"]
+            self.assertLessEqual(set(job), set(wr.BATCH_JOB_FIELDS), p.name)
+        records = sorted((ROOT / "sim/records").glob("*-ro-ring11-pex-welltied-*.md"))
+        self.assertEqual(len(records), 27)
+        for p in records:
+            self.assertNotRegex(p.read_text(), r"\bi-0[0-9a-f]{8,}|\bami-[0-9a-f]+", p.name)
+
+
+class ReportGate(unittest.TestCase):
+    """write_records refuses anything but a clean pass of all 27 corners."""
+
+    @staticmethod
+    def rep(status="pass", passed=27, count=27, entries=27):
+        return {"status": status, "passed": passed, "corner_count": count,
+                "corners": [{}] * entries}
+
+    def test_clean_27_accepted(self):
+        self.assertIsNone(wr.report_problem(self.rep()))
+
+    def test_equal_but_short_refused(self):
+        # Regression: `passed != corner_count != 27` let 26/26 through.
+        self.assertIsNotNone(wr.report_problem(self.rep(passed=26, count=26, entries=26)))
+
+    def test_partial_pass_refused(self):
+        self.assertIsNotNone(wr.report_problem(self.rep(passed=26)))
+
+    def test_corner_list_mismatch_refused(self):
+        self.assertIsNotNone(wr.report_problem(self.rep(entries=26)))
+
+    def test_failed_status_refused(self):
+        self.assertIsNotNone(wr.report_problem(self.rep(status="fail")))
+
+    def test_main_refuses_26_of_26_before_writing(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "report.json"
+            p.write_text(json.dumps(self.rep(passed=26, count=26, entries=26)))
+            with contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(wr.main([str(p), d]), 1)
+            self.assertIn("26/26", err.getvalue())
 
 
 if __name__ == "__main__":

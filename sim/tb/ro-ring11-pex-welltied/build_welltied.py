@@ -28,9 +28,9 @@ rather than guess when:
     names;
   * the number of rewired cards is not exactly `unbiased_device_count`, or the
     set of distinct wells rewired is not the envelope's `unbiased_nets`;
-  * any pfet card in the netlist is not covered by the envelope (a PMOS the
-    envelope does not call unbiased is left alone only if it already sits on
-    a named supply net);
+  * any pfet card in the netlist is not in the envelope's list (every PMOS
+    must be one the envelope calls unbiased; an unlisted PMOS is an error
+    even if its body already sits on a named supply net);
   * an old well net is still referenced anywhere after the rewrite.
 
 The body goes to the `vddr` port node itself, not to a parasitic hub of it
@@ -142,8 +142,14 @@ def rewire(netlist: str, body_bias: dict) -> tuple[str, int]:
 
 
 def render() -> tuple[str, str]:
+    full, tb, _n = render_counted()
+    return full, tb
+
+
+def render_counted() -> tuple[str, str, int]:
+    """Return (netlist text, testbench text, rewired card count)."""
     body_bias = json.loads(ENVELOPE.read_text())["body_bias"]
-    netlist, _n = rewire(SOURCE_NETLIST.read_text(), body_bias)
+    netlist, n_tied = rewire(SOURCE_NETLIST.read_text(), body_bias)
     tb = SOURCE_TB.read_text()
     if tb.count(SOURCE_INCLUDE) != 1:
         raise BuildError(f"{SOURCE_TB.name}: expected exactly one {SOURCE_INCLUDE!r}")
@@ -157,7 +163,7 @@ def render() -> tuple[str, str]:
         "* deck is self-contained for the batch backend (issue #339). Do not edit by hand.\n"
         + tb
     )
-    return full, tb
+    return full, tb, n_tied
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -165,13 +171,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
     try:
-        netlist, tb = render()
+        netlist, tb, n_tied = render_counted()
         pairs = ((OUT_NETLIST, netlist), (OUT_TB, tb))
         if args.check:
             for path, want in pairs:
                 if not path.is_file() or path.read_text() != want:
                     raise BuildError(f"{path.relative_to(REPO_ROOT)} is stale; re-run build_welltied.py")
-            print("build_welltied: well-tied netlist and testbench are current (23 of 23 bodies tied)")
+            print(f"build_welltied: well-tied netlist and testbench are current ({n_tied} PMOS bodies tied)")
             return 0
         for path, want in pairs:
             path.write_text(want)
