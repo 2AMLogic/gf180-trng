@@ -8,6 +8,11 @@
     python3 sim/tb/ro-ring11-pex/build_dut.py --verify-netlist <extracted.spice>
                                                          # hold a klt-pex-written netlist to the DUT
 
+Ring selection (#423): every mode takes `--ring ring1|ring2` (default ring1).
+Ring2 (`layout/rings/ro_ring11_ring2/`, instance `xr2`, subcircuit
+`ro_ring11_ring2`) writes its fixture under sim/tb/ro-ring11-ring2-pex/; its
+sizing is read from `xr2`, never from ring1's constants.
+
 Why this file exists
 --------------------
 `klt pex` (klt 0.6.0) re-runs one `klt sim` testbench twice: once as written,
@@ -76,18 +81,48 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections import namedtuple
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 DESIGN = REPO_ROOT / "design" / "ro_array_core.spice"
-GDS = "layout/rings/ro_ring11/ro_ring11.gds"
-TOP = "ro_ring11"
-DUT = HERE / "ro_ring11_schematic.spice"
-TESTBENCH = HERE / "tb_ro_ring11_pex.sp"
+
+
+class Ring(namedtuple("Ring", "key top instance params gds dut testbench")):
+    """One physically separate ring this fixture can be built for.
+
+    `top` is the extracted `.SUBCKT` name (the layout's top cell); `instance`
+    is the canonical instance in design/ro_array_core.spice whose sizing the
+    DUT must carry. The schematic *body* is always that file's `ro_ring11`
+    subcircuit; only the instance sizing and the layout differ per ring.
+    """
+
+    __slots__ = ()
+
 
 #: Ring1's instance parameters (`xr1` in design/ro_array_core.spice).
 RING1_PARAMS = "wstv=0.220u lstv=2u cld=0.5f"
+#: Ring2's instance parameters (`xr2`): the separately sized oscillator (#423).
+RING2_PARAMS = "wstv=0.240u lstv=2u cld=0.5f"
+RING1 = Ring(
+    "ring1", "ro_ring11", "xr1", RING1_PARAMS,
+    "layout/rings/ro_ring11/ro_ring11.gds",
+    HERE / "ro_ring11_schematic.spice", HERE / "tb_ro_ring11_pex.sp",
+)
+_RING2_DIR = HERE.parent / "ro-ring11-ring2-pex"
+RING2 = Ring(
+    "ring2", "ro_ring11_ring2", "xr2", RING2_PARAMS,
+    "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+    _RING2_DIR / "ro_ring11_ring2_schematic.spice", _RING2_DIR / "tb_ro_ring11_ring2_pex.sp",
+)
+RINGS = {r.key: r for r in (RING1, RING2)}
+
+# Ring1 module-level names, kept for existing callers.
+GDS = RING1.gds
+TOP = RING1.top
+DUT = RING1.dut
+TESTBENCH = RING1.testbench
 #: Ports the extraction names uniquely; every other port is a ring node.
 NAMED_PORTS = ("en", "vddr", "vss", "vsubs")
 #: Schematic names of the eleven ring nodes, in ROW_ORDER (input of xg first).
@@ -124,16 +159,16 @@ def _subckt_block(text: str, name: str) -> list[str]:
     return lines[start : end + 1]
 
 
-def extraction_port_map(netlist_text: str) -> list[str]:
+def extraction_port_map(netlist_text: str, ring: Ring = RING1) -> list[str]:
     """Schematic node name for each port position of the extracted
-    `.SUBCKT ro_ring11` header -- see the module docstring."""
+    `.SUBCKT <ring.top>` header -- see the module docstring."""
     lines = _logical_lines(netlist_text)
     header = next(
-        (l.split()[2:] for l in lines if re.match(rf"^\.SUBCKT\s+{TOP}\b", l, re.I)),
+        (l.split()[2:] for l in lines if re.match(rf"^\.SUBCKT\s+{ring.top}\b", l, re.I)),
         None,
     )
     if header is None:
-        raise BuildError(f"extracted netlist declares no .SUBCKT {TOP}")
+        raise BuildError(f"extracted netlist declares no .SUBCKT {ring.top}")
     for name in NAMED_PORTS:
         if header.count(name) != 1:
             raise BuildError(f"extracted header names {name!r} {header.count(name)} times")
@@ -190,30 +225,52 @@ def extraction_port_map(netlist_text: str) -> list[str]:
 
 #: Subcircuits of design/ro_array_core.spice the DUT body is transcribed from.
 CONSUMED_SUBCKTS = ("ro_ring11", "ro_nand2", "ro_stage")
+#: The schematic cell every ring instance (xr1, xr2) instantiates.
+SCHEMATIC_CELL = "ro_ring11"
 #: The canonical instance whose sizing RING1_PARAMS restates.
-RING1_INSTANCE = "xr1"
+RING1_INSTANCE = RING1.instance
+
+
+def ring_instance_params(design: str, ring: Ring = RING1) -> str:
+    """The ring's canonical instance parameter tokens, as written in the design
+    source. The instance's model is always `ro_ring11` (the schematic cell),
+    whatever the layout's top cell is called."""
+    for line in _logical_lines(design):
+        toks = line.split()
+        if toks and toks[0].lower() == ring.instance and SCHEMATIC_CELL in toks:
+            return " ".join(t for t in toks[toks.index(SCHEMATIC_CELL) + 1 :] if "=" in t)
+    raise BuildError(
+        f"{DESIGN.relative_to(REPO_ROOT)}: no {ring.instance} {SCHEMATIC_CELL} instance"
+    )
 
 
 def ring1_instance_params(design: str) -> str:
-    """The `xr1` instance's parameter tokens, as written in the design source."""
-    for line in _logical_lines(design):
-        toks = line.split()
-        if toks and toks[0].lower() == RING1_INSTANCE and TOP in toks:
-            return " ".join(t for t in toks[toks.index(TOP) + 1 :] if "=" in t)
-    raise BuildError(f"{DESIGN.relative_to(REPO_ROOT)}: no {RING1_INSTANCE} {TOP} instance")
+    return ring_instance_params(design, RING1)
+
+
+def audit_ring_params(design: str, ring: Ring = RING1) -> None:
+    """Fail unless the ring's restated sizing equals its canonical instance's,
+    and (for any other ring) differs from ring1's -- a ring2 fixture carrying
+    ring1's widths is a substitution, not a ring2 comparison."""
+    canonical = ring_instance_params(design, ring)
+    if canonical.split() != ring.params.split():
+        raise BuildError(
+            f"{ring.key} params {ring.params!r} disagrees with {ring.instance} in "
+            f"{DESIGN.relative_to(REPO_ROOT)}: {canonical!r}"
+        )
+    if ring is not RING1 and canonical.split() == ring_instance_params(design, RING1).split():
+        raise BuildError(
+            f"{ring.instance} has ring1's sizing in {DESIGN.relative_to(REPO_ROOT)}; "
+            f"refusing to build a {ring.key} fixture that is really ring1"
+        )
 
 
 def audit_ring1_params(design: str) -> None:
     """Fail unless RING1_PARAMS equals the canonical `xr1` sizing."""
-    canonical = ring1_instance_params(design)
-    if canonical.split() != RING1_PARAMS.split():
-        raise BuildError(
-            f"RING1_PARAMS {RING1_PARAMS!r} disagrees with {RING1_INSTANCE} in "
-            f"{DESIGN.relative_to(REPO_ROOT)}: {canonical!r}"
-        )
+    audit_ring_params(design, RING1)
 
 
-def consumed_source(design: str) -> str:
+def consumed_source(design: str, ring: Ring = RING1) -> str:
     """Canonical text of the source the DUT is built from.
 
     Scope: the `.subckt` blocks named in CONSUMED_SUBCKTS plus the `xr1`
@@ -223,27 +280,29 @@ def consumed_source(design: str) -> str:
     leaves the identity unchanged; any change to a consumed device or to
     ring1's sizing changes it.
     """
-    parts = [f"{RING1_INSTANCE}: {ring1_instance_params(design)}"]
+    parts = [f"{ring.instance}: {ring_instance_params(design, ring)}"]
     for name in CONSUMED_SUBCKTS:
         block = _logical_lines("\n".join(_subckt_block(design, name)))
         parts += [" ".join(l.split()) for l in block if l.strip() and not l.lstrip().startswith("*")]
     return "\n".join(parts) + "\n"
 
 
-def source_identity(design: str | None = None) -> str:
+def source_identity(design: str | None = None, ring: Ring = RING1) -> str:
     """`sha256:<hex>` of consumed_source() for the current (or given) design."""
     text = DESIGN.read_text() if design is None else design
-    return "sha256:" + hashlib.sha256(consumed_source(text).encode()).hexdigest()
+    return "sha256:" + hashlib.sha256(consumed_source(text, ring).encode()).hexdigest()
 
 
-def dut_source_problem(dut_text: str | None = None, design: str | None = None) -> str | None:
+def dut_source_problem(
+    dut_text: str | None = None, design: str | None = None, ring: Ring = RING1
+) -> str | None:
     """None if the committed DUT is exactly what render_dut() produces from the
     current source at the DUT's own header; otherwise a diagnostic. Needs no
     klt, ngspice or PDK: the header is read back from the committed DUT."""
     try:
-        dut = DUT.read_text() if dut_text is None else dut_text
+        dut = ring.dut.read_text() if dut_text is None else dut_text
         design_text = DESIGN.read_text() if design is None else design
-        want = render_dut(dut_header(dut), design_text)
+        want = render_dut(dut_header(dut, ring), design_text, ring)
     except BuildError as exc:
         return str(exc)
     if dut == want:
@@ -256,30 +315,32 @@ def dut_source_problem(dut_text: str | None = None, design: str | None = None) -
         ) if not l.startswith(("---", "+++", "@@"))
     ]
     return (
-        f"{DUT.relative_to(REPO_ROOT)} does not match {DESIGN.relative_to(REPO_ROOT)} "
-        f"(first differences: {'; '.join(diff[:4])}); re-run build_dut.py, then "
-        f"signoff/publish_item7_analog.py"
+        f"{ring.dut.relative_to(REPO_ROOT)} does not match {DESIGN.relative_to(REPO_ROOT)} "
+        f"(first differences: {'; '.join(diff[:4])}); re-run build_dut.py"
+        f"{'' if ring is RING1 else ' --ring ' + ring.key}, then "
+        f"signoff/publish_item7_analog.py{'' if ring is RING1 else ' --ring ' + ring.key}"
     )
 
 
-def render_dut(port_names: list[str], design: str | None = None) -> str:
+def render_dut(port_names: list[str], design: str | None = None, ring: Ring = RING1) -> str:
     design = DESIGN.read_text() if design is None else design
-    audit_ring1_params(design)
-    ring = _subckt_block(design, "ro_ring11")
-    body = [l for l in _logical_lines("\n".join(ring[1:-1])) if l and not l.startswith("*")]
+    audit_ring_params(design, ring)
+    block = _subckt_block(design, SCHEMATIC_CELL)
+    body = [l for l in _logical_lines("\n".join(block[1:-1])) if l and not l.startswith("*")]
     out = [
-        "* ro_ring11 schematic-side DUT for the klt pex run over ring1's layout.",
-        "* GENERATED by sim/tb/ro-ring11-pex/build_dut.py -- do not edit by hand.",
+        f"* {ring.top} schematic-side DUT for the klt pex run over {ring.key}'s layout.",
+        "* GENERATED by sim/tb/ro-ring11-pex/build_dut.py"
+        + ("" if ring is RING1 else f" --ring {ring.key}") + " -- do not edit by hand.",
         "*",
-        "* The header is klt extract's fifteen-port order for",
-        f"* {GDS}, with each position carrying the schematic",
+        f"* The header is klt extract's fifteen-port order for",
+        f"* {ring.gds}, with each position carrying the schematic",
         "* node that sits there in the layout (identified from the extracted",
         "* netlist's own device geometry; see build_dut.py). The body is",
-        "* design/ro_array_core.spice's .subckt ro_ring11 and its two leaf",
-        "* subcircuits, transcribed unchanged, at ring1's xr1 sizing. vsubs is",
+        f"* design/ro_array_core.spice's .subckt {SCHEMATIC_CELL} and its two leaf",
+        f"* subcircuits, transcribed unchanged, at {ring.key}'s {ring.instance} sizing. vsubs is",
         "* declared and unused: the schematic has no substrate-tap net.",
         "",
-        f".subckt ro_ring11 {' '.join(port_names)} {RING1_PARAMS}",
+        f".subckt {ring.top} {' '.join(port_names)} {ring.params}",
         *body,
         ".ends",
         "",
@@ -289,37 +350,39 @@ def render_dut(port_names: list[str], design: str | None = None) -> str:
     return "\n".join(out)
 
 
-def check_testbench(port_names: list[str]) -> None:
+def check_testbench(port_names: list[str], ring: Ring = RING1) -> None:
     xdut = next(
-        (l for l in _logical_lines(TESTBENCH.read_text()) if l.lower().startswith("xdut ")),
+        (l for l in _logical_lines(ring.testbench.read_text()) if l.lower().startswith("xdut ")),
         None,
     )
-    want = ["xdut", *port_names, TOP]
+    want = ["xdut", *port_names, ring.top]
     if xdut is None or xdut.split() != want:
         raise BuildError(
-            f"{TESTBENCH.relative_to(REPO_ROOT)}: xdut line must read {' '.join(want)!r}"
+            f"{ring.testbench.relative_to(REPO_ROOT)}: xdut line must read {' '.join(want)!r}"
         )
 
 
-def extract(outdir: Path) -> str:
-    out = outdir / "ro_ring11.extracted.spice"
+def extract(outdir: Path, ring: Ring = RING1) -> str:
+    out = outdir / f"{ring.top}.extracted.spice"
     subprocess.run(
-        ["klt", "extract", GDS, "--deck", "gf180mcu", "--pdk", "gf180mcuD",
-         "--top", TOP, "--parasitics", "-o", str(out), "--format", "json"],
+        ["klt", "extract", ring.gds, "--deck", "gf180mcu", "--pdk", "gf180mcuD",
+         "--top", ring.top, "--parasitics", "-o", str(out), "--format", "json"],
         cwd=REPO_ROOT, check=True, stdout=subprocess.DEVNULL,
     )
     return out.read_text()
 
 
-def dut_header(text: str) -> list[str]:
+def dut_header(text: str, ring: Ring = RING1) -> list[str]:
     for line in _logical_lines(text):
-        if re.match(rf"^\.subckt\s+{TOP}\b", line, re.I):
+        if re.match(rf"^\.subckt\s+{ring.top}\b", line, re.I):
             return [t for t in line.split()[2:] if "=" not in t]
-    raise BuildError(f"{DUT.relative_to(REPO_ROOT)}: no .subckt {TOP}")
+    raise BuildError(f"{ring.dut.relative_to(REPO_ROOT)}: no .subckt {ring.top}")
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--ring", choices=sorted(RINGS), default="ring1",
+                    help="which ring's fixture to build or check (default: ring1)")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--verify-netlist", type=Path)
@@ -328,16 +391,18 @@ def main(argv: list[str] | None = None) -> int:
         help="offline: hold the committed DUT to design/ro_array_core.spice (no klt)",
     )
     args = ap.parse_args(argv)
+    ring = RINGS[args.ring]
+    rel = ring.dut.relative_to(REPO_ROOT)
     try:
         if args.check_source:
-            problem = dut_source_problem()
+            problem = dut_source_problem(ring=ring)
             if problem:
                 raise BuildError(problem)
-            print(f"build_dut: {DUT.relative_to(REPO_ROOT)} matches source {source_identity()}")
+            print(f"build_dut: {rel} matches source {source_identity(ring=ring)}")
             return 0
         if args.verify_netlist:
-            got = extraction_port_map(args.verify_netlist.read_text())
-            want = dut_header(DUT.read_text())
+            got = extraction_port_map(args.verify_netlist.read_text(), ring)
+            want = dut_header(ring.dut.read_text(), ring)
             if got != want:
                 raise BuildError(
                     f"{args.verify_netlist}: ring positions resolve to {got}, "
@@ -346,16 +411,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"build_dut: {args.verify_netlist} matches the DUT header position for position")
             return 0
         with tempfile.TemporaryDirectory() as tmp:
-            ports = extraction_port_map(extract(Path(tmp)))
-        text = render_dut(ports)
-        check_testbench(ports)
+            ports = extraction_port_map(extract(Path(tmp), ring), ring)
+        text = render_dut(ports, None, ring)
         if args.check:
-            if not DUT.is_file() or DUT.read_text() != text:
-                raise BuildError(f"{DUT.relative_to(REPO_ROOT)} is stale; re-run build_dut.py")
-            print(f"build_dut: {DUT.relative_to(REPO_ROOT)} is current")
+            check_testbench(ports, ring)
+            if not ring.dut.is_file() or ring.dut.read_text() != text:
+                raise BuildError(f"{rel} is stale; re-run build_dut.py --ring {ring.key}")
+            print(f"build_dut: {rel} is current")
             return 0
-        DUT.write_text(text)
-        print(f"build_dut: wrote {DUT.relative_to(REPO_ROOT)} (ports: {' '.join(ports)})")
+        ring.dut.parent.mkdir(parents=True, exist_ok=True)
+        ring.dut.write_text(text)
+        check_testbench(ports, ring)
+        print(f"build_dut: wrote {rel} (ports: {' '.join(ports)})")
         return 0
     except (BuildError, subprocess.CalledProcessError) as exc:
         print(f"build_dut: {exc}", file=sys.stderr)

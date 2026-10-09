@@ -282,18 +282,34 @@ ITEM7A_INPUTS = (
 ITEM7A_CORNERS = 27
 
 
-def _ring_port_check(netlist: Path) -> str | None:
+#: Ring2 (#423): a separate, NOT-cited native comparison for the separately
+#: sized oscillator, produced by `publish_item7_analog.py --ring ring2`. It
+#: shares build_dut.py (one module, one ring selector) with ring1 but has its
+#: own request/testbench/DUT, extracted netlist, envelope and sidecar, so its
+#: freshness is judged independently of ring1's and the manifest's `7.analog`
+#: citation stays ring1's.
+RING2_TB_DIR = "sim/tb/ro-ring11-ring2-pex"
+RING2_DIR = f"{ITEM7A_DIR}/ring2"
+RING2_ENVELOPE = f"{RING2_DIR}/ro_ring11_ring2.pex.json"
+RING2_PUBLICATION = f"{RING2_DIR}/publication.json"
+RING2_NETLIST = f"{RING2_DIR}/ro_ring11_ring2.extracted.spice"
+RING2_GDS = "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds"
+RING2_INPUTS = (
+    f"{RING2_TB_DIR}/request.json",
+    f"{RING2_TB_DIR}/tb_ro_ring11_ring2_pex.sp",
+    f"{RING2_TB_DIR}/ro_ring11_ring2_schematic.spice",
+)
+RING2_PUBLICATION_SCHEMA = "gf180-trng/ring2-pex-publication/1"
+
+
+def _ring_port_check(netlist: Path, ring: str = "ring1") -> str | None:
     """Re-derive the extracted netlist's ring positions with the producer's
     own build_dut.py and require they match the schematic DUT's header."""
-    import importlib.util
-
-    path = REPO_ROOT / ITEM7A_TB_DIR / "build_dut.py"
-    spec = importlib.util.spec_from_file_location("ro_ring11_pex_build_dut", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    mod = _load_build_dut()
+    r = mod.RINGS[ring]
     try:
-        got = mod.extraction_port_map(netlist.read_text())
-        want = mod.dut_header(mod.DUT.read_text())
+        got = mod.extraction_port_map(netlist.read_text(), r)
+        want = mod.dut_header(r.dut.read_text(), r)
     except mod.BuildError as exc:
         return str(exc)
     if got != want:
@@ -311,7 +327,7 @@ def _load_build_dut():
     return mod
 
 
-def item7_analog_dut_source_problems(pub: dict | None = None) -> list[str]:
+def item7_analog_dut_source_problems(pub: dict | None = None, ring: str = "ring1") -> list[str]:
     """The generated schematic DUT must be what build_dut.py renders from the
     current design source (stdlib only; no klt, ngspice or PDK).
 
@@ -321,14 +337,16 @@ def item7_analog_dut_source_problems(pub: dict | None = None) -> list[str]:
     publications that predate the field are not retro-fitted with one.
     """
     mod = _load_build_dut()
+    r = mod.RINGS[ring]
+    publisher = "signoff/publish_item7_analog.py" + ("" if ring == "ring1" else f" --ring {ring}")
     out: list[str] = []
-    problem = mod.dut_source_problem()
+    problem = mod.dut_source_problem(ring=r)
     if problem:
         out.append(f"schematic DUT vs source: {problem}")
     recorded = (pub or {}).get("source_sha256")
-    if recorded is not None:
+    if recorded is not None or (pub is not None and ring != "ring1"):
         try:
-            current = mod.source_identity()
+            current = mod.source_identity(ring=r)
         except mod.BuildError as exc:
             out.append(f"source identity: {exc}")
         else:
@@ -336,15 +354,34 @@ def item7_analog_dut_source_problems(pub: dict | None = None) -> list[str]:
                 out.append(
                     f"source identity: STALE -- the publication recorded {recorded}, the "
                     f"consumed sections of design/ro_array_core.spice hash to {current} today; "
-                    f"re-run signoff/publish_item7_analog.py"
+                    f"re-run {publisher}"
                 )
     return out
 
 
-def item7_analog_problems(pub: dict, envelope: dict) -> list[str]:
-    """Every reason the 7.analog publication must not be treated as current."""
-    out: list[str] = item7_analog_dut_source_problems(pub)
-    if envelope.get("status") != "pass":
+def item7_analog_problems(pub: dict, envelope: dict, ring: str = "ring1") -> list[str]:
+    """Every reason the ring's native-pex publication must not be treated as
+    current (ring1: the 7.analog citation; ring2: the uncited #423 coverage)."""
+    if ring == "ring1":
+        files = dict(netlist=ITEM7A_NETLIST, inputs=ITEM7A_INPUTS, envelope=ITEM7A_ENVELOPE,
+                     gds=None, publisher="signoff/publish_item7_analog.py")
+    else:
+        files = dict(netlist=RING2_NETLIST, inputs=RING2_INPUTS, envelope=RING2_ENVELOPE,
+                     gds=RING2_GDS, publisher=f"signoff/publish_item7_analog.py --ring {ring}")
+    out: list[str] = item7_analog_dut_source_problems(pub, ring)
+    if ring != "ring1":
+        if pub.get("schema") != RING2_PUBLICATION_SCHEMA:
+            out.append(f"publication schema is {pub.get('schema')!r}, not {RING2_PUBLICATION_SCHEMA!r}")
+        layout = envelope.get("layout") or {}
+        if layout.get("path") != files["gds"]:
+            out.append(f"envelope layout is {layout.get('path')!r}, not {files['gds']}")
+        gds = REPO_ROOT / files["gds"]
+        if not gds.is_file() or sha256_file(gds) != pinned_input_hash(envelope):
+            out.append(f"{files['gds']} is not the layout this klt pex run extracted (re-run and re-publish)")
+        if pub.get("layout_content_hash") != pinned_input_hash(envelope):
+            out.append("publication layout_content_hash differs from the envelope's")
+    strict = ring == "ring1"  # the cited run must be complete; ring2 states its verdict
+    if strict and envelope.get("status") != "pass":
         out.append(f"klt pex status is {envelope.get('status')!r}, not 'pass'")
     # The 0.6.0 release predates `measurement` (klayout-tools#2478); absent
     # means testbench mode. A caller-measured run is not what this cites.
@@ -353,15 +390,27 @@ def item7_analog_problems(pub: dict, envelope: dict) -> list[str]:
     for key in ("pin_count_mismatch", "flat_dut_mismatch"):
         if envelope.get(key) is not None:
             out.append(f"klt pex reports {key}")
-    if envelope.get("corner_count") != ITEM7A_CORNERS:
-        out.append(f"corner_count is {envelope.get('corner_count')}, not {ITEM7A_CORNERS}")
-    names = [n for tb in envelope.get("testbenches") or [] for n in tb.get("measurement_names") or []]
-    delta = envelope.get("delta") or []
-    if not names or len(delta) != ITEM7A_CORNERS * len(names):
-        out.append(f"delta has {len(delta)} rows, expected {ITEM7A_CORNERS} x {len(names)}")
-    for row in delta:
-        if row.get("status") != "pass" or row.get("schematic_value") is None or row.get("extracted_value") is None:
-            out.append(f"delta row {row.get('corner_id')}/{row.get('spec_row')} is not a two-sided pass")
+    if strict:
+        if envelope.get("corner_count") != ITEM7A_CORNERS:
+            out.append(f"corner_count is {envelope.get('corner_count')}, not {ITEM7A_CORNERS}")
+        names = [n for tb in envelope.get("testbenches") or [] for n in tb.get("measurement_names") or []]
+        delta = envelope.get("delta") or []
+        if not names or len(delta) != ITEM7A_CORNERS * len(names):
+            out.append(f"delta has {len(delta)} rows, expected {ITEM7A_CORNERS} x {len(names)}")
+        for row in delta:
+            if row.get("status") != "pass" or row.get("schematic_value") is None or row.get("extracted_value") is None:
+                out.append(f"delta row {row.get('corner_id')}/{row.get('spec_row')} is not a two-sided pass")
+    else:
+        # Not a citation: an incomplete or failing run is still current evidence
+        # of that result, provided the recorded verdict is exactly what the
+        # envelope and request yield today (every declared corner/row accounted).
+        out += ring2_request_problems()
+        req = REPO_ROOT / RING2_INPUTS[0]
+        if req.is_file():
+            verdict = combiner_sampler_verdict(envelope, json.loads(req.read_text()))
+            if pub.get("verdict") != verdict:
+                out.append("recorded verdict is not what the envelope and request yield today")
+            out += [f"verdict: {p}" for p in verdict["consistency_problems"]]
     bias = envelope.get("body_bias")
     if not isinstance(bias, dict) or "status" not in bias:
         out.append("envelope carries no body_bias block")
@@ -370,30 +419,76 @@ def item7_analog_problems(pub: dict, envelope: dict) -> list[str]:
             f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
             f"the envelope says {bias['status']!r}"
         )
-    netlist = REPO_ROOT / ITEM7A_NETLIST
+    netlist = REPO_ROOT / files["netlist"]
     if not netlist.is_file():
-        out.append(f"{ITEM7A_NETLIST} is missing")
+        out.append(f"{files['netlist']} is missing")
     else:
         recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
         if sha256_file(netlist) != f"sha256:{recorded}":
-            out.append(f"{ITEM7A_NETLIST} is not the netlist this klt pex run extracted")
-        problem = _ring_port_check(netlist)
+            out.append(f"{files['netlist']} is not the netlist this klt pex run extracted")
+        problem = _ring_port_check(netlist, ring)
         if problem:
             out.append(f"ring port positions: {problem}")
     pinned = pub.get("inputs_sha256") or {}
-    for rel in ITEM7A_INPUTS:
+    for rel in files["inputs"]:
         path = REPO_ROOT / rel
         if rel not in pinned or not path.is_file():
             out.append(f"input {rel}: not pinned or missing")
         elif sha256_file(path) != pinned[rel]:
             out.append(
                 f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
-                f"{sha256_file(path)} today; re-run signoff/publish_item7_analog.py"
+                f"{sha256_file(path)} today; re-run {files['publisher']}"
             )
-    env_path = REPO_ROOT / ITEM7A_ENVELOPE
+    env_path = REPO_ROOT / files["envelope"]
     if env_path.is_file() and (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
         out.append("published envelope differs from the sha256 in publication.json")
     return out
+
+
+def ring2_request_problems() -> list[str]:
+    """The ring2 request must declare the same 27-point grid and the same
+    measurements as ring1's, and point at ring2's own testbench (stdlib only)."""
+    out: list[str] = []
+    try:
+        r1 = json.loads((REPO_ROOT / ITEM7A_INPUTS[0]).read_text())
+        r2 = json.loads((REPO_ROOT / RING2_INPUTS[0]).read_text())
+    except (OSError, ValueError) as exc:
+        return [f"ring2 request: {exc}"]
+    if len(request_corner_ids(r2)) != ITEM7A_CORNERS:
+        out.append(f"ring2 request declares {len(request_corner_ids(r2))} corners, not {ITEM7A_CORNERS}")
+    strip = lambda r: {k: v for k, v in r.items() if k != "netlist"}  # noqa: E731
+    if strip(r1) != strip(r2):
+        out.append("ring2 request differs from ring1's beyond its testbench name "
+                   "(the pair must share the grid, analysis and measurements)")
+    if r2.get("netlist") != Path(RING2_INPUTS[1]).name:
+        out.append(f"ring2 request names testbench {r2.get('netlist')!r}, not {Path(RING2_INPUTS[1]).name!r}")
+    return out
+
+
+def verify_ring2_pex_publication(manifest: dict | None = None) -> list[str]:
+    """Freshness gate for the ring2 comparison, independent of ring1 and the
+    manifest. The fixture (DUT vs source, request, testbench xdut line) is
+    always held; the publication only once committed -- an unrun fixture is a
+    valid state, a half-committed publication is not."""
+    out = [f"fixture: {p}" for p in item7_analog_dut_source_problems(None, "ring2")]
+    for key, entry in ((manifest or {}).get("evidence") or {}).items():
+        if isinstance(entry, dict) and str(entry.get("file", "")).startswith(RING2_DIR):
+            out.append(f"manifest {key} cites ring2 evidence; ring2 is not part of any citation "
+                       f"without a separately reviewed change")
+    out += [f"fixture: {p}" for p in ring2_request_problems()]
+    mod = _load_build_dut()
+    try:
+        mod.check_testbench(mod.dut_header(mod.RING2.dut.read_text(), mod.RING2), mod.RING2)
+    except (mod.BuildError, OSError) as exc:
+        out.append(f"fixture: {exc}")
+    pub_path, env_path = REPO_ROOT / RING2_PUBLICATION, REPO_ROOT / RING2_ENVELOPE
+    if not pub_path.is_file() and not env_path.is_file():
+        return out
+    if not pub_path.is_file() or not env_path.is_file():
+        return out + [f"{RING2_ENVELOPE} / {RING2_PUBLICATION} not both present"]
+    return out + item7_analog_problems(
+        json.loads(pub_path.read_text()), json.loads(env_path.read_text()), "ring2"
+    )
 
 
 def verify_item7_analog_publication(manifest: dict) -> list[str]:
@@ -796,6 +891,9 @@ def freshness_gate(manifest: dict) -> int:
     # Step 1c: the 7.analog citation's testbench-side pins (see ITEM7A_*). Its
     # layout pin is already covered by steps 1 and 2 above.
     failures += [f"7.analog: {p}" for p in verify_item7_analog_publication(manifest)]
+
+    # Step 1c': the separately sized ring2 comparison (#423; see RING2_*).
+    failures += [f"ring2 pex: {p}" for p in verify_ring2_pex_publication(manifest)]
 
     # Step 1d: uncited combiner/sampler post-layout coverage (#418; see CS_*).
     failures += [f"combiner_sampler pex: {p}" for p in verify_combiner_sampler_publication()]

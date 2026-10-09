@@ -16,7 +16,7 @@ own drawn devices plus its hand-routed inter-stage chain and rail straps.
 | `request.json` | the `klt sim` request: 27 corners (`{tt, ff, ss}` x `{2.97, 3.30, 3.63}` V x `{-40, 27, 125}` C, DR-0006's grid), `tran 10p 1300n`, three `.meas` rows |
 | `tb_ro_ring11_pex.sp` | the circuit body: supply, enable tied to supply, one `.ic` kick, the DUT; its one `.include` is what `klt pex` re-points |
 | `ro_ring11_schematic.spice` | generated schematic DUT: `design/ro_array_core.spice`'s ring at ring1 sizing, under the extraction's fifteen-port header |
-| `build_dut.py` | generates the DUT, `--check`s it, and `--verify-netlist`s a netlist `klt pex` wrote |
+| `build_dut.py` | generates the DUT, `--check`s it, and `--verify-netlist`s a netlist `klt pex` wrote; `--ring ring2` selects ring2's separate fixture |
 
 ## Cold start
 
@@ -52,8 +52,10 @@ XOR nets as ports; that is not done here.
 
 ## What this does not cover
 
-- **Ring2**, the buffers, the XOR combiner, the four samplers and every
-  inter-region net. Ring1 only.
+- **Ring2** (its own, separate, uncited fixture:
+  [`../ro-ring11-ring2-pex/`](../ro-ring11-ring2-pex/README.md), #423), the
+  buffers, the XOR combiner, the four samplers and every inter-region net.
+  This fixture is ring1 only.
 - **Bodies.** The layout has no n-well taps, so every PMOS body in the
   extraction is an anonymous floating net: the envelope's `body_bias.status`
   is `"unbiased"`, and `klt`'s own documentation calls a re-simulation of
