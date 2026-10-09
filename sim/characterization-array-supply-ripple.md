@@ -52,7 +52,7 @@ not run:
 2. a retry obtained a fleet job, which the runner rejected with
    `batch_runner_version_mismatch`: the fleet runner image carries klt 0.5.0
    and the submitting client is 0.7.0. The older client that matches the runner
-   (`uvx --from klayout-tools==0.5.0`) has no `batch` backend, so no compatible
+   (`uvx --from klayout-tools==0.5.0`) has no `batch` backend, so no compatible <!-- klt-pin: historical -->
    client/runner pair exists today.
 
 This is the fleet-image problem already tracked in
