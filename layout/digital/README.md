@@ -793,6 +793,12 @@ python3 layout/digital/gen_sdf.py            # (re-)generate, write the SDF + re
 python3 layout/digital/gen_sdf.py --check    # regenerate to scratch and diff; never writes
 ```
 
+`--check` runs unattended in the nightly workflow
+([`pdk-nightly.yml`](../../.github/workflows/pdk-nightly.yml), `npm run
+check:digital-sdf`), using the pinned OpenROAD container when no native
+`openroad` is present and failing, not skipping, if OpenROAD, Docker or the
+PDK's `gf180mcu_fd_sc_mcu9t5v0` files are unavailable.
+
 `trng_top.pnr.v` on its own says nothing about *time*. What consumes it — the
 post-route gate-level re-run of the digital functional suite,
 [`sim/tb/trng-top-post-route/`](../../sim/tb/trng-top-post-route/) ([#147][gf147])

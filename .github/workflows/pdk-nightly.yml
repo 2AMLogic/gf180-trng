@@ -439,6 +439,54 @@ jobs:
       - name: Floorplan flow including the PDK-dependent stages
         run: python3 layout/floorplan/floorplan.py --require-tools
 
+      # The committed post-route SDF's regeneration guard (#374).
+      # `layout/digital/gen_sdf.py --check` re-runs OpenSTA over the committed
+      # `trng_top.pnr.v` and the provisioned liberty deck, then compares the
+      # result with `trng_top.sdf` and `reports/sdf_export.json`. The compare
+      # (wall-clock DATE normalised, byte digest verified, report diffed) is
+      # that script's own; nothing here re-implements or loosens it. It never
+      # writes a committed artefact -- fresh output goes to the gitignored
+      # `layout/.work/gen-sdf/` -- and a missing OpenROAD, container or PDK
+      # file is an environment failure (exit 3), never a skip.
+      #
+      # OpenROAD comes from the digest-pinned `openroad/orfs` image via
+      # `layout/openroad_docker.sh` (the script falls back to it when no
+      # native `openroad` is on PATH; ubuntu-latest ships docker). The image
+      # bind-mounts the checkout and ~/.ciel at their host paths, so the probe
+      # below fails fast, with a readable message, if the provisioned PDK's
+      # liberty/LEF files are not visible *inside* the container, rather than
+      # surfacing as an opaque OpenSTA error halfway through the comparison.
+      - name: OpenROAD and PDK reachability probe (native or pinned container)
+        run: |
+          set -euo pipefail
+          mkdir -p layout/.work
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, ".")
+          from layout.digital import gen_sdf
+          pdk = gen_sdf.resolve_pdk()
+          if pdk is None:
+              sys.exit("FAIL: no gf180mcu PDK install found")
+          lines = []
+          for path in gen_sdf._lib_paths(pdk).values():
+              lines.append(
+                  f'if {{![file isfile {path}]}} {{puts "FAIL: not visible '
+                  f'to openroad: {path}"; exit 1}}'
+              )
+          lines.append('puts "OK: PDK files visible to openroad"')
+          open("layout/.work/probe.tcl", "w").write("\n".join(lines) + "\n")
+          PY
+          if command -v openroad >/dev/null 2>&1; then
+            openroad_cmd=(openroad)
+          else
+            openroad_cmd=(./layout/openroad_docker.sh)
+          fi
+          "${openroad_cmd[@]}" -version
+          "${openroad_cmd[@]}" -no_init -exit "$PWD/layout/.work/probe.tcl"
+
+      - name: Committed SDF regeneration guard
+        run: npm run check:digital-sdf
+
       - name: Assert no evidence records were written
         run: |
           set -euo pipefail

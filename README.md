@@ -510,8 +510,19 @@ schedule — [`.github/workflows/pdk-nightly.yml`](.github/workflows/pdk-nightly
 builds the pinned ngspice release, installs the gf180mcu PDK at a pinned
 open_pdks commit, installs `klt`, and runs `design/netlist.py --check`,
 `sim/selftest.sh --require-pdk` and `layout/verify.py --require-tools` — the
-forms that fail rather than skip. That job writes no evidence records and fails
-if `sim/records/` changes.
+forms that fail rather than skip. It also runs the committed post-route SDF
+regeneration guard, `npm run check:digital-sdf` (`layout/digital/gen_sdf.py
+--check`), which re-runs OpenSTA over `layout/digital/trng_top.pnr.v` and the
+provisioned liberty deck and compares the result with the committed
+`trng_top.sdf` and `reports/sdf_export.json` (wall-clock `DATE` normalised,
+everything else exact). Its prerequisites are the provisioned gf180mcu
+`gf180mcu_fd_sc_mcu9t5v0` library and OpenROAD: a native `openroad` if one is
+on `PATH`, otherwise Docker with the digest-pinned image behind
+`layout/openroad_docker.sh`. A reachability probe step first checks that the
+PDK's liberty and LEF files are visible inside the container; a missing
+OpenROAD, container or PDK file fails the job rather than skipping. The guard
+is read-only. That job writes no evidence records and fails if `sim/records/`
+changes.
 
 The nightly run does not replace the local one: run `sim/selftest.sh
 --require-pdk` (or `npm run check:all`) on a machine that has ngspice and the
