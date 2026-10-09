@@ -357,10 +357,16 @@ def _parse(tokens: list[str]) -> list:
     pos = [0]
 
     def parse_one():
-        assert tokens[pos[0]] == "("
+        if pos[0] >= len(tokens) or tokens[pos[0]] != "(":
+            where = tokens[pos[0]] if pos[0] < len(tokens) else "end of input"
+            raise SdfError(f"malformed SDF: expected '(' but found {where!r}")
         pos[0] += 1
         node: list = []
-        while tokens[pos[0]] != ")":
+        while True:
+            if pos[0] >= len(tokens):
+                raise SdfError("malformed SDF: unexpected end of input (unbalanced '(')")
+            if tokens[pos[0]] == ")":
+                break
             if tokens[pos[0]] == "(":
                 node.append(parse_one())
             else:
@@ -399,7 +405,7 @@ def filter_sdf(raw_text: str) -> tuple[str, dict]:
     something was.
     """
     top = _parse(_tokenize(raw_text))
-    if len(top) != 1 or top[0][0] != "DELAYFILE":
+    if len(top) != 1 or not top[0] or top[0][0] != "DELAYFILE":
         raise SdfError("write_sdf output does not start with (DELAYFILE ...)")
     delayfile = top[0]
 
