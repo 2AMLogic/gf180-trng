@@ -1,0 +1,584 @@
+{
+  "netlist": "tb_combiner_sampler_pex.sp",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "bjt_typical",
+          "diode_typical",
+          "res_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "bjt_ff",
+          "diode_ff",
+          "res_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "bjt_ss",
+          "diode_ss",
+          "res_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vsupply": [
+        2.97,
+        3.3,
+        3.63
+      ]
+    },
+    "temperature_c": [
+      -40,
+      27,
+      125
+    ]
+  },
+  "analysis": {
+    "kind": "tran",
+    "args": "10p 370n"
+  },
+  "measurements": [
+    {
+      "name": "rst_hold_e1_raw_bit",
+      "spice": ".meas tran rst_hold_e1_raw_bit find v(raw_bitn) at=35n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e1_raw_valid",
+      "spice": ".meas tran rst_hold_e1_raw_valid find v(raw_validn) at=35n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e1_ring_bit1",
+      "spice": ".meas tran rst_hold_e1_ring_bit1 find v(ring_bit1n) at=35n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e1_ring_bit2",
+      "spice": ".meas tran rst_hold_e1_ring_bit2 find v(ring_bit2n) at=35n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e2_raw_bit",
+      "spice": ".meas tran rst_hold_e2_raw_bit find v(raw_bitn) at=75n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e2_raw_valid",
+      "spice": ".meas tran rst_hold_e2_raw_valid find v(raw_validn) at=75n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e2_ring_bit1",
+      "spice": ".meas tran rst_hold_e2_ring_bit1 find v(ring_bit1n) at=75n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e2_ring_bit2",
+      "spice": ".meas tran rst_hold_e2_ring_bit2 find v(ring_bit2n) at=75n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "startup_pre_e3_raw_bit",
+      "spice": ".meas tran startup_pre_e3_raw_bit find v(raw_bitn) at=95n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "startup_pre_e3_raw_valid",
+      "spice": ".meas tran startup_pre_e3_raw_valid find v(raw_validn) at=95n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "startup_pre_e3_ring_bit1",
+      "spice": ".meas tran startup_pre_e3_ring_bit1 find v(ring_bit1n) at=95n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "startup_pre_e3_ring_bit2",
+      "spice": ".meas tran startup_pre_e3_ring_bit2 find v(ring_bit2n) at=95n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e3_xo",
+      "spice": ".meas tran pre_e3_xo find v(xon) at=99n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e3_ro1",
+      "spice": ".meas tran pre_e3_ro1 find v(ro1n) at=99n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e3_ro2",
+      "spice": ".meas tran pre_e3_ro2 find v(ro2n) at=99n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e3_raw_bit",
+      "spice": ".meas tran cap_e3_raw_bit find v(raw_bitn) at=115n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e3_raw_valid",
+      "spice": ".meas tran cap_e3_raw_valid find v(raw_validn) at=115n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e3_ring_bit1",
+      "spice": ".meas tran cap_e3_ring_bit1 find v(ring_bit1n) at=115n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e3_ring_bit2",
+      "spice": ".meas tran cap_e3_ring_bit2 find v(ring_bit2n) at=115n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e4_xo",
+      "spice": ".meas tran pre_e4_xo find v(xon) at=139n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e4_ro1",
+      "spice": ".meas tran pre_e4_ro1 find v(ro1n) at=139n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e4_ro2",
+      "spice": ".meas tran pre_e4_ro2 find v(ro2n) at=139n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e4_raw_bit",
+      "spice": ".meas tran cap_e4_raw_bit find v(raw_bitn) at=155n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e4_raw_valid",
+      "spice": ".meas tran cap_e4_raw_valid find v(raw_validn) at=155n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e4_ring_bit1",
+      "spice": ".meas tran cap_e4_ring_bit1 find v(ring_bit1n) at=155n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e4_ring_bit2",
+      "spice": ".meas tran cap_e4_ring_bit2 find v(ring_bit2n) at=155n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e5_xo",
+      "spice": ".meas tran pre_e5_xo find v(xon) at=179n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e5_ro1",
+      "spice": ".meas tran pre_e5_ro1 find v(ro1n) at=179n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e5_ro2",
+      "spice": ".meas tran pre_e5_ro2 find v(ro2n) at=179n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e5_raw_bit",
+      "spice": ".meas tran cap_e5_raw_bit find v(raw_bitn) at=195n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e5_raw_valid",
+      "spice": ".meas tran cap_e5_raw_valid find v(raw_validn) at=195n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e5_ring_bit1",
+      "spice": ".meas tran cap_e5_ring_bit1 find v(ring_bit1n) at=195n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e5_ring_bit2",
+      "spice": ".meas tran cap_e5_ring_bit2 find v(ring_bit2n) at=195n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e6_xo",
+      "spice": ".meas tran pre_e6_xo find v(xon) at=219n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e6_ro1",
+      "spice": ".meas tran pre_e6_ro1 find v(ro1n) at=219n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e6_ro2",
+      "spice": ".meas tran pre_e6_ro2 find v(ro2n) at=219n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e6_raw_bit",
+      "spice": ".meas tran cap_e6_raw_bit find v(raw_bitn) at=235n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e6_raw_valid",
+      "spice": ".meas tran cap_e6_raw_valid find v(raw_validn) at=235n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e6_ring_bit1",
+      "spice": ".meas tran cap_e6_ring_bit1 find v(ring_bit1n) at=235n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e6_ring_bit2",
+      "spice": ".meas tran cap_e6_ring_bit2 find v(ring_bit2n) at=235n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e7_xo",
+      "spice": ".meas tran pre_e7_xo find v(xon) at=259n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e7_ro1",
+      "spice": ".meas tran pre_e7_ro1 find v(ro1n) at=259n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e7_ro2",
+      "spice": ".meas tran pre_e7_ro2 find v(ro2n) at=259n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e7_raw_bit",
+      "spice": ".meas tran cap_e7_raw_bit find v(raw_bitn) at=275n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e7_raw_valid",
+      "spice": ".meas tran cap_e7_raw_valid find v(raw_validn) at=275n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e7_ring_bit1",
+      "spice": ".meas tran cap_e7_ring_bit1 find v(ring_bit1n) at=275n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e7_ring_bit2",
+      "spice": ".meas tran cap_e7_ring_bit2 find v(ring_bit2n) at=275n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e8_xo",
+      "spice": ".meas tran pre_e8_xo find v(xon) at=299n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "pre_e8_ro1",
+      "spice": ".meas tran pre_e8_ro1 find v(ro1n) at=299n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "pre_e8_ro2",
+      "spice": ".meas tran pre_e8_ro2 find v(ro2n) at=299n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e8_raw_bit",
+      "spice": ".meas tran cap_e8_raw_bit find v(raw_bitn) at=315n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e8_raw_valid",
+      "spice": ".meas tran cap_e8_raw_valid find v(raw_validn) at=315n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "cap_e8_ring_bit1",
+      "spice": ".meas tran cap_e8_ring_bit1 find v(ring_bit1n) at=315n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "cap_e8_ring_bit2",
+      "spice": ".meas tran cap_e8_ring_bit2 find v(ring_bit2n) at=315n",
+      "unit": "V/V",
+      "limits": {
+        "min": 0.9
+      }
+    },
+    {
+      "name": "rst_async_raw_bit",
+      "spice": ".meas tran rst_async_raw_bit find v(raw_bitn) at=330n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_async_raw_valid",
+      "spice": ".meas tran rst_async_raw_valid find v(raw_validn) at=330n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_async_ring_bit1",
+      "spice": ".meas tran rst_async_ring_bit1 find v(ring_bit1n) at=330n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_async_ring_bit2",
+      "spice": ".meas tran rst_async_ring_bit2 find v(ring_bit2n) at=330n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e9_raw_bit",
+      "spice": ".meas tran rst_hold_e9_raw_bit find v(raw_bitn) at=355n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e9_raw_valid",
+      "spice": ".meas tran rst_hold_e9_raw_valid find v(raw_validn) at=355n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e9_ring_bit1",
+      "spice": ".meas tran rst_hold_e9_ring_bit1 find v(ring_bit1n) at=355n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "rst_hold_e9_ring_bit2",
+      "spice": ".meas tran rst_hold_e9_ring_bit2 find v(ring_bit2n) at=355n",
+      "unit": "V/V",
+      "limits": {
+        "max": 0.1
+      }
+    },
+    {
+      "name": "tcq_raw_valid_e3",
+      "spice": ".meas tran tcq_raw_valid_e3 trig v(clkn) val=0.5 td=95n rise=1 targ v(raw_validn) val=0.5 td=95n rise=1",
+      "unit": "s"
+    },
+    {
+      "name": "tcq_raw_bit_e5",
+      "spice": ".meas tran tcq_raw_bit_e5 trig v(clkn) val=0.5 td=175n rise=1 targ v(raw_bitn) val=0.5 td=175n rise=1",
+      "unit": "s"
+    },
+    {
+      "name": "tcq_raw_bit_e7",
+      "spice": ".meas tran tcq_raw_bit_e7 trig v(clkn) val=0.5 td=255n rise=1 targ v(raw_bitn) val=0.5 td=255n fall=1",
+      "unit": "s"
+    },
+    {
+      "name": "trst_raw_valid",
+      "spice": ".meas tran trst_raw_valid trig v(rst_nn) val=0.5 td=320n fall=1 targ v(raw_validn) val=0.5 td=320n fall=1",
+      "unit": "s"
+    }
+  ],
+  "options": {
+    "timeout_s": 900,
+    "keep_artifacts": false,
+    "waveforms": false
+  }
+}
