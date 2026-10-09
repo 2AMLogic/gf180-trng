@@ -323,14 +323,13 @@ jobs:
       # mismatch, a missing file, an unlisted file in a raw directory, or raw
       # output that was never committed fails the run. sim/records/ is
       # append-only, so a record with broken provenance that reaches main can
-      # only be superseded -- this is the gate that keeps one out (#60). Not
-      # an `npm run <script>` call: `npm run check:ci` only reaches this
-      # script indirectly (via the sim/selftest.sh call at the end of its
-      # chain, in the --no-git form), so this step keeps the stricter,
-      # git-commit-state-checking invocation as a distinct, deliberately
-      # redundant belt-and-suspenders early check.
+      # only be superseded -- this is the gate that keeps one out (#60). This
+      # is the strict, git-commit-state-checking form, run as the named entry
+      # point `npm run check:record-checksums` (also in check:ci and
+      # check:all). sim/selftest.sh re-runs the check in its --no-git form, so
+      # this is a deliberately redundant early check.
       - name: Record checksum verification (sim/records/ raw.files)
-        run: python3 sim/tools/verify_record_checksums.py --quiet
+        run: npm run check:record-checksums
 
       # Append-only enforcement (the checksum step above only proves the
       # CURRENT tree is self-consistent; a rewritten record with matching

@@ -486,10 +486,11 @@ than a second list that can say something different (#97):
   `jitter_estimator_calibration_check.py` and `statistical_battery.py`, each
   `--check`;
 - `sim/tools/verify_record_checksums.py`, which re-hashes every file each
-  record's `raw.files` cites against `sim/records/raw/` (#60) — run as its own
-  workflow step (the stricter, git-commit-state-checking form) rather than via
-  `npm run`, since `check:ci` only reaches this script indirectly, through the
-  `sim/selftest.sh` call at the end of its chain;
+  record's `raw.files` cites against `sim/records/raw/` (#60) — run as
+  **`npm run check:record-checksums`**, its own workflow step in the stricter,
+  git-commit-state-checking form (`sim/selftest.sh` re-runs it with
+  `--no-git`). That form requires every record and raw file to be tracked by
+  git, so `git add` freshly minted records before running `check:all`;
 - **`npm run check:regmap`** — the register-map staleness guard
   (`design/interface/regmap.py --check`);
 - **`npm run check:fixtures`** — the layout test-cell staleness guard
