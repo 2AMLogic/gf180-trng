@@ -33,6 +33,22 @@ too, but only if it repeats a total -- absence there is fine. Phrases with a
 non-number in front ("the decision records", "no evidence records") are not
 claims, and per-campaign sizes ("fifteen records") are not matched at all.
 
+The same --check also holds the `npm run check:spec` gate inventory to its
+single source (#360). package.json's check:spec script is the list; the
+tool names and their count are derived from its `sim/tools/<name>.py --check`
+invocations, and three restatements must agree with it:
+
+  README.md                   "<N> spec-arithmetic self-checks" and the set
+                              of `<name>.py` names in that bullet
+  .github/workflows/ci.yml    every "list of [all] <N>" count, and the set of
+                              header lines `#   sim/tools/<name>.py --check`
+  package.json description    optional; a "<N> spec-arithmetic ..." count
+                              there, if present, must match too
+
+Adding, removing or renaming a gate without updating those prose lists fails
+the gate. No gate is added by this: the guard rides on corpus_counts.py's own
+entry in the chain.
+
 Usage:
   python3 sim/tools/corpus_counts.py           # print derived totals
   python3 sim/tools/corpus_counts.py --check   # exit 1 on any disagreement
@@ -43,6 +59,7 @@ Read-only. Stdlib only; no ngspice and no PDK.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -171,6 +188,98 @@ def check_tree(root: Path) -> tuple[dict[str, int], list[str]]:
     return counts, problems
 
 
+_GATE = re.compile(r"python3\s+sim/tools/([A-Za-z0-9_]+)\.py\s+--check\b")
+_README_COUNT = re.compile(
+    r"([\w,-]+)\s+spec-arithmetic\s+(?:self-checks|derivations)\b",
+    re.IGNORECASE)
+_CI_COUNT = re.compile(r"\blist\s+of\s+(?:all\s+)?([\w,-]+)", re.IGNORECASE)
+_CI_NAME = re.compile(
+    r"^#\s+sim/tools/([A-Za-z0-9_]+)\.py\s+--check\s*$", re.MULTILINE)
+_NAME_IN_PROSE = re.compile(r"`([A-Za-z0-9_]+)\.py`")
+
+
+def spec_gates(package_json_text: str) -> list[str]:
+    """Tool names chained by package.json's check:spec script, in order."""
+    script = json.loads(package_json_text).get("scripts", {}).get(
+        "check:spec", "")
+    return _GATE.findall(script)
+
+
+def _counts(pattern: re.Pattern[str], text: str) -> list[int]:
+    plain = re.sub(r"(?m)^\s*#", " ", _MD_LINK.sub(r"\1", text))
+    return [v for m in pattern.finditer(plain)
+            if (v := parse_number(m.group(1))) is not None]
+
+
+def _name_diff(document: str, quoted: set[str], gates: list[str]) -> list[str]:
+    want = set(gates)
+    out = []
+    if want - quoted:
+        out.append(f"{document}: gate list omits "
+                   f"{', '.join(sorted(want - quoted))}")
+    if quoted - want:
+        out.append(f"{document}: gate list names "
+                   f"{', '.join(sorted(quoted - want))}, not in check:spec")
+    return out
+
+
+def check_gate_inventory(root: Path) -> list[str]:
+    """Diagnostics for the check:spec count/name restatements (#360)."""
+    pkg = root / "package.json"
+    if not pkg.is_file():
+        return ["package.json: document missing"]
+    try:
+        pkg_text = pkg.read_text(encoding="utf-8")
+        gates = spec_gates(pkg_text)
+        description = json.loads(pkg_text).get("description", "")
+    except ValueError as e:
+        return [f"package.json: unparseable ({e})"]
+    if not gates:
+        return ["package.json: check:spec lists no --check gates"]
+    n = len(gates)
+    problems: list[str] = []
+    if len(set(gates)) != n:
+        problems.append("package.json: check:spec repeats a gate")
+
+    def count_problems(doc: str, found: list[int], required: bool) -> None:
+        if not found and required:
+            problems.append(f"{doc}: gate count quoted missing/unparseable, "
+                            f"check:spec has {n}")
+        for q in found:
+            if q != n:
+                problems.append(f"{doc}: gate count quoted {q}, "
+                                f"check:spec has {n}")
+
+    readme = root / "README.md"
+    if readme.is_file():
+        text = readme.read_text(encoding="utf-8")
+        count_problems("README.md", _counts(_README_COUNT, text), True)
+        m = re.search(r"(?ms)^- \*\*`npm run check:spec`\*\*.*?(?=^- |\Z)",
+                      text)
+        if m is None:
+            problems.append("README.md: check:spec bullet missing")
+        else:
+            problems += _name_diff("README.md",
+                                   set(_NAME_IN_PROSE.findall(m.group(0))),
+                                   gates)
+    else:
+        problems.append("README.md: document missing")
+
+    ci = root / ".github" / "workflows" / "ci.yml"
+    if ci.is_file():
+        text = ci.read_text(encoding="utf-8")
+        count_problems(".github/workflows/ci.yml",
+                       _counts(_CI_COUNT, text), True)
+        problems += _name_diff(".github/workflows/ci.yml",
+                               set(_CI_NAME.findall(text)), gates)
+    else:
+        problems.append(".github/workflows/ci.yml: document missing")
+
+    count_problems("package.json description",
+                   _counts(_README_COUNT, description), False)
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true",
@@ -180,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     counts, problems = check_tree(args.root.resolve())
+    problems += check_gate_inventory(args.root.resolve())
     for category in CATEGORIES:
         print(f"{category}: {counts[category]}")
     if not args.check:
@@ -188,7 +298,8 @@ def main(argv: list[str] | None = None) -> int:
         for p in problems:
             print(f"FAIL: {p}", file=sys.stderr)
         return 1
-    print("OK: corpus totals quoted in README.md agree with the tree")
+    print("OK: corpus totals quoted in README.md agree with the tree; "
+          "check:spec gate inventory agrees with package.json")
     return 0
 
 

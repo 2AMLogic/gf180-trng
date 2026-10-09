@@ -12,6 +12,7 @@ depends on the size of the real corpus. Stdlib only; no PDK, no ngspice.
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,28 @@ records under [`sim/records/`](sim/records/).
 """
 
 
+GATES = ("alpha", "beta", "gamma")
+
+INVENTORY_README = """
+- **`npm run check:spec`**, **three spec-arithmetic self-checks** -- pure
+  derivations: `alpha.py`, `beta.py` and `gamma.py`, each `--check`;
+- **`npm run lint`** -- unrelated bullet naming `other.py`.
+"""
+
+
+def package_json(gates=GATES, description="Workspace. See ci.yml.") -> str:
+    script = " && ".join(f"python3 sim/tools/{g}.py --check" for g in gates)
+    return json.dumps({"description": description,
+                       "scripts": {"check:spec": script,
+                                   "lint": "python3 sim/tools/other.py --check"}})
+
+
+def ci_yml(count: str = "three", gates=GATES) -> str:
+    lines = [f"#   sim/tools/{g}.py --check" for g in gates]
+    return ("\n".join(lines) + f"\n#       (package.json is the single list "
+            f"of all {count}).\n#   design/netlist.py --check (other)\n")
+
+
 def build_tree(root: Path, readme: str = GOOD_README,
                sim_readme: str | None = None) -> None:
     """A minimal corpus: 3 DR ids, 2 summaries, 4 records."""
@@ -52,7 +75,10 @@ def build_tree(root: Path, readme: str = GOOD_README,
     (sim / "characterization-b.md").write_text("x\n")
     (sim / "nested").mkdir()
     (sim / "nested" / "characterization-c.md").write_text("x\n")
-    (root / "README.md").write_text(readme)
+    (root / "README.md").write_text(readme + INVENTORY_README)
+    (root / "package.json").write_text(package_json())
+    (root / ".github" / "workflows").mkdir(parents=True)
+    (root / ".github" / "workflows" / "ci.yml").write_text(ci_yml())
     if sim_readme is not None:
         (sim / "README.md").write_text(sim_readme)
 
@@ -218,10 +244,83 @@ class Cli(TreeCase):
         self.assertIn("evidence records: 4", proc.stdout)
 
 
+class GateInventory(TreeCase):
+    """check:spec's count and names, restated in prose (#360)."""
+
+    def problems(self, readme_tail=INVENTORY_README, pkg=None, ci=None):
+        build_tree(self.root)
+        (self.root / "README.md").write_text(GOOD_README + readme_tail)
+        if pkg is not None:
+            (self.root / "package.json").write_text(pkg)
+        if ci is not None:
+            (self.root / ".github" / "workflows" / "ci.yml").write_text(ci)
+        return cc.check_gate_inventory(self.root)
+
+    def test_consistent_passes(self) -> None:
+        self.assertEqual(self.problems(), [])
+
+    def test_description_count_matching_passes(self) -> None:
+        ok = package_json(description="Runs three spec-arithmetic derivations.")
+        self.assertEqual(self.problems(pkg=ok), [])
+
+    def test_description_count_stale_is_caught(self) -> None:
+        bad = package_json(description="Runs two spec-arithmetic derivations.")
+        self.assertIn("package.json description: gate count quoted 2",
+                      "\n".join(self.problems(pkg=bad)))
+
+    def test_gate_added_to_script_is_caught(self) -> None:
+        out = "\n".join(self.problems(pkg=package_json(GATES + ("delta",))))
+        self.assertIn("README.md: gate count quoted 3, check:spec has 4", out)
+        self.assertIn("README.md: gate list omits delta", out)
+        self.assertIn("ci.yml: gate count quoted 3, check:spec has 4", out)
+        self.assertIn("ci.yml: gate list omits delta", out)
+
+    def test_gate_removed_from_script_is_caught(self) -> None:
+        out = "\n".join(self.problems(pkg=package_json(GATES[:2])))
+        self.assertIn("README.md: gate list names gamma, not in check:spec",
+                      out)
+        self.assertIn("ci.yml: gate list names gamma, not in check:spec", out)
+
+    def test_readme_count_alone_stale_is_caught(self) -> None:
+        tail = INVENTORY_README.replace("three spec", "eleven spec")
+        out = self.problems(readme_tail=tail)
+        self.assertEqual(out, ["README.md: gate count quoted 11, "
+                               "check:spec has 3"])
+
+    def test_readme_swapped_name_is_caught(self) -> None:
+        tail = INVENTORY_README.replace("`gamma.py`", "`omega.py`")
+        out = "\n".join(self.problems(readme_tail=tail))
+        self.assertIn("omits gamma", out)
+        self.assertIn("names omega", out)
+
+    def test_ci_count_stale_is_caught(self) -> None:
+        out = self.problems(ci=ci_yml(count="eleven"))
+        self.assertEqual(out, [".github/workflows/ci.yml: gate count quoted "
+                               "11, check:spec has 3"])
+
+    def test_missing_readme_claim_fails(self) -> None:
+        out = "\n".join(self.problems(readme_tail="\nnothing\n"))
+        self.assertIn("README.md: gate count quoted missing/unparseable", out)
+        self.assertIn("README.md: check:spec bullet missing", out)
+
+    def test_cli_exits_nonzero_on_drift(self) -> None:
+        build_tree(self.root)
+        (self.root / "package.json").write_text(
+            package_json(GATES + ("delta",)))
+        proc = subprocess.run(
+            [sys.executable, str(TOOL), "--root", str(self.root), "--check"],
+            capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("gate list omits delta", proc.stderr)
+
+
 class RepositoryReadme(unittest.TestCase):
     def test_committed_readme_agrees_with_tree(self) -> None:
         counts, problems = cc.check_tree(cc.REPO_ROOT)
         self.assertEqual(problems, [], counts)
+
+    def test_committed_gate_inventory_agrees_with_package_json(self) -> None:
+        self.assertEqual(cc.check_gate_inventory(cc.REPO_ROOT), [])
 
 
 if __name__ == "__main__":
