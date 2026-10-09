@@ -83,6 +83,25 @@ class EndToEndTests(unittest.TestCase):
             self.assertGreater(len(rec.bits), 0)
             self.assertTrue(all(b in (0, 1) for b in rec.bits))
 
+    def test_required_corners_all_have_records(self):
+        # Includes #13's measured worst corner, ss / +125 C / 3.63 V.
+        self.assertEqual(est.missing_corners(est.load_records()), [])
+        self.assertIn(est.format_corner("ss", 125.0, 3.63), est.REQUIRED_CORNERS)
+
+    def test_missing_corners_reports_gaps(self):
+        recs = [r for r in est.load_records() if r.corner != est.REQUIRED_CORNERS[2]]
+        self.assertEqual(est.missing_corners(recs), [est.REQUIRED_CORNERS[2]])
+
+    def test_check_flag_passes(self):
+        result = subprocess.run(
+            [sys.executable, str(SIM_DIR / "tools" / "raw_min_entropy_estimate.py"), "--check"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
     def test_cli_runs_clean(self):
         result = subprocess.run(
             [sys.executable, str(SIM_DIR / "tools" / "raw_min_entropy_estimate.py")],

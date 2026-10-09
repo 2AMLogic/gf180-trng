@@ -276,8 +276,31 @@ number**. The README's "Raw min-entropy per bit" and "Quality" rows remain
 the placeholders they already were, now pointing at this document rather
 than only at "owed by #12/#13" — #13's worst-corner analysis inherits the
 same ceiling this document derives (Section 1 already evaluates DR-0010's
-own entropy-binding corner, `ss`/−40 °C/3.63 V, alongside nominal) and does
-not change the conclusion that no affordable transistor-level simulation
+own entropy-binding corner, `ss`/−40 °C/3.63 V, alongside nominal), and the
+re-run at #13's measured worst corner, `ss`/+125 °C/3.63 V (#406, record
+`2026-10-09-sampler-array-digitize-01`, seeds 1001..1003), is now a computed
+row of `sim/tools/raw_min_entropy_estimate.py` (`--check` fails if any of the
+three corners lacks a record). That row reads `ones = 10 / 10`, `p1_hat = 1.0`,
+`H_hat = 0` at every seed (per-bit seed-to-seed spread zero): ten identical
+`1` bits at the same 10 ns sample interval. It is a ten-bit observation of a
+stuck-high pattern, not an entropy measurement. It is consistent with, but
+not evidence of, the array not having accumulated enough phase noise at this
+`T_s` for any seed to move a bit (the explanation offered at the other two
+corners); a fixed all-ones pattern cannot distinguish that from a sampler
+bias at the hot/slow corner. The record's generated Caveats section says
+`ones_count` is reported "so a reader can see the bits are not all
+identical"; that boilerplate is inverted for this result, where all ten bits
+are identical (`1`). Records are append-only, so the correction lives here
+rather than in the record. The Q_array cross-check has
+no row for this corner because no `ro-array-core-power` record exists at it.
+Ring 1's period metrics are `no data` in that record: at `ss`/+125 °C the
+rings are slower (ring 2: 9.58 ns), so ring 1's 14th rising edge falls after
+`tstop` = 132 ns and the testbench's period measure is out of interval; the
+bits and ring 2's period are unaffected. (The record labels those metrics
+"no data (all runs failed to converge)"; that is the harness's generic
+no-data wording, and here it means the measure fell outside the simulated
+interval, not that the transient failed to converge.) The result does not change the
+conclusion that no affordable transistor-level simulation
 reaches the entropy-supporting rate. A non-placeholder number for this row
 becomes available only from measured silicon (DR-0004 Tier 3) or from a
 superseding decision that changes the rate/power/cell trade-off DR-0010
@@ -288,6 +311,8 @@ already argues through.
 - **#13** (worst-corner min-entropy) inherits this document's ceiling; its
   job is confirming the entropy-binding corner over the full grid, not
   producing a number this issue could not.
+  The re-run at that corner (`ss`/+125 °C/3.63 V) landed in #406; see the
+  note under "No spec row is edited by this issue".
 - **If DR-0010's proposed 500 bps rate is ratified**, the array-sizing
   cross-check in Section 1 (`Q_array` ≈ 8.6× the required margin at `ss`,
   using the more favorable starved-cell constant) is the number to revisit —
