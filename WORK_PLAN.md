@@ -26,7 +26,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#357**: Add fail-path unit tests for the untested sim tool --check spec gates
 
 ## PRs Awaiting Review
 
@@ -38,7 +38,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#358**: test(sim): fail-path tests for four spec-guarding --check gates
 
 ## Proposed
 
@@ -48,7 +48,6 @@ _None._
 
 ## Proposed (Architect / Hermit)
 
-- **#345**: Unit-test the shared evidence-record parser (sim/tools/_record_parsing.py), which has no direct tests *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -62,10 +61,10 @@ _None._
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 0 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

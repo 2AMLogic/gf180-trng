@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-08.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-09.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-09
+
+- **PR #356**: test(sim): add direct unit tests for the shared record parser
+- **Issue #345** (closed): Unit-test the shared evidence-record parser (sim/tools/_record_parsing.py), which has no direct tests
 
 ### 2026-10-08
 
