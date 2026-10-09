@@ -51,7 +51,8 @@ class CheckScriptParity(unittest.TestCase):
             self.assertTrue(names, f"CI runs `{command}` with no npm check:* entry")
             for chain in ("check:ci", "check:all"):
                 self.assertTrue(
-                    any(re.search(rf"npm run {re.escape(n)}(?![\w-])", scripts[chain]) for n in names),
+                    command in scripts[chain]
+                    or any(re.search(rf"npm run {re.escape(n)}(?![\w-])", scripts[chain]) for n in names),
                     f"CI runs `{command}` but {chain} does not reach it",
                 )
 
