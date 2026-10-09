@@ -28,7 +28,8 @@ Usage:
   python3 sim/tools/verify_record_checksums.py --no-git        # skip (4)
   python3 sim/tools/verify_record_checksums.py --quiet         # failures only
 
-Exit 0 if every checked record verifies, 1 otherwise. Stdlib only; no
+Exit 0 if every checked record verifies, 1 if one does not, 2 if `--changed`
+cannot compute its record set (bad/missing base, unrelated histories). Stdlib only; no
 ngspice and no PDK.
 """
 
@@ -64,6 +65,16 @@ def git_tracked_raw_files() -> set[str]:
     return {line for line in out.stdout.splitlines() if line}
 
 
+class ChangedDiscoveryError(RuntimeError):
+    """`git diff` could not compute the changed-record set for a base.
+
+    Distinct from "the diff is empty": an unknown base, a base missing from a
+    shallow clone, or unrelated histories (no merge base) all make git exit
+    nonzero, and treating that as "nothing changed" would report success on a
+    check that never ran.
+    """
+
+
 def _changed_records(base: str) -> list[Path]:
     # `git diff --name-only` prints paths from the REPO ROOT regardless of the
     # cwd it is run in (only --relative changes that), so the result is joined
@@ -76,6 +87,12 @@ def _changed_records(base: str) -> list[Path]:
          f"{report.RECORDS_DIRNAME}/*.md"],
         cwd=SIM_DIR, capture_output=True, text=True, check=False,
     )
+    if out.returncode != 0:
+        detail = (out.stderr or "").strip() or "no error output"
+        raise ChangedDiscoveryError(
+            f"git diff against base {base!r} failed (exit {out.returncode}): {detail}. "
+            f"Fetch the base (e.g. `git fetch origin main`) or pass an explicit BASE."
+        )
     return [REPO_ROOT / line for line in out.stdout.splitlines() if line]
 
 
@@ -117,7 +134,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.records:
         records = [Path(r) for r in args.records]
     elif args.changed:
-        records = _changed_records(args.changed)
+        try:
+            records = _changed_records(args.changed)
+        except ChangedDiscoveryError as exc:
+            print(f"FAIL: cannot resolve --changed base {args.changed!r}: {exc}",
+                  file=sys.stderr)
+            return 2
     else:
         records = sorted(RECORDS_DIR.glob("*.md"))
 
