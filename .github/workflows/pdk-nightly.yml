@@ -80,12 +80,15 @@ jobs:
       # which ride in the release's `common` tarball (always fetched), plus the
       # primitive library. No sim/tb testbench uses standard cells, IO or SRAM,
       # so the rest of the ~5 GB default set would be skipped -- except that
-      # `design/synth.py --check` below needs exactly one more of them:
+      # two PDK-dependent steps below each need one more of them:
       # `gf180mcu_fd_sc_mcu9t5v0`, the digital standard-cell library `klt
-      # synthesize` maps trng_top's RTL onto (#143). Space-separated; each
-      # name becomes its own `-l` flag in the `ciel enable` step below (`-l`
-      # takes one library per flag -- `ciel enable --help`).
-      PDK_LIBRARIES: "gf180mcu_fd_pr gf180mcu_fd_sc_mcu9t5v0"
+      # synthesize` maps trng_top's RTL onto (`design/synth.py --check`, #143),
+      # and `gf180mcu_fd_sc_mcu7t5v0`, whose LEF `layout/floorplan/floorplan.py`
+      # reads to price cell areas (`area_estimate.STDCELL_LIB`, #310).
+      # Space-separated; each name becomes its own `-l` flag in the `ciel
+      # enable` step below (`-l` takes one library per flag -- `ciel enable
+      # --help`).
+      PDK_LIBRARIES: "gf180mcu_fd_pr gf180mcu_fd_sc_mcu9t5v0 gf180mcu_fd_sc_mcu7t5v0"
     steps:
       - uses: actions/checkout@v4
 
