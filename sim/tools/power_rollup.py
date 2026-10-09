@@ -110,7 +110,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import digital_corner_characterization as dcc  # noqa: E402
-from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
+from _record_parsing import format_corner, parse_corner, parse_status, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -166,6 +166,9 @@ class Record:
         self.stem = path.stem
         self.values = parse_values(text)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
+        #: ``valid`` or ``superseded`` (``sim/README.md``); a record with any
+        #: other lifecycle raises here, naming the record.
+        self.status = parse_status(text, label=self.stem)
         #: Blob SHA of the netlist this record's numbers were measured
         #: against, or ``None`` for a record whose deck names no netlist.
         #: This is what identifies the DUT *revision*: two records of the same
@@ -180,10 +183,19 @@ class Record:
         return format_corner(self.process, self.temp_c, self.vdd)
 
 
-def load(globs) -> list[Record]:
+def load(globs, *, include_superseded: bool = False) -> list[Record]:
+    """Records matching ``globs``, chronologically within each glob.
+
+    Records marked ``status: superseded`` were invalidated (mistaken or
+    misconfigured runs) and are excluded unless ``include_superseded`` is
+    set for an explicit historical read. Older records that remain
+    ``status: valid`` are always returned, so design-revision comparisons
+    keep working.
+    """
     if isinstance(globs, str):
         globs = (globs,)
-    return [Record(p) for g in globs for p in sorted(RECORDS.glob(g))]
+    recs = [Record(p) for g in globs for p in sorted(RECORDS.glob(g))]
+    return recs if include_superseded else [r for r in recs if r.status == "valid"]
 
 
 def by_corner(records: list[Record], prefer: str | None = None) -> dict[str, Record]:

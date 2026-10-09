@@ -98,6 +98,39 @@ def parse_corner(
     return process, temp_c, vdd
 
 
+#: The lifecycle values ``sim/README.md`` defines for a record's ``status:``.
+STATUS_VALUES = ("valid", "superseded")
+
+
+def parse_status(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = RuntimeError,
+) -> str:
+    """The record's frontmatter ``status:`` (``valid`` or ``superseded``).
+
+    Only the leading ``---`` frontmatter block is read, so a ``status:`` line
+    quoted in a record's body can never decide a record's lifecycle. A
+    missing, empty or unknown value raises ``error_cls`` naming ``label``:
+    a record whose lifecycle cannot be established is never guessed at.
+    """
+    m = re.match(r"---[ \t]*\n(.*?)^---[ \t]*$", text, re.S | re.M)
+    prefix = f"{label}: " if label else ""
+    if m is None:
+        raise error_cls(f"{prefix}no frontmatter block, so no lifecycle `status:`")
+    sm = re.search(r"^status:[ \t]*(.*?)[ \t]*$", m.group(1), re.M)
+    if sm is None:
+        raise error_cls(f"{prefix}frontmatter has no `status:` line")
+    value = sm.group(1)
+    if value not in STATUS_VALUES:
+        raise error_cls(
+            f"{prefix}unknown `status: {value}` (expected one of "
+            f"{', '.join(STATUS_VALUES)})"
+        )
+    return value
+
+
 def format_corner(process: str, temp_c: float, vdd: float) -> str:
     """The canonical ``process/temp_c/vdd`` corner label, e.g. ``tt/27/3.30``.
 

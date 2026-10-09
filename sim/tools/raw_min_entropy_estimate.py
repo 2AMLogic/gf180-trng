@@ -60,7 +60,7 @@ TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "sampler-array-digitize" / "tb.json"
 sys.path.insert(0, str(TOOLS_DIR))
 import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
-from _record_parsing import field, format_corner, parse_corner  # noqa: E402
+from _record_parsing import field, format_corner, parse_corner, parse_status  # noqa: E402
 
 SLUG = "sampler-array-digitize"
 
@@ -103,6 +103,7 @@ class BitstreamRecord:
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )
+        self.status = parse_status(text, label=self.stem, error_cls=RecordError)
         self.seeds = field(text, r"^seeds:\s*(\[[^\]]*\])", label=self.stem, error_cls=RecordError)
 
         bit_indices = sorted(
@@ -119,7 +120,11 @@ class BitstreamRecord:
         return format_corner(self.process, self.temp_c, self.vdd)
 
 
-def load_records() -> list[BitstreamRecord]:
+def load_records(*, include_superseded: bool = False) -> list[BitstreamRecord]:
+    """Committed bitstream records, chronologically. ``status: superseded``
+    records are excluded (issue #425) unless ``include_superseded`` requests
+    an explicit historical read; a missing or unknown lifecycle raises
+    ``RecordError`` naming the record."""
     # `-[0-9]` and not `-`: the sequence number must follow the slug
     # directly, so a record from a *variant* testbench whose slug starts
     # with this one (e.g. `sampler-array-digitize-extracted`, issue #17's
@@ -130,7 +135,8 @@ def load_records() -> list[BitstreamRecord]:
     paths = sorted(RECORDS.glob(f"*-{SLUG}-[0-9]*.md"))
     if not paths:
         raise RecordError(f"no sim/records/*-{SLUG}-[0-9]*.md records found")
-    return [BitstreamRecord(p) for p in paths]
+    recs = [BitstreamRecord(p) for p in paths]
+    return recs if include_superseded else [r for r in recs if r.status == "valid"]
 
 
 def missing_corners(records: list[BitstreamRecord]) -> list[str]:
