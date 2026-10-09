@@ -6,6 +6,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-08
 
+- **PR #354**: Pin RTL and verification sources in the item-7 digital freshness gate
+- **PR #353**: Verify item-7 analog schematic DUT against its design source
+- **Issue #351** (closed): Verify analog item-7 generated schematic DUT against its canonical source
+- **Issue #350** (closed): Pin RTL and verification sources in the digital item-7 freshness gate
 - **PR #349**: Guard every restated klt/klayout pin against signoff/check.py
 - **PR #348**: Drop stale test counts from ci.yml self-check header
 - **PR #347**: Require a complete current-DEF family for digital STA aggregates
