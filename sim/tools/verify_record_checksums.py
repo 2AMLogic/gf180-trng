@@ -104,7 +104,10 @@ def verify_one(path: Path, tracked: set[str] | None = None) -> list[str]:
     """
     problems = report.verify_record_file(path, REPO_ROOT)
     if tracked is not None:
-        raw_path, raw_files = report.parse_raw_section(path.read_text())
+        try:
+            raw_path, raw_files = report.parse_raw_section(path.read_text())
+        except report.RawSectionError:
+            raw_path, raw_files = "", []  # already reported by verify_record_file
         if raw_path:
             raw_dir = REPO_ROOT / raw_path
             for name, _digest in raw_files:
@@ -155,7 +158,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"FAIL {path}: no such record", file=sys.stderr)
             failures += 1
             continue
-        problems = verify_one(path, tracked)
+        try:
+            problems = verify_one(path, tracked)
+        except (OSError, UnicodeDecodeError) as exc:
+            problems = [f"cannot read record: {exc}"]
         if problems:
             failures += 1
             print(f"FAIL {path.name}", file=sys.stderr)
