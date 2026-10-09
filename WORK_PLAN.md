@@ -26,7 +26,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it
+_None._
 
 ## PRs Awaiting Review
 
@@ -44,13 +44,12 @@ _None._
 
 Issues carrying `loom:curated`.
 
-- **#326**: T1 item 7 (analog): emit the post-layout extraction as a native klt pex report and cite it *(curated)*
+_None._
 
 ## Proposed (Architect / Hermit)
 
-- **#336**: ci.yml self-check inventory quotes test counts that are ~7x stale (71/43 vs 540/121) *(architect)*
-- **#337**: Unit-test the signoff freshness gate (check_envelope_against_its_input) against its failure branches *(architect)*
-- **#335**: Consolidate duplicate klt_origin(): verify.py fork vs layout/_klt.py *(hermit)*
+- **#345**: Unit-test the shared evidence-record parser (sim/tools/_record_parsing.py), which has no direct tests *(architect)*
+- **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
 
@@ -63,10 +62,10 @@ _None._
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 1 |
-| Architect / Hermit proposals | 3 |
+| Curated | 0 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
