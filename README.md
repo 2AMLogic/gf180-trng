@@ -327,7 +327,7 @@ Where this block stands against the klayout-tools design-evidence ladder is
 **graded, not asserted**: [`signoff/records/t1-tier-report.json`](signoff/records/t1-tier-report.json)
 is the verdict of record, produced by `klt signoff --manifest` from
 [`signoff/block-manifest.json`](signoff/block-manifest.json) and re-run by CI
-on every push. Today it reads `tier: null`, **T1 3 of 22 items met** (a
+on every push. <!-- current-t1-status:begin -->Today it reads `tier: null`, **T1 8 of 22 items met**<!-- current-t1-status:end --> (a
 `mixed-signal` block is graded once per partition, so the eleven-item T1
 checklist renders 22 rows). That is a stricter reading than "which work has
 been done", because it counts only evidence a third party can re-grade from a

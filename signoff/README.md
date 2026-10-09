@@ -15,7 +15,7 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-**Today: `tier: null`, T1 8 of 22 items met.** A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 8 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
 22 rows. The eight met are item 3 (DRC), item 4 (LVS), item 7 (post-layout
 verification) and item 8 (characterization report) on **both** partitions.

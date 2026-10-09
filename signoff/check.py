@@ -57,6 +57,11 @@ separable conditions, in order, so a red build says which one:
    evidence moved or the checklist did. Both are real news, and neither should
    be discoverable only by someone re-reading prose.
 
+Before the re-grade, the designated current-status blocks of README.md and
+signoff/README.md (fenced by `current-t1-status` marker comments) are compared
+with the committed record's tier, met count and item count (stdlib-only,
+always run, fails on mismatch or a missing/malformed block).
+
 Step 1 and step 2 are stdlib-only and always run -- they need no `klt`, no
 PDK and no network, which is why the freshness half of this gate is on the
 PR-blocking path unconditionally. Steps 3 and 4 need the grader; without it
@@ -86,6 +91,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -843,6 +849,74 @@ def manifest_entries(manifest: dict):
                 yield key, part
 
 
+#: Documents that restate the current T1 verdict. Each must carry exactly one
+#: block fenced by the marker comments below; only that block is read, so
+#: historical narrative elsewhere in the same file is never treated as a
+#: current claim.
+CURRENT_STATUS_DOCS = ("README.md", "signoff/README.md")
+CURRENT_STATUS_BEGIN = "<!-- current-t1-status:begin -->"
+CURRENT_STATUS_END = "<!-- current-t1-status:end -->"
+_STATUS_TIER = re.compile(r"`tier:\s*(null|T\d+)`")
+_STATUS_COUNT = re.compile(r"T1\s+(\d+)\s+of\s+(\d+)\s+items\s+met")
+
+
+def current_status_problems(report: dict, docs: dict[str, str]) -> list[str]:
+    """Compare designated current-status text with the committed report.
+
+    ``docs`` maps a display name to document text. The expected numerator,
+    denominator and tier come from ``report`` (never hard-coded). A document
+    with no block, more than one block, or a block lacking a parseable tier or
+    count is a problem, as is any disagreement.
+    """
+    want_tier = report.get("tier")
+    want_met = report.get("t1_met_count")
+    want_total = report.get("t1_item_count")
+    problems: list[str] = []
+    for name, text in docs.items():
+        begins = text.count(CURRENT_STATUS_BEGIN)
+        ends = text.count(CURRENT_STATUS_END)
+        if begins != 1 or ends != 1:
+            problems.append(
+                f"{name}: expected exactly one {CURRENT_STATUS_BEGIN} ... "
+                f"{CURRENT_STATUS_END} block, found {begins} begin / {ends} end"
+            )
+            continue
+        head, _, rest = text.partition(CURRENT_STATUS_BEGIN)
+        block, _, _ = rest.partition(CURRENT_STATUS_END)
+        tier_m = _STATUS_TIER.findall(block)
+        count_m = _STATUS_COUNT.findall(block)
+        if len(tier_m) != 1 or len(count_m) != 1:
+            problems.append(
+                f"{name}: current-status block must state one "
+                f"`tier: <null|Tn>` and one 'T1 N of M items met'"
+            )
+            continue
+        got_tier = None if tier_m[0] == "null" else tier_m[0]
+        got_met, got_total = int(count_m[0][0]), int(count_m[0][1])
+        if got_tier != want_tier:
+            problems.append(f"{name}: tier states {got_tier!r}, report says {want_tier!r}")
+        if got_met != want_met:
+            problems.append(f"{name}: states {got_met} items met, report says {want_met}")
+        if got_total != want_total:
+            problems.append(f"{name}: states {got_total} T1 items, report says {want_total}")
+    return problems
+
+
+def verify_current_status() -> list[str]:
+    """Read-only, offline: committed report vs the designated README text."""
+    try:
+        report = json.loads(RECORD.read_text())
+    except (OSError, ValueError) as exc:
+        return [f"{RECORD.relative_to(REPO_ROOT)}: unreadable ({exc})"]
+    docs = {}
+    for name in CURRENT_STATUS_DOCS:
+        try:
+            docs[name] = (REPO_ROOT / name).read_text()
+        except OSError as exc:
+            return [f"{name}: unreadable ({exc})"]
+    return current_status_problems(report, docs)
+
+
 def freshness_gate(manifest: dict) -> int:
     failures: list[str] = []
     verified = 0
@@ -1036,6 +1110,12 @@ def main() -> int:
     rc = freshness_gate(manifest)
     if rc:
         return rc
+
+    status_problems = verify_current_status()
+    if status_problems:
+        for problem in status_problems:
+            print(f"signoff/check.py: current T1 status: {problem}", file=sys.stderr)
+        return 1
 
     try:
         report = run_grader()
