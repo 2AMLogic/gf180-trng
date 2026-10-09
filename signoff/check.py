@@ -414,6 +414,244 @@ def verify_item7_analog_publication(manifest: dict) -> list[str]:
     )
 
 
+#: Additional post-layout coverage, NOT a manifest citation (#418): the native
+#: `klt pex` response over the assembled combiner/sampler block
+#: (layout/blocks/combiner_sampler/combiner_sampler.gds) under a deterministic
+#: clock/reset/two-input schedule, published by
+#: signoff/publish_combiner_sampler_pex.py. The 7.analog citation above stays
+#: ring1's; this sidecar is held to the same freshness discipline so its
+#: committed artifacts cannot silently rot, and its recorded verdict is
+#: recomputed from the envelope so it cannot be hand-edited into a pass.
+CS_TB_DIR = "sim/tb/combiner-sampler-pex"
+CS_DIR = f"{ITEM7A_DIR}/combiner_sampler"
+CS_ENVELOPE = f"{CS_DIR}/combiner_sampler.pex.json"
+CS_PUBLICATION = f"{CS_DIR}/publication.json"
+CS_NETLIST = f"{CS_DIR}/combiner_sampler.extracted.spice"
+CS_GDS = "layout/blocks/combiner_sampler/combiner_sampler.gds"
+CS_REQUEST = f"{CS_TB_DIR}/request.json"
+CS_INPUTS = (
+    CS_REQUEST,
+    f"{CS_TB_DIR}/tb_combiner_sampler_pex.sp",
+    f"{CS_TB_DIR}/combiner_sampler_schematic.spice",
+)
+CS_PUBLICATION_SCHEMA = "gf180-trng/combiner-sampler-pex-publication/1"
+
+
+def _load_tb_module(tb_dir: str, name: str):
+    import importlib.util
+
+    path = REPO_ROOT / tb_dir / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"{Path(tb_dir).name.replace('-', '_')}_{name}", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def request_corner_ids(request: dict) -> list[str]:
+    """`klt sim`'s corner ids (`tt/2.970V/-40C`) for every corner a request declares."""
+    corners = request.get("corners") or {}
+    supplies = [v for vs in (corners.get("supply_v") or {}).values() for v in vs]
+    return [
+        f"{p['name']}/{v:.3f}V/{t:g}C"
+        for p in corners.get("process") or []
+        for v in supplies
+        for t in corners.get("temperature_c") or []
+    ]
+
+
+def _within(value: float, limits: dict) -> bool:
+    lo, hi = limits.get("min"), limits.get("max")
+    return (lo is None or value >= lo) and (hi is None or value <= hi)
+
+
+def combiner_sampler_verdict(envelope: dict, request: dict) -> dict:
+    """Classify every declared (corner, measurement) of the combiner/sampler run.
+
+    `klt pex` grades only the extracted side's limits (a delta row's `status`
+    is the extracted measurement's own); the schematic value is reported,
+    never graded. Both sides are held to the request's limits here. A row is
+
+    * `pass` -- measured on both sides, both inside the limits;
+    * `fail` -- measured on both sides, at least one side outside them (the
+      failing side(s) are named);
+    * `measured` -- an informational row (no limits), measured on both sides;
+    * `unmeasured` -- missing from the response, missing a value on either
+      side, or errored. Never a pass.
+
+    The overall verdict is `incomplete` if any declared row is unmeasured,
+    else `fail` if any row fails, else `pass`.
+    """
+    specs = {m["name"]: m.get("limits") or None for m in request.get("measurements") or []}
+    corners = request_corner_ids(request)
+    rows = {}
+    for r in envelope.get("delta") or []:
+        rows.setdefault((r.get("corner_id"), r.get("spec_row")), r)
+    counts = {"pass": 0, "fail": 0, "measured": 0, "unmeasured": 0}
+    failures: list[dict] = []
+    unmeasured: list[str] = []
+    problems: list[str] = []
+    for corner in corners:
+        for name, limits in specs.items():
+            row = rows.get((corner, name))
+            sv = None if row is None else row.get("schematic_value")
+            ev = None if row is None else row.get("extracted_value")
+            if row is None or row.get("status") == "error" or not isinstance(sv, (int, float)) \
+                    or not isinstance(ev, (int, float)):
+                counts["unmeasured"] += 1
+                unmeasured.append(f"{corner}/{name}")
+                continue
+            if not limits:
+                counts["measured"] += 1
+                continue
+            bad = [side for side, v in (("schematic", sv), ("extracted", ev)) if not _within(v, limits)]
+            if ("extracted" in bad) != (row.get("status") == "fail"):
+                problems.append(
+                    f"{corner}/{name}: klt pex status {row.get('status')!r} disagrees with the "
+                    f"request's limits on the extracted value {ev!r}"
+                )
+            if bad:
+                counts["fail"] += 1
+                failures.append({"corner_id": corner, "row": name, "sides": bad,
+                                 "schematic_value": sv, "extracted_value": ev, "limits": limits})
+            else:
+                counts["pass"] += 1
+    extra = sorted({c for c, _n in rows} - set(corners))
+    if extra:
+        problems.append(f"response carries undeclared corners: {extra}")
+    verdict = "incomplete" if counts["unmeasured"] else ("fail" if counts["fail"] else "pass")
+    return {
+        "verdict": verdict,
+        "declared_corners": len(corners),
+        "declared_rows_per_corner": len(specs),
+        "limited_rows_per_corner": sum(1 for v in specs.values() if v),
+        "counts": counts,
+        "failures": failures,
+        "unmeasured": unmeasured,
+        "consistency_problems": problems,
+    }
+
+
+def combiner_sampler_dut_source_problems(pub: dict | None = None) -> list[str]:
+    """The generated DUT and testbench must be current with their sources
+    (stdlib only; no klt, ngspice or PDK)."""
+    out: list[str] = []
+    bd = _load_tb_module(CS_TB_DIR, "build_dut")
+    problem = bd.dut_source_problem()
+    if problem:
+        out.append(f"schematic DUT vs source: {problem}")
+    st = _load_tb_module(CS_TB_DIR, "stimulus")
+    for path, want in ((st.TESTBENCH, st.render_testbench()), (st.REQUEST, st.render_request_text())):
+        if not path.is_file() or path.read_text() != want:
+            out.append(
+                f"{path.relative_to(REPO_ROOT)} is not what {CS_TB_DIR}/stimulus.py renders; "
+                f"re-run stimulus.py"
+            )
+    recorded = (pub or {}).get("source_sha256")
+    if pub is not None:
+        try:
+            current = bd.source_identity()
+        except bd.BuildError as exc:
+            out.append(f"source identity: {exc}")
+        else:
+            if recorded != current:
+                out.append(
+                    f"source identity: STALE -- the publication recorded {recorded}, the consumed "
+                    f"design sections hash to {current} today; re-run "
+                    f"signoff/publish_combiner_sampler_pex.py"
+                )
+    return out
+
+
+def combiner_sampler_problems(pub: dict, envelope: dict) -> list[str]:
+    """Every reason the combiner/sampler publication is not current evidence.
+
+    Freshness, not success: a run whose verdict is `fail` or `incomplete` is
+    still current evidence of that result. What is checked is that every
+    committed artifact is the one the run used, that the recorded verdict is
+    exactly what the envelope and request yield today, and that the
+    extracted netlist's ports re-derive to the DUT header.
+    """
+    out = combiner_sampler_dut_source_problems(pub)
+    if pub.get("schema") != CS_PUBLICATION_SCHEMA:
+        out.append(f"publication schema is {pub.get('schema')!r}, not {CS_PUBLICATION_SCHEMA!r}")
+    if (envelope.get("measurement") or {}).get("mode", "testbench") != "testbench":
+        out.append("klt pex measurement.mode is not 'testbench'")
+    for key in ("pin_count_mismatch", "flat_dut_mismatch"):
+        if envelope.get(key) is not None:
+            out.append(f"klt pex reports {key}")
+    layout = envelope.get("layout") or {}
+    if layout.get("path") != CS_GDS:
+        out.append(f"envelope layout is {layout.get('path')!r}, not {CS_GDS}")
+    gds = REPO_ROOT / CS_GDS
+    if not gds.is_file() or sha256_file(gds) != pinned_input_hash(envelope):
+        out.append(f"{CS_GDS} is not the layout this klt pex run extracted (re-run and re-publish)")
+    if pub.get("layout_content_hash") != pinned_input_hash(envelope):
+        out.append("publication layout_content_hash differs from the envelope's")
+    bias = envelope.get("body_bias")
+    if not isinstance(bias, dict) or "status" not in bias:
+        out.append("envelope carries no body_bias block")
+    elif pub.get("body_bias_status") != bias["status"]:
+        out.append(
+            f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
+            f"the envelope says {bias['status']!r}"
+        )
+    netlist = REPO_ROOT / CS_NETLIST
+    if not netlist.is_file():
+        out.append(f"{CS_NETLIST} is missing")
+    else:
+        recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
+        if sha256_file(netlist) != f"sha256:{recorded}":
+            out.append(f"{CS_NETLIST} is not the netlist this klt pex run extracted")
+        bd = _load_tb_module(CS_TB_DIR, "build_dut")
+        try:
+            dut_text = bd.DUT.read_text()
+            got = bd.extraction_port_map(netlist.read_text(), dut_text)
+            want = bd.dut_header(dut_text)
+        except (bd.BuildError, OSError) as exc:
+            out.append(f"port map: {exc}")
+        else:
+            if got != want:
+                out.append(f"port map: extracted ports resolve to {got}, DUT header is {want}")
+            header = bd.extracted_graph(netlist.read_text())[1]
+            if pub.get("port_map") != dict(zip(header, got)):
+                out.append("publication port_map differs from the one the committed netlist yields")
+    pinned = pub.get("inputs_sha256") or {}
+    for rel in CS_INPUTS:
+        path = REPO_ROOT / rel
+        if rel not in pinned or not path.is_file():
+            out.append(f"input {rel}: not pinned or missing")
+        elif sha256_file(path) != pinned[rel]:
+            out.append(
+                f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
+                f"{sha256_file(path)} today; re-run signoff/publish_combiner_sampler_pex.py"
+            )
+    req_path = REPO_ROOT / CS_REQUEST
+    if req_path.is_file():
+        verdict = combiner_sampler_verdict(envelope, json.loads(req_path.read_text()))
+        if pub.get("verdict") != verdict:
+            out.append("recorded verdict is not what the envelope and request yield today")
+        for p in verdict["consistency_problems"]:
+            out.append(f"verdict: {p}")
+    env_path = REPO_ROOT / CS_ENVELOPE
+    if not env_path.is_file() or (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
+        out.append("published envelope differs from the sha256 in publication.json")
+    return out
+
+
+def verify_combiner_sampler_publication() -> list[str]:
+    """Freshness gate for the combiner/sampler coverage (stdlib only, always
+    runs once the publication is committed)."""
+    pub_path = REPO_ROOT / CS_PUBLICATION
+    env_path = REPO_ROOT / CS_ENVELOPE
+    if not pub_path.is_file() and not env_path.is_file():
+        return []
+    if not pub_path.is_file() or not env_path.is_file():
+        return [f"{CS_ENVELOPE} / {CS_PUBLICATION} not both present"]
+    return combiner_sampler_problems(
+        json.loads(pub_path.read_text()), json.loads(env_path.read_text())
+    )
+
+
 def sha256_file(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -558,6 +796,9 @@ def freshness_gate(manifest: dict) -> int:
     # Step 1c: the 7.analog citation's testbench-side pins (see ITEM7A_*). Its
     # layout pin is already covered by steps 1 and 2 above.
     failures += [f"7.analog: {p}" for p in verify_item7_analog_publication(manifest)]
+
+    # Step 1d: uncited combiner/sampler post-layout coverage (#418; see CS_*).
+    failures += [f"combiner_sampler pex: {p}" for p in verify_combiner_sampler_publication()]
 
     if failures:
         print("signoff/check.py: freshness verification FAILED", file=sys.stderr)
