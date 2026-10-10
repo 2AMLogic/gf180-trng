@@ -55,7 +55,18 @@ _MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$
 # excluding "Warning" keeps ordinary warnings (e.g. "Warning: ...", notes
 # mentioning the word "error" mid-line) from failing a run, while still
 # catching ngspice's fatal "Error: ..." / "doAnalyses: ..." analysis aborts.
-_ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
+# Two `.meas` diagnostics are NON-fatal and are excluded: ngspice prints
+# "Error: measure X when(WHEN) : out of interval" (a crossing that never
+# happens) and 'Error: RHS "..." invalid' (a derived .meas whose inputs are
+# missing) yet still exits 0 with the other measurements intact; both occur in
+# committed evidence. A requested-but-absent measurement is already caught by
+# the `missing` check, so these lines add nothing as a failure signal.
+_ERROR_RE = re.compile(
+    r"^\s*(?!Error:\s+measure\s.*:\s*out of interval)"
+    r"(?!Error:\s+RHS\s.*\sinvalid)"
+    r"(?:Error|ERROR|Fatal|fatal error|doAnalyses:)",
+    re.MULTILINE,
+)
 
 
 class NgspiceMissing(RuntimeError):

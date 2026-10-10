@@ -399,6 +399,15 @@ class TimeoutTests(unittest.TestCase):
         self.assertEqual(result.measurements, {"vout": 3.3})
         self.assertIn("Error: failed analysis", result.message)
 
+    def test_nonfatal_meas_errors_with_clean_exit_remain_ok(self):
+        result = self._run_fake(
+            "print('Error: measure  t1b  when(WHEN) : out of interval')\n"
+            "print('Error: RHS \"(t1b-t1a)/nper\" invalid')\n"
+            "print('m_vout = 3.3')\n"
+        )
+        self.assertEqual(result.status, "ok", result.message)
+        self.assertEqual(result.measurements, {"vout": 3.3})
+
     def test_nonzero_exit_message_includes_code_and_diagnostic(self):
         result = self._run_fake(
             "import sys\nprint('m_vout = 3.3')\nprint('doAnalyses: bad')\nsys.exit(3)\n"
