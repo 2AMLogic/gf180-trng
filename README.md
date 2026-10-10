@@ -228,9 +228,14 @@ DRBG supplies its own and treats this block as the seed source.
 >   [DR-0007]'s separate conflict — that its first-cut array size projected far
 >   more active power than this row allows — was resolved by [DR-0010]
 >   shrinking the array to N = 2, which is the 415 µW measured above.
-> - **Area: no measurement, and the standing estimate misses by 1.4×.** The
->   row is `< 0.05 mm²` and no layout exists to measure, but #16's floorplan
->   work priced the block bottom-up against the PDK's own standard-cell LEF:
+> - **Area: the regenerated floorplan misses by 3.5×.** The row is
+>   `< 0.05 mm²`. The current figure is the regenerated depth-2 floorplan
+>   rollup in `layout/floorplan/reports/area.json` (#256, via #454):
+>   **175 789.9 µm² including isolation channels, 351.6 % of the row** (a
+>   floorplan-area sum; the row bounding box, 934.4 × 416.7 µm, is reported
+>   separately). The rest of this bullet is historical context from before
+>   that regeneration. #16's floorplan work had priced the block bottom-up
+>   against the PDK's own standard-cell LEF:
 >   **0.06885 mm², 137.7 % of the row** at the shipped `FIFO_DEPTH = 2`
 >   (**0.13918 mm², 278.4 %** at the depth-8 default the paragraph below and
 >   [DR-0019] were written against)
@@ -263,12 +268,11 @@ DRBG supplies its own and treats this block as the seed source.
 >   brings the estimate from **278.4 % to 137.7 %** of the row (0.13918 mm² →
 >   **0.06885 mm²**; the digital section's own cell area falls 74 485 µm² →
 >   33 655 µm², and 40 357 µm² of that 40 831 µm² drop is FIFO storage, read
->   mux and per-word clock gates). Two caveats the re-run does not
->   let us drop: **it is still a miss, by 1.4×**, and it moves the *estimate*
->   only — `layout/floorplan/reports/area.json`'s composed figure is still
->   **642.9 %**, because that one is measured from `layout/digital/
->   trng_top.gds`, the depth-8 place-and-route, which #254 did not
->   re-synthesize. The 129.4 % [DR-0020] itself quotes is superseded by the
+>   mux and per-word clock gates). At that
+>   time it was still a miss, by 1.4×, and it moved the *estimate* only: the
+>   composed figure in `area.json` was then **642.9 %**, measured from
+>   `layout/digital/trng_top.gds`, the depth-8 place-and-route, which #254 did
+>   not re-synthesize (superseded by the #256 regeneration, above). The 129.4 % [DR-0020] itself quotes is superseded by the
 >   137.7 % above: that figure predated issues #119/#135's analog-region
 >   resizes and was computed against the older 269.4 % baseline.
 >
