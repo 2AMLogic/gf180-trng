@@ -14,7 +14,7 @@ measured on silicon.** As of this writing the repository contains an evidence-re
 convention, [twenty-nine decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
 harness — plus, since #145, a gate-level static-timing and power flow over the
-placed digital netlist. Between them they produce nineteen characterization
+placed digital netlist. Between them they produce twenty characterization
 summaries (`sim/characterization-*.md`) resting on 1029 append-only evidence
 records under [`sim/records/`](sim/records/).
 `design/` holds the analog entropy source and sampler as xschem schematics with
@@ -472,7 +472,7 @@ than a second list that can say something different (#97):
 - **`npm run lint`** — a Python/shell syntax check and the schematic
   text-block brace guard (`design/netlist.py --lint`, #61);
 - **`npm run test`** — the harness unit tests;
-- **`npm run check:spec`**, **eighteen spec-arithmetic self-checks** — pure
+- **`npm run check:spec`**, **nineteen spec-arithmetic self-checks** — pure
   derivations over records already committed under `sim/records/`, so a newly
   appended record cannot silently move a conclusion a summary document still
   asserts: `jitter_energy_law.py`, `starved_cell_jitter_energy.py`,
@@ -481,7 +481,7 @@ than a second list that can say something different (#97):
   `array_liveness_tap_phase_variants.py`, `sampler_bit_bias_variants.py`,
   `time_to_first_valid.py`, `power_rollup.py`,
   `digital_corner_characterization.py`, `activity_power_characterization.py`,
-  `vss_trunk_ir_drop.py`,
+  `vss_trunk_ir_drop.py`, `digital_supply_ir_drop.py`,
   `corpus_counts.py`, `klt_pin_sites.py`,
   `jitter_estimator_calibration_check.py` and `statistical_battery.py`, each
   `--check`;
