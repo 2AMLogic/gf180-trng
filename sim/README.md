@@ -476,7 +476,12 @@ Records minted after issue #506 summarize only status-`ok` runs in the
 per-measurement lines. A failed run (nonzero exit, simulator or analysis
 error, fatal diagnostic, missing measurements, or timeout) still retains any
 measurements it parsed, but they appear only under a separate "Failed-run
-diagnostics" heading with the failure reason, never in a mean or spread. A
+diagnostics" heading with the failure reason, never in a mean or spread.
+Since issue #527 a requested measurement must also be a finite number: a
+value that overflows to infinity (e.g. `1e999`) or a literal `inf`/`nan`
+fails the run with `non-finite measurements: <name> (<name> = <raw>)`,
+reported separately from absent ones. The non-finite value is never kept as
+a diagnostic number; the raw log retains it exactly as ngspice printed it. A
 `Runs: N of M successful` line reports attempted vs. successful counts; a
 measurement with no successful run reads `no successful-run data (N of M
 runs succeeded)` (this replaces the older "no data (all runs failed to

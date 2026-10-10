@@ -534,7 +534,7 @@ def render_result_section(record: dict) -> str:
         lines.append("")
         lines.append(
             "Run failures (nonzero exit, simulator error or analysis error, "
-            "missing measurements, or timeout):"
+            "missing or non-finite measurements, or timeout):"
         )
         for r in failed:
             lines.append(f"- seed {r.seed}: {r.status} -- {r.message}")

@@ -7,6 +7,7 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -554,6 +555,54 @@ class FailedRunSeparationTests(unittest.TestCase):
         self.assertEqual(record["runs_attempted"], 1)
         self.assertIn("no successful-run data", text)
         self.assertIn("  - `iout`: 8", text)
+
+    def test_mixed_campaign_with_overflowed_seed_keeps_only_finite_seed(self):
+        # Issue #527: real runner.run_one against a fake ngspice that prints
+        # finite values for seed 1 and an overflowing `1e999` for seed 2.
+        bin_dir = self.root / "bin"
+        bin_dir.mkdir()
+        fake = bin_dir / "ngspice"
+        fake.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            "deck = open(sys.argv[-1]).read()\n"
+            "if '.option seed=2' in deck:\n"
+            "    print('m_vout = 1e999')\n"
+            "    print('m_iout = 4.0e-6')\n"
+            "else:\n"
+            "    print('m_vout = 1.5')\n"
+            "    print('m_iout = 2.0e-6')\n"
+        )
+        fake.chmod(0o755)
+        env = mock.patch.dict(
+            os.environ, {"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"}
+        )
+        env.start()
+        self.addCleanup(env.stop)
+
+        results = [
+            runner.run_one(self.tb, self.pdk, self.point, self.raw_dir,
+                           seed=seed, run_index=i, timeout_s=5)
+            for i, seed in enumerate((1, 2))
+        ]
+        self.assertEqual([r.status for r in results], ["ok", "failed"])
+        bad = results[1]
+
+        record, text = self._text(results)
+        self.assertEqual(record["samples"], {"vout": [1.5], "iout": [2.0e-6]})
+        self.assertEqual(record["runs_ok"], 1)
+        self.assertEqual(record["runs_attempted"], 2)
+        self.assertIn("Runs: 1 of 2 successful", text)
+        self.assertNotIn("`vout`: inf", text)
+        self.assertIn("seed 2: failed -- non-finite measurements: vout", text)
+        # The finite value from the failed seed stays diagnostic-only.
+        head, _, diag = text.partition("Failed-run diagnostics")
+        self.assertIn("  - `iout`: 4.000000e-06", diag)
+        self.assertNotIn("4.000000e-06", head)
+        # The invalid seed's raw log is preserved and checksummed.
+        log = self.raw_dir / bad.log_name
+        self.assertIn("m_vout = 1e999", log.read_text())
+        self.assertIn(bad.log_name, [name for name, _ in record["raw_files"]])
 
     def test_consumer_regex_still_matches_mean_lines(self):
         import re

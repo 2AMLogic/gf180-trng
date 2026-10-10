@@ -185,6 +185,31 @@ class ParseTests(unittest.TestCase):
             runner.parse_measurements(text), {"vout": 1.2003456789, "iq": -4.5e-05}
         )
 
+    def test_non_finite_values_are_never_parsed_as_measurements(self):
+        # `1e999` matches the numeric syntax but float() overflows it to
+        # +/-inf without raising; literal inf/nan are not numbers either.
+        text = "\n".join(
+            [
+                "m_big = 1e999",
+                "m_small = -1e999",
+                "m_pinf = inf",
+                "m_ninf = -Infinity",
+                "m_nan = nan",
+                "m_ok = 2.5e-3",
+            ]
+        )
+        self.assertEqual(runner.parse_measurements(text), {"ok": 2.5e-3})
+        self.assertEqual(
+            runner.parse_non_finite_measurements(text),
+            {
+                "big": "1e999",
+                "small": "-1e999",
+                "pinf": "inf",
+                "ninf": "-Infinity",
+                "nan": "nan",
+            },
+        )
+
 
 class RunPointContractTests(unittest.TestCase):
     """run_point enforces the 'no seed, no evidence' rule at the API level
@@ -463,6 +488,66 @@ class TimeoutTests(unittest.TestCase):
         result = self._run_fake("print('nothing useful')\n")
         self.assertEqual(result.status, "failed")
         self.assertEqual(result.missing, ["vout"])
+        self.assertNotIn("non-finite", result.message)
+
+    def test_overflowed_sole_measurement_fails_naming_it(self):
+        # Issue #527: zero exit, no fatal diagnostic, the requested name is
+        # present -- but the value overflows float() to +/-inf.
+        for raw in ("1e999", "-1e999"):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "failed")
+                self.assertIn("non-finite measurements: vout", result.message)
+                self.assertIn(raw, result.message)
+                # Absent and invalid stay distinguishable.
+                self.assertNotIn("missing measurements", result.message)
+                self.assertNotIn("no measurements parsed", result.message)
+                self.assertEqual(result.missing, [])
+                self.assertEqual(result.non_finite, ["vout"])
+                # No inf leaks into the retained diagnostic values ...
+                self.assertEqual(result.measurements, {})
+                # ... and the raw log keeps the invalid output for diagnosis.
+                log = (self.workdir / result.log_name).read_text()
+                self.assertIn(f"m_vout = {raw}", log)
+
+    def test_literal_inf_and_nan_cannot_succeed(self):
+        for raw in ("inf", "-inf", "Infinity", "nan", "NaN"):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "failed")
+                self.assertIn("vout", result.message)
+                self.assertEqual(result.measurements, {})
+
+    def test_last_printed_value_decides_finiteness(self):
+        result = self._run_fake("print('m_vout = 1e999')\nprint('m_vout = 1.5')\n")
+        self.assertEqual(result.status, "ok", result.message)
+        self.assertEqual(result.measurements, {"vout": 1.5})
+        result = self._run_fake("print('m_vout = 1.5')\nprint('m_vout = 1e999')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {})
+
+    def test_non_finite_combines_with_other_failure_reasons(self):
+        result = self._run_fake(
+            "import sys\nprint('m_vout = 1e999')\nprint('Error: failed analysis')\n"
+            "sys.exit(2)\n"
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("exit 2", result.message)
+        self.assertIn("Error: failed analysis", result.message)
+        self.assertIn("non-finite measurements: vout", result.message)
+
+    def test_finite_scientific_negative_and_zero_remain_ok(self):
+        for raw, value in (
+            ("1.5e+300", 1.5e300),
+            ("-4.5e-05", -4.5e-05),
+            ("0", 0.0),
+            ("-0.0", 0.0),
+            ("2.2250738585072014e-308", 2.2250738585072014e-308),
+        ):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "ok", result.message)
+                self.assertEqual(result.measurements, {"vout": value})
 
     def tmp_path_for(self, name: str) -> Path:
         return Path(self.tmp.name) / name
