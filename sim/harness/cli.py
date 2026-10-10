@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import shutil
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -260,10 +260,19 @@ def run(args: argparse.Namespace) -> int:
 
     if args.no_write:
         stems: list[str] = ["" for _ in points]
-        workdirs = [WORK_DIR / tb.slug / p.corner_id for p in points]
-        for workdir in workdirs:
-            if workdir.exists():
-                shutil.rmtree(workdir)
+        # Every invocation gets its own scratch directory, created atomically
+        # by mkdtemp, so two overlapping --no-write runs of the same testbench
+        # and point (even from separate processes) never share, delete or
+        # overwrite each other's deck/log. Nothing is ever removed here: a
+        # run's scratch output is retained for diagnostics and is only ever
+        # this invocation's own. See sim/README.md ("Scratch directories").
+        scratch_parent = WORK_DIR / tb.slug
+        scratch_parent.mkdir(parents=True, exist_ok=True)
+        scratch_root = Path(tempfile.mkdtemp(prefix="run-", dir=scratch_parent))
+        workdirs = [scratch_root / p.corner_id for p in points]
+        if not args.quiet:
+            print(f"scratch   : {scratch_root}  (retained; not evidence)")
+            print()
     else:
         # Reserved for the whole grid up front so concurrent points cannot
         # race for the same append-only sequence number, and reserved by
@@ -373,6 +382,7 @@ def run(args: argparse.Namespace) -> int:
     print()
     if args.no_write:
         print("evidence  : not recorded (--no-write)")
+        print(f"scratch   : {scratch_root}  (retained; delete when no longer needed)")
     else:
         print(f"records   : {len(written_paths)} written under {RECORDS_DIR}/")
         for path in written_paths:

@@ -232,6 +232,115 @@ class RunIntegrityTests(unittest.TestCase):
         self.assertIn("raw output changed after it was hashed", err)
 
 
+class NoWriteScratchIsolationTests(RunIntegrityTests):
+    # Inherits only the fixture; the parent's own tests run in their class.
+    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
+    test_a_second_writer_clobbering_raw_output_fails_the_run = None
+    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
+
+    """``--no-write`` invocations never share scratch directories (#499).
+
+    Reuses the RunIntegrityTests fixture (fake PDK, tiny testbench); the
+    simulator is a stub, so no PDK or ngspice is needed. Overlap between two
+    invocations is made deterministic by running the second one from inside
+    the first one's stubbed simulator call.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.work_dir = self.root / "work"
+        patcher = mock.patch.object(cli, "WORK_DIR", self.work_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _run_one_point(self, *extra):
+        argv = [str(self.tb_dir), "--corners", "tt", "--temps", "27",
+                "--supply-tol", "0", "--no-write", *extra]
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = cli.main(argv)
+        return status, out.getvalue(), err.getvalue()
+
+    def test_overlapping_invocations_use_disjoint_scratch_and_keep_each_others_files(self):
+        seen: dict[str, Path] = {}
+        inner: dict[str, tuple] = {}
+
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+            workdir.mkdir(parents=True, exist_ok=True)
+            deck = workdir / f"{point.corner_id}.spice"
+            log = workdir / f"{point.corner_id}.log"
+            if "outer" not in seen:
+                seen["outer"] = workdir
+                deck.write_text("* outer deck\n")
+                log.write_text("m_vout = 1.0\n")
+                (workdir / "sentinel").write_text("outer")
+                # Second invocation starts while the first is mid-run, same
+                # testbench, point and seed.
+                inner["result"] = self._run_one_point()
+                # The first run's files must be untouched by the second.
+                self.assertEqual((workdir / "sentinel").read_text(), "outer")
+                self.assertEqual(deck.read_text(), "* outer deck\n")
+                self.assertEqual(log.read_text(), "m_vout = 1.0\n")
+                value = 1.0
+            else:
+                seen["inner"] = workdir
+                deck.write_text("* inner deck\n")
+                log.write_text("m_vout = 2.0\n")
+                value = 2.0
+            return runner.RunResult(
+                point=point, seed=seed, status="ok", measurements={"vout": value},
+                seconds=0.1, deck_name=deck.name, log_name=log.name,
+            )
+
+        with mock.patch.object(cli.runner, "run_one", side_effect=fake_run_one):
+            status, out, _err = self._run_one_point()
+
+        self.assertEqual(status, cli.EXIT_OK)
+        self.assertEqual(inner["result"][0], cli.EXIT_OK)
+        outer_dir, inner_dir = seen["outer"], seen["inner"]
+        self.assertNotEqual(outer_dir, inner_dir)
+        self.assertNotEqual(outer_dir.parent, inner_dir.parent)
+        # Each result is tied to its own output.
+        self.assertIn("vout=1", out)
+        self.assertIn("vout=2", inner["result"][1])
+        # Scratch is retained and its location is reported.
+        self.assertTrue(any(outer_dir.glob("*.log")))
+        self.assertIn(str(outer_dir.parent), out)
+        self.assertIn(str(inner_dir.parent), inner["result"][1])
+        # No evidence record minted by either run.
+        self.assertFalse(self.records_dir.exists() and any(self.records_dir.iterdir()))
+
+    def test_a_failing_invocation_does_not_disturb_the_other(self):
+        seen: dict[str, Path] = {}
+        inner: dict[str, tuple] = {}
+
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+            workdir.mkdir(parents=True, exist_ok=True)
+            log = workdir / f"{point.corner_id}.log"
+            if "outer" not in seen:
+                seen["outer"] = workdir
+                log.write_text("m_vout = 1.0\n")
+                inner["result"] = self._run_one_point()
+                self.assertEqual(log.read_text(), "m_vout = 1.0\n")
+                return runner.RunResult(
+                    point=point, seed=seed, status="ok", measurements={"vout": 1.0},
+                    seconds=0.1, deck_name="d", log_name=log.name,
+                )
+            log.write_text("fatal\n")
+            return runner.RunResult(
+                point=point, seed=seed, status="failed", measurements={},
+                seconds=0.1, deck_name="d", log_name=log.name, message="boom",
+            )
+
+        with mock.patch.object(cli.runner, "run_one", side_effect=fake_run_one):
+            status, _out, _err = self._run_one_point()
+
+        self.assertEqual(status, cli.EXIT_OK)
+        self.assertEqual(inner["result"][0], cli.EXIT_CHECK_FAILED)
+        # The failing run's diagnostics are retained.
+        self.assertTrue(any(self.work_dir.rglob("*.log")))
+
+
 class TimeoutSummaryTests(unittest.TestCase):
     """A corner ``runner.run_one`` reports as killed by the wall-clock bound
     (issue #83) must stand out in the summary and still leave a written
