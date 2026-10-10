@@ -477,10 +477,23 @@ From `python3 layout/floorplan/floorplan.py` — full breakdown in
 | Entropy ring 1 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
 | Entropy ring 2 | 11 | 225.1 µm² | 375.1 µm² | 546.1 µm² |
 | XOR combiner + 2 buffers + 4 samplers | 7 | 342.4 µm² | 570.8 µm² | 5 434.1 µm² |
-| Conditioner + health tests + interface | 863 | 33 654.6 µm² | 56 091.0 µm² | 303 408.2 µm² |
-| **total** | | **34 447.2 µm²** | **57 412.0 µm²** | **309 934.6 µm²** |
+| Conditioner + health tests + interface | 863 | 33 654.6 µm² | 56 091.0 µm² | 160 744.9 µm² |
+| **total** | | **34 447.2 µm²** | **57 412.0 µm²** | **167 271.3 µm²** |
 
-> **The digital row halved in issue [#254], and the guarded column did not.**
+> **Regenerated for issue [#256] (2026-10-10).** The **guarded** column, the
+> composed `compose.json`/`floorplan.drc.json`/`ring_fit.json`/`interregion.json`
+> reports and `trng_floorplan.gds` were re-run under the klayout-tools `0.6.0`
+> release [DR-0026] makes normative, against the depth-2 place-and-route
+> ([#255]) as repaired by [#315]. The `digital` guarded footprint is now
+> **400.93 × 400.93 µm = 160 744.9 µm²** (was 550.825 µm, 303 408.2 µm²), the
+> guarded total **167 271.3 µm²**, the floorplan total (with channels)
+> **175 789.9 µm²** = **351.6 %** of the `< 0.05 mm²` row (was 642.9 %), and
+> the composed row bbox **934.4 × 416.7 µm**. The estimate columns (863 cells /
+> 33 654.6 µm²) are unchanged. The paragraphs below that describe the
+> depth-8 guarded column are kept as the history of why it was stale.
+>
+> **The digital row halved in issue [#254], and the guarded column did not
+> (until #256, above).**
 > [DR-0020]'s `FIFO_DEPTH = 2` is now the shipped RTL/regmap value, so this
 > estimate's own inventory (`design/digital_power_estimate.py`, which this
 > script reads) prices **863 cells / 33 654.6 µm²** where it used to price
@@ -604,7 +617,7 @@ uniformly bigger.
 > difference. **The row is still missed, now by 1.4× rather than 2.8×.**
 >
 > **What did *not* move: the composed total.** `reports/area.json`'s own
-> `share_of_budget_pct` stays at **642.9 %**, because since [#209]/[#210] the
+> `share_of_budget_pct` stayed at **642.9 %** at #254 time (now **351.6 %**, see the #256 note above), because since [#209]/[#210] the
 > `digital` region's guarded footprint is measured from the composed
 > `layout/digital/trng_top.gds` — the depth-8 place-and-route — and #254 does
 > not re-synthesize it. The 137.7 % above is therefore a re-derivation of
@@ -739,7 +752,7 @@ current state of knowledge.
 > trng_top.gds`'s own real bbox via `klt stats` — and this issue committed a
 > new, smaller `trng_top.gds` without re-running that composition step,
 > which is the sibling issue [#256]'s job (additionally gated on
-> [DR-0026]'s klt-build question). Until [#256] lands, every *composed*
+> [DR-0026]'s klt-build question). Before [#256] landed (it has since: 400.93 µm guarded, 351.6 %, 934.4 × 416.7 µm row), every *composed*
 > figure elsewhere in this document — the 548.815 µm guarded-footprint
 > figure, the 642.9 % `share_of_budget_pct`, the 1070.4 × 550.8 µm composed
 > row bbox — still describes the depth-8 `trng_top.gds` that
@@ -825,8 +838,9 @@ pre-synthesis prediction it was.
   (`combiner_sampler`) — real bbox **+ 2 ×** `RING_PLACEMENT_CLEARANCE_UM` —
   while `guarded_w_um`/`guarded_h_um` are unchanged by that split. `digital`
   is sized the same way as of #209/#210: from `layout/digital/
-  trng_top.gds`'s own real bbox, inner cavity **549.615 × 549.615 µm**,
-  guarded **550.815 × 550.815 µm**.
+  trng_top.gds`'s own real bbox. As regenerated in #256 (depth-2 P&R,
+  klt 0.6.0): inner cavity **399.73 × 399.73 µm**, guarded
+  **400.93 × 400.93 µm** (it was 549.615 / 550.815 µm at depth 8).
 - `layout/floorplan/floorplan.py` also checks that the real assembled
   geometry actually *fits* inside the region it now sizes: it composes each
   such region's guard ring with the real assembled GDS and runs `klt drc`
@@ -848,7 +862,7 @@ pre-synthesis prediction it was.
   standalone DRC for `ring1`/`ring2`/`combiner_sampler` is clean — 0
   violations — not the 49-per-ring pre-existing count issue #110 recorded:
   see [Tool friction](#tool-friction) for why that count is gone.)
-- The composed abstract's row bounding box is **1070.4 × 550.8 µm** (up
+- The composed abstract's row bounding box is **934.4 × 416.7 µm** as of #256 (it was 1070.4 × 550.8 µm at depth 8; up
   from 857.1 × 354.3 µm before #209/#210 placed `digital`'s own real,
   much larger row into the composition — both the width, from the new
   `combiner_sampler` | `digital` channel and `digital`'s own 549 µm-wide
@@ -1552,14 +1566,11 @@ Choices that shape what the pass means:
   spec covers its tap sites. The report carries the spec's
   `ties_disclosure` of kind `unexpressible`.
 
-**Which stream this read.** The committed `trng_floorplan.gds` predates the
-depth-2 digital rebuild: regenerating it from HEAD today (`floorplan.py`
-without `--write`) reports drift in `area`, `compose`, `floorplan.drc`,
-`ring_fit` and `interregion` and in the GDS itself. Refreshing those is
-[#256]'s job and is not done here. The ERC report is pinned by hash to the
-committed stream as it stands, so it is evidence about that stream only;
-when #256 replaces the GDS, the freshness check fails until `--write`
-re-runs `klt erc` on the new one. As an informational one-off (not committed, no hash pin), the same spec
+**Which stream this read.** The committed `trng_floorplan.gds` was, when this
+section was first written, the depth-8 stream. [#256] has since regenerated it
+(depth-2 digital, klt 0.6.0) and `--write` re-ran `klt erc` on the new stream:
+`erc_status` stays `clean`, zero findings, now over 4 035 gates (was 8 123).
+The ERC report is pinned by hash to the committed stream. As an informational one-off (not committed, no hash pin), the same spec
 run on the stream HEAD regenerates also read `erc_status: clean`, zero
 findings, nothing skipped.
 
@@ -1938,3 +1949,4 @@ would not block that separate question.
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
 [#255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [#256]: https://github.com/2AMLogic/gf180-trng/issues/256
+[#315]: https://github.com/2AMLogic/gf180-trng/issues/315
