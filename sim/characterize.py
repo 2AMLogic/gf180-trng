@@ -165,13 +165,25 @@ def build_parser() -> argparse.ArgumentParser:
 def _select(rows: list[str] | None) -> list[Campaign]:
     if not rows:
         return list(CAMPAIGNS)
-    wanted = {r.upper() for r in rows}
-    selected = [c for c in CAMPAIGNS if wanted & set(c.rows)]
-    if not selected:
-        known = sorted({r for c in CAMPAIGNS for r in c.rows})
+    wanted = {r.strip().upper() for r in rows}
+    covered = {r for c in CAMPAIGNS for r in c.rows}
+    # Recognized rows handled by a separate flow, keyed by their leading letter.
+    out_of_scope = {k.split()[0].upper(): v for k, v in ROWS_NOT_COVERED.items()}
+    problems: list[str] = []
+    for row in sorted(wanted - covered):
+        if row in out_of_scope:
+            problems.append(
+                f"  row {row}: not produced by this script (separate flow): "
+                f"{out_of_scope[row]}"
+            )
+        else:
+            problems.append(f"  row {row}: unknown")
+    if problems:
         raise SystemExit(
-            f"error: no campaign feeds row(s) {sorted(wanted)!r}; known rows: {known}"
+            "error: unsupported row selection; refusing to run a partial "
+            f"campaign. Covered rows: {sorted(covered)}\n" + "\n".join(problems)
         )
+    selected = [c for c in CAMPAIGNS if wanted & set(c.rows)]
     return selected
 
 
