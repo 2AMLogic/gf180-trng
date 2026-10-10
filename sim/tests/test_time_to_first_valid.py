@@ -51,6 +51,14 @@ class MalformedNumberCliTests(unittest.TestCase):
         self.assertIn("2026-01-01-ro-array-core-startup-01", err)
         self.assertIn("period_1", err)
 
+    def test_exponent_continuation_fails_with_context(self) -> None:
+        for token in ("1e2.3", "1e2e3"):
+            with self.subTest(token=token):
+                code, err = self._run(f"- `period_1`: {token}\n")
+                self.assertNotEqual(code, 0)
+                self.assertIn("2026-01-01-ro-array-core-startup-01", err)
+                self.assertIn("period_1", err)
+
     def test_overflow_fails_with_context(self) -> None:
         code, err = self._run("- `period_1`: 1e999\n")
         self.assertNotEqual(code, 0)

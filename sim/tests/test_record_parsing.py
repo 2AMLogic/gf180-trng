@@ -152,6 +152,30 @@ class ParseValuesTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     parse_values(f"- `t`: {token}\n")
 
+    def test_exponent_continuation_is_rejected(self) -> None:
+        for token in ("1e2.3", "1e2e3", "1e2.", "1.5e3.5"):
+            with self.subTest(token=token):
+                with self.assertRaises(ValueError):
+                    parse_values(f"- `t`: {token}\n")
+
+    def test_exponent_continuation_error_names_label_and_key(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            parse_values("- `bad_key`: 1e2e3\n", label="rec-stem", error_cls=RuntimeError)
+        self.assertIn("rec-stem", str(ctx.exception))
+        self.assertIn("bad_key", str(ctx.exception))
+        self.assertIn("1e2e3", str(ctx.exception))
+
+    def test_bare_decimal_forms_are_accepted(self) -> None:
+        cases = {".5": 0.5, "-.5": -0.5, "1.": 1.0, "+.5e1": 5.0}
+        for token, expected in cases.items():
+            with self.subTest(token=token):
+                self.assertEqual(parse_values(f"- `t`: {token}\n"), {"t": expected})
+                self.assertEqual(parse_values(f"- `t`: {token}ns\n"), {"t": expected})
+
+    def test_lone_dot_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_values("- `t`: .\n")
+
     def test_overflow_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             parse_values("- `t`: 1e999\n")

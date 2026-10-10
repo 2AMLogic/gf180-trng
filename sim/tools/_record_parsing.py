@@ -43,16 +43,18 @@ NUMBER_PATTERN = r"-?[\d.]+(?:e[-+]?\d+)?"
 #: the "mean" of a multi-seed bullet so its point estimate is still
 #: captured; the seed count / standard deviation of that form are read by
 #: :data:`SEED_SUMMARY_RE` / :func:`iter_seed_summaries`.
+#:
+#: Group 2 is the numeric *candidate*: a signed run of digits and dots,
+#: followed by any number of ``e``/``E`` groups, each with an optional sign
+#: and a run of digits and dots. It is deliberately looser than a valid
+#: number so a malformed token (``1e+``, ``1.2.3``, ``1e2.3``, ``1e2e3``) is
+#: captured whole and rejected by :func:`parse_values` rather than silently
+#: matching its valid prefix. The token ends at the first character that
+#: cannot continue a number; anything after it (a unit suffix such as ``ns``)
+#: is ignored and never scaled.
 VALUE_RE = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?([-+]?[\d.]+(?:[eE][-+]?\d*)?)", re.M
+    r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*)", re.M
 )
-#: Group 2 of :data:`VALUE_RE` is the numeric *candidate*: a signed run of
-#: digits and dots, optionally followed by ``e``/``E`` and whatever sign and
-#: digits follow it. It is deliberately looser than a valid number so a
-#: malformed token (``1e+``, ``1.2.3``) is captured whole and rejected by
-#: :func:`parse_values` rather than silently matching its valid prefix.
-#: Anything after the token (a unit suffix such as ``ns``) is ignored and
-#: never scaled.
 
 #: A multi-seed bullet "- `key`: mean X over N seeds (sd Y": groups are
 #: key, mean, seed count, standard deviation.
@@ -62,9 +64,10 @@ SEED_SUMMARY_RE = re.compile(
     re.M,
 )
 
-#: A complete numeric token: digits, optional fraction, optional ``e``/``E``
-#: exponent with at least one digit.
-_NUMBER_TOKEN_RE = re.compile(r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
+#: A complete numeric token: digits with an optional fraction (``1``, ``1.``,
+#: ``1.5``, ``.5``), then an optional ``e``/``E`` exponent with at least one
+#: digit.
+_NUMBER_TOKEN_RE = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
 
 _FRONTMATTER_RE = re.compile(r"---[ \t]*\n(.*?)^---[ \t]*$", re.S | re.M)
 _NUMBER = r"[-+]?\d+(?:\.\d+)?"
