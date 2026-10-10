@@ -375,6 +375,17 @@ pin) also errored and was discarded; it is not the producer of record. The
 grid was not run locally. The item remains unrun and the issue open. See
 klayout-tools#2989 and #2990.
 
+**Attempt log (2026-10-10, third session).** Same pin and host rules (batch
+only; no local fallback). The offline checks passed. Two
+`publish_combiner_sampler_pex.py --backend batch` submissions, about 100 s
+apart, both failed on the schematic side with
+`batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of
+the 30 pools after 3 attempt(s) — this is the capacity-refusal case, and it
+is now visible instead of silent`. `klt pex` reported `nothing published`; the
+partial extraction netlist it left behind was removed, so no evidence is
+committed and no row counts as a pass. The grid remains unrun and #418 open.
+See klayout-tools#2989 and #2990.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
