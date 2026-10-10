@@ -386,6 +386,16 @@ partial extraction netlist it left behind was removed, so no evidence is
 committed and no row counts as a pass. The grid remains unrun and #418 open.
 See klayout-tools#2989 and #2990.
 
+**Attempt log (2026-10-10, fourth session).** Same pin and host rules (batch
+only; no local fallback). The offline checks, the 34-test regression and
+`build_dut.py --check` passed. One `publish_combiner_sampler_pex.py --backend
+batch` submission returned `klt pex` exit 4; a diagnostic `--format text`
+re-run reported `corners: 27  rows: 1782  passed: 0  failed: 0  errored: 1782`
+with every schematic and extracted value `None`. The publisher refused to
+publish, the partial extraction netlist it left behind was removed, and no row
+counts as a pass. The grid remains unrun and #418 open. See klayout-tools#2989
+and #2990.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
