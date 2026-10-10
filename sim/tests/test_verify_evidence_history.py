@@ -36,6 +36,9 @@ class Repo:
         self.git("config", "user.email", "t@example.invalid")
         self.git("config", "user.name", "t")
         self.git("config", "commit.gpgsign", "false")
+        # No detached gc/maintenance may outlive a test and race tempdir cleanup.
+        self.git("config", "gc.auto", "0")
+        self.git("config", "maintenance.auto", "false")
 
     def git(self, *args: str) -> str:
         return subprocess.run(
