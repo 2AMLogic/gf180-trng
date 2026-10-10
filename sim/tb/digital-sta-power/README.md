@@ -153,13 +153,33 @@ aggregates them into the Fmax / area / power answer, and
 `python3 sim/tools/digital_corner_characterization.py`, which re-derives
 every figure in that document from the records themselves.
 
+## Observed switching activity (opt-in, #453)
+
+The default flow above prices power at a declared uniform activity. DR-0023
+named a per-net activity annotation from post-route gate simulation as its
+follow-up; it is available behind a flag and changes nothing by default:
+
+```sh
+python3 sim/tb/digital-sta-power/activity.py capture      # seeded traces -> layout/.work/digital-sta-activity/
+python3 sim/tb/digital-sta-power/run_sta.py --activity --no-write
+python3 sim/tb/digital-sta-power/run_sta.py --activity    # 15 `digital-sta-activity` records
+python3 sim/tb/digital-sta-power/activity_power.py negative-controls
+python3 sim/tools/activity_power_characterization.py --check
+```
+
+Needs `iverilog` 13.0+ as well. The workloads and capture windows are
+`sim/tb/trng-top-post-route/activity_workloads.py`; the records use their own
+slug, so the fifteen `digital-sta-power` records and the rollup baseline are
+not touched. Read the results through
+`sim/characterization-digital-activity-power.md`.
+
 ## What this is not
 
 - Not signoff. Real extraction, but not a foundry-signed one; and the DEF it
   reads has no power delivery at all (#171, klayout-tools#1091), so nothing
   here sees IR drop.
 - Not a supply-current measurement. Power carries a declared uniform
-  switching activity (0.25 transitions/net/cycle, duty 0.5), chosen to match
+  switching activity (or, with `--activity`, a recorded synthetic-workload one) (0.25 transitions/net/cycle, duty 0.5), chosen to match
   the estimate it is compared against. Leakage is the one column with no
   activity assumption in it.
 - Not a re-run of the flow. The placement and routing are #111's, unchanged;
