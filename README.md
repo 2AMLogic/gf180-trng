@@ -126,8 +126,10 @@ DRBG supplies its own and treats this block as the seed source.
 > on 2026-07-31 by engineering (Robb) — see
 > [`spec/ratification-2026-07-31-target-spec.md`](spec/ratification-2026-07-31-target-spec.md)
 > and issue #1 — together with the amendment package in #29. Every decision
-> record the rows above cite is `Accepted` except [DR-0015] and [DR-0017],
-> both `Proposed`; a row that cannot be met is a **superseding decision record**,
+> record the rows above cite is `Accepted` except [DR-0017], which is
+> `Proposed` (its idle-current options are unchosen; see the Power note below);
+> [DR-0015] was `Accepted` 2026-10-10 via the two-key ratification mechanism,
+> #480; a row that cannot be met is a **superseding decision record**,
 > not an edit. What ratification does *not* do is turn placeholders into
 > claims:
 >
@@ -279,11 +281,14 @@ DRBG supplies its own and treats this block as the seed source.
 > 1281 fixed sample periods. Its stated binding corner is formally correct and
 > practically vacuous — the spread across the whole covered grid is 9 ns on
 > 1.281 ms. What does move that row is the **rate**, and the rate row is
-> unsettled: at [DR-0010]'s proposed 500 bps the same 1281 samples take
-> **2.562 s**, and at the 2 kbps [DR-0011-rate] re-derived from the shipped
-> starved cell (also `Proposed`, superseding DR-0010 §1's value only) they take
-> **641 ms**. Both sit far below the ratified `> 1 Mbps` row — 2000× and 500×
-> below it respectively — and that gap, not the arithmetic above it, is the
+> unsettled: at [DR-0010]'s 500 bps (`Accepted` 2026-10-10, #480, via the
+> two-key ratification mechanism) the same 1281 samples take **2.562 s**, and at
+> the 2 kbps [DR-0011-rate] re-derived from the shipped starved cell (also
+> `Accepted` 2026-10-10, superseding DR-0010 §1's value only) they take
+> **641 ms**. Ratifying the two records did not move the `Raw rate` row: the
+> row edit their Decisions direct is a separate follow-up. Both sit far below
+> the `> 1 Mbps` row as it still stands — 2000× and 500× below it respectively
+> — and that gap, not the arithmetic above it, is the
 > open question.
 
 [DR-0001]: spec/decision-records/DR-0001-raw-and-conditioned-output-paths.md

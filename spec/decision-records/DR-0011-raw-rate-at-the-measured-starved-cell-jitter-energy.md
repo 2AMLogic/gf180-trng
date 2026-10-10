@@ -1,9 +1,9 @@
 ---
 dr: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy
 title: Re-derive the raw-rate row from the jitter-energy constant measured on the shipped starved cell, raising it from 500 bps to 2 kbps
-status: Proposed
+status: Accepted
 date: 2026-08-01
-deciders: Proposed by #46 (validating DR-0010's `(★)` on the shipped cell). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004, DR-0007 and DR-0010 were.
+deciders: Proposed by #46 (validating DR-0010's `(★)` on the shipped cell). Accepted 2026-10-10 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work), tracked as #480 -- see Status.
 supersedes: "DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit — its §1 rate VALUE only, and only on acceptance. Everything else in DR-0010 stands unchanged: `(★)` as the sizing law, N = 2, eleven stages, the array of §3, the Power row, and DR-0003's definition of where the rate is measured and what corner it binds at."
 superseded_by: n/a
 related: "#46 (the measurement — this record's whole basis), #51 (why the four-ring array deck disagrees — the follow-up this record hands off), #7 (array sizing), #12 (min-entropy on bitstreams, still owns H), #13 (minimum-Q corner over the full grid), #16 (two-ring isolation); DR-0003 (raw rate), DR-0004 (quality tiers), DR-0006 (PVT/seed coverage), DR-0007 §2 (sizing law), DR-0010 (the record this supersedes, §1 only); sim/characterization-starved-cell-jitter-energy.md; sim/records/2026-08-01-ro-ring5-starved-jitter-long-{01,02,03}.md"
@@ -14,6 +14,19 @@ related: "#46 (the measurement — this record's whole basis), #51 (why the four
 ## Status
 
 - 2026-08-01: Proposed, by #46. Not ratified.
+- 2026-10-10: **Accepted** via the two-key ratification mechanism (`2AMLogic/2am#372`: EE key + market key both review this repo's ratification pull request, tracked as #480) per the operator's 2026-08-27 comment on #150, which superseded the earlier "acceptance is an operator decision" language and ruled that cutting this ratification PR is ordinary agent work. Ratified together with
+  [`DR-0010`](DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md),
+  whose §1 rate value it supersedes (that record is `Accepted` and superseded
+  in part).
+- 2026-10-10: **The §4 acceptance checklist is NOT executed by the
+  ratification pull request.** Items 1 (`array_sizing.py` constant), 4
+  (`README.md` `Raw rate` row and `design/README.md` figures) and 5 (K and
+  time-to-first-valid re-derivation) change a ratified target value or
+  recorded derived figures, and the ratification pull request edits only
+  decision-record status and provenance commentary (the #213 precedent). They
+  are tracked as a separate follow-up; until they land the stated constant
+  stays at 1.79 and `README.md`'s `Raw rate` row still reads as ratified on
+  2026-07-31.
 
 ## Context
 
