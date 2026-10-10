@@ -104,15 +104,25 @@ CAMPAIGNS: tuple[Campaign, ...] = (
         rows=("C",),
         extra_args=("--corners", "tt", "--temps", "27", "--supply", "3.30", "--supply-tol", "0"),
         note="Row C raw-bitstream functional demonstration at tt/27C/3.30V -- "
-        "one of the two corners a real bitstream exists for (see the "
-        "proposal's Row C caveats: this is not an entropy measurement).",
+        "one of the three corners a real bitstream exists for (see the "
+        "proposal's Row C caveats: this is not an entropy measurement). "
+        "Default seeds (1001..1003), the convention every prior record uses.",
     ),
     Campaign(
         "sampler-array-digitize",
         rows=("C",),
         extra_args=("--corners", "ss", "--temps", "-40", "--supply", "3.63", "--supply-tol", "0"),
         note="Row C raw-bitstream functional demonstration at ss/-40C/3.63V -- "
-        "the other of the two corners a real bitstream exists for.",
+        "the second of the three corners a real bitstream exists for.",
+    ),
+    Campaign(
+        "sampler-array-digitize",
+        rows=("C",),
+        extra_args=("--corners", "ss", "--temps", "125", "--supply", "3.63", "--supply-tol", "0"),
+        note="Row C raw-bitstream functional demonstration at ss/+125C/3.63V -- "
+        "the measured entropy-binding corner (#13, re-run in #406). Ten "
+        "of ten bits were 1 at every seed there: a stuck-high observation, "
+        "not an entropy measurement.",
     ),
 )
 
