@@ -11,7 +11,11 @@ records in a temporary directory and patch the module's ``RECORDS``,
 
 1. the arithmetic against hand-computed values;
 2. ``main(["--check"])`` returns non-zero for a too-tight and a too-loose seed
-   spread, and zero for a spread that matches the reference.
+   spread, and zero for a spread that matches the reference;
+3. ``load_variants_by_glob`` (the loader the ring-coupling and
+   liveness-tap-phase variant scripts share) skips ``status: superseded``
+   records before picking the latest one (issue #427), and its three callers
+   still pass their own ``VARIANTS``, ``CORNER`` and ``Variant`` factory.
 
 Stdlib only: no ngspice, no PDK.
 """
@@ -211,6 +215,92 @@ class CheckGateTests(StarvedCellTestCase):
                    _corner() + "- `sigma_1`: 1e-12\n- `sigma_2`: 1.4e-12\n"
                    "- `period`: 2.8e-09\n- `p_active_w`: 1e-04\n")
         self.assertEqual(self.run_main("--check")[0], 1)
+
+
+class VariantsByGlobLifecycleTests(StarvedCellTestCase):
+    GLOB = "*-ro-array-coupling-xor-driven-[0-9]*.md"
+    SPEC = [("3 xor-driven", GLOB, "rest-a", "rest-b")]
+
+    def write_variant(self, stem: str, status: str | None, sigma_1: float) -> None:
+        text = jitter_text(spread_1=REF_SPREAD, sigma_1=sigma_1)
+        text = text.replace("status: valid\n",
+                            "" if status is None else f"status: {status}\n", 1)
+        self.write(f"{stem}.md", text)
+
+    def load(self, **kwargs):
+        return sc.load_variants_by_glob(
+            self.SPEC, "tt/27/3.30", lambda label, rec, *rest: (label, rec, rest), **kwargs
+        )
+
+    def test_lexically_newer_superseded_record_is_not_selected(self) -> None:
+        self.write_variant("2026-01-01-ro-array-coupling-xor-driven-01", "valid", 1e-12)
+        self.write_variant("2026-01-02-ro-array-coupling-xor-driven-01", "superseded", 9e-12)
+        [(label, rec, rest)] = self.load()
+        self.assertEqual(label, "3 xor-driven")
+        self.assertEqual(rec.stem, "2026-01-01-ro-array-coupling-xor-driven-01")
+        self.assertEqual(rest, ("rest-a", "rest-b"))
+
+    def test_historical_read_selects_the_superseded_record(self) -> None:
+        self.write_variant("2026-01-01-ro-array-coupling-xor-driven-01", "valid", 1e-12)
+        self.write_variant("2026-01-02-ro-array-coupling-xor-driven-01", "superseded", 9e-12)
+        [(_label, rec, _rest)] = self.load(include_superseded=True)
+        self.assertEqual(rec.stem, "2026-01-02-ro-array-coupling-xor-driven-01")
+
+    def test_superseded_only_variant_is_missing_evidence(self) -> None:
+        self.write_variant("2026-01-01-ro-array-coupling-xor-driven-01", "superseded", 1e-12)
+        with self.assertRaisesRegex(sc.RecordError, "3 xor-driven.*no valid"):
+            self.load()
+
+    def test_body_status_line_does_not_override_frontmatter(self) -> None:
+        self.write("2026-01-01-ro-array-coupling-xor-driven-01.md",
+                   jitter_text(spread_1=REF_SPREAD) + "\nstatus: superseded\n")
+        [(_label, rec, _rest)] = self.load()
+        self.assertEqual(rec.stem, "2026-01-01-ro-array-coupling-xor-driven-01")
+
+    def test_missing_unknown_and_duplicate_status_name_the_record(self) -> None:
+        stem = "2026-01-01-ro-array-coupling-xor-driven-01"
+        for status in (None, "draft", "valid\nstatus: valid"):
+            with self.subTest(status=status):
+                self.write_variant(stem, status, 1e-12)
+                with self.assertRaisesRegex(sc.RecordError, stem):
+                    self.load()
+
+
+class SharedLoaderCallerTests(StarvedCellTestCase):
+    """The three scripts built on ``load_variants_by_glob`` keep their own
+    arguments and get the lifecycle filter by default."""
+
+    CALLERS = ("array_coupling_variants", "array_coupling_buffer_variant",
+               "liveness_tap_phase_variants")
+
+    def test_callers_pass_their_own_variants_corner_and_factory(self) -> None:
+        import importlib
+
+        for name in self.CALLERS:
+            with self.subTest(caller=name):
+                mod = importlib.import_module(name)
+                calls = []
+                with mock.patch.object(
+                    mod, "load_variants_by_glob",
+                    lambda *a, **k: calls.append((a, k)) or ["sentinel"],
+                ):
+                    self.assertEqual(mod.load_variants(), ["sentinel"])
+                self.assertEqual(calls, [((mod.VARIANTS, mod.CORNER, mod.Variant), {})])
+
+    def test_buffer_variant_skips_a_newer_superseded_record(self) -> None:
+        import array_coupling_buffer_variant as bv
+
+        for i, (_label, glob) in enumerate(bv.VARIANTS):
+            slug = glob.removeprefix("*-").split("-[0-9]")[0].removesuffix("-*.md")
+            self.write(f"2026-01-01-{slug}-0{i}.md", jitter_text(spread_1=REF_SPREAD))
+        self.write("2026-01-09-ro-array-coupling-xor-driven-buffered-01.md",
+                   jitter_text(spread_1=REF_SPREAD, sigma_1=5e-12).replace(
+                       "status: valid", "status: superseded", 1))
+        by_label = {v.label: v for v in bv.load_variants()}
+        self.assertEqual(list(by_label), [label for label, _glob in bv.VARIANTS])
+        buffered = by_label["6 xor-driven-buffered"]
+        self.assertTrue(buffered.rec.stem.startswith("2026-01-01-"))
+        self.assertAlmostEqual(buffered.sigma[1], 1.0e-12)
 
 
 if __name__ == "__main__":
