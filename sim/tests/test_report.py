@@ -269,6 +269,122 @@ class BuildRecordTests(unittest.TestCase):
             report.write_record(self.record, self.tb, records_dir, ["a caveat"])
 
 
+class FailedRunSeparationTests(unittest.TestCase):
+    """Failed runs keep their parsed measurements (runner.run_one) but must
+    not feed the primary numeric summaries (#506)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tb_dir = self.root / "tb" / "an-experiment"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(json.dumps(
+            {"name": "an-experiment", "netlist": "x.spice",
+             "measure": {"vout": "v(out)", "iout": "i(v1)"}}))
+        self.tb = testbench.load(tb_dir)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.raw_dir = self.root / "raw"
+        self.raw_dir.mkdir()
+
+    def _result(self, seed, status, meas, message="", missing=()):
+        return runner.RunResult(
+            point=self.point, seed=seed, status=status, measurements=dict(meas),
+            missing=list(missing), message=message,
+            deck_name=f"s{seed}.spice", log_name=f"s{seed}.log")
+
+    def _text(self, results):
+        record = report.build_record(
+            tb=self.tb, pdk=self.pdk, point=self.point, results=results,
+            ngspice="ngspice-46", repo_root=self.root, stem="2026-07-31-an-experiment-01",
+            completed_utc=_dt.datetime(2026, 7, 31, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.0, raw_dir=self.raw_dir,
+            git={"commit": "f" * 40, "dirty": False})
+        return record, report.render_result_section(record)
+
+    def test_mixed_fixture_summarizes_only_successful_run(self):
+        both = {"vout": 1.0, "iout": 2.0}
+        results = [
+            self._result(1, "ok", both),
+            self._result(2, "failed", {"vout": 9.0, "iout": 8.0},
+                         "ngspice exit 1; Error: singular matrix"),
+        ]
+        record, text = self._text(results)
+        self.assertEqual(record["samples"]["vout"], [1.0])
+        self.assertIn("- `vout`: 1\n", text)
+        self.assertNotIn("mean", text)
+        self.assertIn("Runs: 1 of 2 successful", text)
+        self.assertIn("Failed-run diagnostics", text)
+        self.assertIn("  - `vout`: 9", text)
+        self.assertIn("singular matrix", text)
+        # 9.0 appears only in the diagnostics block, after its heading.
+        head, _, diag = text.partition("Failed-run diagnostics")
+        self.assertNotIn("9", head)
+
+    def test_all_failed_has_no_numeric_summary_but_keeps_diagnostics(self):
+        results = [
+            self._result(1, "failed", {"vout": 9.0, "iout": 8.0},
+                         "fatal diagnostic: analysis aborted"),
+            self._result(2, "failed", {"vout": 7.0}, "missing measurements: iout",
+                         missing=["iout"]),
+        ]
+        record, text = self._text(results)
+        self.assertEqual(record["samples"], {"vout": [], "iout": []})
+        self.assertIn("- `vout`: no successful-run data (0 of 2 runs succeeded)", text)
+        self.assertNotIn("all runs failed to converge", text)
+        self.assertNotIn("mean", text)
+        self.assertIn("analysis error", text)
+        self.assertIn("missing measurements", text)
+        self.assertIn("fatal diagnostic: analysis aborted", text)
+        self.assertIn("  - `vout`: 7", text)
+
+    def test_all_success_keeps_existing_numeric_format(self):
+        results = [self._result(i, "ok", {"vout": v, "iout": 1.0})
+                   for i, v in ((1, 1.0), (2, 3.0))]
+        record, text = self._text(results)
+        self.assertIn("- `vout`: mean 2 over 2 seeds (sd 1.41421, 70.7% of mean; min 1, max 3)", text)
+        self.assertIn("Runs: 2 of 2 successful", text)
+        self.assertNotIn("Failed-run diagnostics", text)
+        self.assertNotIn("Run failures", text)
+
+    def test_timeout_without_measurements_has_no_diagnostics_block(self):
+        results = [self._result(1, "ok", {"vout": 1.0, "iout": 1.0}),
+                   self._result(2, "timeout", {}, "ngspice timed out")]
+        _, text = self._text(results)
+        self.assertIn("Runs: 1 of 2 successful", text)
+        self.assertIn("seed 2: timeout", text)
+        self.assertNotIn("Failed-run diagnostics", text)
+
+    def test_missing_measurement_on_failed_seed_keeps_counts_consistent(self):
+        results = [self._result(1, "ok", {"vout": 1.0, "iout": 2.0}),
+                   self._result(2, "ok", {"vout": 3.0, "iout": 2.0}),
+                   self._result(3, "failed", {"vout": 50.0}, "missing measurements: iout",
+                                missing=["iout"])]
+        record, text = self._text(results)
+        self.assertEqual(len(record["samples"]["vout"]), len(record["samples"]["iout"]))
+        self.assertIn("mean 2 over 2 seeds", text)
+        self.assertIn("Runs: 2 of 3 successful", text)
+
+    def test_run_one_retained_fatal_diagnostic_with_all_measurements(self):
+        # run_one marks a run failed on a fatal diagnostic even when every
+        # requested measurement was parsed; those values must stay diagnostic.
+        results = [self._result(1, "failed", {"vout": 9.0, "iout": 8.0},
+                                "Error: timestep too small")]
+        record, text = self._text(results)
+        self.assertEqual(record["runs_ok"], 0)
+        self.assertEqual(record["runs_attempted"], 1)
+        self.assertIn("no successful-run data", text)
+        self.assertIn("  - `iout`: 8", text)
+
+    def test_consumer_regex_still_matches_mean_lines(self):
+        import re
+        results = [self._result(i, "ok", {"vout": float(i), "iout": 1.0}) for i in (1, 2)]
+        _, text = self._text(results)
+        self.assertTrue(any(re.match(r"^- `(\w+)`: mean (\S+) over", l) for l in text.splitlines()))
+
+
 class ChangedRecordDiscoveryTests(unittest.TestCase):
     """`verify_record_checksums.py --changed` must find the records it lists.
 

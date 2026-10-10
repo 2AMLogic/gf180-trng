@@ -277,7 +277,13 @@ def build_record(
 
     measure_names = list(tb.measure)
     samples: dict[str, list[float]] = {name: [] for name in measure_names}
+    # Only status-ok runs feed the primary summaries. A failed run keeps its
+    # parsed measurements (runner.run_one retains them for diagnosis), but
+    # they are surfaced separately as failed-run diagnostics, never averaged
+    # in with successful values.
     for r in results:
+        if r.status != "ok":
+            continue
         for name in measure_names:
             if name in r.measurements:
                 samples[name].append(r.measurements[name])
@@ -331,6 +337,8 @@ def build_record(
         "wall_time": _fmt_wall(wall_seconds),
         "measure_names": measure_names,
         "samples": samples,
+        "runs_attempted": len(results),
+        "runs_ok": sum(1 for r in results if r.status == "ok"),
         "results": results,
         "tb_slug": tb.slug,
         "netlist_rel": _relpath(repo_root, tb.dut_netlist),
@@ -406,11 +414,24 @@ def render_frontmatter(record: dict) -> str:
 
 
 def render_result_section(record: dict) -> str:
+    """Render the "Result" prose.
+
+    Primary measurement lines summarize status-ok runs only. Measurements a
+    failed run happened to retain are listed afterward under an explicit
+    "Failed-run diagnostics" heading with the failure reason, and are never
+    folded into the means above.
+    """
+    results = record["results"]
+    attempted = record.get("runs_attempted", len(results))
+    ok = record.get("runs_ok", sum(1 for r in results if r.status == "ok"))
     lines = ["## Result", ""]
     for name in record["measure_names"]:
         values = record["samples"][name]
         if not values:
-            lines.append(f"- `{name}`: no data (all runs failed to converge)")
+            lines.append(
+                f"- `{name}`: no successful-run data "
+                f"({ok} of {attempted} runs succeeded)"
+            )
             continue
         if len(values) == 1:
             lines.append(f"- `{name}`: {_fmt(values[0])}")
@@ -427,12 +448,32 @@ def render_result_section(record: dict) -> str:
                 f"- `{name}`: mean {_fmt(mean)} over {len(values)} seeds "
                 f"(sd {_fmt(sd)}{rel}; min {_fmt(min(values))}, max {_fmt(max(values))})"
             )
-    failed = [r for r in record["results"] if r.status != "ok"]
+    lines.append("")
+    lines.append(
+        f"Runs: {ok} of {attempted} successful. Summaries above use "
+        "successful runs only."
+    )
+    failed = [r for r in results if r.status != "ok"]
     if failed:
         lines.append("")
-        lines.append("Run failures:")
+        lines.append(
+            "Run failures (nonzero exit, simulator error or analysis error, "
+            "missing measurements, or timeout):"
+        )
         for r in failed:
             lines.append(f"- seed {r.seed}: {r.status} -- {r.message}")
+        retained = [r for r in failed if r.measurements]
+        if retained:
+            lines.append("")
+            lines.append(
+                "Failed-run diagnostics (values parsed from runs that did not "
+                "succeed; NOT included in the summaries above, not evidence "
+                "about the device):"
+            )
+            for r in retained:
+                lines.append(f"- seed {r.seed} ({r.status}: {r.message}):")
+                for name, value in r.measurements.items():
+                    lines.append(f"  - `{name}`: {_fmt(value)}")
     lines.append("")
     lines.append("Numbers only. No entropy-rate or spec-compliance claim is made by this record.")
     lines.append("")
