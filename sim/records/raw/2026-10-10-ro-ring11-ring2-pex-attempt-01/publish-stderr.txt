@@ -1,0 +1,3 @@
+publish_item7_analog: /home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-476/.venv-klt/bin/klt pex layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds sim/tb/ro-ring11-ring2-pex/request.json --deck gf180mcu --pdk gf180mcuD --top ro_ring11_ring2 -o signoff/evidence/post-layout/ring2/ro_ring11_ring2.extracted.spice --outdir sim/.work/ro-ring11-ring2-pex --format json --backend batch
+publish_item7_analog: klt pex failed (exit 4); nothing published
+rc=1

@@ -1,0 +1,20 @@
+{
+  "job_id": "klt-sim-a44d58085f30",
+  "state": "failed",
+  "detail": "job command exited 4",
+  "instance_id": "i-05afffca0aa426a6c",
+  "instance_type": "m6i.4xlarge",
+  "availability_zone": "us-east-1d",
+  "region": "us-east-1",
+  "ami_id": "ami-0e40e3245f1923ac8",
+  "lifecycle": "spot",
+  "spot": true,
+  "concurrency": "1",
+  "physical_cores": "8",
+  "vcpus": "16",
+  "tool": "ngspice",
+  "exit_code": "4",
+  "started_at": "2026-10-10T13:45:35Z",
+  "updated_at": "2026-10-10T13:45:40Z",
+  "elapsed_seconds": 5
+}
