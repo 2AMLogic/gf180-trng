@@ -1,0 +1,313 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vsup                                       3.3
+en                                         3.3
+clk                                          0
+rst_n                                        0
+vddr1                                      3.3
+vddr2                                      3.3
+vdd                                        3.3
+vsbp                                       3.3
+vsvp                                       3.3
+vs1p                                       3.3
+vs2p                                       3.3
+xdut.xr1.xg.py                         1.58325
+xdut.xr1.n1                                  0
+xdut.rn1                           1.24708e-07
+xdut.xr1.xg.nm                               0
+xdut.xr1.xg.ny                               0
+xdut.xr1.x1.py                             3.3
+xdut.xr1.n2                                3.3
+xdut.xr1.x1.ny                     2.35462e-08
+xdut.xr1.x2.py                             3.3
+xdut.xr1.n3                        1.24708e-07
+xdut.xr1.x2.ny                     1.06256e-07
+xdut.xr1.x3.py                             3.3
+xdut.xr1.n4                                3.3
+xdut.xr1.x3.ny                     2.35463e-08
+xdut.xr1.x4.py                             3.3
+xdut.xr1.n5                        1.24708e-07
+xdut.xr1.x4.ny                     1.06256e-07
+xdut.xr1.x5.py                             3.3
+xdut.xr1.n6                                3.3
+xdut.xr1.x5.ny                     2.35463e-08
+xdut.xr1.x6.py                             3.3
+xdut.xr1.n7                        1.24708e-07
+xdut.xr1.x6.ny                     1.06256e-07
+xdut.xr1.x7.py                             3.3
+xdut.xr1.n8                                3.3
+xdut.xr1.x7.ny                     2.35463e-08
+xdut.xr1.x8.py                             3.3
+xdut.xr1.n9                        1.24708e-07
+xdut.xr1.x8.ny                     1.06256e-07
+xdut.xr1.x9.py                             3.3
+xdut.xr1.n10                               3.3
+xdut.xr1.x9.ny                     2.35463e-08
+xdut.xr1.x10.py                            3.3
+xdut.xr1.x10.ny                    1.06256e-07
+xdut.xr2.xg.py                         1.59988
+xdut.xr2.n1                                  0
+xdut.rn2                           1.17147e-07
+xdut.xr2.xg.nm                    -4.44089e-16
+xdut.xr2.xg.ny                    -4.44089e-16
+xdut.xr2.x1.py                             3.3
+xdut.xr2.n2                                3.3
+xdut.xr2.x1.ny                     2.18706e-08
+xdut.xr2.x2.py                             3.3
+xdut.xr2.n3                        1.17147e-07
+xdut.xr2.x2.ny                      9.8695e-08
+xdut.xr2.x3.py                             3.3
+xdut.xr2.n4                                3.3
+xdut.xr2.x3.ny                     2.18707e-08
+xdut.xr2.x4.py                             3.3
+xdut.xr2.n5                        1.17147e-07
+xdut.xr2.x4.ny                      9.8695e-08
+xdut.xr2.x5.py                             3.3
+xdut.xr2.n6                                3.3
+xdut.xr2.x5.ny                     2.18707e-08
+xdut.xr2.x6.py                             3.3
+xdut.xr2.n7                        1.17147e-07
+xdut.xr2.x6.ny                      9.8695e-08
+xdut.xr2.x7.py                             3.3
+xdut.xr2.n8                                3.3
+xdut.xr2.x7.ny                     2.18707e-08
+xdut.xr2.x8.py                             3.3
+xdut.xr2.n9                        1.17147e-07
+xdut.xr2.x8.ny                      9.8695e-08
+xdut.xr2.x9.py                             3.3
+xdut.xr2.n10                               3.3
+xdut.xr2.x9.ny                     2.18707e-08
+xdut.xr2.x10.py                            3.3
+xdut.xr2.x10.ny                     9.8695e-08
+ro1                                        3.3
+ro2                                        3.3
+xdut.xa1.an                        1.84515e-08
+xdut.xa1.bn                        1.84515e-08
+xdut.xa1.mid                          0.783853
+xo                                 1.79152e-07
+xdut.xa1.s1                        8.95762e-08
+xdut.xa1.s2                        3.77438e-08
+xsb.clkb                                   3.3
+xsb.m                              2.15824e-07
+xsb.mb                                     3.3
+xsb.mmid                             0.0420081
+xsb.mc                             3.68602e-08
+xsb.s                                      3.3
+qb                                 1.84515e-08
+xsb.qb                                     3.3
+xsb.s2mid                            0.0420079
+xsv.clkb                                   3.3
+xsv.m                                      3.3
+xsv.mb                                     3.3
+xsv.mmid                               2.76248
+xsv.mc                             4.09919e-08
+xsv.s                                      3.3
+qv                                 1.84515e-08
+xsv.qb                                     3.3
+xsv.s2mid                             0.042008
+xsr1.clkb                                  3.3
+xsr1.m                                     3.3
+xsr1.mb                                    3.3
+xsr1.mmid                              2.76248
+xsr1.mc                            4.09919e-08
+xsr1.s                                     3.3
+qr1                                1.84515e-08
+xsr1.qb                                    3.3
+xsr1.s2mid                           0.0420078
+xsr2.clkb                                  3.3
+xsr2.m                                     3.3
+xsr2.mb                                    3.3
+xsr2.mmid                              2.76248
+xsr2.mc                            4.09919e-08
+xsr2.s                                     3.3
+qr2                                1.84515e-08
+xsr2.qb                                    3.3
+xsr2.s2mid                           0.0420079
+cvddr1                                     3.3
+cvddr2                                     3.3
+cvdd                                       3.3
+csbp                                       3.3
+csvp                                       3.3
+xctl.xr1.xg.py                         1.58325
+xctl.xr1.n1                                  0
+xctl.rn1                           1.24708e-07
+xctl.xr1.xg.nm                               0
+xctl.xr1.xg.ny                               0
+xctl.xr1.x1.py                             3.3
+xctl.xr1.n2                                3.3
+xctl.xr1.x1.ny                     2.35462e-08
+xctl.xr1.x2.py                             3.3
+xctl.xr1.n3                        1.24708e-07
+xctl.xr1.x2.ny                     1.06256e-07
+xctl.xr1.x3.py                             3.3
+xctl.xr1.n4                                3.3
+xctl.xr1.x3.ny                     2.35463e-08
+xctl.xr1.x4.py                             3.3
+xctl.xr1.n5                        1.24708e-07
+xctl.xr1.x4.ny                     1.06256e-07
+xctl.xr1.x5.py                             3.3
+xctl.xr1.n6                                3.3
+xctl.xr1.x5.ny                     2.35463e-08
+xctl.xr1.x6.py                             3.3
+xctl.xr1.n7                        1.24708e-07
+xctl.xr1.x6.ny                     1.06256e-07
+xctl.xr1.x7.py                             3.3
+xctl.xr1.n8                                3.3
+xctl.xr1.x7.ny                     2.35463e-08
+xctl.xr1.x8.py                             3.3
+xctl.xr1.n9                        1.24708e-07
+xctl.xr1.x8.ny                     1.06256e-07
+xctl.xr1.x9.py                             3.3
+xctl.xr1.n10                               3.3
+xctl.xr1.x9.ny                     2.35463e-08
+xctl.xr1.x10.py                            3.3
+xctl.xr1.x10.ny                    1.06256e-07
+xctl.xr2.xg.py                         1.59988
+xctl.xr2.n1                                  0
+xctl.rn2                           1.17147e-07
+xctl.xr2.xg.nm                    -4.44089e-16
+xctl.xr2.xg.ny                    -4.44089e-16
+xctl.xr2.x1.py                             3.3
+xctl.xr2.n2                                3.3
+xctl.xr2.x1.ny                     2.18706e-08
+xctl.xr2.x2.py                             3.3
+xctl.xr2.n3                        1.17147e-07
+xctl.xr2.x2.ny                      9.8695e-08
+xctl.xr2.x3.py                             3.3
+xctl.xr2.n4                                3.3
+xctl.xr2.x3.ny                     2.18707e-08
+xctl.xr2.x4.py                             3.3
+xctl.xr2.n5                        1.17147e-07
+xctl.xr2.x4.ny                      9.8695e-08
+xctl.xr2.x5.py                             3.3
+xctl.xr2.n6                                3.3
+xctl.xr2.x5.ny                     2.18707e-08
+xctl.xr2.x6.py                             3.3
+xctl.xr2.n7                        1.17147e-07
+xctl.xr2.x6.ny                      9.8695e-08
+xctl.xr2.x7.py                             3.3
+xctl.xr2.n8                                3.3
+xctl.xr2.x7.ny                     2.18707e-08
+xctl.xr2.x8.py                             3.3
+xctl.xr2.n9                        1.17147e-07
+xctl.xr2.x8.ny                      9.8695e-08
+xctl.xr2.x9.py                             3.3
+xctl.xr2.n10                               3.3
+xctl.xr2.x9.ny                     2.18707e-08
+xctl.xr2.x10.py                            3.3
+xctl.xr2.x10.ny                     9.8695e-08
+cro1                                       3.3
+cro2                                       3.3
+xctl.xa1.an                        1.84515e-08
+xctl.xa1.bn                        1.84515e-08
+xctl.xa1.mid                          0.783853
+cxo                                1.79153e-07
+xctl.xa1.s1                        8.95766e-08
+xctl.xa1.s2                         3.7744e-08
+xcsb.clkb                                  3.3
+xcsb.m                             2.15825e-07
+xcsb.mb                                    3.3
+xcsb.mmid                            0.0420081
+xcsb.mc                            3.68602e-08
+xcsb.s                                     3.3
+cqb                                1.84515e-08
+xcsb.qb                                    3.3
+xcsb.s2mid                           0.0420077
+xcsv.clkb                                  3.3
+xcsv.m                                     3.3
+xcsv.mb                                    3.3
+xcsv.mmid                              2.76248
+xcsv.mc                            4.09919e-08
+xcsv.s                                     3.3
+cqv                                1.84515e-08
+xcsv.qb                                    3.3
+xcsv.s2mid                            0.042008
+q1                                -9.26862e-16
+q2                                -9.82236e-16
+qt                                -5.28178e-21
+qsb                               -4.39987e-21
+qsv                               -5.04621e-21
+qs1                               -3.97962e-21
+qs2                               -3.97962e-21
+cq1i                              -9.26862e-16
+cq2i                              -9.82236e-16
+cqt                               -3.14822e-21
+cqsb                              -4.39976e-21
+cqsv                              -5.04617e-21
+vth                                       1.65
+bvth#branch                                  0
+brst#branch                                  0
+bclk#branch                                  0
+vcsv#branch                        5.04617e-11
+vcsb#branch                        4.39976e-11
+vctr#branch                        3.14822e-11
+vcr2#branch                        9.82236e-06
+vcr1#branch                        9.26862e-06
+vs2#branch                         3.97962e-11
+vs1#branch                         3.97962e-11
+vsv#branch                         5.04621e-11
+vsb#branch                         4.39987e-11
+vtr#branch                         5.28178e-11
+vr2#branch                         9.82236e-06
+vr1#branch                         9.26862e-06
+een#branch                                   0
+vsupply#branch                    -3.81823e-05
+
+
+No. of Data Rows : 24008
+
+  Measurements for Transient Analysis
+
+t1a                 =   1.35562e-08
+t1b                 =   4.01623e-08
+t2a                 =   1.26896e-08
+t2b                 =   3.75724e-08
+tc1a                =   1.34970e-08
+tc1b                =   4.02074e-08
+tc2a                =   1.26336e-08
+tc2b                =   3.75964e-08
+q1_1a               =  -2.505256e-04
+q1_1b               =  -7.554092e-04
+qt_1a               =  -2.657441e-04
+qt_1b               =  -8.141652e-04
+qsb_1a              =  -4.393556e-05
+qsb_1b              =  -1.596642e-04
+qsv_1a              =  -2.675816e-05
+qsv_1b              =  -4.995432e-05
+qs1_1a              =  -3.480689e-05
+qs1_1b              =  -1.357129e-04
+q2_2a               =  -2.498518e-04
+q2_2b               =  -7.537638e-04
+qsv_2a              =  -2.675808e-05
+qsv_2b              =  -4.448820e-05
+qs2_2a              =  -2.875617e-05
+qs2_2b              =  -1.185099e-04
+cq1i_c1a            =  -2.494443e-04
+cq1i_c1b            =  -7.558936e-04
+cqt_c1a             =  -2.373930e-04
+cqt_c1b             =  -7.397975e-04
+cqsb_c1a            =  -4.378261e-05
+cqsb_c1b            =  -1.635517e-04
+cqsv_c1a            =  -2.675816e-05
+cqsv_c1b            =  -5.200119e-05
+cq2i_c2a            =  -2.487206e-04
+cq2i_c2b            =  -7.536867e-04
+ring1_max           =  3.410593e+00 at=  1.157964e-07
+ring1_min           =  -3.660921e-02 at=  6.517140e-08
+ring2_max           =  3.396789e+00 at=  1.151164e-07
+ring2_min           =  -3.597332e-02 at=  8.517140e-08
+
+ngspice-42 done
