@@ -510,29 +510,100 @@ def _pdk():
         raise ActivityError(f"no gf180mcu PDK install found: {exc}") from exc
 
 
-def load_manifest(path: Path) -> dict:
-    """Load a manifest and re-verify what it pins: the netlist, the VCD
-    bytes and the regenerated stimulus. A stale manifest is an error, not a
-    warning -- it would put a number next to a netlist it never described."""
-    manifest = json.loads(path.read_text())
-    ident = manifest["identities"]
-    current = report.blob_sha(REPO_ROOT, PNR_NETLIST)
-    if ident["netlist"]["git_blob_sha"] != current:
+def _field(obj, path: str, where: str, kind):
+    """Fetch a required manifest field by dotted path or raise a named error."""
+    cur = obj
+    for part in path.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            raise ActivityError(f"{where}: required field `{path}` is missing")
+        cur = cur[part]
+    if not isinstance(cur, kind) or isinstance(cur, bool):
+        raise ActivityError(f"{where}: field `{path}` is malformed ({cur!r})")
+    return cur
+
+
+def expected_trace_semantics(name: str) -> dict:
+    """What the capture program generates for `name` today: the semantic
+    contract (cycle count, clock period, seeds, windows, stimulus bytes)."""
+    rows, windows = wl.build(name)
+    w = wl.WORKLOADS[name]
+    return {
+        "cycles": len(rows),
+        "clock_period_ns": wl.SIM_CLOCK_NS,
+        "seed": w.seed,
+        "base_seed": wl.BASE_SEED,
+        "windows_cycles": {k: list(v) for k, v in windows.items()},
+        "windows_ps": {k: [a * int(wl.SIM_CLOCK_NS * 1000), b * int(wl.SIM_CLOCK_NS * 1000)]
+                       for k, (a, b) in windows.items()},
+        "stimulus_sha256": wl.stimulus_sha256(rows),
+    }
+
+
+def verify_capture_source(manifest: dict, label: str = "manifest") -> None:
+    """Check a manifest's capture-source identity against the current tree,
+    with no VCD, PDK or simulator needed.
+
+    Strict identity: the gate-simulation testbench blob
+    (`identities.testbench.git_blob_sha`) -- any edit to `activity_tb.v` can
+    change what a VCD contains, so any edit stales the capture.
+
+    Semantic identity: the workloads module is NOT compared by blob (a
+    comment-only edit must not invalidate evidence). Instead everything it
+    determines is regenerated and compared per trace: stimulus bytes, cycle
+    count, clock period, seeds and the capture-window boundaries in cycles
+    and ps. A change to windows alone (stimulus unchanged) is therefore
+    rejected. Raises ActivityError naming the manifest, trace and field."""
+    ident = _field(manifest, "identities", label, dict)
+    pinned = _field(ident, "testbench.git_blob_sha", f"{label} identities", str)
+    current = report.blob_sha(REPO_ROOT, TB_SOURCE)
+    if pinned != current:
         raise ActivityError(
-            f"manifest was captured from netlist blob {ident['netlist']['git_blob_sha']}, "
+            f"{label}: stale capture testbench: identities.testbench.git_blob_sha is {pinned}, "
+            f"{TB_SOURCE.relative_to(REPO_ROOT)} is now {current}; re-run `capture`"
+        )
+    traces = _field(manifest, "traces", label, dict)
+    if not traces:
+        raise ActivityError(f"{label}: `traces` is empty")
+    for name, t in traces.items():
+        where = f"{label} trace {name}"
+        if name not in wl.WORKLOADS:
+            raise ActivityError(f"{where}: workload no longer exists")
+        exp = expected_trace_semantics(name)
+        for fld, kind in (("cycles", int), ("clock_period_ns", (int, float)), ("seed", int),
+                          ("base_seed", int), ("windows_cycles", dict), ("windows_ps", dict),
+                          ("stimulus_sha256", str)):
+            got = _field(t, fld, where, kind)
+            if fld in ("windows_cycles", "windows_ps"):
+                got = {k: list(v) for k, v in got.items()}
+            if got != exp[fld]:
+                raise ActivityError(
+                    f"{where}: stale capture: `{fld}` is {got!r} but the current workload "
+                    f"generates {exp[fld]!r}; re-run `capture`"
+                )
+
+
+def load_manifest(path: Path) -> dict:
+    """Load a manifest and re-verify what it pins: the netlist, the capture
+    source (testbench identity and regenerated windows/stimulus, see
+    `verify_capture_source`) and the VCD bytes. A stale manifest is an error,
+    not a warning -- it would put a number next to a netlist it never
+    described."""
+    manifest = json.loads(path.read_text())
+    ident = _field(manifest, "identities", str(path), dict)
+    pinned_net = _field(ident, "netlist.git_blob_sha", f"{path} identities", str)
+    current = report.blob_sha(REPO_ROOT, PNR_NETLIST)
+    if pinned_net != current:
+        raise ActivityError(
+            f"manifest was captured from netlist blob {pinned_net}, "
             f"layout/digital/trng_top.pnr.v is now {current}; re-run `capture`"
         )
+    verify_capture_source(manifest, str(path))
     for name, t in manifest["traces"].items():
         vcd = REPO_ROOT / t["vcd_path"]
         if not vcd.is_file():
             raise ActivityError(f"trace for {name} missing: {t['vcd_path']}")
         if report.sha256_file(vcd) != t["vcd_sha256"]:
             raise ActivityError(f"trace for {name} no longer matches its recorded sha256")
-        rows, _ = wl.build(name)
-        if wl.stimulus_sha256(rows) != t["stimulus_sha256"]:
-            raise ActivityError(
-                f"workload {name} no longer generates the stimulus this trace was captured from"
-            )
     return manifest
 
 

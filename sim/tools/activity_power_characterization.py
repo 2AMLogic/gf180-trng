@@ -17,6 +17,17 @@ of the 15-point liberty x interconnect matrix, minted by
   windows, seeds), and each stimulus hash equals what
   `activity_workloads.py` generates today (a changed workload makes the
   records stale, not silently wrong);
+- each record pins the current gate-simulation testbench blob (strict:
+  any edit to `activity_tb.v` stales the capture), and its committed raw
+  `activity-manifest.json` (checksummed in the record) agrees with the
+  record and, per workload, with what the capture program generates today:
+  stimulus, cycle count, clock period, seeds and capture-window boundaries
+  (semantic: the workloads module is not compared by blob, so a comment-only
+  edit is harmless but a window-only change is not);
+- the workload set equals the declared default campaign
+  (`activity_workloads.WORKLOADS`) in every record, with missing, extra and
+  duplicate workloads named. Diagnostic subset captures stay possible but
+  are not accepted as the published aggregate;
 - every record's uniform baseline equals the default flow's
   `digital-sta-power` 1 MHz total at the same corner and DEF (like-for-like
   by construction, re-verified);
@@ -41,6 +52,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "trng-top-post-route"))
+sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 
 from _record_parsing import parse_values  # noqa: E402
 
@@ -85,6 +97,10 @@ class Rec:
         self.traces = re.findall(
             r"- workload: (\S+)\n\s+vcd_sha256: (\w+)\n\s+vcd_bytes: (\d+)\n\s+stimulus_sha256: (\w+)\n"
             r"\s+cycles: (\d+)\n\s+windows_cycles: (\{.*\})\n", self.fm)
+        self.testbench_sha = self._one(r"^\s+testbench_sha:\s*([0-9a-f]{40})\s*$")
+        self.raw_path = self._one(r"^raw:\s*\n\s+path:\s*(\S+)")
+        self.manifest_sha = self._one(r"^\s+- activity-manifest\.json\s+sha256:([0-9a-f]{64})")
+        self._manifest = None
         self.seeds = self._one(r"^seeds:\s*(.*)$")
         self.values = parse_values(text)
         self.corner = f"{self.liberty}/rc-{self.rc}"
@@ -94,6 +110,17 @@ class Rec:
         if not m:
             raise CheckError(f"{self.stem}: cannot find /{pat}/ in the frontmatter")
         return m.group(1)
+
+    def manifest(self) -> dict:
+        """The committed raw activity manifest, checksummed against the record."""
+        if self._manifest is None:
+            path = REPO_ROOT / self.raw_path / "activity-manifest.json"
+            if not path.is_file():
+                raise CheckError(f"{self.stem}: raw manifest {path.relative_to(REPO_ROOT)} is missing")
+            if hashlib.sha256(path.read_bytes()).hexdigest() != self.manifest_sha:
+                raise CheckError(f"{self.stem}: raw manifest does not match its recorded sha256")
+            self._manifest = json.loads(path.read_text())
+        return self._manifest
 
     def v(self, key: str) -> float:
         if key not in self.values:
@@ -131,9 +158,64 @@ def key(workload: str, window: str, term: str) -> str:
     return f"obs_{workload.replace('-', '_')}_{window}_{term}"
 
 
-def check(fam: dict[str, Rec]) -> list[str]:
+def campaign_problems(r: Rec, expected: tuple[str, ...]) -> list[str]:
+    """Missing / extra / duplicate workloads in one record's trace list."""
+    names = [t[0] for t in r.traces]
+    out = [f"{r.stem}: duplicate workload trace {n}" for n in sorted({n for n in names if names.count(n) > 1})]
+    missing = [n for n in expected if n not in names]
+    extra = sorted(set(names) - set(expected))
+    if missing:
+        out.append(f"{r.stem}: incomplete campaign, missing workload(s) {missing}")
+    if extra:
+        out.append(f"{r.stem}: undeclared workload(s) {extra} not in the default campaign")
+    return out
+
+
+def capture_source_problems(r: Rec) -> list[str]:
+    """Freshness of the capture program behind one record (no VCD/PDK needed)."""
+    import activity as act  # noqa: PLC0415
+
+    out: list[str] = []
+    cur_tb = blob_sha(act.TB_SOURCE)
+    if r.testbench_sha != cur_tb:
+        out.append(f"{r.stem}: stale capture testbench: record pins {r.testbench_sha}, "
+                   f"{act.TB_SOURCE.name} is now {cur_tb}")
+    try:
+        m = r.manifest()
+        act.verify_capture_source(m, f"{r.stem} raw manifest")
+    except (CheckError, act.ActivityError, KeyError, ValueError) as exc:
+        return out + [str(exc)]
+    if m["identities"]["testbench"]["git_blob_sha"] != r.testbench_sha:
+        out.append(f"{r.stem}: record testbench_sha differs from its raw manifest")
+    by_name = {}
+    for n, t in m["traces"].items():
+        by_name[n] = t
+    if sorted(by_name) != sorted(t[0] for t in r.traces):
+        out.append(f"{r.stem}: record traces {sorted(t[0] for t in r.traces)} differ from raw manifest "
+                   f"traces {sorted(by_name)}")
+    for name, vcd, size, stim, cycles, win in r.traces:
+        t = by_name.get(name)
+        if t is None:
+            continue
+        try:
+            same = (t["vcd_sha256"] == vcd and str(t["vcd_bytes"]) == size
+                    and t["stimulus_sha256"] == stim and str(t["cycles"]) == cycles
+                    and json.loads(win) == t["windows_cycles"])
+        except (KeyError, ValueError):
+            same = False
+        if not same:
+            out.append(f"{r.stem}: trace {name} in the record differs from its raw manifest")
+    return out
+
+
+def check(fam: dict[str, Rec], expected: tuple[str, ...] | None = None) -> list[str]:
     problems: list[str] = []
     import activity_workloads as wl  # noqa: PLC0415
+
+    expected = tuple(wl.WORKLOADS) if expected is None else expected
+    for r in fam.values():
+        problems += campaign_problems(r, expected)
+        problems += capture_source_problems(r)
 
     first = next(iter(fam.values()))
     for c, r in fam.items():
@@ -168,7 +250,7 @@ def check(fam: dict[str, Rec]) -> list[str]:
         if abs(a - b) > 1e-6 * b:
             problems.append(f"{c}: uniform baseline {a:.6e} != default flow {b:.6e}")
     for c, r in fam.items():
-        for name in workloads(fam):
+        for name in [n for n in workloads(fam) if n in expected]:
             for w in WINDOWS:
                 ann = r.v(key(name, w, "annotated_pins"))
                 un = r.v(key(name, w, "unannotated_pins"))
