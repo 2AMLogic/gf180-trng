@@ -44,6 +44,13 @@ from this list or a listed file does not exist.
 - [`characterization-vss-trunk-ir-drop.md`](characterization-vss-trunk-ir-drop.md) -- IR drop on the shared vss return trunk, per region. Status: complete (#234); verdict: not material.
 - [`characterization-worst-corner-and-mc-mismatch.md`](characterization-worst-corner-and-mc-mismatch.md) -- Entropy-binding PVT corner over the full 27-point grid, and Monte Carlo mismatch bias. Status: complete (#13).
 
+### Plans and feasibility assessments (not measured reports)
+
+These are forward-looking documents. They run no simulation, are not evidence
+records, and are not part of the report index above.
+
+- [`../docs/out-of-envelope-characterization-plan.md`](../docs/out-of-envelope-characterization-plan.md) -- Model-bound audit and execution plan for health-test behaviour just outside the operating envelope. Status: plan (#467); no supported simulation grid and over the CPU budget as of its writing, so the envelope row's out-of-envelope clause remains unverified.
+
 ---
 
 ## The two rules
