@@ -71,8 +71,10 @@ Every session also carries the inter-region trunks that terminate on
 `trng_top`'s own pins — `clk`, `rst_n`, `raw_bit`, `raw_valid`,
 `ring_bit[0]`, `ring_bit[1]` as the DEF names them — as a
 `set_input_transition` per port, derived at run time from
-`layout/floorplan/reports/interregion.json`'s as-built `trunk_length_um` and
-[DR-0025]'s Metal4 coefficients. It is **permanent**, not a flag-gated
+`layout/floorplan/reports/interregion.json`'s as-built `trunk_length_um`
+(Metal4 coefficients per [DR-0025]) and, since #456, the per-endpoint `legs`
+(Metal4 stub, Metal5 track, Metal3 flank riser of the top-edge pins) at each
+layer's own coefficients ([DR-0028]). It is **permanent**, not a flag-gated
 scenario: re-deriving costs nothing per run, and a pinned constant would go
 stale the moment #222's routing moves. Each record's `interface_loads:` block
 states the per-port R, C and stated transition, and the convention they are
@@ -192,3 +194,4 @@ not touched. Read the results through
 [DR-0003]: ../../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0021]: ../../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0025]: ../../../spec/decision-records/DR-0025-full-chip-pex-scope.md
+[DR-0028]: ../../../spec/decision-records/DR-0028-top-edge-legs-are-priced-in-the-sta-interface-load.md
