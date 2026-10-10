@@ -526,14 +526,44 @@ with their own prerequisites, named here rather than silently skipped.
 | A | Per-ring oscillation frequency | `make characterize` (`ro-array-core-pvt-q`, 27-point grid) | `sim/records/<date>-ro-array-core-pvt-q-*.md` |
 | B | Raw bit rate | *not* a PVT sweep — `python3 sim/tools/jitter_energy_law.py --check` and `starved_cell_jitter_energy.py --check`, derived from the existing `rostage-noise` / `ro-ring5-starved-jitter-long` records (`npm run check:spec`) | stdout only; no new record |
 | C | Raw min-entropy | `make characterize` (`sampler-array-digitize`, the three corners a real bitstream exists for: `tt`/27 °C/3.30 V, `ss`/−40 °C/3.63 V and the measured entropy-binding corner `ss`/+125 °C/3.63 V, seeds 1001..1003 at each) | `sim/records/<date>-sampler-array-digitize-*.md` (functional demonstration only — see the record's own caveats and the proposal's Row C notes; **not** an entropy measurement) |
-| D | Active power (whole block) | analog term: `make characterize` (`ro-array-core-pvt-q` + `sampler-dff-active-current`), rolled up by `power_rollup.py`; digital term: `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD, not covered by `make characterize`) | `sim/records/<date>-{ro-array-core-pvt-q,sampler-dff-active-current}-*.md`; digital: `sim/records/<date>-digital-sta-power-*.md` |
+| D | Active power (whole block) | four required terms, rolled up by `power_rollup.py`: **array** and **raw sampler**: `make characterize` (`ro-array-core-pvt-q` + `sampler-dff-active-current`); **liveness** (`xsr1`/`xsr2`): a separate opt-in `klt sim` campaign, *not* run by `make characterize` or CI (see below); **digital**: `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD) | `sim/records/<date>-{ro-array-core-pvt-q,sampler-dff-active-current,sampler-core-liveness-active}-*.md`; digital: `sim/records/<date>-digital-sta-power-*.md` |
 | E | Idle current (whole block) | analog term: `make characterize` (`sampler-core-idle-leakage`), rolled up by `power_rollup.py`; digital leakage term: same `run_sta.py` flow as Row D | `sim/records/<date>-sampler-core-idle-leakage-*.md`; digital: `sim/records/<date>-digital-sta-power-*.md` |
 | F | Time-to-first-valid | `make characterize` (`ro-array-core-startup`), rolled up by `time_to_first_valid.py` | `sim/records/<date>-ro-array-core-startup-*.md` |
 | G | Digital section max clean sample-clock frequency (`Fmax`) | gate-level, not ngspice: `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD; not covered by `make characterize`) | `sim/records/<date>-digital-sta-power-*.md` |
 | H | Health-test cutoffs (RCT/APT) | closed-form, no PVT dependency — `design/health_test/rct_apt.py` is a library, not a CLI: `python3 -c "from design.health_test.rct_apt import c_rct, c_apt, H0; print(c_rct(H0), c_apt(H0))"` | stdout only; no new record |
 | I | Area (whole block) | layout, no PVT dependency: `python3 layout/floorplan/floorplan.py` (needs `klt` + PDK) | `layout/floorplan/reports/area.json` |
 
-`sim/characterize.py --dry-run` prints this same mapping (as
+#### Row D liveness term (separate, opt-in, batch backend)
+
+`power_rollup.py` requires a liveness term (the shipped per-ring samplers
+`xsr1`/`xsr2`), measured by `sim/tb/sampler-core-liveness-active/`. That
+testbench has no `tb.json` on purpose, so `make characterize` does not run it
+and a Row D reproduction that stops at `make characterize` leaves the term
+either unregenerated (committed records reused) or an explicit gap in the
+rollup. The full 27-unit grid goes to the batch backend through `klt sim`;
+it is never swept locally. Commands, all from
+`sim/tools/liveness_sampler_power.py`:
+
+```sh
+python3 sim/tools/liveness_sampler_power.py plan                # offline: grid, method, runtime note
+python3 sim/tools/liveness_sampler_power.py emit --check        # offline: committed request-grid.json matches the grid
+python3 sim/tools/liveness_sampler_power.py emit                # offline: regenerate request-grid.json
+python3 sim/tools/liveness_sampler_power.py run --outdir DIR    # OPT-IN: klt sim --backend batch (needs klt + batch access)
+python3 sim/tools/liveness_sampler_power.py analyze DIR/grid.report.json   # offline: derived ledger terms
+python3 sim/tools/liveness_sampler_power.py record DIR/grid.report.json    # mint NEW append-only records
+```
+
+`run` refuses a whole-grid local run (`--backend local` is accepted only with
+`--only PROCESS/TEMP/VDD`, a single debug point). If the batch submit fails or
+no batch access exists, say so and keep the committed records; do not
+substitute a local loop. Freshly regenerated evidence is exactly the new
+`sim/records/<date>-sampler-core-liveness-active-NN.md` files `record` writes
+(existing records are never edited); `python3 sim/tools/power_rollup.py` then
+prints the per-corner total and flags any corner still lacking a liveness
+record as a gap.
+
+`sim/characterize.py --dry-run` prints this same mapping (Row D's four
+evidence terms and the liveness commands via `ROW_D_EVIDENCE`, and
 `ROWS_NOT_COVERED` for the rows it does not produce) alongside the exact
 `run_corners.py` command for each row it does — read it, or the script's own
 module docstring, if this table and the code ever disagree.
