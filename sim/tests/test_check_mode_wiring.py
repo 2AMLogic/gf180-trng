@@ -42,6 +42,10 @@ UNWIRED_ALLOWLIST = {
         "test_check_flag_passes in test_raw_min_entropy_estimate.py, which skips if the "
         "sampler-array-digitize records are absent"
     ),
+    "unused_names.py": (
+        "enforced by the `lint` script (`python3 -m sim.tools.unused_names --check`), which "
+        "check:ci runs first; it is a source linter, not a spec/evidence gate"
+    ),
     "liveness_sampler_power.py": (
         "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_liveness_sampler_power.py"
