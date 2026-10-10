@@ -396,6 +396,17 @@ publish, the partial extraction netlist it left behind was removed, and no row
 counts as a pass. The grid remains unrun and #418 open. See klayout-tools#2989
 and #2990.
 
+**Attempt log (2026-10-10, fifth session).** Same pin and host rules (batch
+only; no local fallback). The offline checks, the 34-test regression and
+`build_dut.py --check` passed. One `publish_combiner_sampler_pex.py --backend
+batch` submission ran for about 100 s and `klt pex` exited 4 ("klt pex failed
+(exit 4); nothing published"); a direct `klt pex ... --format text --backend
+batch` re-run printed `status: error`, `corners: 27  rows: 1782  passed: 0
+failed: 0  errored: 1782` and wrote nothing to stderr, so the cause (capacity
+refusal or another fleet failure) is not distinguishable from the output. No
+envelope was kept and no row counts as a pass. The grid remains unrun and #418
+open. See klayout-tools#2989 and #2990.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
