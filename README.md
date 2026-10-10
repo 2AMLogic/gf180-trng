@@ -10,56 +10,24 @@ xschem for schematics, ngspice for simulation, and
 which says what each report answers and whether it is complete.
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
-measured on silicon.** As of this writing the repository contains an evidence-record
-convention, [twenty-nine decision records](spec/decision-records/), an
-entropy-source architecture survey, and a working PVT corner simulation
-harness — plus, since #145, a gate-level static-timing and power flow over the
-placed digital netlist. Between them they produce twenty characterization
+measured on silicon.** What exists today is an evidence-record convention,
+[twenty-nine decision records](spec/decision-records/), an entropy-source
+architecture survey, a PVT corner simulation harness and a gate-level
+static-timing and power flow, together producing twenty characterization
 summaries (`sim/characterization-*.md`) resting on 1030 append-only evidence
-records under [`sim/records/`](sim/records/).
-`design/` holds the analog entropy source and sampler as xschem schematics with
-a deterministic SPICE netlist export, plus four digital directories —
-[`conditioner/`](design/conditioner/), [`health_test/`](design/health_test/),
-[`interface/`](design/interface/) and the [`trng_top/`](design/trng_top/)
-integration — each a behavioural model with synthesisable RTL checked against
-it. `layout/` is **no longer empty**, and it now contains a first piece of the
-design: a working DRC/LVS flow with its committed reports, the entropy
-source's floorplan abstract, and seven hand-drawn, DRC-clean, LVS-matching
-design cells — [`ro_stage`, `ro_stage_ring2`, `ro_nand2`, `ro_nand2_ring2`,
-`ro_buf`, `xor2` and `sampler_dff`](layout/cells/README.md) — assembled into
-two rings, [`ro_ring11` and `ro_ring11_ring2`](layout/rings/README.md), and
-one non-ring block, [`combiner_sampler`](layout/blocks/README.md), all
-DRC-clean and LVS-matching per [`layout/reports/`](layout/reports/), with
-`ring1`, `ring2` and `combiner_sampler` placed inside the entropy source's
-own guarded regions in the floorplan. Since #170, the digital section
-(conditioner, health tests, interface) also has its own standalone layout —
-[`layout/digital/trng_top.gds`](layout/digital/), a placed-and-routed,
-DRC-clean gate-level GDS, and its LVS now reports `status: match`
-(`mismatch_count: 0`, `error_count: 0` after the rebuild in #306 — see
-[`layout/digital/README.md`'s LVS section](layout/digital/README.md#lvs)
-and #306). Since #209/#210, that digital section is composed into the same
-floorplan too: [`layout/floorplan/trng_floorplan.gds`](layout/floorplan/)
-now places `layout/digital/trng_top.gds` inside its own guarded `digital`
-region alongside `ring1`/`ring2`/`combiner_sampler`, DRC-clean (0
-violations introduced by the fit) and LVS-matching against the digital
-section's own reference netlist (`status: match`, `mismatch_count: 0`
-after the depth-2 floorplan regeneration in #454, which closed #256) — a single whole-block GDS with the
-entropy source and the digital section placed together, per
-[`layout/floorplan/reports/ring_fit.json`](layout/floorplan/reports/ring_fit.json).
-Since #221/#222 those four regions are also **wired to each other**: the
-inter-region net list is declared as reviewable data
-([`design/floorplan_netlist.py`](design/floorplan_netlist.py)) and drawn as
-real routing geometry across the isolation channels
-([`layout/floorplan/interregion.py`](layout/floorplan/interregion.py)), with
-the composed, routed stream DRC-clean and LVS-matching that declaration's
-own composed reference
-([`layout/floorplan/reports/interregion.json`](layout/floorplan/reports/interregion.json)).
-See [`layout/cells/README.md`](layout/cells/README.md) for the cell-by-cell
-inventory and what is explicitly still deferred. The specification table
-below was
+records under [`sim/records/`](sim/records/). `design/` holds the analog
+entropy source and sampler as xschem schematics plus four digital blocks, each
+a behavioural model with RTL checked against it. `layout/` holds a DRC/LVS
+flow, hand-drawn cells and rings, a placed-and-routed digital section, and a
+composed floorplan; what is placed, and what is still deferred, is stated in
+[`layout/README.md`](layout/README.md) and
+[`layout/digital/README.md`](layout/digital/README.md). Simulation evidence is
+indexed in [`sim/README.md`](sim/README.md), and per-row status of the
+specification in [`docs/spec-row-status.md`](docs/spec-row-status.md). The
+specification table below was
 [ratified on 2026-07-31](spec/ratification-2026-07-31-target-spec.md) and is
-binding on the design — but several of its rows are explicitly *unmeasured
-placeholders*, and the table labels which.
+binding on the design, but several of its rows are explicitly *unmeasured
+placeholders*; the table labels which.
 
 ## Why this repo exists
 
