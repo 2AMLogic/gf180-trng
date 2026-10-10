@@ -234,7 +234,7 @@ regeneration mapping reproduced here for convenience:
 | A | `make characterize` → `sim/records/<date>-ro-array-core-pvt-q-*.md` |
 | B | `python3 sim/tools/jitter_energy_law.py --check` / `starved_cell_jitter_energy.py --check` (not a PVT sweep) |
 | C | `make characterize` → `sim/records/<date>-sampler-array-digitize-*.md` (functional demonstration only, per this row's own caveats above) |
-| D | `make characterize` (analog term) + `python3 sim/tb/digital-sta-power/run_sta.py` (digital term, needs OpenROAD) |
+| D | `make characterize` (array + raw-sampler terms) + the opt-in liveness campaign `python3 sim/tools/liveness_sampler_power.py {emit --check, run --outdir DIR, record REPORT}` (`klt sim --backend batch`; not run by `make characterize`; commands in the README) + `python3 sim/tb/digital-sta-power/run_sta.py` (digital term, needs OpenROAD) |
 | E | `make characterize` (analog term) + the same `run_sta.py` (digital term) |
 | F | `make characterize` → `sim/records/<date>-ro-array-core-startup-*.md` |
 | G | `python3 sim/tb/digital-sta-power/run_sta.py` (needs OpenROAD; not covered by `make characterize`) |
