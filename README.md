@@ -11,11 +11,11 @@ which says what each report answers and whether it is complete.
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** As of this writing the repository contains an evidence-record
-convention, [twenty-seven decision records](spec/decision-records/), an
+convention, [twenty-eight decision records](spec/decision-records/), an
 entropy-source architecture survey, and a working PVT corner simulation
 harness — plus, since #145, a gate-level static-timing and power flow over the
 placed digital netlist. Between them they produce seventeen characterization
-summaries (`sim/characterization-*.md`) resting on 993 append-only evidence
+summaries (`sim/characterization-*.md`) resting on 1023 append-only evidence
 records under [`sim/records/`](sim/records/).
 `design/` holds the analog entropy source and sampler as xschem schematics with
 a deterministic SPICE netlist export, plus four digital directories —
