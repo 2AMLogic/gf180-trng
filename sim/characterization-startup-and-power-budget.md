@@ -446,6 +446,16 @@ change, which is what DR-0017 is for.
 
 ### Two taps that are not in the total
 
+> **Update (#463): the liveness digitizer is not an optional tap.** The text
+> below, written before #65 integrated it, says neither tap is instantiated by
+> the shipped `sampler_core`. That is true of the metastability hybrid only:
+> `design/sampler_core.spice` instantiates `xsr1`/`xsr2`. The ~81 µW figure was
+> measured on the unbuffered array at a 10 ns clock and is not the shipped
+> topology's cost. `power_rollup.py` now carries the liveness samplers as a
+> required ledger term with its own records and explicit corner gaps; see
+> [`characterization-liveness-sampler-active-power.md`](characterization-liveness-sampler-active-power.md).
+> `--with-taps` adds only the hybrid.
+
 Both are measured, both exist in the tree, and neither is instantiated by the
 shipped `sampler_core`/`trng_top`. They are excluded on the same basis
 `design/README.md` already excludes the first, and `power_rollup.py --with-taps`

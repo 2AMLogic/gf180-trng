@@ -76,12 +76,18 @@ apples-to-apples re-run of the estimate's inventory.
 
 What this does NOT include
 --------------------------
-- The metastability-hybrid tap (``ro_array_core_meta``, ~187 uW, [DR-0011]) and
-  the DR-0016 per-ring liveness digitizer (~81 uW,
-  ``sim/tb/ring-liveness-tap-power/``). Neither is instantiated by the shipped
-  ``sampler_core``/``trng_top``, and ``design/README.md`` already states that
-  the ratified row is measured against the shipped core. ``--with-taps`` adds
-  them so the cost of adopting them is visible rather than forgotten.
+- The metastability-hybrid tap (``ro_array_core_meta``, ~187 uW, [DR-0011]).
+  It is not instantiated by the shipped ``sampler_core``/``trng_top``;
+  ``--with-taps`` adds it so the cost of adopting it is visible rather than
+  forgotten.
+- The DR-0016 per-ring liveness samplers ``xsr1``/``xsr2`` ARE instantiated by
+  ``design/sampler_core.spice`` (#65) and are therefore a REQUIRED ledger term
+  (#463), not an optional tap. Their term comes from ``sim/tb/
+  sampler-core-liveness-active/`` records (``*-sampler-core-liveness-active-NN``)
+  at each corner that has one; a corner without a record is an explicit GAP, its
+  total is printed as a lower bound, and ``inventory`` below says so. The
+  historical 81.3 uW constant from ``sim/tb/ring-liveness-tap-power/`` (an
+  unbuffered array, a 10 ns clock) is never added to a total.
 - Any I/O, level-shifting, clock-generation or reference circuitry outside
   this block. The block does not contain a clock source at all ([DR-0012]).
 - Post-layout parasitics beyond the digital section's own routed DEF. The
@@ -128,6 +134,30 @@ ARRAY_GLOBS = ("*-ro-array-core-pvt-q-[0-9]*.md", "*-ro-array-core-power-[0-9]*.
 # measurement.
 SAMPLER_ACTIVE_GLOB = "*-sampler-dff-active-current-[0-9]*.md"
 IDLE_GLOB = "*-sampler-core-idle-leakage-[0-9]*.md"
+#: The shipped xsr1/xsr2 liveness samplers (#463), same `-[0-9]` slug rule.
+LIVENESS_GLOB = "*-sampler-core-liveness-active-[0-9]*.md"
+
+SAMPLER_CORE_NETLIST = REPO_ROOT / "design" / "sampler_core.spice"
+
+#: The active-power ledger, one row per term: which ``sampler_core`` instances
+#: (or, for the digital section, which external block) the term accounts for and
+#: where its evidence comes from. ``required`` terms are in the default total.
+#: ``inventory_check`` fails if an instance is covered by no term (a missing
+#: term) or by two (double counting). Idle is a separate, whole-sampler_core
+#: measurement and is deliberately NOT a row here (see ``IDLE_SCOPE``).
+LEDGER_TERMS = (
+    {"name": "array", "covers": ("xdut",), "required": True,
+     "evidence": "ro-array-core-pvt-q / ro-array-core-power (rings, ring buffers, XOR)"},
+    {"name": "sampler_raw", "covers": ("xsb", "xsv"), "required": True,
+     "evidence": "sampler-dff-active-current (per-event charges) x xo rate"},
+    {"name": "liveness", "covers": ("xsr1", "xsr2"), "required": True,
+     "evidence": "sampler-core-liveness-active (this term plus the taps' loading of the array)"},
+)
+
+#: What the idle row's ``sampler-core-idle-leakage`` measurement spans. It is run
+#: on the whole ``sampler_core``, so xsr1/xsr2 leakage is ALREADY inside it; the
+#: liveness active term must not (and does not) add a second idle term.
+IDLE_SCOPE = "sampler_core"
 
 #: README rows.
 ACTIVE_BUDGET_W = 500e-6
@@ -148,10 +178,13 @@ DUTY_OPEN = 0.5
 DIGITAL_CORNER_ACTIVE = "ff_n40C_3v60"
 DIGITAL_CORNER_IDLE = "ff_125C_3v60"
 
-#: Measured costs of the two taps that exist but are not instantiated by the
-#: shipped block, for --with-taps. Both are quoted at ff/-40C/3.63 V.
+#: Measured cost of the metastability-hybrid tap, which exists but is not
+#: instantiated by the shipped block, for --with-taps. Quoted at ff/-40C/3.63 V.
 TAP_META_W = 187e-6
-TAP_LIVENESS_W = 81.3e-6
+#: HISTORICAL context only, never added to any total (#463): the liveness tap
+#: as measured on the UNBUFFERED array at a 10 ns clock (ring-liveness-tap-power,
+#: ff/-40C/3.63 V). The shipped samplers are measured by LIVENESS_GLOB records.
+HISTORICAL_TAP_LIVENESS_W = 81.3e-6
 
 #: The ``netlist:`` block of a record's front matter, which names the DUT file
 #: and pins its blob SHA. Optional: not every record family has a netlist (the
@@ -323,6 +356,84 @@ def sampler_active(sampler: Record, r_xo: float, f_clk: float) -> dict:
     }
 
 
+def shipped_instances(netlist: Path = SAMPLER_CORE_NETLIST) -> dict[str, str]:
+    """``{instance: subckt}`` for the cells the shipped ``sampler_core`` instantiates.
+
+    Read from the generated netlist, not restated, so a cell added to or removed
+    from the schematic changes the inventory the ledger is checked against.
+    """
+    lines = netlist.read_text().splitlines()
+    out: dict[str, str] = {}
+    inside = False
+    for ln in lines:
+        s = ln.strip()
+        if s.startswith(".subckt sampler_core"):
+            inside = True
+            continue
+        if inside and s.startswith(".ends"):
+            break
+        if inside and s[:1].lower() == "x":
+            toks = s.split()
+            out[toks[0]] = toks[-1]
+    if not out:
+        raise RuntimeError(f"{netlist}: no instances found inside .subckt sampler_core")
+    return out
+
+
+def inventory_check(instances: dict[str, str], terms=LEDGER_TERMS) -> dict:
+    """Map every instantiated cell to its ledger term(s).
+
+    Returns ``{"mapping", "uncovered", "double_counted", "unknown"}``:
+    ``uncovered`` are instances no required term accounts for (a missing term),
+    ``double_counted`` maps an instance to the several terms claiming it, and
+    ``unknown`` are covers that name no instance (a stale ledger).
+    """
+    mapping: dict[str, list[str]] = {inst: [] for inst in instances}
+    unknown: list[str] = []
+    for term in terms:
+        if not term["required"]:
+            continue
+        for inst in term["covers"]:
+            if inst in mapping:
+                mapping[inst].append(term["name"])
+            else:
+                unknown.append(f"{term['name']}:{inst}")
+    return {
+        "mapping": mapping,
+        "uncovered": sorted(i for i, ts in mapping.items() if not ts),
+        "double_counted": {i: ts for i, ts in mapping.items() if len(ts) > 1},
+        "unknown": sorted(unknown),
+    }
+
+
+def inventory_problems(inv: dict) -> list[str]:
+    probs = []
+    if inv["uncovered"]:
+        probs.append("instantiated but in no required ledger term: " + ", ".join(inv["uncovered"]))
+    for inst, ts in inv["double_counted"].items():
+        probs.append(f"{inst} is counted by several terms: {', '.join(ts)}")
+    if inv["unknown"]:
+        probs.append("ledger covers name no instance of sampler_core: " + ", ".join(inv["unknown"]))
+    return probs
+
+
+def liveness_active(rec: Record, f_clk: float, q_clk_c: float) -> dict:
+    """The liveness term at one corner, split so nothing is counted twice.
+
+    ``p_flops_w`` is the xsr1/xsr2 flops themselves at sample-clock rate
+    ``f_clk`` (ring-data charge from the record, clock-cycle charge ``q_clk_c``
+    from the same corner's sampler-dff-active-current record, as for xsb/xsv).
+    ``dp_load_w`` is the SIGNED change those taps cause in the array's own
+    supply power, from the record's in-run control array: it belongs next to
+    ``P_array`` because the array records were taken without the taps.
+    """
+    vdd = rec.vdd
+    i_data = rec.values["i_data_a"]
+    p_flops = vdd * (i_data + 2.0 * f_clk * q_clk_c)
+    return {"p_flops_w": p_flops, "dp_load_w": rec.values["dp_load_w"],
+            "p_total_w": p_flops + rec.values["dp_load_w"]}
+
+
 def _w(x: float) -> str:
     for unit, scale in (("W", 1.0), ("mW", 1e-3), ("uW", 1e-6), ("nW", 1e-9), ("pW", 1e-12)):
         if abs(x) >= scale or scale == 1e-12:
@@ -349,8 +460,9 @@ def main(argv=None) -> int:
                    help="fail instead of degrading if the gate-level digital "
                         "power records are unavailable")
     p.add_argument("--with-taps", action="store_true",
-                   help="add the two measured but not-instantiated taps "
-                        "(metastability hybrid, ring-liveness digitizer)")
+                   help="add the measured but not-instantiated metastability-hybrid "
+                        "tap. The liveness samplers are shipped and are a ledger term "
+                        "of their own (#463); they are never added here.")
     p.add_argument("--check", action="store_true",
                    help="exit non-zero if a required record family is missing or a "
                         "measured term contradicts the record it came from. Does NOT "
@@ -361,6 +473,8 @@ def main(argv=None) -> int:
     arrays = by_corner(load(ARRAY_GLOBS), prefer="pvt-q")
     samplers = by_corner(load(SAMPLER_ACTIVE_GLOB))
     idles = by_corner(load(IDLE_GLOB))
+    lives = by_corner(load(LIVENESS_GLOB))
+    inv = inventory_check(shipped_instances())
 
     missing = [name for name, d in
                (("array", arrays), ("sampler-active", samplers), ("idle", idles)) if not d]
@@ -398,6 +512,7 @@ def main(argv=None) -> int:
     print(f"array records    : {len(arrays)} corners  {', '.join(ARRAY_GLOBS)}")
     print(f"sampler records  : {len(samplers)} corners  {SAMPLER_ACTIVE_GLOB}")
     print(f"idle records     : {len(idles)} corners  {IDLE_GLOB}")
+    print(f"liveness records : {len(lives)} of {len(arrays)} corners  {LIVENESS_GLOB}")
     if dig:
         print(f"digital term     : MEASURED-at-gate-level ({dig['n_corners']} corners, "
               f"active binds {dig['active_corner']}, leakage binds "
@@ -416,19 +531,37 @@ def main(argv=None) -> int:
     elif dig_est_note and not args.no_digital:
         print(f"digital estimate : UNAVAILABLE ({dig_est_note}) -- context comparison skipped")
     print()
+    print("LEDGER INVENTORY  (design/sampler_core.spice instances -> active-power term)")
+    insts = shipped_instances()
+    for inst, terms_ in inv["mapping"].items():
+        print(f"  {inst:<5} {insts[inst]:<14} -> {', '.join(terms_) if terms_ else 'NO TERM'}")
+    for term in LEDGER_TERMS:
+        print(f"  term {term['name']:<12} covers {', '.join(term['covers']):<10} evidence: {term['evidence']}")
+    print(f"  idle scope: one whole-{IDLE_SCOPE} measurement (xsr1/xsr2 leakage already inside; "
+          "no second idle term)")
+    missing_live = [c for c in arrays if c in samplers and c not in lives]
+    if missing_live:
+        print(f"  GAP: liveness samplers (xsr1/xsr2) have no record at {len(missing_live)} of "
+              f"{len(arrays)} corners; those totals EXCLUDE them and are lower bounds "
+              f"(historical {_w(HISTORICAL_TAP_LIVENESS_W)} is a different topology and rate "
+              "and is not used).")
+    print()
 
     # ------------------------------------------------------------------ ACTIVE
     print("ACTIVE POWER  (rings + XOR + sampler measured; digital MEASURED-at-gate-level)")
+    live_col = bool(lives)
     hdr = (f"| {'corner':<16} | {'R_xo':>10} | {'P_array':>9} | {'P_sampler':>9} |"
-           f" {'P_digital':>9} | {'TOTAL':>9} | {'vs 500uW':>8} |")
+           + (f" {'P_liveness':>10} |" if live_col else "")
+           + f" {'P_digital':>9} | {'TOTAL':>9} | {'vs 500uW':>8} |")
     rule = ("|" + "-" * 18 + "|" + "-" * 12 + "|" + "-" * 11 + "|" + "-" * 11
+            + ("|" + "-" * 12 if live_col else "")
             + "|" + "-" * 11 + "|" + "-" * 11 + "|" + "-" * 10 + "|")
     print(hdr)
     print(rule)
 
     p_dig = dig["active_w"] if dig else 0.0
     if args.with_taps:
-        p_dig += TAP_META_W + TAP_LIVENESS_W
+        p_dig += TAP_META_W
 
     active_rows = []
     for corner, arec in arrays.items():
@@ -438,13 +571,18 @@ def main(argv=None) -> int:
         r_xo = abs(arec.values["xo_trans_per_s"])
         s = sampler_active(srec, r_xo, args.rate)
         p_array = abs(arec.values["p_total_w"])
-        total = p_array + s["p_total_w"] + p_dig
-        active_rows.append((total, corner, r_xo, p_array, s, total))
-    active_rows.sort(reverse=True)
-    for total, corner, r_xo, p_array, s, _t in active_rows:
+        lrec = lives.get(corner)
+        live = liveness_active(lrec, args.rate, s["q_clk_c"]) if lrec else None
+        total = p_array + s["p_total_w"] + p_dig + (live["p_total_w"] if live else 0.0)
+        active_rows.append((total, corner, r_xo, p_array, s, live))
+    active_rows.sort(key=lambda r: r[0], reverse=True)
+    for total, corner, r_xo, p_array, s, live in active_rows:
+        cell = ""
+        if live_col:
+            cell = (f" {_w(live['p_total_w']):>10} |" if live else f" {'GAP':>10} |")
         print(
             f"| {corner:<16} | {r_xo:>10.3e} | {_w(p_array):>9} | {_w(s['p_total_w']):>9} |"
-            f" {_w(p_dig):>9} | {_w(total):>9} | {total / ACTIVE_BUDGET_W:>7.1%} |"
+            f"{cell} {_w(p_dig):>9} | {_w(total):>9} | {total / ACTIVE_BUDGET_W:>7.1%} |"
         )
     print(rule)
     print()
@@ -470,6 +608,21 @@ def main(argv=None) -> int:
                   f"does not feed this total): {_w(est_w)}"
                   f"   ({p_dig / est_w:.1f}x)")
     headroom = ACTIVE_BUDGET_W - worst_active[3]
+    wl = worst_active[5]
+    if wl:
+        print(f"  liveness samplers xsr1/xsr2 (measured): {_w(wl['p_flops_w']):>8}"
+              f"   {wl['p_flops_w'] / ACTIVE_BUDGET_W:6.1%}"
+              f"   (flops) + {_w(wl['dp_load_w'])} loading of the array")
+    else:
+        print("  liveness samplers xsr1/xsr2: GAP at the worst corner -- total is a lower bound")
+    measured_rows = [r for r in active_rows if r[5]]
+    if measured_rows:
+        print("  liveness reconciliation (like-for-like, same corner, same rate; measured corners only):")
+        for total, corner, _r, _pa, _s, live in sorted(measured_rows, key=lambda r: r[1]):
+            print(f"    {corner:<14} without xsr1/xsr2 {_w(total - live['p_total_w']):>9}"
+                  f" -> with {_w(total):>9}  (+{_w(live['p_total_w'])} = flops {_w(live['p_flops_w'])}"
+                  f" + array loading {_w(live['dp_load_w'])};"
+                  f" {live['p_total_w'] / ACTIVE_BUDGET_W:.1%} of the row)")
     non_array = worst_active[0] - worst_active[3]
     print(f"  headroom left by the entropy source: {_w(headroom)}; "
           f"everything else needs {_w(non_array)} ({non_array / headroom:.1%} of it)")
@@ -522,6 +675,7 @@ def main(argv=None) -> int:
             problems.append(f"only {len(samplers)} sampler-active corners (expected >= 45)")
         if len(idles) < 45:
             problems.append(f"only {len(idles)} idle corners (expected >= 45)")
+        problems += inventory_problems(inv)
         if not args.no_digital:
             if dig is None:
                 problems.append(
