@@ -487,6 +487,22 @@ jobs:
       - name: Committed SDF regeneration guard
         run: npm run check:digital-sdf
 
+      # Tap-distance report freshness (#458). Re-measures the committed
+      # trng_top.gds with the current layout/digital/tap_distance.py and fails
+      # if layout/digital/reports/tap-distance.json no longer follows from it,
+      # which the hash-only unit tests cannot see after an algorithm-only
+      # change. Needs only the `klayout` module installed above;
+      # --require-tools turns a missing module into a failure, never a skip.
+      # Read-only: --check writes nothing. It checks report freshness only; the
+      # report's own physical verdict is not gated here.
+      #
+      # `if: always()` so this reports its own result even when an earlier,
+      # unrelated validation step (floorplan, SDF, ...) failed. It still needs
+      # the klayout install, so it cannot run meaningfully if that failed.
+      - name: Tap-distance report regeneration guard
+        if: always()
+        run: python3 layout/digital/tap_distance.py --check --require-tools
+
       - name: Assert no evidence records were written
         run: |
           set -euo pipefail

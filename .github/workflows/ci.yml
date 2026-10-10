@@ -170,6 +170,16 @@ name: CI
 #       pass, so exercising the skip path itself is still worth a green check
 #       here; `npm run check:all` runs the latter two with --require-tools.
 #
+#   layout/digital/tap_distance.py --check (tap-distance report freshness)
+#       RUN on every push/PR via `npm run check:digital-tap-distance`, which
+#       self-skips (explicitly, on stderr) when the `klayout` Python module is
+#       absent, as on this runner. The mandatory `--check --require-tools`
+#       form runs in the provisioned nightly layout job (pdk-nightly.yml),
+#       where a missing module fails rather than skips. It only compares and
+#       never rewrites the committed report. It judges report freshness, not
+#       physical compliance (a current report may still disclose a failing
+#       verdict; that decision is tracked separately).
+#
 #   signoff/check.py (T1 tier-report re-grade + evidence-freshness gate)
 #       RUN on every push/PR, in its own `signoff` job below, with
 #       --require-tools. It is not in the `harness` matrix because it is the
@@ -414,6 +424,15 @@ jobs:
       # above, which are excluded on purpose (issue #97).
       - name: Entropy-source floorplan self-check (self-skips on a hosted runner)
         run: npm run check:floorplan
+
+      # Tap-distance report freshness (#448/#458). Re-measures the committed
+      # trng_top.gds and compares with layout/digital/reports/tap-distance.json.
+      # Needs only the `klayout` Python module, which this runner does not
+      # install, so it prints "the `klayout` Python module is not installed;
+      # skipping" and exits 0 -- a skip, not a pass. The mandatory form
+      # (--check --require-tools) runs in pdk-nightly.yml. Read-only.
+      - name: Tap-distance report freshness (self-skips on a hosted runner)
+        run: npm run check:digital-tap-distance
 
       # sim/selftest.sh re-runs the unit tests and the record-checksum check
       # as its own stages 1-2; the few seconds of overlap buy coverage of the

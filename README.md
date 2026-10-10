@@ -502,6 +502,9 @@ than a second list that can say something different (#97):
 - **`npm run check:layout`** and **`npm run check:floorplan`** —
   `layout/verify.py` and `layout/floorplan/floorplan.py`, both of which
   self-skip when `klt`/the PDK are absent;
+- **`npm run check:digital-tap-distance`** — tap-distance report freshness
+  (`layout/digital/tap_distance.py --check`, #458); it prints that the
+  `klayout` module is missing and skips when it is absent;
 - **`sim/selftest.sh`** — whose PDK-dependent stages detect the missing PDK
   and skip themselves on a hosted runner.
 
@@ -528,8 +531,14 @@ on `PATH`, otherwise Docker with the digest-pinned image behind
 `layout/openroad_docker.sh`. A reachability probe step first checks that the
 PDK's liberty and LEF files are visible inside the container; a missing
 OpenROAD, container or PDK file fails the job rather than skipping. The guard
-is read-only. That job writes no evidence records and fails if `sim/records/`
-changes.
+is read-only. The same job runs the strict tap-distance freshness check,
+`python3 layout/digital/tap_distance.py --check --require-tools` (#458), which
+re-measures `layout/digital/trng_top.gds` and compares the result with
+`layout/digital/reports/tap-distance.json`; it runs under `if: always()` so it
+reports independently of earlier validation failures, and a missing `klayout`
+module fails it. It checks that the report follows from the current measuring
+program, not that the layout is physically compliant, and writes nothing. That
+job writes no evidence records and fails if `sim/records/` changes.
 
 The nightly run does not replace the local one: run `sim/selftest.sh
 --require-pdk` (or `npm run check:all`) on a machine that has ngspice and the

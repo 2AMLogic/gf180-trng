@@ -660,6 +660,15 @@ arrangement, an over-limit gap, and a nearby tap wired to the wrong supply
 Python module, the engine `klt` runs on; `--check` self-skips without it
 unless `--require-tools`.
 
+CI coverage (#458): `npm run check:digital-tap-distance` is part of
+`npm run check:ci` and the PR workflow, where it prints that the module is
+missing and skips on a hosted runner. The nightly layout job in
+`.github/workflows/pdk-nightly.yml` runs the mandatory form,
+`python3 layout/digital/tap_distance.py --check --require-tools`, under
+`if: always()`, so it reports on its own even when an earlier validation step
+failed. Both are read-only and test report freshness (the report follows from
+the current measuring program), not physical compliance.
+
 **Result on the committed stream.** Measured against the MV column, the
 placement does **not** meet `LU.3`/`LU.4`: the worst boundary-to-tap
 distance is 49.73 µm (`LU.4`) and 49.69 µm (`LU.3`) against a 15 µm limit,

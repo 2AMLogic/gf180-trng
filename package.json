@@ -21,7 +21,7 @@
     "check:floorplan": "python3 layout/floorplan/floorplan.py",
     "check:digital-tap-distance": "python3 layout/digital/tap_distance.py --check",
     "check:signoff": "python3 signoff/check.py",
-    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:digital-input && npm run check:layout && npm run check:floorplan && npm run check:signoff && npm run check:evidence-history && npm run check:no-host-paths && sim/selftest.sh",
+    "check:ci": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:digital-input && npm run check:layout && npm run check:floorplan && npm run check:digital-tap-distance && npm run check:signoff && npm run check:evidence-history && npm run check:no-host-paths && sim/selftest.sh",
     "check:all": "npm run lint && npm run test && npm run test:layout && npm run check:spec && npm run check:regmap && npm run check:floorplan-netlist && npm run check:fixtures && npm run check:evidence-history && npm run check:no-host-paths && npm run check:netlist && npm run check:digital-netlist && npm run check:digital-input && npm run check:digital-sdf && python3 layout/verify.py --require-tools && python3 layout/floorplan/floorplan.py --require-tools && python3 layout/digital/tap_distance.py --check --require-tools && python3 signoff/check.py --require-tools && sim/selftest.sh --require-pdk"
   }
 }
