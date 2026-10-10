@@ -1,0 +1,8 @@
+Installed 7 packages in 5ms
+{
+  "schema_version": 1,
+  "error": {
+    "command": "sim",
+    "message": "unsupported backend 'batch' (supported: local, local-parallel, remote)"
+  }
+}

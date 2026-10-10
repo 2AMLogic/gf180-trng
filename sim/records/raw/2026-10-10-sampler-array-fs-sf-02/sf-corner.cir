@@ -1,0 +1,177 @@
+* klt sim -- generated corner deck, do not edit
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice sf
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.include /tmp/pilot472/deck.sp
+.temp -40
+.meas tran r1_rise_8 when v(xs.ro1)=v(vth) rise=8
+.meas tran r1_fall_8 when v(xs.ro1)=v(vth) fall=8
+.meas tran r1_rise_9 when v(xs.ro1)=v(vth) rise=9
+.meas tran r1_fall_9 when v(xs.ro1)=v(vth) fall=9
+.meas tran r1_rise_10 when v(xs.ro1)=v(vth) rise=10
+.meas tran r1_fall_10 when v(xs.ro1)=v(vth) fall=10
+.meas tran r1_rise_11 when v(xs.ro1)=v(vth) rise=11
+.meas tran r1_fall_11 when v(xs.ro1)=v(vth) fall=11
+.meas tran r1_rise_12 when v(xs.ro1)=v(vth) rise=12
+.meas tran r1_fall_12 when v(xs.ro1)=v(vth) fall=12
+.meas tran r1_rise_13 when v(xs.ro1)=v(vth) rise=13
+.meas tran r1_fall_13 when v(xs.ro1)=v(vth) fall=13
+.meas tran r1_rise_14 when v(xs.ro1)=v(vth) rise=14
+.meas tran r1_fall_14 when v(xs.ro1)=v(vth) fall=14
+.meas tran r1_rise_15 when v(xs.ro1)=v(vth) rise=15
+.meas tran r1_fall_15 when v(xs.ro1)=v(vth) fall=15
+.meas tran r1_rise_16 when v(xs.ro1)=v(vth) rise=16
+.meas tran r1_fall_16 when v(xs.ro1)=v(vth) fall=16
+.meas tran r1_rise_17 when v(xs.ro1)=v(vth) rise=17
+.meas tran r1_fall_17 when v(xs.ro1)=v(vth) fall=17
+.meas tran r1_rise_18 when v(xs.ro1)=v(vth) rise=18
+.meas tran r1_fall_18 when v(xs.ro1)=v(vth) fall=18
+.meas tran r1_rise_19 when v(xs.ro1)=v(vth) rise=19
+.meas tran r1_fall_19 when v(xs.ro1)=v(vth) fall=19
+.meas tran r1_rise_20 when v(xs.ro1)=v(vth) rise=20
+.meas tran r1_fall_20 when v(xs.ro1)=v(vth) fall=20
+.meas tran r1_rise_21 when v(xs.ro1)=v(vth) rise=21
+.meas tran r1_fall_21 when v(xs.ro1)=v(vth) fall=21
+.meas tran r1_rise_22 when v(xs.ro1)=v(vth) rise=22
+.meas tran r1_fall_22 when v(xs.ro1)=v(vth) fall=22
+.meas tran r1_rise_23 when v(xs.ro1)=v(vth) rise=23
+.meas tran r1_fall_23 when v(xs.ro1)=v(vth) fall=23
+.meas tran r1_max max v(xs.ro1) from=100n to=290n
+.meas tran r1_min min v(xs.ro1) from=100n to=290n
+.meas tran r2_rise_8 when v(xs.ro2)=v(vth) rise=8
+.meas tran r2_fall_8 when v(xs.ro2)=v(vth) fall=8
+.meas tran r2_rise_9 when v(xs.ro2)=v(vth) rise=9
+.meas tran r2_fall_9 when v(xs.ro2)=v(vth) fall=9
+.meas tran r2_rise_10 when v(xs.ro2)=v(vth) rise=10
+.meas tran r2_fall_10 when v(xs.ro2)=v(vth) fall=10
+.meas tran r2_rise_11 when v(xs.ro2)=v(vth) rise=11
+.meas tran r2_fall_11 when v(xs.ro2)=v(vth) fall=11
+.meas tran r2_rise_12 when v(xs.ro2)=v(vth) rise=12
+.meas tran r2_fall_12 when v(xs.ro2)=v(vth) fall=12
+.meas tran r2_rise_13 when v(xs.ro2)=v(vth) rise=13
+.meas tran r2_fall_13 when v(xs.ro2)=v(vth) fall=13
+.meas tran r2_rise_14 when v(xs.ro2)=v(vth) rise=14
+.meas tran r2_fall_14 when v(xs.ro2)=v(vth) fall=14
+.meas tran r2_rise_15 when v(xs.ro2)=v(vth) rise=15
+.meas tran r2_fall_15 when v(xs.ro2)=v(vth) fall=15
+.meas tran r2_rise_16 when v(xs.ro2)=v(vth) rise=16
+.meas tran r2_fall_16 when v(xs.ro2)=v(vth) fall=16
+.meas tran r2_rise_17 when v(xs.ro2)=v(vth) rise=17
+.meas tran r2_fall_17 when v(xs.ro2)=v(vth) fall=17
+.meas tran r2_rise_18 when v(xs.ro2)=v(vth) rise=18
+.meas tran r2_fall_18 when v(xs.ro2)=v(vth) fall=18
+.meas tran r2_rise_19 when v(xs.ro2)=v(vth) rise=19
+.meas tran r2_fall_19 when v(xs.ro2)=v(vth) fall=19
+.meas tran r2_rise_20 when v(xs.ro2)=v(vth) rise=20
+.meas tran r2_fall_20 when v(xs.ro2)=v(vth) fall=20
+.meas tran r2_rise_21 when v(xs.ro2)=v(vth) rise=21
+.meas tran r2_fall_21 when v(xs.ro2)=v(vth) fall=21
+.meas tran r2_rise_22 when v(xs.ro2)=v(vth) rise=22
+.meas tran r2_fall_22 when v(xs.ro2)=v(vth) fall=22
+.meas tran r2_rise_23 when v(xs.ro2)=v(vth) rise=23
+.meas tran r2_fall_23 when v(xs.ro2)=v(vth) fall=23
+.meas tran r2_max max v(xs.ro2) from=100n to=290n
+.meas tran r2_min min v(xs.ro2) from=100n to=290n
+.meas tran xo_rise_8 when v(xs.xo)=v(vth) rise=8
+.meas tran xo_fall_8 when v(xs.xo)=v(vth) fall=8
+.meas tran xo_rise_9 when v(xs.xo)=v(vth) rise=9
+.meas tran xo_fall_9 when v(xs.xo)=v(vth) fall=9
+.meas tran xo_rise_10 when v(xs.xo)=v(vth) rise=10
+.meas tran xo_fall_10 when v(xs.xo)=v(vth) fall=10
+.meas tran xo_rise_11 when v(xs.xo)=v(vth) rise=11
+.meas tran xo_fall_11 when v(xs.xo)=v(vth) fall=11
+.meas tran xo_rise_12 when v(xs.xo)=v(vth) rise=12
+.meas tran xo_fall_12 when v(xs.xo)=v(vth) fall=12
+.meas tran xo_rise_13 when v(xs.xo)=v(vth) rise=13
+.meas tran xo_fall_13 when v(xs.xo)=v(vth) fall=13
+.meas tran xo_rise_14 when v(xs.xo)=v(vth) rise=14
+.meas tran xo_fall_14 when v(xs.xo)=v(vth) fall=14
+.meas tran xo_rise_15 when v(xs.xo)=v(vth) rise=15
+.meas tran xo_fall_15 when v(xs.xo)=v(vth) fall=15
+.meas tran xo_rise_16 when v(xs.xo)=v(vth) rise=16
+.meas tran xo_fall_16 when v(xs.xo)=v(vth) fall=16
+.meas tran xo_rise_17 when v(xs.xo)=v(vth) rise=17
+.meas tran xo_fall_17 when v(xs.xo)=v(vth) fall=17
+.meas tran xo_rise_18 when v(xs.xo)=v(vth) rise=18
+.meas tran xo_fall_18 when v(xs.xo)=v(vth) fall=18
+.meas tran xo_rise_19 when v(xs.xo)=v(vth) rise=19
+.meas tran xo_fall_19 when v(xs.xo)=v(vth) fall=19
+.meas tran xo_rise_20 when v(xs.xo)=v(vth) rise=20
+.meas tran xo_fall_20 when v(xs.xo)=v(vth) fall=20
+.meas tran xo_rise_21 when v(xs.xo)=v(vth) rise=21
+.meas tran xo_fall_21 when v(xs.xo)=v(vth) fall=21
+.meas tran xo_rise_22 when v(xs.xo)=v(vth) rise=22
+.meas tran xo_fall_22 when v(xs.xo)=v(vth) fall=22
+.meas tran xo_rise_23 when v(xs.xo)=v(vth) rise=23
+.meas tran xo_fall_23 when v(xs.xo)=v(vth) fall=23
+.meas tran xo_rise_24 when v(xs.xo)=v(vth) rise=24
+.meas tran xo_fall_24 when v(xs.xo)=v(vth) fall=24
+.meas tran xo_rise_25 when v(xs.xo)=v(vth) rise=25
+.meas tran xo_fall_25 when v(xs.xo)=v(vth) fall=25
+.meas tran xo_rise_26 when v(xs.xo)=v(vth) rise=26
+.meas tran xo_fall_26 when v(xs.xo)=v(vth) fall=26
+.meas tran xo_rise_27 when v(xs.xo)=v(vth) rise=27
+.meas tran xo_fall_27 when v(xs.xo)=v(vth) fall=27
+.meas tran xo_rise_28 when v(xs.xo)=v(vth) rise=28
+.meas tran xo_fall_28 when v(xs.xo)=v(vth) fall=28
+.meas tran xo_rise_29 when v(xs.xo)=v(vth) rise=29
+.meas tran xo_fall_29 when v(xs.xo)=v(vth) fall=29
+.meas tran xo_rise_30 when v(xs.xo)=v(vth) rise=30
+.meas tran xo_fall_30 when v(xs.xo)=v(vth) fall=30
+.meas tran xo_rise_31 when v(xs.xo)=v(vth) rise=31
+.meas tran xo_fall_31 when v(xs.xo)=v(vth) fall=31
+.meas tran xo_max max v(xs.xo) from=100n to=290n
+.meas tran xo_min min v(xs.xo) from=100n to=290n
+.meas tran te_0 when v(clk)=v(vth) rise=1
+.meas tran xl_0 find v(xs.xo) when v(clk)=v(vlo) rise=1
+.meas tran xm_0 find v(xs.xo) when v(clk)=v(vth) rise=1
+.meas tran xh_0 find v(xs.xo) when v(clk)=v(vhi) rise=1
+.meas tran rb_0_8 find v(raw_bit) at=308.0n
+.meas tran rv_0_8 find v(raw_valid) at=308.0n
+.meas tran rb_0_50 find v(raw_bit) at=350.0n
+.meas tran rv_0_50 find v(raw_valid) at=350.0n
+.meas tran rb_0_300 find v(raw_bit) at=600.0n
+.meas tran rv_0_300 find v(raw_valid) at=600.0n
+.meas tran te_1 when v(clk)=v(vth) rise=2
+.meas tran xl_1 find v(xs.xo) when v(clk)=v(vlo) rise=2
+.meas tran xm_1 find v(xs.xo) when v(clk)=v(vth) rise=2
+.meas tran xh_1 find v(xs.xo) when v(clk)=v(vhi) rise=2
+.meas tran rb_1_8 find v(raw_bit) at=1308.0n
+.meas tran rv_1_8 find v(raw_valid) at=1308.0n
+.meas tran rb_1_50 find v(raw_bit) at=1350.0n
+.meas tran rv_1_50 find v(raw_valid) at=1350.0n
+.meas tran rb_1_300 find v(raw_bit) at=1600.0n
+.meas tran rv_1_300 find v(raw_valid) at=1600.0n
+.meas tran te_2 when v(clk)=v(vth) rise=3
+.meas tran xl_2 find v(xs.xo) when v(clk)=v(vlo) rise=3
+.meas tran xm_2 find v(xs.xo) when v(clk)=v(vth) rise=3
+.meas tran xh_2 find v(xs.xo) when v(clk)=v(vhi) rise=3
+.meas tran rb_2_8 find v(raw_bit) at=2308.0n
+.meas tran rv_2_8 find v(raw_valid) at=2308.0n
+.meas tran rb_2_50 find v(raw_bit) at=2350.0n
+.meas tran rv_2_50 find v(raw_valid) at=2350.0n
+.meas tran rb_2_300 find v(raw_bit) at=2600.0n
+.meas tran rv_2_300 find v(raw_valid) at=2600.0n
+.meas tran te_3 when v(clk)=v(vth) rise=4
+.meas tran xl_3 find v(xs.xo) when v(clk)=v(vlo) rise=4
+.meas tran xm_3 find v(xs.xo) when v(clk)=v(vth) rise=4
+.meas tran xh_3 find v(xs.xo) when v(clk)=v(vhi) rise=4
+.meas tran rb_3_8 find v(raw_bit) at=3308.0n
+.meas tran rv_3_8 find v(raw_valid) at=3308.0n
+.meas tran rb_3_50 find v(raw_bit) at=3350.0n
+.meas tran rv_3_50 find v(raw_valid) at=3350.0n
+.meas tran rb_3_300 find v(raw_bit) at=3600.0n
+.meas tran rv_3_300 find v(raw_valid) at=3600.0n
+.control
+save all
+alter vph=0.0
+alter vrel=5e-07
+alter vsupply=2.97
+alter vthw=5e-07
+tran 10p 3620n 0 10p
+quit
+.endc
+.end
