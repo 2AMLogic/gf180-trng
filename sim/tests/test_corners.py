@@ -128,9 +128,62 @@ class GridValidationTests(unittest.TestCase):
             corners.validate_grid(grid)
         self.assertIn("share the output id tt_27c_3.30v", str(ctx.exception))
 
-    def test_empty_and_single_point_grids_are_valid(self):
-        corners.validate_grid([])
+    def test_single_point_grid_is_valid(self):
         corners.validate_grid(self._grid(["tt"], (27,), [3.3]))
+
+    def test_empty_grids_are_rejected(self):
+        for label, grid in (
+            ("no points", []),
+            ("empty temperatures", self._grid(["tt"], (), [3.3])),
+            ("empty supplies", self._grid(["tt"], (27,), [])),
+        ):
+            with self.subTest(label), self.assertRaises(ValueError) as ctx:
+                corners.validate_grid(grid)
+            self.assertIn("grid is empty", str(ctx.exception))
+
+    def test_non_finite_and_non_positive_coordinates_are_rejected(self):
+        nan, inf = float("nan"), float("inf")
+        cases = (
+            ((nan,), [3.3], "temperature must be finite, got nan"),
+            ((inf,), [3.3], "temperature must be finite, got inf"),
+            ((27,), [nan], "supply must be finite and > 0 V, got nan"),
+            ((27,), [inf], "supply must be finite and > 0 V, got inf"),
+            ((27,), [0.0], "supply must be finite and > 0 V, got 0.0"),
+            ((27,), [-3.3], "supply must be finite and > 0 V, got -3.3"),
+        )
+        for temps, supplies, needle in cases:
+            with self.subTest(needle), self.assertRaises(ValueError) as ctx:
+                corners.validate_grid(self._grid(["tt"], temps, supplies))
+            self.assertIn(needle, str(ctx.exception))
+
+    def test_finite_out_of_envelope_diagnostics_are_valid(self):
+        corners.validate_grid(self._grid(["tt"], (-273.0, 400.0), [0.5, 12.0]))
+
+
+class SupplyPointValidationTests(unittest.TestCase):
+    def test_invalid_nominal_is_rejected(self):
+        for bad in (0.0, -3.3, float("nan"), float("inf")):
+            with self.subTest(bad), self.assertRaises(ValueError) as ctx:
+                corners.supply_points(bad, 0.1)
+            self.assertIn("nominal supply", str(ctx.exception))
+            self.assertIn(repr(bad), str(ctx.exception))
+
+    def test_invalid_tolerance_is_rejected(self):
+        for bad in (-0.1, float("nan"), float("inf")):
+            with self.subTest(bad), self.assertRaises(ValueError) as ctx:
+                corners.supply_points(3.3, bad)
+            self.assertIn("supply tolerance", str(ctx.exception))
+            self.assertIn(repr(bad), str(ctx.exception))
+
+    def test_tolerance_producing_non_positive_rail_is_rejected(self):
+        for tol in (1.0, 1.5):
+            with self.subTest(tol), self.assertRaises(ValueError):
+                corners.supply_points(3.3, tol)
+
+    def test_zero_tolerance_and_out_of_envelope_nominal_are_valid(self):
+        self.assertEqual(corners.supply_points(3.3, 0), [3.3])
+        self.assertEqual(corners.supply_points(1.0, 0.0), [1.0])
+        self.assertEqual(corners.supply_points(12.0, 0.1), [10.8, 12.0, 13.2])
 
 
 if __name__ == "__main__":
