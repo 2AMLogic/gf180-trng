@@ -687,8 +687,17 @@ def _tcl(
     period_ns: float,
     spef_path: Path,
     bisect: bool,
+    activity_block: list[str] | None = None,
 ) -> str:
     """One OpenROAD session's script: read the committed DEF, extract, time.
+
+    ``activity_block`` is the opt-in observed-activity mode (#453, see
+    `activity_power.py`): when given, the session reads the SPEF the default
+    flow already wrote for this corner (no re-extraction, so the observed and
+    uniform numbers see identical parasitics), propagates the clock, runs the
+    caller's `read_vcd`/`report_power` lines and returns. It never touches the
+    default path: with ``activity_block=None`` the script is byte-identical
+    to what it was before this parameter existed.
 
     One session per (corner, clock period) on purpose. OpenSTA caches a
     design's clock-derived activity densities on the first power query, so a
@@ -747,6 +756,10 @@ def _tcl(
             f"  ;# {trunk.net}: {trunk.trunk_length_um:.2f} um, "
             f"{trunk.res_ohm:.2f} ohm, {trunk.cap_fF:.3f} fF"
         )
+    if activity_block is not None:
+        return "\n".join(
+            lines + ["", f"read_spef {spef_path}", "set_propagated_clock [all_clocks]", *activity_block]
+        ) + "\n"
     lines += [
         "",
         "define_process_corner -ext_model_index 0 X",
@@ -1460,6 +1473,13 @@ def main(argv: list[str] | None = None) -> int:
                     help="run and print without minting evidence records")
     ap.add_argument("--list", action="store_true", help="print the corner grid and exit")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument(
+        "--activity", nargs="?", const="", default=None, metavar="MANIFEST",
+        help="opt-in (#453): instead of the uniform-activity sweep, run the "
+             "observed-activity flow over the traces in MANIFEST (default: "
+             "layout/.work/digital-sta-activity/manifest.json, from "
+             "`activity.py capture`) and mint digital-sta-activity records. "
+             "The default flow is unchanged without this flag.")
     args = ap.parse_args(argv)
 
     try:
@@ -1472,6 +1492,13 @@ def main(argv: list[str] | None = None) -> int:
         for c in corners:
             print(f"{c.label:32s} process={c.process} temp={c.temp_c:g}C vdd={c.vdd:.2f}V")
         return 0
+
+    if args.activity is not None:
+        import activity_power  # noqa: E402  (opt-in path only)
+
+        manifest = Path(args.activity) if args.activity else (
+            WORK_DIR.parent / "digital-sta-activity" / "manifest.json")
+        return activity_power.main(corners, manifest, no_write=args.no_write)
 
     pdk = resolve_pdk()
     missing = check_environment(pdk)
