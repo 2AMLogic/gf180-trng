@@ -102,6 +102,7 @@ from array_sizing import (  # noqa: E402
     shipped_ring_count,
 )
 from starved_cell_jitter_energy import load_points as load_starved_points  # noqa: E402
+from _record_parsing import parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -337,7 +338,15 @@ def _cv(xs: list[float]) -> float:
     return sd / m
 
 
-def report_mc_ro_freq() -> None:
+def report_mc_ro_freq(*, include_superseded: bool = False) -> None:
+    """Print one entry per ``sim/tb/ro-array-core-mc-freq/`` record.
+
+    Records whose frontmatter says ``status: superseded`` are left out
+    (issue #427): they are kept in ``sim/records/`` as history, not listed as
+    current evidence. ``include_superseded=True`` is the explicit historical
+    read. A record whose lifecycle cannot be read raises ``RuntimeError``
+    naming it.
+    """
     print("\n== RO-array frequency-spread MC (sim/tb/ro-array-core-mc-freq/) ==")
     # `-[0-9]` and not `-`: the sequence number must follow the slug directly
     # (same convention as array_sizing.py's ARRAY_RECORD_GLOBS), so records
@@ -345,12 +354,15 @@ def report_mc_ro_freq() -> None:
     # (sim/tb/ro-array-core-mc-freq-control/, issue #146) -- whose slug
     # extends this one's as a substring -- are never swept in here as if they
     # were mismatch-enabled MC data.
-    records = sorted(RECORDS.glob("*-ro-array-core-mc-freq-[0-9]*.md"))
-    if not records:
-        print("  (no sim/records/*-ro-array-core-mc-freq-[0-9]*.md record committed yet)")
-        return
-    for rec_path in records:
+    records = []
+    for rec_path in sorted(RECORDS.glob("*-ro-array-core-mc-freq-[0-9]*.md")):
         text = rec_path.read_text()
+        if include_superseded or parse_status(text, label=rec_path.stem) == "valid":
+            records.append((rec_path, text))
+    if not records:
+        print("  (no valid sim/records/*-ro-array-core-mc-freq-[0-9]*.md record committed yet)")
+        return
+    for rec_path, text in records:
         raw_dir_m = re.search(r"path:\s*(sim/records/raw/\S+)/?\s*$", text, re.M)
         if raw_dir_m is None:
             print(f"  {rec_path.stem}: no raw.path found, skipping per-seed ratio check")
@@ -401,7 +413,9 @@ _DTRIP_PATTERN = re.compile(
 )
 
 
-def _sampler_offset(corner: str = "tt/27/3.30") -> tuple[float, float, float, int, str]:
+def _sampler_offset(
+    corner: str = "tt/27/3.30", *, include_superseded: bool = False,
+) -> tuple[float, float, float, int, str]:
     """``(systematic_offset_v, mismatch_sd_v, vdd, n_seeds, record_stem)`` at
     ``corner`` (default the nominal corner, where this callable's callers
     historically only ever had one record to read).
@@ -412,6 +426,11 @@ def _sampler_offset(corner: str = "tt/27/3.30") -> tuple[float, float, float, in
     function's pre-#146 selection rule) is no longer reliably the nominal
     one, so this filters explicitly by corner (and by ``status: valid``,
     skipping superseded records) instead.
+
+    The lifecycle is read by ``parse_status`` from the frontmatter only
+    (issue #427), so a ``status:`` line quoted in a record's body cannot
+    decide it, and a missing or unknown value raises ``RuntimeError`` naming
+    the record. ``include_superseded=True`` is the explicit historical read.
     """
     # `-[0-9]` and not `-`: the sequence number must follow the slug directly
     # (same convention as array_sizing.py's ARRAY_RECORD_GLOBS), so records
@@ -427,7 +446,7 @@ def _sampler_offset(corner: str = "tt/27/3.30") -> tuple[float, float, float, in
     candidates = []
     for rec_path in records:
         text = rec_path.read_text()
-        if re.search(r"^status:\s*superseded\s*$", text, re.M):
+        if not include_superseded and parse_status(text, label=rec_path.stem) != "valid":
             continue
         process_m = re.search(r"process:\s*(\w+)", text)
         temp_m = re.search(r"temperature:\s*(-?[\d.]+)", text)

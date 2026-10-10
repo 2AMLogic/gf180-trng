@@ -12,7 +12,9 @@ patch the module's ``RECORDS`` and ``REPO_ROOT``, and check:
 2. ``classify`` and ``main(["--check"])``: a baseline corpus with no effect
    exits zero, and each way the bit effect can show up -- phase lock, bias,
    serial correlation, injection pulling, an unsettled sampled level -- is
-   caught with a non-zero exit.
+   caught with a non-zero exit;
+3. ``_load`` skips ``status: superseded`` records before picking the latest
+   one per slug (issue #427).
 
 Stdlib only: no ngspice, no PDK.
 """
@@ -48,7 +50,7 @@ NEUTRAL = dict(
 PPC = {"integer": 4.01, "generic": 4.38, "clk-floor": 1000.3}
 
 
-def record_text(raw_rel: str, deck: dict) -> str:
+def record_text(raw_rel: str, deck: dict, status: str | None = "valid") -> str:
     bullets = {
         "n_samples": N, "ones_frac": deck["ones_frac"], "bit_mean": deck["bit_mean"],
         "ring1_periods_per_sample": deck["ppc1"], "ring2_periods_per_sample": deck["ppc2"],
@@ -60,8 +62,8 @@ def record_text(raw_rel: str, deck: dict) -> str:
     # Corner, status and raw path live in the leading frontmatter, as in the
     # committed records; the parser does not read them from the body (#443).
     return (
-        "---\nstatus: valid\n"
-        f"raw:\n  path: {raw_rel}\n"
+        "---\n" + ("" if status is None else f"status: {status}\n")
+        + f"raw:\n  path: {raw_rel}\n"
         "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n"
         f"{body}\n"
     )
@@ -327,6 +329,72 @@ class CheckGateTests(CorpusTestCase):
         code, out, _ = self.run_main()
         self.assertEqual(code, 0)
         self.assertIn("Verdict: no-measurable-bit-effect", out)
+
+
+class LoadLifecycleTests(CorpusTestCase):
+    SLUG = "sampler-bit-bias-clocked-generic"
+
+    def write_record(self, day: int, status: str | None, ones_frac: float, *,
+                     body: str = "") -> str:
+        stem = f"2026-01-0{day}-{self.SLUG}-01"
+        raw = self.root / "sim" / "raw" / stem
+        raw.mkdir(parents=True, exist_ok=True)
+        for i in range(SEEDS):
+            (raw / f"tb-run{i}.log").write_text(
+                "".join(f"bk = {3.3 * (j % 2):.6e}\n" for j in range(N)))
+        deck = dict(NEUTRAL, ones_frac=ones_frac)
+        text = record_text(f"sim/raw/{stem}", deck, status=status)
+        (self.records / f"{stem}.md").write_text(text + body)
+        return stem
+
+    def test_lexically_newer_superseded_record_is_not_selected(self) -> None:
+        valid = self.write_record(1, "valid", 0.5)
+        self.write_record(2, "superseded", 0.9)
+        v = sb._load(self.SLUG)
+        self.assertEqual(v.rec.stem, valid)
+        self.assertEqual(v.rec.values["ones_frac"], 0.5)
+
+    def test_historical_read_selects_the_superseded_record(self) -> None:
+        self.write_record(1, "valid", 0.5)
+        newer = self.write_record(2, "superseded", 0.9)
+        self.assertEqual(sb._load(self.SLUG, include_superseded=True).rec.stem, newer)
+
+    def test_superseded_only_slug_is_missing_evidence(self) -> None:
+        self.write_record(1, "superseded", 0.5)
+        with self.assertRaisesRegex(sb.RecordError, "no valid .*cannot be compared"):
+            sb._load(self.SLUG)
+
+    def test_superseded_only_slug_fails_main(self) -> None:
+        self.write_corpus()
+        for path in self.records.glob(f"*-{self.SLUG}-*.md"):
+            path.write_text(path.read_text().replace("status: valid", "status: superseded", 1))
+        code, _out, err = self.run_main("--check")
+        self.assertEqual(code, 2)
+        self.assertIn(self.SLUG, err)
+
+    def test_body_status_line_does_not_override_frontmatter(self) -> None:
+        stem = self.write_record(1, "valid", 0.5, body="\nQuoted:\n\nstatus: superseded\n")
+        self.assertEqual(sb._load(self.SLUG).rec.stem, stem)
+
+    def test_missing_unknown_and_duplicate_status_name_the_record(self) -> None:
+        for status in (None, "draft", "valid\nstatus: superseded"):
+            with self.subTest(status=status):
+                stem = self.write_record(1, status, 0.5)
+                with self.assertRaisesRegex(sb.RecordError, stem):
+                    sb._load(self.SLUG)
+
+    def test_load_pairs_passes_the_historical_option_through(self) -> None:
+        seen = []
+
+        def fake_load(slug, **kw):
+            seen.append((slug, kw))
+            return mock.Mock()
+
+        with mock.patch.object(sb, "_load", fake_load), \
+                mock.patch.object(sb, "Pair", lambda *a: a):
+            sb.load_pairs(include_superseded=True)
+        self.assertEqual(len(seen), 2 * len(sb.RATES))
+        self.assertTrue(all(kw == {"include_superseded": True} for _slug, kw in seen))
 
 
 if __name__ == "__main__":

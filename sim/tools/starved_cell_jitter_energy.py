@@ -159,9 +159,8 @@ class Record:
     @property
     def status(self) -> str:
         """Frontmatter lifecycle (``valid``/``superseded``), parsed on demand
-        so callers that never filter on it (the variant-comparison scripts and
-        their fixtures) need not carry one; a missing or unknown value raises
-        ``RecordError`` naming the record."""
+        (only the loaders that select evidence read it); a missing or unknown
+        value raises ``RecordError`` naming the record."""
         return parse_status(self._text, label=self.stem, error_cls=RecordError)
 
     def spread(self, key: str) -> float | None:
@@ -426,7 +425,7 @@ class Point:
         return self.rec.spread("sigma_1")
 
 
-def load_variants_by_glob(variants, corner: str, factory):
+def load_variants_by_glob(variants, corner: str, factory, *, include_superseded: bool = False):
     """Load one ``factory``-built object per entry of a ``VARIANTS``-style
     sequence of ``(label, glob, *rest)`` tuples, filtered to records at
     ``corner`` that carry a ``sigma_1``.
@@ -445,19 +444,28 @@ def load_variants_by_glob(variants, corner: str, factory):
     value (measurements come back "no data"), so it never reaches the filter
     below in the first place -- it is the ``"sigma_1" not in rec.values``
     check that excludes it, not any special-casing of failure.
+
+    Records whose frontmatter says ``status: superseded`` are dropped before
+    the latest is chosen (issue #427), so a superseded record that sorts last
+    is never compared, and a variant with only superseded records at
+    ``corner`` is missing evidence (``RecordError``). Every matched record
+    must carry a readable ``status:``. ``include_superseded=True`` is the
+    explicit historical read.
     """
     out = []
     for label, glob, *rest in variants:
         matches = []
         for path in sorted(RECORDS.glob(glob)):
             rec = Record(path)
+            if not include_superseded and rec.status != "valid":
+                continue
             if rec.corner != corner or "sigma_1" not in rec.values:
                 continue
             matches.append(rec)
         if not matches:
             raise RecordError(
-                f"variant {label!r}: no sim/records/{glob} record at {corner} carries a "
-                "sigma_1, so this variant cannot be compared"
+                f"variant {label!r}: no valid sim/records/{glob} record at {corner} "
+                "carries a sigma_1, so this variant cannot be compared"
             )
         out.append(factory(label, matches[-1], *rest))
     return out

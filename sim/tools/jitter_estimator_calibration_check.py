@@ -45,7 +45,7 @@ from statistics import NormalDist
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import parse_values  # noqa: E402
+from _record_parsing import parse_status, parse_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -96,10 +96,30 @@ def h_hat(p1: float) -> float:
     return -math.log2(max(p1, 1.0 - p1))
 
 
-def latest_record() -> Path:
+def latest_record(*, include_superseded: bool = False) -> Path:
+    """The newest ``sim/records/*-{SLUG}-*.md`` record that is current evidence.
+
+    Records whose frontmatter says ``status: superseded`` are skipped before
+    the newest one is chosen (issue #427), so a superseded record that sorts
+    last never becomes the default. A missing or unknown ``status:`` raises
+    :class:`RecordError` naming the record. ``include_superseded=True`` is
+    the explicit historical read. A record named on the command line is read
+    as given, whatever its lifecycle: naming one is an intentional
+    (possibly historical) read, not an automatic selection.
+    """
     candidates = sorted(RECORDS.glob(f"*-{SLUG}-*.md"))
     if not candidates:
         raise RecordError(f"no committed record matches sim/records/*-{SLUG}-*.md")
+    if not include_superseded:
+        candidates = [
+            c for c in candidates
+            if parse_status(c.read_text(), label=c.stem, error_cls=RecordError) == "valid"
+        ]
+        if not candidates:
+            raise RecordError(
+                f"no valid record matches sim/records/*-{SLUG}-*.md "
+                "(every match is superseded)"
+            )
     return candidates[-1]
 
 
@@ -118,7 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "record", nargs="?", metavar="RECORD_STEM_OR_PATH",
-        help=f"record to check (default: newest sim/records/*-{SLUG}-*.md)",
+        help=f"record to check (default: newest sim/records/*-{SLUG}-*.md whose "
+        "status is valid; a record named here is read whatever its status)",
     )
     parser.add_argument(
         "--check", action="store_true",

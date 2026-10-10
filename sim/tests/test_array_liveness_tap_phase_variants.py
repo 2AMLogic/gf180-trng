@@ -15,7 +15,10 @@ shipped-array experiment: the shipped-array residual
    conflict on its own while the other still matches. Matching evidence
    returns 0, a conflict 1, an unset recorded verdict 2, and a recorded
    conclusion whose supporting variant pair has gone missing returns 1.
-3. ``_load`` against an empty record directory.
+3. ``_load`` against an empty record directory, and its lifecycle filter
+   (issue #427): a ``status: superseded`` record is skipped before the latest
+   is chosen, so a superseded-only variant is ``None`` when optional and a
+   ``RecordError`` when required.
 
 Stdlib only: no ngspice, no PDK, no committed record is read.
 """
@@ -335,6 +338,81 @@ class LoadTests(unittest.TestCase):
                 mock.patch.object(alt, "RECORDS", Path(tmp)):
             with self.assertRaises(RecordError):
                 alt._load(self.SPEC)
+
+
+class LoadLifecycleTests(unittest.TestCase):
+    SPEC = LoadTests.SPEC
+    STEM = "2026-01-0{day}-array-liveness-tap-phase-clocked-01"
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        for name, value in (
+            ("RECORDS", self.root),
+            # The real Variant reads a testbench manifest; the record is what
+            # selection is about, so the factory hands it straight back.
+            ("Variant", lambda label, rec, manifest, difference: rec),
+        ):
+            p = mock.patch.object(alt, name, value)
+            p.start()
+            self.addCleanup(p.stop)
+
+    def write(self, day: int, status: str | None, *, body: str = "") -> str:
+        stem = self.STEM.format(day=day)
+        head = "---\n" + ("" if status is None else f"status: {status}\n")
+        (self.root / f"{stem}.md").write_text(
+            head + "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n"
+            + body + "- `sigma_1`: 1e-12\n- `period`: 2.8e-09\n"
+        )
+        return stem
+
+    def test_lexically_newer_superseded_record_is_not_selected(self) -> None:
+        valid = self.write(1, "valid")
+        self.write(2, "superseded")
+        for required in (True, False):
+            with self.subTest(required=required):
+                self.assertEqual(alt._load(self.SPEC, required=required).stem, valid)
+
+    def test_historical_read_selects_the_superseded_record(self) -> None:
+        self.write(1, "valid")
+        newer = self.write(2, "superseded")
+        self.assertEqual(alt._load(self.SPEC, include_superseded=True).stem, newer)
+
+    def test_superseded_only_optional_variant_is_none(self) -> None:
+        self.write(1, "superseded")
+        self.assertIsNone(alt._load(self.SPEC, required=False))
+
+    def test_superseded_only_required_variant_raises(self) -> None:
+        self.write(1, "superseded")
+        with self.assertRaisesRegex(RecordError, "1 shipped.*no valid"):
+            alt._load(self.SPEC)
+
+    def test_body_status_line_does_not_override_frontmatter(self) -> None:
+        stem = self.write(1, "valid", body="Quoted:\n\nstatus: superseded\n\n")
+        self.assertEqual(alt._load(self.SPEC).stem, stem)
+
+    def test_missing_unknown_and_duplicate_status_name_the_record(self) -> None:
+        for status in (None, "draft", "valid\nstatus: valid"):
+            with self.subTest(status=status):
+                stem = self.write(1, status)
+                for required in (True, False):
+                    with self.assertRaisesRegex(RecordError, stem):
+                        alt._load(self.SPEC, required=required)
+
+    def test_load_variants_passes_the_historical_option_through(self) -> None:
+        seen = []
+        with mock.patch.object(alt, "_load", lambda spec, **kw: seen.append(kw)):
+            alt.load_variants()
+            alt.load_variants(include_superseded=True)
+        n_opt, n_req = len(alt.VARIANTS), len(alt.BOUND_VARIANTS)
+        self.assertEqual(
+            seen,
+            [{"required": False, "include_superseded": False}] * n_opt
+            + [{"include_superseded": False}] * n_req
+            + [{"required": False, "include_superseded": True}] * n_opt
+            + [{"include_superseded": True}] * n_req,
+        )
 
 
 if __name__ == "__main__":

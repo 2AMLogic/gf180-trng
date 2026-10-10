@@ -20,6 +20,11 @@ Two halves, the same contract as ``layout/tests/test_verify.py``:
    two record families disagree by more than ``FAMILY_AGREEMENT_TOL``, or the
    minimum-Q corner is not ``MEASURED_MIN_Q_CORNER``.
 
+3. Lifecycle filtering (issue #427) in the two Monte Carlo readers that glob
+   records themselves: ``report_mc_ro_freq`` and ``_sampler_offset`` read
+   synthetic records from a temporary directory and must skip a record whose
+   frontmatter says ``status: superseded``, unless asked for a historical read.
+
 Needs no ngspice, no PDK, and reads nothing under ``sim/records/``.
 """
 
@@ -28,6 +33,7 @@ from __future__ import annotations
 import contextlib
 import io
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -227,6 +233,131 @@ class GateTests(unittest.TestCase):
         _code, _out, err = run_check(records, power_records())
         self.assertNotIn("incomplete", err)
         self.assertNotIn("record families differ", err)
+
+
+def _frontmatter(status: str | None, *, extra: str = "") -> str:
+    head = "---\n" + (f"status: {status}\n" if status is not None else "")
+    return head + extra + "---\n\n"
+
+
+class LifecycleTestCase(unittest.TestCase):
+    """A temporary repo root holding ``sim/records`` and its raw logs."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.records = self.root / "sim" / "records"
+        self.records.mkdir(parents=True)
+        for name, value in (("REPO_ROOT", self.root), ("RECORDS", self.records)):
+            p = mock.patch.object(wce, name, value)
+            p.start()
+            self.addCleanup(p.stop)
+
+
+class McFreqLifecycleTests(LifecycleTestCase):
+    def write_mc_freq(self, stem: str, status: str | None, *, body: str = "") -> None:
+        raw_rel = f"sim/records/raw/{stem}"
+        raw = self.root / raw_rel
+        raw.mkdir(parents=True)
+        for i, (p1, p2) in enumerate(((2.0e-9, 1.9e-9), (2.02e-9, 1.89e-9))):
+            (raw / f"seed{i}.log").write_text(f"m_period_r1 = {p1!r}\nm_period_r2 = {p2!r}\n")
+        text = _frontmatter(status, extra=f"raw:\n  path: {raw_rel}/\n") + body
+        (self.records / f"{stem}.md").write_text(text)
+
+    def report(self, **kwargs) -> str:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            wce.report_mc_ro_freq(**kwargs)
+        return out.getvalue()
+
+    def test_superseded_record_is_omitted_by_default(self) -> None:
+        self.write_mc_freq("2026-01-01-ro-array-core-mc-freq-01", "valid")
+        self.write_mc_freq("2026-01-02-ro-array-core-mc-freq-01", "superseded")
+        out = self.report()
+        self.assertIn("2026-01-01-ro-array-core-mc-freq-01: 2 mismatch seeds", out)
+        self.assertNotIn("2026-01-02-ro-array-core-mc-freq-01", out)
+
+    def test_historical_read_lists_superseded_records(self) -> None:
+        self.write_mc_freq("2026-01-01-ro-array-core-mc-freq-01", "valid")
+        self.write_mc_freq("2026-01-02-ro-array-core-mc-freq-01", "superseded")
+        out = self.report(include_superseded=True)
+        self.assertIn("2026-01-01-ro-array-core-mc-freq-01: 2 mismatch seeds", out)
+        self.assertIn("2026-01-02-ro-array-core-mc-freq-01: 2 mismatch seeds", out)
+
+    def test_superseded_only_family_reports_no_valid_record(self) -> None:
+        self.write_mc_freq("2026-01-01-ro-array-core-mc-freq-01", "superseded")
+        out = self.report()
+        self.assertIn("no valid sim/records/*-ro-array-core-mc-freq-[0-9]*.md", out)
+        self.assertNotIn("mismatch seeds", out)
+
+    def test_body_status_line_does_not_override_frontmatter(self) -> None:
+        self.write_mc_freq("2026-01-01-ro-array-core-mc-freq-01", "valid",
+                           body="Quoted from an older record:\n\nstatus: superseded\n")
+        self.assertIn("2 mismatch seeds", self.report())
+
+    def test_unreadable_lifecycle_names_the_record(self) -> None:
+        for status in (None, "draft"):
+            with self.subTest(status=status):
+                for old in self.records.glob("*.md"):
+                    old.unlink()
+                stem = f"2026-01-01-ro-array-core-mc-freq-0{1 if status is None else 2}"
+                self.write_mc_freq(stem, status)
+                with self.assertRaisesRegex(RuntimeError, stem):
+                    self.report()
+
+    def test_duplicate_status_names_the_record(self) -> None:
+        stem = "2026-01-01-ro-array-core-mc-freq-01"
+        self.write_mc_freq(stem, "valid\nstatus: valid")
+        with self.assertRaisesRegex(RuntimeError, f"{stem}.*exactly one"):
+            self.report()
+
+
+class SamplerOffsetLifecycleTests(LifecycleTestCase):
+    CORNER = "tt/27/3.30"
+
+    def write_offset(self, stem: str, status: str | None, mean: float, *,
+                     body: str = "") -> None:
+        corner = "corner:\n  process: tt\n  temperature: 27\n  voltage: 3.30\n"
+        text = (_frontmatter(status, extra=corner) + body
+                + f"- `dtrip_v`: mean {mean!r} over 30 seeds (sd 0.01, 1% of mean)\n")
+        (self.records / f"{stem}.md").write_text(text)
+
+    def test_lexically_newer_superseded_record_is_not_selected(self) -> None:
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "valid", 1.70)
+        self.write_offset("2026-01-02-sampler-dff-mc-offset-01", "superseded", 1.80)
+        offset, _sd, vdd, n, stem = wce._sampler_offset(self.CORNER)
+        self.assertEqual(stem, "2026-01-01-sampler-dff-mc-offset-01")
+        self.assertAlmostEqual(offset, 1.70 - 0.5 * vdd)
+        self.assertEqual(n, 30)
+
+    def test_historical_read_selects_the_superseded_record(self) -> None:
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "valid", 1.70)
+        self.write_offset("2026-01-02-sampler-dff-mc-offset-01", "superseded", 1.80)
+        stem = wce._sampler_offset(self.CORNER, include_superseded=True)[4]
+        self.assertEqual(stem, "2026-01-02-sampler-dff-mc-offset-01")
+
+    def test_superseded_only_corner_is_missing_evidence(self) -> None:
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "superseded", 1.70)
+        with self.assertRaisesRegex(RuntimeError, "no valid .* at corner"):
+            wce._sampler_offset(self.CORNER)
+
+    def test_body_status_line_does_not_override_frontmatter(self) -> None:
+        # The pre-#427 regex matched `status: superseded` anywhere in the file.
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "valid", 1.70,
+                          body="An earlier draft said:\n\nstatus: superseded\n\n")
+        self.assertEqual(wce._sampler_offset(self.CORNER)[4],
+                         "2026-01-01-sampler-dff-mc-offset-01")
+
+    def test_missing_unknown_and_duplicate_status_name_the_record(self) -> None:
+        for status in (None, "draft", "valid\nstatus: superseded"):
+            with self.subTest(status=status):
+                for old in self.records.glob("*.md"):
+                    old.unlink()
+                stem = "2026-01-01-sampler-dff-mc-offset-01"
+                self.write_offset(stem, status, 1.70)
+                with self.assertRaisesRegex(RuntimeError, stem):
+                    wce._sampler_offset(self.CORNER)
 
 
 if __name__ == "__main__":
