@@ -1,8 +1,22 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-09.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-10.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-10
+
+- **PR #444**: Record batch capacity refusals for combiner/sampler PEX grid (partial #418)
+- **PR #442**: Refresh Chipalooza current-evidence table and Row C corner coverage (#436)
+- **PR #441**: Restate nested P&R DEF path and add host-path guard for tracked JSON
+- **PR #440**: Reject partially unsupported characterization row selections
+- **Issue #436** (closed): Refresh Chipalooza current-evidence table and reproduction corner coverage
+- **Issue #437** (closed): Reject partially unsupported characterization row selections before running campaigns
+- **Issue #404** (closed): Committed generated reports embed absolute host paths (home dir, worktree); add a guard
+
+### 2026-10-09
+
+- **PR #439**: Note supply-ripple batch retry; results still pending (#414)
 
 ### 2026-10-09
 
