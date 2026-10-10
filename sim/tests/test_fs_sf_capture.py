@@ -17,7 +17,6 @@ No ngspice, no PDK, no ``klt``, no network. They cover:
 
 from __future__ import annotations
 
-import json
 import sys
 import unittest
 from pathlib import Path

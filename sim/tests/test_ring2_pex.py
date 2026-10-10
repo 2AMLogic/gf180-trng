@@ -7,7 +7,6 @@ publication tests build a synthetic publication in a scratch copy of the paths.
 import copy
 import importlib.util
 import json
-import tempfile
 import unittest
 from pathlib import Path
 
