@@ -342,6 +342,15 @@ so step 1d currently has nothing to check. A single-corner debug probe
 within limits, and extracted clock-to-Q was about 4x the schematic value.
 That probe is a debug observation, not a PVT record.
 
+**Attempt log (2026-10-10).** With the pinned producer
+(`klayout-tools==0.6.0`, `klayout==0.30.10`), the offline checks and
+`build_dut.py --check` passed. Two further `publish_combiner_sampler_pex.py
+--backend batch` submissions both failed on the schematic side with
+`batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of
+the 30 pools after 3 attempt(s)`. `klt pex` reported
+`nothing published`, so no evidence was written and the grid was again not run
+locally. This remains unrun; see klayout-tools#2989 and #2990.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
