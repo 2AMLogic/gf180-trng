@@ -73,6 +73,55 @@ class SelectTests(unittest.TestCase):
             characterize._select(["ZZ"])
 
 
+    def test_mixed_valid_and_unknown_raises_naming_unknown(self):
+        with self.assertRaises(SystemExit) as cm:
+            characterize._select(["A", "TYPO", "QQ"])
+        msg = str(cm.exception)
+        self.assertIn("TYPO", msg)
+        self.assertIn("QQ", msg)
+
+    def test_mixed_valid_and_out_of_scope_reports_guidance(self):
+        with self.assertRaises(SystemExit) as cm:
+            characterize._select(["A", "G"])
+        msg = str(cm.exception)
+        self.assertIn("row G", msg)
+        self.assertIn(characterize.ROWS_NOT_COVERED["G"], msg)
+
+    def test_multi_row_and_lowercase_still_select(self):
+        selected = characterize._select(["a", "f"])
+        self.assertEqual(
+            selected,
+            [c for c in characterize.CAMPAIGNS if {"A", "F"} & set(c.rows)],
+        )
+
+
+class RefusalSubprocessTests(unittest.TestCase):
+    """Bad selections fail before env probing or any subprocess launch."""
+
+    def _run(self, *args):
+        return subprocess.run(
+            [sys.executable, str(SIM_DIR / "characterize.py"), *args],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=30,
+        )
+
+    def test_normal_and_dry_run_reject_mixed_unknown(self):
+        for extra in ([], ["--dry-run"]):
+            r = self._run("--rows", "A", "TYPO", *extra)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("TYPO", r.stderr)
+            self.assertNotIn("====", r.stdout)
+            self.assertNotIn("run_corners.py", r.stdout)
+            self.assertNotIn("environment check", r.stderr)
+
+    def test_mixed_out_of_scope_rejected(self):
+        for extra in ([], ["--dry-run"]):
+            r = self._run("--rows", "A", "G", *extra)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("row G", r.stderr)
+            self.assertIn("run_sta.py", r.stderr)
+            self.assertEqual(r.stdout, "")
+
+
 class DryRunSubprocessTests(unittest.TestCase):
     """No PDK/ngspice required -- --dry-run never touches either."""
 
