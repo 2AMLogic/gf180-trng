@@ -351,6 +351,30 @@ the 30 pools after 3 attempt(s)`. `klt pex` reported
 `nothing published`, so no evidence was written and the grid was again not run
 locally. This remains unrun; see klayout-tools#2989 and #2990.
 
+**Attempt log (2026-10-10, second session).** Same pin, same host rules (grid
+only through `klt pex --backend batch`; no local fallback). The offline
+checks (`stimulus.py --check`, `build_dut.py --check-source`, the 34-test
+regression, `build_dut.py --check`) passed. Four further
+`publish_combiner_sampler_pex.py --backend batch` submissions were made and
+none produced a complete two-sided response:
+
+* The first failed on the schematic side with
+  `batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any
+  of the 30 pools after 3 attempt(s)`.
+* Two retries after a wait of about 150 s each returned `klt pex` exit 4 with
+  a native envelope whose 1782 delta rows (27 corners x 66 rows) were all
+  `status: error`, with no per-row reason in the envelope.
+* A diagnostic re-run with `--format text` showed the schematic side
+  completing and the extracted side failing with the same capacity refusal
+  text as above.
+
+The publisher refused to publish, so nothing was committed and no row counts
+as a pass. The incomplete envelopes were not kept as evidence because they
+carry no measurement. A run with the host-default `klt` (0.7.0, not the
+pin) also errored and was discarded; it is not the producer of record. The
+grid was not run locally. The item remains unrun and the issue open. See
+klayout-tools#2989 and #2990.
+
 ## Why each item reads the way it does
 
 The grader's verdict is in `records/t1-tier-report.json`. This section is the
