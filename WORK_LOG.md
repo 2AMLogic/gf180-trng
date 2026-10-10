@@ -6,6 +6,16 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #482**: sim: remove unused imports and an unused local (#478)
+- **PR #477**: docs: out-of-envelope health-test characterization model-bound audit and plan (#467)
+- **PR #475**: sim: fs/sf campaign second batch retry, refused again (#472)
+- **PR #473**: sim: integrated fs/sf capture campaign on the ring-array + XOR + sampler path (#472)
+- **PR #470**: docs(signoff): combiner/sampler PEX grid attempt 3, batch capacity refused (#418)
+- **Issue #478** (closed): Remove dead code: 3 unused imports, 1 unused local (ruff F401/F841)
+- **Issue #467** (closed): Establish model bounds and a feasible plan for out-of-envelope health-test characterization
+
+### 2026-10-10
+
 - **PR #466**: Price the top-edge digital pin legs in the STA interface load and re-run the sweep (#456)
 - **PR #465**: Skip superseded records in the remaining direct-glob record readers
 - **Issue #456** (closed): Price the top-edge digital pin legs in the STA interface load and re-run the sweep against the regenerated trunks
