@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "file": "layout/floorplan/trng_floorplan.gds",
+  "spec": "layout/floorplan/erc-supply-spec.json",
+  "pdk": null,
+  "findings_only": true,
+  "gate_role": "poly2",
+  "gate_count": 8123,
+  "erc_findings": [],
+  "erc_finding_count": 0,
+  "erc_status": "clean",
+  "status": "not_checked",
+  "erc_coverage": {
+    "scope": "connectivity",
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "erc.net_connectivity:[\"vdd\"]",
+      "erc.net_connectivity:[\"vddd\"]",
+      "erc.net_connectivity:[\"vddr1\"]",
+      "erc.net_connectivity:[\"vddr2\"]",
+      "erc.net_connectivity:[\"vss\"]"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "erc.missing_tie:[]",
+        "reason": "ties_disclosed_unexpressible"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": [],
+    "checked_by_assertion": [],
+    "checked_by_well_assertion": [],
+    "floating_gate_checked_count": 8123
+  },
+  "ties_disclosure": {
+    "reason": "No ties[] is declared and erc.missing_tie is not computed for the composed stream. The analog regions draw no Nplus/Pplus (31/0, 32/0) or LVPWELL (204/0) layer, so a well tap cannot be told from source/drain diffusion by layer, and their reference netlists give every PMOS a floating well; the digital partition's own spec (layout/digital/erc-supply-spec.json) checks its tap sites. The substrate/guard-ring identity is likewise unverified here: no vsubs label exists in the stream and the guard ring is deliberately not merged into vss. Well-tie coverage and the substrate connection are unverified for the composed floorplan, not passed.",
+    "kind": "unexpressible"
+  },
+  "provenance": {
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:5698c4e1db04be69140c73406ed8457984d86a605b69a31018bec2f634872c96",
+      "role": "layout"
+    },
+    "spec": {
+      "content_hash": "sha256:36152df43c8d5638934098519916067a24cf6fe5f8ba38ccfb5ef9e29405ea02"
+    },
+    "devices": []
+  },
+  "trimmed": {
+    "gates": "per-gate antenna tables omitted (gate_count kept)",
+    "coverage": "antenna coverage omitted (findings_only run; no antenna PDK table)",
+    "erc_coverage.checked": "erc.floating_gate ids collapsed to floating_gate_checked_count"
+  }
+}

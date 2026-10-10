@@ -28,3 +28,7 @@ Every declaration was read off the committed streams:
   not computed, and well-tie / substrate-body coverage is unverified.
 - The specs carry no `_comment` key: the `klt` build on some hosts rejects
   unknown keys, so the rationale lives here instead.
+
+The composed floorplan stream (all four regions, the region-level names
+`vddr1`/`vddr2`/`vdd`/`vddd`/`vss`, Metal1-Metal5) has its own spec and report
+under `layout/floorplan/` (issue #447); the three reports here are unchanged.

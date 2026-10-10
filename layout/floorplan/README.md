@@ -1512,6 +1512,75 @@ wired as phase 1 declares and four regions sitting next to each other, and
 it is what a future regression that silently disconnects a region would
 trip.
 
+### Supply connectivity over the whole composed stream (`klt erc`) — issue #447
+
+One `klt erc` run (klt 0.6.0, the repo pin) over
+`trng_floorplan.gds`, top cell `trng_floorplan`, with
+[`erc-supply-spec.json`](erc-supply-spec.json): Metal1-Metal5 and
+Via1-Via4, with the five supplies the inter-region trunks carry declared as
+`kind: supply` nets (`vddr1`, `vddr2`, `vdd`, `vddd`, `vss`). The response,
+trimmed of its ~10 MB per-gate antenna tables, is
+[`reports/erc-supply.json`](reports/erc-supply.json), pinned to the stream
+and the spec by `provenance.input.content_hash` / `provenance.spec.content_hash`.
+
+**Baseline result: `erc_status: clean`, zero findings.** Each of the five
+supplies is in `erc_coverage.checked` (`erc.net_connectivity`), nothing is
+skipped, and 8123 `erc.floating_gate` checks ran. Read that as: every
+declared name resolves to exactly one electrical island across Metal1-Metal5
+(zero `erc.unconnected_net`) and no two declared supplies touch (zero
+`erc.supply_short`), including the shared `vss`, which joins all four
+regions. It is a connectivity read of the drawn stream; it is not a tier
+input and `signoff/block-manifest.json` does not cite it.
+
+Choices that shape what the pass means:
+
+- **One spelling per supply.** Inside a region the same island also carries
+  other spellings (rings: cell-level `vddr`; digital cells: `VDD`/`VSS` on
+  34/10; the digital PDN: `vddd`/`vss` on 81/10). Declaring two spellings of
+  one island reports a false `erc.supply_short`, so only the trunk spelling
+  (Metal4 label, 46/10) is declared. The other spellings are undeclared
+  aliases: they are neither asserted nor checked for distinctness.
+- **A trunk without a readable label cannot pass by default.** A declared
+  name with no label in the stream is reported as `erc.unconnected_net`
+  (control below), and the freshness check also requires every declared
+  supply in `erc_coverage.checked`.
+- **Disclosed, not passed:** well ties (`erc.missing_tie`) are not computed
+  and the substrate/guard-ring identity is not asserted. `vsubs` is not
+  declared (no label of that name exists, and merging the guard ring into
+  `vss` is the `net.merged` failure documented in `interregion.py`); the
+  analog regions draw no Nplus/Pplus/LVPWELL; the digital partition's own
+  spec covers its tap sites. The report carries the spec's
+  `ties_disclosure` of kind `unexpressible`.
+
+**Which stream this read.** The committed `trng_floorplan.gds` predates the
+depth-2 digital rebuild: regenerating it from HEAD today (`floorplan.py`
+without `--write`) reports drift in `area`, `compose`, `floorplan.drc`,
+`ring_fit` and `interregion` and in the GDS itself. Refreshing those is
+[#256]'s job and is not done here. The ERC report is pinned by hash to the
+committed stream as it stands, so it is evidence about that stream only;
+when #256 replaces the GDS, the freshness check fails until `--write`
+re-runs `klt erc` on the new one. As an informational one-off (not committed, no hash pin), the same spec
+run on the stream HEAD regenerates also read `erc_status: clean`, zero
+findings, nothing skipped.
+
+**Controls**, in [`../tests/test_floorplan_erc.py`](../tests/test_floorplan_erc.py).
+The composed stream takes minutes per `klt erc` run, so the controls run the
+same committed spec against a small synthetic stream on the real layer
+numbers, mutated in a temp dir (no committed file is touched): a baseline with
+a shared two-stack `vss` is clean; removing Via1 under one `vss` stack gives
+`erc.unconnected_net`; a Metal4 bar across two trunks (`vddr1`/`vddr2`, and
+separately `vdd`/`vddd`) gives `erc.supply_short`; a trunk with no label gives
+`erc.unconnected_net`. They need the pinned klt first on PATH and skip
+otherwise (`uvx --from "klayout-tools==0.6.0" klt`). No control was run on
+the full composed stream.
+
+**Freshness.** `python3 layout/floorplan/floorplan.py` fails when the report's
+two content hashes no longer match the committed stream and spec, when the klt
+version is not the pin, or when the report is not clean with all five supplies
+computed (a tool-free check, so it runs even where `klt` is absent).
+`--write` re-runs `klt erc` after regenerating the stream and refreshes the
+report; findings are written into it before the run fails.
+
 ---
 
 ## DRC: what actually ran
@@ -1865,6 +1934,7 @@ would not block that separate question.
 [#145]: https://github.com/2AMLogic/gf180-trng/issues/145
 [#209]: https://github.com/2AMLogic/gf180-trng/issues/209
 [#210]: https://github.com/2AMLogic/gf180-trng/issues/210
+[#256]: https://github.com/2AMLogic/gf180-trng/issues/256
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
 [#255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [#256]: https://github.com/2AMLogic/gf180-trng/issues/256
