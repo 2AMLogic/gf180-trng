@@ -587,11 +587,89 @@ in the DRM (its own `coverage` block names what it checks and what it
 skips), and this run's clean result is bounded by that, exactly as
 `layout/README.md` says for every other cell here. In particular the
 tapcell spacing is OpenROAD's `tapcell -distance 100` — ORFS's own gf180
-platform value, not a latch-up rule this deck independently enforces — so
-"the ties are at the PDK's own maximum tie spacing" is a claim this
-repository does not yet have a check for. It also remains true that a
+platform value, not a latch-up rule this deck independently enforces. The
+tie *distance* is measured separately, on the committed stream, by
+[Tap distance](#tap-distance) below. It also remains true that a
 clean DRC over a standalone core with no IO ring is not a signoff DRC over
 a chip.
+
+### Tap distance
+
+[`layout/digital/tap_distance.py`](tap_distance.py) measures the well and
+substrate tie *distance* on the committed `trng_top.gds` ([#448][gf448]).
+This is a different question from the ERC section's `erc.missing_tie`
+(a well has a tie at all, `reports/erc-supply.json`, unchanged); a well with
+a connected tap can still have a diffusion too far from it. The
+configured `tapcell -distance 100` is a placement input and is not treated
+as evidence of compliance.
+
+**Rule source.** GF180MCU Design Rule Manual §14.3.1 *Core Latch-up Rules and
+Guidelines* ([open-PDK documentation page][gf-lu], retrieved 2026-10-10).
+No executable deck carries it: the PDK's KLayout decks (variant `gf180mcuD`)
+code no `LU.*` rule, and `klt deck rules --deck gf180mcu` lists no
+tie-distance rule, so the limits are transcribed from the DRM text into
+[`tap-distance-spec.json`](tap-distance-spec.json), which holds the full
+rationale. The table has an `LV` (3.3 V) and an `MV` (5 V/6 V) column and
+three sub-cases keyed on a well clearance: LV is 50 / 30 / 15 µm, **MV is
+15 µm in every sub-case**. This library (`gf180mcu_fd_sc_mcu9t5v0`) is 5 V:
+the tool verifies every gate in the stream lies inside DualGate (55/0)
+before applying the MV column, and reports the rule unsupported otherwise.
+
+| Rule | Subject (every boundary point of) | Must be within | of a tap on |
+|---|---|---|---|
+| `LU.4` | `PCOMP` inside Nwell | 15 µm (MV) | an `NCOMP` in the *same* Nwell island, wired to the VDD side |
+| `LU.3` | `NCOMP` outside Nwell | 15 µm (MV) | a `PCOMP` outside Nwell, wired to the VSS side |
+
+**Distance definition.** Euclidean distance from each point on the boundary
+of a subject polygon to the nearest point of a qualifying tap diffusion
+polygon (edge to edge, not to a contact or centre). Layer algebra is the
+PDK's own `main.drc`: `ncomp = Comp & Nplus`, `pcomp = Comp & Pplus`,
+`ntap = ncomp & Nwell`, `ptap = pcomp − Nwell`. The measurement
+Minkowski-sums the taps with an inscribed 128-gon (so a "covered" point is
+truly within range; the error is toward reporting a violation) and bisects
+to 0.005 µm; the report states the resulting error bound.
+
+**Tap identity.** A tap counts only if its extracted net carries the
+required rail's name (connectivity: tap diffusion → Contact → Metal1 → … →
+Metal5, with 34/10 and 81/10 text as names; `VDD`/`vddd` and `VSS`/`vss` are
+the two alias pairs the ERC spec already documents). A tap on the other
+rail, on neither, or on a net carrying both is excluded and counted in
+`tap_identity`; the report also gives the geometry-only worst distance so the
+effect of the exclusion is visible.
+
+**Report.** [`reports/tap-distance.json`](reports/tap-distance.json) records
+the stream SHA-256 and the spec SHA-256, the limits, the maximum distance with
+resolution and error bound, the five worst wells with coordinates, every
+Nwell island's extent and result (coverage boundaries), an uncovered-boundary
+profile at 0.5/1/2/3/4× the limit, and an explicit status for every rule in
+the spec: `pass`, `fail`, `not_applicable` (the triggering geometry — DNWELL
+for `LU.1`/`LU.2`, NAT for `LU.5` — is provably absent) or `unsupported`
+(`LU.7`–`LU.10` guidelines, DRM §14.3.2 I/O latch-up). The overall verdict is
+`pass` only when every rule is decided and none failed; with unsupported
+rules it is at best `incomplete`.
+
+```sh
+python3 layout/digital/tap_distance.py --check    # fresh run == committed report
+python3 layout/digital/tap_distance.py --write    # regenerate (about 20 s)
+npm run test:layout                                    # includes the fixtures
+```
+
+The fixtures (`layout/tests/test_digital_tap_distance.py`) cover a compliant
+arrangement, an over-limit gap, and a nearby tap wired to the wrong supply
+(geometry alone would pass, identity makes it fail). It needs the `klayout`
+Python module, the engine `klt` runs on; `--check` self-skips without it
+unless `--require-tools`.
+
+**Result on the committed stream.** Measured against the MV column, the
+placement does **not** meet `LU.3`/`LU.4`: the worst boundary-to-tap
+distance is 49.73 µm (`LU.4`) and 49.69 µm (`LU.3`) against a 15 µm limit,
+with 35 of 36 Nwell islands over the limit. The same distances sit just inside the LV
+column's 50 µm sub-case, which is consistent with the platform's
+`-distance 100` having been chosen for 3.3 V cells. This is a measurement
+result of the as-built geometry, recorded here without a design change; whether to re-place ties is
+tracked separately in [#449][gf449]. The §14.3.1 column assignment is read from the published
+table and should be confirmed against the controlled DRM before a design
+decision rests on it.
 
 ### LVS
 
@@ -903,8 +981,9 @@ them errors, all traced to one CTS clock-load dummy cell — see
 here). Not an unbounded DRC claim
 either: `klt drc`'s clean verdict is relative to the gf180mcu deck this
 repository pins, which does not model every DRM rule, and this repository
-has no independent check that the tapcell spacing meets the DRM's own
-latch-up tie-spacing requirement — `tapcell -distance 100` is ORFS's gf180
+checks the tapcell spacing against the DRM's own latch-up tie-spacing
+rule only through [Tap distance](#tap-distance), which finds the as-built
+spacing over the 5 V (MV) limit — `tapcell -distance 100` is ORFS's gf180
 platform value, adopted, not derived here. Not an area or power result. Not
 a corner characterization: one implementation corner, and the multi-corner
 sweep the tool does offer cannot yet be scoped to this block's supply; the
@@ -974,3 +1053,6 @@ boundary.
 [klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [dr20]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
+[gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
+[gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html
+[gf449]: https://github.com/2AMLogic/gf180-trng/issues/449
