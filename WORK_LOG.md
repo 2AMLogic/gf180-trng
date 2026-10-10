@@ -6,6 +6,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #466**: Price the top-edge digital pin legs in the STA interface load and re-run the sweep (#456)
+- **PR #465**: Skip superseded records in the remaining direct-glob record readers
+- **Issue #456** (closed): Price the top-edge digital pin legs in the STA interface load and re-run the sweep against the regenerated trunks
+- **Issue #427** (closed): Apply the superseded-record lifecycle filter to the remaining direct-glob record readers in sim/tools
 - **PR #461**: Enforce activity capture-source freshness and full campaign coverage (#457)
 - **PR #460**: Run tap-distance report regeneration in the mandatory nightly verification job
 - **Issue #457** (closed): Enforce activity capture-source freshness and full campaign coverage
