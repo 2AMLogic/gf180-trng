@@ -6,6 +6,13 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #461**: Enforce activity capture-source freshness and full campaign coverage (#457)
+- **PR #460**: Run tap-distance report regeneration in the mandatory nightly verification job
+- **Issue #457** (closed): Enforce activity capture-source freshness and full campaign coverage
+- **Issue #458** (closed): Run tap-distance report regeneration in the mandatory nightly verification job
+
+### 2026-10-10
+
 - **PR #455**: Characterize workload-dependent digital power with post-route per-net switching activity
 - **PR #454**: Regenerate composed floorplan reports and GDS under klt 0.6.0 (depth-2 digital)
 - **PR #452**: Record second batch attempt for combiner/sampler PEX grid (partial, #418)
