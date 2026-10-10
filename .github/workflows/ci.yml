@@ -227,6 +227,12 @@ jobs:
   harness:
     name: harness (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs of this job take 47-83 s across
+    # both Python versions (last 20 successful runs); 5 min is ~3.5x the
+    # slowest, so suite growth and a cold runner do not trip it, but a stuck
+    # step fails in minutes instead of holding the runner and the
+    # `ci-<ref>` concurrency group for GitHub's 360-minute default.
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -450,6 +456,10 @@ jobs:
   signoff:
     name: T1 tier report (klt signoff --manifest, no PDK required)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs take 9-14 s (last 20 successful
+    # runs, dominated by the klayout-tools install); 2 min leaves room for a
+    # slow package-index fetch while still failing a stuck step quickly.
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
 
