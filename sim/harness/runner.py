@@ -472,8 +472,9 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
     """The ``(seed, run_index)`` pairs one PVT point needs.
 
     This is where the "no seed, no evidence" rule from ``sim/README.md`` is
-    enforced, so that both the serial (:func:`run_point`) and the parallel
-    (``run_corners.py -j``) execution paths inherit it from one place.
+    enforced, together with the rule that every seed is distinct, so that
+    both the serial (:func:`run_point`) and the parallel (``run_corners.py
+    -j``) execution paths inherit them from one place.
     """
     if not tb.stochastic:
         return [(None, 0)]
@@ -482,7 +483,29 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
             f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
             "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
         )
+    # Each seed is one independent realization; report.py summarizes the
+    # per-seed values as a sample (mean, stdev), so a repeated seed would be
+    # the same realization counted twice. Reject rather than deduplicate, so
+    # the requested and executed sample counts never silently differ.
+    repeated = _repeated(seeds)
+    if repeated:
+        raise ValueError(
+            f"{tb.slug}: duplicate seed(s) {', '.join(str(s) for s in repeated)} -- "
+            "each stochastic run needs a distinct seed; a repeated seed would count "
+            "the same realization twice"
+        )
     return [(seed, i) for i, seed in enumerate(seeds)]
+
+
+def _repeated(values: list) -> list:
+    """Values that occur more than once, in first-occurrence order."""
+    seen: set = set()
+    repeated: list = []
+    for value in values:
+        if value in seen and value not in repeated:
+            repeated.append(value)
+        seen.add(value)
+    return repeated
 
 
 def run_point(

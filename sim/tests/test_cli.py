@@ -342,6 +342,98 @@ class NoWriteScratchIsolationTests(RunIntegrityTests):
         self.assertTrue(any(self.work_dir.rglob("*.log")))
 
 
+class InvalidPlanRejectionTests(RunIntegrityTests):
+    # Inherits only the fixture; the parent's own tests run in their class.
+    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
+    test_a_second_writer_clobbering_raw_output_fails_the_run = None
+    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
+
+    """A plan that repeats a seed or a PVT point, or whose points alias to one
+    output id, is refused before anything is allocated (#511).
+
+    For every invalid plan, in write and ``--no-write`` mode and with
+    ``-j 1`` and ``-j 2``: the simulator stub is never called, no
+    ``raw/<stem>/`` directory is reserved, no ``run-*`` scratch directory is
+    created, and the exit is nonzero with the repeated value on stderr.
+    """
+
+    INVALID_PLANS = (
+        # (label, extra argv, text the diagnostic must contain)
+        ("duplicate seed", ["--temps", "27", "--supply-tol", "0", "--seeds", "1001", "1002", "1001"],
+         "duplicate seed(s) 1001 "),
+        ("duplicate temperature", ["--temps", "27", "125", "27", "--supply-tol", "0", "--seeds", "1"],
+         "repeated PVT point tt_27c_3.30v"),
+        # 3.3 V +/-0.1% -> 3.2967 / 3.3 / 3.3033 V, all formatted as 3.30v.
+        ("aliasing supplies", ["--temps", "27", "--supply-tol", "0.001", "--seeds", "1"],
+         "share the output id tt_27c_3.30v"),
+    )
+
+    def setUp(self):
+        super().setUp()
+        (self.tb_dir / "tb.json").write_text(
+            json.dumps({
+                "name": "an-experiment", "netlist": "x.spice",
+                "measure": {"vout": "v(out)"},
+                "analysis_type": "tran-noise", "default_runs": 2,
+            })
+        )
+        self.work_dir = self.root / "work"
+        patcher = mock.patch.object(cli, "WORK_DIR", self.work_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _invoke(self, extra):
+        argv = [str(self.tb_dir), "--corners", "tt", *extra]
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = cli.main(argv)
+        return status, out.getvalue(), err.getvalue()
+
+    def test_invalid_plans_launch_nothing_and_allocate_nothing(self):
+        for label, extra, needle in self.INVALID_PLANS:
+            for mode in ([], ["--no-write"]):
+                for jobs in ("1", "2"):
+                    with self.subTest(plan=label, mode=mode or "write", jobs=jobs):
+                        with mock.patch.object(cli.runner, "run_one") as run_one, \
+                                mock.patch.object(cli.report, "reserve_record_stems",
+                                                  wraps=cli.report.reserve_record_stems) as reserve:
+                            status, out, err = self._invoke([*extra, *mode, "-j", jobs])
+                        self.assertEqual(status, cli.EXIT_ENVIRONMENT)
+                        self.assertIn(needle, err)
+                        self.assertNotIn("status    : OK", out)
+                        run_one.assert_not_called()
+                        reserve.assert_not_called()
+                        raw = self.records_dir / report.RAW_DIRNAME
+                        self.assertFalse(raw.exists() and any(raw.iterdir()))
+                        self.assertFalse(self.records_dir.exists() and any(self.records_dir.glob("*.md")))
+                        self.assertFalse(self.work_dir.exists() and any(self.work_dir.rglob("run-*")))
+
+    def test_distinct_seeds_and_points_still_run_and_write_records(self):
+        for jobs in ("1", "2"):
+            with self.subTest(jobs=jobs):
+                calls: list[tuple] = []
+                self._install_runner(on_run=lambda point, _w: calls.append(point.corner_id))
+                status, out, err = self._invoke(
+                    ["--temps", "27", "125", "--supply-tol", "0", "--seeds", "1002", "1001",
+                     "-j", jobs]
+                )
+                self.assertEqual(status, cli.EXIT_OK, err)
+                self.assertIn("status    : OK", out)
+                self.assertEqual(len(calls), 4)  # 2 points x 2 seeds
+                self.assertEqual(sorted(set(calls)), ["tt_125c_3.30v", "tt_27c_3.30v"])
+        records = sorted(self.records_dir.glob("*.md"))
+        self.assertEqual(len(records), 4)  # two invocations x two points
+        for path in records:
+            self.assertEqual(report.verify_record_file(path, self.root), [])
+            self.assertIn("1002, 1001", path.read_text())
+
+    def test_default_seeds_still_run_in_no_write_mode(self):
+        self._install_runner()
+        status, out, err = self._invoke(["--temps", "27", "--supply-tol", "0", "--no-write"])
+        self.assertEqual(status, cli.EXIT_OK, err)
+        self.assertEqual(len(list(self.work_dir.glob("*/run-*"))), 1)
+
+
 class TimeoutSummaryTests(unittest.TestCase):
     """A corner ``runner.run_one`` reports as killed by the wall-clock bound
     (issue #83) must stand out in the summary and still leave a written

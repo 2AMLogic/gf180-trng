@@ -177,3 +177,51 @@ def build_grid(
         )
     ]
     return points
+
+
+def validate_grid(points: list[PvtPoint]) -> None:
+    """Reject a grid that would schedule competing writes.
+
+    Every point owns one evidence record and one raw/scratch directory named
+    by its :attr:`PvtPoint.corner_id`, so the grid must contain no repeated
+    effective point (e.g. a temperature passed twice) and no two distinct
+    points whose formatted ids collide (supply is formatted to 10 mV and
+    temperature with ``:g``, so e.g. 3.301 V and 3.304 V alias). Raises
+    :class:`ValueError` naming every offending value; valid grids are left
+    untouched, in their original order. Repeated points are rejected rather
+    than silently dropped so the requested and executed plans never differ.
+    """
+    problems: list[str] = []
+    first_by_key: dict[tuple, PvtPoint] = {}
+    first_by_id: dict[str, PvtPoint] = {}
+    reported_keys: set[tuple] = set()
+    reported_ids: set[str] = set()
+    for point in points:
+        key = (point.corner.name, point.temp_c, point.vdd)
+        cid = point.corner_id
+        if key in first_by_key:
+            if key not in reported_keys:
+                reported_keys.add(key)
+                problems.append(
+                    f"repeated PVT point {cid} (corner={point.corner.name}, "
+                    f"temp={point.temp_c:g} C, vdd={point.vdd!r} V)"
+                )
+            continue
+        first_by_key[key] = point
+        if cid in first_by_id:
+            if cid not in reported_ids:
+                reported_ids.add(cid)
+                other = first_by_id[cid]
+                problems.append(
+                    f"distinct PVT points share the output id {cid} "
+                    f"(temp={other.temp_c!r} C, vdd={other.vdd!r} V vs "
+                    f"temp={point.temp_c!r} C, vdd={point.vdd!r} V)"
+                )
+            continue
+        first_by_id[cid] = point
+    if problems:
+        raise ValueError(
+            "invalid PVT plan -- " + "; ".join(problems)
+            + ". Each point must be distinct and map to its own output id; "
+            "run repeated diagnostics as separate invocations."
+        )

@@ -74,5 +74,64 @@ class GridTests(unittest.TestCase):
         self.assertIn("ff_125c_3.63v", ids)
 
 
+class GridValidationTests(unittest.TestCase):
+    """validate_grid: a plan must not schedule two writes to one output id
+    (issue #511). Rejected, never silently deduplicated."""
+
+    def _grid(self, names, temps, supplies):
+        return corners.build_grid(corners.resolve_corners(names), temps, supplies)
+
+    def test_valid_grid_passes_and_keeps_order_and_indices(self):
+        grid = self._grid(["tt", "ss"], (27, -40), [3.3, 2.97])
+        corners.validate_grid(grid)
+        self.assertEqual(
+            [p.corner_id for p in grid],
+            ["tt_27c_3.30v", "tt_27c_2.97v", "tt_-40c_3.30v", "tt_-40c_2.97v",
+             "ss_27c_3.30v", "ss_27c_2.97v", "ss_-40c_3.30v", "ss_-40c_2.97v"],
+        )
+        self.assertEqual([p.index for p in grid], list(range(8)))
+
+    def test_repeated_temperature_is_rejected(self):
+        grid = self._grid(["tt"], (27, 125, 27), [3.3])
+        with self.assertRaises(ValueError) as ctx:
+            corners.validate_grid(grid)
+        self.assertIn("repeated PVT point tt_27c_3.30v", str(ctx.exception))
+        self.assertNotIn("125", str(ctx.exception))
+
+    def test_repeated_corner_is_rejected(self):
+        tt = corners.CORNERS["tt"]
+        grid = corners.build_grid([tt, tt], (27,), [3.3])
+        with self.assertRaises(ValueError) as ctx:
+            corners.validate_grid(grid)
+        self.assertIn("repeated PVT point tt_27c_3.30v", str(ctx.exception))
+
+    def test_repeated_supply_is_rejected(self):
+        grid = self._grid(["tt"], (27,), [3.3, 3.3])
+        with self.assertRaises(ValueError) as ctx:
+            corners.validate_grid(grid)
+        self.assertIn("repeated PVT point tt_27c_3.30v", str(ctx.exception))
+
+    def test_supplies_that_alias_at_two_decimals_are_rejected(self):
+        grid = self._grid(["tt"], (27,), [3.301, 3.304])
+        self.assertEqual(grid[0].corner_id, grid[1].corner_id)
+        with self.assertRaises(ValueError) as ctx:
+            corners.validate_grid(grid)
+        message = str(ctx.exception)
+        self.assertIn("share the output id tt_27c_3.30v", message)
+        self.assertIn("3.301", message)
+        self.assertIn("3.304", message)
+
+    def test_temperatures_that_alias_in_the_id_are_rejected(self):
+        grid = self._grid(["tt"], (27.0, 27.0000001), [3.3])
+        self.assertEqual(grid[0].corner_id, grid[1].corner_id)
+        with self.assertRaises(ValueError) as ctx:
+            corners.validate_grid(grid)
+        self.assertIn("share the output id tt_27c_3.30v", str(ctx.exception))
+
+    def test_empty_and_single_point_grids_are_valid(self):
+        corners.validate_grid([])
+        corners.validate_grid(self._grid(["tt"], (27,), [3.3]))
+
+
 if __name__ == "__main__":
     unittest.main()

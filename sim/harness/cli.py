@@ -77,7 +77,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--supply-tol", type=float, metavar="FRAC", help="supply tolerance as a fraction, e.g. 0.10")
     parser.add_argument(
         "--seeds", nargs="+", type=int, metavar="N",
-        help="explicit seed list for a stochastic testbench (one run per seed, per PVT point)",
+        help="explicit seed list for a stochastic testbench (one run per seed, per PVT point); "
+             "seeds must be distinct",
     )
     parser.add_argument(
         "-j", "--jobs", type=int, default=1,
@@ -237,6 +238,19 @@ def run(args: argparse.Namespace) -> int:
             return EXIT_ENVIRONMENT
         seeds = None
 
+    # Validate the complete execution plan -- distinct seeds, distinct PVT
+    # points, non-colliding output ids -- before anything is allocated: no
+    # record stem is reserved, no scratch directory is created and no
+    # simulator is launched for a plan that would double-count a seed or
+    # schedule two points into the same deck/log paths. The serial (-j 1)
+    # and parallel paths below share this one plan.
+    try:
+        corners_mod.validate_grid(points)
+        plan = runner.plan_runs(tb, seeds)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+
     git = report.git_provenance(REPO_ROOT)
 
     if not args.quiet:
@@ -283,12 +297,6 @@ def run(args: argparse.Namespace) -> int:
         # it finishes.
         stems = report.reserve_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
         workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
-
-    try:
-        plan = runner.plan_runs(tb, seeds)
-    except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
 
     jobs = max(1, int(args.jobs))
     tasks = [(pi, seed, index) for pi in range(len(points)) for seed, index in plan]

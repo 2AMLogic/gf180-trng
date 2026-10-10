@@ -65,6 +65,16 @@ records, and are not part of the report index above.
    record without its seed(s) is unreproducible and therefore is not
    evidence, regardless of how good the numbers look.
 
+`run_corners.py` checks the whole execution plan before it reserves a
+record, creates a scratch directory or launches ngspice, and refuses
+(exit 3, naming the repeated value) a plan that repeats a seed, repeats a
+PVT point (e.g. `--temps 27 27`), or contains two distinct points whose
+output id `<corner>_<temp>c_<supply>v` collides (supply is formatted to
+10 mV, so e.g. 3.301 V and 3.304 V alias). A repeated seed would count one
+realization twice in a record's mean and spread; a repeated id would put
+two points' decks and logs in the same place. Run a repeated diagnostic as
+a separate invocation instead.
+
 Everything below is mechanics in service of those two rules.
 
 ---
