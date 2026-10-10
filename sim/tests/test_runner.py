@@ -382,6 +382,53 @@ class TimeoutTests(unittest.TestCase):
         # one's own (much longer) bound.
         self.assertLess(fast_elapsed, 5.0)
 
+    def _run_fake(self, body: str):
+        _install_fake_ngspice(self.bin_dir, "#!/usr/bin/env python3\n" + body)
+        return runner.run_one(self.tb, self.pdk, self.tt_point, self.workdir, timeout_s=5)
+
+    def test_nonzero_exit_with_all_measurements_fails_and_keeps_evidence(self):
+        result = self._run_fake("import sys\nprint('m_vout = 3.3')\nsys.exit(1)\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {"vout": 3.3})
+        self.assertIn("exit 1", result.message)
+        self.assertIn("m_vout = 3.3", (self.workdir / result.log_name).read_text())
+
+    def test_zero_exit_with_fatal_diagnostic_fails(self):
+        result = self._run_fake("print('m_vout = 3.3')\nprint('Error: failed analysis')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {"vout": 3.3})
+        self.assertIn("Error: failed analysis", result.message)
+
+    def test_nonfatal_meas_errors_with_clean_exit_remain_ok(self):
+        result = self._run_fake(
+            "print('Error: measure  t1b  when(WHEN) : out of interval')\n"
+            "print('Error: RHS \"(t1b-t1a)/nper\" invalid')\n"
+            "print('m_vout = 3.3')\n"
+        )
+        self.assertEqual(result.status, "ok", result.message)
+        self.assertEqual(result.measurements, {"vout": 3.3})
+
+    def test_nonzero_exit_message_includes_code_and_diagnostic(self):
+        result = self._run_fake(
+            "import sys\nprint('m_vout = 3.3')\nprint('doAnalyses: bad')\nsys.exit(3)\n"
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("exit 3", result.message)
+        self.assertIn("doAnalyses: bad", result.message)
+
+    def test_benign_warnings_remain_ok(self):
+        result = self._run_fake(
+            "print('Warning: something minor')\n"
+            "print('note: no error found, 0 errors')\n"
+            "print('m_vout = 3.3')\n"
+        )
+        self.assertEqual(result.status, "ok")
+
+    def test_missing_measurement_still_fails(self):
+        result = self._run_fake("print('nothing useful')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.missing, ["vout"])
+
     def tmp_path_for(self, name: str) -> Path:
         return Path(self.tmp.name) / name
 

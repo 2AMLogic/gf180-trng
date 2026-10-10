@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -452,6 +453,37 @@ class TimeoutSummaryTests(unittest.TestCase):
         self.assertIn("timeout --", text)
         self.assertIn("kill-grace", text)
         self.assertIn(".spice", text)
+
+
+class ExecutionFailureExitTests(unittest.TestCase):
+    """A fake ngspice that prints every measurement but exits nonzero (issue
+    #498) must fail the CLI run; the real ``runner.run_one`` is exercised."""
+
+    setUp = TimeoutSummaryTests.setUp
+    _run = TimeoutSummaryTests._run
+
+    def _fake(self, body: str):
+        bin_dir = self.root / "bin"
+        bin_dir.mkdir(exist_ok=True)
+        path = bin_dir / "ngspice"
+        path.write_text("#!/usr/bin/env python3\n" + body)
+        path.chmod(0o755)
+        patcher = mock.patch.dict(
+            os.environ, {"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"}
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_nonzero_exit_with_all_measurements_fails_the_run(self):
+        self._fake("import sys\nprint('m_vout = 1.65')\nsys.exit(1)\n")
+        status, out, _err = self._run()
+        self.assertEqual(status, cli.EXIT_CHECK_FAILED)
+        self.assertIn("FAIL", out)
+
+    def test_clean_run_exits_ok(self):
+        self._fake("print('Warning: benign')\nprint('m_vout = 1.65')\n")
+        status, _out, _err = self._run()
+        self.assertEqual(status, 0)
 
 
 if __name__ == "__main__":

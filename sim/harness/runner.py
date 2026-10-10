@@ -49,7 +49,24 @@ _WATCHDOG_EXIT_CODES = frozenset({124, 137, 143})
 
 # `print` output for a length-1 vector: "m_vout = 6.9043645202e-01"
 _MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
-_ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
+# Fatal-diagnostic policy (issue #498). A run is only "ok" when ngspice exited
+# 0 AND every requested measurement parsed AND no line of output *starts with*
+# one of these markers. Anchoring at line start (after whitespace) and
+# excluding "Warning" keeps ordinary warnings (e.g. "Warning: ...", notes
+# mentioning the word "error" mid-line) from failing a run, while still
+# catching ngspice's fatal "Error: ..." / "doAnalyses: ..." analysis aborts.
+# Two `.meas` diagnostics are NON-fatal and are excluded: ngspice prints
+# "Error: measure X when(WHEN) : out of interval" (a crossing that never
+# happens) and 'Error: RHS "..." invalid' (a derived .meas whose inputs are
+# missing) yet still exits 0 with the other measurements intact; both occur in
+# committed evidence. A requested-but-absent measurement is already caught by
+# the `missing` check, so these lines add nothing as a failure signal.
+_ERROR_RE = re.compile(
+    r"^\s*(?!Error:\s+measure\s.*:\s*out of interval)"
+    r"(?!Error:\s+RHS\s.*\sinvalid)"
+    r"(?:Error|ERROR|Fatal|fatal error|doAnalyses:)",
+    re.MULTILINE,
+)
 
 
 class NgspiceMissing(RuntimeError):
@@ -411,11 +428,23 @@ def run_one(
     measurements = parse_measurements(output)
     missing = [name for name in tb.measure if name not in measurements]
 
-    if missing:
-        errors = "; ".join(_ERROR_RE.findall(output)[:3])
-        first_error = next(
-            (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
-        )
+    first_error = next(
+        (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
+    )
+
+    if missing or returncode != 0 or first_error:
+        # Parsed measurements and the raw log are kept in the failed result
+        # so the evidence stays available for diagnosis.
+        parts = []
+        if returncode != 0:
+            parts.append(f"ngspice exit {returncode}")
+        if first_error:
+            parts.append(first_error)
+        if missing:
+            parts.append(
+                "no measurements parsed" if not measurements
+                else f"missing measurements: {', '.join(missing)}"
+            )
         return RunResult(
             point=point,
             seed=seed,
@@ -425,7 +454,7 @@ def run_one(
             seconds=elapsed,
             deck_name=deck_path.name,
             log_name=log_path.name,
-            message=first_error or errors or f"ngspice exit {returncode}, no measurements parsed",
+            message="; ".join(parts),
         )
 
     return RunResult(
