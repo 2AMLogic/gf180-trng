@@ -677,8 +677,12 @@ column's 50 µm sub-case, which is consistent with the platform's
 `-distance 100` having been chosen for 3.3 V cells. This is a measurement
 result of the as-built geometry, recorded here without a design change; whether to re-place ties is
 tracked separately in [#449][gf449]. The §14.3.1 column assignment is read from the published
-table and should be confirmed against the controlled DRM before a design
-decision rests on it.
+table and has **not** been confirmed against the controlled DRM (none was
+available): [DR-0029](../../spec/decision-records/DR-0029-digital-latch-up-tie-distance-column-disposition.md)
+records the source reconciliation, the reproduction of this measurement
+(`--check --require-tools` exits 0 because the report is current; the physical
+verdict is still `fail`), the recommended placement remedy and the artifact
+refresh it would require. #449 stays open.
 
 ### LVS
 
