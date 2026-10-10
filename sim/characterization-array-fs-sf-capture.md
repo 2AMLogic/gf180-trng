@@ -60,6 +60,9 @@ before any run (`sim/tb/sampler-array-fs-sf/README.md`,
 **The coverage-complete verdict is not available: 16 of 18 asymmetric PVT points,
 the tt capture control, and 3 of 4 phases at the other two are unmeasured.**
 
+A later retry (`sim/records/2026-10-10-sampler-array-fs-sf-04.md`) was refused
+again with `batch_no_capacity` for both requests; nothing new was measured.
+
 Batch (`sim/records/2026-10-10-sampler-array-fs-sf-01.md`, raw error envelopes and
 the one fleet report): five submits. Three stopped with `batch_no_capacity`; one
 obtained a fleet job (`klt-sim-d40243c0c1ee`) that the runner rejected with exit 87
