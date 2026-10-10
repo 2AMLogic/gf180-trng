@@ -26,7 +26,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison
 
 ## PRs Awaiting Review
@@ -46,13 +45,13 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 Issues carrying `loom:curated`.
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
-- **#404**: Committed generated reports embed absolute host paths (home dir, worktree); add a guard *(curated)*
+- **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
+- **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#404**: Committed generated reports embed absolute host paths (home dir, worktree); add a guard *(architect)*
-- **#436**: Refresh Chipalooza current-evidence table and reproduction corner coverage *(architect)*
-- **#437**: Reject partially unsupported characterization row selections before running campaigns *(architect)*
+- **#457**: Enforce activity capture-source freshness and full campaign coverage *(architect)*
+- **#458**: Run tap-distance report regeneration in the mandatory nightly verification job *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -66,10 +65,10 @@ _None._
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 2 |
-| Architect / Hermit proposals | 4 |
+| Curated | 3 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

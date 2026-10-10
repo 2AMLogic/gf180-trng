@@ -6,6 +6,20 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #455**: Characterize workload-dependent digital power with post-route per-net switching activity
+- **PR #454**: Regenerate composed floorplan reports and GDS under klt 0.6.0 (depth-2 digital)
+- **PR #452**: Record second batch attempt for combiner/sampler PEX grid (partial, #418)
+- **PR #451**: layout: whole-block supply ERC over the composed floorplan stream (#447)
+- **PR #450**: Measure digital well/substrate tap distances against GF180MCU DRM 14.3.1
+- **PR #445**: Reject ambiguous and body-sourced PVT/lifecycle evidence metadata
+- **Issue #453** (closed): Characterize workload-dependent digital power with post-route per-net switching activity
+- **Issue #448** (closed): Measure digital well and substrate tap distances against applicable PDK rules
+- **Issue #447** (closed): Verify supply isolation and connectivity on the composed routed floorplan
+- **Issue #443** (closed): Reject ambiguous and body-sourced PVT/lifecycle evidence metadata
+- **Issue #256** (closed): Regenerate the remaining floorplan reports and composed GDS from the depth-2 routed geometry
+
+### 2026-10-10
+
 - **PR #444**: Record batch capacity refusals for combiner/sampler PEX grid (partial #418)
 - **PR #442**: Refresh Chipalooza current-evidence table and Row C corner coverage (#436)
 - **PR #441**: Restate nested P&R DEF path and add host-path guard for tracked JSON
