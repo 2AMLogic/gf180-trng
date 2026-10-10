@@ -50,8 +50,6 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#457**: Enforce activity capture-source freshness and full campaign coverage *(architect)*
-- **#458**: Run tap-distance report regeneration in the mandatory nightly verification job *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -69,6 +67,6 @@ _None._
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 3 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
