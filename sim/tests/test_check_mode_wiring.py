@@ -29,10 +29,23 @@ CI_YML = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 # Tools with a --check mode that deliberately are NOT in a check:* script.
 # tool file name -> why it is safe to leave out.
 UNWIRED_ALLOWLIST = {
-    "fs_sf_capture.py": "needs ngspice/PDK to run; committed-request drift is covered by test_fs_sf_capture.py",
-    "supply_ripple.py": "needs ngspice/PDK to run; emit --check drift is covered by test_supply_ripple.py",
-    "raw_min_entropy_estimate.py": "needs ngspice-derived raw data; --check is run by test_raw_min_entropy_estimate.py",
-    "liveness_sampler_power.py": "needs ngspice/PDK to run; emit --check drift is covered by test_liveness_sampler_power.py",
+    "fs_sf_capture.py": (
+        "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and its drift comparison "
+        "is exercised by test_committed_requests_match_grid in test_fs_sf_capture.py"
+    ),
+    "supply_ripple.py": (
+        "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
+        "cmd_emit(check=True) by test_supply_ripple.py"
+    ),
+    "raw_min_entropy_estimate.py": (
+        "derives from committed sim/records (no ngspice/PDK needed); --check is run by "
+        "test_check_flag_passes in test_raw_min_entropy_estimate.py, which skips if the "
+        "sampler-array-digitize records are absent"
+    ),
+    "liveness_sampler_power.py": (
+        "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
+        "cmd_emit(check=True) by test_liveness_sampler_power.py"
+    ),
 }
 
 # `add_argument("--check"` / `add_argument(\n "--check"`; prose mentions of
