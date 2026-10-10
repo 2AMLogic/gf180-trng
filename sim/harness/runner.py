@@ -4,6 +4,7 @@ seeded runs, for stochastic testbenches)."""
 from __future__ import annotations
 
 import functools
+import math
 import os
 import re
 import shutil
@@ -48,7 +49,12 @@ _GUARD_PAD_S = 30
 _WATCHDOG_EXIT_CODES = frozenset({124, 137, 143})
 
 # `print` output for a length-1 vector: "m_vout = 6.9043645202e-01"
-_MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
+# Literal inf/infinity/nan spellings are matched too, but only so they can be
+# reported as non-finite (issue #527) -- never accepted as a measurement.
+_MEAS_RE = re.compile(
+    r"^\s*m_(\w+)\s*=\s*"
+    r"([-+]?(?:[0-9.]+(?:[eE][-+]?[0-9]+)?|(?i:inf(?:inity)?|nan)))\s*$"
+)
 # Fatal-diagnostic policy (issue #498). A run is only "ok" when ngspice exited
 # 0 AND every requested measurement parsed AND no line of output *starts with*
 # one of these markers. Anchoring at line start (after whitespace) and
@@ -255,22 +261,55 @@ class RunResult:
     status: str                                   # "ok" | "failed" | "error" | "timeout"
     measurements: dict[str, float] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
+    # Requested measurements ngspice printed but whose value is not a finite
+    # number (overflow such as `1e999`, or a literal inf/nan). Kept apart
+    # from `missing` so "absent" and "invalid" stay distinguishable.
+    non_finite: list[str] = field(default_factory=list)
     seconds: float = 0.0
     deck_name: str = ""
     log_name: str = ""
     message: str = ""
 
 
-def parse_measurements(text: str) -> dict[str, float]:
-    found: dict[str, float] = {}
+def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
+    """Split printed ``m_<name> = <value>`` lines into finite measurements and
+    non-finite ones (name -> the raw printed text).
+
+    ``float()`` does not raise on an out-of-range exponent: ``1e999`` becomes
+    ``inf`` silently, so finiteness is checked explicitly rather than relying
+    on the regex or on ``ValueError`` (issue #527). When a name is printed
+    more than once, the last line wins, whichever bucket it lands in.
+    """
+    finite: dict[str, float] = {}
+    non_finite: dict[str, str] = {}
     for line in text.splitlines():
         match = _MEAS_RE.match(line)
-        if match:
-            try:
-                found[match.group(1)] = float(match.group(2))
-            except ValueError:  # pragma: no cover - regex already constrains this
-                continue
-    return found
+        if not match:
+            continue
+        name, raw = match.group(1), match.group(2)
+        try:
+            value = float(raw)
+        except ValueError:  # e.g. a bare "." -- not a number at all
+            continue
+        if math.isfinite(value):
+            finite[name] = value
+            non_finite.pop(name, None)
+        else:
+            non_finite[name] = raw
+            finite.pop(name, None)
+    return finite, non_finite
+
+
+def parse_measurements(text: str) -> dict[str, float]:
+    """Finite measurements printed by ngspice; non-finite values are dropped
+    (see :func:`parse_non_finite_measurements`)."""
+    return _scan_measurements(text)[0]
+
+
+def parse_non_finite_measurements(text: str) -> dict[str, str]:
+    """Measurements printed with a non-finite value, mapped to the raw text
+    ngspice printed for them (e.g. ``{"vout": "1e999"}``)."""
+    return _scan_measurements(text)[1]
 
 
 def _timeout_result(
@@ -425,24 +464,37 @@ def run_one(
 
     log_path.write_text(output)
 
-    measurements = parse_measurements(output)
-    missing = [name for name in tb.measure if name not in measurements]
+    measurements, invalid = _scan_measurements(output)
+    # A requested value that is present but non-finite is invalid, not
+    # absent: it fails the run under its own reason (issue #527).
+    non_finite = [name for name in tb.measure if name in invalid]
+    missing = [
+        name for name in tb.measure
+        if name not in measurements and name not in invalid
+    ]
 
     first_error = next(
         (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
     )
 
-    if missing or returncode != 0 or first_error:
-        # Parsed measurements and the raw log are kept in the failed result
-        # so the evidence stays available for diagnosis.
+    if missing or non_finite or returncode != 0 or first_error:
+        # Parsed (finite) measurements and the raw log are kept in the failed
+        # result so the evidence stays available for diagnosis; the raw log
+        # also keeps any non-finite text exactly as ngspice printed it.
         parts = []
         if returncode != 0:
             parts.append(f"ngspice exit {returncode}")
         if first_error:
             parts.append(first_error)
+        if non_finite:
+            parts.append(
+                f"non-finite measurements: {', '.join(non_finite)} ("
+                + ", ".join(f"{name} = {invalid[name]}" for name in non_finite)
+                + ")"
+            )
         if missing:
             parts.append(
-                "no measurements parsed" if not measurements
+                "no measurements parsed" if not measurements and not non_finite
                 else f"missing measurements: {', '.join(missing)}"
             )
         return RunResult(
@@ -451,6 +503,7 @@ def run_one(
             status="failed",
             measurements=measurements,
             missing=missing,
+            non_finite=non_finite,
             seconds=elapsed,
             deck_name=deck_path.name,
             log_name=log_path.name,

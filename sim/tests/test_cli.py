@@ -577,6 +577,24 @@ class ExecutionFailureExitTests(unittest.TestCase):
         status, _out, _err = self._run()
         self.assertEqual(status, 0)
 
+    def test_overflowed_sole_measurement_fails_the_run(self):
+        # Issue #527: `1e999` overflows float() to +/-inf without raising.
+        for raw in ("1e999", "-1e999"):
+            with self.subTest(raw=raw):
+                self._fake(f"print('m_vout = {raw}')\n")
+                status, out, _err = self._run()
+                self.assertEqual(status, cli.EXIT_CHECK_FAILED)
+                self.assertIn("FAIL", out)
+                self.assertIn("non-finite measurements: vout", out)
+
+    def test_literal_non_finite_measurement_fails_the_run(self):
+        for raw in ("inf", "nan"):
+            with self.subTest(raw=raw):
+                self._fake(f"print('m_vout = {raw}')\n")
+                status, out, _err = self._run()
+                self.assertEqual(status, cli.EXIT_CHECK_FAILED)
+                self.assertIn("FAIL", out)
+
 
 if __name__ == "__main__":
     unittest.main()
