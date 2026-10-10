@@ -1,9 +1,9 @@
 ---
 dr: DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner
 title: Move the entropy-binding corner from ss/-40 C/3.63 V to ss/+125 C/3.63 V, measured over the full covered 27-point PVT grid
-status: Proposed
+status: Accepted
 date: 2026-08-02
-deciders: Proposed by #13 (the measurement this record rests on). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004, DR-0007 and DR-0012 were.
+deciders: Proposed by #13 (the measurement this record rests on). Accepted 2026-10-10 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work), tracked as #480 -- see Status.
 supersedes: "DR-0012-sampler-fixed-external-clock — its stated minimum-`Q` CORNER only, and only on acceptance. Everything else in that record stands unchanged: the fixed external sample clock, the resulting `Q ∝ σ₁²/T₀³` corner metric, and every consequence drawn from the clock architecture itself."
 superseded_by: n/a
 related: "#13 (the measurement — this record's whole basis), #12 (measuring H, which must now be measured at this corner), #17 (post-layout re-run), #11 (health-test RTL); DR-0002 (RCT/APT cutoffs stated in H), DR-0004 (quality tiers), DR-0006 (the covered PVT grid), DR-0007 §2/§4 (the sizing inequality and the corner-metric fork), DR-0010/DR-0011 (raw rate), DR-0012-sampler-fixed-external-clock (the record this supersedes, its corner only); sim/characterization-worst-corner-and-mc-mismatch.md; sim/records/2026-08-02-ro-array-core-pvt-q-{01..27}.md"
@@ -14,6 +14,13 @@ related: "#13 (the measurement — this record's whole basis), #12 (measuring H,
 ## Status
 
 - 2026-08-02: Proposed, by #13. Not ratified.
+- 2026-10-10: **Accepted** via the two-key ratification mechanism (`2AMLogic/2am#372`: EE key + market key both review this repo's ratification pull request, tracked as #480) per the operator's 2026-08-27 comment on #150, which superseded the earlier "acceptance is an operator decision" language and ruled that cutting this ratification PR is ordinary agent work. Ratified as a
+  **moved corner, not a closed gap**: the record's own basis is the covered
+  27-point grid, `fs`/`sf` remain outside it per
+  [`DR-0006`](DR-0006-ro-jitter-characterization-pvt-sampling-strategy.md), and
+  this record's own Revisit-if clause already covers adding them. That
+  characterization is tracked as #472 and is a follow-up to this record, not a
+  prerequisite of it.
 - 2026-08-02: Drafted as `DR-0014` on a branch that forked before
   [#59](https://github.com/2AMLogic/gf180-trng/pull/59) merged; #59 took
   DR-0014 for `sampler_dff`'s reset structure. Renumbered `DR-0014` →

@@ -1,9 +1,9 @@
 ---
 dr: DR-0018-adopt-per-ring-output-buffer
 title: Adopt the per-ring output buffer into the shipped entropy-source schematic
-status: Proposed
+status: Accepted
 date: 2026-08-02
-deciders: Proposed by #78 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001…DR-0004, DR-0007, DR-0010…DR-0012, DR-0015…DR-0017 were.
+deciders: Proposed by #78 (Builder). Accepted 2026-10-10 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work), tracked as #480 -- see Status.
 supersedes: n/a
 superseded_by: n/a
 related: "#78 (this record), #75/#80 (the measurement this record adopts -- sim/characterization-ring-buffer-mitigation.md), #51/PR #67 (measured the 27.10x/28.6x coupling this record's mitigation addresses), #16/#77 (layout/floorplan/README.md's mitigation proposal), #65/#71/DR-0016 (the ro1/ro2 observation pins this record re-drives), #13/#12 (PVT sizing and worst-corner entropy, both due for a re-run against the adopted array), #14 (time-to-first-valid, likewise); DR-0007 §1/§2 (topology and the sizing law this record does not change), DR-0007 §2's per-ring sigma_acc measurement rule (unchanged, explicitly not relaxed by this record)"
@@ -14,6 +14,7 @@ related: "#78 (this record), #75/#80 (the measurement this record adopts -- sim/
 ## Status
 
 - 2026-08-02: Proposed, by #78. Not ratified.
+- 2026-10-10: **Accepted** via the two-key ratification mechanism (`2AMLogic/2am#372`: EE key + market key both review this repo's ratification pull request, tracked as #480) per the operator's 2026-08-27 comment on #150, which superseded the earlier "acceptance is an operator decision" language and ruled that cutting this ratification PR is ordinary agent work.
 
 ## Context
 
