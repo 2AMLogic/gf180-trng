@@ -42,9 +42,8 @@ floorplan too: [`layout/floorplan/trng_floorplan.gds`](layout/floorplan/)
 now places `layout/digital/trng_top.gds` inside its own guarded `digital`
 region alongside `ring1`/`ring2`/`combiner_sampler`, DRC-clean (0
 violations introduced by the fit) and LVS-matching against the digital
-section's own reference netlist (`status: match`, `mismatch_count: 6`, the
-six benign warnings from the earlier digital build; this composed evidence
-awaits regeneration under #256) — a single whole-block GDS with the
+section's own reference netlist (`status: match`, `mismatch_count: 0`
+after the depth-2 floorplan regeneration in #454, which closed #256) — a single whole-block GDS with the
 entropy source and the digital section placed together, per
 [`layout/floorplan/reports/ring_fit.json`](layout/floorplan/reports/ring_fit.json).
 Since #221/#222 those four regions are also **wired to each other**: the
