@@ -6,6 +6,18 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-09
 
+- **PR #435**: Keep current T1 summaries consistent with the graded verdict
+- **PR #431**: Test verify_record_checksums.py's committed-to-git check and main() exit paths
+- **PR #429**: Index characterization reports in sim/README.md and guard the index
+- **PR #426**: Exclude superseded evidence from current analog rollups
+- **PR #424**: Extend native ring pex comparison to ring2 (unrun fixture)
+- **PR #422**: sim: opt-in supply-ripple susceptibility campaign for the buffered RO array (#414)
+- **Issue #434** (closed): Keep current T1 summaries consistent with the graded verdict
+- **Issue #430** (closed): Unit-test verify_record_checksums.py's committed-to-git check and main() exit paths
+- **Issue #428** (closed): Index the characterization reports under sim/ and guard the index in corpus_counts --check
+- **Issue #425** (closed): Exclude superseded evidence from current analog rollups
+- **Issue #423** (closed): Extend native ring PEX comparison to the separately sized ring2
+
 - **PR #420**: feat: combiner/sampler schematic-vs-extracted klt pex fixture (grid not yet run)
 - **PR #417**: fix(floorplan): route digital's top-edge pins around the east flank (#315)
 - **PR #419**: sim: min-entropy re-run at ss/+125C/3.63V (#406)
