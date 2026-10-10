@@ -206,6 +206,7 @@ class TrunkLanes(unittest.TestCase):
 # metals it sits between.
 _VIA_JOINS = {(40, 0): ((42, 0), (46, 0)), (41, 0): ((46, 0), (81, 0))}
 _TOP_EDGE_ENDPOINTS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit[0]", "ring_bit[1]")
+_TOP_EDGE_NETS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit1", "ring_bit2")
 
 
 def _overlap_area(a: list[float], b: list[float]) -> float:
@@ -337,6 +338,86 @@ class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
     def test_a_mid_block_pin_is_rejected_before_any_geometry(self):
         with self.assertRaises(interregion.WiringError):
             interregion.digital_pin_edge(50.0, {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0})
+
+
+class TopEdgeLegsAreReported(unittest.TestCase):
+    """gf180-trng#456: the Metal4 stub, Metal5 track and Metal3 flank riser
+    of each top-edge endpoint are most of that net's drawn conductor, so the
+    report states them, and a consumer prices them from the report."""
+
+    _LAYER_KEY = {"metal4": (46, 0), "metal5": (81, 0), "metal3": (42, 0)}
+
+    def _legs(self, plan: dict) -> dict[str, list[dict]]:
+        return {r["net"]: e["legs"] for r in plan["routes"]
+                for e in r["endpoints"] if "legs" in e}
+
+    def test_only_top_edge_digital_endpoints_carry_legs(self):
+        plan = _plan()
+        legged = {(r["net"], e["pin"]) for r in plan["routes"]
+                  for e in r["endpoints"] if "legs" in e}
+        self.assertEqual({net for net, _ in legged}, set(_TOP_EDGE_NETS))
+        for r in plan["routes"]:
+            for e in r["endpoints"]:
+                self.assertEqual("legs" in e, e["anchor"] == "digital_pin_top")
+
+    def test_each_leg_is_the_length_of_the_rectangle_actually_drawn(self):
+        """Measured off the emitted shapes, not off the formula that sizes them:
+        the stub is the one Metal4 rectangle taller than wide, the track the
+        one Metal5 rectangle wider than tall, the riser the Metal3 rectangle
+        taller than wide, on that net."""
+        plan = _plan()
+        riser_x = {r["net"]: e["riser_x_um"] for r in plan["routes"]
+                   for e in r["endpoints"] if "legs" in e}
+        for net, legs in self._legs(plan).items():
+            by_layer = {leg["layer"]: leg for leg in legs}
+            self.assertEqual(set(by_layer), {"metal4", "metal5", "metal3"})
+            shapes = [sh for sh in plan["shapes"] if sh["_net"] == net]
+
+            def long_side(layer, vertical):
+                found = []
+                for sh in shapes:
+                    if tuple(sh["layer"]) != self._LAYER_KEY[layer]:
+                        continue
+                    x0, y0, x1, y1 = sh["rect_um"]
+                    w, h = x1 - x0, y1 - y0
+                    # A net's other endpoint has its own Metal3 riser; this
+                    # one is the riser standing on the east flank.
+                    if layer == "metal3" and abs((x0 + x1) / 2 - riser_x[net]) > 1e-3:
+                        continue
+                    if vertical and h > 2 * w:
+                        found.append(h)
+                    if not vertical and w > 2 * h:
+                        found.append(w)
+                self.assertEqual(len(found), 1, f"{net} {layer}")
+                return found[0]
+
+            self.assertAlmostEqual(by_layer["metal4"]["length_um"],
+                                   long_side("metal4", True), places=3)
+            self.assertAlmostEqual(by_layer["metal5"]["length_um"],
+                                   long_side("metal5", False), places=3)
+            self.assertAlmostEqual(by_layer["metal3"]["length_um"],
+                                   long_side("metal3", True), places=3)
+            for leg in legs:
+                self.assertEqual(leg["width_um"], interregion.WIRE_W)
+
+    def test_the_committed_report_carries_the_legs_the_rules_produce(self):
+        committed = json.loads((REPO_ROOT / "layout" / "floorplan" / "reports"
+                                / "interregion.json").read_text())
+        got = {r["net"]: e["legs"] for r in committed["routes"]
+               for e in r["endpoints"] if "legs" in e}
+        self.assertEqual(got, self._legs(_plan()))
+        self.assertEqual(set(got), set(_TOP_EDGE_NETS))
+
+    def test_bottom_edge_endpoints_report_no_legs(self):
+        bbox = {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0}
+        with mock.patch.object(interregion, "digital_pin_positions",
+                               return_value={p: (10.0 + i * 3, 0.26)
+                                             for i, p in enumerate(_TOP_EDGE_ENDPOINTS)}):
+            plan = interregion.wiring_plan(
+                _content_origins(),
+                {"combiner_sampler": {"x0": -0.5, "y0": -0.3, "x1": 50.0, "y1": 0.0},
+                 "digital": bbox})
+        self.assertEqual(self._legs(plan), {})
 
 
 class CompositionCarriesTheWiring(unittest.TestCase):

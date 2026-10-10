@@ -818,6 +818,49 @@ def _vrect(layer: list[int], x: float, y0: float, y1: float, w: float = WIRE_W) 
     return _rect(layer, x - w / 2, lo, x + w / 2, hi)
 
 
+def _top_edge_coords(anchor: tuple, origin: dict[str, float]
+                     ) -> tuple[float, float, float, float]:
+    """`(pin x, pin y, Metal5 track y, east-flank riser x)` of one
+    `digital_pin_top` endpoint, in the composed frame. The single owner of
+    this arithmetic: `_endpoint_geometry` draws from it and
+    `top_edge_legs` (the report's per-leg lengths, gf180-trng#456) measures
+    from it, so the two cannot disagree."""
+    _, lx, ly, top, east, slot = anchor
+    x = lx + origin["x"]
+    y_pin = ly + origin["y"]
+    track_y = round(origin["y"] + top + TOP_TRACK_CLEAR_UM
+                    + slot * TOP_TRACK_PITCH_UM, 4)
+    x_east = round(origin["x"] + east + EAST_RISER_CLEAR_UM
+                   + slot * EAST_RISER_PITCH_UM, 4)
+    return x, y_pin, track_y, x_east
+
+
+def top_edge_legs(anchor: tuple, origin: dict[str, float], trunk_y: float
+                  ) -> list[dict]:
+    """The drawn conductor of one `digital_pin_top` endpoint, leg by leg
+    (gf180-trng#456): the Metal4 stub, the Metal5 track and the Metal3
+    east-flank riser, each as `{layer, length_um, width_um}`.
+
+    Lengths are the drawn rectangles' end-to-end lengths, exactly the
+    rectangles `_endpoint_geometry` emits (so they include the via runout
+    and Via4 enclosure overhangs, the same convention `trunk_length_um`
+    uses for the Metal4 trunk). Vias and the Metal4 landing pad are not
+    legs: they are cut/pad shapes with no length, and are not priced."""
+    x, y_pin, track_y, x_east = _top_edge_coords(anchor, origin)
+    return [
+        {"layer": "metal4", "role": "stub",
+         "length_um": round(track_y + VIA_RUNOUT - y_pin, 4),
+         "width_um": WIRE_W},
+        {"layer": "metal5", "role": "track",
+         "length_um": round((x_east + METAL5_VIA4_ENCLOSE_UM)
+                            - (x - METAL5_VIA4_ENCLOSE_UM), 4),
+         "width_um": WIRE_W},
+        {"layer": "metal3", "role": "riser",
+         "length_um": round((track_y + VIA_RUNOUT) - (trunk_y - VIA_RUNOUT), 4),
+         "width_um": WIRE_W},
+    ]
+
+
 def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
                        ) -> tuple[list[dict], float]:
     """Draw one endpoint's own via stack and its Metal3 riser down to
@@ -858,13 +901,7 @@ def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
         # gf180-trng#315 -- see `TOP_TRACK_CLEAR_UM`. `top`/`east` are the
         # block bbox's local top and east edges; `slot` numbers this
         # endpoint among the top-edge ones so each gets its own track/riser.
-        _, lx, ly, top, east, slot = anchor
-        x = lx + origin["x"]
-        y_pin = ly + origin["y"]
-        track_y = round(origin["y"] + top + TOP_TRACK_CLEAR_UM
-                        + slot * TOP_TRACK_PITCH_UM, 4)
-        x_east = round(origin["x"] + east + EAST_RISER_CLEAR_UM
-                       + slot * EAST_RISER_PITCH_UM, 4)
+        x, y_pin, track_y, x_east = _top_edge_coords(anchor, origin)
         # Metal4 stub: from the pin's centre (real overlap with the pin
         # rectangle) straight up past the guard ring to the track.
         shapes.append(_vrect(METAL4, x, y_pin, track_y + VIA_RUNOUT))
@@ -987,10 +1024,16 @@ def wiring_plan(origins: dict[str, dict[str, float]],
             geometry, riser_x = _endpoint_geometry(anchor, origin, trunk_y)
             shapes.extend(geometry)
             riser_xs.append(riser_x)
-            endpoints.append({
+            endpoint = {
                 "region": rid, "pin": pin, "anchor": anchor[0],
                 "riser_x_um": round(riser_x, 4),
-            })
+            }
+            if anchor[0] == "digital_pin_top":
+                # gf180-trng#456: the #315 legs are most of the drawn
+                # conductor on these nets; report them so a consumer prices
+                # them from here rather than re-deriving the rules.
+                endpoint["legs"] = top_edge_legs(anchor, origin, trunk_y)
+            endpoints.append(endpoint)
 
         chip_pin_x = None
         if net["chip_pin"]:

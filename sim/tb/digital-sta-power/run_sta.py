@@ -102,19 +102,21 @@ declined to do with an ngspice run, one level removed.
 the `set_input_transition` / `max_transition` domain check behind
 `SlewConvention`, on demand.
 
-**The trunk-only Metal4 arithmetic below is a floor, not the measured
-load (#232, #242).** `InterfaceTrunk.cap_fF`/`res_ohm` price only the
-Metal4 trunk itself; they omit the Metal3 risers and vias that a real
-full-chip extraction includes. Issue #232's `ro1`/`ro2` full-chip
-`klt extract --parasitics` measurement -- the only case in this repository
-where a trunk-only estimate and a real extraction can be compared
+**The estimate is a floor, not the measured load (#232, #242, #456).**
+`InterfaceTrunk.cap_fF`/`res_ohm` price the Metal4 trunk and, since #456,
+the stub/track/riser legs of the #315 top-edge endpoints
+(`interregion.json`'s per-endpoint `legs`, emitted by
+`layout/floorplan/interregion.py`'s `top_edge_legs`), each at its own
+layer's coefficients (`LAYER_RC`, from the `klt` gf180mcu deck's
+`PARASITICS` table). Vias and landing pads are not priced. Issue #232's
+`ro1`/`ro2` full-chip `klt extract --parasitics` measurement -- the only
+case where an estimate and a real extraction can be compared
 like-for-like -- found the trunk-only arithmetic undercounts real added
-capacitance by ~14 % and real added resistance by ~48 % on those two
-(the *shortest* measured) trunks; see
-`sim/characterization-post-layout-extracted.md` §8.5 for the full table
-and why the ratio is not extrapolated onto the six trunks below. See
-`InterfaceTrunk`'s own docstring for the disclosure at its computation
-site.
+capacitance by ~14 % and real added resistance by ~48 % on those two (the
+*shortest* measured) trunks; see `sim/characterization-post-layout-
+extracted.md` §8.5 and why the ratio is not extrapolated. DR-0027's
+trunk-only table stays available as `trunk_cap_fF`/`trunk_res_ohm`, and
+DR-0028 pins the with-legs table.
 
 What this is not
 ----------------
@@ -262,16 +264,75 @@ INTERREGION_REPORT = REPO_ROOT / "layout" / "floorplan" / "reports" / "interregi
 #: cap_area/cap_perim/0.007602` before touching these numbers to confirm
 #: that is still true.
 #:
-#: Metal4-only: these coefficients omit the Metal3 riser/via R and C a real
-#: full-chip extraction includes, which is why `InterfaceTrunk.cap_fF`/
-#: `res_ohm` computed from them are a **floor**, not the measured load --
-#: see `InterfaceTrunk`'s own docstring, `sim/characterization-post-layout-
-#: extracted.md` §8.5, and issue #232/#242 for the ~14 %/~48 % undercount
-#: this arithmetic carries on the shortest measured trunks.
+#: Metal4 row only: Metal3/Metal5 have their own rows in `LAYER_RC` below.
+#: Vias and pads are unpriced, which is why `InterfaceTrunk.cap_fF`/
+#: `res_ohm` are a **floor**, not the measured load -- see `InterfaceTrunk`'s
+#: own docstring, `sim/characterization-post-layout-extracted.md` §8.5, and
+#: issue #232/#242 for the ~14 %/~48 % undercount the trunk-only arithmetic
+#: carries on the shortest measured trunks.
 METAL4_SHEET_RES_OHM_PER_SQ = 0.09
 METAL4_CAP_AREA_FF_PER_UM2 = 0.007602
 METAL4_CAP_PERIM_FF_PER_UM = 0.028153
 METAL4_WIRE_W_UM = 0.30
+
+
+@dataclass(frozen=True)
+class LayerRC:
+    """First-order lumped-RC coefficients of one routing layer: sheet
+    resistance (ohm/sq), area capacitance (fF/um^2) and per-edge fringe
+    capacitance (fF/um; a wire has two edges)."""
+
+    sheet_res_ohm_sq: float
+    cap_area_ff_um2: float
+    cap_perim_ff_um: float
+
+
+#: Per-layer coefficients for the conductor `InterfaceTrunk` prices (#456).
+#: The source is `PARASITICS` in `klayout_tools/decks/gf180mcu.py` -- the
+#: `klt` gf180mcu deck's `klt extract --parasitics` table, itself
+#: transcribed (nominal corner, 5-metal stack) from the public
+#: `gf180mcu.tech` magic file of the open PDK. Read off klt 0.7.0 on the
+#: sweep host; the Metal4 row is the pair of numbers DR-0025 already cites.
+#: The deck's own caveat applies: order-of-magnitude and not calibrated to
+#: silicon.
+#:
+#:   layer    sheet (ohm/sq)  area (fF/um^2)  fringe (fF/um)
+#:   Metal3   0.09            0.010094        0.030021
+#:   Metal4   0.09            0.007602        0.028153
+#:   Metal5   0.06            0.005798        0.030386
+#:
+#: Each layer keeps its own row (the Metal4 numbers are not reused for the
+#: others). Plate coupling between layers (`metal_overlaps`) and neighbour
+#: coupling are not in this lumped model, and neither are vias or the
+#: Metal4 landing pad: the legs are priced as bare wire.
+LAYER_RC: dict[str, LayerRC] = {
+    "metal3": LayerRC(0.09, 0.010094, 0.030021),
+    "metal4": LayerRC(METAL4_SHEET_RES_OHM_PER_SQ, METAL4_CAP_AREA_FF_PER_UM2,
+                      METAL4_CAP_PERIM_FF_PER_UM),
+    "metal5": LayerRC(0.06, 0.005798, 0.030386),
+}
+
+
+@dataclass(frozen=True)
+class WireLeg:
+    """One straight conductor of a net, as `interregion.json` reports it
+    (`layout/floorplan/interregion.py`'s `top_edge_legs`): layer, drawn
+    length and drawn width."""
+
+    layer: str
+    length_um: float
+    width_um: float = METAL4_WIRE_W_UM
+
+    @property
+    def cap_fF(self) -> float:
+        rc = LAYER_RC[self.layer]
+        return self.length_um * (
+            rc.cap_area_ff_um2 * self.width_um + 2 * rc.cap_perim_ff_um
+        )
+
+    @property
+    def res_ohm(self) -> float:
+        return LAYER_RC[self.layer].sheet_res_ohm_sq * self.length_um / self.width_um
 
 #: 10-90 % is the transition convention most RC hand-calculations are quoted
 #: in (`t = ln(9) * R * C`), including DR-0025's own prose. It is *not* the
@@ -332,38 +393,65 @@ class InterfaceTrunk:
     `ring_bit[1]`) against `INTERREGION_REPORT`'s net names (`ring_bit1`/
     `ring_bit2`) without a hand-maintained lookup table.
 
-    **`cap_fF`/`res_ohm` are a floor, not the measured load (#232, #242).**
-    Both properties price only the trunk's own Metal4 sheet (see
-    `METAL4_SHEET_RES_OHM_PER_SQ` et al.); neither includes the Metal3
-    risers and vias a real full-chip extraction picks up. Issue #232's
-    full-chip `klt extract --parasitics` measurement on `ro1`/`ro2` -- the
-    two nets where a trunk-only estimate and a real extraction can be
-    compared like-for-like -- found this same Metal4-only arithmetic
-    undercounts real added capacitance by ~14 % and real added resistance
-    by ~48 % on those two (the *shortest* measured) trunks; see
-    `sim/characterization-post-layout-extracted.md` §8.5 for the full
-    measured table and why that ratio is not extrapolated onto the six
-    trunks `digital_facing_trunks()` returns (they are 2-4x longer, where
-    the fixed riser/via cost is a *smaller* share of the total, not
-    necessarily the same share).
+    **`cap_fF`/`res_ohm` are an estimate, and still a floor, not the measured
+    load (#232, #242, #456).** They price the Metal4 trunk plus the legs
+    `interregion.json` reports for a `digital_pin_top` endpoint (the #315
+    Metal4 stub, Metal5 track and Metal3 east-flank riser), each at its own
+    layer's coefficients (`LAYER_RC`). They omit vias and landing pads, and
+    the Metal3 riser at the *other* endpoint, which a real full-chip
+    extraction includes. Issue #232's `ro1`/`ro2` measurement found the
+    trunk-only arithmetic undercounts real added capacitance by ~14 % and
+    real added resistance by ~48 % on those two (the *shortest* measured)
+    trunks; see `sim/characterization-post-layout-extracted.md` §8.5. That
+    ratio is not extrapolated onto the six nets here. `trunk_cap_fF`/
+    `trunk_res_ohm`/`trunk_transition_ns` keep the trunk-only figures
+    DR-0027 pinned, so the two can be compared.
     """
 
     net: str
     def_pin: str
     chip_pin: bool
     trunk_length_um: float
+    #: The `digital_pin_top` endpoint's Metal4 stub, Metal5 track and Metal3
+    #: east-flank riser (#315, priced by #456), read from the report. Empty
+    #: for a net with no such endpoint, whose totals are then trunk-only.
+    legs: tuple[WireLeg, ...] = ()
+
+    @property
+    def trunk_cap_fF(self) -> float:
+        """Trunk-only lumped capacitance (DR-0027's table): area term +
+        both-side fringe term, Metal4."""
+        return WireLeg("metal4", self.trunk_length_um).cap_fF
+
+    @property
+    def trunk_res_ohm(self) -> float:
+        """Trunk-only resistance (DR-0027's table), Metal4."""
+        return WireLeg("metal4", self.trunk_length_um).res_ohm
+
+    @property
+    def leg_length_um(self) -> float:
+        return sum(leg.length_um for leg in self.legs)
 
     @property
     def cap_fF(self) -> float:
-        """Lumped trunk capacitance: area term + both-side fringe term."""
-        return self.trunk_length_um * (
-            METAL4_CAP_AREA_FF_PER_UM2 * METAL4_WIRE_W_UM
-            + 2 * METAL4_CAP_PERIM_FF_PER_UM
-        )
+        """Lumped capacitance of the trunk plus every reported leg, each at
+        its own layer's coefficients. Vias and the landing pad are not
+        priced."""
+        return self.trunk_cap_fF + sum(leg.cap_fF for leg in self.legs)
 
     @property
     def res_ohm(self) -> float:
-        return METAL4_SHEET_RES_OHM_PER_SQ * self.trunk_length_um / METAL4_WIRE_W_UM
+        """Series resistance of the trunk plus every reported leg."""
+        return self.trunk_res_ohm + sum(leg.res_ohm for leg in self.legs)
+
+    @property
+    def trunk_rc_ns(self) -> float:
+        return 1e-6 * self.trunk_res_ohm * self.trunk_cap_fF
+
+    def trunk_transition_ns(self, slew: "SlewConvention") -> float:
+        """The trunk-only stated transition (DR-0027's basis), for the
+        with-legs vs trunk-only comparison."""
+        return slew.rc_factor * self.trunk_rc_ns
 
     @property
     def rc_ns(self) -> float:
@@ -397,16 +485,16 @@ class InterfaceTrunk:
           netlist in this repository models at all (#233). Neither can be
           priced here without inventing it, so neither is. (Makes this
           number larger than reality.)
-        * **Metal4-only, so a floor on `R` and `C` themselves.** `res_ohm`
-          and `cap_fF` omit the Metal3 risers and vias a real full-chip
-          extraction includes -- issue #232's `ro1`/`ro2` full-chip
-          measurement shows this arithmetic undercounts real added
-          capacitance by ~14 % and real added resistance by ~48 % on the
-          shortest measured trunks (`sim/characterization-post-layout-
-          extracted.md` §8.5, #242). (Makes the *inputs* to this number
-          smaller than reality, which pulls the other way from the first
-          two conservatisms above -- the net effect on `transition_ns`
-          itself is not derived here.)
+        * **Bare wire, so a floor on `R` and `C` themselves.** `res_ohm`
+          and `cap_fF` cover the trunk and the reported legs but omit vias,
+          landing pads and neighbour coupling that a real full-chip
+          extraction includes -- issue #232's `ro1`/`ro2` measurement shows
+          the trunk-only arithmetic undercounts real added capacitance by
+          ~14 % and real added resistance by ~48 % on the shortest measured
+          trunks (`sim/characterization-post-layout-extracted.md` §8.5,
+          #242). (Makes the *inputs* to this number smaller than reality,
+          which pulls the other way from the first two conservatisms above
+          -- the net effect on `transition_ns` itself is not derived here.)
         """
         return slew.rc_factor * self.rc_ns
 
@@ -449,12 +537,27 @@ def digital_facing_trunks(report_path: Path | None = None) -> list[InterfaceTrun
         )
         if digital_ep is None:
             continue
+        legs = tuple(
+            WireLeg(
+                layer=leg["layer"],
+                length_um=float(leg["length_um"]),
+                width_um=float(leg.get("width_um", METAL4_WIRE_W_UM)),
+            )
+            for leg in digital_ep.get("legs", ())
+        )
+        for leg in legs:
+            if leg.layer not in LAYER_RC:
+                raise StaError(
+                    f"{route['net']}: report leg on {leg.layer!r}, which has "
+                    "no coefficients in LAYER_RC"
+                )
         trunks.append(
             InterfaceTrunk(
                 net=route["net"],
                 def_pin=digital_ep["pin"],
                 chip_pin=bool(route["chip_pin"]),
                 trunk_length_um=float(route["trunk_length_um"]),
+                legs=legs,
             )
         )
     return trunks
@@ -747,13 +850,14 @@ def _tcl(
         f"# slew_derate_from_library {slew.derate:g}) a single-pole RC edge is",
         f"# {slew.rc_factor:.4f} * R * C in the table domain set_input_transition and",
         "# max_transition both use -- lumped R and C, ideal source, so an",
-        "# upper bound on the trunk's own contribution (see InterfaceTrunk).",
+        "# upper bound on the net's own contribution (see InterfaceTrunk).",
     ]
     for trunk in trunks:
         lines.append(
             f"set_input_transition {trunk.transition_ns(slew):.6f} "
             f"[get_ports {{{trunk.def_pin}}}]"
-            f"  ;# {trunk.net}: {trunk.trunk_length_um:.2f} um, "
+            f"  ;# {trunk.net}: trunk {trunk.trunk_length_um:.2f} um + "
+            f"legs {trunk.leg_length_um:.2f} um, "
             f"{trunk.res_ohm:.2f} ohm, {trunk.cap_fF:.3f} fF"
         )
     if activity_block is not None:
@@ -1249,13 +1353,23 @@ def _frontmatter(stem: str, point: Point, values: dict, pdk, git: dict,
         "    input/output direction alone: all six ports are DIRECTION INPUT on",
         "    trng_top with no driver inside this netlist, so there is no driver arc",
         "    for a load to attach to, and OpenSTA reports bit-identical slack, slew",
-        "    and power whether these ports carry no set_load, their as-built",
-        "    15.6-30.7 fF, or 10 pF. sdc_treatment_probe.py re-runs that comparison.",
-        "    Metal4 coefficients per DR-0025 (spec/decision-records/",
-        "    DR-0025-full-chip-pex-scope.md): sheet_res "
-        f"{METAL4_SHEET_RES_OHM_PER_SQ:g} ohm/sq, cap_area "
-        f"{METAL4_CAP_AREA_FF_PER_UM2:g} fF/um^2, cap_perim "
-        f"{METAL4_CAP_PERIM_FF_PER_UM:g} fF/um at WIRE_W {METAL4_WIRE_W_UM:g} um.",
+        "    and power whether these ports carry no set_load, a trunk-sized load",
+        "    (15.6-30.7 fF at depth 8; see the ports below for this geometry), or",
+        "    10 pF. sdc_treatment_probe.py re-runs that comparison.",
+        "    Priced since #456: the Metal4 trunk plus, for each top-edge",
+        "    endpoint (#315), the Metal4 stub, Metal5 track and Metal3 east-flank",
+        "    riser that interregion_json reports per endpoint (`legs`). Lumped",
+        "    series R and summed C; vias and landing pads are NOT priced.",
+        "    Per-layer coefficients, from the klt gf180mcu deck's PARASITICS table",
+        "    (klayout_tools/decks/gf180mcu.py; DR-0025 cites the Metal4 row),",
+        "    at the drawn width of 0.30 um:",
+    ]
+    for layer, rc in sorted(LAYER_RC.items()):
+        lines.append(
+            f"      {layer}: sheet_res {rc.sheet_res_ohm_sq:g} ohm/sq, cap_area "
+            f"{rc.cap_area_ff_um2:g} fF/um^2, cap_perim {rc.cap_perim_ff_um:g} fF/um"
+        )
+    lines += [
         f"  interregion_json: {INTERREGION_REPORT.relative_to(REPO_ROOT)} "
         f"(sha256:{report.sha256_file(INTERREGION_REPORT)})",
     ]
@@ -1281,13 +1395,30 @@ def _frontmatter(stem: str, point: Point, values: dict, pdk, git: dict,
             if point.slew_convention is not None
             else "n/a"
         )
+        legs = ", ".join(
+            f"{leg.layer} {leg.length_um:.2f} um" for leg in trunk.legs
+        ) or "none"
         lines.append(
             f"    - {trunk.def_pin}: net {trunk.net}, trunk "
-            f"{trunk.trunk_length_um:.2f} um, R {trunk.res_ohm:.2f} ohm, "
+            f"{trunk.trunk_length_um:.2f} um, legs [{legs}], "
+            f"R {trunk.res_ohm:.2f} ohm, "
             f"C {trunk.cap_fF:.3f} fF, R*C {trunk.rc_ns * 1e3:.3f} ps, "
             f"set_input_transition {stated} ns "
             f"(10-90% reference {trunk.transition_10_90_ns:.6f} ns)"
         )
+        if point.slew_convention is not None:
+            limit = point.metrics.get("max_slew_limit_ns")
+            ratio = (
+                f", {limit / trunk.transition_ns(point.slew_convention):.0f}x "
+                f"below this corner's max_transition {limit:g} ns"
+                if limit else ""
+            )
+            lines.append(
+                f"      trunk-only (DR-0027 basis): C {trunk.trunk_cap_fF:.3f} fF, "
+                f"R {trunk.trunk_res_ohm:.2f} ohm, transition "
+                f"{trunk.trunk_transition_ns(point.slew_convention):.6f} ns; "
+                f"with legs {stated} ns{ratio}"
+            )
     lines += [
         "",
         "raw:",

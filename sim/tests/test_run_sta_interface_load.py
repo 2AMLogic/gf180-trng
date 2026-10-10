@@ -212,8 +212,33 @@ class InterfaceTrunkArithmeticTests(unittest.TestCase):
         self.assertEqual(set(trunks), set(expected))
         for net, (c_ff, r_ohm) in expected.items():
             trunk = trunks[net]
+            # DR-0027's table is trunk-only; since #456 `cap_fF`/`res_ohm`
+            # also price the legs, so this table is asserted on the
+            # `trunk_*` properties (same numbers, same tolerances).
+            self.assertAlmostEqual(trunk.trunk_cap_fF, c_ff, delta=0.1)
+            self.assertAlmostEqual(trunk.trunk_res_ohm, r_ohm, delta=1.0)
+
+    def test_matches_dr0028_estimates_with_the_legs_priced(self):
+        # (net, DR-0028's quoted C in fF, R in ohm, stated transition in ps
+        # at the 30/70 %, derate 0.5 convention)
+        expected = {
+            "raw_bit": (74.4, 347, 43.8),
+            "raw_valid": (71.2, 331, 39.9),
+            "ring_bit1": (65.4, 306, 33.9),
+            "clk": (59.6, 280, 28.3),
+            "rst_n": (61.5, 286, 29.8),
+            "ring_bit2": (65.3, 299, 33.0),
+        }
+        trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
+        self.assertEqual(set(trunks), set(expected))
+        for net, (c_ff, r_ohm, ps) in expected.items():
+            trunk = trunks[net]
+            self.assertEqual(len(trunk.legs), 3, net)
             self.assertAlmostEqual(trunk.cap_fF, c_ff, delta=0.1)
             self.assertAlmostEqual(trunk.res_ohm, r_ohm, delta=1.0)
+            self.assertAlmostEqual(
+                trunk.transition_ns(_GF180_CONVENTION) * 1e3, ps, delta=0.1
+            )
 
     def test_rc_is_a_time_in_ns(self):
         """1 ohm * 1 fF is 1e-15 s, i.e. 1e-6 ns."""
@@ -263,6 +288,131 @@ class InterfaceTrunkArithmeticTests(unittest.TestCase):
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(trunks["ring_bit1"].def_pin, "ring_bit[0]")
         self.assertEqual(trunks["ring_bit2"].def_pin, "ring_bit[1]")
+
+
+#: Independent restatement of the three klt gf180mcu `PARASITICS` rows, so the
+#: leg arithmetic is checked against literals and not against `LAYER_RC`.
+_M3 = dict(rsh=0.09, area=0.010094, perim=0.030021)
+_M4 = dict(rsh=0.09, area=0.007602, perim=0.028153)
+_M5 = dict(rsh=0.06, area=0.005798, perim=0.030386)
+
+
+def _hand_c(row: dict, length: float, width: float = 0.30) -> float:
+    return length * (row["area"] * width + 2 * row["perim"])
+
+
+def _hand_r(row: dict, length: float, width: float = 0.30) -> float:
+    return row["rsh"] * length / width
+
+
+_LEGGED_ROUTES = [
+    {
+        "net": "legged",
+        "chip_pin": False,
+        "trunk_length_um": 100.0,
+        "endpoints": [
+            {"region": "combiner_sampler", "pin": "legged", "anchor": "metal2",
+             "riser_x_um": 1.0},
+            {"region": "digital", "pin": "legged", "anchor": "digital_pin_top",
+             "riser_x_um": 2.0,
+             "legs": [
+                 {"layer": "metal4", "length_um": 10.0, "width_um": 0.30},
+                 {"layer": "metal5", "length_um": 50.0, "width_um": 0.30},
+                 {"layer": "metal3", "length_um": 200.0, "width_um": 0.30},
+             ]},
+        ],
+    },
+    {
+        "net": "bare",
+        "chip_pin": False,
+        "trunk_length_um": 100.0,
+        "endpoints": [
+            {"region": "combiner_sampler", "pin": "bare", "anchor": "metal2",
+             "riser_x_um": 1.0},
+            {"region": "digital", "pin": "bare", "anchor": "digital_pin",
+             "riser_x_um": 2.0},
+        ],
+    },
+]
+
+
+class LegArithmeticTests(unittest.TestCase):
+    """#456: the top-edge legs are priced per layer from the report."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        path = _write_interregion_report(Path(self.tmp.name), _LEGGED_ROUTES)
+        self.by_net = {t.net: t for t in run_sta.digital_facing_trunks(path)}
+
+    def test_legs_are_read_from_the_report(self):
+        legs = self.by_net["legged"].legs
+        self.assertEqual(
+            [(leg.layer, leg.length_um) for leg in legs],
+            [("metal4", 10.0), ("metal5", 50.0), ("metal3", 200.0)],
+        )
+        self.assertAlmostEqual(self.by_net["legged"].leg_length_um, 260.0)
+
+    def test_c_and_r_sum_over_the_trunk_and_each_leg_at_its_own_layer(self):
+        t = self.by_net["legged"]
+        want_c = (_hand_c(_M4, 100.0) + _hand_c(_M4, 10.0)
+                  + _hand_c(_M5, 50.0) + _hand_c(_M3, 200.0))
+        want_r = (_hand_r(_M4, 100.0) + _hand_r(_M4, 10.0)
+                  + _hand_r(_M5, 50.0) + _hand_r(_M3, 200.0))
+        self.assertAlmostEqual(t.cap_fF, want_c, places=9)
+        self.assertAlmostEqual(t.res_ohm, want_r, places=9)
+        # Hand-worked: trunk 0.09*100/0.3 = 30, Metal4 stub 3, Metal5 track
+        # 0.06*50/0.3 = 10, Metal3 riser 0.09*200/0.3 = 60 -> 103 ohm.
+        self.assertAlmostEqual(t.res_ohm, 103.0, places=9)
+
+    def test_layers_are_not_priced_at_the_metal4_coefficients(self):
+        t = self.by_net["legged"]
+        all_m4_c = _hand_c(_M4, 360.0)
+        all_m4_r = _hand_r(_M4, 360.0)
+        self.assertNotAlmostEqual(t.cap_fF, all_m4_c, places=3)
+        self.assertNotAlmostEqual(t.res_ohm, all_m4_r, places=3)
+
+    def test_trunk_only_properties_ignore_the_legs(self):
+        t = self.by_net["legged"]
+        self.assertAlmostEqual(t.trunk_cap_fF, _hand_c(_M4, 100.0), places=9)
+        self.assertAlmostEqual(t.trunk_res_ohm, _hand_r(_M4, 100.0), places=9)
+        self.assertGreater(
+            t.transition_ns(_GF180_CONVENTION),
+            t.trunk_transition_ns(_GF180_CONVENTION),
+        )
+
+    def test_a_net_without_legs_is_unchanged(self):
+        t = self.by_net["bare"]
+        self.assertEqual(t.legs, ())
+        self.assertAlmostEqual(t.cap_fF, t.trunk_cap_fF, places=12)
+        self.assertAlmostEqual(t.res_ohm, t.trunk_res_ohm, places=12)
+        self.assertAlmostEqual(
+            t.transition_ns(_GF180_CONVENTION),
+            t.trunk_transition_ns(_GF180_CONVENTION), places=12,
+        )
+
+    def test_a_leg_on_an_unpriced_layer_is_an_error(self):
+        routes = json.loads(json.dumps(_LEGGED_ROUTES))
+        routes[0]["endpoints"][1]["legs"][0]["layer"] = "metal2"
+        path = _write_interregion_report(Path(self.tmp.name), routes)
+        with self.assertRaises(run_sta.StaError):
+            run_sta.digital_facing_trunks(path)
+
+    def test_stated_transition_in_the_tcl_includes_the_legs(self):
+        corner = run_sta.Corner(liberty="tt_025C_3v30", rc="nom")
+        tmp = Path(self.tmp.name)
+        orig = run_sta.INTERREGION_REPORT
+        run_sta.INTERREGION_REPORT = tmp / "interregion.json"
+        self.addCleanup(setattr, run_sta, "INTERREGION_REPORT", orig)
+        text = run_sta._tcl(
+            pdk=_fake_pdk_with_liberty(tmp, corner.liberty), corner=corner,
+            period_ns=50.0, spef_path=tmp / "x.spef", bisect=False,
+        )
+        t = self.by_net["legged"]
+        self.assertIn(
+            f"set_input_transition {t.transition_ns(_GF180_CONVENTION):.6f} "
+            "[get_ports {legged}]", text,
+        )
 
 
 class SlewConventionTests(unittest.TestCase):
