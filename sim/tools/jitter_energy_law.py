@@ -90,7 +90,7 @@ def read_record(stem: str) -> tuple[dict[str, float], dict[str, object]]:
     if not path.is_file():
         raise RecordError(f"no such record: sim/records/{stem}.md")
     text = path.read_text()
-    values = parse_values(text)
+    values = parse_values(text, label=stem, error_cls=RecordError)
     process, temp_c, vdd = parse_corner(text, label=stem, error_cls=RecordError)
     corner = {"process": process, "temp_c": temp_c, "vdd": vdd}
     return values, corner

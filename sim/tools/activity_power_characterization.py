@@ -102,7 +102,7 @@ class Rec:
         self.manifest_sha = self._one(r"^\s+- activity-manifest\.json\s+sha256:([0-9a-f]{64})")
         self._manifest = None
         self.seeds = self._one(r"^seeds:\s*(.*)$")
-        self.values = parse_values(text)
+        self.values = parse_values(text, label=self.stem, error_cls=CheckError)
         self.corner = f"{self.liberty}/rc-{self.rc}"
 
     def _one(self, pat: str) -> str:
@@ -240,7 +240,7 @@ def check(fam: dict[str, Rec], expected: tuple[str, ...] | None = None) -> list[
         lib = re.search(r"^\s+liberty:\s*\S+__(\S+)", t, re.M)
         rc = re.search(r"^\s+interconnect:\s*(\S+)", t, re.M)
         if m and lib and rc and m.group(1) == first.def_sha:
-            default[f"{lib.group(1)}/rc-{rc.group(1)}"] = parse_values(t)
+            default[f"{lib.group(1)}/rc-{rc.group(1)}"] = parse_values(t, label=p.stem, error_cls=CheckError)
     for c, r in fam.items():
         base = default.get(c)
         if base is None:

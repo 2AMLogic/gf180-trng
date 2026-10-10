@@ -140,6 +140,34 @@ class ParseValuesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_values("- `bad`: 1.2.3\n")
 
+    def test_uppercase_exponent(self) -> None:
+        self.assertEqual(parse_values("- `t`: 2.5E-6\n"), {"t": 2.5e-6})
+
+    def test_exponent_with_unit_suffix(self) -> None:
+        self.assertEqual(parse_values("- `t`: 2.5e-9s\n"), {"t": 2.5e-9})
+
+    def test_incomplete_exponent_is_rejected(self) -> None:
+        for token in ("1e+", "1e-", "1e", "2.5E"):
+            with self.subTest(token=token):
+                with self.assertRaises(ValueError):
+                    parse_values(f"- `t`: {token}\n")
+
+    def test_overflow_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_values("- `t`: 1e999\n")
+
+    def test_error_names_label_and_key(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            parse_values("- `bad_key`: 1e+\n", label="rec-stem", error_cls=RuntimeError)
+        self.assertIn("rec-stem", str(ctx.exception))
+        self.assertIn("bad_key", str(ctx.exception))
+
+    def test_committed_corpus_parses(self) -> None:
+        records = Path(__file__).resolve().parents[1] / "records"
+        for path in sorted(records.glob("*.md")):
+            with self.subTest(record=path.name):
+                parse_values(path.read_text(), label=path.stem)
+
     def test_record_excerpt(self) -> None:
         self.assertEqual(
             parse_values(RECORD_EXCERPT),

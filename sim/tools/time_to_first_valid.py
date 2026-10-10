@@ -111,7 +111,7 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = parse_values(text)
+        self.values = parse_values(text, label=self.stem, error_cls=RuntimeError)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         self.status = parse_status(text, label=self.stem)
 
@@ -267,7 +267,11 @@ def main(argv=None) -> int:
                         "README's arithmetic floor")
     args = p.parse_args(argv)
 
-    records = load_startup_records()
+    try:
+        records = load_startup_records()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     if not records:
         print(f"ERROR: no start-up records found (glob: {STARTUP_GLOB})", file=sys.stderr)
         return 2
