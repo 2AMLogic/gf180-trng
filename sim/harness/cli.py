@@ -223,7 +223,11 @@ def run(args: argparse.Namespace) -> int:
     temperatures = args.temps if args.temps is not None else list(tb.temperatures_c)
     nominal = args.supply if args.supply is not None else tb.nominal_supply_v
     tolerance = args.supply_tol if args.supply_tol is not None else tb.supply_tolerance
-    supplies = corners_mod.supply_points(nominal, tolerance)
+    try:
+        supplies = corners_mod.supply_points(nominal, tolerance)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
     points = corners_mod.build_grid(corner_list, temperatures, supplies)
 
     if tb.stochastic:

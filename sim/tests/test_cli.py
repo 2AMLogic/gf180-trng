@@ -366,6 +366,18 @@ class InvalidPlanRejectionTests(RunIntegrityTests):
         # 3.3 V +/-0.1% -> 3.2967 / 3.3 / 3.3033 V, all formatted as 3.30v.
         ("aliasing supplies", ["--temps", "27", "--supply-tol", "0.001", "--seeds", "1"],
          "share the output id tt_27c_3.30v"),
+        ("NaN temperature", ["--temps", "nan", "--supply-tol", "0", "--seeds", "1"],
+         "temperature must be finite, got nan"),
+        ("infinite temperature", ["--temps", "inf", "--supply-tol", "0", "--seeds", "1"],
+         "temperature must be finite, got inf"),
+        ("zero nominal supply", ["--temps", "27", "--supply", "0", "--seeds", "1"],
+         "nominal supply must be finite and > 0 V, got 0.0"),
+        ("infinite nominal supply", ["--temps", "27", "--supply", "inf", "--seeds", "1"],
+         "nominal supply must be finite and > 0 V, got inf"),
+        ("negative tolerance", ["--temps", "27", "--supply-tol", "-0.1", "--seeds", "1"],
+         "supply tolerance must be finite and >= 0, got -0.1"),
+        ("NaN tolerance", ["--temps", "27", "--supply-tol", "nan", "--seeds", "1"],
+         "supply tolerance must be finite and >= 0, got nan"),
     )
 
     def setUp(self):
@@ -407,6 +419,40 @@ class InvalidPlanRejectionTests(RunIntegrityTests):
                         self.assertFalse(raw.exists() and any(raw.iterdir()))
                         self.assertFalse(self.records_dir.exists() and any(self.records_dir.glob("*.md")))
                         self.assertFalse(self.work_dir.exists() and any(self.work_dir.rglob("run-*")))
+
+    def test_manifest_with_invalid_plan_is_rejected_before_allocation(self):
+        for label, overrides, needle in (
+            ("empty temperatures", {"temperatures_c": []}, "grid is empty"),
+            ("negative tolerance", {"supply_tolerance": -0.05}, "supply tolerance must be"),
+            ("zero nominal", {"nominal_supply_v": 0}, "nominal supply must be"),
+        ):
+            manifest = {
+                "name": "an-experiment", "netlist": "x.spice",
+                "measure": {"vout": "v(out)"},
+                "analysis_type": "tran-noise", "default_runs": 2,
+                "temperatures_c": [27], "supply_tolerance": 0, **overrides,
+            }
+            (self.tb_dir / "tb.json").write_text(json.dumps(manifest))
+            for jobs in ("1", "2"):
+                with self.subTest(case=label, jobs=jobs):
+                    with mock.patch.object(cli.runner, "run_one") as run_one, \
+                            mock.patch.object(cli.report, "reserve_record_stems") as reserve:
+                        status, out, err = self._invoke(["-j", jobs])
+                    self.assertEqual(status, cli.EXIT_ENVIRONMENT)
+                    self.assertIn(needle, err)
+                    self.assertNotIn("status    : OK", out)
+                    run_one.assert_not_called()
+                    reserve.assert_not_called()
+                    self.assertFalse(self.work_dir.exists() and any(self.work_dir.rglob("run-*")))
+
+    def test_zero_tolerance_and_out_of_envelope_requests_still_run(self):
+        self._install_runner(on_run=lambda point, _w: None)
+        status, out, err = self._invoke(
+            ["--temps", "-60", "200", "--supply", "1.2", "--supply-tol", "0",
+             "--seeds", "1", "--no-write"]
+        )
+        self.assertEqual(status, cli.EXIT_OK, err)
+        self.assertIn("status    : OK", out)
 
     def test_distinct_seeds_and_points_still_run_and_write_records(self):
         for jobs in ("1", "2"):
