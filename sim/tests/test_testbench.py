@@ -147,6 +147,56 @@ class TestbenchLoadTests(unittest.TestCase):
         )
         self.assertEqual(tb.caveats, ("not a rate measurement", "ideal clock"))
 
+    def test_analysis_type_defaults_to_op(self):
+        tb = testbench.load(self._write("v1 out 0 dc {vdd_val}\n"))
+        self.assertEqual(tb.analysis_type, "op")
+
+    def test_each_supported_analysis_type_loads(self):
+        for kind in testbench.SUPPORTED_ANALYSIS_TYPES:
+            with self.subTest(kind=kind):
+                tb = testbench.load(
+                    self._write("v1 out 0 dc {vdd_val}\n", {"analysis_type": kind})
+                )
+                self.assertEqual(tb.analysis_type, kind)
+                self.assertEqual(tb.stochastic, kind in ("tran-noise", "mc"))
+
+    def test_stochastic_types_are_a_subset_of_supported_types(self):
+        self.assertLessEqual(
+            set(testbench.STOCHASTIC_ANALYSIS_TYPES),
+            set(testbench.SUPPORTED_ANALYSIS_TYPES),
+        )
+
+    def test_misspelled_stochastic_types_are_rejected_at_load(self):
+        for bad in ("tran-niose", "Tran-Noise", "tran_noise", "monte-carlo", "mcc", ""):
+            with self.subTest(bad=bad):
+                tb_dir = self._write(
+                    "v1 out 0 dc {vdd_val}\n", {"analysis_type": bad}
+                )
+                with self.assertRaises(ValueError) as ctx:
+                    testbench.load(tb_dir)
+                msg = str(ctx.exception)
+                self.assertIn("tb.json", msg)
+                self.assertIn(repr(bad), msg)
+                self.assertIn("tran-noise", msg)
+                self.assertIn("op", msg)
+
+    def test_non_string_analysis_types_are_rejected_at_load(self):
+        for bad in (None, 1, 1.5, True, ["mc"], {"type": "mc"}):
+            with self.subTest(bad=bad):
+                tb_dir = self._write(
+                    "v1 out 0 dc {vdd_val}\n", {"analysis_type": bad}
+                )
+                with self.assertRaises(ValueError) as ctx:
+                    testbench.load(tb_dir)
+                self.assertIn(repr(bad), str(ctx.exception))
+                self.assertIn("supported types", str(ctx.exception))
+
+    def test_every_committed_manifest_loads(self):
+        for tb_dir in testbench.discover(SIM_DIR / "tb"):
+            with self.subTest(tb=tb_dir.name):
+                tb = testbench.load(tb_dir)
+                self.assertIn(tb.analysis_type, testbench.SUPPORTED_ANALYSIS_TYPES)
+
     def test_the_sampler_testbenches_declare_their_method_limits(self):
         """The two testbenches whose records would otherwise overstate what
         they measured -- a bitstream captured well above the target rate, and

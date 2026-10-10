@@ -168,7 +168,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `corner.process` | `tt` / `ss` / `ff` / `sf` / `fs` (as named by the PDK). |
 | `corner.voltage` | Supply(s) in volts, with the nominal noted. |
 | `corner.temperature` | Degrees C. |
-| `analysis.type` | `tran`, `tran-noise`, `noise`, `ac`, `dc`, `mc`. |
+| `analysis.type` | `op` (default when a manifest omits `analysis_type`), `tran`, `tran-noise`, `noise`, `ac`, `dc`, `mc`. Any other value is rejected when the testbench manifest is loaded; `tran-noise` and `mc` are stochastic and require a seed. |
 | `analysis.tstop` | Run length (simulated time), or the sweep range for `ac`/`dc`/`noise`. |
 | `analysis.tstep` / `analysis.tmax` | Timestep controls that materially affect the result. |
 | `analysis.noise_params` | For `tran-noise`: `NOISETSTEP` / `NOISEFMAX` / equivalent, verbatim. |
