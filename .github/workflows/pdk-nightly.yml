@@ -90,7 +90,8 @@ jobs:
       # --help`).
       PDK_LIBRARIES: "gf180mcu_fd_pr gf180mcu_fd_sc_mcu9t5v0 gf180mcu_fd_sc_mcu7t5v0"
     steps:
-      - uses: actions/checkout@v4
+      - id: checkout
+        uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
@@ -503,7 +504,13 @@ jobs:
         if: always()
         run: python3 layout/digital/tap_distance.py --check --require-tools
 
+      # `if: always()` so the no-write contract is still enforced when an
+      # earlier verification step failed (an unrelated failure must not hide
+      # a record write). Gated on a successful checkout: without a working
+      # tree, `git status` would fail with a misleading error, so skip then.
+      # Cancellation or runner loss cannot be covered by this.
       - name: Assert no evidence records were written
+        if: always() && steps.checkout.outcome == 'success'
         run: |
           set -euo pipefail
           if [ -n "$(git status --porcelain -- sim/records)" ]; then
