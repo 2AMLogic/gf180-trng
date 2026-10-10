@@ -89,7 +89,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_status  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    format_corner,
+    iter_seed_summaries,
+    parse_corner,
+    parse_status,
+    parse_values,
+)  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -118,13 +124,6 @@ PLAIN_TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "ro-inv-05stage-jitter" / "tb.jso
 #: and still rejects the ~30x-too-tight signature of the array-sanity run.
 SPREAD_TOLERANCE = 3.0
 
-_MEAN = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)",
-    re.M,
-)
-_SINGLE = re.compile(r"^- `([a-z0-9_]+)`:\s*(-?[\d.]+(?:e[-+]?\d+)?)\s*$", re.M)
-
 
 class RecordError(RuntimeError):
     pass
@@ -141,12 +140,11 @@ class Record:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.seeds = 1
-        for m in _SINGLE.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-        for m in _MEAN.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-            self.seeds = int(m.group(3))
-            self.sd[m.group(1)] = float(m.group(4))
+        self.values.update(parse_values(text))
+        for key, summary in iter_seed_summaries(text):
+            self.values[key] = summary.mean
+            self.seeds = summary.n_seeds
+            self.sd[key] = summary.sd
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )

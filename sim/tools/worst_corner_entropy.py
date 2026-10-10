@@ -102,7 +102,7 @@ from array_sizing import (  # noqa: E402
     shipped_ring_count,
 )
 from starved_cell_jitter_energy import load_points as load_starved_points  # noqa: E402
-from _record_parsing import parse_status  # noqa: E402
+from _record_parsing import iter_seed_summaries, parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -407,12 +407,6 @@ def report_mc_ro_freq(*, include_superseded: bool = False) -> None:
               f"margin over M*Q_H0 ({need:g}) shown in section 2 above")
 
 
-_DTRIP_PATTERN = re.compile(
-    r"^- `(dtrip_v)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)", re.M,
-)
-
-
 def _sampler_offset(
     corner: str = "tt/27/3.30", *, include_superseded: bool = False,
 ) -> tuple[float, float, float, int, str]:
@@ -461,10 +455,10 @@ def _sampler_offset(
             f"no valid sim/records/*-sampler-dff-mc-offset-[0-9]*.md record at corner {corner!r}"
         )
     rec_path, text, vdd = candidates[-1]
-    m = _DTRIP_PATTERN.search(text)
-    if m is None:
+    dtrip = [s for key, s in iter_seed_summaries(text) if key == "dtrip_v"]
+    if not dtrip:
         raise RuntimeError(f"{rec_path.stem}: no dtrip_v seed-aggregate found")
-    mean_v, n, sd_v = float(m.group(2)), int(m.group(3)), float(m.group(4))
+    mean_v, n, sd_v = dtrip[0].mean, dtrip[0].n_seeds, dtrip[0].sd
     return mean_v - 0.5 * vdd, sd_v, vdd, n, rec_path.stem
 
 
