@@ -1,0 +1,58 @@
+{
+  "netlist": "/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-476/sim/.work/ro-ring11-ring2-pex/00-request.extracted-dut-testbench.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "bjt_typical",
+          "diode_typical",
+          "res_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vsupply": [
+        3.3
+      ]
+    },
+    "temperature_c": [
+      27
+    ]
+  },
+  "analysis": {
+    "kind": "tran",
+    "args": "10p 1300n"
+  },
+  "measurements": [
+    {
+      "name": "period_s",
+      "spice": ".meas tran period_s trig v(ron) val=0.5 rise=10 targ v(ron) val=0.5 rise=11",
+      "unit": "s"
+    },
+    {
+      "name": "supply_current_avg_a",
+      "spice": ".meas tran supply_current_avg_a avg i(vsupply) from=300n to=1300n",
+      "unit": "A"
+    },
+    {
+      "name": "ro_swing_v",
+      "spice": ".meas tran ro_swing_v pp v(ro) from=300n to=1300n",
+      "unit": "V"
+    }
+  ],
+  "options": {
+    "timeout_s": 600,
+    "keep_artifacts": false,
+    "waveforms": false
+  },
+  "netlist_source": "extracted"
+}

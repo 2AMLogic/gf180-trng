@@ -1010,9 +1010,13 @@ to `evidence/post-layout/ring2/` with a recomputed, never-passing-when-incomplet
 verdict; `check.py` checks the fixture and any such publication in step 1c',
 independently of ring1, and fails if the manifest cites it.
 
-**Currently unrun.** The batch fleet refused the 27-corner submission for
-capacity, and the grid was not run locally, so no ring2 result is committed. The
-README in that directory has the reproduction commands. Whatever it eventually
+**Currently unrun.** The batch fleet first refused the 27-corner submission for
+capacity. A second attempt (#476) ran on the fleet, but every corner on both
+sides errored unmeasured, because the pinned 0.6.0 client does not ship the
+`.include`d DUT and the fleet runner is klt 0.5.0
+(`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`). The grid was
+not run locally, so no ring2 result is committed. The README in that directory
+has the reproduction commands. Whatever it eventually
 reports describes a layout with floating PMOS wells (#339/#411) and is a
 diagnostic under that limitation: no entropy, full-chip timing or
 silicon-performance claim.

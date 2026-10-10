@@ -1,0 +1,1 @@
+{"tool": "ngspice", "cmd": "klt sim \"$EDA_INPUT_DIR/request.json\" --backend local-parallel --format json > \"$EDA_OUTPUT_DIR/report.json\"", "pdk_variant": "gf180mcuD", "cores_per_job": 8, "timeout_seconds": 16320}
