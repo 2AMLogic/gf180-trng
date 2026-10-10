@@ -43,6 +43,14 @@ FORBIDDEN_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp", ".include"
 #: (i.e. subject to the "no seed, no evidence" rule).
 STOCHASTIC_ANALYSIS_TYPES = ("tran-noise", "mc")
 
+#: Every analysis type a manifest may declare. ``op`` is the default when
+#: ``analysis_type`` is absent. The type is metadata that drives seed
+#: enforcement, so an unrecognised token (e.g. a misspelt ``tran-noise``)
+#: is rejected at load rather than silently planned as deterministic.
+SUPPORTED_ANALYSIS_TYPES = ("op", "tran", "tran-noise", "noise", "ac", "dc", "mc")
+
+assert set(STOCHASTIC_ANALYSIS_TYPES) <= set(SUPPORTED_ANALYSIS_TYPES)
+
 
 @dataclass
 class Testbench:
@@ -148,6 +156,13 @@ def load(directory: str | Path) -> Testbench:
     if not analyses:
         raise ValueError(f"{manifest_path}: 'analyses' must not be empty")
 
+    analysis_type = manifest.get("analysis_type", "op")
+    if not isinstance(analysis_type, str) or analysis_type not in SUPPORTED_ANALYSIS_TYPES:
+        raise ValueError(
+            f"{manifest_path}: unsupported analysis_type {analysis_type!r}; "
+            f"supported types: {', '.join(SUPPORTED_ANALYSIS_TYPES)}"
+        )
+
     design_netlist = None
     if "design_netlist" in manifest:
         # Repo-relative (e.g. "design/ro_array_core.spice"): the DUT is a
@@ -172,7 +187,7 @@ def load(directory: str | Path) -> Testbench:
             float(t) for t in manifest.get("temperatures_c", DEFAULT_TEMPERATURES_C)
         ),
         corners=tuple(manifest.get("corners", (DEFAULT_CORNER_SET,))),
-        analysis_type=manifest.get("analysis_type", "op"),
+        analysis_type=analysis_type,
         analyses=analyses,
         measure=measure,
         params={k: v for k, v in manifest.get("params", {}).items()},
