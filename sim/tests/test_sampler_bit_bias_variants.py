@@ -57,9 +57,13 @@ def record_text(raw_rel: str, deck: dict) -> str:
     }
     bullets.update({f"r_{lag}": v for lag, v in deck["r"].items()})
     body = "\n".join(f"- `{k}`: {v!r}" for k, v in bullets.items())
+    # Corner, status and raw path live in the leading frontmatter, as in the
+    # committed records; the parser does not read them from the body (#443).
     return (
-        f"raw:\n  path: {raw_rel}\n\n"
-        f"corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n\n{body}\n"
+        "---\nstatus: valid\n"
+        f"raw:\n  path: {raw_rel}\n"
+        "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n"
+        f"{body}\n"
     )
 
 

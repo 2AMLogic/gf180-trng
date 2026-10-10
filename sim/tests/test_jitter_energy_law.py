@@ -36,8 +36,8 @@ import jitter_energy_law as jel  # noqa: E402
 def _record(temp_c: float, vdd: float, **values: float) -> str:
     bullets = "\n".join(f"- `{k}`: {v!r}" for k, v in values.items())
     return (
-        "corner:\n  process: tt\n"
-        f"  voltage: {vdd}\n  temperature: {temp_c}\n\n{bullets}\n"
+        "---\nstatus: valid\ncorner:\n  process: tt\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n{bullets}\n"
     )
 
 

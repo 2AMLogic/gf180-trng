@@ -114,6 +114,19 @@ metadata) followed by prose (the summary and any caveats). No tooling reads
 the frontmatter today; it is structured so tooling *can* later without
 re-parsing prose.
 
+The shared parser (`sim/tools/_record_parsing.py`) reads two things from the
+frontmatter and holds them to a strict contract: the lifecycle `status` and
+the `corner:` fields `process`, `temperature` and `voltage`. The block must
+open on the file's first line and be closed by a second `---` line; each of
+those four keys must appear exactly once inside it, so a body line such as
+`process: ff` can never supply or override metadata. `temperature` and
+`voltage` are read as a complete scalar -- a finite decimal number, an
+optional `C`/`V` unit and an optional parenthetical remark (for example
+`3.300 V (nominal 3.3 V)`); a trailing suffix such as `125junk`, a
+non-finite value or `n/a` is rejected. Failures raise the calling tool's
+`RecordError` naming the record and the field. Result bullets
+(`- `key`: value`) are a separate contract and are unchanged.
+
 ### Required frontmatter fields
 
 | Field | Meaning |

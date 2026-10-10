@@ -44,7 +44,10 @@ def array_record_text(*, period: float, temp_c: float = 27.0, vdd: float = 3.3,
         ring_swing_v=3.2, xo_swing_v=3.3, xo_trans_per_s=1.0e8,
     )
     body = "\n".join(f"- `{k}`: {v!r}" for k, v in bullets.items())
-    return f"corner:\n  process: tt\n  voltage: {vdd}\n  temperature: {temp_c}\n\n{body}\n"
+    return (
+        "---\nstatus: valid\ncorner:\n  process: tt\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n{body}\n"
+    )
 
 
 def fake_point(corner: str, stem: str):
@@ -78,7 +81,7 @@ class ArrayPointArithmeticTests(unittest.TestCase):
     def point(self, text: str, a: float = sizing.A_JITTER_ENERGY):
         path = self.root / "2026-01-01-ro-array-core-power-01.md"
         # Records must carry a lifecycle status (#425).
-        path.write_text("---\nstatus: valid\n---\n" + text)
+        path.write_text(text)
         return sizing.ArrayPoint(sizing.Record(path), a=a)
 
     def test_ring_count_and_powers_are_read_off_the_record(self) -> None:
@@ -131,7 +134,7 @@ class CheckGateTests(unittest.TestCase):
         )
 
     def write(self, name: str, text: str) -> None:
-        (self.root / name).write_text("---\nstatus: valid\n---\n" + text)
+        (self.root / name).write_text(text)
 
     def run_main(self, *args: str) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
