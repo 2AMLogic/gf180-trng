@@ -62,7 +62,7 @@ block-to-block signals inside `trng_top`.
 
 | Port | Dir | Width | Leaves the die | Meaning |
 |---|---|---|---|---|
-| `clk` | in | 1 | yes | Sampler clock (DR-0012: fixed external). The whole block, including the register bus, is synchronous to it. |
+| `clk` | in | 1 | yes | Sampler clock (DR-0012-clock: fixed external). The whole block, including the register bus, is synchronous to it. |
 | `rst_n` | in | 1 | yes | Asynchronous power-on reset, active low. |
 
 ### sampler (#9)

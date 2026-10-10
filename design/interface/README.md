@@ -117,7 +117,7 @@ python3 sim/tb/interface-regfile/run_demo.py --no-write
   `STATUS.HT_FAIL_RING` is one bit, precisely so that the published register
   map does not depend on `N_RINGS`.
 - **A bus protocol and any clock-domain crossing.** The register bus is a
-  bare synchronous interface in the sampler clock domain (DR-0012). APB/AHB/
+  bare synchronous interface in the sampler clock domain (DR-0012-clock). APB/AHB/
   Wishbone adaptation and CDC are #27's wrapper, deliberately not baked in
   here.
 - **Timing closure.** Nothing in this directory shows this block closes

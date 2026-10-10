@@ -357,7 +357,7 @@ tap at the **sampler** output, after digitisation, and no per-ring signal leaves
 by `sampler_core`'s own liveness digitizers and go no further; see
 [Per-ring liveness](#per-ring-liveness) below. The sampler is
 `sampler_core` (see [The sampler](#the-sampler-9) below), and its clock source
-— a fixed external clock, per DR-0012 — pins DR-0007 §4's corner metric to
+— a fixed external clock, per DR-0012-clock — pins DR-0007 §4's corner metric to
 `Q ∝ σ₁²/T₀³`, minimum at `ss`/−40 °C/3.63 V.
 
 ### Per-ring liveness
@@ -392,7 +392,7 @@ ring is half the array — which is stated in `DR-0010` §Consequences.
 **The tap is shipped, not just anticipated (#65).** `ro_array_core.sym`/`.sch`
 now carry `ro1`/`ro2` as **observation-only output pins**, and
 `sampler_core.sch` digitizes them with two more `sampler_dff` instances
-(`xsr1`/`xsr2`) on the same DR-0012 external clock the raw tap already uses.
+(`xsr1`/`xsr2`) on the same DR-0012-clock external clock the raw tap already uses.
 Three things are worth being precise about:
 
 - **Nothing about the entropy source changed.** The two pins add no device and
@@ -494,7 +494,7 @@ Since #65 the same cell also carries **two more instances of that same
 observation pins into `ring_bit1`/`ring_bit2` for the DR-0016 per-ring liveness
 monitor. They are here rather than in `ro_array_core` for a structural reason:
 a digitizer needs a clock, and the entropy source is a free-running analog cell
-with none — the sample clock enters the design at *this* level (DR-0012), and
+with none — the sample clock enters the design at *this* level (DR-0012-clock), and
 this is already the cell that owns it. Their loading on the ring nodes is
 measured at three PVT points by `sim/tb/ring-liveness-tap-power/`.
 
@@ -675,7 +675,7 @@ The block-level rollup of both figures, and the `< 1 µA` idle row's 4.5× miss
 [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md)
 and [`DR-0017`](../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md).
 
-### Clock-source decision (binding, DR-0012): fixed external, not RO-divided
+### Clock-source decision (binding, DR-0012-clock): fixed external, not RO-divided
 
 DR-0007 §6 makes this issue's clock-source choice binding: it selects which
 corner metric §4 applies, so #13's worst-corner analysis cannot proceed
@@ -734,7 +734,7 @@ is exactly what `sim/tb/sampler-dff-setup-hold/` is for.
 
 Setup and hold violations at this flip-flop are **not** a fault to be designed
 out. `xo` is asynchronous to `clk` by construction — that is the whole point of
-DR-0012's clock-source choice — so the data edge lands at an arbitrary phase
+DR-0012-clock's clock-source choice — so the data edge lands at an arbitrary phase
 relative to the sampling edge, and some samples necessarily arrive inside the
 aperture. What the design has to guarantee is not "no violation" but **bounded
 resolution**: that a struck edge settles to a rail quickly and never leaves the
@@ -962,8 +962,8 @@ committed:
   netlists #47 itself reformatted, and it is checkable by joining `+`
   continuations and normalising whitespace on both files.
 - `sim/tb/sampler-{dff-setup-hold,array-digitize}/tb_sampler_*.sp` — a comment
-  line each, renumbering the sampler decision record from `DR-0011` to `DR-0012`
-  after #47 landed a different `DR-0011` first (see below). No `.control` block,
+  line each, renumbering the sampler decision record from its provisional number 0011 to `DR-0012-clock`
+  after #47 landed a different record (now `DR-0011-meta`) first (see below). No `.control` block,
   no source, no measurement, no device statement changed.
 
 Nothing is corrected in place, for the same reason as the erratum above:

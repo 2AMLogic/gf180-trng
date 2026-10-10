@@ -1,6 +1,6 @@
 # Raw min-entropy estimation and statistical test battery (issue #12)
 
-Status: analysis complete for issue #12, applying the #10/[DR-0012] methodology
+Status: analysis complete for issue #12, applying the #10/[DR-0012-noise] methodology
 contract to the real design. **No non-trivial raw min-entropy figure is
 reported as a design estimate.** Sections 1–3 below explain, quantitatively
 and from evidence already committed under `sim/records/`, why that is the
@@ -24,7 +24,7 @@ Covered: the two things issue #12 was scoped to do —
 
 1. a min-entropy point estimate on the one transistor-derived raw bitstream
    this repository has (`sim/tb/sampler-array-digitize`, issue #9), with the
-   confidence-degradation discussion [DR-0012] §2 requires, plus a physical
+   confidence-degradation discussion [DR-0012-noise] §2 requires, plus a physical
    cross-check against the design's own jitter-energy sizing law
    ([DR-0007] §2, [DR-0010]);
 2. a statistical test battery on the CRC-32-conditioned output, at the one
@@ -52,7 +52,7 @@ closed-form target (issue #10, closed via #50) to within 0.02 bit. Nothing
 here re-derives or re-validates the estimator; it is applied, unmodified, to
 real bits instead of the calibration testbench's idealized Gaussian source.
 
-**Why 3 seeds, not [DR-0012] §1's 4-seed default.** This analysis does not
+**Why 3 seeds, not [DR-0012-noise] §1's 4-seed default.** This analysis does not
 mine a fourth seed. §1 permits a stated reduction from the default, and the
 reason here is direct rather than a cost excuse: the three already-run seeds
 produce **bit-identical output** at both corners (see the "Effective
@@ -73,7 +73,7 @@ stronger route.
 | `tt`/27 °C/3.30 V | 10 | 3 | 6 | 0.600 | 0.7370 | 0.1549 | 0.3725 |
 | `ss`/−40 °C/3.63 V (entropy-binding) | 10 | 3 | 7 | 0.700 | 0.5146 | 0.1449 | 0.2987 |
 
-The "naive" standard errors are [DR-0012] §2's own stated formula
+The "naive" standard errors are [DR-0012-noise] §2's own stated formula
 (binomial SE on `p1_hat`, propagated through the estimator's local
 sensitivity `1/(p_max ln 2)`), applied honestly at the achieved N = 10. They
 are already large — order 0.3–0.4 bit on an `H_hat` of order 0.5–0.7 bit —
@@ -181,7 +181,7 @@ not support").
 
 - **Does**: apply the calibrated MCV estimator, honestly, to the only
   transistor-derived raw bits this repository has, at both corners they
-  exist for, with the confidence-degradation figure [DR-0012] §2 requires.
+  exist for, with the confidence-degradation figure [DR-0012-noise] §2 requires.
   Explains, quantitatively rather than by assertion, why those bits are
   seed-invariant and why that is expected rather than anomalous.
 - **Does not**: support the `H_hat` figures in the Result table as a
@@ -190,10 +190,10 @@ not support").
   samples at a rate ~4–5 orders of magnitude below the array's own
   entropy-sufficiency threshold; reporting either number as *the* raw
   min-entropy would be exactly the "review-blocking defect" [DR-0004]/
-  [DR-0012] name — quoting an estimator at an unsupported N (or, here, an
+  [DR-0012-noise] name — quoting an estimator at an unsupported N (or, here, an
   unsupported physical regime) as if it were the real answer.
 - **Does not** attempt the SP 800-90B non-IID suite or the restart dataset,
-  per [DR-0012] §2's explicit exclusion.
+  per [DR-0012-noise] §2's explicit exclusion.
 
 ## 2. Statistical battery on the conditioned stream
 
@@ -208,7 +208,7 @@ cross-validated against the closed-form identity `Q(1/2, x) = erfc(sqrt(x))`
 (`--check`; also `sim/tests/test_statistical_battery.py`).
 
 **This is explicitly not the SP 800-90B non-IID entropy-source suite
-[DR-0012] §2 forbids running at an unsupported N.** SP 800-22 is a different
+[DR-0012-noise] §2 forbids running at an unsupported N.** SP 800-22 is a different
 standard aimed at a different, much cheaper question — does a stream that is
 *supposed* to already look uniform (post-conditioning) show a classical
 statistical defect — with a sample-size floor (hundreds to low thousands of
@@ -330,4 +330,4 @@ already argues through.
 [DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0010]: spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
-[DR-0012]: spec/decision-records/DR-0012-transient-noise-simulation-methodology.md
+[DR-0012-noise]: spec/decision-records/DR-0012-transient-noise-simulation-methodology.md

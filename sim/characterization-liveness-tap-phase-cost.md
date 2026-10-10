@@ -107,7 +107,7 @@ answers both halves:
   `trnoise()` source in series with every stage input at the same fixed
   injected density (`1e-16 V²/Hz`).
 - **`clk` at 1.0007 µs (~1 MHz)** in the two running-clock decks. DR-0003's
-  ratified raw-rate row is "> 1 Mbps sustained at the raw tap" and DR-0012
+  ratified raw-rate row is "> 1 Mbps sustained at the raw tap" and DR-0012-clock
   makes `clk` a fixed external pin with no divider, so this is the shipped
   operating point rather than a chosen stimulus.
 
@@ -393,7 +393,7 @@ from the shipped **3.46×**, not from this document's isolated 19.9×.
 - **One clk rate**, 1.0007 µs (~1 MHz), for the two running-clock decks. The
   25.61 % endpoint gap is rate-independent by construction, but how the
   disturbance folds into any particular `σ_acc` window is not — variant 4's
-  `σ₁` would be different at a different `clk` rate, and DR-0012 makes that
+  `σ₁` would be different at a different `clk` rate, and DR-0012-clock makes that
   rate external.
 - **`σ` here is raw, at the fixed injected level, and is not physical jitter.**
   No entropy-rate or spec-compliance claim is made anywhere in this document;

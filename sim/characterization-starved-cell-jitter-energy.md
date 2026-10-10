@@ -314,7 +314,7 @@ python3 sim/tools/array_sizing.py --a 7.322      # the entropy-binding corner's 
 `sim/tools/array_sizing.py`'s stated `A_JITTER_ENERGY` is **deliberately left
 at 1.79** by this work. It is the constant DR-0010 §3's published table and
 `design/README.md` are quoted against, and `--check` holds it to the plain-cell
-derivation; moving it is what accepting DR-0011 means, and DR-0011 lists the
+derivation; moving it is what accepting DR-0011-rate means, and DR-0011-rate lists the
 exact edits that acceptance implies. The `--a` flag exists so this document can
 price the alternative without any of them.
 

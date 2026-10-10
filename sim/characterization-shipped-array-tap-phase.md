@@ -702,7 +702,7 @@ What this experiment leaves open for someone else, none of it blocking:
    residual grows or shrinks at the DR-0015 entropy-binding corner is not
    measured, and the ratio is not obviously corner-independent — it is a ratio
    of two loaded ring periods.
-2. **Only one `clk` rate.** DR-0012 makes `clk` external, so the rate is not a
+2. **Only one `clk` rate.** DR-0012-clock makes `clk` external, so the rate is not a
    design constant an attacker cannot move; #86 swept three rates for the
    *bit-level* question and found no rate dependence there, but this document's
    phase question has been asked at one rate only.
@@ -737,7 +737,7 @@ decks, so they apply equally to both pairs' results above.
   temperature or supply.
 - **One `clk` rate**, 1.0007 µs (~1 MHz), for the two running-clock decks.
   How a `clk`-locked disturbance folds into any particular `σ_acc` window
-  depends on that rate, and DR-0012 makes the rate external.
+  depends on that rate, and DR-0012-clock makes the rate external.
 - **The window is matched to #76 in time, not in ring periods** — 256 periods
   here against 512 there. Both windows span more than one `clk` period, which
   is what a `clk`-locked disturbance needs, but a `σ` estimate over 256 periods

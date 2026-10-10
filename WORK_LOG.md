@@ -79,7 +79,7 @@ not independent verification of the claims in issue or PR titles.
 - **PR #389**: test: unit-test the digital LVS reference-netlist helpers
 - **PR #386**: test: unit-test digital place-and-route DEF/GDS checks
 - **Issue #391** (closed): Unit-test signoff/check.py's verdict-of-record comparison (compare_record, resolve_artifact)
-- **Issue #400** (closed): Wire the DR-0012 estimator-calibration and statistical-battery self-checks into check:spec / CI
+- **Issue #400** (closed): Wire the DR-0012-noise estimator-calibration and statistical-battery self-checks into check:spec / CI
 - **Issue #388** (closed): lvs.py: _bit_names documents a net<id> fallback it does not implement
 - **Issue #377** (closed): Unit-test the corner-sanity guardrail's pass/fail logic without ngspice
 - **Issue #374** (closed): Run the committed SDF regeneration guard in PDK nightly CI

@@ -99,7 +99,7 @@ of measuring at *fast* `clk`:
 |---|---|---|---|---|
 | A | near-integer | 11.36 ns | ~4.00 periods | where a circle map locks |
 | B | generic | 12.46 ns | ~4.38 periods | fractional part far from a low-order rational: the quiet background |
-| C | DR-0003 floor | 1.0007 µs | ~352 periods | the shipped operating point (DR-0003 rate, DR-0012 pin) |
+| C | DR-0003 floor | 1.0007 µs | ~352 periods | the shipped operating point (DR-0003 rate, DR-0012-clock pin) |
 
 Six decks, `sim/tb/sampler-bit-bias-{clocked,static}-{integer,generic,clk-floor}/`.
 
@@ -163,7 +163,7 @@ each deck reports its own ring periods over the same window it sampled bits in.
 
 Two of the three rates landed on a resonance, and only one of them on purpose.
 The DR-0003 floor — 1.0007 µs, chosen by `DR-0003`'s ratified raw-rate row and
-`DR-0012`'s no-divider external pin, not by this experiment — happens to put
+`DR-0012-clock`'s no-divider external pin, not by this experiment — happens to put
 ring 1 within **0.006** of a **352 : 1** ratio with `clk`. The shipped
 operating point is therefore itself a near-resonant one, which makes it a
 better test than it was picked to be.
@@ -314,7 +314,7 @@ matter.** Two things have to be kept apart:
 - the **difference** between the clocked and static arrangements — the only
   quantity the digitizers can be responsible for — is 0.38 σ, 0.82 σ and
   0.72 σ across those same three rates, with no trend. On this evidence an
-  attacker who owns `clk` (which `DR-0012` grants them) gains no lever *through
+  attacker who owns `clk` (which `DR-0012-clock` grants them) gains no lever *through
   the liveness digitizers*.
 
 What an attacker who owns `clk` can still do is choose a rate at which the
