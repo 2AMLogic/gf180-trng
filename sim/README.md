@@ -459,6 +459,22 @@ absent result. A record built this way is evidence that the run hung, not
 evidence about the device; `sim/README.md`'s "no claim beyond what this
 run measured" rule applies as usual.
 
+### Failed runs in the "Result" section
+
+Records minted after issue #506 summarize only status-`ok` runs in the
+per-measurement lines. A failed run (nonzero exit, simulator or analysis
+error, fatal diagnostic, missing measurements, or timeout) still retains any
+measurements it parsed, but they appear only under a separate "Failed-run
+diagnostics" heading with the failure reason, never in a mean or spread. A
+`Runs: N of M successful` line reports attempted vs. successful counts; a
+measurement with no successful run reads `no successful-run data (N of M
+runs succeeded)` (this replaces the older "no data (all runs failed to
+converge)" wording, which was too narrow). The `- `name`: ...` and
+`mean X over N seeds` line formats are unchanged, so readers that parse them
+keep working; the only new lines are the `Runs:` line and the failure and
+diagnostic blocks. Existing records are append-only and keep their original
+wording and semantics.
+
 ---
 
 ## Pre-commit checklist
