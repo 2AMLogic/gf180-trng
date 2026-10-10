@@ -415,6 +415,21 @@ The commit that supersedes a record should say so in its message, so
 
 ---
 
+## Scratch directories (`--no-write`)
+
+`--no-write` runs produce no evidence record, but ngspice still needs
+somewhere to put its deck and log. Each invocation creates its own
+directory `sim/.work/<testbench>/run-XXXXXXXX/` (atomically, via
+`tempfile.mkdtemp`) and puts one subdirectory per PVT point inside it, so
+overlapping invocations of the same testbench, point and seed never share
+or delete each other's files. The path is printed at the start of the run
+and again in the summary.
+
+Cleanup policy: the harness never deletes scratch output. The directory is
+kept so the deck and log of a failing point can be inspected; it is
+git-ignored and is not evidence. Remove a run's directory yourself when you
+are done with it (`rm -rf sim/.work/<testbench>/run-XXXXXXXX`).
+
 ## Hung and timed-out runs
 
 Every corner `run_corners.py` simulates is bounded by `--timeout` (default
