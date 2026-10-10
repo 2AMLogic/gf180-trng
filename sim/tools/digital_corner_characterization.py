@@ -85,6 +85,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _record_parsing import parse_values  # noqa: E402
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
 RECORD_GLOB = "*-digital-sta-power-[0-9]*.md"
@@ -228,7 +231,6 @@ RECORDED = {
 #: far tighter than any real regression and far looser than that noise.
 TOLERANCE = 0.01
 
-_VALUE = re.compile(r"^- `([a-z0-9_]+)`:\s*(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
 _FIELD = {
     "liberty": re.compile(r"^\s*liberty:\s*(\S+)\s*$", re.M),
     "interconnect": re.compile(r"^\s*interconnect:\s*(\w+)", re.M),
@@ -253,7 +255,7 @@ class Record:
         text = path.read_text()
         self.path = path
         self.stem = path.stem
-        self.values = {m.group(1): float(m.group(2)) for m in _VALUE.finditer(text)}
+        self.values = parse_values(text)
         self.fields = {}
         for name, pattern in _FIELD.items():
             m = pattern.search(text)

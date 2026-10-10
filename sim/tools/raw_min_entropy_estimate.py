@@ -60,15 +60,16 @@ TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "sampler-array-digitize" / "tb.json"
 sys.path.insert(0, str(TOOLS_DIR))
 import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
-from _record_parsing import field, format_corner, parse_corner, parse_status  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    field,
+    format_corner,
+    iter_seed_summaries,
+    parse_corner,
+    parse_status,
+)
 
 SLUG = "sampler-array-digitize"
 
-_VALUE_MEAN = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)",
-    re.M,
-)
 _BIT_KEY = re.compile(r"^b(\d+)_v$")
 
 
@@ -96,10 +97,10 @@ class BitstreamRecord:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.n_seeds = 1
-        for m in _VALUE_MEAN.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-            self.n_seeds = int(m.group(3))
-            self.sd[m.group(1)] = float(m.group(4))
+        for key, summary in iter_seed_summaries(text):
+            self.values[key] = summary.mean
+            self.n_seeds = summary.n_seeds
+            self.sd[key] = summary.sd
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )

@@ -41,6 +41,7 @@ from _record_parsing import (  # noqa: E402
     field,
     format_corner,
     frontmatter,
+    iter_seed_summaries,
     parse_corner,
     parse_values,
 )
@@ -144,6 +145,28 @@ class ParseValuesTests(unittest.TestCase):
             parse_values(RECORD_EXCERPT),
             {"period": 5.951232e-10, "f_osc": 1.680324e9},
         )
+
+
+class SeedSummaryTests(unittest.TestCase):
+    TEXT = (
+        "- `dtrip_v`: mean 1.6e-3 over 8 seeds (sd 2.5e-5, min 1, max 2)\n"
+        "- `plain`: 4.5\n"
+        "- `other`: mean -0.25 over 4 seeds (sd 0.5\n"
+    )
+
+    def test_extracts_key_mean_seed_count_and_sd_in_order(self) -> None:
+        got = list(iter_seed_summaries(self.TEXT))
+        self.assertEqual([k for k, _ in got], ["dtrip_v", "other"])
+        self.assertEqual(tuple(got[0][1]), (1.6e-3, 8, 2.5e-5))
+        self.assertEqual(tuple(got[1][1]), (-0.25, 4, 0.5))
+
+    def test_plain_bullet_is_not_a_summary_but_still_a_value(self) -> None:
+        self.assertNotIn("plain", [k for k, _ in iter_seed_summaries(self.TEXT)])
+        self.assertEqual(parse_values(self.TEXT)["plain"], 4.5)
+        self.assertEqual(parse_values(self.TEXT)["dtrip_v"], 1.6e-3)
+
+    def test_requires_sd_clause(self) -> None:
+        self.assertEqual(list(iter_seed_summaries("- `k`: mean 1.0 over 3 seeds\n")), [])
 
 
 class FieldTests(unittest.TestCase):

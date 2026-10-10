@@ -30,15 +30,28 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Iterator
+from typing import NamedTuple
+
+#: The numeric token of a result bullet: the one definition of "what a number
+#: may look like" among the sim tools. Embed it (unparenthesised) in a larger
+#: pattern; do not re-type it.
+NUMBER_PATTERN = r"-?[\d.]+(?:e[-+]?\d+)?"
 
 #: A bullet line of the form "- `key`: [mean ]value", exactly as every
 #: sim/records/*.md result section writes one. ``(?:mean\s+)?`` skips past
 #: the "mean" of a multi-seed bullet so its point estimate is still
-#: captured; a caller that also needs the seed count / standard deviation
-#: (``starved_cell_jitter_energy.py``, ``raw_min_entropy_estimate.py``)
-#: parses those itself -- that shape is not common enough across all seven
-#: callers to belong here.
-VALUE_RE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
+#: captured; the seed count / standard deviation of that form are read by
+#: :data:`SEED_SUMMARY_RE` / :func:`iter_seed_summaries`.
+VALUE_RE = re.compile(rf"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?({NUMBER_PATTERN})", re.M)
+
+#: A multi-seed bullet "- `key`: mean X over N seeds (sd Y": groups are
+#: key, mean, seed count, standard deviation.
+SEED_SUMMARY_RE = re.compile(
+    rf"^- `([a-z0-9_]+)`:\s*mean\s+({NUMBER_PATTERN})\s+over\s+(\d+)\s+seeds"
+    rf"\s*\(sd\s+({NUMBER_PATTERN})",
+    re.M,
+)
 
 _FRONTMATTER_RE = re.compile(r"---[ \t]*\n(.*?)^---[ \t]*$", re.S | re.M)
 _NUMBER = r"[-+]?\d+(?:\.\d+)?"
@@ -52,6 +65,20 @@ _VOLTAGE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*V)?" + _REMARK)
 def parse_values(text: str) -> dict[str, float]:
     """Every ``- `key`: value`` bullet in ``text``, keyed by ``key``."""
     return {m.group(1): float(m.group(2)) for m in VALUE_RE.finditer(text)}
+
+
+class SeedSummary(NamedTuple):
+    """The ``mean X over N seeds (sd Y`` shape of one multi-seed bullet."""
+
+    mean: float
+    n_seeds: int
+    sd: float
+
+
+def iter_seed_summaries(text: str) -> Iterator[tuple[str, SeedSummary]]:
+    """Every multi-seed bullet in ``text`` as ``(key, SeedSummary)``, in order."""
+    for m in SEED_SUMMARY_RE.finditer(text):
+        yield m.group(1), SeedSummary(float(m.group(2)), int(m.group(3)), float(m.group(4)))
 
 
 def field(
