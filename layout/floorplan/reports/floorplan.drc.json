@@ -1,11 +1,14 @@
 {
   "drc": {
-    "schema_version": 1,
+    "schema_version": 2,
     "deck": "gf180mcu",
     "dbu_um": 0.0005,
     "status": "clean",
     "violation_count": 0,
     "rule_counts": {},
+    "metrics": {
+      "drc__error__count": 0
+    },
     "violations": [],
     "coverage": {
       "deck_layers": [
@@ -58,6 +61,47 @@
         "204/0",
         "204/10"
       ],
+      "rules_checked": [
+        "comp.enclosing.contact.1",
+        "comp.space.1",
+        "comp.space.mv.1",
+        "comp.width.1",
+        "comp.width.mv.1",
+        "contact.space.1",
+        "contact.width.1",
+        "metal1.enclosing.contact.1",
+        "metal1.enclosing.via1.1",
+        "metal1.space.1",
+        "metal1.width.1",
+        "metal2.enclosing.via1.1",
+        "metal2.enclosing.via2.1",
+        "metal2.space.1",
+        "metal2.width.1",
+        "metal3.enclosing.via2.1",
+        "metal3.enclosing.via3.1",
+        "metal3.space.1",
+        "metal3.width.1",
+        "metal4.enclosing.via3.1",
+        "metal4.enclosing.via4.1",
+        "metal4.space.1",
+        "metal4.width.1",
+        "metal5.enclosing.via4.1",
+        "metal5.space.1",
+        "metal5.width.1",
+        "nwell.enclosing.comp.1",
+        "nwell.space.1",
+        "poly2.enclosing.contact.1",
+        "poly2.space.1",
+        "poly2.width.1",
+        "via1.space.1",
+        "via1.width.1",
+        "via2.space.1",
+        "via2.width.1",
+        "via3.space.1",
+        "via3.width.1",
+        "via4.space.1",
+        "via4.width.1"
+      ],
       "rules_skipped": [
         "bjt.separation.comp.1",
         "metaltop.space.1",
@@ -84,20 +128,99 @@
         "7.5 Comp",
         "7.7 Poly2",
         "9.1 Bond Pad"
-      ]
+      ],
+      "schema_version": 1,
+      "known": true,
+      "checked": [
+        "comp.enclosing.contact.1",
+        "comp.space.1",
+        "comp.space.mv.1",
+        "comp.width.1",
+        "comp.width.mv.1",
+        "contact.space.1",
+        "contact.width.1",
+        "metal1.enclosing.contact.1",
+        "metal1.enclosing.via1.1",
+        "metal1.space.1",
+        "metal1.width.1",
+        "metal2.enclosing.via1.1",
+        "metal2.enclosing.via2.1",
+        "metal2.space.1",
+        "metal2.width.1",
+        "metal3.enclosing.via2.1",
+        "metal3.enclosing.via3.1",
+        "metal3.space.1",
+        "metal3.width.1",
+        "metal4.enclosing.via3.1",
+        "metal4.enclosing.via4.1",
+        "metal4.space.1",
+        "metal4.width.1",
+        "metal5.enclosing.via4.1",
+        "metal5.space.1",
+        "metal5.width.1",
+        "nwell.enclosing.comp.1",
+        "nwell.space.1",
+        "poly2.enclosing.contact.1",
+        "poly2.space.1",
+        "poly2.width.1",
+        "via1.space.1",
+        "via1.width.1",
+        "via2.space.1",
+        "via2.width.1",
+        "via3.space.1",
+        "via3.width.1",
+        "via4.space.1",
+        "via4.width.1"
+      ],
+      "skipped": [],
+      "inapplicable": [
+        {
+          "id": "bjt.separation.comp.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "metaltop.space.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "metaltop.width.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "mim.enclosing.fusetop.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "mim.enclosing.via4.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "mim.space.1",
+          "reason": "no_applicable_geometry"
+        },
+        {
+          "id": "pad.enclosing.metal5.1",
+          "reason": "no_applicable_geometry"
+        }
+      ],
+      "unknown": [],
+      "nothing_checked": false,
+      "nothing_checked_reasons": []
     },
     "provenance": {
-      "klt_version": "0.4.0",
-      "klayout_version": "0.30.12",
+      "klt_version": "0.6.0",
+      "klayout_version": "0.30.10",
       "pdk": null,
       "deck": {
         "name": "gf180mcu",
-        "content_hash": "sha256:36ed362443943bc488c41640b3e219c926bb251a7c1bd0e07bd6e96f5c158114",
+        "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
         "released": false
       },
       "input": {
-        "content_hash": "sha256:5698c4e1db04be69140c73406ed8457984d86a605b69a31018bec2f634872c96"
-      }
+        "content_hash": "sha256:5d20e8808b5b7f59f27bc750128d5008899391b742a2f2bf902754b11428cc21",
+        "role": "layout"
+      },
+      "klayout_version_mismatch": false
     }
   },
   "new_violations_from_composition": {

@@ -112,8 +112,8 @@
     "bbox_um": {
       "x0": 0.0,
       "y0": -11.15,
-      "x1": 1070.395,
-      "y1": 550.815
+      "x1": 934.36,
+      "y1": 405.58
     },
     "ports": [],
     "blocks": [
@@ -122,6 +122,8 @@
         "source": "generator_report",
         "generator": "guard_ring",
         "cell_name": "fp_guard_ring1",
+        "source_path": "layout/.work/fp_guard_ring1.gds",
+        "source_digest": "sha256:c95a15fe4495025bf976df4eda6a316def0166a3af911a79e3c7b893225a3604",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -139,6 +141,8 @@
         "source": "generator_report",
         "generator": "guard_ring",
         "cell_name": "fp_guard_ring2",
+        "source_path": "layout/.work/fp_guard_ring2.gds",
+        "source_digest": "sha256:523eeaffef5f5bd7860ae2c9de7b94d6223e27df9c08a83356b1afb9f3b57c0c",
         "offset_um": {
           "x": 100.91,
           "y": 0.0
@@ -156,6 +160,8 @@
         "source": "generator_report",
         "generator": "guard_ring",
         "cell_name": "fp_guard_combiner_sampler",
+        "source_path": "layout/.work/fp_guard_combiner_sampler.gds",
+        "source_digest": "sha256:13233164691b49045142914842d8c26e2fa043c2fe229aa96da23f24ab58408e",
         "offset_um": {
           "x": 201.82,
           "y": 0.0
@@ -173,6 +179,8 @@
         "source": "generator_report",
         "generator": "guard_ring",
         "cell_name": "fp_guard_digital",
+        "source_path": "layout/.work/fp_guard_digital.gds",
+        "source_digest": "sha256:425e84a25ea730d25901c7595ffc27cc0f52227225bac47326b95aa84340e217",
         "offset_um": {
           "x": 519.58,
           "y": 0.0
@@ -180,8 +188,8 @@
         "bbox_um": {
           "x0": 519.58,
           "y0": 0.0,
-          "x1": 1070.395,
-          "y1": 550.815
+          "x1": 920.51,
+          "y1": 400.93
         },
         "orientation": "none"
       },
@@ -190,6 +198,8 @@
         "source": "generator_report",
         "generator": "committed_ring_geometry",
         "cell_name": "ro_ring11",
+        "source_path": "layout/rings/ro_ring11/ro_ring11.gds",
+        "source_digest": "sha256:3e91467137624017c56c3689fb87e9139d75da982805f17e144c4de2c5361e55",
         "offset_um": {
           "x": 5.05,
           "y": 1.55
@@ -207,6 +217,8 @@
         "source": "generator_report",
         "generator": "committed_ring_geometry",
         "cell_name": "ro_ring11_ring2",
+        "source_path": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+        "source_digest": "sha256:43a14e48bbc6e8e8327fde9acc06af47eb74c71b7d2beee5ddbe8fb0a377ffe2",
         "offset_um": {
           "x": 105.96,
           "y": 1.55
@@ -224,6 +236,8 @@
         "source": "generator_report",
         "generator": "committed_ring_geometry",
         "cell_name": "combiner_sampler",
+        "source_path": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+        "source_digest": "sha256:2c81129992930be5995f20997bee46ae6af3a07445dfa98f5e2f5d7a8bff8d8a",
         "offset_um": {
           "x": 203.32,
           "y": 1.3
@@ -241,6 +255,8 @@
         "source": "generator_report",
         "generator": "committed_ring_geometry",
         "cell_name": "trng_top",
+        "source_path": "layout/digital/trng_top.gds",
+        "source_digest": "sha256:e0e42839d1dbada68c31489748ffe0c935f28f76aff6f833860986607b34f3c1",
         "offset_um": {
           "x": 520.58,
           "y": 1.0
@@ -248,8 +264,8 @@
         "bbox_um": {
           "x0": 520.58,
           "y0": 1.0,
-          "x1": 1069.395,
-          "y1": 549.815
+          "x1": 919.51,
+          "y1": 399.93
         },
         "orientation": "none"
       },
@@ -258,6 +274,8 @@
         "source": "generator_report",
         "generator": "layout.floorplan.interregion",
         "cell_name": "trng_interregion",
+        "source_path": "layout/.work/trng_interregion.gds",
+        "source_digest": "sha256:30afebb51b04f17feccb88272a4f4a7e34a1a031ad8877feabc04a613fa41115",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -265,8 +283,8 @@
         "bbox_um": {
           "x0": 4.16,
           "y0": -11.15,
-          "x1": 853.61,
-          "y1": 102.92
+          "x1": 934.36,
+          "y1": 405.58
         },
         "orientation": "none"
       }
@@ -291,7 +309,18 @@
       "block 'ring1_ring' gds 'layout/rings/ro_ring11/ro_ring11.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)",
       "block 'ring2_ring' gds 'layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)",
       "block 'combiner_sampler_ring' gds 'layout/blocks/combiner_sampler/combiner_sampler.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)"
-    ]
+    ],
+    "provenance": {
+      "klt_version": "0.6.0",
+      "klayout_version": "0.30.10",
+      "pdk": {
+        "name": "gf180mcuD",
+        "source": "search root: ~/.ciel",
+        "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      },
+      "deck": null,
+      "input": null
+    }
   },
-  "gds_sha256_timestamp_normalised": "5698c4e1db04be69140c73406ed8457984d86a605b69a31018bec2f634872c96"
+  "gds_sha256_timestamp_normalised": "5d20e8808b5b7f59f27bc750128d5008899391b742a2f2bf902754b11428cc21"
 }

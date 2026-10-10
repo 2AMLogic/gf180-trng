@@ -118,17 +118,17 @@
       "trunk_y_um": -4.0,
       "trunk_x_um": [
         499.83,
-        853.61
+        933.66
       ],
-      "trunk_length_um": 353.78,
-      "chip_pin_x_um": 853.46,
-      "label_x_um": 853.46,
+      "trunk_length_um": 433.83,
+      "chip_pin_x_um": 933.51,
+      "label_x_um": 933.51,
       "endpoints": [
         {
           "region": "digital",
           "pin": "clk",
-          "anchor": "digital_pin",
-          "riser_x_um": 841.46
+          "anchor": "digital_pin_top",
+          "riser_x_um": 921.51
         },
         {
           "region": "combiner_sampler",
@@ -148,17 +148,17 @@
       "trunk_y_um": -4.7,
       "trunk_x_um": [
         500.83,
-        840.17
+        934.36
       ],
-      "trunk_length_um": 339.34,
-      "chip_pin_x_um": 840.02,
-      "label_x_um": 840.02,
+      "trunk_length_um": 433.53,
+      "chip_pin_x_um": 934.21,
+      "label_x_um": 934.21,
       "endpoints": [
         {
           "region": "digital",
           "pin": "rst_n",
-          "anchor": "digital_pin",
-          "riser_x_um": 828.02
+          "anchor": "digital_pin_top",
+          "riser_x_um": 922.21
         },
         {
           "region": "combiner_sampler",
@@ -178,11 +178,11 @@
       "trunk_y_um": -5.4,
       "trunk_x_um": [
         312.36,
-        837.13
+        923.06
       ],
-      "trunk_length_um": 524.77,
+      "trunk_length_um": 610.7,
       "chip_pin_x_um": null,
-      "label_x_um": 574.745,
+      "label_x_um": 617.71,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -193,8 +193,8 @@
         {
           "region": "digital",
           "pin": "raw_bit",
-          "anchor": "digital_pin",
-          "riser_x_um": 836.98
+          "anchor": "digital_pin_top",
+          "riser_x_um": 922.91
         }
       ]
     },
@@ -208,11 +208,11 @@
       "trunk_y_um": -6.1,
       "trunk_x_um": [
         372.6,
-        819.21
+        923.76
       ],
-      "trunk_length_um": 446.61,
+      "trunk_length_um": 551.16,
       "chip_pin_x_um": null,
-      "label_x_um": 595.905,
+      "label_x_um": 648.18,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -223,8 +223,8 @@
         {
           "region": "digital",
           "pin": "raw_valid",
-          "anchor": "digital_pin",
-          "riser_x_um": 819.06
+          "anchor": "digital_pin_top",
+          "riser_x_um": 923.61
         }
       ]
     },
@@ -238,11 +238,11 @@
       "trunk_y_um": -6.8,
       "trunk_x_um": [
         433.49,
-        776.65
+        924.46
       ],
-      "trunk_length_um": 343.16,
+      "trunk_length_um": 490.97,
       "chip_pin_x_um": null,
-      "label_x_um": 605.07,
+      "label_x_um": 678.975,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -253,8 +253,8 @@
         {
           "region": "digital",
           "pin": "ring_bit[0]",
-          "anchor": "digital_pin",
-          "riser_x_um": 776.5
+          "anchor": "digital_pin_top",
+          "riser_x_um": 924.31
         }
       ]
     },
@@ -268,11 +268,11 @@
       "trunk_y_um": -7.5,
       "trunk_x_um": [
         494.38,
-        759.85
+        925.16
       ],
-      "trunk_length_um": 265.47,
+      "trunk_length_um": 430.78,
       "chip_pin_x_um": null,
-      "label_x_um": 627.115,
+      "label_x_um": 709.77,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -283,8 +283,8 @@
         {
           "region": "digital",
           "pin": "ring_bit[1]",
-          "anchor": "digital_pin",
-          "riser_x_um": 759.7
+          "anchor": "digital_pin_top",
+          "riser_x_um": 925.01
         }
       ]
     },
@@ -430,10 +430,10 @@
   "wiring_bbox_um": {
     "x0": 4.16,
     "y0": -11.15,
-    "x1": 853.61,
-    "y1": 102.92
+    "x1": 934.36,
+    "y1": 405.58
   },
-  "shape_count": 125,
+  "shape_count": 149,
   "net_labels": [
     "en1",
     "en2",
@@ -453,21 +453,21 @@
   ],
   "check": {
     "declared_pins": 112,
-    "pins_unnameable_by_klt_extract": [
-      "en1",
-      "en2",
-      "vdd",
-      "vddr1",
-      "vddr2"
-    ],
+    "joined_name_pins": {
+      "en1": "en|en1",
+      "en2": "en|en2",
+      "vdd": "d|vdd",
+      "vddr1": "vddr|vddr1",
+      "vddr2": "vddr|vddr2"
+    },
     "duplicate_pin_name_promotions": [],
-    "expected_pin_count": 107,
+    "expected_pin_count": 112,
     "extract": {
       "status": "extracted",
       "device_count": 196,
-      "net_count": 2691,
-      "pin_count": 107,
-      "abstracted_cell_types": 83
+      "net_count": 1678,
+      "pin_count": 112,
+      "abstracted_cell_types": 92
     },
     "drawn_nets": [
       "en1",
@@ -500,8 +500,8 @@
       },
       "counts": {
         "nets": {
-          "layout": 2691,
-          "reference": 2690,
+          "layout": 1678,
+          "reference": 1678,
           "matched": 254
         },
         "devices": {
@@ -510,7 +510,7 @@
           "matched": 196
         },
         "pins": {
-          "layout": 107,
+          "layout": 112,
           "reference": 112,
           "matched": 112
         }
