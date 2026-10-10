@@ -97,6 +97,28 @@ class CommittedViewTests(unittest.TestCase):
         }
         self.assertEqual(build._drc_committed_view(payload), payload)
 
+    def test_pnr_committed_view_restates_nested_def_path_without_mutation(self):
+        import copy
+
+        payload = {
+            "power": {"placed": {"def_path": "/home/u/wt/x.def", "status": "complete"}, "other": 1},
+            "verdict": "pass",
+        }
+        before = copy.deepcopy(payload)
+        view = build._committed_view(payload)
+        self.assertEqual(payload, before)
+        self.assertEqual(view["power"]["placed"]["def_path"], "layout/digital/trng_top.def")
+        self.assertEqual(view["power"]["placed"]["status"], "complete")
+        self.assertEqual(view["power"]["other"], 1)
+        self.assertEqual(view["verdict"], "pass")
+
+    def test_pnr_committed_view_keeps_absent_and_null_def_path(self):
+        for power in (None, {}, {"placed": None}, {"placed": {}}, {"placed": {"def_path": None}}):
+            payload = {"power": power}
+            view = build._committed_view(payload)
+            self.assertEqual(view["power"], power)
+        self.assertNotIn("power", build._committed_view({}))
+
     def test_drc_committed_view_copies_rather_than_aliases(self):
         """A caller that mutates the payload afterwards (as `build()` does,
         via `_drc_summary`) must not retroactively edit what was written."""

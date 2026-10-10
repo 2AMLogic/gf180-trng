@@ -364,6 +364,12 @@ jobs:
       - name: Register-map staleness guard
         run: npm run check:regmap
 
+      # Tracked generated JSON under design/, layout/ and signoff/ must not
+      # embed absolute /home/<user>/ or /Users/<user>/ paths. One historical
+      # native response is exempt by exact path and SHA-256. Stdlib only.
+      - name: Generated-report host-path guard
+        run: npm run check:no-host-paths
+
       # design/floorplan_netlist.py's own inter-region net list (issue #221,
       # phase 1 of the #219 floorplan-composition epic) against the four
       # regions' own committed reference netlists, and the composed

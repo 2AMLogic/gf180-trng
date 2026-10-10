@@ -1118,7 +1118,7 @@
     },
     "placed": {
       "evidence": "def",
-      "def_path": "/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-293/layout/.work/place-and-route/.klt/place-and-route/trng_top.def",
+      "def_path": "layout/digital/trng_top.def",
       "unavailable_reason": null,
       "status": "complete",
       "missing": [],

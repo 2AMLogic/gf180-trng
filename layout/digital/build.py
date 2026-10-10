@@ -799,9 +799,22 @@ def _committed_view(payload: dict) -> dict:
     `provenance.pdk.source` (machine-local, not part of what was verified --
     `design/synth.py`'s own `_committed_view` does the same for the
     identical field) and `layer_map.path` (an absolute host path into the
-    local PDK install, not a repository-relative one).
+    local PDK install, not a repository-relative one). Likewise restates the
+    nested `power.placed.def_path` -- the same scratch DEF, which otherwise
+    names the producing host and worktree -- to the committed DEF, when that
+    field is present. Nested dictionaries are copied, never mutated in place.
     """
     restated = dict(payload)
+    power = restated.get("power")
+    if isinstance(power, dict):
+        power = dict(power)
+        placed = power.get("placed")
+        if isinstance(placed, dict):
+            placed = dict(placed)
+            if placed.get("def_path") is not None:
+                placed["def_path"] = str(DEF_PATH.relative_to(REPO_ROOT))
+            power["placed"] = placed
+        restated["power"] = power
     layer_map = restated.get("layer_map")
     if isinstance(layer_map, dict):
         restated["layer_map"] = {"resolution": layer_map.get("resolution")}
