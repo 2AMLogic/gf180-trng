@@ -6,6 +6,37 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #513**: sim: reject duplicate seeds and colliding PVT plans before allocation
+- **PR #512**: sim: snapshot the loaded testbench manifest with each run record
+- **PR #509**: sim: separate failed-run diagnostics from report summaries
+- **PR #505**: sim: record blocked ring2 paired PEX batch attempt (Part of #476)
+- **PR #504**: docs(signoff): combiner/sampler PVT grid attempt 5, still unrun (part of #418)
+- **PR #503**: test(sim): guard that every --check sim tool is wired or allowlisted
+- **PR #501**: Isolate per-invocation scratch directories for --no-write sweeps
+- **PR #500**: Fail unsuccessful ngspice executions even when all measurements are printed
+- **PR #497**: docs: move the spec-row change history out of the README table
+- **PR #496**: docs(signoff): combiner/sampler PEX grid attempt 4, all rows errored (partial #418)
+- **PR #493**: docs: refresh Chipalooza Row I area from regenerated floorplan report
+- **PR #492**: spec: ratify DR-0010, DR-0011, DR-0015, DR-0016 and DR-0018 via the two-key mechanism
+- **PR #490**: sim: quantify DC drop through the digital supply docking path and PDN (#464)
+- **PR #489**: sim: reconcile shipped liveness samplers with the whole-block active-power ledger (#463)
+- **PR #488**: docs: DR-0029 disposition of the LU.3/LU.4 tie-distance column (#449)
+- **PR #483**: sim: stop git gc/maintenance racing tempdir cleanup in evidence-history tests (#479)
+- **Issue #511** (closed): Reject duplicate seeds and colliding PVT execution plans before allocation
+- **Issue #510** (closed): Snapshot simulation manifests alongside checksum-protected run evidence
+- **Issue #506** (closed): Separate failed-run diagnostic measurements from simulation evidence statistics
+- **Issue #499** (closed): Isolate scratch directories for concurrent no-write simulation sweeps
+- **Issue #498** (closed): Fail unsuccessful ngspice executions even when all measurements are printed
+- **Issue #484** (closed): Refresh Chipalooza area evidence after floorplan regeneration and derive its guard from the report
+- **Issue #481** (closed): Move the README spec-row change history out of the Target specification table
+- **Issue #480** (closed): Carry the remaining Proposed decision records (DR-0010/0011/0015/0016/0017/0018) through ratification
+- **Issue #479** (closed): Build/runtime failure on main: flaky tempdir cleanup in test_verify_evidence_history (Errno 39)
+- **Issue #474** (closed): Guard that every sim tool with a --check mode is wired into check:spec or explicitly allowlisted
+- **Issue #464** (closed): Quantify DC voltage loss through the digital supply docking path and parallel PDN
+- **Issue #463** (closed): Reconcile shipped liveness samplers with the whole-block active-power ledger
+
+### 2026-10-10
+
 - **PR #482**: sim: remove unused imports and an unused local (#478)
 - **PR #477**: docs: out-of-envelope health-test characterization model-bound audit and plan (#467)
 - **PR #475**: sim: fs/sf campaign second batch retry, refused again (#472)

@@ -21,15 +21,17 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
+- **#514**: Reserve behavioral evidence stems before rendering raw artifacts
+- **#515**: Freeze SPICE source inputs for consistent multi-corner evidence
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide
-- **#463**: Reconcile shipped liveness samplers with the whole-block active-power ledger
-- **#464**: Quantify DC voltage loss through the digital supply docking path and parallel PDN
+- **#502**: Replace the README status changelog paragraph with a short summary and relocate the history
+- **#507**: Build/runtime failure on main: nightly SDF freshness fails on engine_version
 
 ## PRs Awaiting Review
 
@@ -51,11 +53,13 @@ Issues carrying `loom:curated`.
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
+- **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
+- **#494**: Guard against unused imports and locals in npm run lint (recurring ruff F401/F841 cleanups) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#467**: Characterize behavior just outside the operating envelope: the 'health-test-detected' clause has no testbench *(architect)*
-- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(architect)*
+- **#494**: Guard against unused imports and locals in npm run lint (recurring ruff F401/F841 cleanups) *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -68,11 +72,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 4 |
+| Ready (`loom:issue`) | 4 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 4 |
-| Architect / Hermit proposals | 3 |
+| Curated | 7 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
