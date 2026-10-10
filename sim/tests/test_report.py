@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
@@ -622,7 +623,7 @@ class RawFileVerificationTests(unittest.TestCase):
         return report.render_record(self.record, self.tb, ["a caveat"])
 
     def _entry_line(self):
-        return next(l for l in self._good_text().splitlines() if "sha256:" in l)
+        return next(l for l in self._good_text().splitlines() if l.startswith("    - ") and "sha256:" in l)
 
     def test_body_only_raw_section_is_not_accepted(self):
         text = "---\nrecord: x\nwall_time: 1\n---\n\n```\n" + "\n".join(
@@ -756,3 +757,102 @@ class StochasticRecordTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ManifestSnapshotTests(unittest.TestCase):
+    """The loaded tb.json is snapshotted and checksummed with the raw output
+    (#510). No PDK or ngspice involved."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.tb_dir = self.root / "tb" / "an-experiment"
+        self.tb_dir.mkdir(parents=True)
+        (self.tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def _record(self, measure_expr: str, stem: str) -> dict:
+        (self.tb_dir / "tb.json").write_text(json.dumps(
+            {"name": "an-experiment", "netlist": "x.spice", "measure": {"vout": measure_expr}}
+        ))
+        tb = testbench.load(self.tb_dir)
+        raw_dir = self.root / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        (raw_dir / "d.spice").write_text("* deck\n")
+        (raw_dir / "d.log").write_text("m_vout = 1\n")
+        results = [runner.RunResult(
+            point=self.point, seed=None, status="ok", measurements={"vout": 1.0},
+            deck_name="d.spice", log_name="d.log",
+        )]
+        record = report.build_record(
+            tb=tb, pdk=self.pdk, point=self.point, results=results,
+            ngspice="ngspice-46", repo_root=self.root, stem=stem,
+            completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": True},
+        )
+        self.tb = tb
+        return record
+
+    def test_manifest_only_change_is_distinguishable(self):
+        a = self._record("v(out)", "2026-07-31-an-experiment-01")
+        b = self._record("v(out)*2", "2026-07-31-an-experiment-02")
+        self.assertEqual(a["testbench_sha"], b["testbench_sha"])  # same fragment
+        self.assertNotEqual(a["manifest_sha256"], b["manifest_sha256"])
+        self.assertIn(f"sha256: {a['manifest_sha256']}", report.render_frontmatter(a))
+        self.assertIn(f"sha256: {b['manifest_sha256']}", report.render_frontmatter(b))
+
+    def test_snapshot_holds_loaded_bytes_and_is_checksummed(self):
+        rec = self._record("v(out)", "2026-07-31-an-experiment-01")
+        snap = Path(rec["raw_dir"]) / report.MANIFEST_SNAPSHOT_NAME
+        self.assertEqual(snap.read_bytes(), (self.tb_dir / "tb.json").read_bytes())
+        self.assertIn((report.MANIFEST_SNAPSHOT_NAME, rec["manifest_sha256"]), rec["raw_files"])
+        self.assertEqual(report.verify_record(rec), [])
+
+    def test_snapshot_is_the_loaded_config_not_a_later_edit(self):
+        rec = self._record("v(out)", "2026-07-31-an-experiment-01")
+        original = self.tb.manifest_bytes
+        (self.tb_dir / "tb.json").write_text("{}")
+        again = report.snapshot_manifest(self.tb, Path(rec["raw_dir"]))
+        self.assertEqual((Path(rec["raw_dir"]) / again[0]).read_bytes(), original)
+
+    def test_changed_snapshot_is_detected_on_disk(self):
+        rec = self._record("v(out)", "2026-07-31-an-experiment-01")
+        records_dir = self.root / "records"
+        path = report.write_record(rec, self.tb, records_dir, ["c"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+        (Path(rec["raw_dir"]) / report.MANIFEST_SNAPSHOT_NAME).write_text("{}")
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any(report.MANIFEST_SNAPSHOT_NAME in p for p in problems), problems)
+
+    def test_manifest_digest_must_match_raw_files_entry(self):
+        rec = self._record("v(out)", "2026-07-31-an-experiment-01")
+        text = report.render_frontmatter(rec).replace(rec["manifest_sha256"], "0" * 64, 1)
+        problems = report.verify_manifest_reference(text, rec["raw_files"])
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_manifest_edited_during_load_is_rejected(self):
+        self._record("v(out)", "2026-07-31-an-experiment-01")
+        real = testbench.validate_netlist
+
+        def edit_then_validate(tb):
+            (self.tb_dir / "tb.json").write_text(json.dumps({"changed": 1}))
+            real(tb)
+
+        with mock.patch.object(testbench, "validate_netlist", edit_then_validate):
+            with self.assertRaises(ValueError):
+                testbench.load(self.tb_dir)
+
+    def test_legacy_record_without_manifest_block_is_readable(self):
+        rec = self._record("v(out)", "2026-07-31-an-experiment-01")
+        legacy = dict(rec, manifest_snapshot="", manifest_sha256="", manifest_sha="")
+        legacy["raw_files"] = [f for f in rec["raw_files"] if f[0] != report.MANIFEST_SNAPSHOT_NAME]
+        (Path(rec["raw_dir"]) / report.MANIFEST_SNAPSHOT_NAME).unlink()
+        text = report.render_frontmatter(legacy)
+        self.assertNotIn("manifest:", text)
+        self.assertEqual(report.parse_manifest_section(text), {})
+        self.assertEqual(report.verify_manifest_reference(text, legacy["raw_files"]), [])
+        self.assertEqual(report.verify_record(legacy), [])
+        path = report.write_record(legacy, self.tb, self.root / "records", ["c"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])

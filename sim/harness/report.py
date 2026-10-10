@@ -88,10 +88,34 @@ def blob_sha(repo_root: Path, path: Path) -> str:
     return out or "unknown"
 
 
+def _git_blob_sha1(data: bytes) -> str:
+    """Git blob SHA of ``data`` (what ``git hash-object`` yields), no subprocess."""
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+#: Name of the per-record copy of the loaded ``tb.json`` kept in the raw dir.
+MANIFEST_SNAPSHOT_NAME = "tb.manifest.json"
+
+
+def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
+    """Write the manifest bytes ``tb`` was loaded from into ``raw_dir``.
+
+    Returns ``(file name, sha256)`` or ``None`` if ``tb`` carries no loaded
+    bytes. Uses the bytes captured at load time, never the file's current
+    content, so a manifest edited after loading cannot leak into the record.
+    """
+    if tb.manifest_bytes is None:
+        return None
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    path = raw_dir / MANIFEST_SNAPSHOT_NAME
+    path.write_bytes(tb.manifest_bytes)
+    return MANIFEST_SNAPSHOT_NAME, sha256_file(path)
 
 
 def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
@@ -295,6 +319,10 @@ def build_record(
             if path.is_file():
                 raw_files.append((fname, sha256_file(path)))
 
+    manifest_snapshot = snapshot_manifest(tb, raw_dir)
+    if manifest_snapshot is not None:
+        raw_files.append(manifest_snapshot)
+
     return {
         "record": stem,
         "date": completed_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -343,6 +371,9 @@ def build_record(
         "tb_slug": tb.slug,
         "netlist_rel": _relpath(repo_root, tb.dut_netlist),
         "manifest_rel": _relpath(repo_root, tb.manifest_path),
+        "manifest_snapshot": manifest_snapshot[0] if manifest_snapshot else "",
+        "manifest_sha256": manifest_snapshot[1] if manifest_snapshot else "",
+        "manifest_sha": _git_blob_sha1(tb.manifest_bytes) if manifest_snapshot else "",
     }
 
 
@@ -367,6 +398,18 @@ def render_frontmatter(record: dict) -> str:
         f"  path: {record['netlist_path']}",
         f"  sha: {record['netlist_sha']}",
         f"repo_commit: {record['repo_commit']}",
+    ]
+    # Additive: records predating the manifest snapshot (#510) have no
+    # ``manifest:`` block and stay valid as they are.
+    if record.get("manifest_sha256"):
+        lines += [
+            "manifest:",
+            f"  path: {record['manifest_rel']}",
+            f"  sha: {record['manifest_sha']}",
+            f"  snapshot: {record['manifest_snapshot']}",
+            f"  sha256: {record['manifest_sha256']}",
+        ]
+    lines += [
         "",
         f"pdk: {_yaml_str(record['pdk'])}",
         "pdk.models:",
@@ -511,6 +554,16 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
             f"--temps {_fmt(record['corner_temperature'])} {supply_args}{timeout_args}--no-write"
         )
     lines += ["```", ""]
+    if record.get("manifest_sha256"):
+        lines += [
+            f"The manifest used is snapshotted as `{record['raw_path']}"
+            f"{record['manifest_snapshot']}` (sha256 `{record['manifest_sha256']}`). "
+            f"The commands above read the CURRENT `{record['manifest_rel']}`; check "
+            "out `repo_commit` and, if the snapshot differs from the tree "
+            "(`diff`), restore the snapshot over it before re-running. See "
+            "`sim/README.md`.",
+            "",
+        ]
     return "\n".join(lines)
 
 
@@ -689,4 +742,44 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
         return [f"{path.name}: no raw.path in frontmatter"]
     if not raw_files:
         return [f"{path.name}: raw.files lists no files"]
-    return verify_raw_files(repo_root / raw_path, raw_files, check_unlisted=check_unlisted)
+    problems = verify_raw_files(repo_root / raw_path, raw_files, check_unlisted=check_unlisted)
+    problems += verify_manifest_reference(path.read_text(), raw_files)
+    return problems
+
+
+def parse_manifest_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``manifest:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "manifest:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_manifest_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """The ``manifest.sha256`` a record declares must match its raw.files entry.
+
+    (The snapshot's bytes themselves are covered by the raw.files re-hash.)
+    Legacy records without a ``manifest:`` block yield no problems.
+    """
+    ref = parse_manifest_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    name, digest = ref.get("snapshot", ""), ref.get("sha256", "")
+    if not name or name not in listed:
+        return [f"manifest.snapshot {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [f"manifest.sha256 {digest} != {listed[name]} recorded for {name} in raw.files"]
+    return []
