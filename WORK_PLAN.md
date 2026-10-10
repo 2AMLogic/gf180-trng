@@ -27,6 +27,9 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison
+- **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide
+- **#463**: Reconcile shipped liveness samplers with the whole-block active-power ledger
+- **#464**: Quantify DC voltage loss through the digital supply docking path and parallel PDN
 
 ## PRs Awaiting Review
 
@@ -47,9 +50,12 @@ Issues carrying `loom:curated`.
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
+- **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 
 ## Proposed (Architect / Hermit)
 
+- **#467**: Characterize behavior just outside the operating envelope: the 'health-test-detected' clause has no testbench *(architect)*
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -63,10 +69,10 @@ _None._
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 3 |
-| Architect / Hermit proposals | 1 |
+| Curated | 4 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
