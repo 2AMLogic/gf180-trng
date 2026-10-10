@@ -54,6 +54,38 @@ class CampaignTableTests(unittest.TestCase):
             )
 
 
+class RowCCornerTests(unittest.TestCase):
+    """Row C must cover every corner a real bitstream exists for (#436)."""
+
+    @staticmethod
+    def _corner(c):
+        args = c.extra_args
+        return (
+            args[args.index("--corners") + 1],
+            args[args.index("--temps") + 1],
+            args[args.index("--supply") + 1],
+        )
+
+    def test_row_c_is_exactly_the_three_bitstream_corners(self):
+        got = {
+            self._corner(c)
+            for c in characterize.CAMPAIGNS
+            if c.testbench == "sampler-array-digitize"
+        }
+        self.assertEqual(
+            got,
+            {("tt", "27", "3.30"), ("ss", "-40", "3.63"), ("ss", "125", "3.63")},
+        )
+
+    def test_row_c_dry_run_includes_entropy_binding_corner(self):
+        result = subprocess.run(
+            [sys.executable, str(SIM_DIR / "characterize.py"), "--dry-run", "--rows", "C"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertRegex(result.stdout, r"--temps\s+125\b[^\n]*--supply\s+3\.63")
+
+
 class SelectTests(unittest.TestCase):
     def test_no_filter_returns_everything(self):
         self.assertEqual(characterize._select(None), list(characterize.CAMPAIGNS))
