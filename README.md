@@ -107,7 +107,7 @@ that should be legible too.
 |---|---|---|
 | Entropy source | **N-way array of independent free-running ring oscillators, XOR-combined ahead of a single sampler**, N fixed by the jitter-budget sizing law `Q_array ≥ 1.5 × 4.0×10⁻³` at the entropy-binding corner ([DR-0007]) | metastability hybrid, scoped as a *secondary tap on the RO core* — not a free-standing source |
 | Raw rate | > 1 Mbps sustained at the raw tap (sampler output), binding at the slowest-RO corner: `ss` / −10 % / +125 °C ([DR-0003]) | > 4 Mbps, same definition |
-| Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner, which #13 measured over the full covered 27-point grid as **`ss` / +125 °C / 3.63 V** — the hot end of the `ss`/+10 % edge, *not* the cold end [DR-0012] predicted from three points ([DR-0015]; `fs`/`sf` remain uncovered per [DR-0006]). #12 applied the #10 methodology to the real sampler bitstream at the corners [DR-0012] predicted before that grid landed (`tt`/27 °C/3.30 V and `ss`/−40 °C/3.63 V) and found no non-trivial `H` figure is supportable by transistor-level simulation at any rate under consideration — the array's own sizing law predicts `H0 = 0.5` is plausible only near DR-0010's proposed (not yet ratified) 500 bps, and no affordable simulation reaches that rate. See [`sim/characterization-raw-min-entropy-and-battery.md`](sim/characterization-raw-min-entropy-and-battery.md). The same analysis was then re-run at #13's actual worst corner (`ss`/+125 °C/3.63 V, #406): ten of ten sampled bits were `1` at every seed, a ten-bit stuck-high observation that supports no `H` figure either — the same ceiling, not a number. Still owed: measured silicon ([DR-0004] Tier 3) | — |
+| Raw min-entropy per bit | **placeholder — H₀ = 0.5 bit/sample is a design *target*, not a measurement.** Stated at the entropy-binding corner, which #13 measured over the full covered 27-point grid as **`ss` / +125 °C / 3.63 V** — the hot end of the `ss`/+10 % edge, *not* the cold end [DR-0012-clock] predicted from three points ([DR-0015]; `fs`/`sf` remain uncovered per [DR-0006]). #12 applied the #10 methodology ([DR-0012-noise]) to the real sampler bitstream at the corners [DR-0012-clock] predicted before that grid landed (`tt`/27 °C/3.30 V and `ss`/−40 °C/3.63 V) and found no non-trivial `H` figure is supportable by transistor-level simulation at any rate under consideration — the array's own sizing law predicts `H0 = 0.5` is plausible only near DR-0010's proposed (not yet ratified) 500 bps, and no affordable simulation reaches that rate. See [`sim/characterization-raw-min-entropy-and-battery.md`](sim/characterization-raw-min-entropy-and-battery.md). The same analysis was then re-run at #13's actual worst corner (`ss`/+125 °C/3.63 V, #406): ten of ten sampled bits were `1` at every seed, a ten-bit stuck-high observation that supports no `H` figure either — the same ceiling, not a number. Still owed: measured silicon ([DR-0004] Tier 3) | — |
 | Quality | designed-for-SP 800-90B (raw access + RCT/APT + entropy-source model), plus a **simulation-derived design-stage min-entropy estimate** within the #10 claim limits; 90B validation itself deferred to measured silicon ([DR-0004]) | AIS-31 PTG.2 — same three-tier treatment (structure now, conformance deferred) |
 | Conditioning | **non-vetted** 32-bit CRC-32 LFSR compression (Galois, poly `0xEDB88320`), state cleared every block, **K = 8** — 256 raw bits in : one 32-bit word out. Creditable output entropy **0.85 bit per output bit** (SP 800-90B's non-vetted cap) for any raw stream at or above **H = 0.107 bit/sample**; a 4.70× margin under the H₀ = 0.5 target. ~0.005–0.008 mm² ([DR-0008]) | a 90B-*vetted* conditioning function — **rejected on area**: a compact serialised AES-128 is 88–124 % of the whole block budget ([DR-0008] §4). Live again only if the area budget grows |
 | Delivered (post-conditioning) rate | **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3) | — |
@@ -135,7 +135,7 @@ DRBG supplies its own and treats this block as the seed source.
 >   source is *sized* to hit it ([DR-0007]); the corner it has to hold at is
 >   now measured over the whole covered grid and moved as a result
 >   ([DR-0015], from #13). #12 attempted the `H` measurement at the corner
->   [DR-0012] predicted before that grid landed and found it is not
+>   [DR-0012-clock] predicted before that grid landed and found it is not
 >   supportable by transistor-level simulation at any rate under
 >   consideration (see
 >   [`sim/characterization-raw-min-entropy-and-battery.md`](sim/characterization-raw-min-entropy-and-battery.md));
@@ -274,7 +274,7 @@ DRBG supplies its own and treats this block as the seed source.
 > at the slowest-RO corner, min-entropy per bit at the *least*-jitter
 > (minimum-`Q`) corner, power at the fastest/leakiest corner, time-to-first-valid
 > at the slowest-sampling corner. One caveat #14 added to that last one:
-> [DR-0012] made the sample clock a *fixed external* clock, so the sample
+> [DR-0012-clock] made the sample clock a *fixed external* clock, so the sample
 > period does not move with PVT, and 99.999 % of the time-to-first-valid row is
 > 1281 fixed sample periods. Its stated binding corner is formally correct and
 > practically vacuous — the spread across the whole covered grid is 9 ns on
@@ -296,7 +296,8 @@ DRBG supplies its own and treats this block as the seed source.
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0010]: spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
 [DR-0011-rate]: spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
-[DR-0012]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0012-noise]: spec/decision-records/DR-0012-transient-noise-simulation-methodology.md
+[DR-0012-clock]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
 [DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0017]: spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md

@@ -377,6 +377,74 @@ class ReportIndex(TreeCase):
         self.assertIn("characterization-new.md is not linked", proc.stderr)
 
 
+class DrCitations(TreeCase):
+    """Bare citations of a number shared by two records fail (#468)."""
+
+    A = "spec/decision-records/DR-0007-alpha.md"
+    B = "spec/decision-records/DR-0007-beta.md"
+    C = "spec/decision-records/DR-0008-gamma.md"
+
+    def make(self, doc: str, name: str = "notes.md") -> None:
+        for rel in (self.A, self.B, self.C):
+            path = self.root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# record\nDR-0007 bare inside a record\n")
+        (self.root / name).write_text(doc)
+
+    def problems(self, doc: str, name: str = "notes.md") -> list[str]:
+        self.make(doc, name)
+        return cc.check_dr_citations(self.root)
+
+    def test_colliding_ids_derived_from_listing(self) -> None:
+        self.make("x\n")
+        self.assertEqual(cc.colliding_ids(self.root), {"0007"})
+
+    def test_bare_colliding_citation_fails(self) -> None:
+        out = self.problems("ok\nsee DR-0007 for details\n")
+        self.assertEqual(len(out), 1, out)
+        self.assertIn("notes.md:2: bare DR-0007", out[0])
+
+    def test_bare_reference_label_fails(self) -> None:
+        out = self.problems(f"see [DR-0007]\n\n[DR-0007]: {self.A}\n")
+        self.assertEqual(len(out), 2, out)
+
+    def test_non_colliding_id_passes(self) -> None:
+        self.assertEqual(self.problems("per DR-0008 and DR-00071\n"), [])
+
+    def test_slug_suffix_passes(self) -> None:
+        self.assertEqual(self.problems("per DR-0007-alpha, `DR-0007-beta`\n"),
+                         [])
+
+    def test_link_with_record_target_passes(self) -> None:
+        doc = (f"per [`DR-0007`]({self.A}) and [DR-0007][a].\n\n"
+               f"[a]: {self.B}\n")
+        self.assertEqual(self.problems(doc), [])
+
+    def test_link_to_non_record_target_fails(self) -> None:
+        self.assertEqual(len(self.problems("[DR-0007](other.md)\n")), 1)
+
+    def test_record_bodies_and_evidence_records_are_exempt(self) -> None:
+        self.make("clean\n")
+        ev = self.root / "sim" / "records" / "e.md"
+        ev.parent.mkdir(parents=True, exist_ok=True)
+        ev.write_text("DR-0007 quoted in append-only evidence\n")
+        self.assertEqual(cc.check_dr_citations(self.root), [])
+
+    def test_no_collision_means_nothing_to_flag(self) -> None:
+        self.make("DR-0007\n")
+        (self.root / self.B).unlink()
+        self.assertEqual(cc.check_dr_citations(self.root), [])
+
+    def test_cli_fails_on_bare_citation(self) -> None:
+        build_tree(self.root)
+        self.make("see DR-0007\n")
+        proc = subprocess.run(
+            [sys.executable, str(TOOL), "--root", str(self.root), "--check"],
+            capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("bare DR-0007", proc.stderr)
+
+
 class RepositoryReadme(unittest.TestCase):
     def test_committed_readme_agrees_with_tree(self) -> None:
         counts, problems = cc.check_tree(cc.REPO_ROOT)
@@ -384,6 +452,9 @@ class RepositoryReadme(unittest.TestCase):
 
     def test_committed_report_index_is_complete(self) -> None:
         self.assertEqual(cc.check_report_index(cc.REPO_ROOT), [])
+
+    def test_committed_tree_has_no_bare_colliding_citations(self) -> None:
+        self.assertEqual(cc.check_dr_citations(cc.REPO_ROOT), [])
 
     def test_committed_gate_inventory_agrees_with_package_json(self) -> None:
         self.assertEqual(cc.check_gate_inventory(cc.REPO_ROOT), [])

@@ -170,7 +170,7 @@ depends on. It follows the precedent `design/conditioner/area_estimate.py`
 already set, whose area figures DR-0008 cites directly from the script.
 
 **Not covered, and not projected:** post-layout parasitics (#15/#17), pads and
-I/O, any clock source (the block contains none — [DR-0012]), and the two taps
+I/O, any clock source (the block contains none — [DR-0012-clock]), and the two taps
 that exist but are not instantiated by the shipped block (see
 [Two taps that are not in the total](#two-taps-that-are-not-in-the-total)).
 
@@ -246,7 +246,7 @@ floor did not count. The oscillator contributes one part in 10⁵.
 ### Two things this changes about how the row should be read
 
 1. **Its stated binding corner is very nearly vacuous.** The row says it "binds
-   at `ss` / −10 % / +125 °C (slowest sampling)". [DR-0012] made the sample
+   at `ss` / −10 % / +125 °C (slowest sampling)". [DR-0012-clock] made the sample
    clock a *fixed external* clock, so the sample period does not move with PVT
    at all, and 99.999 % of this row is 1281 fixed sample periods. The corner
    spread across the whole grid is **9 ns on 1.281 ms**. The corner label is
@@ -453,7 +453,7 @@ adds them so the cost of adopting one is a command rather than an argument:
 
 | Tap | Measured cost | Effect on the active row if adopted |
 |---|---|---|
-| Metastability hybrid ([DR-0011], `ro_array_core_meta`) | ~187 µW | 454 → 641 µW, **1.28× over** |
+| Metastability hybrid ([DR-0011-meta], `ro_array_core_meta`) | ~187 µW | 454 → 641 µW, **1.28× over** |
 | Per-ring liveness digitizer ([DR-0016], `sim/tb/ring-liveness-tap-power/`) | ~81 µW | 454 → 536 µW, **1.07× over** |
 
 Adopting either one moves the active row from met to missed. That is a real
@@ -522,8 +522,8 @@ python3 sim/run_corners.py sampler-core-idle-leakage
 [DR-0004]: ../spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
 [DR-0008]: ../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: ../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
-[DR-0011]: ../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
-[DR-0012]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0011-meta]: ../spec/decision-records/DR-0011-metastability-hybrid-tap-claims-and-scope.md
+[DR-0012-clock]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0016]: ../spec/decision-records/DR-0016-per-ring-liveness-monitor.md
 [DR-0017]: ../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md

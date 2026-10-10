@@ -157,7 +157,7 @@ hop lives in exactly one file:
 | Hop | Where | What it is |
 |---|---|---|
 | `ro1`/`ro2` leave the array | `design/xschem/ro_array_core.sch`/`.sym` | two observation-only output pins. No device added, no ring changed — a parent that leaves them unconnected gets the identical circuit, which is why the pre-#65 power and jitter records still describe that cell. |
-| ring node → `ring_bit` | `design/xschem/sampler_core.sch` | two more `sampler_dff` instances (`xsr1`/`xsr2`), the raw tap's own already-characterized cell (DR-0014), on the same DR-0012 external clock. Their electrical cost is measured, not assumed: `sim/tb/ring-liveness-tap-power/`. |
+| ring node → `ring_bit` | `design/xschem/sampler_core.sch` | two more `sampler_dff` instances (`xsr1`/`xsr2`), the raw tap's own already-characterized cell (DR-0014), on the same DR-0012-clock external clock. Their electrical cost is measured, not assumed: `sim/tb/ring-liveness-tap-power/`. |
 | `ring_bit` → `ring_stuck_any` | `design/health_test/ring_liveness.v` | this block. Reports; never latches or gates. |
 | `ring_stuck_any` → alarm/gate | `design/trng_top/trng_top.v`/`.py` → `design/interface/` | wired to the interface's `ht_fail_ring` input, the third source of the DR-0002 latch. |
 | the reader's view | `STATUS.HT_FAIL_RING` (bit 9, W1C) | latched, distinguishable from `HT_FAIL_RCT`/`HT_FAIL_APT`, cleared the same way. |
@@ -175,7 +175,7 @@ interface block's side, so the direction there is inverted):
 
 | Port | Dir (this block) | Width | Meaning |
 |---|---|---|---|
-| `clk` | in | 1 | sampler clock (DR-0012: fixed external) |
+| `clk` | in | 1 | sampler clock (DR-0012-clock: fixed external) |
 | `rst_n` | in | 1 | asynchronous power-on reset, active low |
 | `raw_bit` | in | 1 | the DR-0001 raw tap |
 | `raw_valid` | in | 1 | `raw_bit` carries a new sample this cycle |

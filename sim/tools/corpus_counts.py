@@ -54,6 +54,18 @@ must have a "## Characterization reports" section, and the set of
 `characterization-*.md` files it links must equal the set on disk: a report
 nobody indexed fails, and so does an index entry whose file does not exist.
 
+Decision-record citations are held to be unambiguous (#468). Two records may
+share a number (DR-0011 and DR-0012 do); the colliding ids are derived from
+the directory listing, never hard-coded. In every markdown file outside the
+records themselves, a colliding id must not appear bare: cite it with a
+slug suffix (`DR-0012-noise`, `DR-0012-clock`, `DR-0011-rate`,
+`DR-0011-meta`), or as a link whose target names the record file
+(`[DR-0012](../spec/decision-records/DR-0012-sampler-fixed-external-clock.md)`).
+A reference label that is itself a bare colliding id (`[DR-0012]: ...`) is
+ambiguous and fails too. Out of scope, by design: the decision records' own
+bodies (immutable once accepted) and sim/records/ (append-only, checksummed
+evidence); the residual bare citations there are not rewritten.
+
 Usage:
   python3 sim/tools/corpus_counts.py           # print derived totals
   python3 sim/tools/corpus_counts.py --check   # exit 1 on any disagreement
@@ -316,6 +328,85 @@ def check_gate_inventory(root: Path) -> list[str]:
     return problems
 
 
+_SKIP_DIRS = {".git", "node_modules", ".loom", ".claude", ".agents",
+              ".venv", "venv", "__pycache__"}
+_BARE_DR = re.compile(r"(?<![A-Za-z0-9])DR-(\d{4})(?!\d|-[A-Za-z0-9])")
+_INLINE_LINK = re.compile(r"\[[^\]\n]*\]\([^)\n]*\)")
+_REF_LINK = re.compile(r"\[[^\]\n]*\]\[([^\]\n]+)\]")
+_REF_DEF = re.compile(r"(?m)^[ ]{0,3}\[([^\]\n]+)\]:[ \t]*(\S+)")
+_DR_TARGET = re.compile(r"DR-\d{4}-[A-Za-z0-9]")
+
+
+def colliding_ids(root: Path) -> set[str]:
+    """Numeric ids shared by two or more DR-NNNN-*.md files."""
+    dr_dir = root / "spec" / "decision-records"
+    seen: dict[str, int] = {}
+    if dr_dir.is_dir():
+        for p in dr_dir.iterdir():
+            m = _DR_NAME.match(p.name)
+            if p.is_file() and m:
+                seen[m.group(1)] = seen.get(m.group(1), 0) + 1
+    return {i for i, n in seen.items() if n > 1}
+
+
+def _blank(m: re.Match[str]) -> str:
+    return re.sub(r"[^\n]", " ", m.group(0))
+
+
+def find_bare_citations(text: str, ids: set[str]) -> list[tuple[int, str]]:
+    """(line, id) for each bare colliding-id citation in ``text``.
+
+    A citation inside a link whose target names a record file is resolved
+    by that target and is not bare. A reference link `[x][label]` counts as
+    resolved when `[label]: ...DR-NNNN-slug...` is defined in the text.
+    """
+    if not ids:
+        return []
+    defined = {m.group(1).lower() for m in _REF_DEF.finditer(text)
+               if _DR_TARGET.search(m.group(2))}
+    masked = _REF_LINK.sub(
+        lambda m: _blank(m) if m.group(1).lower() in defined else m.group(0),
+        text)
+    masked = _INLINE_LINK.sub(
+        lambda m: _blank(m) if _DR_TARGET.search(m.group(0)) else m.group(0),
+        masked)
+    out = []
+    for m in _BARE_DR.finditer(masked):
+        if m.group(1) in ids:
+            out.append((masked.count("\n", 0, m.start()) + 1,
+                        f"DR-{m.group(1)}"))
+    return out
+
+
+def citation_files(root: Path):
+    """Markdown files subject to the citation check."""
+    records = root / "sim" / "records"
+    for p in sorted(root.rglob("*.md")):
+        rel = p.relative_to(root)
+        if any(part in _SKIP_DIRS for part in rel.parts[:-1]):
+            continue
+        if records in p.parents:
+            continue
+        if rel.parts[:2] == ("spec", "decision-records") \
+                and _DR_NAME.match(p.name):
+            continue
+        yield p
+
+
+def check_dr_citations(root: Path) -> list[str]:
+    """Diagnostics for bare citations of colliding decision-record ids."""
+    ids = colliding_ids(root)
+    problems = []
+    for p in citation_files(root):
+        rel = p.relative_to(root).as_posix()
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for line, dr in find_bare_citations(text, ids):
+            problems.append(
+                f"{rel}:{line}: bare {dr} is ambiguous (two records share "
+                f"that number); cite {dr}-<slug> or link the record file")
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true",
@@ -326,6 +417,7 @@ def main(argv: list[str] | None = None) -> int:
 
     counts, problems = check_tree(args.root.resolve())
     problems += check_gate_inventory(args.root.resolve())
+    problems += check_dr_citations(args.root.resolve())
     for category in CATEGORIES:
         print(f"{category}: {counts[category]}")
     if not args.check:
@@ -335,7 +427,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"FAIL: {p}", file=sys.stderr)
         return 1
     print("OK: corpus totals quoted in README.md agree with the tree; "
-          "check:spec gate inventory agrees with package.json")
+          "check:spec gate inventory agrees with package.json; no bare "
+          "colliding decision-record citations")
     return 0
 
 

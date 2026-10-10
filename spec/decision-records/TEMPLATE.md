@@ -9,6 +9,15 @@ Delete the guidance comments; keep the section headings.
   increasing number (`DR-0001-…`, `DR-0002-…`); `<slug>` is lowercase-hyphenated
   (`DR-0003-ro-stage-count.md`). Numbers are never reused, including for
   rejected or superseded records.
+- **Allocating the next number**: take the highest `<nnnn>` in the
+  directory listing (`ls spec/decision-records/`) and add one. Do not infer
+  it from an issue, a PR, a branch name or your memory of the last record:
+  concurrent branches that each "take the next number" collide (two numbers in
+  this directory are each used by two records for that reason). If a collision already exists,
+  do not rename either file; cite the colliding ids with a slug suffix
+  (`DR-0012-noise`, `DR-0012-clock`) or a link to the record file.
+  `sim/tools/corpus_counts.py --check` (part of `npm run check:spec`) fails
+  on a bare citation of any number shared by two records.
 - **Immutable once accepted.** An accepted DR is not rewritten when the
   decision changes. Write a new DR that supersedes it, and update only the
   old DR's `status` / `superseded_by` fields.
