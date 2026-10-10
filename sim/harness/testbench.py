@@ -20,6 +20,7 @@ testbenches) the seed injected via ``.option seed=<value>``.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,6 +75,18 @@ class Testbench:
     #: the PVT point -- so they belong in the manifest, next to the settings
     #: that cause them, rather than being re-typed per record.
     caveats: tuple[str, ...] = ()
+    #: The exact ``tb.json`` bytes this object was built from (read once, in
+    #: ``load``). Records snapshot these rather than re-reading the file, so
+    #: the recorded manifest is the configuration the decks were composed
+    #: from even if the working tree changes mid-run. ``None`` for a
+    #: Testbench constructed by hand rather than via ``load``.
+    manifest_bytes: bytes | None = None
+
+    @property
+    def manifest_sha256(self) -> str | None:
+        if self.manifest_bytes is None:
+            return None
+        return hashlib.sha256(self.manifest_bytes).hexdigest()
 
     @property
     def stochastic(self) -> bool:
@@ -114,7 +127,8 @@ def load(directory: str | Path) -> Testbench:
     if not manifest_path.is_file():
         raise FileNotFoundError(f"no {MANIFEST_NAME} in {directory}")
 
-    manifest = json.loads(manifest_path.read_text())
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes.decode("utf-8"))
 
     netlist = directory / _require(manifest, "netlist", manifest_path)
     if not netlist.is_file():
@@ -172,8 +186,17 @@ def load(directory: str | Path) -> Testbench:
         extra_lib_sections=tuple(manifest.get("extra_lib_sections", ())),
         design_netlist=design_netlist,
         caveats=tuple(manifest.get("caveats", ())),
+        manifest_bytes=manifest_bytes,
     )
     validate_netlist(tb)
+    # The manifest drives deck composition and measurement interpretation, so
+    # refuse to proceed if it was edited while we were loading it: the
+    # snapshot would otherwise not be the configuration actually used.
+    if manifest_path.read_bytes() != manifest_bytes:
+        raise ValueError(
+            f"{manifest_path}: changed while it was being loaded; re-run once "
+            "the file is stable"
+        )
     if tb.stochastic and tb.default_runs < 1:
         raise ValueError(f"{manifest_path}: stochastic testbench must set default_runs >= 1")
     return tb

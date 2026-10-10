@@ -166,6 +166,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `seeds` | **Every** seed used, in run order. Required whenever the analysis is stochastic; write `seeds: n/a (deterministic analysis)` otherwise. |
 | `raw.path` | Repo-relative path to the raw-output directory for this record. |
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
+| `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
 | `wall_time` | Wall-clock cost of the run. Makes future coverage/cost trade-offs honest. |
 
 If a required field genuinely does not apply, write the field with an
@@ -520,6 +521,24 @@ If git itself cannot answer (not run from a checkout, git not installed), it
 exits 2 naming git as the cause rather than reporting every file uncommitted.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
+
+### Manifest snapshot and reproducing a historical run
+
+`testbench.sha` pins the SPICE fragment only. The manifest (`tb.json`) also
+defines measurement expressions, options, params, analyses and caveats, so
+`run_corners.py` copies the exact bytes it loaded (read once, before decks are
+composed; loading fails if the file changes during the load) to
+`raw/<stem>/tb.manifest.json` and records its digest in the `manifest:` block
+and in `raw.files`. `verify_record_checksums.py` flags a changed snapshot, and
+a `manifest.sha256` that disagrees with the `raw.files` entry.
+
+The "How to reproduce" commands read the *current* `tb.json`, not the
+snapshot. To reproduce a historical run, check out its `repo_commit`, and if
+the tree was `-dirty` or `tb.json` has since changed, compare
+`diff sim/records/raw/<stem>/tb.manifest.json sim/tb/<slug>/tb.json` and put
+the snapshot's content in place (in a scratch worktree, never in committed
+evidence) before running. Legacy records have no snapshot: use `repo_commit`
+alone, and treat a `-dirty` one as not exactly reproducible.
 
 ### Checking that evidence stays append-only
 
