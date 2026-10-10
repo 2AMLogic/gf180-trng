@@ -40,7 +40,10 @@ REF_SPREAD = 0.05
 
 
 def _corner(temp_c: float = 27.0, vdd: float = 3.3) -> str:
-    return f"corner:\n  process: tt\n  voltage: {vdd}\n  temperature: {temp_c}\n\n"
+    return (
+        "---\nstatus: valid\ncorner:\n  process: tt\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n"
+    )
 
 
 def _mean_bullet(key: str, mean: float, sd: float, seeds: int = 4) -> str:

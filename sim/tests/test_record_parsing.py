@@ -16,8 +16,10 @@ parts a reader might not expect:
   any unit suffix -- ``2.5ns`` parses to ``2.5``, with no SI scaling.
 - ``field`` returns the raw capture string and raises only when the pattern
   does not match; numeric validation is the caller's job.
-- ``parse_corner`` converts temperature and supply with ``float``, so a
-  malformed capture raises ``ValueError`` regardless of ``error_cls``.
+- ``parse_corner`` and ``parse_status`` read only the leading frontmatter
+  block, require exactly one of each field, parse temperature and supply as
+  complete finite scalars, and raise the caller's ``error_cls`` naming the
+  record and field for every failure (issue #443).
 - ``format_corner`` rounds temperature to zero decimal places and supply to
   two, so it is not a lossless inverse of ``parse_corner``.
 
@@ -38,6 +40,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 from _record_parsing import (  # noqa: E402
     field,
     format_corner,
+    frontmatter,
     parse_corner,
     parse_values,
 )
@@ -58,6 +61,11 @@ corner:
 - `period`: mean 5.951232e-10 over 4 seeds (sd 5.590174e-15, 0.0% of mean; min 5.951178e-10, max 5.951289e-10)
 - `f_osc`: mean 1.680324e+09 over 4 seeds (sd 15783.8, 0.0% of mean; min 1.680308e+09, max 1.680340e+09)
 """
+
+
+def _wrap(fragment: str) -> str:
+    """A fragment placed inside a complete leading frontmatter block."""
+    return "---\nrecord: fixture\nstatus: valid\n" + fragment + "---\n\nbody\n"
 
 
 class CustomRecordError(Exception):
@@ -81,7 +89,7 @@ def _corner_text(
         lines.append(f"  voltage: {voltage} V")
     if temperature is not None:
         lines.append(f"  temperature: {temperature}")
-    return "\n".join(lines) + "\n"
+    return "---\nrecord: fixture\nstatus: valid\n" + "\n".join(lines) + "\n---\n\nbody\n"
 
 
 class ParseValuesTests(unittest.TestCase):
@@ -193,7 +201,9 @@ class FieldTests(unittest.TestCase):
 
 class ParseCornerTests(unittest.TestCase):
     def test_record_excerpt(self) -> None:
-        self.assertEqual(parse_corner(RECORD_EXCERPT), ("tt", -40.0, 2.97))
+        self.assertEqual(
+            parse_corner(_wrap(RECORD_EXCERPT)), ("tt", -40.0, 2.97)
+        )
 
     def test_representative_corners(self) -> None:
         cases = [
@@ -238,20 +248,76 @@ class ParseCornerTests(unittest.TestCase):
                 self.assertTrue(message.startswith("rec-y: "), message)
                 self.assertIn(f"{name}:", message)
 
-    def test_malformed_numeric_capture_raises_value_error(self) -> None:
+    def test_malformed_numeric_metadata_raises_error_cls(self) -> None:
+        bad = ["1.2.3", "125junk", "nan", "inf", "-inf", "1e999", "abc", "",
+               "12 5", "n/a (behavioral-level record)"]
+        for name in ("temperature", "voltage"):
+            for value in bad:
+                with self.subTest(field=name, value=value):
+                    text = _corner_text(**{name: value})
+                    with self.assertRaises(CustomRecordError) as ctx:
+                        parse_corner(text, label="rec-z", error_cls=CustomRecordError)
+                    self.assertIs(type(ctx.exception), CustomRecordError)
+                    message = str(ctx.exception)
+                    self.assertTrue(message.startswith("rec-z: "), message)
+                    self.assertIn(f"{name}:", message)
+
+    def test_committed_scalar_shapes_parse(self) -> None:
+        text = _wrap(
+            "corner:\n  process: ss (from the liberty deck)\n"
+            "  voltage: 3.00 V (nominal 3.3 V, -10%; binding supply)\n"
+            "  temperature: 125\n"
+        )
+        self.assertEqual(parse_corner(text), ("ss", 125.0, 3.0))
+
+    def test_body_only_corner_is_rejected(self) -> None:
+        text = (
+            "---\nrecord: fixture\nstatus: valid\n---\n\n"
+            "process: ff\ntemperature: 125\nvoltage: 3.63\n"
+        )
+        with self.assertRaises(CustomRecordError) as ctx:
+            parse_corner(text, label="rec-b", error_cls=CustomRecordError)
+        self.assertIn("rec-b: ", str(ctx.exception))
+        self.assertIn("process:", str(ctx.exception))
+
+    def test_body_does_not_supply_missing_frontmatter_field(self) -> None:
+        text = _corner_text(voltage=None).replace("body", "voltage: 3.30")
+        with self.assertRaises(CustomRecordError):
+            parse_corner(text, error_cls=CustomRecordError)
+
+    def test_duplicate_fields_raise(self) -> None:
+        for name in ("process", "temperature", "voltage"):
+            with self.subTest(field=name):
+                text = _wrap(
+                    "corner:\n  process: tt\n  voltage: 3.30 V\n"
+                    "  temperature: 27\n" + f"other:\n  {name}: 1\n"
+                )
+                with self.assertRaises(CustomRecordError) as ctx:
+                    parse_corner(text, label="rec-d", error_cls=CustomRecordError)
+                self.assertIn(f"`{name}:`", str(ctx.exception))
+                self.assertIn("rec-d: ", str(ctx.exception))
+
+    def test_missing_closing_or_leading_frontmatter_raises(self) -> None:
         cases = {
-            "temperature": _corner_text(temperature="1.2.3"),
-            "voltage": _corner_text(voltage="1.2.3"),
+            "unclosed": "---\nprocess: tt\ntemperature: 27\nvoltage: 3.3\n",
+            "not leading": "\n" + _corner_text(),
+            "absent": "process: tt\ntemperature: 27\nvoltage: 3.3\n",
         }
         for name, text in cases.items():
-            with self.subTest(malformed=name):
-                with self.assertRaises(ValueError):
-                    parse_corner(text)
-                # The custom class covers only a missing match; float()
-                # conversion failures still surface as ValueError.
-                with self.assertRaises(ValueError) as ctx:
-                    parse_corner(text, label="rec-z", error_cls=CustomRecordError)
-                self.assertNotIsInstance(ctx.exception, CustomRecordError)
+            with self.subTest(case=name):
+                with self.assertRaises(CustomRecordError) as ctx:
+                    parse_corner(text, label="rec-f", error_cls=CustomRecordError)
+                self.assertTrue(str(ctx.exception).startswith("rec-f: "))
+
+
+class FrontmatterTests(unittest.TestCase):
+    def test_returns_block_body_only(self) -> None:
+        self.assertEqual(frontmatter("---\na: 1\n---\nb: 2\n"), "a: 1\n")
+
+    def test_error_cls_and_label(self) -> None:
+        with self.assertRaises(CustomRecordError) as ctx:
+            frontmatter("a: 1\n", label="rec-q", error_cls=CustomRecordError)
+        self.assertTrue(str(ctx.exception).startswith("rec-q: "))
 
 
 class FormatCornerTests(unittest.TestCase):
@@ -265,7 +331,7 @@ class FormatCornerTests(unittest.TestCase):
         self.assertEqual(format_corner("ff", 27.4, 3.634), "ff/27/3.63")
 
     def test_formats_parsed_record_excerpt(self) -> None:
-        self.assertEqual(format_corner(*parse_corner(RECORD_EXCERPT)), "tt/-40/2.97")
+        self.assertEqual(format_corner(*parse_corner(_wrap(RECORD_EXCERPT))), "tt/-40/2.97")
 
 
 class RecordExcerptProvenanceTests(unittest.TestCase):

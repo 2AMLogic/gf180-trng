@@ -28,6 +28,7 @@ call sites elsewhere in ``sim/tools/`` (and in scripts that import
 
 from __future__ import annotations
 
+import math
 import re
 
 #: A bullet line of the form "- `key`: [mean ]value", exactly as every
@@ -39,9 +40,13 @@ import re
 #: callers to belong here.
 VALUE_RE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
 
-_PROCESS_PATTERN = r"process:\s*(\w+)"
-_TEMPERATURE_PATTERN = r"temperature:\s*(-?[\d.]+)"
-_VOLTAGE_PATTERN = r"voltage:\s*([\d.]+)"
+_FRONTMATTER_RE = re.compile(r"---[ \t]*\n(.*?)^---[ \t]*$", re.S | re.M)
+_NUMBER = r"[-+]?\d+(?:\.\d+)?"
+#: An optional trailing parenthetical remark, e.g. ``(nominal 3.3 V, -10%)``.
+_REMARK = r"(?:[ \t]+\(.*\))?"
+_PROCESS_RE = re.compile(r"(\w+)" + _REMARK)
+_TEMPERATURE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*(?:°C|C))?" + _REMARK)
+_VOLTAGE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*V)?" + _REMARK)
 
 
 def parse_values(text: str) -> dict[str, float]:
@@ -82,20 +87,92 @@ def field(
     return m.group(1)
 
 
+def frontmatter(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = RuntimeError,
+) -> str:
+    """The body of the record's leading ``---`` frontmatter block.
+
+    The block must start on the first line of ``text`` and be closed by a
+    second ``---`` line; anything else raises ``error_cls`` naming ``label``.
+    Metadata read through this helper can never come from the record's prose.
+    """
+    m = _FRONTMATTER_RE.match(text)
+    if m is None:
+        prefix = f"{label}: " if label else ""
+        raise error_cls(
+            f"{prefix}no complete leading frontmatter block (opening and "
+            "closing `---` lines)"
+        )
+    return m.group(1)
+
+
+def _unique_field(
+    fm: str,
+    key: str,
+    *,
+    indented: bool,
+    label: str,
+    error_cls: type[Exception],
+) -> str:
+    """The single value of ``key:`` in frontmatter ``fm``; zero or several raise."""
+    lead = r"[ \t]*" if indented else ""
+    values = re.findall(rf"^{lead}{key}:[ \t]*(.*?)[ \t]*$", fm, re.M)
+    prefix = f"{label}: " if label else ""
+    if not values:
+        raise error_cls(f"{prefix}frontmatter has no `{key}:` field")
+    if len(values) > 1:
+        raise error_cls(
+            f"{prefix}frontmatter has {len(values)} `{key}:` fields "
+            "(exactly one is required)"
+        )
+    return values[0]
+
+
+def _scalar(
+    fm: str,
+    key: str,
+    pattern: re.Pattern[str],
+    *,
+    label: str,
+    error_cls: type[Exception],
+) -> str:
+    value = _unique_field(fm, key, indented=True, label=label, error_cls=error_cls)
+    m = pattern.fullmatch(value)
+    if m is None:
+        prefix = f"{label}: " if label else ""
+        raise error_cls(f"{prefix}malformed `{key}: {value}` in the frontmatter")
+    return m.group(1)
+
+
 def parse_corner(
     text: str,
     *,
     label: str = "",
     error_cls: type[Exception] = RuntimeError,
 ) -> tuple[str, float, float]:
-    """``(process, temp_c, vdd)`` from a record's ``process:``/
-    ``temperature:``/``voltage:`` frontmatter lines -- the corner triplet
-    every one of the seven callers parses identically.
+    """``(process, temp_c, vdd)`` from a record's frontmatter corner fields.
+
+    ``text`` is the complete record. Only the leading frontmatter block is
+    read; each of ``process:``, ``temperature:`` and ``voltage:`` must occur
+    exactly once there. Temperature and voltage are parsed as complete
+    scalars -- a decimal number, an optional ``C``/``V`` unit and an optional
+    parenthetical remark -- and must be finite. Every failure raises
+    ``error_cls`` naming ``label`` and the offending field.
     """
-    process = field(text, _PROCESS_PATTERN, label=label, error_cls=error_cls)
-    temp_c = float(field(text, _TEMPERATURE_PATTERN, label=label, error_cls=error_cls))
-    vdd = float(field(text, _VOLTAGE_PATTERN, label=label, error_cls=error_cls))
-    return process, temp_c, vdd
+    fm = frontmatter(text, label=label, error_cls=error_cls)
+    kw = {"label": label, "error_cls": error_cls}
+    process = _scalar(fm, "process", _PROCESS_RE, **kw)
+    values = []
+    for key, pat in (("temperature", _TEMPERATURE_RE), ("voltage", _VOLTAGE_RE)):
+        number = float(_scalar(fm, key, pat, **kw))
+        if not math.isfinite(number):
+            prefix = f"{label}: " if label else ""
+            raise error_cls(f"{prefix}non-finite `{key}:` in the frontmatter")
+        values.append(number)
+    return process, values[0], values[1]
 
 
 #: The lifecycle values ``sim/README.md`` defines for a record's ``status:``.
@@ -111,18 +188,17 @@ def parse_status(
     """The record's frontmatter ``status:`` (``valid`` or ``superseded``).
 
     Only the leading ``---`` frontmatter block is read, so a ``status:`` line
-    quoted in a record's body can never decide a record's lifecycle. A
-    missing, empty or unknown value raises ``error_cls`` naming ``label``:
-    a record whose lifecycle cannot be established is never guessed at.
+    quoted in a record's body can never decide a record's lifecycle. The
+    field must occur exactly once; a missing, duplicated, empty or unknown
+    value raises ``error_cls`` naming ``label``: a record whose lifecycle
+    cannot be established is never guessed at.
     """
-    m = re.match(r"---[ \t]*\n(.*?)^---[ \t]*$", text, re.S | re.M)
     prefix = f"{label}: " if label else ""
-    if m is None:
-        raise error_cls(f"{prefix}no frontmatter block, so no lifecycle `status:`")
-    sm = re.search(r"^status:[ \t]*(.*?)[ \t]*$", m.group(1), re.M)
-    if sm is None:
-        raise error_cls(f"{prefix}frontmatter has no `status:` line")
-    value = sm.group(1)
+    try:
+        fm = frontmatter(text, label=label, error_cls=error_cls)
+    except error_cls as exc:
+        raise error_cls(f"{prefix}no frontmatter block, so no lifecycle `status:`") from exc
+    value = _unique_field(fm, "status", indented=False, label=label, error_cls=error_cls)
     if value not in STATUS_VALUES:
         raise error_cls(
             f"{prefix}unknown `status: {value}` (expected one of "

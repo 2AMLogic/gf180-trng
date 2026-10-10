@@ -28,8 +28,8 @@ def record(status: str | None, temp: float = 27, extra: str = "") -> str:
     lines = ["---", "record: fixture"]
     if status is not None:
         lines.append(f"status: {status}")
-    lines += ["---", "", "process: tt", f"temperature: {temp}", "voltage: 3.30",
-              "", "- `i_avdd`: 1e-6", extra]
+    lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V",
+              "---", "", "- `i_avdd`: 1e-6", extra]
     return "\n".join(lines) + "\n"
 
 
@@ -54,6 +54,15 @@ class ParseStatusTests(unittest.TestCase):
         text = record(None, extra="status: valid")
         with self.assertRaises(RuntimeError):
             rp.parse_status(text, label="rec-d")
+
+    def test_duplicate_status_is_rejected(self):
+        text = "---\nrecord: x\nstatus: valid\nstatus: superseded\n---\nbody\n"
+        with self.assertRaisesRegex(RuntimeError, "rec-g: .*2 `status:` fields"):
+            rp.parse_status(text, label="rec-g")
+
+    def test_unclosed_frontmatter(self):
+        with self.assertRaisesRegex(RuntimeError, "rec-h: no frontmatter"):
+            rp.parse_status("---\nstatus: valid\n", label="rec-h")
 
     def test_no_frontmatter(self):
         with self.assertRaisesRegex(RuntimeError, "rec-e: no frontmatter"):
@@ -139,15 +148,12 @@ class ArraySizingTests(_Fixture):
         self.assertEqual(len(hist), 2)
 
 
-def frontmatter(status: str | None) -> str:
+def frontmatter(status: str | None, temp: float = 27) -> str:
     lines = ["---", "record: fixture"]
     if status is not None:
         lines.append(f"status: {status}")
-    return "\n".join(lines + ["---", ""]) + "\n"
-
-
-def corner_block(temp: float = 27) -> str:
-    return f"process: tt\ntemperature: {temp}\nvoltage: 3.30\n\n"
+    lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V"]
+    return "\n".join(lines + ["---", ""]) + "\n\n"
 
 
 def mean_bullet(key: str, mean: float, sd: float = 0.0, seeds: int = 4) -> str:
@@ -160,7 +166,7 @@ class RawMinEntropyTests(_Fixture):
 
     def write_bits(self, name: str, status: str | None, bits: list[int],
                    temp: float = 27) -> None:
-        text = frontmatter(status) + corner_block(temp) + "seeds: [1, 2]\n\n"
+        text = frontmatter(status, temp) + "seeds: [1, 2]\n\n"
         for i, b in enumerate(bits):
             text += mean_bullet(f"b{i}_v", 3.3 if b else 0.0)
         (self.dir / name).write_text(text)
@@ -204,7 +210,7 @@ class StarvedCellJitterEnergyTests(_Fixture):
             self.addCleanup(p.stop)
 
     def write_jitter(self, name: str, status: str | None, temp: float = 27) -> None:
-        text = frontmatter(status) + corner_block(temp)
+        text = frontmatter(status, temp)
         for lag in (1, 2, 4, 8):
             text += mean_bullet(f"sigma_{lag}", 1e-12 * lag ** 0.5, 5e-14)
         text += "- `period`: 2.8e-09\n- `p_active_w`: 1e-04\n"
@@ -213,7 +219,7 @@ class StarvedCellJitterEnergyTests(_Fixture):
     def write_noise(self, name: str, status: str | None, dens: float,
                     temp: float = 27) -> None:
         (self.dir / name).write_text(
-            frontmatter(status) + corner_block(temp) + f"- `inoise_dens_1g`: {dens!r}\n"
+            frontmatter(status, temp) + f"- `inoise_dens_1g`: {dens!r}\n"
         )
 
     def test_superseded_noise_record_does_not_win_corner(self):
