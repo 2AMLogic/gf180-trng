@@ -201,11 +201,11 @@ def finalize_record(
     slug: str,
     render: Callable[[str, Path], str],
 ) -> Path:
-    """Allocate a record stem, hand its raw directory to ``render``, and
-    write the markdown text it returns to ``records/<stem>.md``.
+    """Reserve a record stem, hand its raw directory to ``render``, and
+    publish the markdown text it returns as ``records/<stem>.md``.
 
-    This is the "allocate -> mkdir -> write artifacts -> guard -> write
-    markdown" skeleton shared by every ``sim/tb/*/run_demo.py`` script:
+    This is the "reserve -> write artifacts -> publish markdown" skeleton
+    shared by the callback-based behavioral writers (``sim/tb/*/run_*.py``):
     ``render(stem, raw_dir)`` does the testbench-specific work (writing raw
     artifact files under ``raw_dir``, hashing them into a ``raw_files``
     list, and rendering the frontmatter/body), and this function owns the
@@ -214,19 +214,52 @@ def finalize_record(
     ``sim/run_corners.py`` and takes an already-built record dict rather
     than a render callback.
 
-    Raises ``RecordExists`` if ``records/<stem>.md`` already exists --
-    normally prevented by ``allocate_record_stem`` minting an unused stem,
-    but checked explicitly (as every caller did before this helper existed)
-    since ``render`` runs between allocation and the check.
+    Guarantees for callback writers (#514):
+
+    * The stem is claimed with ``reserve_record_stems`` -- an atomic
+      ``mkdir`` of ``raw/<stem>/`` -- *before* ``render`` runs, so two
+      concurrent invocations for the same date and slug always receive
+      distinct stems and disjoint raw directories. ``render`` is handed a
+      directory that already exists, is empty, and belongs to this call
+      alone; it must write only inside it.
+    * If ``render`` raises, the exception propagates and the reserved raw
+      directory (with whatever ``render`` had written so far) is left in
+      place. The stem stays occupied, so a later invocation mints the next
+      number instead of reusing a directory holding a failed attempt's
+      partial output -- the same policy as ``sim/run_corners.py``.
+    * The markdown is published with exclusive creation (``open(..., "x")``),
+      so an existing ``records/<stem>.md`` is never overwritten, even one
+      that appeared between reservation and publication. That collision
+      raises ``RecordExists``; the raw directory is kept.
     """
-    stem = allocate_record_stem(records_dir, date, slug)
+    stem = reserve_record_stems(records_dir, date, slug, 1)[0]
     raw_dir = records_dir / RAW_DIRNAME / stem
-    raw_dir.mkdir(parents=True, exist_ok=True)
     text = render(stem, raw_dir)
-    path = records_dir / f"{stem}.md"
-    if path.exists():  # pragma: no cover - allocate_record_stem prevents this
-        raise RecordExists(f"{path} already exists")
-    path.write_text(text)
+    return publish_record_text(records_dir / f"{stem}.md", text)
+
+
+def publish_record_text(path: Path, text: str) -> Path:
+    """Create ``path`` holding ``text``; never replace an existing file.
+
+    Exclusive creation (``O_CREAT | O_EXCL``) makes the existence check and
+    the write one atomic step, so there is no window in which another
+    writer's record could be clobbered. Raises ``RecordExists`` if ``path``
+    is already present. If the write itself fails after creation, the
+    partial file -- which this call alone created -- is removed so it
+    cannot be mistaken for a record.
+    """
+    try:
+        handle = open(path, "x")
+    except FileExistsError:
+        raise RecordExists(
+            f"{path} already exists; records are append-only -- mint a new record stem"
+        ) from None
+    try:
+        with handle:
+            handle.write(text)
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
     return path
 
 

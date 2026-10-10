@@ -155,6 +155,182 @@ class StemReservationTests(unittest.TestCase):
         self.assertEqual(len(set(allocated)), 20, "two callers were handed the same stem")
 
 
+class FinalizeRecordTests(unittest.TestCase):
+    """finalize_record() reserves its stem before render runs (#514).
+
+    PDK-free: the render callbacks here stand in for the behavioral
+    ``sim/tb/*/run_*.py`` writers that share this finalizer.
+    """
+
+    DATE = "2026-08-14"
+    SLUG = "a-behavioral-demo"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.repo_root = Path(self.tmp.name)
+        self.records_dir = self.repo_root / "sim" / "records"
+
+    def _raw(self, stem: str) -> Path:
+        return self.records_dir / report.RAW_DIRNAME / stem
+
+    def _render_with_checksums(self, payload: bytes):
+        """A render callback shaped like the shipped behavioral writers."""
+        def render(stem: str, raw_dir: Path) -> str:
+            (raw_dir / "out.bin").write_bytes(payload)
+            digest = report.sha256_file(raw_dir / "out.bin")
+            rel = raw_dir.relative_to(self.repo_root).as_posix()
+            return (
+                "---\n"
+                f"record: {stem}\n"
+                "raw:\n"
+                f"  path: {rel}\n"
+                "  files:\n"
+                f"    - out.bin  sha256:{digest}\n"
+                "---\n\n"
+                f"# {stem}\n"
+            )
+        return render
+
+    def test_concurrent_allocations_get_distinct_stems_and_disjoint_raw_dirs(self):
+        """Both writers' scans are forced to finish before either claims a
+        stem -- the interleaving in which the advisory allocator hands both
+        the same number -- and both renders then run at the same time."""
+        scan_barrier = threading.Barrier(2, timeout=10)
+        render_barrier = threading.Barrier(2, timeout=10)
+        real_scan = report.allocate_record_stems
+
+        def synchronized_scan(*args, **kwargs):
+            stems = real_scan(*args, **kwargs)
+            scan_barrier.wait()
+            return stems
+
+        results: dict[str, tuple[str, Path, list[str]]] = {}
+        errors: list[BaseException] = []
+
+        def writer(name: str):
+            def render(stem: str, raw_dir: Path) -> str:
+                render_barrier.wait()
+                (raw_dir / f"{name}.txt").write_text(name)
+                render_barrier.wait()  # both have written before either lists
+                listing = sorted(p.name for p in raw_dir.iterdir())
+                results[name] = (stem, raw_dir, listing)
+                return f"# {stem} by {name}\n"
+            try:
+                report.finalize_record(self.records_dir, self.DATE, self.SLUG, render)
+            except BaseException as exc:  # surfaced in the main thread
+                errors.append(exc)
+
+        with mock.patch.object(report, "allocate_record_stems", side_effect=synchronized_scan):
+            threads = [threading.Thread(target=writer, args=(n,)) for n in ("alpha", "beta")]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+        self.assertEqual(errors, [])
+        (stem_a, raw_a, list_a), (stem_b, raw_b, list_b) = results["alpha"], results["beta"]
+        self.assertNotEqual(stem_a, stem_b, "two writers were handed the same stem")
+        self.assertNotEqual(raw_a, raw_b)
+        self.assertEqual(list_a, ["alpha.txt"], "beta wrote into alpha's raw directory")
+        self.assertEqual(list_b, ["beta.txt"], "alpha wrote into beta's raw directory")
+        self.assertEqual(
+            sorted([stem_a, stem_b]),
+            [f"{self.DATE}-{self.SLUG}-01", f"{self.DATE}-{self.SLUG}-02"],
+        )
+        self.assertEqual((self.records_dir / f"{stem_a}.md").read_text(), f"# {stem_a} by alpha\n")
+        self.assertEqual((self.records_dir / f"{stem_b}.md").read_text(), f"# {stem_b} by beta\n")
+
+    def test_raw_dir_is_reserved_before_render_runs(self):
+        seen = {}
+
+        def render(stem: str, raw_dir: Path) -> str:
+            seen["is_dir"] = raw_dir.is_dir()
+            seen["empty"] = not any(raw_dir.iterdir())
+            # A second allocation while this render is in flight skips it.
+            seen["next"] = report.reserve_record_stems(self.records_dir, self.DATE, self.SLUG, 1)[0]
+            return "# x\n"
+
+        report.finalize_record(self.records_dir, self.DATE, self.SLUG, render)
+        self.assertEqual(seen["is_dir"], True)
+        self.assertEqual(seen["empty"], True)
+        self.assertEqual(seen["next"], f"{self.DATE}-{self.SLUG}-02")
+
+    def test_renderer_failure_keeps_its_partial_directory_occupied(self):
+        def failing(stem: str, raw_dir: Path) -> str:
+            (raw_dir / "partial.bin").write_bytes(b"half")
+            raise RuntimeError("renderer blew up")
+
+        with self.assertRaises(RuntimeError):
+            report.finalize_record(self.records_dir, self.DATE, self.SLUG, failing)
+        failed = f"{self.DATE}-{self.SLUG}-01"
+        self.assertEqual((self._raw(failed) / "partial.bin").read_bytes(), b"half")
+        self.assertFalse((self.records_dir / f"{failed}.md").exists())
+
+        handed = {}
+
+        def render(stem: str, raw_dir: Path) -> str:
+            handed["stem"] = stem
+            handed["listing"] = sorted(p.name for p in raw_dir.iterdir())
+            return "# retry\n"
+
+        path = report.finalize_record(self.records_dir, self.DATE, self.SLUG, render)
+        self.assertEqual(handed["stem"], f"{self.DATE}-{self.SLUG}-02")
+        self.assertEqual(handed["listing"], [], "retry was handed a non-empty raw directory")
+        self.assertEqual(path.name, f"{self.DATE}-{self.SLUG}-02.md")
+        # The failed attempt's partial output is untouched.
+        self.assertEqual((self._raw(failed) / "partial.bin").read_bytes(), b"half")
+
+    def test_existing_record_without_raw_dir_is_skipped_not_overwritten(self):
+        first = self.records_dir / f"{self.DATE}-{self.SLUG}-01.md"
+        self.records_dir.mkdir(parents=True)
+        first.write_text("# historical record\n")
+        path = report.finalize_record(self.records_dir, self.DATE, self.SLUG, lambda s, d: "# new\n")
+        self.assertEqual(path.name, f"{self.DATE}-{self.SLUG}-02.md")
+        self.assertEqual(first.read_text(), "# historical record\n")
+
+    def test_record_appearing_between_render_and_publish_is_not_overwritten(self):
+        def render(stem: str, raw_dir: Path) -> str:
+            (raw_dir / "out.bin").write_bytes(b"mine")
+            # Another writer publishes this stem's markdown while we render.
+            (self.records_dir / f"{stem}.md").write_text("# someone else's record\n")
+            return "# would clobber\n"
+
+        with self.assertRaises(report.RecordExists):
+            report.finalize_record(self.records_dir, self.DATE, self.SLUG, render)
+        stem = f"{self.DATE}-{self.SLUG}-01"
+        self.assertEqual(
+            (self.records_dir / f"{stem}.md").read_text(), "# someone else's record\n"
+        )
+        # The reservation stays occupied; the next writer moves on.
+        self.assertTrue(self._raw(stem).is_dir())
+        nxt = report.finalize_record(self.records_dir, self.DATE, self.SLUG, lambda s, d: "# n\n")
+        self.assertEqual(nxt.name, f"{self.DATE}-{self.SLUG}-02.md")
+
+    def test_publish_record_text_refuses_existing_file(self):
+        path = Path(self.tmp.name) / "r.md"
+        path.write_text("original\n")
+        with self.assertRaises(report.RecordExists):
+            report.publish_record_text(path, "replacement\n")
+        self.assertEqual(path.read_text(), "original\n")
+
+    def test_sequential_records_keep_format_and_verify(self):
+        paths = [
+            report.finalize_record(
+                self.records_dir, self.DATE, self.SLUG, self._render_with_checksums(payload)
+            )
+            for payload in (b"one", b"two")
+        ]
+        self.assertEqual(
+            [p.name for p in paths],
+            [f"{self.DATE}-{self.SLUG}-01.md", f"{self.DATE}-{self.SLUG}-02.md"],
+        )
+        for path in paths:
+            text = path.read_text()
+            self.assertTrue(text.startswith(f"---\nrecord: {path.stem}\n"))
+            self.assertEqual(report.verify_record_file(path, self.repo_root), [])
+
+
 def fake_pdk(root: Path) -> Pdk:
     (root / "libs.tech" / "ngspice").mkdir(parents=True, exist_ok=True)
     (root / "libs.tech" / "ngspice" / "sm141064.ngspice").write_text("* fake\n")
