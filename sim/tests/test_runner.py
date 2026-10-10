@@ -215,6 +215,41 @@ class RunPointContractTests(unittest.TestCase):
             runner.run_point(self.tb, None, self.point, Path("/nonexistent"), seeds=None)
         self.assertIn("no seed, no evidence", str(ctx.exception))
 
+    def test_duplicate_seed_is_rejected_naming_the_value(self):
+        with self.assertRaises(ValueError) as ctx:
+            runner.plan_runs(self.tb, [1, 2, 1])
+        self.assertIn("duplicate seed(s) 1 ", str(ctx.exception))
+
+    def test_every_repeated_seed_is_named_once(self):
+        with self.assertRaises(ValueError) as ctx:
+            runner.plan_runs(self.tb, [1001, 7, 1001, 7, 1001, 3])
+        self.assertIn("duplicate seed(s) 1001, 7 ", str(ctx.exception))
+
+    def test_run_point_rejects_duplicate_seeds_before_running(self):
+        with mock.patch.object(runner, "run_one") as run_one:
+            with self.assertRaises(ValueError):
+                runner.run_point(self.tb, None, self.point, Path("/nonexistent"), seeds=[5, 5])
+        run_one.assert_not_called()
+
+    def test_distinct_seeds_keep_their_order(self):
+        self.assertEqual(
+            runner.plan_runs(self.tb, [1003, 1001, 1002]),
+            [(1003, 0), (1001, 1), (1002, 2)],
+        )
+
+    def test_deterministic_testbench_is_unaffected(self):
+        tb = testbench.load(self._deterministic_tb())
+        self.assertEqual(runner.plan_runs(tb, None), [(None, 0)])
+
+    def _deterministic_tb(self) -> Path:
+        root = Path(self.tmp.name) / "det"
+        root.mkdir()
+        (root / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb.json").write_text(
+            json.dumps({"name": "det", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        return root
+
 
 def _install_fake_ngspice(bin_dir: Path, script: str) -> None:
     """Drop an executable named ``ngspice`` on ``bin_dir``.
