@@ -766,9 +766,11 @@ Three things remain, none touched by this change:
   floorplan abstract, which also contains the digital region); the supply
   names are the cell-level `vddr`, not the region-level `vddr1`/`vddr2`; and
   the LVS `power_connectivity` (`"unchecked"`) and `body_verification`
-  (`"unverified"`) fields remain exactly as disclosed above. Only the rings'
-  and combiner's own GDS are covered: the composed floorplan stream was not
-  run through `klt erc`.
+  (`"unverified"`) fields remain exactly as disclosed above. These three
+  reports cover only the rings' and combiner's own GDS. The composed floorplan
+  stream has its own whole-block run, `layout/floorplan/reports/erc-supply.json`
+  (issue #447; five region-level supplies, Metal1-Metal5, clean), which is
+  not cited by any manifest item here and changes no tier.
 - The digital column's additional requirement, `power_connectivity.status:
   "match"` on item 4's LVS citation, stays `"unchecked"`, for the reason
   "Item 4 is `met` twice" above already documents. A `met` supply-spec run
