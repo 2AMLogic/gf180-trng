@@ -1570,9 +1570,7 @@ Choices that shape what the pass means:
 section was first written, the depth-8 stream. [#256] has since regenerated it
 (depth-2 digital, klt 0.6.0) and `--write` re-ran `klt erc` on the new stream:
 `erc_status` stays `clean`, zero findings, now over 4 035 gates (was 8 123).
-The ERC report is pinned by hash to the committed stream. As an informational one-off (not committed, no hash pin), the same spec
-run on the stream HEAD regenerates also read `erc_status: clean`, zero
-findings, nothing skipped.
+The ERC report is pinned by hash to the committed stream.
 
 **Controls**, in [`../tests/test_floorplan_erc.py`](../tests/test_floorplan_erc.py).
 The composed stream takes minutes per `klt erc` run, so the controls run the

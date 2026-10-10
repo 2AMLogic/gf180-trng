@@ -186,20 +186,27 @@ class DigitalFacingTrunksTests(unittest.TestCase):
 
 
 class InterfaceTrunkArithmeticTests(unittest.TestCase):
-    """Cross-check `InterfaceTrunk`'s derived properties against DR-0025's
-    own worked numbers for the real, committed six trunks (spec/decision-
-    records/DR-0025-full-chip-pex-scope.md's table), not just against the
-    formula restated."""
+    """Cross-check `InterfaceTrunk`'s derived properties against the worked
+    numbers a decision record quotes for the real, committed six trunks, not
+    just against the formula restated.
 
-    def test_matches_dr0025_estimates_for_the_committed_six(self):
-        # (net, DR-0025's own quoted estimate C in fF, R in ohm)
+    The numbers track the committed geometry, not a spec limit. DR-0025's
+    table (spec/decision-records/DR-0025-full-chip-pex-scope.md) is the
+    depth-8 snapshot. Since #256 regenerated `interregion.json` against the
+    depth-2 place-and-route, the pinned values are DR-0027's table
+    (spec/decision-records/DR-0027-digital-facing-trunk-estimates-follow-
+    the-regenerated-geometry.md). A future change to any of these trunks
+    fails here and is re-dated by a new record. Do not widen the tolerance."""
+
+    def test_matches_dr0027_estimates_for_the_committed_six(self):
+        # (net, DR-0027's own quoted estimate C in fF, R in ohm)
         expected = {
-            "raw_bit": (30.8, 157),
-            "raw_valid": (26.2, 134),
-            "clk": (20.7, 106),
-            "ring_bit1": (20.1, 103),
-            "rst_n": (19.9, 102),
-            "ring_bit2": (15.6, 80),
+            "raw_bit": (35.8, 183),
+            "raw_valid": (32.3, 165),
+            "ring_bit1": (28.8, 147),
+            "clk": (25.4, 130),
+            "rst_n": (25.4, 130),
+            "ring_bit2": (25.2, 129),
         }
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(set(trunks), set(expected))
