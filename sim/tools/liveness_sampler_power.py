@@ -55,13 +55,12 @@ import argparse
 import datetime as _dt
 import json
 import platform
-import shlex
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from harness import klt_request as _kreq  # noqa: E402
 from harness import report as _report  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -360,30 +359,16 @@ def plan_text() -> str:
 
 def cmd_emit(check: bool) -> int:
     path, text = request_path(), render(build_request())
-    if check:
-        if not path.exists() or path.read_text() != text:
-            print(f"DRIFT: {path.relative_to(REPO_ROOT)} does not match the declared grid")
-            return 1
-        print(f"ok: {path.relative_to(REPO_ROOT)} matches the declared grid ({n_units()} units)")
-        return 0
-    TB_DIR.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
-    print(f"wrote {path.relative_to(REPO_ROOT)}")
-    return 0
+    return _kreq.emit_requests(
+        [(path, text)], check, repo_root=REPO_ROOT,
+        ok=lambda: print(f"ok: {path.relative_to(REPO_ROOT)} matches the declared grid ({n_units()} units)"))
 
 
 def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) -> int:
     if only is not None and backend != "local":
         print("--only is a single-point debug probe and runs with --backend local", file=sys.stderr)
         return 2
-    if only is None and backend == "local":
-        print("refusing to run the whole grid locally: use --backend batch (shared-host rule), "
-              "or --only PROCESS/TEMP/VDD for one probe point", file=sys.stderr)
-        return 2
-    out = Path(outdir)
-    out.mkdir(parents=True, exist_ok=True)
     stem = "grid" if only is None else "probe-" + only.replace("/", "_")
-    report = out / f"{stem}.report.json"
     req = request_path()
     tmp = None
     if only is not None:
@@ -392,17 +377,10 @@ def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) ->
         tmp = TB_DIR / f".{stem}.request.json"
         tmp.write_text(render(build_request(only)))
         req = tmp
-    cmd = [*shlex.split(klt_cmd), "sim", str(req), "--backend", backend,
-           "-o", str(out / stem), "--format", "json"]
-    print("running:", " ".join(cmd))
-    try:
-        with open(report, "w") as fh, open(out / f"{stem}.stderr.txt", "w") as err:
-            rc = subprocess.call(cmd, stdout=fh, stderr=err)
-    finally:
-        if tmp is not None:
-            tmp.unlink(missing_ok=True)
-    print(f"klt exit {rc}; report: {report}; stderr: {out / (stem + '.stderr.txt')}")
-    return rc
+    return _kreq.run_klt_request(
+        outdir, stem, req, backend, klt_cmd,
+        single_point=only is not None, probe_hint="--only PROCESS/TEMP/VDD",
+        cleanup=None if tmp is None else (lambda: tmp.unlink(missing_ok=True)))
 
 
 SLUG = "sampler-core-liveness-active"

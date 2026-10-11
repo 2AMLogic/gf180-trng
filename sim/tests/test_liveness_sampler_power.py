@@ -26,6 +26,7 @@ import sys
 import json
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
@@ -131,6 +132,32 @@ class GridTests(unittest.TestCase):
 
     def test_a_local_run_of_the_whole_grid_is_refused(self):
         self.assertEqual(lsp.cmd_run("/nonexistent-never-created", "local", "klt"), 2)
+
+    def test_a_local_run_is_refused_before_any_klt_invocation(self):
+        def no_klt(*_a, **_k):
+            raise AssertionError("subprocess must not be reached on a refused run")
+
+        with mock.patch("subprocess.call", no_klt):
+            self.assertEqual(lsp.cmd_run("/never-created-outdir", "local", "klt"), 2)
+
+    def test_a_batch_run_builds_the_identical_klt_command(self):
+        import tempfile
+
+        seen = {}
+
+        def fake_call(cmd, stdout=None, stderr=None):
+            seen["cmd"] = cmd
+            return 5
+
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            with mock.patch("subprocess.call", fake_call):
+                rc = lsp.cmd_run(str(out), "batch", "uvx --from klayout-tools==0.6.0 klt")
+        self.assertEqual(rc, 5)
+        self.assertEqual(seen["cmd"], [
+            "uvx", "--from", "klayout-tools==0.6.0", "klt", "sim",
+            str(lsp.request_path()), "--backend", "batch",
+            "-o", str(out / "grid"), "--format", "json"])
 
 
 class DeckWiringTests(unittest.TestCase):
