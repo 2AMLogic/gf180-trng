@@ -595,30 +595,6 @@ TABLE_HEAD = (
 )
 
 
-def convergence_text(main: dict, finer: dict[str, dict]) -> str:
-    """Compare the both/50 mV and control units of binding-beat across solver steps."""
-    def pick(an: dict, ctrl: bool) -> dict | None:
-        for u in an["units"]:
-            if "error" in u:
-                continue
-            if ctrl and u["amp_v"] == 0.0:
-                return u
-            if not ctrl and abs(u["amp_v"] - 0.05) < 1e-12 and (u["m1"], u["m2"]) == (1, 1):
-                return u
-        return None
-
-    lines = ["| solver step | control ring1 x (ps) | 50 mV both ring1 x (ps) | rel. change vs 10 ps |", "|---|---|---|---|"]
-    ref = pick(main, False)
-    for label, an in [("10 ps", main)] + sorted(finer.items()):
-        c, s = pick(an, True), pick(an, False)
-        if c is None or s is None or ref is None:
-            lines.append(f"| {label} | n/a | n/a | n/a |")
-            continue
-        rel = (s["ring1"]["amp"] - ref["ring1"]["amp"]) / ref["ring1"]["amp"]
-        lines.append(f"| {label} | {c['ring1']['amp'] * 1e12:.3g} | {s['ring1']['amp'] * 1e12:.3g} | {rel:+.2%} |")
-    return "\n".join(lines)
-
-
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
     results = {}
     for p in paths:
