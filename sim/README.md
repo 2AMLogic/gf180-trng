@@ -610,6 +610,17 @@ exits 2 naming git as the cause rather than reporting every file uncommitted.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
 
+Only the default invocation (no record arguments, no `--changed`, no
+`--no-git`) validates the whole evidence inventory. It also runs the reverse
+check: every file `git` tracks (or has staged) under `sim/records/raw/` must be
+named in some record's validated `raw.files`, otherwise the run fails and lists
+the orphan paths, including when no records exist at all. This catches an
+abandoned run staged without a record. Untracked local directories are ignored,
+so unfinished work does not break the check. The fix is to add the record that
+cites the output or unstage it (`git rm --cached`); the tool never deletes or
+invents evidence. Record-scoped runs (named records, `--changed`) and `--no-git`
+check only what they select and make no claim about the rest of the inventory.
+
 ### Manifest snapshot and reproducing a historical run
 
 `testbench.sha` pins the SPICE fragment only. The manifest (`tb.json`) also
