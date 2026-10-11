@@ -176,7 +176,6 @@ module computes numbers.
 
 from __future__ import annotations
 
-import importlib.util
 import re
 import sys
 from pathlib import Path
@@ -190,6 +189,7 @@ sys.path.insert(0, str(REPO_ROOT / "design"))
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
 
 from layout._klt import _rect  # noqa: E402
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 
 
 class WiringError(RuntimeError):
@@ -399,11 +399,7 @@ def _load(name: str, path: Path):
     `_load_build_module`: every region directory names its geometry module
     `build.py`, so a bare `import build` would hand back whichever one was
     imported first."""
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 _RING_BUILD = {

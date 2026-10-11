@@ -37,7 +37,6 @@ the flow is the tool's public interface, not a Python API this repo pins.
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
 import shutil
@@ -61,6 +60,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTCELL_DIR))
 
 import build as testcells  # noqa: E402  (layout/testcells/build.py)
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 from layout._klt import (  # noqa: E402
     FlowError,
     _run_klt,
@@ -81,11 +81,7 @@ def _load_build_module(name: str, path: Path):
     share a bare module name, not the same module. Loading each one from its
     own path, under its own `sys.modules` key, is what keeps them distinct.
     """
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 RINGS_DIR = LAYOUT_DIR / "rings"
