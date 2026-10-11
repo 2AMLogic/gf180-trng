@@ -1,19 +1,24 @@
 """Explicit ngspice start-up-configuration policy for harness runs.
 
 ngspice reads initialization scripts before the netlist, and those scripts
-can change simulator behaviour. Measured on ngspice-42 (see
-``sim/tool-experiments/2026-10-11-ngspice-startup-config/``), batch mode
-(``-b``) reads:
+can change simulator behaviour. Batch mode (``-b``) reads:
 
 - the system ``spinit`` from the scripts directory (``SPICE_SCRIPTS``, else
   the installed default) -- ``-n`` does **not** suppress it;
-- ``./.spiceinit`` from the working directory, otherwise ``~/.spiceinit``
-  (only one of the two; the work-directory file shadows the user file) --
-  ``-n`` suppresses both.
+- ``.spiceinit`` from the first of the deck's directory, the working
+  directory, ``~/.spiceinit`` that has one (one file per launch) --
+  ``-n`` suppresses all three.
 
-So the controlled policy is two controls together: ``-n`` for the
-user/work-directory files, and ``SPICE_SCRIPTS`` pointing at the checked-in
-``ngspice_scripts/`` directory whose ``spinit`` is content-pinned.
+Measured on ngspice-42 and on the ngspice-46 baseline the README requires
+(see ``sim/tool-experiments/2026-10-11-ngspice-startup-config/`` and
+``sim/tool-experiments/2026-10-11-ngspice46-startup-lookup/``): the two
+builds differ only in *where* ``.spiceinit`` is looked up -- ngspice-42
+searched the working directory, else ``~/.spiceinit``, and never the deck's
+directory, while ngspice-46 searches the deck's directory first. The
+suppression behaviour is the same on both, so the controlled policy is two
+controls together: ``-n`` for the ``.spiceinit`` files, and
+``SPICE_SCRIPTS`` pointing at the checked-in ``ngspice_scripts/`` directory
+whose ``spinit`` is content-pinned.
 
 The checked-in script is only the *source*. Each invocation captures its
 bytes once (:func:`capture`) before the first simulator starts, writes that
