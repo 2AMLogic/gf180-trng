@@ -107,13 +107,23 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(ttfv.SAMPLER_SAMPLES, 1)
 
     def test_budget_at_the_ratified_rate_matches_the_readme_floor(self):
+        # DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §1: 2 kbps.
+        self.assertEqual(ttfv.RATIFIED_RAW_RATE_BPS, 2000.0)
         b = ttfv.budget(ttfv.RATIFIED_RAW_RATE_BPS)
-        self.assertAlmostEqual(b["health_test_s"], 1.024e-3)
-        self.assertAlmostEqual(b["conditioner_s"], 256e-6)
+        self.assertAlmostEqual(b["health_test_s"], 0.512)
+        self.assertAlmostEqual(b["conditioner_s"], 0.128)
         # 1281 samples, i.e. the README's 1280 plus the one sampler clock the
         # floor does not count.
-        self.assertAlmostEqual(b["digital_total_s"], 1.281e-3)
+        self.assertAlmostEqual(b["digital_total_s"], 0.6405)
+        self.assertAlmostEqual(ttfv.README_FLOOR_S, 1280 / ttfv.RATIFIED_RAW_RATE_BPS)
         self.assertGreater(b["digital_total_s"], ttfv.README_FLOOR_S)
+
+    def test_historical_one_mbps_figures_stay_reproducible(self):
+        # #14's 1.281 ms total and the 1.28 ms floor were stated at DR-0003's
+        # original 1 Mbps; they are historical and reachable only explicitly.
+        b = ttfv.budget(ttfv.DR0003_RAW_RATE_BPS)
+        self.assertAlmostEqual(b["digital_total_s"], 1.281e-3)
+        self.assertAlmostEqual(ttfv.DR0003_FLOOR_S, 1280 / ttfv.DR0003_RAW_RATE_BPS)
 
     def test_the_row_scales_exactly_with_the_rate(self):
         fast = ttfv.budget(1e6)["digital_total_s"]

@@ -2,8 +2,9 @@
 """Check the entropy source against DR-0007 §2's sizing inequality.
 
     python3 sim/tools/array_sizing.py                  # report Q_array per corner
-    python3 sim/tools/array_sizing.py --check          # assert DR-0010's rate holds
-    python3 sim/tools/array_sizing.py --rate 2000      # ask about a different rate
+    python3 sim/tools/array_sizing.py --check          # assert the ratified 2 kbps holds
+    python3 sim/tools/array_sizing.py --rate 500       # ask about a different rate
+    python3 sim/tools/array_sizing.py --a 1.79         # price a different constant
 
 DR-0007 §6 makes this an acceptance criterion rather than a nicety: "#7 may not
 close on an N without showing the §2 inequality holds at that corner." This
@@ -18,12 +19,19 @@ DR-0007 §2's array figure of merit is
 
 with ``kappa^2`` the random-walk rate constant of ring *i*
 (``sigma_acc^2(t) = kappa^2 t``). ``sim/tools/jitter_energy_law.py`` derives,
-from this repository's 27-point candidate-A grid, that ``kappa^2`` is fixed by
-the ring's power:
+from this repository's 27-point candidate-A grid of a plain inverter ring, that
+``kappa^2`` is fixed by the ring's power (DR-0010's ``(*)``):
 
-    kappa^2 = a * kB * T / P_ring ,    a = 1.79 +/- 0.14
+    kappa^2 = a * kB * T / P_ring
 
-so a *deterministic* measurement of each ring's period and supply current --
+``sim/tools/starved_cell_jitter_energy.py`` measures the same law on the
+shipped, series-starved cell, and
+``DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`` §2 selects the
+constant the array is sized against from it: the asymptotic-slope ``a`` at that
+record's entropy-binding corner (``ss``/-40 C/3.63 V), **a = 7.32** -- not the
+three-corner asymptotic mean (11.77), not a lag-1 figure (24.84 mean), and no
+longer the plain cell's 1.79. A *deterministic* measurement of each ring's
+period and supply current --
 which is what ``sim/tb/ro-array-core-power/`` records at each PVT point -- is
 enough to evaluate ``Q_array``. That is deliberate: a transient-noise run of the
 shipped eleven-stage array over the tens of thousands of periods a direct
@@ -32,23 +40,35 @@ current is cheap and bit-reproducible.
 
 What ``--check`` actually enforces
 ---------------------------------
-Exactly two things, both hard failures:
+Three things, all hard failures:
 
-  * ``Q_array >= M * Q_H0`` at every measured corner of the shipped array, at
-    the rate given by ``--rate``; and
+  * ``Q_array >= M * Q_H0`` at every measured corner of the shipped array
+    (the full covered grid, DR-0015), at the rate given by ``--rate``
+    (default: the ratified 2 kbps raw-rate row);
   * that ``A_JITTER_ENERGY`` below still agrees, to within ``A_TOLERANCE``,
-    with what ``sim/tools/jitter_energy_law.py`` derives from the record
-    families it reads -- so the two cannot drift apart unnoticed.
+    with the value ``starved_cell_jitter_energy.sizing_constant()`` derives
+    from the committed starved-cell records -- the asymptotic ``a`` at
+    ``SIZING_CONSTANT_CORNER``, selected by corner identity -- so the two
+    cannot drift apart unnoticed, and a wrong estimator cannot pass; and
+  * that the selected corner's constant is still the smallest asymptotic
+    ``a`` measured at any corner. DR-0015 moved the entropy-binding corner to
+    ``ss``/+125 C/3.63 V, where no starved-cell jitter record exists; using
+    the smallest measured constant there is the conservative reading, and
+    this check fails if a later record stops making it so.
+
+A derivation that cannot run at all (missing family, missing corner, a value
+that is not a positive finite number) is also a hard failure.
 
 Every run *also* prints ``kappa^2`` as measured by the transient-noise array
 records (``sim/tb/ro-array-sanity-jitter/``, which measure ``sigma_1`` and the
 ring's supply current in the same run) beside what the law predicts. That
 comparison is **reported, not enforced**: the one such record in the tree
-disagrees by four orders of magnitude, and DR-0010 §Consequences diagnoses that
+disagrees by over three orders of magnitude, and DR-0010 §Consequences diagnoses that
 run's ``sigma`` as start-up settling drift rather than jitter (seed-independent
-to 0.3 %, accumulating as lag^0.81 rather than lag^0.5). Confirming the law on
-the shipped starved cell needs a longer, later window; that measurement is #46's
-and this script does not pretend to stand in for it.
+to 0.3 %, accumulating as lag^0.81 rather than lag^0.5); #51 later traced it
+to deterministic ring-to-ring coupling through the XOR input stage. The law
+itself was confirmed on the shipped starved cell by #46's long-window records,
+which is where the stated constant now comes from.
 
 What this does NOT do
 ---------------------
@@ -60,6 +80,7 @@ not an entropy assessment. #12 owns measuring ``H`` for the array.
 from __future__ import annotations
 
 import argparse
+import math
 import re
 import sys
 from pathlib import Path
@@ -73,25 +94,50 @@ RECORDS = REPO_ROOT / "sim" / "records"
 
 KB = 1.380649e-23
 
-#: DR-0010's ``a``, from sim/tools/jitter_energy_law.py over the candidate-A
-#: 27-point grid. Deliberately a *stated* constant rather than a live one: the
-#: figures in DR-0010 §3, the README's Raw rate row and design/README.md are all
-#: quoted against this exact value, and they must not shift under a reader every
-#: time a record is appended. It is kept honest by ``--check``, which re-runs the
-#: derivation and fails if the two have drifted by more than A_TOLERANCE.
-A_JITTER_ENERGY = 1.79
+#: The array-sizing jitter-energy constant:
+#: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2's ``a`` --
+#: the shipped starved cell's asymptotic-slope constant at that record's
+#: entropy-binding corner (``ss``/-40 C/3.63 V), as derived by
+#: ``starved_cell_jitter_energy.sizing_constant()``. Deliberately a *stated*
+#: constant rather than a live one: the README's Raw rate row and
+#: design/README.md are quoted against this exact value, and they must not
+#: shift under a reader every time a record is appended. It is kept honest by
+#: ``--check``, which re-runs the derivation and fails if the two have drifted
+#: by more than A_TOLERANCE.
+A_JITTER_ENERGY = 7.32
 
 #: Allowed relative drift between A_JITTER_ENERGY and the live derivation.
-#: Comfortably tighter than the 1.29x spread of ``a`` across the grid itself,
-#: so a record family swapped for an inconsistent one fails loudly, and loose
-#: enough that ordinary rounding does not.
-A_TOLERANCE = 0.05
+#: Set from the selected quantity's own bounds, not from the spread between
+#: corners or estimators. The derivation reads committed records only, so it is
+#: deterministic; the stated 7.32 is it (7.322) rounded to three significant
+#: figures, a rounding error of at most 0.005 / 7.32 = 0.07 %. One percent is
+#: ~15x that, and still ~50x tighter than the nearest wrong estimator (the
+#: asymptotic ``a`` at the next corner, 10.87, +49 %; the three-corner
+#: asymptotic mean 11.77 is +61 %; the lag-1 figures are +190 % and more; the
+#: plain cell's 1.79 is -76 %). A re-measured constant at the same corner --
+#: a different seed set moves it by several percent -- fails too, on purpose:
+#: moving the stated constant is a decision record's job.
+A_TOLERANCE = 0.01
+
+#: DR-0010's plain-cell ``a`` (sim/tools/jitter_energy_law.py, 27-point
+#: candidate-A grid). No longer the sizing input; kept so historical tables
+#: quoted at it (DR-0010 §3, DR-0015, the characterization summaries) stay
+#: reproducible with ``--a 1.79`` and by the tools that print it beside the
+#: starved-cell constants.
+A_PLAIN_CELL = 1.79
 
 #: DR-0007 §2
 Q_H0 = 4.0e-3
 MARGIN_M = 1.5
 
-#: DR-0010 §1's proposed raw-rate row, in bits per second.
+#: The ratified Raw rate row, in bits per second:
+#: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §1, "> 2 kbps
+#: sustained at the raw tap". The default rate every inequality is tested at.
+RAW_RATE_BPS = 2000.0
+
+#: DR-0010 §1's raw-rate value (> 500 bps), superseded in value by DR-0011-
+#: raw-rate-at-the-measured-starved-cell-jitter-energy. Historical: kept for
+#: the tools whose committed tables are quoted at it.
 DR0010_RATE_BPS = 500.0
 
 #: The fixed injected per-stage noise density of the jitter testbenches, V/sqrt(Hz).
@@ -164,9 +210,8 @@ class ArrayPoint:
         self.rec = rec
         #: the jitter-energy constant this point is sized against. Defaults to
         #: the stated A_JITTER_ENERGY; ``--a`` overrides it so a superseding
-        #: decision record can price a *different* measured constant (issue #46
-        #: measures one for the shipped starved cell) without editing the
-        #: stated constant that DR-0010 §3's published arithmetic is quoted
+        #: decision record can price a *different* measured constant without
+        #: editing the stated constant the published arithmetic is quoted
         #: against. Changing the stated constant is a decision, not a run.
         self.a = a
         v = rec.values
@@ -217,22 +262,45 @@ def sanity_invariant() -> list[tuple[str, float, float, float]]:
     return out
 
 
-def derived_law_constant() -> tuple[float | None, str]:
-    """Re-derive ``a`` with ``sim/tools/jitter_energy_law.py``.
+def derived_sizing_constant():
+    """Re-derive the sizing constant with ``sim/tools/starved_cell_jitter_energy.py``.
 
-    Returns ``(value, description)``. ``value`` is None when the derivation
-    could not run at all, with the reason in ``description`` -- that is a
-    ``--check`` failure, not something to shrug at, because the constant this
-    file sizes against would then be unverifiable.
+    Returns ``(constant, description)``. ``constant`` is the
+    ``starved_cell_jitter_energy.SizingConstant`` -- the asymptotic ``a`` at
+    the corner DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2
+    names, with its record stem and every measured corner's value -- or None
+    when the derivation could not run at all, with the reason in
+    ``description``. None is a ``--check`` failure, not something to shrug at,
+    because the constant this file sizes against would then be unverifiable.
+
+    The plain-cell derivation (``jitter_energy_law.derive_a``) is deliberately
+    not consulted: it remains correct about the plain cell, it simply is not
+    the sizing input any more.
     """
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     try:
-        from jitter_energy_law import derive_a  # noqa: PLC0415
+        from starved_cell_jitter_energy import sizing_constant  # noqa: PLC0415
 
-        mean_a, lo, hi = derive_a()
+        sel = sizing_constant()
     except Exception as exc:  # noqa: BLE001 - reported, never swallowed
         return None, f"could not be re-derived: {exc}"
-    return mean_a, f"mean {mean_a:.3f} (min {lo:.3f}, max {hi:.3f})"
+    others = ", ".join(
+        f"{c} {v:.3f}" for c, v in sorted(sel.by_corner.items()) if c != sel.corner)
+    return sel, (
+        f"starved_cell_jitter_energy.py derives asymptotic a = {sel.value:.3f} at "
+        f"{sel.corner} ({sel.stem}); other measured corners: {others or 'none'}"
+    )
+
+
+def _positive_finite(text: str) -> float:
+    """argparse type: a positive, finite float (a rate or a constant)."""
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {text!r}") from None
+    if not (math.isfinite(value) and value > 0):
+        raise argparse.ArgumentTypeError(f"must be a positive finite number, got {text!r}")
+    return value
 
 
 def shipped_ring_count() -> int:
@@ -254,17 +322,19 @@ def main(argv: list[str] | None = None) -> int:
         description="Evaluate DR-0007 §2's sizing inequality for the shipped array.",
     )
     parser.add_argument(
-        "--rate", type=float, default=DR0010_RATE_BPS, metavar="BPS",
-        help=f"raw rate to test the inequality at (default {DR0010_RATE_BPS:g} bps, DR-0010 §1)",
+        "--rate", type=_positive_finite, default=RAW_RATE_BPS, metavar="BPS",
+        help=f"raw rate to test the inequality at (default {RAW_RATE_BPS:g} bps, the "
+             "ratified Raw rate row, DR-0011-raw-rate-at-the-measured-starved-cell-"
+             f"jitter-energy §1; DR-0010's superseded value was {DR0010_RATE_BPS:g})",
     )
     parser.add_argument(
-        "--a", type=float, default=A_JITTER_ENERGY, dest="a", metavar="A",
+        "--a", type=_positive_finite, default=A_JITTER_ENERGY, dest="a", metavar="A",
         help=f"jitter-energy constant to size against (default {A_JITTER_ENERGY:g}, the "
-             "stated DR-0010 value). Overriding it prices a different measured constant "
-             "-- e.g. the shipped starved cell's, from "
-             "sim/tools/starved_cell_jitter_energy.py -- WITHOUT moving the stated one; "
-             "moving that is a decision record's job, not a flag's. Incompatible with "
-             "--check, which exists to hold the stated constant to the derivation.",
+             "stated DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2 "
+             "value). Overriding it prices a different constant -- e.g. DR-0010's "
+             f"plain-cell {A_PLAIN_CELL:g} -- WITHOUT moving the stated one; moving that "
+             "is a decision record's job, not a flag's. Incompatible with --check, "
+             "which exists to hold the stated constant to the derivation.",
     )
     parser.add_argument(
         "--check", action="store_true",
@@ -301,18 +371,23 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    a_derived, a_note = derived_law_constant()
+    sel, a_note = derived_sizing_constant()
     need = MARGIN_M * Q_H0
     print(f"DR-0007 §2 requires Q_array >= M * Q_H0 = {MARGIN_M} * {Q_H0:g} = {need:g}")
-    print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s)")
+    if args.rate == RAW_RATE_BPS:
+        print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s), "
+              f"the ratified Raw rate row")
+    else:
+        print(f"evaluated at a raw rate of {args.rate:g} bps (T_s = {1/args.rate:.4g} s)"
+              f"  <-- OVERRIDDEN via --rate (the ratified row is {RAW_RATE_BPS:g} bps)")
     if args.a == A_JITTER_ENERGY:
-        print(f"sizing constant a = {A_JITTER_ENERGY:g}; jitter_energy_law.py {a_note}\n")
+        print(f"sizing constant a = {A_JITTER_ENERGY:g} (stated); {a_note}\n")
     else:
         print(
             f"sizing constant a = {args.a:g}  <-- OVERRIDDEN via --a "
             f"({args.a / A_JITTER_ENERGY:.2f}x the stated {A_JITTER_ENERGY:g}). "
             f"Nothing published is quoted at this value.\n"
-            f"jitter_energy_law.py {a_note}\n"
+            f"{a_note}\n"
         )
 
     header = (
@@ -357,20 +432,31 @@ def main(argv: list[str] | None = None) -> int:
         print("\n(no ro-array-sanity-jitter records paired with a rostage-noise corner yet)")
 
     if args.check:
-        if a_derived is None:
+        if sel is None:
             print(
                 f"\nFAIL: the sizing constant a = {A_JITTER_ENERGY:g} {a_note}",
                 file=sys.stderr,
             )
             return 2
-        drift = abs(a_derived - A_JITTER_ENERGY) / A_JITTER_ENERGY
+        drift = abs(sel.value - A_JITTER_ENERGY) / A_JITTER_ENERGY
         if drift > A_TOLERANCE:
             print(
                 f"\nFAIL: A_JITTER_ENERGY = {A_JITTER_ENERGY:g} has drifted {drift:.1%} "
-                f"from the {a_derived:.3f} sim/tools/jitter_energy_law.py now derives "
-                f"(tolerance {A_TOLERANCE:.0%}). The constant is not the thing to edit "
-                f"on its own: DR-0010 §3's arithmetic and every rate figure quoted from "
-                f"it move with it.",
+                f"from the asymptotic a = {sel.value:.3f} that "
+                f"sim/tools/starved_cell_jitter_energy.py now derives at {sel.corner} "
+                f"({sel.stem}; tolerance {A_TOLERANCE:.0%}). The constant is not the "
+                f"thing to edit on its own: the Raw rate row and every rate figure "
+                f"quoted from it move with it.",
+                file=sys.stderr,
+            )
+            return 1
+        if not sel.is_smallest:
+            print(
+                f"\nFAIL: the selected corner {sel.corner} (a = {sel.value:.3f}) is no "
+                f"longer the smallest asymptotic a measured; {sel.smallest_corner} has "
+                f"{sel.by_corner[sel.smallest_corner]:.3f}. Applying the selected value "
+                f"at the DR-0015 entropy-binding corner is then no longer the "
+                f"conservative reading, and the sizing constant needs a decision.",
                 file=sys.stderr,
             )
             return 1
@@ -383,9 +469,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
             return 1
         print(
-            f"\nOK: a = {A_JITTER_ENERGY:g} is within {A_TOLERANCE:.0%} of the derivation "
-            f"({drift:.1%} off), and DR-0007 §2 holds at every measured corner at "
-            f"{args.rate:g} bps."
+            f"\nOK: a = {A_JITTER_ENERGY:g} is within {A_TOLERANCE:.0%} of the asymptotic "
+            f"a derived at {sel.corner} ({drift:.2%} off), the smallest measured; and "
+            f"DR-0007 §2 holds at all {len(points)} measured corners at {args.rate:g} bps."
         )
     return 0
 

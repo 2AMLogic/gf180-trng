@@ -94,7 +94,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from array_sizing import (  # noqa: E402
     ArrayPoint,
     KB,
-    A_JITTER_ENERGY,
+    A_PLAIN_CELL,
     MARGIN_M,
     Q_H0,
     DR0010_RATE_BPS,
@@ -259,7 +259,7 @@ def report_family_agreement() -> float:
 
 def grid_coverage() -> tuple[int, list[str]]:
     """``(measured, missing)`` over the covered PVT grid."""
-    have = {p.rec.corner for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)}
+    have = {p.rec.corner for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)}
     want = [
         f"{proc}/{t:.0f}/{v:.2f}"
         for proc in GRID_PROCESSES
@@ -290,7 +290,7 @@ def report_corner(a_value: float, a_label: str, rate_bps: float,
         )
     need = MARGIN_M * Q_H0
     print(f"\n-- a = {a_value:.3f} ({a_label}) -- "
-          f"{a_value / A_JITTER_ENERGY:.2f}x the plain-cell constant ({A_JITTER_ENERGY:g}) --")
+          f"{a_value / A_PLAIN_CELL:.2f}x the plain-cell constant ({A_PLAIN_CELL:g}) --")
     ordered = sorted(points, key=lambda p: p.g)
     if full_table:
         header = (f"{'corner':<15} {'T0_r1 (s)':>11} {'P_tot (W)':>11} "
@@ -713,7 +713,7 @@ def main(argv: list[str] | None = None) -> int:
     a_lag1, a_asym = starved_cell_constants()
     print("issue #13: entropy-binding corner over the covered PVT grid, and "
           "Monte Carlo mismatch bias")
-    print(f"plain-cell constant (jitter_energy_law.py):  a = {A_JITTER_ENERGY:g}")
+    print(f"plain-cell constant (jitter_energy_law.py):  a = {A_PLAIN_CELL:g}")
     print(f"starved-cell constants (starved_cell_jitter_energy.py): "
           f"a_lag1 = {a_lag1:.3f}, a_asym = {a_asym:.3f}")
 
@@ -731,7 +731,7 @@ def main(argv: list[str] | None = None) -> int:
     worsts = []
     try:
         for a_value, label in (
-            (A_JITTER_ENERGY, "plain cell, DR-0010's stated constant"),
+            (A_PLAIN_CELL, "plain cell, DR-0010's stated constant"),
             (a_asym, "starved cell, asymptotic slope"),
             (a_lag1, "starved cell, lag-1"),
         ):
@@ -755,9 +755,9 @@ def main(argv: list[str] | None = None) -> int:
           "construction; they are all printed because the MARGIN, not the ranking, "
           "is what the constant moves.")
     if MEASURED_MIN_Q_CORNER != PREDICTED_MIN_Q_CORNER:
-        pred = next((p for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)
+        pred = next((p for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)
                      if p.rec.corner == PREDICTED_MIN_Q_CORNER), None)
-        meas = next((p for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)
+        meas = next((p for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)
                      if p.rec.corner == MEASURED_MIN_Q_CORNER), None)
         if pred is not None and meas is not None:
             print(f"\n  The measured minimum is NOT the predicted one. At "

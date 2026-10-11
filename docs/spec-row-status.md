@@ -83,6 +83,37 @@ The README row carried no evidence narrative beyond its own target text, which s
 
 The row's open question — that the rates [DR-0010] and [DR-0011-rate] re-derive sit far below it — is recorded under [Binding corners and the rate row](#binding-corners-and-the-rate-row). The [Delivered (post-conditioning) rate](#delivered-post-conditioning-rate) row inherits this row's status.
 
+### 2026-10-11 — target moves to `> 2 kbps` (#491)
+
+The edit [DR-0010] and [DR-0011-rate] direct, which their 2026-10-10
+ratification deliberately did not make, is made. The `Target` cell now reads
+**> 2 kbps** sustained at the raw tap, binding at `ss` / −10 % / +125 °C, with
+the value cited to [DR-0011-rate] §1 and the definition (raw tap, *sustained*,
+binding corner) still [DR-0003]'s. The superseded entry above stays as the
+record of the 1 Mbps row.
+
+What the new figure is, and is not:
+
+- **A derived target, not a measurement.** Status stays `unmeasured`. The
+  number is [DR-0011-rate] §2's arithmetic: the shipped array's highest rate
+  satisfying DR-0007 §2, at the starved cell's asymptotic jitter-energy
+  constant `a = 7.32`, quoted with a 1.30× margin.
+- **Re-checked on today's records.** `python3 sim/tools/array_sizing.py
+  --check` (stated `a = 7.32`, default rate 2000 bps) re-derives the constant
+  from the committed starved-cell records (asymptotic `a` = 7.322 at
+  `ss`/−40 °C/3.63 V, `2026-08-01-ro-ring5-starved-jitter-long-01`, the
+  smallest of the three measured corners) and finds DR-0007 §2 holding at all
+  27 covered corners. Minimum margin 1.39× at the DR-0015 entropy-binding
+  corner `ss`/+125 °C/3.63 V, where the highest satisfying rate is 2773 bps.
+  The decision record's own 2664 bps was computed at `ss`/−40 °C/3.63 V on
+  pre-#78 records; the corner and the records moved, the conclusion did not.
+- **Stretch.** Neither rate decision re-derives DR-0003's `> 4 Mbps` stretch,
+  so it is left as written and marked as such; it is far above the 2.77 kbps
+  edge above.
+- **Entropy caveats unchanged.** The constant carries the fixed-injection
+  scaling uncertainty [DR-0011-rate] states (~2–4× on `a`), it is measured on
+  a five-stage ring, and `H` remains unmeasured (#12).
+
 ## Raw min-entropy per bit
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -130,6 +161,15 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"), s
   *target* raw rate — filling in K does not turn the raw-rate row into a
   measurement.
 
+### 2026-10-11 — K re-derived at 2 kbps and retained (#491)
+
+[DR-0011-rate] §4 asks for K to be re-derived at the new raw rate. K's
+governing inequality (DR-0008 §5: the non-vetted cap binds for any input at or
+above the break-even `H`, with margin under `H₀ = 0.5`) contains no rate term,
+so **K stays 8** and the row is unchanged. The reasoning and the break-even
+table are in
+[`design/conditioner/README.md`](../design/conditioner/README.md#k-at-the-2-kbps-raw-rate).
+
 ## Delivered (post-conditioning) rate
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -139,6 +179,16 @@ Row text as it stood on relocation (the README keeps the target; the "derived fr
 **Target cell:** **`R_cond = R_raw / K` > 125 kbps** at the raw-rate row's binding corner (`ss` / −10 % / +125 °C), K = 8; > 500 kbps at the stretch raw rate. **Derived from a target, not measured** — it inherits the raw-rate row's status exactly, and becomes a measured figure only when `R_raw` does ([DR-0003] §6, [DR-0008] §3)
 
 See also the ratification-note bullet under [Conditioning](#conditioning).
+
+### 2026-10-11 — follows the raw-rate row to `> 250 bps` (#491)
+
+`R_cond = R_raw / K` = 2000 / 8 → **> 250 bps** (one 32-bit word per 128 ms)
+at the raw-rate row's binding corner, K = 8 retained (see
+[Conditioning](#conditioning)). Still `derived from target`: it is arithmetic
+on the raw-rate *target*, and becomes measured only when `R_raw` does. The
+`> 500 kbps` stretch figure is left tied to DR-0003's original stretch, which
+neither rate decision re-derives. The `> 125 kbps` entry above is the
+superseded 1 Mbps figure.
 
 ## Health tests
 
@@ -157,6 +207,24 @@ Row text as it stood on relocation (the README keeps the arithmetic floor; the m
 **Target cell:** **≥ ~1.28 ms** at 1 Mbps — an arithmetic floor: 1024 consecutive raw samples for the start-up health test (1.024 ms) plus 256 samples of conditioner latency (0.256 ms), which do **not** overlap because the conditioner is held flushed while gated. Applies at power-on and after every alarm clear; binds at `ss` / −10 % / +125 °C (slowest sampling) ([DR-0002] §Failure behavior, [DR-0008] §7). **Now measured (#14): 1.281 ms**, the floor plus one sampler clock plus a 4.1–12.4 ns oscillator start-up (4.4–13.4 ns before #78's buffer adoption) — the row is met and the floor is confirmed as a floor ([`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md))
 
 The caveat #14 added about this row's binding corner is under [Binding corners and the rate row](#binding-corners-and-the-rate-row).
+
+### 2026-10-11 — restated at 2 kbps; status `derived from target` (#491)
+
+At the ratified 2 kbps the same non-overlapping sample counts give an
+arithmetic floor of **≥ ~0.640 s** (1024 health-test samples, 0.512 s, plus
+256 conditioner samples, 0.128 s). `python3 sim/tools/time_to_first_valid.py
+--check`, whose default rate is now 2000 bps, reports **640.5 ms** at the
+longest corner (`ss`/+125 °C/2.97 V): that floor, plus one sampler clock
+(0.5 ms), plus #14's measured oscillator start-up (12.41 ns). It passes —
+the floor is still a floor.
+
+The Status tag moves from `met` to `derived from target`. The 640.5 ms is the
+measured start-up term plus arithmetic at the raw-rate *target*; no
+simulation has run the block at 2 kbps, and 99.999 % of the figure is sample
+periods of a rate that is itself unmeasured. #14's **1.281 ms** was reported
+at the original 1 Mbps and is historical; `--rate 1e6` reproduces it, and
+[`sim/characterization-analog-summary.md`](../sim/characterization-analog-summary.md)
+still quotes it at that rate.
 
 ## Power
 
@@ -347,6 +415,15 @@ row edit their Decisions direct is a separate follow-up. Both sit far below
 the `> 1 Mbps` row as it still stands — 2000× and 500× below it respectively
 — and that gap, not the arithmetic above it, is the
 open question.
+
+### 2026-10-11 — the rate row moved (#491)
+
+The gap the entry above names is closed by the row edit it describes: the
+`Raw rate` row now reads `> 2 kbps` ([DR-0011-rate]), and the 641 ms quoted
+above is what the time-to-first-valid row now states (0.640 s floor, 640.5 ms
+with the sampler clock and oscillator start-up). The fixed-external-clock
+caveat still applies: the row's binding corner remains formally correct and
+practically vacuous.
 
 
 ## README status narrative, as of 2026-10-10

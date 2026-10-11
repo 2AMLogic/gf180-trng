@@ -32,6 +32,23 @@ related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), 
     is not settled and the corner *metric* depends on the sampler clock source
     #9 has yet to pin. Read `ff`/+10 %/−40 °C in the table below as "cold /
     +10 % supply, process letter TBD by #13".
+- 2026-10-11: **Rate VALUE superseded; everything else stands** (#491).
+  §2's `> 1 Mbps` target was superseded in value by
+  [`DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit`](DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md)
+  §1 (`> 500 bps`), whose value was in turn superseded by
+  [`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+  §1: the README `Raw rate` row now reads **`> 2 kbps`**. Both were accepted
+  2026-10-10 (#480). Still in force from this record, unchanged: the
+  measurement point at the raw tap (§1), the meaning of *sustained* and the
+  FIFO no-underflow condition (§2), the rate-binding corner `ss` / −10 % /
+  +125 °C (§3), the opposite-corner reporting obligation (§4), `R_H` as a
+  reported, untargeted figure (§5), the conditioned rate as `R_raw / K`
+  owned by #8 (§6), and the healthy-ungated scope (§7). The §2 stretch value
+  (`> 4 Mbps`) was not re-derived by either superseding record. `status`
+  stays `Accepted` and `superseded_by` stays `n/a` deliberately: this is a
+  value-only, partial supersession, and that field reads as whole-record —
+  the same treatment DR-0010's own Status records for its partial
+  supersession. The decision text below is not rewritten.
 
 ## Context
 
