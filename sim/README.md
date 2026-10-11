@@ -602,6 +602,12 @@ Include policy:
   Absolute paths, sub-directories, `..`, missing files and include cycles fail
   before any simulation, naming the file and line. `.lib` and the other
   harness-owned directives stay forbidden.
+- An included file may not share a name with a file the harness writes into
+  the same raw directory: `tb.manifest.json`, `pdk-models.json`,
+  `pdk-models.after-run.json`, the fragment/DUT snapshots, or any planned
+  `<corner_id>.spice`/`.log` (`<corner_id>-run<N>.spice`/`.log` for seeded
+  runs). Such a plan is refused before any record or scratch directory is
+  allocated; the diagnostic names the include and suggests a rename.
 - External PDK models are not snapshotted; they keep the live-PDK policy,
   with their content identity recorded as described next.
 

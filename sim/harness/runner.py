@@ -16,7 +16,13 @@ from pathlib import Path
 
 from .corners import PvtPoint
 from .pdk import Pdk
-from .testbench import Testbench, validate_seed_ownership, write_input_snapshots
+from .testbench import (
+    Testbench,
+    run_artifact_names,
+    validate_artifact_namespace,
+    validate_seed_ownership,
+    write_input_snapshots,
+)
 
 NGSPICE = "ngspice"
 DEFAULT_TIMEOUT_S = 300
@@ -432,10 +438,11 @@ def run_one(
     :func:`validate_timeout_s`.
     """
     validate_timeout_s(timeout_s)
+    validate_artifact_namespace(tb, [(point.corner_id, seed, run_index)])
     workdir.mkdir(parents=True, exist_ok=True)
-    stem = f"{point.corner_id}-run{run_index}" if seed is not None else point.corner_id
-    deck_path = workdir / f"{stem}.spice"
-    log_path = workdir / f"{stem}.log"
+    deck_name, log_name = run_artifact_names(point.corner_id, seed, run_index)
+    deck_path = workdir / deck_name
+    log_path = workdir / log_name
     # Freeze the SPICE inputs captured at load into the corner's own
     # directory and compose the deck against those copies, never the
     # working-tree originals (which may change between corner launches).

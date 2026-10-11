@@ -480,6 +480,68 @@ class InvalidPlanRejectionTests(RunIntegrityTests):
         self.assertEqual(len(list(self.work_dir.glob("*/run-*"))), 1)
 
 
+class ArtifactCollisionRejectionTests(RunIntegrityTests):
+    """A DUT include named like a generated artifact is refused before any
+    record stem, scratch directory or simulator launch (#565)."""
+    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
+    test_a_second_writer_clobbering_raw_output_fails_the_run = None
+    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
+
+    def _with_dependency(self, name, extra_manifest=None):
+        dutdir = self.root / "dutdir"
+        dutdir.mkdir(exist_ok=True)
+        (dutdir / "dut.spice").write_text(f'.include "{name}"\n')
+        (dutdir / name).write_text("* dep\n")
+        (self.tb_dir / "tb.json").write_text(json.dumps({
+            "name": "an-experiment", "netlist": "x.spice",
+            "measure": {"vout": "v(out)"}, "design_netlist": str(dutdir / "dut.spice"),
+            **(extra_manifest or {}),
+        }))
+        self.work_dir = self.root / "work"
+        patcher = mock.patch.object(cli, "WORK_DIR", self.work_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _invoke(self, extra):
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = cli.main([str(self.tb_dir), "--corners", "tt", "--supply-tol", "0",
+                               "--temps", "27", *extra])
+        return status, out.getvalue(), err.getvalue()
+
+    def test_collisions_launch_nothing_and_allocate_nothing(self):
+        stochastic = {"analysis_type": "tran-noise", "default_runs": 2}
+        cases = (
+            ("tb.manifest.json", None, []),
+            ("pdk-models.json", None, []),
+            ("pdk-models.after-run.json", None, []),
+            ("tt_27c_3.30v.spice", None, []),
+            ("tt_27c_3.30v.log", None, []),
+            ("tt_27c_3.30v-run1.spice", stochastic, ["--seeds", "5", "6"]),
+        )
+        for name, manifest, extra in cases:
+            self._with_dependency(name, manifest)
+            for mode in ([], ["--no-write"]):
+                for jobs in ("1", "2"):
+                    with self.subTest(include=name, mode=mode or "write", jobs=jobs):
+                        with mock.patch.object(cli.runner, "run_one") as run_one, \
+                                mock.patch.object(cli.report, "reserve_record_stems") as reserve:
+                            status, out, err = self._invoke([*extra, *mode, "-j", jobs])
+                        self.assertEqual(status, cli.EXIT_ENVIRONMENT)
+                        self.assertIn(f"DUT include '{name}'", err)
+                        run_one.assert_not_called()
+                        reserve.assert_not_called()
+                        raw = self.records_dir / report.RAW_DIRNAME
+                        self.assertFalse(raw.exists() and any(raw.iterdir()))
+                        self.assertFalse(self.work_dir.exists() and any(self.work_dir.rglob("*")))
+
+    def test_ordinary_include_still_runs_and_seeded_name_is_free_when_deterministic(self):
+        self._with_dependency("tt_27c_3.30v-run1.spice")  # deterministic plan: not generated
+        self._install_runner()
+        status, out, err = self._invoke(["--no-write"])
+        self.assertEqual(status, cli.EXIT_OK, err)
+
+
 class NonpositiveTimeoutRejectionTests(RunIntegrityTests):
     # Inherits only the fixture; the parent's own tests run in their class.
     test_clean_run_reserves_disjoint_stems_and_reports_ok = None

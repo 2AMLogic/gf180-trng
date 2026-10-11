@@ -673,3 +673,31 @@ class InputCaptureDeckTests(unittest.TestCase):
         deck = runner.compose_deck(tb, self.pdk, self.points[0], snapshot_dir=self.root / "w")
         self.assertIn(str(self.frag), deck)
         self.assertNotIn("tb.fragment.spice", deck)
+
+
+class ArtifactCollisionTests(unittest.TestCase):
+    """run_one refuses a colliding DUT include before writing or launching."""
+
+    def test_run_one_refuses_before_any_write_or_launch(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            dutdir = root / "dutdir"
+            dutdir.mkdir()
+            (dutdir / "dut.spice").write_text('.include "tt_27c_3.30v.spice"\n')
+            (dutdir / "tt_27c_3.30v.spice").write_text("* dep\n")
+            tbd = root / "tb" / "x"
+            tbd.mkdir(parents=True)
+            (tbd / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+            (tbd / "tb.json").write_text(json.dumps({
+                "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+                "design_netlist": str(dutdir / "dut.spice"),
+            }))
+            tb = testbench.load(tbd)
+            point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+            workdir = root / "work"
+            with mock.patch.object(runner.subprocess, "Popen") as popen:
+                with self.assertRaises(ValueError) as ctx:
+                    runner.run_one(tb, fake_pdk(root / "pdk"), point, workdir)
+            self.assertIn("tt_27c_3.30v.spice", str(ctx.exception))
+            popen.assert_not_called()
+            self.assertFalse(workdir.exists())

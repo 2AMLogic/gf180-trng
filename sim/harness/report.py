@@ -37,6 +37,7 @@ from .corners import PvtPoint
 from .pdk import Pdk
 from .pdk_models import ModelManifest
 from .runner import RunResult
+from .testbench import MANIFEST_SNAPSHOT_NAME as _MANIFEST_SNAPSHOT_NAME
 from .testbench import Testbench, write_input_snapshots
 
 RECORDS_DIRNAME = "records"
@@ -102,7 +103,21 @@ def sha256_file(path: Path) -> str:
 
 
 #: Name of the per-record copy of the loaded ``tb.json`` kept in the raw dir.
-MANIFEST_SNAPSHOT_NAME = "tb.manifest.json"
+MANIFEST_SNAPSHOT_NAME = _MANIFEST_SNAPSHOT_NAME
+
+
+def _write_idempotent(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path``; identical existing bytes are a no-op.
+
+    Different existing bytes raise ``RuntimeError`` and are left untouched.
+    """
+    if path.exists():
+        if path.read_bytes() != data:
+            raise RuntimeError(
+                f"{path}: refusing to overwrite an existing file with different content"
+            )
+        return
+    path.write_bytes(data)
 
 
 def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
@@ -116,7 +131,7 @@ def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
         return None
     raw_dir.mkdir(parents=True, exist_ok=True)
     path = raw_dir / MANIFEST_SNAPSHOT_NAME
-    path.write_bytes(tb.manifest_bytes)
+    _write_idempotent(path, tb.manifest_bytes)
     return MANIFEST_SNAPSHOT_NAME, sha256_file(path)
 
 
@@ -457,7 +472,7 @@ def write_model_manifest(manifest: ModelManifest, raw_dir: Path, name: str = "")
     """Write ``manifest`` as ``raw_dir/pdk-models.json`` (or ``name``)."""
     raw_dir.mkdir(parents=True, exist_ok=True)
     path = raw_dir / (name or pdk_models.MANIFEST_NAME)
-    path.write_bytes(manifest.to_json_bytes())
+    _write_idempotent(path, manifest.to_json_bytes())
     return path
 
 

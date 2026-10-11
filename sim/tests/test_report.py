@@ -20,7 +20,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import corners, report, runner, testbench  # noqa: E402
+from harness import corners, pdk_models, report, runner, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
 
@@ -1187,6 +1187,38 @@ class ManifestSnapshotTests(unittest.TestCase):
         self.assertEqual(report.verify_record(legacy), [])
         path = report.write_record(legacy, self.tb, self.root / "records", ["c"])
         self.assertEqual(report.verify_record_file(path, self.root), [])
+
+
+class ManifestWriteIdempotenceTests(unittest.TestCase):
+    """Manifest writers accept identical existing bytes and refuse others."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.raw = Path(self.tmp.name) / "raw"
+
+    def test_snapshot_manifest_absent_identical_and_different(self):
+        tb = mock.Mock(manifest_bytes=b'{"a": 1}\n')
+        first = report.snapshot_manifest(tb, self.raw)
+        self.assertEqual(first, report.snapshot_manifest(tb, self.raw))  # retry
+        path = self.raw / report.MANIFEST_SNAPSHOT_NAME
+        path.write_bytes(b"different")
+        with self.assertRaises(RuntimeError):
+            report.snapshot_manifest(tb, self.raw)
+        self.assertEqual(path.read_bytes(), b"different")
+
+    def test_model_manifest_writer_including_changed_name(self):
+        manifest = mock.Mock()
+        manifest.to_json_bytes.return_value = b"{}\n"
+        for name in ("", pdk_models.CHANGED_MANIFEST_NAME):
+            with self.subTest(name=name or "default"):
+                path = report.write_model_manifest(manifest, self.raw, name)
+                self.assertEqual(path.read_bytes(), b"{}\n")
+                report.write_model_manifest(manifest, self.raw, name)  # retry
+                path.write_bytes(b"other")
+                with self.assertRaises(RuntimeError):
+                    report.write_model_manifest(manifest, self.raw, name)
+                self.assertEqual(path.read_bytes(), b"other")
 
 
 class InputSnapshotTests(unittest.TestCase):

@@ -32,7 +32,9 @@ import re
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Iterable
 
+from . import pdk_models
 from .corners import (
     DEFAULT_CORNER_SET,
     DEFAULT_NOMINAL_SUPPLY_V,
@@ -62,6 +64,8 @@ DUT_INCLUDE_DIRECTIVES = (".include", ".inc")
 #: Fixed file names of the per-invocation input snapshots (raw dir / deck dir).
 FRAGMENT_SNAPSHOT_NAME = "tb.fragment.spice"
 DUT_SNAPSHOT_NAME = "dut.netlist.spice"
+#: Per-record copy of the loaded ``tb.json`` kept in the raw directory.
+MANIFEST_SNAPSHOT_NAME = "tb.manifest.json"
 
 #: analysis.type values sim/README.md's frontmatter recognizes as stochastic
 #: (i.e. subject to the "no seed, no evidence" rule).
@@ -569,3 +573,52 @@ def discover(root: str | Path) -> list[Path]:
     """
     root = Path(root)
     return sorted(p.parent for p in root.glob(f"*/{MANIFEST_NAME}"))
+
+
+def run_artifact_names(corner_id: str, seed: int | None, run_index: int) -> tuple[str, str]:
+    """The ``(deck, log)`` file names one (PVT point, seed) run writes.
+
+    The single definition shared by execution (``runner.run_one``) and the
+    pre-launch namespace check, so the two cannot drift.
+    """
+    stem = f"{corner_id}-run{run_index}" if seed is not None else corner_id
+    return f"{stem}.spice", f"{stem}.log"
+
+
+def fixed_artifact_names() -> dict[str, str]:
+    """Generated files that share the raw directory with frozen inputs.
+
+    Maps file name to a description. Includes names written only on some paths
+    (e.g. the changed-model diagnostic) so a dependency can never occupy them.
+    """
+    return {
+        FRAGMENT_SNAPSHOT_NAME: "the testbench fragment snapshot",
+        DUT_SNAPSHOT_NAME: "the DUT netlist snapshot",
+        MANIFEST_SNAPSHOT_NAME: "the testbench manifest snapshot",
+        pdk_models.MANIFEST_NAME: "the PDK model manifest",
+        pdk_models.CHANGED_MANIFEST_NAME: "the post-run PDK model manifest",
+    }
+
+
+def validate_artifact_namespace(
+    tb: Testbench, planned: Iterable[tuple[str, int | None, int]]
+) -> None:
+    """Refuse a DUT include whose name a run would later write over.
+
+    ``planned`` is every ``(corner_id, seed, run_index)`` the invocation will
+    execute. Raises ``ValueError`` naming the include, the colliding artifact
+    and a suggested rename; call it before any directory or record is
+    allocated.
+    """
+    generated = dict(fixed_artifact_names())
+    for corner_id, seed, run_index in planned:
+        deck, log = run_artifact_names(corner_id, seed, run_index)
+        generated.setdefault(deck, f"the generated deck for {corner_id}")
+        generated.setdefault(log, f"the simulator log for {corner_id}")
+    for name, _ in tb.design_dependencies:
+        if name in generated:
+            raise ValueError(
+                f"{tb.slug}: DUT include '{name}' collides with {generated[name]} "
+                f"('{name}'), which the harness writes into the same directory as the "
+                f"frozen inputs; rename the included file (e.g. 'dep_{name}')"
+            )
