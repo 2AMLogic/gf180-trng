@@ -279,7 +279,9 @@ class _Scanner:
     def _reference(self, rel: str, where: str, token: str, section: str | None) -> None:
         target = _unquote(token)
         if not target or any(ch in target for ch in "{}$~`"):
-            self.problems.add(f"{where}: unsupported parameterized path {target!r}")
+            # Never echo an absolute literal: it would be a host path.
+            shown = "an absolute path" if os.path.isabs(target) else repr(target)
+            self.problems.add(f"{where}: unsupported parameterized path {shown}")
             return
         if section is not None and any(ch in section for ch in "{}$"):
             self.problems.add(f"{where}: unsupported parameterized section {section!r}")
