@@ -29,14 +29,15 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column
-- **#553**: Replace 24 hand-copied path-based module loaders with one helper
+- **#574**: ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed
+- **#584**: test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46
+- **#590**: Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#606**: Record that trnoise waveforms are not seed-reproducible on ngspice-46 (#574)
 
 ## Approved (Awaiting Merge)
 
@@ -58,15 +59,15 @@ Issues carrying `loom:curated`.
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#491**: Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures) *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
-- **#553**: Replace 24 hand-copied path-based module loaders with one helper *(curated)*
+- **#574**: ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed *(curated)*
+- **#584**: test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46 *(curated)*
+- **#590**: Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#590**: Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once *(architect)*
-- **#591**: Run shellcheck over tracked shell scripts in lint and CI (bash -n is the only check today) *(architect)*
-- **#593**: Reject tracked raw simulation artifacts with no evidence record *(architect)*
+- **#601**: Add direct unit tests for layout/cells/_build_cli.py message contract *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
-- **#589**: Dedup the gds_path/check/main boilerplate repeated in every layout generator *(hermit)*
+- **#603**: Remove dead functions clk_at, contract_rows, convergence_text (and dead local ctrl) *(hermit)*
 
 ## Epics
 
@@ -79,10 +80,10 @@ _None._
 | Operator merge-risk holds | 2 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 2 |
-| Curated | 10 |
-| Architect / Hermit proposals | 5 |
+| Curated | 12 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
