@@ -1,8 +1,25 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-10.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-11.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-11
+
+- **PR #552**: Scope whole-record measurement readers to the primary Result section
+- **PR #551**: Validate multi-seed summary bullets in the shared record parser
+- **PR #550**: Freeze SPICE inputs per invocation and hash the captured bytes
+- **PR #549**: Pin the OpenROAD image that produced the committed artefacts (#507)
+- **PR #545**: Validate raw-artifact path containment before verifying evidence
+- **PR #543**: Require final-tree CI-gate validation in verification guidance
+- **PR #535**: Validate numeric exponent tokens and finiteness in evidence bullets (#529)
+- **Issue #548** (closed): Scope whole-record measurement readers to primary Result sections
+- **Issue #547** (closed): Validate finite means, spreads, and seed counts in multi-seed evidence summaries
+- **Issue #515** (closed): Freeze SPICE source inputs for consistent multi-corner evidence
+- **Issue #507** (closed): Build/runtime failure on main: nightly SDF freshness fails on engine_version
+- **Issue #541** (closed): Validate raw-artifact path containment before verifying evidence
+- **Issue #508** (closed): Builder validation omits repository CI gates before review
+- **Issue #529** (closed): Validate numeric exponent tokens and finiteness when reading evidence Markdown
 
 ### 2026-10-10
 
