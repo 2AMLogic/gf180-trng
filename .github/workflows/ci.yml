@@ -275,6 +275,12 @@ jobs:
       - name: Lint (syntax check, shell check, schematic brace guard)
         run: npm run lint
 
+      # shellcheck (warning severity) over the tracked first-party *.sh (#591).
+      # ubuntu-latest ships shellcheck; --require-tools makes a missing
+      # binary a failure here instead of the local skip.
+      - name: Shell lint (shellcheck)
+        run: python3 -m sim.tools.lint_shell --require-tools
+
       - name: Harness unit tests
         run: npm run test
 
