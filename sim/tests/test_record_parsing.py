@@ -29,6 +29,7 @@ Everything here is stdlib-only: no ngspice and no PDK.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -219,6 +220,51 @@ class SeedSummaryTests(unittest.TestCase):
 
     def test_requires_sd_clause(self) -> None:
         self.assertEqual(list(iter_seed_summaries("- `k`: mean 1.0 over 3 seeds\n")), [])
+
+    def test_uppercase_exponent_and_zero_sd_accepted(self) -> None:
+        got = list(iter_seed_summaries("- `k`: mean 1.5E-3 over 2 seeds (sd 2E-4\n- `z`: mean 1 over 1 seeds (sd 0\n"))
+        self.assertEqual([tuple(s) for _, s in got], [(1.5e-3, 2, 2e-4), (1.0, 1, 0.0)])
+
+    def test_boundary_values_raise_with_label_and_key(self) -> None:
+        bad = {
+            "overflow mean": "- `k`: mean 1e999 over 3 seeds (sd 1\n",
+            "malformed sd": "- `k`: mean 1 over 3 seeds (sd 1.2.3\n",
+            "malformed mean": "- `k`: mean 1.2.3 over 3 seeds (sd 1\n",
+            "zero count": "- `k`: mean 1 over 0 seeds (sd 1\n",
+            "malformed count": "- `k`: mean 1 over x seeds (sd 1\n",
+            "negative sd": "- `k`: mean 1 over 3 seeds (sd -0.1\n",
+            "overflow sd": "- `k`: mean 1 over 3 seeds (sd 1e999\n",
+        }
+        for name, line in bad.items():
+            with self.subTest(name):
+                with self.assertRaises(KeyError) as cm:
+                    list(iter_seed_summaries(line, label="rec-01", error_cls=KeyError))
+                self.assertIn("rec-01", str(cm.exception))
+                self.assertIn("`k`", str(cm.exception))
+
+    def test_default_error_is_value_error(self) -> None:
+        with self.assertRaises(ValueError):
+            list(iter_seed_summaries("- `k`: mean 1 over 0 seeds (sd 1\n"))
+
+    def test_malformed_bullet_among_valid_ones_raises(self) -> None:
+        text = (
+            "- `a`: mean 1 over 3 seeds (sd 1\n"
+            "- `b`: mean 1 over 3 seeds (sd 1.2.3\n"
+            "- `c`: mean 1 over 3 seeds (sd 1\n"
+        )
+        with self.assertRaises(ValueError):
+            list(iter_seed_summaries(text))
+
+    def test_consumer_wraps_error_in_its_record_error(self) -> None:
+        import starved_cell_jitter_energy as sc
+
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-fixture-01.md"
+            path.write_text("- `dtrip_v`: mean 1 over 3 seeds (sd -0.5\n")
+            with self.assertRaises(sc.RecordError) as cm:
+                sc.Record(path)
+        self.assertIn("2026-01-01-fixture-01", str(cm.exception))
+        self.assertIn("`dtrip_v`", str(cm.exception))
 
 
 class FieldTests(unittest.TestCase):
