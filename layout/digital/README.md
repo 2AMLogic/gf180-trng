@@ -1024,9 +1024,15 @@ always wins). The pin:
 
 | | |
 |---|---|
-| Image | `openroad/orfs:26Q3-296-gda37dce1c` |
-| Digest | `sha256:ebc8142da6d65d1a1e9a528aa2cedcde356243465dd859af8d3ade51075f8cb2` |
+| Image | `openroad/orfs:26Q3-383-g205191eb2` |
+| Digest | `sha256:bb7f31697fb8466ab61852fc796376cc16d9df38f762ccb733218b8a5e55824b` |
 | `openroad -version` inside it | `26Q3-1510-g6cb3f2b704` |
+
+The committed `reports/place_and_route.json` and `reports/sdf_export.json`
+record this same build. An earlier revision of this pin pointed at
+`openroad/orfs:26Q3-296-gda37dce1c` (`sha256:ebc8142d…`), which reports
+`26Q3-1260-g06a5a02279`, not 1510; that mismatch made the nightly
+`gen_sdf.py --check` fail on `engine_version` ([#507][gf507]).
 
 The wrapper bind-mounts the working directory **and** the resolved PDK root
 at their own absolute host paths, because the generated Tcl carries absolute
@@ -1034,6 +1040,7 @@ paths for the netlist, the LEF/liberty deck and every output — source ==
 target is what makes those resolve identically on both sides of the container
 boundary.
 
+[gf507]: https://github.com/2AMLogic/gf180-trng/issues/507
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf145]: https://github.com/2AMLogic/gf180-trng/issues/145
 [gf147]: https://github.com/2AMLogic/gf180-trng/issues/147
