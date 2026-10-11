@@ -88,12 +88,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import runpy
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT))
-sys.path.insert(0, str(REPO_ROOT / "design"))
+
+# Import convention (sim/README.md, "Import convention"): the shared
+# bootstrap puts REPO_ROOT on sys.path once, so repository packages are
+# imported by their qualified names. It is located relative to this file so
+# it works for both `python3 .../vss_trunk_ir_drop.py` and
+# `python -m sim.tools.vss_trunk_ir_drop`, from any working directory.
+runpy.run_path(str(REPO_ROOT / "sim" / "harness" / "__init__.py"),
+               run_name="__repo_bootstrap__")
 
 from layout.floorplan import interregion  # noqa: E402
 
