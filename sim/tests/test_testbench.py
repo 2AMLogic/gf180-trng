@@ -95,6 +95,43 @@ class TestbenchLoadTests(unittest.TestCase):
             (dutdir / name).write_text(text)
         return self._write("v1 out 0 dc 3.3\n", {"design_netlist": str(dut)})
 
+    def test_namespace_check_rejects_includes_named_like_generated_artifacts(self):
+        planned = [("tt_27c_3.30v", None, 0)]
+        seeded = [("tt_27c_3.30v", 7, 0), ("tt_27c_3.30v", 8, 1)]
+        cases = (
+            ("tb.manifest.json", planned),
+            ("pdk-models.json", planned),
+            ("pdk-models.after-run.json", planned),
+            ("tt_27c_3.30v.spice", planned),
+            ("tt_27c_3.30v.log", planned),
+            ("tt_27c_3.30v-run1.spice", seeded),
+            ("tt_27c_3.30v-run1.log", seeded),
+        )
+        for name, plan in cases:
+            with self.subTest(include=name):
+                tb = testbench.load(self._dut_tb(f'.include "{name}"\n', {name: "* dep\n"}))
+                with self.assertRaises(ValueError) as ctx:
+                    testbench.validate_artifact_namespace(tb, plan)
+                self.assertIn(f"DUT include '{name}'", str(ctx.exception))
+                self.assertIn("rename", str(ctx.exception))
+
+    def test_namespace_check_accepts_ordinary_and_unplanned_names(self):
+        tb = testbench.load(self._dut_tb(
+            '.include "a.spice"\n.include "tt_27c_3.30v-run1.spice"\n',
+            {"a.spice": '.include "b.spice"\n', "b.spice": "* b\n",
+             "tt_27c_3.30v-run1.spice": "* only a seeded run would write this\n"},
+        ))
+        # Deterministic plan: the seeded name is never generated.
+        testbench.validate_artifact_namespace(tb, [("tt_27c_3.30v", None, 0)])
+        self.assertEqual(
+            [n for n, _ in tb.design_dependencies],
+            ["a.spice", "b.spice", "tt_27c_3.30v-run1.spice"],
+        )
+        self.assertEqual(
+            testbench.run_artifact_names("c", None, 0), ("c.spice", "c.log"))
+        self.assertEqual(
+            testbench.run_artifact_names("c", 5, 2), ("c-run2.spice", "c-run2.log"))
+
     def test_dut_sibling_includes_are_captured_transitively(self):
         d = self._dut_tb(
             '.include "a.spice"\n', {"a.spice": '.inc b.spice\n* a\n', "b.spice": "* b\n"}

@@ -300,6 +300,9 @@ def run(args: argparse.Namespace) -> int:
     try:
         corners_mod.validate_grid(points)
         plan = runner.plan_runs(tb, seeds)
+        tb_mod.validate_artifact_namespace(
+            tb, [(p.corner_id, seed, idx) for p in points for seed, idx in plan]
+        )
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT

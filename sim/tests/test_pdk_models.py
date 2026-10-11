@@ -299,6 +299,9 @@ class RecordProvenanceTests(unittest.TestCase):
     def test_incomplete_identity_is_recorded_as_such(self):
         (self.pdk.path / "libs.tech/ngspice/cards/mos_card.ngspice").unlink()
         manifest = pdk_models.manifest_for_deck(self.pdk, TT_SECTIONS)
+        # The fixture's raw dir already holds the complete-identity manifest;
+        # manifest writers refuse to replace different bytes (#565).
+        (self.raw_dir / pdk_models.MANIFEST_NAME).unlink()
         record = report.build_record(
             tb=self.tb, pdk=self.pdk, point=self.point, results=self.record["results"],
             ngspice="ngspice-46", repo_root=self.root, stem=self.stem,
