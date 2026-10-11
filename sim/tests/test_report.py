@@ -409,6 +409,14 @@ class BuildRecordTests(unittest.TestCase):
         for label in self.REQUIRED_FRONTMATTER_LABELS:
             self.assertIn(label, text, f"missing ratified field {label!r}")
 
+    def test_startup_policy_metadata_is_additive_and_pinned(self):
+        from harness import startup
+        text = report.render_frontmatter(self.record)
+        self.assertIn(f"  ngspice_startup: {startup.POLICY_ID}", text)
+        self.assertIn(f"  ngspice_startup_spinit_sha256: {startup.spinit_sha256()}", text)
+        legacy = {k: v for k, v in self.record.items() if k != "tool_ngspice_startup"}
+        self.assertNotIn("ngspice_startup", report.render_frontmatter(legacy))
+
     def test_seeds_are_na_for_deterministic_analysis(self):
         text = report.render_frontmatter(self.record)
         self.assertIn("seeds: n/a (deterministic analysis)", text)
