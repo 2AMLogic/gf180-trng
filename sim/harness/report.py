@@ -675,6 +675,12 @@ def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[s
     Raises ``RawFilesMismatch`` if the raw output has changed underneath the
     record between hashing (``build_record``) and writing -- a record whose
     checksums are already wrong at birth must not reach the disk.
+
+    The early existence check gives a fast ``RecordExists`` that takes
+    precedence over a raw-file mismatch, but it is not the authority: the
+    rendered Markdown is published through ``publish_record_text``, whose
+    exclusive creation refuses a destination that appeared after the check
+    and removes its own partial file if the write fails.
     """
     records_dir.mkdir(parents=True, exist_ok=True)
     path = records_dir / f"{record['record']}.md"
@@ -689,8 +695,8 @@ def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[s
             "(another run_corners.py invocation writing into the same raw "
             "directory?)\n  " + "\n  ".join(problems)
         )
-    path.write_text(render_record(record, tb, caveats))
-    return path
+    text = render_record(record, tb, caveats)
+    return publish_record_text(path, text)
 
 
 RAW_FILE_LINE = re.compile(r"^\s*-\s+(?P<name>\S+)\s+sha256:(?P<digest>[0-9a-f]{64})\s*$")

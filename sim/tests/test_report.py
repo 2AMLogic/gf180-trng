@@ -470,6 +470,14 @@ class BuildRecordTests(unittest.TestCase):
         with self.assertRaises(report.RecordExists):
             report.write_record(self.record, self.tb, records_dir, ["a caveat"])
 
+    def test_write_record_publishes_exactly_the_rendered_record(self):
+        records_dir = Path(self.tmp.name) / "records"
+        expected = report.render_record(self.record, self.tb, ["a caveat"])
+        path = report.write_record(self.record, self.tb, records_dir, ["a caveat"])
+        self.assertEqual(path, records_dir / "2026-07-31-an-experiment-01.md")
+        self.assertEqual(path.read_text(), expected)
+        self.assertEqual(report.verify_record(self.record), [])
+
 
 class FailedRunSeparationTests(unittest.TestCase):
     """Failed runs keep their parsed measurements (runner.run_one) but must
@@ -845,6 +853,84 @@ class RawFileVerificationTests(unittest.TestCase):
         self.assertIn("tt_27c_3.30v.spice", str(caught.exception))
         # Nothing was written: a record that is wrong at birth never lands.
         self.assertFalse((self.records_dir / "2026-07-31-an-experiment-01.md").exists())
+
+    def _dest(self) -> Path:
+        return self.records_dir / "2026-07-31-an-experiment-01.md"
+
+    def test_existing_destination_takes_precedence_over_raw_mismatch(self):
+        # Exception precedence: the early existence check still fires before
+        # raw verification, so a collision is reported as RecordExists.
+        self.deck.write_text("* clobbered between hashing and writing\n")
+        sentinel = b"independent record\n"
+        self._dest().write_bytes(sentinel)
+        with self.assertRaises(report.RecordExists):
+            report.write_record(self.record, self.tb, self.records_dir, ["a caveat"])
+        self.assertEqual(self._dest().read_bytes(), sentinel)
+
+    def test_destination_created_after_the_early_check_is_not_overwritten(self):
+        # Deterministic stand-in for a concurrent writer: the sentinel lands
+        # after write_record's existence check and raw verification (inside
+        # rendering), before publication. Exclusive creation must refuse it.
+        sentinel = b"record published by another writer\n"
+        real_render = report.render_record
+
+        def render_then_collide(*args, **kwargs):
+            text = real_render(*args, **kwargs)
+            self._dest().write_bytes(sentinel)
+            return text
+
+        with mock.patch.object(report, "render_record", side_effect=render_then_collide):
+            with self.assertRaises(report.RecordExists):
+                report.write_record(self.record, self.tb, self.records_dir, ["a caveat"])
+        self.assertEqual(self._dest().read_bytes(), sentinel)
+
+    def test_failed_publication_write_leaves_no_partial_record(self):
+        real_open = open
+
+        class FailingHandle:
+            def __init__(self, handle):
+                self._handle = handle
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                self._handle.close()
+                return False
+
+            def write(self, text):
+                # Leave a genuinely partial file before failing.
+                self._handle.write(text[: len(text) // 2])
+                self._handle.flush()
+                raise OSError("simulated disk full")
+
+        opened = []
+
+        def failing_open(path, mode="r", *args, **kwargs):
+            handle = real_open(path, mode, *args, **kwargs)
+            if mode == "x":
+                opened.append(Path(path))
+                return FailingHandle(handle)
+            return handle
+
+        with mock.patch.object(report, "open", side_effect=failing_open, create=True):
+            with self.assertRaisesRegex(OSError, "simulated disk full"):
+                report.write_record(self.record, self.tb, self.records_dir, ["a caveat"])
+        self.assertEqual(opened, [self._dest()])
+        self.assertFalse(self._dest().exists())
+        # The stem is free again: a retry publishes the full record.
+        path = report.write_record(self.record, self.tb, self.records_dir, ["a caveat"])
+        self.assertEqual(path.read_text(), report.render_record(self.record, self.tb, ["a caveat"]))
+
+    def test_refused_publication_never_removes_an_existing_destination(self):
+        # publish_record_text cleans up only a file it created itself; a
+        # refused exclusive open must not unlink the destination.
+        sentinel = b"independent record\n"
+        self._dest().parent.mkdir(parents=True, exist_ok=True)
+        self._dest().write_bytes(sentinel)
+        with self.assertRaises(report.RecordExists):
+            report.publish_record_text(self._dest(), "replacement\n")
+        self.assertEqual(self._dest().read_bytes(), sentinel)
 
     def test_written_record_can_be_re_verified_from_disk(self):
         path = report.write_record(self.record, self.tb, self.records_dir, ["a caveat"])
