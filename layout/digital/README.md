@@ -678,10 +678,12 @@ column's 50 µm sub-case, which is consistent with the platform's
 result of the as-built geometry, recorded here without a design change; whether to re-place ties is
 tracked separately in [#449][gf449]. The §14.3.1 column assignment is read from the published
 table and has **not** been confirmed against the controlled DRM (none was
-available; a 2026-10-11 follow-up search of public sources, recorded in
+available; 2026-10-11 follow-up searches of public sources, recorded in
 [DR-0030](../../spec/decision-records/DR-0030-digital-latch-up-source-confirmation-outcome.md),
 found only the unversioned rendered page and a commit-pinned open-PDK
-transcription, and the table's `MV` header is not defined in either, so the
+transcription — a same-day re-check after the open-PDK repositories moved to
+the FOSSi Foundation found the design-manual content byte-identical and still
+unversioned — and the table's `MV` header is not defined in either, so the
 MV reading remains an unconfirmed working interpretation, #486):
 [DR-0029](../../spec/decision-records/DR-0029-digital-latch-up-tie-distance-column-disposition.md)
 records the source reconciliation, the reproduction of this measurement
