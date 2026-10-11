@@ -97,6 +97,14 @@ jobs:
     steps:
       - id: checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Full history, as in ci.yml. test_report's changed-record discovery
+          # test diffs `origin/main...HEAD`, so it needs `origin/main` and a
+          # merge-base with HEAD. The default shallow checkout of a
+          # workflow_dispatch run on a non-default branch fetches only that
+          # branch, and the test then errors before anything is exercised
+          # (#621).
+          fetch-depth: 0
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
