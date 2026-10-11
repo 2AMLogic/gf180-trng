@@ -23,6 +23,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
@@ -278,6 +279,38 @@ class CampaignDefinitionTests(unittest.TestCase):
     def test_limits_are_printed_with_every_analysis(self):
         self.assertTrue(any("synthetic" in l.lower() or "ideal series" in l.lower() for l in sr.LIMITS))
         self.assertTrue(any("min-entropy" in l for l in sr.LIMITS))
+
+
+class RunScaffoldTests(unittest.TestCase):
+    """``cmd_run`` goes through ``sim/harness/klt_request.py`` (issue #590):
+    the no-whole-grid-local rule is the helper's, and the command line it
+    builds is the one the tool always built. No klt is ever invoked."""
+
+    def test_a_local_run_of_the_whole_grid_is_refused(self):
+        def no_klt(*_a, **_k):
+            raise AssertionError("subprocess must not be reached on a refused run")
+
+        with mock.patch("subprocess.call", no_klt):
+            self.assertEqual(sr.cmd_run("nominal-lowf", "/never-created-outdir", "local"), 2)
+
+    def test_a_batch_run_builds_the_identical_klt_command(self):
+        import tempfile
+
+        seen = {}
+
+        def fake_call(cmd, stdout=None, stderr=None):
+            seen["cmd"] = cmd
+            return 5
+
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            with mock.patch("subprocess.call", fake_call):
+                rc = sr.cmd_run("nominal-lowf", str(out), "batch", "uvx --from klayout-tools==0.6.0 klt")
+        self.assertEqual(rc, 5)
+        self.assertEqual(seen["cmd"], [
+            "uvx", "--from", "klayout-tools==0.6.0", "klt", "sim",
+            str(sr.request_path("nominal-lowf")), "--backend", "batch",
+            "-o", str(out / "nominal-lowf"), "--format", "json"])
 
 
 class CliTests(unittest.TestCase):

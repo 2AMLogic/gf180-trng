@@ -34,10 +34,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import shlex
-import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from harness import klt_request as _kreq  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "sampler-array-fs-sf"
@@ -560,37 +561,17 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 def cmd_emit(check: bool) -> int:
-    bad = 0
-    TB_DIR.mkdir(parents=True, exist_ok=True)
-    for name, req in all_requests().items():
-        path = request_path(name)
-        text = render(req)
-        if check:
-            if not path.exists() or path.read_text() != text:
-                print(f"DRIFT: {path.relative_to(REPO_ROOT)} does not match the declared grid")
-                bad += 1
-        else:
-            path.write_text(text)
-            print(f"wrote {path.relative_to(REPO_ROOT)}")
-    if check and not bad:
-        print(f"ok: {len(REQUESTS)} requests match the declared grid")
-    return 1 if bad else 0
+    return _kreq.emit_requests(
+        ((request_path(name), render(req)) for name, req in all_requests().items()),
+        check, repo_root=REPO_ROOT,
+        ok=lambda: print(f"ok: {len(REQUESTS)} requests match the declared grid"))
 
 
 def cmd_run(name: str, outdir: str, backend: str, klt_cmd: str = "klt") -> int:
     if name not in REQUESTS:
         print(f"unknown request {name!r}; choices: {', '.join(REQUESTS)}", file=sys.stderr)
         return 2
-    out = Path(outdir)
-    out.mkdir(parents=True, exist_ok=True)
-    report = out / f"{name}.report.json"
-    cmd = [*shlex.split(klt_cmd), "sim", str(request_path(name)), "--backend", backend, "-o", str(out / name),
-           "--format", "json"]
-    print("running:", " ".join(cmd))
-    with open(report, "w") as fh, open(out / f"{name}.stderr.txt", "w") as err:
-        rc = subprocess.call(cmd, stdout=fh, stderr=err)
-    print(f"klt exit {rc}; report: {report}; stderr: {out / (name + '.stderr.txt')}")
-    return rc
+    return _kreq.run_klt_request(outdir, name, request_path(name), backend, klt_cmd)
 
 
 def main(argv: list[str] | None = None) -> int:
