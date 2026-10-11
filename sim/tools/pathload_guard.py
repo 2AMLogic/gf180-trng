@@ -30,22 +30,9 @@ from sim.tools.unused_names import ROOT, select_files, tracked_files
 HELPER = "sim/tools/pathload.py"
 NAME = "spec_from_file_location"
 
-#: Unmigrated files (issue #553, batches 2 and 3: layout/tests, sim/tests).
-ALLOWLIST = frozenset({
-    "layout/tests/test_block_geometry.py",
-    "layout/tests/test_digital_build_checks.py",
-    "layout/tests/test_digital_lvs_reference.py",
-    "layout/tests/test_digital_reports.py",
-    "layout/tests/test_digital_tap_distance.py",
-    "layout/tests/test_floorplan_erc.py",
-    "layout/tests/test_floorplan_netlist.py",
-    "layout/tests/test_gdsii.py",
-    "layout/tests/test_gen_sdf.py",
-    "layout/tests/test_mos_row.py",
-    "layout/tests/test_synth.py",
-    "layout/tests/test_tap_distance_ci_wiring.py",
-    "layout/tests/test_verify.py",
-})
+#: Unmigrated files (issue #553). Empty since batch 3 migrated the last of
+#: them (layout/tests); any new finding is an unallowlisted copy.
+ALLOWLIST = frozenset()
 
 
 def uses_loader(source: str, path: str = "<source>") -> bool:
