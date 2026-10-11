@@ -38,7 +38,6 @@ each of those too.
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -222,8 +221,10 @@ ROWS_NOT_COVERED: dict[str, str] = {
 }
 
 
-def _default_jobs() -> int:
-    return os.cpu_count() or 1
+# Deliberately small: the campaign is 153 ngspice points and usually runs on a
+# shared machine, so the default must not scale with the core count. Ask for
+# more explicitly with --jobs N (or JOBS=N through make).
+DEFAULT_JOBS = 2
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -233,9 +234,9 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--jobs", "-j", type=int, default=_default_jobs(),
+        "--jobs", "-j", type=int, default=None,
         help="parallel ngspice runs per testbench, forwarded to run_corners.py "
-        "-j (default: os.cpu_count())",
+        f"-j (default: {DEFAULT_JOBS}, not every core; pass --jobs N to use more)",
     )
     parser.add_argument(
         "--rows", nargs="+", metavar="ROW",
@@ -277,10 +278,13 @@ def _select(rows: list[str] | None) -> list[Campaign]:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    jobs_source = "default" if args.jobs is None else "--jobs"
+    if args.jobs is None:
+        args.jobs = DEFAULT_JOBS
     campaigns = _select(args.rows)
 
     if args.dry_run:
-        print(f"# make characterize -- dry run (jobs={args.jobs})")
+        print(f"# make characterize -- dry run (jobs={args.jobs}, {jobs_source})")
         for c in campaigns:
             print(f"\n# rows {','.join(c.rows)}: {c.note}")
             print("  " + " ".join(c.command(args.jobs)))
@@ -308,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return EXIT_ENVIRONMENT
 
-    print(f"\ncharacterize: {len(campaigns)} campaign step(s), jobs={args.jobs}\n")
+    print(f"\ncharacterize: {len(campaigns)} campaign step(s), jobs={args.jobs} ({jobs_source})\n")
 
     failures: list[str] = []
     for i, campaign in enumerate(campaigns, start=1):
