@@ -385,6 +385,37 @@ class BufferVariantBaselineTests(unittest.TestCase):
         self.assertIn("append-only", str(ctx.exception))
 
 
+class RecordResultBoundaryTests(unittest.TestCase):
+    """Issue #548: a Caveats/reproduce example never reaches the rollup."""
+
+    def test_caveat_example_does_not_replace_the_measurement(self):
+        text = (
+            "---\nrecord: fixture\nstatus: valid\ncorner:\n  process: tt\n"
+            "  temperature: 27\n  voltage: 3.30 V\n---\n\n"
+            "## Result\n\n- `p_total_w`: 1e-6\n\n"
+            "## How to reproduce\n\n```sh\n- `p_total_w`: 98\n```\n\n"
+            "## Caveats\n\n- Example form:\n- `p_total_w`: 99\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-ro-array-core-power-01.md"
+            path.write_text(text)
+            rec = pr.Record(path)
+        self.assertEqual(rec.values["p_total_w"], 1e-6)
+        self.assertEqual(rec.corner, "tt/27/3.30")
+
+    def test_duplicate_primary_key_is_rejected_with_record_name(self):
+        text = (
+            "---\nstatus: valid\ncorner:\n  process: tt\n  temperature: 27\n"
+            "  voltage: 3.30 V\n---\n\n## Result\n\n"
+            "- `p_total_w`: 1e-6\n- `p_total_w`: 2e-6\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-ro-array-core-power-01.md"
+            path.write_text(text)
+            with self.assertRaisesRegex(RuntimeError, "2026-01-01-ro-array-core-power-01: duplicate"):
+                pr.Record(path)
+
+
 # ---------------------------------------------------------------------------
 # 3. Liberty parser (no PDK needed)
 # ---------------------------------------------------------------------------

@@ -237,7 +237,7 @@ class GateTests(unittest.TestCase):
 
 def _frontmatter(status: str | None, *, extra: str = "") -> str:
     head = "---\n" + (f"status: {status}\n" if status is not None else "")
-    return head + extra + "---\n\n"
+    return head + extra + "---\n\n## Result\n\n"
 
 
 class LifecycleTestCase(unittest.TestCase):

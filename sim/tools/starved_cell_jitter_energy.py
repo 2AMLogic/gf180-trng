@@ -91,10 +91,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _record_parsing import (  # noqa: E402
     format_corner,
-    iter_seed_summaries,
+    iter_result_seed_summaries,
     parse_corner,
     parse_status,
-    parse_values,
+    parse_result_values,
 )  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
@@ -140,8 +140,10 @@ class Record:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.seeds = 1
-        self.values.update(parse_values(text))
-        for key, summary in iter_seed_summaries(
+        self.values.update(
+            parse_result_values(text, label=self.stem, error_cls=RecordError)
+        )
+        for key, summary in iter_result_seed_summaries(
             text, label=self.stem, error_cls=RecordError
         ):
             self.values[key] = summary.mean

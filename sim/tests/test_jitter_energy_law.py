@@ -37,7 +37,7 @@ def _record(temp_c: float, vdd: float, **values: float) -> str:
     bullets = "\n".join(f"- `{k}`: {v!r}" for k, v in values.items())
     return (
         "---\nstatus: valid\ncorner:\n  process: tt\n"
-        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n{bullets}\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n## Result\n\n{bullets}\n"
     )
 
 

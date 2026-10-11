@@ -86,7 +86,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _record_parsing import parse_values  # noqa: E402
+from _record_parsing import parse_result_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -255,7 +255,7 @@ class Record:
         text = path.read_text()
         self.path = path
         self.stem = path.stem
-        self.values = parse_values(text)
+        self.values = parse_result_values(text, label=self.stem, error_cls=RecordError)
         self.fields = {}
         for name, pattern in _FIELD.items():
             m = pattern.search(text)

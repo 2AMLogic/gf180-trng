@@ -46,7 +46,7 @@ def array_record_text(*, period: float, temp_c: float = 27.0, vdd: float = 3.3,
     body = "\n".join(f"- `{k}`: {v!r}" for k, v in bullets.items())
     return (
         "---\nstatus: valid\ncorner:\n  process: tt\n"
-        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n{body}\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n## Result\n\n{body}\n"
     )
 
 
