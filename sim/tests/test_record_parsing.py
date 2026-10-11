@@ -29,6 +29,7 @@ Everything here is stdlib-only: no ngspice and no PDK.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -222,6 +223,51 @@ class SeedSummaryTests(unittest.TestCase):
 
     def test_requires_sd_clause(self) -> None:
         self.assertEqual(list(iter_seed_summaries("- `k`: mean 1.0 over 3 seeds\n")), [])
+
+    def test_uppercase_exponent_and_zero_sd_accepted(self) -> None:
+        got = list(iter_seed_summaries("- `k`: mean 1.5E-3 over 2 seeds (sd 2E-4\n- `z`: mean 1 over 1 seeds (sd 0\n"))
+        self.assertEqual([tuple(s) for _, s in got], [(1.5e-3, 2, 2e-4), (1.0, 1, 0.0)])
+
+    def test_boundary_values_raise_with_label_and_key(self) -> None:
+        bad = {
+            "overflow mean": "- `k`: mean 1e999 over 3 seeds (sd 1\n",
+            "malformed sd": "- `k`: mean 1 over 3 seeds (sd 1.2.3\n",
+            "malformed mean": "- `k`: mean 1.2.3 over 3 seeds (sd 1\n",
+            "zero count": "- `k`: mean 1 over 0 seeds (sd 1\n",
+            "malformed count": "- `k`: mean 1 over x seeds (sd 1\n",
+            "negative sd": "- `k`: mean 1 over 3 seeds (sd -0.1\n",
+            "overflow sd": "- `k`: mean 1 over 3 seeds (sd 1e999\n",
+        }
+        for name, line in bad.items():
+            with self.subTest(name):
+                with self.assertRaises(KeyError) as cm:
+                    list(iter_seed_summaries(line, label="rec-01", error_cls=KeyError))
+                self.assertIn("rec-01", str(cm.exception))
+                self.assertIn("`k`", str(cm.exception))
+
+    def test_default_error_is_value_error(self) -> None:
+        with self.assertRaises(ValueError):
+            list(iter_seed_summaries("- `k`: mean 1 over 0 seeds (sd 1\n"))
+
+    def test_malformed_bullet_among_valid_ones_raises(self) -> None:
+        text = (
+            "- `a`: mean 1 over 3 seeds (sd 1\n"
+            "- `b`: mean 1 over 3 seeds (sd 1.2.3\n"
+            "- `c`: mean 1 over 3 seeds (sd 1\n"
+        )
+        with self.assertRaises(ValueError):
+            list(iter_seed_summaries(text))
+
+    def test_consumer_wraps_error_in_its_record_error(self) -> None:
+        import starved_cell_jitter_energy as sc
+
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-fixture-01.md"
+            path.write_text("## Result\n\n- `dtrip_v`: mean 1 over 3 seeds (sd -0.5\n")
+            with self.assertRaises(sc.RecordError) as cm:
+                sc.Record(path)
+        self.assertIn("2026-01-01-fixture-01", str(cm.exception))
+        self.assertIn("`dtrip_v`", str(cm.exception))
 
 
 class FieldTests(unittest.TestCase):
@@ -533,8 +579,57 @@ class ResultSectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"rec-d: malformed number `1e\+` in `x`"):
             parse_result_values(_record("- `x`: 1e+\n"), label="rec-d")
 
-    def test_committed_records_yield_one_result_section(self) -> None:
+    def test_malformed_seed_summary_names_record_and_key(self) -> None:
+        """The wrapper forwards ``label``/``error_cls`` to the #547 validator."""
+
+        class MyError(RuntimeError):
+            pass
+
+        text = _record("- `s`: mean 1 over 0 seeds (sd 0.1)\n")
+        with self.assertRaisesRegex(MyError, r"rec-e: .*`s`"):
+            iter_result_seed_summaries(text, label="rec-e", error_cls=MyError)
+
+    def test_committed_records_have_one_parsable_result_section(self) -> None:
+        """Durable structural check, valid for records added in future too.
+
+        Every committed record has exactly one ``## Result`` section, and
+        its measurement and seed-summary bullets parse without a duplicate
+        key or malformed number. This deliberately does not compare against
+        the whole-file :func:`parse_values`, so a future record that quotes
+        a ``- `key`: N`` example in its Caveats or reproduce section (the
+        case issue #548 exists to support) still passes.
+        """
         for path in sorted((SIM_DIR / "records").glob("*.md")):
+            with self.subTest(record=path.stem):
+                text = path.read_text()
+                result_section(text, label=path.stem)
+                parse_result_values(text, label=path.stem)
+                iter_result_seed_summaries(text, label=path.stem)
+
+    def test_frozen_audit_result_reader_matches_whole_file_reader(self) -> None:
+        """One-time corpus audit for the records that existed at #548.
+
+        For each of these records the Result-scoped readers return exactly
+        what the old whole-file readers did, i.e. moving consumers to the
+        Result section changed no recorded value. The audit set is frozen
+        (records dated on or before ``AUDIT_CUTOFF``, pinned by count) so a
+        later record with value-shaped examples outside its Result section
+        is not held to whole-file equivalence.
+        """
+        audit_cutoff = "2026-10-10"
+        audited_count = 1030
+        audited = [
+            path
+            for path in sorted((SIM_DIR / "records").glob("*.md"))
+            if path.stem[:10] <= audit_cutoff
+        ]
+        self.assertEqual(
+            len(audited),
+            audited_count,
+            "the frozen #548 audit set changed; sim/records/ is append-only "
+            f"and new records should be dated after {audit_cutoff}",
+        )
+        for path in audited:
             with self.subTest(record=path.stem):
                 text = path.read_text()
                 self.assertEqual(
@@ -544,7 +639,7 @@ class ResultSectionTests(unittest.TestCase):
                 )
                 self.assertEqual(
                     iter_result_seed_summaries(text, label=path.stem),
-                    list(iter_seed_summaries(text)),
+                    list(iter_seed_summaries(text, label=path.stem)),
                 )
 
 

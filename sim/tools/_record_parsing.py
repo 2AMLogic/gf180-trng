@@ -57,10 +57,15 @@ VALUE_RE = re.compile(
 )
 
 #: A multi-seed bullet "- `key`: mean X over N seeds (sd Y": groups are
-#: key, mean, seed count, standard deviation.
+#: key, mean, seed count, standard deviation (``None`` when the bullet has no
+#: ``(sd`` clause). Mean and sd are loose candidates like :data:`VALUE_RE`
+#: group 2, and the count is any non-blank run, so a malformed token is
+#: captured whole and rejected by :func:`iter_seed_summaries` instead of
+#: making the bullet silently vanish.
 SEED_SUMMARY_RE = re.compile(
-    rf"^- `([a-z0-9_]+)`:\s*mean\s+({NUMBER_PATTERN})\s+over\s+(\d+)\s+seeds"
-    rf"\s*\(sd\s+({NUMBER_PATTERN})",
+    r"^- `([a-z0-9_]+)`:\s*mean\s+([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*)"
+    r"\s+over\s+([^\s]+)\s+seeds"
+    r"(?:\s*\(sd\s+([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*))?",
     re.M,
 )
 
@@ -114,10 +119,45 @@ class SeedSummary(NamedTuple):
     sd: float
 
 
-def iter_seed_summaries(text: str) -> Iterator[tuple[str, SeedSummary]]:
-    """Every multi-seed bullet in ``text`` as ``(key, SeedSummary)``, in order."""
+def _finite_token(token: str, what: str, key: str, prefix: str, error_cls: type[Exception]) -> float:
+    if _NUMBER_TOKEN_RE.fullmatch(token) is None:
+        raise error_cls(f"{prefix}malformed {what} `{token}` in `{key}`")
+    number = float(token)
+    if not math.isfinite(number):
+        raise error_cls(f"{prefix}non-finite {what} `{token}` in `{key}`")
+    return number
+
+
+def iter_seed_summaries(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> Iterator[tuple[str, SeedSummary]]:
+    """Every multi-seed bullet in ``text`` as ``(key, SeedSummary)``, in order.
+
+    Mean and sd must be complete, finite numbers (``e``/``E`` exponent
+    allowed), the seed count a positive integer, and sd nonnegative (zero is
+    valid). A violation raises ``error_cls`` naming ``label`` and the
+    bullet's key. A ``mean X over N seeds`` bullet with no ``(sd`` clause is
+    a legacy shape (e.g. ``2026-07-31-nfet-mismatch-seed-01.md``) and is
+    skipped, as before, once its mean and count have been checked.
+    """
+    prefix = f"{label}: " if label else ""
     for m in SEED_SUMMARY_RE.finditer(text):
-        yield m.group(1), SeedSummary(float(m.group(2)), int(m.group(3)), float(m.group(4)))
+        key, mean_t, count_t, sd_t = m.groups()
+        mean = _finite_token(mean_t, "mean", key, prefix, error_cls)
+        if re.fullmatch(r"\d+", count_t) is None:
+            raise error_cls(f"{prefix}malformed seed count `{count_t}` in `{key}`")
+        n_seeds = int(count_t)
+        if n_seeds < 1:
+            raise error_cls(f"{prefix}seed count `{count_t}` must be >= 1 in `{key}`")
+        if sd_t is None:
+            continue
+        sd = _finite_token(sd_t, "sd", key, prefix, error_cls)
+        if sd < 0:
+            raise error_cls(f"{prefix}negative sd `{sd_t}` in `{key}`")
+        yield key, SeedSummary(mean, n_seeds, sd)
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +310,7 @@ def iter_result_seed_summaries(
 ) -> list[tuple[str, SeedSummary]]:
     """:func:`iter_seed_summaries` over the ``## Result`` section only."""
     region = _checked_region(text, label=label, error_cls=error_cls)
-    return list(iter_seed_summaries(region))
+    return list(iter_seed_summaries(region, label=label, error_cls=error_cls))
 
 
 def field(
