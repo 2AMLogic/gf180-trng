@@ -20,7 +20,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import corners, pdk_models, report, runner, testbench  # noqa: E402
+from harness import corners, pdk_models, report, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
 
@@ -1344,3 +1344,88 @@ class InputSnapshotTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StartupSnapshotRecordTests(unittest.TestCase):
+    """#582: the start-up script the runs consumed is listed in raw.files and
+    the metadata digest is cross-checked against it. No PDK, no ngspice."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tb_dir = self.root / "tb" / "an-experiment"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps({"name": "an-experiment", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.tb = testbench.load(tb_dir)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.live = self.root / "live-spinit"
+        self.live.write_bytes(b"* captured\n")
+        with mock.patch.object(startup, "SPINIT_PATH", self.live):
+            self.snap = startup.capture()
+        self.live.write_bytes(b"echo EDITED\n")  # after capture, before publication
+
+    def _record(self, snapshot, stem="2026-07-31-an-experiment-01"):
+        raw_dir = self.root / "records" / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        (raw_dir / "d.spice").write_text("* deck\n")
+        (raw_dir / "d.log").write_text("m_vout = 1\n")
+        testbench.write_input_snapshots(self.tb, raw_dir)
+        if snapshot is not None:
+            startup.write_snapshot(snapshot, raw_dir)
+        results = [runner.RunResult(
+            point=self.point, seed=None, status="ok", measurements={"vout": 1.0},
+            deck_name="d.spice", log_name="d.log",
+        )]
+        with mock.patch.object(startup, "SPINIT_PATH", self.live):
+            return report.build_record(
+                tb=self.tb, pdk=self.pdk, point=self.point, results=results,
+                ngspice="ngspice-46", repo_root=self.root, stem=stem,
+                completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+                wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": True},
+                startup_snapshot=snapshot,
+            )
+
+    def test_digest_and_raw_file_are_of_the_captured_bytes(self):
+        rec = self._record(self.snap)
+        self.assertEqual(rec["tool_ngspice_startup"]["spinit_sha256"], self.snap.sha256)
+        self.assertIn(("spinit", self.snap.sha256), rec["raw_files"])
+        self.assertEqual((Path(rec["raw_dir"]) / "spinit").read_bytes(), b"* captured\n")
+        text = report.render_frontmatter(rec)
+        self.assertIn("  ngspice_startup_spinit_snapshot: spinit", text)
+        self.assertEqual(report.verify_record(rec), [])
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+
+    def test_missing_or_changed_snapshot_is_detected(self):
+        rec = self._record(self.snap)
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        spinit = Path(rec["raw_dir"]) / "spinit"
+        spinit.write_bytes(b"echo TAMPERED\n")
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any(p.startswith("spinit:") for p in problems), problems)
+        spinit.unlink()
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any("spinit" in p and "not present" in p for p in problems), problems)
+
+    def test_inconsistent_metadata_digest_is_detected(self):
+        rec = self._record(self.snap)
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        bad = path.read_text().replace(self.snap.sha256, "0" * 64, 1)
+        problems = report.verify_startup_reference(bad, rec["raw_files"])
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("ngspice_startup_spinit_sha256", problems[0])
+        unlisted = [f for f in rec["raw_files"] if f[0] != "spinit"]
+        self.assertEqual(len(report.verify_startup_reference(path.read_text(), unlisted)), 1)
+
+    def test_legacy_formats_stay_valid(self):
+        rec = self._record(None, stem="2026-07-31-an-experiment-02")
+        self.assertNotIn("spinit_snapshot", rec["tool_ngspice_startup"])
+        text = report.render_frontmatter(rec)
+        self.assertNotIn("ngspice_startup_spinit_snapshot", text)
+        self.assertEqual(report.verify_startup_reference(text, rec["raw_files"]), [])
+        self.assertEqual(report.verify_startup_reference("---\nrecord: x\n---\n", []), [])

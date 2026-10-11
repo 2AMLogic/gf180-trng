@@ -7,6 +7,7 @@ PDK layout; actual ngspice execution is exercised by sim/selftest.sh instead.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -739,7 +740,13 @@ class StartupPolicyTests(unittest.TestCase):
                 self.assertEqual(cmd[at:at + 3], [runner.NGSPICE, "-n", "-b"])
                 self.assertEqual(cmd[0] == "/usr/bin/timeout", watchdog is not None)
                 env = call.kwargs["env"]
-                self.assertEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                # The child reads the run's own captured copy (#582), not the
+                # live checkout directory.
+                self.assertEqual(env["SPICE_SCRIPTS"], str(call.kwargs["cwd"].resolve()))
+                self.assertNotEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                self.assertEqual(
+                    (call.kwargs["cwd"] / "spinit").read_bytes(), startup.SPINIT_PATH.read_bytes()
+                )
                 self.assertNotIn("SPICE_LIB_DIR", env)
                 self.assertTrue(call.kwargs["start_new_session"])
 
@@ -753,6 +760,87 @@ class StartupPolicyTests(unittest.TestCase):
         self.assertEqual(meta["spinit_sha256"], startup.spinit_sha256())
         self.assertEqual(len(meta["spinit_sha256"]), 64)
         self.assertTrue((SIM_DIR.parent / meta["spinit"]).is_file())
+
+    def _tb_and_point(self, root):
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        return testbench.load(root / "tb"), point
+
+    def test_edit_after_capture_changes_neither_consumed_bytes_nor_digest(self):
+        """#582: every launch (both watchdog paths, several points) consumes
+        the bytes captured before the first one, and the recorded digest
+        identifies those bytes, whatever the live file does afterwards."""
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                live = root / "live-spinit"
+                live.write_bytes(b"* original\n")
+                tb, point = self._tb_and_point(root)
+                proc = mock.Mock(returncode=0)
+                proc.communicate.return_value = ("m_vout = 1.65\n", "")
+                proc.pid = 1
+                with mock.patch.object(startup, "SPINIT_PATH", live):
+                    snap = startup.capture()
+                live.write_bytes(b"echo EDITED_AFTER_CAPTURE\n")  # mid-sweep edit
+                calls = []
+                with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                        mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen, \
+                        mock.patch.object(startup, "SPINIT_PATH", live):
+                    for name in ("pt-a", "pt-b"):
+                        runner.run_one(
+                            tb, fake_pdk(root / "gf180mcuD"), point, root / name,
+                            timeout_s=9, startup_snapshot=snap,
+                        )
+                        calls.append(popen.call_args)
+                    meta = startup.metadata(snap)
+                for call, name in zip(calls, ("pt-a", "pt-b")):
+                    scripts = Path(call.kwargs["env"]["SPICE_SCRIPTS"])
+                    self.assertEqual(scripts, (root / name).resolve())
+                    self.assertEqual((scripts / "spinit").read_bytes(), b"* original\n")
+                self.assertEqual(meta["spinit_sha256"], hashlib.sha256(b"* original\n").hexdigest())
+                self.assertEqual(meta["spinit_snapshot"], "spinit")
+
+    def test_write_snapshot_refuses_a_changed_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = startup.Snapshot(b"* a\n")
+            startup.write_snapshot(snap, Path(tmp))
+            startup.write_snapshot(snap, Path(tmp))  # identical: no-op
+            (Path(tmp) / "spinit").write_bytes(b"* b\n")
+            with self.assertRaisesRegex(RuntimeError, "modified during the run"):
+                startup.write_snapshot(snap, Path(tmp))
+
+    def test_dut_include_may_not_take_the_snapshot_name(self):
+        self.assertIn(startup.SNAPSHOT_NAME, testbench.fixed_artifact_names())
+
+    @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; snapshot probe skipped")
+    def test_ngspice_reads_the_snapshot_not_the_live_script(self):
+        """PDK-free: a sentinel in the captured copy is echoed by ngspice;
+        a different sentinel in the live file (edited after capture) is not."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            live = root / "live-spinit"
+            live.write_text("echo SENTINEL_CAPTURED\n")
+            with mock.patch.object(startup, "SPINIT_PATH", live):
+                snap = startup.capture()
+            live.write_text("echo SENTINEL_LIVE_EDIT\n")
+            work = root / "work"
+            startup.write_snapshot(snap, work)
+            deck = work / "d.cir"
+            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            env = startup.environment(
+                {k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
+                scripts_dir=work.resolve(),
+            )
+            out = subprocess.run(
+                runner.ngspice_command(deck, None, 60), env=env, cwd=work,
+                capture_output=True, text=True, timeout=60,
+            ).stdout
+            self.assertIn("SENTINEL_CAPTURED", out)
+            self.assertNotIn("SENTINEL_LIVE_EDIT", out)
 
     @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; hostile-fixture probe skipped")
     def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
