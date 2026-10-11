@@ -6,6 +6,26 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #592**: Redact absolute parameterized PDK paths from model manifest diagnostics
+- **PR #588**: Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **PR #587**: Add load_module_from_path helper and migrate production loaders (batch 1 of #553)
+- **PR #580**: docs: correct what the Area row's 351.6 % figure is (#495)
+- **PR #579**: Control ambient ngspice start-up configuration in harness runs
+- **PR #578**: Reject DUT includes that collide with generated simulation artifacts
+- **PR #577**: Record the outcome of the LU.3/LU.4 controlled-DRM source search (#486)
+- **PR #576**: Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **PR #573**: Enforce harness ownership of stochastic simulation seed controls
+- **PR #572**: Reject nonpositive simulation timeout bounds before launching ngspice
+- **PR #567**: Deduplicate git blob SHA-1 helper onto sim/harness/report.py (#557)
+- **Issue #582** (closed): Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **Issue #575** (closed): Control ambient ngspice startup configuration in evidence-producing harness runs
+- **Issue #570** (closed): Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **Issue #569** (closed): Redact absolute parameterized PDK paths from model manifest diagnostics
+- **Issue #566** (closed): Enforce harness ownership of stochastic simulation seed controls
+- **Issue #565** (closed): Reject DUT include filenames that collide with generated simulation artifacts
+- **Issue #563** (closed): Reject nonpositive simulation timeout bounds before launching ngspice
+- **Issue #557** (closed): Deduplicate git blob SHA-1 helper: 4 copies across sim/harness and sim/tools
+- **Issue #495** (closed): Area row status text predates the composed layout
 - **PR #568**: Record PDK model-content identity in new simulation evidence
 - **PR #564**: Bound the default concurrency of sim/characterize.py
 - **PR #560**: ci: pin GitHub Actions to verified commit SHAs and guard against mutable refs
