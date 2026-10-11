@@ -163,8 +163,9 @@ name: CI
 #
 #   sim/tools/unused_names.py --check (unused import / local guard, #494)
 #   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
+#   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
-#       and so into this job's first step; both are stdlib-only and need no
+#       and so into this job's first step; all are stdlib-only and need no
 #       PDK. verify_markdown_links walks the git-tracked *.md files (outside
 #       the append-only sim/records/ tree and the installed .loom/, .claude/
 #       and .agents/ surfaces) and fails on any relative inline link or
