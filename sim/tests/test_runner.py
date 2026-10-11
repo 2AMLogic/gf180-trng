@@ -557,6 +557,64 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class TimeoutBoundValidationTests(unittest.TestCase):
+    """A zero timeout makes coreutils ``timeout(1)`` disable its bound, so
+    nonpositive (and non-integer) bounds are refused by the runner itself
+    before any file is created or any child is spawned (#563)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.workdir = root / "work"
+
+    def test_run_one_rejects_invalid_bounds_before_creating_or_spawning(self):
+        for bad in (0, -1, -3600, True, 1.5, "10", None):
+            with self.subTest(timeout_s=bad):
+                with mock.patch.object(runner.subprocess, "Popen") as popen:
+                    with self.assertRaises(ValueError) as ctx:
+                        runner.run_one(self.tb, self.pdk, self.point, self.workdir, timeout_s=bad)
+                self.assertIn("positive integer", str(ctx.exception))
+                popen.assert_not_called()
+                self.assertFalse(self.workdir.exists())
+
+    def test_run_point_rejects_invalid_bounds_before_running(self):
+        with mock.patch.object(runner, "run_one") as run_one:
+            with self.assertRaises(ValueError):
+                runner.run_point(self.tb, self.pdk, self.point, self.workdir, None, timeout_s=0)
+        run_one.assert_not_called()
+        self.assertFalse(self.workdir.exists())
+
+    def test_positive_bound_reaches_the_watchdog_command_unchanged(self):
+        proc = mock.Mock(returncode=0)
+        proc.communicate.return_value = ("m_vout = 1.65\n", "")
+        proc.pid = 1
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog):
+                with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                        mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen:
+                    result = runner.run_one(self.tb, self.pdk, self.point, self.workdir, timeout_s=17)
+                self.assertEqual(result.status, "ok")
+                cmd = popen.call_args.args[0]
+                if watchdog:
+                    self.assertIn("17s", cmd)
+                    guard = 17 + runner.KILL_GRACE_S + runner._GUARD_PAD_S
+                else:
+                    guard = 17
+                proc.communicate.assert_called_with(timeout=guard)
+
+    def test_default_bound_is_positive(self):
+        self.assertEqual(runner.validate_timeout_s(runner.DEFAULT_TIMEOUT_S), runner.DEFAULT_TIMEOUT_S)
+
+
 class InputCaptureDeckTests(unittest.TestCase):
     """Decks consume the SPICE bytes captured at load, not the live files
     (#515). A stub ngspice keeps this PDK- and simulator-free."""

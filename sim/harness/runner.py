@@ -373,6 +373,24 @@ def _timeout_result(
     )
 
 
+def validate_timeout_s(timeout_s: object) -> int:
+    """Return ``timeout_s`` if it is a strictly positive integer, else raise.
+
+    coreutils ``timeout(1)`` treats a zero duration as "no timeout", so a
+    zero bound would silently disable the independent OS-level watchdog
+    that survives this harness dying (#83); a negative bound is simply
+    invalid. Both are rejected up front, before anything is created or
+    launched, rather than being replaced by a default or treated as
+    unbounded.
+    """
+    if isinstance(timeout_s, bool) or not isinstance(timeout_s, int) or timeout_s <= 0:
+        raise ValueError(
+            f"timeout_s must be a positive integer number of seconds (got {timeout_s!r}); "
+            "a zero or negative bound would disable the per-run watchdog"
+        )
+    return timeout_s
+
+
 def run_one(
     tb: Testbench,
     pdk: Pdk,
@@ -406,7 +424,12 @@ def run_one(
     -- whether the watchdog's own default group-kill or this function's
     :func:`_kill_process_group` fallback -- reaches every descendant, not
     just the direct child.
+
+    Raises ``ValueError`` (before creating ``workdir`` or spawning anything)
+    if ``timeout_s`` is not a strictly positive integer; see
+    :func:`validate_timeout_s`.
     """
+    validate_timeout_s(timeout_s)
     workdir.mkdir(parents=True, exist_ok=True)
     stem = f"{point.corner_id}-run{run_index}" if seed is not None else point.corner_id
     deck_path = workdir / f"{stem}.spice"
@@ -593,6 +616,7 @@ def run_point(
     timeout_s: int = DEFAULT_TIMEOUT_S,
 ) -> list[RunResult]:
     """Run every seed (or the single deterministic run) for one PVT point."""
+    validate_timeout_s(timeout_s)
     return [
         run_one(tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s)
         for seed, index in plan_runs(tb, seeds)

@@ -480,6 +480,86 @@ class InvalidPlanRejectionTests(RunIntegrityTests):
         self.assertEqual(len(list(self.work_dir.glob("*/run-*"))), 1)
 
 
+class NonpositiveTimeoutRejectionTests(RunIntegrityTests):
+    # Inherits only the fixture; the parent's own tests run in their class.
+    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
+    test_a_second_writer_clobbering_raw_output_fails_the_run = None
+    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
+
+    """``--timeout`` must be a strictly positive integer: coreutils
+    ``timeout(1)`` treats 0 as "no timeout", which would disable the
+    independent watchdog. An invalid bound is refused before PDK discovery,
+    record-stem reservation, or any simulator launch (#563).
+    """
+
+    def _assert_nothing_started(self, run_one, reserve, find_pdk):
+        run_one.assert_not_called()
+        reserve.assert_not_called()
+        find_pdk.assert_not_called()
+        raw = self.records_dir / report.RAW_DIRNAME
+        self.assertFalse(raw.exists() and any(raw.iterdir()))
+
+    def test_parser_rejects_nonpositive_and_non_integer_timeouts(self):
+        parser = cli.build_parser()
+        for bad in ("0", "-1", "abc", "1.5"):
+            with self.subTest(timeout=bad):
+                err = io.StringIO()
+                with redirect_stderr(err), self.assertRaises(SystemExit) as ctx:
+                    parser.parse_args(["tb", "--timeout", bad])
+                self.assertEqual(ctx.exception.code, 2)
+                self.assertIn("--timeout", err.getvalue())
+
+    def test_parser_keeps_default_and_accepts_positive_timeout(self):
+        parser = cli.build_parser()
+        self.assertEqual(parser.parse_args(["tb"]).timeout, runner.DEFAULT_TIMEOUT_S)
+        self.assertEqual(parser.parse_args(["tb", "--timeout", "7"]).timeout, 7)
+
+    def test_nonpositive_timeout_launches_nothing_and_allocates_nothing(self):
+        for bad in ("0", "-1"):
+            for mode in ([], ["--no-write"]):
+                for jobs in ("1", "2"):
+                    with self.subTest(timeout=bad, mode=mode or "write", jobs=jobs):
+                        with mock.patch.object(cli.runner, "run_one") as run_one, \
+                                mock.patch.object(cli, "find_pdk") as find_pdk, \
+                                mock.patch.object(cli.report, "reserve_record_stems",
+                                                  wraps=cli.report.reserve_record_stems) as reserve:
+                            err = io.StringIO()
+                            with redirect_stdout(io.StringIO()), redirect_stderr(err), \
+                                    self.assertRaises(SystemExit) as ctx:
+                                cli.main([str(self.tb_dir), "--corners", "tt", "--timeout", bad,
+                                          "-j", jobs, *mode])
+                        self.assertEqual(ctx.exception.code, 2)
+                        self.assertIn("positive integer", err.getvalue())
+                        self._assert_nothing_started(run_one, reserve, find_pdk)
+
+    def test_run_refuses_a_hand_built_namespace_with_nonpositive_timeout(self):
+        for bad in (0, -5):
+            with self.subTest(timeout=bad):
+                args = cli.build_parser().parse_args([str(self.tb_dir), "--corners", "tt"])
+                args.timeout = bad
+                with mock.patch.object(cli.runner, "run_one") as run_one, \
+                        mock.patch.object(cli, "find_pdk") as find_pdk, \
+                        mock.patch.object(cli.report, "reserve_record_stems") as reserve:
+                    err = io.StringIO()
+                    with redirect_stderr(err):
+                        status = cli.run(args)
+                self.assertEqual(status, cli.EXIT_ENVIRONMENT)
+                self.assertIn("positive integer", err.getvalue())
+                self._assert_nothing_started(run_one, reserve, find_pdk)
+
+    def test_positive_timeout_is_forwarded_to_every_run_serial_and_parallel(self):
+        for jobs in ("1", "2"):
+            with self.subTest(jobs=jobs):
+                self._install_runner()
+                status, _out, _err = self._run("--no-write", "--timeout", "42", "-j", jobs)
+                self.assertEqual(status, cli.EXIT_OK)
+                calls = cli.runner.run_one.call_args_list
+                self.assertTrue(calls)
+                self.assertTrue(all(c.kwargs["timeout_s"] == 42 for c in calls))
+                mock.patch.stopall()
+                self.setUp()
+
+
 class TimeoutSummaryTests(unittest.TestCase):
     """A corner ``runner.run_one`` reports as killed by the wall-clock bound
     (issue #83) must stand out in the summary and still leave a written
