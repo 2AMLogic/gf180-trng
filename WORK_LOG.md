@@ -6,6 +6,13 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #625**: test: skip changed-record end-to-end case when origin/main is not fetched
+- **PR #624**: test: pin RCT/APT cutoff boundaries in RTL equivalence tests
+- **PR #622**: test: require simulator-gated unit tests in the nightly
+- **Issue #621** (closed): test_report end-to-end case errors when origin/main is not fetched (nightly dispatched on a branch)
+- **Issue #620** (closed): RTL equivalence tests for rct_apt.v do not pin the APT cutoff boundary (>= vs > survives)
+- **Issue #618** (closed): Make tool-gated RTL/ngspice tests runnable-and-required in at least one CI environment (iverilog tests skip everywhere in CI today)
+- **Issue #614** (closed): Add unit tests for the shared layout generator check/main factories in layout/cells/_build_cli.py
 - **PR #619**: test: cover signoff publishers (refusals, --backend argv, publication fields)
 - **Issue #611** (closed): Add unit tests for the signoff publication scripts (publish_item7_analog, publish_combiner_sampler_pex) and dedupe their shared run_pex
 - **PR #616**: Reserve klt output destinations before submission (#610)
