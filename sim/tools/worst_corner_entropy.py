@@ -455,7 +455,7 @@ def _sampler_offset(
             f"no valid sim/records/*-sampler-dff-mc-offset-[0-9]*.md record at corner {corner!r}"
         )
     rec_path, text, vdd = candidates[-1]
-    dtrip = [s for key, s in iter_seed_summaries(text) if key == "dtrip_v"]
+    dtrip = [s for key, s in iter_seed_summaries(text, label=rec_path.stem, error_cls=RuntimeError) if key == "dtrip_v"]
     if not dtrip:
         raise RuntimeError(f"{rec_path.stem}: no dtrip_v seed-aggregate found")
     mean_v, n, sd_v = dtrip[0].mean, dtrip[0].n_seeds, dtrip[0].sd

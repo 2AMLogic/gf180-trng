@@ -141,7 +141,9 @@ class Record:
         self.sd: dict[str, float] = {}
         self.seeds = 1
         self.values.update(parse_values(text))
-        for key, summary in iter_seed_summaries(text):
+        for key, summary in iter_seed_summaries(
+            text, label=self.stem, error_cls=RecordError
+        ):
             self.values[key] = summary.mean
             self.seeds = summary.n_seeds
             self.sd[key] = summary.sd
