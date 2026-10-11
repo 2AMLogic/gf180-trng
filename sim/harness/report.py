@@ -88,7 +88,7 @@ def blob_sha(repo_root: Path, path: Path) -> str:
     return out or "unknown"
 
 
-def _git_blob_sha1(data: bytes) -> str:
+def git_blob_sha1(data: bytes) -> str:
     """Git blob SHA of ``data`` (what ``git hash-object`` yields), no subprocess."""
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
@@ -362,8 +362,8 @@ def build_record(
     input_snapshots = write_input_snapshots(tb, raw_dir)
     raw_files.extend(input_snapshots)
     if tb.netlist_bytes is not None:
-        testbench_sha = _git_blob_sha1(tb.netlist_bytes)
-        netlist_sha = _git_blob_sha1(tb.dut_netlist_bytes)
+        testbench_sha = git_blob_sha1(tb.netlist_bytes)
+        netlist_sha = git_blob_sha1(tb.dut_netlist_bytes)
     else:
         testbench_sha = blob_sha(repo_root, tb.netlist)
         netlist_sha = blob_sha(repo_root, tb.dut_netlist)
@@ -421,7 +421,7 @@ def build_record(
         "manifest_rel": _relpath(repo_root, tb.manifest_path),
         "manifest_snapshot": manifest_snapshot[0] if manifest_snapshot else "",
         "manifest_sha256": manifest_snapshot[1] if manifest_snapshot else "",
-        "manifest_sha": _git_blob_sha1(tb.manifest_bytes) if manifest_snapshot else "",
+        "manifest_sha": git_blob_sha1(tb.manifest_bytes) if manifest_snapshot else "",
         "testbench_snapshot": fragment_snapshot or "",
         "testbench_sha256": snapshot_digest.get(fragment_snapshot, ""),
         "netlist_snapshot": dut_snapshot or "",
