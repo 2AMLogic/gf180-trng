@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
+import json
 import platform
 import re
 import statistics
@@ -31,9 +32,10 @@ import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
-from . import runner
+from . import pdk_models, runner
 from .corners import PvtPoint
 from .pdk import Pdk
+from .pdk_models import ModelManifest
 from .runner import RunResult
 from .testbench import Testbench, write_input_snapshots
 
@@ -322,9 +324,15 @@ def build_record(
     git: dict,
     supersedes: str = "",
     timeout_s: int | None = None,
+    model_manifest: ModelManifest | None = None,
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
-    (testbench, PVT point) record."""
+    (testbench, PVT point) record.
+
+    ``model_manifest`` is the PDK model-content manifest (#562) captured
+    before the run; ``sim/run_corners.py`` passes the pre-run capture after
+    re-checking it. When omitted it is computed here from the live PDK.
+    """
     # "status" here is the record's append-only lifecycle state (valid vs.
     # superseded, per sim/README.md), not a pass/fail verdict on the
     # measurement -- a failed simulation is still an honestly recorded fact,
@@ -368,6 +376,15 @@ def build_record(
         testbench_sha = blob_sha(repo_root, tb.netlist)
         netlist_sha = blob_sha(repo_root, tb.dut_netlist)
     snapshot_digest = dict(input_snapshots)
+
+    # PDK model-content identity (#562): which model files, by PDK-relative
+    # path and SHA-256, the deck's .include/.lib entry points reach.
+    lib_sections = list(tb.extra_lib_sections or point.corner.sections)
+    if model_manifest is None:
+        model_manifest = pdk_models.manifest_for_deck(pdk, lib_sections)
+    models_path = write_model_manifest(model_manifest, raw_dir)
+    models_sha256 = sha256_file(models_path)
+    raw_files.append((models_path.name, models_sha256))
     fragment_snapshot = tb.fragment_snapshot_name if input_snapshots else None
     dut_snapshot = tb.dut_snapshot_name if input_snapshots else None
 
@@ -392,6 +409,12 @@ def build_record(
             f"{pdk.model_lib} (sections: "
             f"{' '.join(tb.extra_lib_sections or point.corner.sections)})"
         ],
+        "pdk_content_manifest": models_path.name,
+        "pdk_content_sha256": models_sha256,
+        "pdk_content_identity": model_manifest.identity,
+        "pdk_content_files": len(model_manifest.files),
+        "pdk_content_complete": model_manifest.complete,
+        "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
@@ -428,6 +451,14 @@ def build_record(
         "netlist_sha256": snapshot_digest.get(dut_snapshot, ""),
         "netlist_dependencies": [name for name, _ in tb.design_dependencies],
     }
+
+
+def write_model_manifest(manifest: ModelManifest, raw_dir: Path, name: str = "") -> Path:
+    """Write ``manifest`` as ``raw_dir/pdk-models.json`` (or ``name``)."""
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    path = raw_dir / (name or pdk_models.MANIFEST_NAME)
+    path.write_bytes(manifest.to_json_bytes())
+    return path
 
 
 def _relpath(repo_root: Path, path: Path) -> str:
@@ -483,6 +514,18 @@ def render_frontmatter(record: dict) -> str:
     ]
     for entry in record["pdk_models"]:
         lines.append(f"  - {entry}")
+    # Additive: records predating the model-content manifest (#562) have no
+    # ``pdk_content:`` block and stay valid as they are.
+    if record.get("pdk_content_sha256"):
+        lines += [
+            "pdk_content:",
+            f"  manifest_file: {record['pdk_content_manifest']}",
+            f"  sha256: {record['pdk_content_sha256']}",
+            f"  identity: {record['pdk_content_identity']}",
+            f"  file_count: {record['pdk_content_files']}",
+            f"  complete: {'true' if record['pdk_content_complete'] else 'false'}",
+            f"  problems: {len(record.get('pdk_content_problems') or [])}",
+        ]
     lines += [
         "",
         "tool:",
@@ -885,6 +928,7 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
     problems = verify_raw_files(raw_dir, raw_files, check_unlisted=check_unlisted)
     problems += verify_manifest_reference(text, raw_files)
     problems += verify_inputs_reference(text, raw_files)
+    problems += verify_pdk_content_reference(text, raw_files, raw_dir)
     return problems
 
 
@@ -968,4 +1012,74 @@ def verify_inputs_reference(text: str, raw_files: list[tuple[str, str]]) -> list
     for dep in [d.strip() for d in ref.get("netlist_dependencies", "").split(",") if d.strip()]:
         if dep not in listed:
             problems.append(f"inputs.netlist_dependencies {dep!r} is not listed in raw.files")
+    return problems
+
+
+def parse_pdk_content_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``pdk_content:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "pdk_content:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_pdk_content_reference(
+    text: str, raw_files: list[tuple[str, str]], raw_dir: Path | None = None
+) -> list[str]:
+    """The ``pdk_content`` block must agree with its manifest in raw.files.
+
+    The manifest's bytes are covered by the raw.files re-hash; this checks
+    the block names a listed file with the listed digest and -- when the raw
+    directory is available -- that the identity, file count and completeness
+    it declares are the ones recomputed from that manifest. Legacy records
+    without a ``pdk_content:`` block yield no problems.
+    """
+    ref = parse_pdk_content_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    name, digest = ref.get("manifest_file", ""), ref.get("sha256", "")
+    if not name or name not in listed:
+        return [f"pdk_content.manifest_file {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [f"pdk_content.sha256 {digest} != {listed[name]} recorded for {name} in raw.files"]
+    if raw_dir is None:
+        return []
+    path = raw_dir / name
+    if not path.is_file() or sha256_file(path) != listed[name]:
+        return []  # already reported by the raw.files re-hash
+    try:
+        doc = json.loads(path.read_text())
+    except (ValueError, UnicodeDecodeError) as exc:
+        return [f"pdk_content.manifest_file {name} is not valid JSON: {exc}"]
+    if not isinstance(doc, dict):
+        return [f"pdk_content.manifest_file {name} is not a JSON object"]
+    problems: list[str] = []
+    identity = pdk_models.identity_from_document(doc)
+    if ref.get("identity") != identity or doc.get("identity") != identity:
+        problems.append(
+            f"pdk_content.identity {ref.get('identity')} does not match {identity} "
+            f"recomputed from {name}"
+        )
+    files = doc.get("files") if isinstance(doc.get("files"), list) else []
+    if ref.get("file_count") != str(len(files)):
+        problems.append(
+            f"pdk_content.file_count {ref.get('file_count')} != {len(files)} listed in {name}"
+        )
+    doc_problems = doc.get("problems") if isinstance(doc.get("problems"), list) else []
+    complete = "true" if not doc_problems else "false"
+    if ref.get("complete") != complete or doc.get("complete") is not (complete == "true"):
+        problems.append(f"pdk_content.complete {ref.get('complete')} disagrees with {name}")
     return problems

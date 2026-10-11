@@ -15,7 +15,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
+from . import HARNESS_VERSION, corners as corners_mod, pdk_models, report, runner, testbench as tb_mod
 from .pdk import PdkNotFound, find_all_variant_dirs, find_pdk
 from .runner import NgspiceMissing
 
@@ -31,6 +31,9 @@ EXIT_ENVIRONMENT = 3
 # Records were written but their raw.files checksums no longer match the
 # files on disk -- the evidence is not trustworthy and must not be committed.
 EXIT_RECORD_CORRUPT = 4
+# A PDK model file the decks consume changed between the pre-run capture and
+# the pre-publication re-check (#562): the affected records are withheld.
+EXIT_PDK_MODELS_CHANGED = 5
 
 
 def _resolve_tb_path(argument: str) -> Path:
@@ -170,11 +173,34 @@ def _fmt(value) -> str:
     return str(value)
 
 
-def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
+def _deck_sections(tb, point) -> tuple[str, ...]:
+    """The model-library sections ``runner.compose_deck`` ``.lib``-includes."""
+    return tuple(tb.extra_lib_sections or point.corner.sections)
+
+
+def _model_caveats(manifest) -> list[str]:
+    caveats = [
+        f"PDK model identity (pdk_content) covers only the {len(manifest.files)} "
+        f"file(s) listed in {pdk_models.MANIFEST_NAME}, reached from the deck's "
+        ".include/.lib entry points; it was captured before the run and re-checked "
+        "before this record was written, so an edit made and reverted between "
+        "those two checks is not detected (see sim/README.md).",
+    ]
+    if not manifest.complete:
+        caveats.append(
+            "PDK model identity is INCOMPLETE -- references the scanner could not "
+            "follow: " + "; ".join(manifest.problems)
+        )
+    return caveats
+
+
+def _default_caveats(tb, point, jobs: int = 1, manifest=None) -> list[str]:
     caveats = [
         f"Single corner ({point.corner.name} / {point.vdd:.2f} V / {point.temp_c:g} C). "
         "Says nothing about any other corner.",
     ]
+    if manifest is not None:
+        caveats.extend(_model_caveats(manifest))
     if jobs > 1:
         caveats.append(
             f"Run concurrently (-j {jobs}); wall_time is the SUMMED per-run ngspice "
@@ -257,6 +283,15 @@ def run(args: argparse.Namespace) -> int:
 
     git = report.git_provenance(REPO_ROOT)
 
+    # PDK model-content identity (#562), captured once per distinct set of
+    # library sections BEFORE any simulator starts; each point is re-checked
+    # against it before its record is published (see _emit).
+    pre_manifests: dict[tuple[str, ...], pdk_models.ModelManifest] = {}
+    for point in points:
+        sections = _deck_sections(tb, point)
+        if sections not in pre_manifests:
+            pre_manifests[sections] = pdk_models.manifest_for_deck(pdk, sections)
+
     if not args.quiet:
         print(f"testbench : {tb.slug}" + (f"  ({tb.description})" if tb.description else ""))
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path})")
@@ -267,9 +302,19 @@ def run(args: argparse.Namespace) -> int:
         print(f"points    : {len(points)}")
         if seeds:
             print(f"seeds     : {seeds}")
+        for sections, manifest in pre_manifests.items():
+            state = (
+                "complete" if manifest.complete
+                else f"INCOMPLETE, {len(manifest.problems)} unfollowed reference(s)"
+            )
+            print(
+                f"models    : {manifest.identity}  ({len(manifest.files)} files, {state}; "
+                f"sections {' '.join(sections)})"
+            )
         print()
 
     overall_ok = True
+    models_changed: list[tuple[str, Path, list[str]]] = []
     written_paths: list[Path] = []
     written_records: list[dict] = []
 
@@ -335,10 +380,30 @@ def run(args: argparse.Namespace) -> int:
         # useless for the coverage/cost trade-offs sim/README.md wants it for.
         wall = sum(r.seconds for r in results)
         point_ok = all(r.status == "ok" for r in results)
+
+        # Re-check the model files before anything is published: a record
+        # citing a model identity ngspice may not have read is not evidence.
+        sections = _deck_sections(tb, point)
+        pre = pre_manifests[sections]
+        post = pdk_models.manifest_for_deck(pdk, sections)
+        changed = post.identity != pre.identity
+        if changed:
+            # Diagnostics stay beside the raw output; no record is written.
+            report.write_model_manifest(pre, workdirs[point_index])
+            report.write_model_manifest(
+                post, workdirs[point_index], pdk_models.CHANGED_MANIFEST_NAME
+            )
+            models_changed.append(
+                (point.corner_id, workdirs[point_index], pre.describe_differences(post))
+            )
+            point_ok = False
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
-            if point_ok:
+            if changed:
+                flag = "FAILED-PDK-CHANGED"
+                detail = "PDK model files changed during the run; record withheld"
+            elif point_ok:
                 flag = "ok  "
                 parts = []
                 for name in tb.measure:
@@ -357,15 +422,18 @@ def run(args: argparse.Namespace) -> int:
                 detail = first_failure.message if first_failure else "no runs"
             print(f"[{i:>3}/{len(points)}] {flag} {point.corner_id:<22} {detail}")
 
+        if changed:
+            return
         if not args.no_write:
             record = report.build_record(
                 tb=tb, pdk=pdk, point=point, results=results, ngspice=ngspice,
                 repo_root=REPO_ROOT, stem=stems[point_index], completed_utc=completed_utc,
                 wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
                 supersedes=args.supersedes, timeout_s=args.timeout,
+                model_manifest=pre,
             )
             path = report.write_record(
-                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs)
+                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs, pre)
             )
             written_paths.append(path)
             written_records.append(record)
@@ -392,6 +460,8 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_ENVIRONMENT
 
     print()
+    if models_changed:
+        _report_models_changed(models_changed)
     if args.no_write:
         print("evidence  : not recorded (--no-write)")
         print(f"scratch   : {scratch_root}  (retained; delete when no longer needed)")
@@ -404,6 +474,9 @@ def run(args: argparse.Namespace) -> int:
             _report_corrupt_records(corrupt)
             print("status    : FAIL (raw output does not match the recorded checksums)")
             return EXIT_RECORD_CORRUPT
+    if models_changed:
+        print("status    : FAIL (PDK model files changed during the run)")
+        return EXIT_PDK_MODELS_CHANGED
     print(f"status    : {'OK' if overall_ok else 'FAIL'}")
 
     return EXIT_OK if overall_ok else EXIT_CHECK_FAILED
@@ -431,6 +504,31 @@ def _verify_written_records(records: list[dict]) -> list[tuple[str, list[str]]]:
         if problems:
             corrupt.append((record["record"], problems))
     return corrupt
+
+
+def _report_models_changed(changed: list[tuple[str, Path, list[str]]]) -> None:
+    print(file=sys.stderr)
+    print(
+        f"error: PDK model files changed while {len(changed)} point(s) were "
+        "simulating; their records were NOT written. The model content captured "
+        "before the run no longer matches the installation, so the numbers cannot "
+        "be tied to one model identity.",
+        file=sys.stderr,
+    )
+    for corner_id, workdir, differences in changed:
+        print(f"  {corner_id}: raw output retained in {_display_path(workdir)}", file=sys.stderr)
+        print(
+            f"    ({pdk_models.MANIFEST_NAME} = before the run, "
+            f"{pdk_models.CHANGED_MANIFEST_NAME} = at the re-check)",
+            file=sys.stderr,
+        )
+        for line in differences:
+            print(f"    - {line}", file=sys.stderr)
+    print(
+        "\nThe retained raw directories are diagnostics, not evidence: do not "
+        "commit them. Re-run once the PDK installation is stable.",
+        file=sys.stderr,
+    )
 
 
 def _report_corrupt_records(corrupt: list[tuple[str, list[str]]]) -> None:

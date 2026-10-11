@@ -178,6 +178,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
 | `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
 | `inputs.testbench_snapshot` / `inputs.testbench_sha256` / `inputs.netlist_snapshot` / `inputs.netlist_sha256` / `inputs.netlist_dependencies` | *Additive; records from `run_corners.py` after #515.* The SPICE fragment and DUT netlist bytes ngspice actually consumed, as snapshot files in the raw directory (`tb.fragment.spice`, `dut.netlist.spice`; when there is no separate `design_netlist` both names refer to the fragment) with their SHA-256, plus any sibling files the DUT netlist `.include`s. All are listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
+| `pdk_content.manifest_file` / `pdk_content.sha256` / `pdk_content.identity` / `pdk_content.file_count` / `pdk_content.complete` / `pdk_content.problems` | *Additive; records from `run_corners.py` after #562.* Content identity of the PDK model files the decks consumed: the manifest file kept in the raw directory (`pdk-models.json`, also listed in `raw.files`) and its SHA-256, the manifest's own `sha256:<hex>` identity, how many model files it covers, and whether every model reference could be followed (`problems` counts the ones that could not; the manifest lists them). See [PDK model-content identity](#pdk-model-content-identity-562). Records without this block predate the field and stay valid unchanged. |
 | `wall_time` | Wall-clock cost of the run. Makes future coverage/cost trade-offs honest. |
 
 If a required field genuinely does not apply, write the field with an
@@ -583,8 +584,8 @@ Include policy:
   Absolute paths, sub-directories, `..`, missing files and include cycles fail
   before any simulation, naming the file and line. `.lib` and the other
   harness-owned directives stay forbidden.
-- External PDK models stay under the existing PDK provenance policy; this
-  does not freeze a PDK installation.
+- External PDK models are not snapshotted; they keep the live-PDK policy,
+  with their content identity recorded as described next.
 
 To reproduce a historical run from snapshots, restore `tb.fragment.spice`,
 `dut.netlist.spice` and any listed dependencies over the originals named by
@@ -592,6 +593,76 @@ To reproduce a historical run from snapshots, restore `tb.fragment.spice`,
 evidence), together with the manifest snapshot above. A hand-built `Testbench`
 (not produced by `testbench.load`) has no captured bytes and keeps using the
 live files. Legacy records have no snapshots.
+
+### PDK model-content identity (#562)
+
+`pdk:` records the variant and the version label read from the installation's
+`SOURCES` file. That label cannot tell apart two installations whose model
+bytes differ (a locally patched model card, a partial update). Each record from
+`run_corners.py` therefore also carries a `pdk_content:` block and a
+`pdk-models.json` manifest in its raw directory.
+
+**What the identity covers, exactly.** The manifest starts from the two model
+entry points every composed deck names:
+
+- `libs.tech/ngspice/design.ngspice`, loaded whole by `.include`;
+- `libs.tech/ngspice/sm141064.ngspice`, loaded by `.lib <file> <section>` once
+  per selected section -- the corner's sections, or the testbench's
+  `extra_lib_sections` when it sets them. The sections are recorded in order.
+
+From the loaded content it follows every `.include`/`.inc <file>` and
+`.lib <file> <section>` reference, transitively. For a `.lib` reference only the
+named section (`.lib <name>` ... `.endl`) of the target file is followed. For an
+`.include` the whole file is followed except section definitions, which it
+defines but does not load. Each file reached is hashed in full (SHA-256) and
+listed by its path relative to the PDK variant directory. No host path is
+stored, so an identical set of files gives the same identity wherever the PDK is
+installed. The identity is the SHA-256 of the canonical JSON of the entry
+points, sections, file list and problem list. Files that only unselected
+sections reach are not covered. Nothing else in the installation is covered:
+other model files, `SOURCES` itself, the xschem and klayout trees, ngspice's
+own `spinit`/code models.
+
+**Incomplete identities.** These references make the manifest list a
+*problem*. The record then says `complete: false` with the problem count, and
+its Caveats list the problems:
+
+- a missing file, or a missing or unterminated section;
+- a parameterized or environment-dependent path (`{...}`, `$`, `~`);
+- an `.include` or `.lib` with an unexpected number of arguments;
+- a path that leaves the PDK variant directory (absolute paths are not echoed);
+- a nested section definition;
+- another file-loading directive (`.osdi`, `.hdl`, `.incl`, `.includex`,
+  `.libx`, `.load`), or a `.control`-block `source`/`osdi`/`pre_osdi`/
+  `codemodel`/`load` command.
+
+The scanner assumes a relative path resolves against the including file's
+directory, where ngspice looks first. ngspice's fallbacks (working directory,
+`sourcepath`) are not modelled.
+
+**Capture and re-check.** The manifest is computed for each distinct section
+set *before* any simulator starts, and printed as `models :` in the run header (unless `--quiet`).
+It is recomputed for each PVT point before that point's record is written. If
+the identity differs, that point's record is **not** written. Its raw
+directory keeps the decks, logs, the pre-run `pdk-models.json` and the
+re-check's `pdk-models.after-run.json`. The differing files are printed, and the
+run ends `status : FAIL (PDK model files changed during the run)` with exit 5.
+That raw directory is diagnostics, not evidence: do not commit it. Points
+re-checked before the change keep their records. `--no-write` runs perform the
+same check.
+
+**Limit.** This is provenance, not a frozen installation. The models are still
+read live by ngspice. An edit made and reverted entirely between the pre-run
+capture and the re-check is not detected, and neither is a change that ngspice
+picks up through a path the scanner does not follow (listed as a problem when
+it is visible in the files).
+
+**Verification.** `pdk-models.json` is in `raw.files`, so
+`verify_record_checksums.py` flags any change to it. It also flags a
+`pdk_content.sha256` that disagrees with the `raw.files` entry, and an
+`identity`, `file_count` or `complete` value that disagrees with the
+recomputation from the manifest. Legacy records have no `pdk_content:` block
+and are not affected.
 
 ### Checking that evidence stays append-only
 
