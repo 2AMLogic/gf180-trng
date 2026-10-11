@@ -688,7 +688,25 @@ class ChangedRecordDiscoveryTests(unittest.TestCase):
 
     def test_changed_records_that_exist_are_reported_as_existing(self):
         """End-to-end against the real repo: whatever this branch added must
-        resolve to files on disk, never to a doubled `sim/sim/...` path."""
+        resolve to files on disk, never to a doubled `sim/sim/...` path.
+
+        Needs a local `origin/main` to diff against. That is an environment
+        precondition, not the behaviour under test: a shallow single-branch
+        checkout or a clone without an `origin` remote lacks it (#621). Skip
+        then, unless the strict switch (`REQUIRE_RTL_TOOLS=1`, set by the
+        nightly, which fetches full history) is on -- there a missing ref is
+        a broken environment and must fail rather than hide the check."""
+        have_base = (
+            subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet", "origin/main^{commit}"],
+                cwd=self.vrc.REPO_ROOT,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
+        if not have_base and os.environ.get("REQUIRE_RTL_TOOLS") != "1":
+            self.skipTest("origin/main is not fetched; cannot diff changed records")
         for path in self.vrc._changed_records("origin/main"):
             with self.subTest(path=str(path)):
                 self.assertTrue(path.is_file(), f"discovered a path that does not exist: {path}")
