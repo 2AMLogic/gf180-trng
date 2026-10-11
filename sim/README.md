@@ -87,6 +87,40 @@ In ngspice-46 a later competing option line is ignored, and a control-block
 `setseed` overrides the seed. That experiment also found that `trnoise`
 waveforms do not repeat under the same seed (#574).
 
+### What a transient-noise seed reproduces (#574, DR-0031)
+
+On the ngspice-46 build measured in
+[`tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/`](tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/README.md),
+the seed does **not** reproduce `trnoise` waveforms. Two processes with the
+same seed shared none of 16 noise samples under the harness start-up policy.
+The same held with `setseed` or `set rndseed` in an explicitly supplied
+`spinit`, with `setseed` in a user `.spiceinit` (the manual's suggestion)
+and with a control-block `setseed`. The noise followed the simulator's
+process id instead. The same seed did reproduce the `agauss` parameter and
+control-language draws. Other ngspice builds have not been measured.
+[DR-0031](../spec/decision-records/DR-0031-transient-noise-reproducibility.md)
+sets the contract that follows:
+
+- **Seeds are still required** and still owned by the harness; rule 2 and
+  the checks above are unchanged. For a transient-noise run the seeds fix
+  the non-`trnoise` random draws and identify the runs.
+- **Replay means deck and configuration, not waveform.** Re-running a
+  `tran-noise` record's commands at its `repo_commit` with its snapshots
+  rebuilds the same decks, PVT point and start-up configuration, but draws
+  fresh `trnoise` noise. Its numbers are a new sample and will differ from
+  the record's. New `tran-noise` records carry a `reproduction` block and
+  say this in "How to reproduce". Deterministic and `mc` records do not:
+  no limit was measured for them.
+- **Distinct seeds do not make the noise distinct.** Runs get different
+  noise because each is a separate ngspice process. Neither the seeds nor
+  the experiment establish that runs are statistically independent.
+- **Statistical repeatability is a separate claim.** Saying a re-run agrees
+  with a record within its spread needs its own tolerance and evidence. It
+  is not demonstrated here.
+
+Records written before DR-0031 have no `reproduction` block and are not
+edited. Read their "How to reproduce" sections under this contract.
+
 Everything below is mechanics in service of those two rules.
 
 ---
@@ -194,6 +228,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `analysis.noise_params` | For `tran-noise`: `NOISETSTEP` / `NOISEFMAX` / equivalent, verbatim. |
 | `analysis.runs` | Number of independent runs aggregated into this record. |
 | `seeds` | **Every** seed used, in run order. Required whenever the analysis is stochastic; write `seeds: n/a (deterministic analysis)` otherwise. |
+| `reproduction.scope` / `reproduction.trnoise_waveform_replay` / `reproduction.basis` / `reproduction.decision` | *Additive; `tran-noise` records from `run_corners.py` after #574.* What the "How to reproduce" commands replay: `deck-and-configuration`, with `trnoise_waveform_replay: false`, the tool experiment that measured it and the decision record that adopts it. See [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031). Records of other analysis types, and records written before #574, have no such block and stay valid unchanged. |
 | `raw.path` | Repo-relative path to the raw-output directory for this record. |
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
 | `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
@@ -212,7 +247,9 @@ indistinguishable from a forgotten one.
   claims.
 - **How to reproduce** — the exact command(s), runnable from the repo root,
   including the seed(s). Someone with the repo and ngspice must be able to
-  copy-paste this.
+  copy-paste this. For a `tran-noise` record the commands replay the deck
+  and configuration, not the `trnoise` waveforms, and the section says so
+  (see [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031)).
 - **Caveats** — what this run does *not* show (method limits, truncated
   accumulation time, known weak spots such as flicker-noise handling in
   transient noise). Stating a limit is not a weakness in the record; an

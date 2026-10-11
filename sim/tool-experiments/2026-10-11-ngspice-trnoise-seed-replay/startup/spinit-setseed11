@@ -1,0 +1,12 @@
+* Pinned ngspice system start-up script for evidence-producing harness runs.
+*
+* The harness points SPICE_SCRIPTS at this directory and passes -n, so the
+* installed system spinit, the user ~/.spiceinit and a work-directory
+* .spiceinit are not read (see sim/README.md, "ngspice start-up
+* configuration", and sim/tool-experiments/2026-10-11-ngspice-startup-config/).
+*
+* Deliberately empty of commands: no aliases, no code-model or OSDI loading.
+* Harness decks use built-in device models only. Changing this file changes
+* its SHA-256, which every new evidence record carries.
+echo STARTUP_SPINIT_SETSEED_11
+setseed 11

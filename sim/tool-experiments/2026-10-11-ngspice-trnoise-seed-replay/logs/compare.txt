@@ -1,0 +1,43 @@
+# Numerical comparison (printed values, numdgt=8)
+
+## H: harness policy (-n, SPICE_SCRIPTS at pinned spinit), .option seed only
+- H_seed11_run1: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-5.2961875e-01', '-9.4028679e-01', '1.16268618e+00', '-1.6743707e+00']
+- H_seed11_run2: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-5.3054054e-01', '1.33958508e-01', '-1.1456968e+00', '-6.0687141e-01']
+- H_seed12: exit=0 sentinels=none p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['3.59725736e-01', '-6.4433640e-01', '1.40620517e+00', '1.26395012e+00']
+- same seed, two processes: v(n1) equal at 0 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 0 of 16 samples; p0 equal=False; g equal=False
+
+## S: harness policy, isolated spinit adds 'setseed N'
+- S_spinit_setseed11_run1: exit=0 sentinels=['STARTUP_SPINIT_SETSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['1.10633970e+00', '-1.7285744e-01', '4.45475134e-01', '-9.8317783e-01']
+- S_spinit_setseed11_run2: exit=0 sentinels=['STARTUP_SPINIT_SETSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-1.0585648e+00', '-1.7528834e+00', '-1.6604823e+00', '7.99833053e-01']
+- S_spinit_setseed12: exit=0 sentinels=['STARTUP_SPINIT_SETSEED_12'] p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['1.57543813e+00', '2.16583864e-01', '-1.9255456e+00', '9.99584436e-01']
+- same seed, two processes: v(n1) equal at 0 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 0 of 16 samples; p0 equal=False; g equal=False
+
+## R: harness policy, isolated spinit adds 'set rndseed=N'
+- R_spinit_rndseed11_run1: exit=0 sentinels=['STARTUP_SPINIT_RNDSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['1.28188492e-01', '1.38195445e+00', '2.36120731e-01', '2.23708887e+00']
+- R_spinit_rndseed11_run2: exit=0 sentinels=['STARTUP_SPINIT_RNDSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['1.47116538e+00', '-6.9505033e-01', '4.78370264e-01', '-2.0102647e+00']
+- R_spinit_rndseed12: exit=0 sentinels=['STARTUP_SPINIT_RNDSEED_12'] p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['6.94360162e-02', '1.25656041e+00', '6.25296023e-01', '-1.4729522e+00']
+- same seed, two processes: v(n1) equal at 0 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 0 of 16 samples; p0 equal=False; g equal=False
+
+## U: manual 11.3: '.spiceinit' with 'setseed N' read as user init (no -n)
+- U_userinit_setseed11_run1: exit=0 sentinels=['STARTUP_USERINIT_SETSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['1.07513424e+00', '-3.9527592e-01', '-7.5992478e-01', '-1.6013330e+00']
+- U_userinit_setseed11_run2: exit=0 sentinels=['STARTUP_USERINIT_SETSEED_11'] p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-4.0816606e-01', '-6.1255379e-01', '-1.4523187e+00', '7.93410273e-02']
+- U_userinit_setseed12: exit=0 sentinels=['STARTUP_USERINIT_SETSEED_12'] p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['-1.1002510e+00', '-2.7312758e-01', '4.76073842e-01', '-1.8782987e+00']
+- same seed, two processes: v(n1) equal at 0 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 0 of 16 samples; p0 equal=False; g equal=False
+
+## C: harness policy, control block 'setseed N' before tran
+- C_ctl_setseed11_run1: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-1.0111393e+00', '-5.5348687e-01', '-1.5720809e+00', '1.40983611e-01']
+- C_ctl_setseed11_run2: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['-8.5322503e-01', '7.82620478e-01', '-4.2255815e-01', '1.35111686e+00']
+- C_ctl_setseed12: exit=0 sentinels=none p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['9.39703253e-01', '8.83913911e-01', '6.29899420e-01', '-1.2305680e+00']
+- same seed, two processes: v(n1) equal at 0 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 0 of 16 samples; p0 equal=False; g equal=False
+
+## P: harness policy inside a new PID namespace (diagnostic, not a control)
+- P_pidns_seed11_run1: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['6.63511854e-01', '7.22975338e-01', '-8.4314039e-01', '-4.3612689e-02']
+- P_pidns_seed11_run2: exit=0 sentinels=none p0=3.48538000e-01 g=['3.48537837e-01', '2.16137408e+00', '-6.7894073e-02'] v(n1)@1..4ns=['6.63511854e-01', '7.22975338e-01', '-8.4314039e-01', '-4.3612689e-02']
+- P_pidns_seed12: exit=0 sentinels=none p0=-1.1814000e+00 g=['-1.1814041e+00', '4.77968617e-01', '1.60282891e-01'] v(n1)@1..4ns=['6.63511854e-01', '7.22975338e-01', '-8.4314039e-01', '-4.3612689e-02']
+- same seed, two processes: v(n1) equal at 16 of 16 samples; p0 equal=True; g equal=True
+- seed 11 vs seed 12: v(n1) equal at 16 of 16 samples; p0 equal=False; g equal=False

@@ -202,9 +202,14 @@ def compose_deck(
     """Build the complete, self-contained ngspice deck for one PVT point.
 
     ``seed`` -- when given -- is emitted as ``.option seed=<seed>`` ahead of
-    the model include, so it governs every random draw in the run (device
-    mismatch, ``trnoise()`` sources, Monte Carlo skew). Required by the
-    harness for any testbench whose ``analysis_type`` is stochastic.
+    the model include. It governs the netlist-parameter draws (device
+    mismatch, Monte Carlo skew) and the control-language random functions.
+    It does **not** govern ``trnoise()`` sources: on the measured ngspice-46
+    build their white noise comes from a generator seeded from the process
+    id at start-up, and no tested seed or start-up control changes that
+    (``sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/``,
+    DR-0031). Required by the harness for any testbench whose
+    ``analysis_type`` is stochastic.
 
     ``snapshot_dir`` -- when given and ``tb`` carries bytes captured at load --
     makes the deck include the frozen snapshots in that directory (see
@@ -609,10 +614,13 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
             f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
             "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
         )
-    # Each seed is one independent realization; report.py summarizes the
-    # per-seed values as a sample (mean, stdev), so a repeated seed would be
-    # the same realization counted twice. Reject rather than deduplicate, so
-    # the requested and executed sample counts never silently differ.
+    # Each seed labels one run; report.py summarizes the per-seed values as
+    # a sample (mean, stdev), so a repeated seed would count the seeded draws
+    # of one realization twice. Reject rather than deduplicate, so the
+    # requested and executed sample counts never silently differ. Distinct
+    # seeds do not by themselves make trnoise() realizations distinct (they
+    # differ because each run is a separate ngspice process; DR-0031), and
+    # nothing here establishes statistical independence between runs.
     repeated = _repeated(seeds)
     if repeated:
         raise ValueError(
