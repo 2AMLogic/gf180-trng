@@ -325,5 +325,104 @@ class RawPathContainmentTests(_TempRepoCase):
         self.assertNotIn("Traceback", err)
 
 
+class OrphanInventoryTests(_TempRepoCase):
+    """Reverse check: tracked raw files that no record cites."""
+
+    def setUp(self):
+        super().setUp()
+        self.init_repo()
+
+    def commit_all(self):
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "x")
+
+    def stray(self, stem="2026-01-09-abandoned-01", name="out.log") -> str:
+        d = self.records / "raw" / stem
+        d.mkdir(parents=True)
+        (d / name).write_bytes(b"abandoned\n")
+        return f"sim/records/raw/{stem}/{name}"
+
+    def test_clean_corpus_passes(self):
+        self.write_record({"deck.cir": b"* deck\n"})
+        self.commit_all()
+        rc, out, err = self.run_cli([])
+        self.assertEqual(rc, 0, err)
+        self.assertIn("PASS: 1 record(s)", out)
+
+    def test_orphan_directory_fails_and_is_named(self):
+        self.write_record({"deck.cir": b"* deck\n"})
+        rel = self.stray()
+        self.commit_all()
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 1)
+        self.assertIn(rel, err)
+        self.assertIn("not listed in any record", err)
+        self.assertNotIn(f"FAIL {STEM}.md", err)
+        self.assertTrue((self.repo / rel).exists())  # never deleted
+
+    def test_extra_file_in_referenced_directory_fails(self):
+        self.write_record({"deck.cir": b"* deck\n"})
+        (self.raw_dir / "extra.log").write_bytes(b"x\n")
+        self.commit_all()
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 1)
+        self.assertIn(f"sim/records/raw/{STEM}/extra.log", err)
+
+    def test_untracked_in_progress_directory_passes(self):
+        self.write_record({"deck.cir": b"* deck\n"})
+        self.commit_all()
+        self.stray()  # on disk, never git added
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 0, err)
+
+    def test_staged_orphan_fails(self):
+        self.write_record({"deck.cir": b"* deck\n"})
+        rel = self.stray()
+        self.git("add", "-A")
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 1)
+        self.assertIn(rel, err)
+
+    def test_empty_record_corpus_with_tracked_raw_output_fails(self):
+        rel = self.stray()
+        self.git("add", "-A")
+        rc, out, err = self.run_cli([])
+        self.assertEqual(rc, 1)
+        self.assertIn(rel, err)
+        self.assertNotIn("no records to check", out)
+
+    def test_empty_corpus_without_raw_output_passes(self):
+        rc, out, _err = self.run_cli([])
+        self.assertEqual(rc, 0)
+        self.assertIn("no records to check", out)
+
+    def test_invalid_record_path_does_not_legitimise_tracked_file(self):
+        rel = self.stray()
+        (self.records / "2026-01-02-bad-01.md").write_text(
+            _record_text("sim/records/raw/../../elsewhere/", {"out.log": b"abandoned\n"})
+        )
+        self.git("add", "-A")
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 1)
+        self.assertIn(rel, err)
+
+    def test_partial_checks_do_not_claim_inventory_coverage(self):
+        record = self.write_record({"deck.cir": b"* deck\n"})
+        self.stray()
+        self.commit_all()
+        for argv in ([str(record)], ["--no-git"]):
+            rc, _out, err = self.run_cli(argv)
+            self.assertEqual(rc, 0, (argv, err))
+        with mock.patch.object(vrc, "_changed_records", return_value=[record]):
+            rc, _out, err = self.run_cli(["--changed"])
+        self.assertEqual(rc, 0, err)
+
+    def test_git_failure_still_fails_closed_exit_2(self):
+        shutil.rmtree(self.repo / ".git")
+        rc, _out, err = self.run_cli([])
+        self.assertEqual(rc, 2)
+        self.assertIn("git", err)
+
+
 if __name__ == "__main__":
     unittest.main()
