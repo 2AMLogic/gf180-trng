@@ -6,6 +6,32 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-10
 
+- **PR #540**: Consolidate duplicated result-bullet regexes onto the shared record parser
+- **PR #538**: Reject empty and non-finite PVT execution plans before simulation
+- **PR #536**: Reject unknown testbench analysis types at manifest load
+- **PR #533**: Include liveness and digital evidence in the Row D reproduction mapping
+- **PR #531**: Guard against unused imports and locals in npm run lint (#494)
+- **PR #530**: sim: reject non-finite ngspice measurements before declaring a run ok
+- **PR #525**: Remove tracked stale .loom/manifest.json.tmp
+- **PR #523**: ci: run nightly no-evidence-write assertion after earlier failures
+- **PR #521**: ci: bound ci.yml jobs with timeout-minutes (#519)
+- **PR #518**: Replace README status changelog with a short summary (#502)
+- **PR #517**: sim: reserve behavioral record stems before rendering raw artifacts
+- **Issue #537** (closed): Consolidate duplicated result-bullet regexes onto the shared record parser
+- **Issue #532** (closed): Reject empty and non-finite PVT execution plans before simulation
+- **Issue #534** (closed): Reject unknown testbench analysis types before stochastic seed planning
+- **Issue #528** (closed): Include required liveness power evidence in the Row D reproduction mapping
+- **Issue #494** (closed): Guard against unused imports and locals in npm run lint (recurring ruff F401/F841 cleanups)
+- **Issue #527** (closed): Reject overflowed non-finite ngspice measurements before declaring success
+- **Issue #524** (closed): Remove tracked .loom/manifest.json.tmp: stale install artifact matched by .gitignore
+- **Issue #526** (closed): Auditor Capability Request: Python 3 unavailable for local harness validation
+- **Issue #522** (closed): Run the nightly no-evidence-write assertion after verification failures
+- **Issue #519** (closed): Bound CI job runtime with timeout-minutes in ci.yml
+- **Issue #502** (closed): Replace the README status changelog paragraph with a short summary and relocate the history
+- **Issue #514** (closed): Reserve behavioral evidence stems before rendering raw artifacts
+
+### 2026-10-10
+
 - **PR #513**: sim: reject duplicate seeds and colliding PVT plans before allocation
 - **PR #512**: sim: snapshot the loaded testbench manifest with each run record
 - **PR #509**: sim: separate failed-run diagnostics from report summaries
