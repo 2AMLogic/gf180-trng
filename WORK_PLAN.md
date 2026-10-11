@@ -29,15 +29,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#574**: ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed
-- **#584**: test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46
-- **#590**: Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once
+- **#618**: Make tool-gated RTL/ngspice tests runnable-and-required in at least one CI environment (iverilog tests skip everywhere in CI today)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#606**: Record that trnoise waveforms are not seed-reproducible on ngspice-46 (#574)
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -59,15 +57,13 @@ Issues carrying `loom:curated`.
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#491**: Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures) *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
-- **#574**: ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed *(curated)*
-- **#584**: test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46 *(curated)*
-- **#590**: Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once *(curated)*
+- **#618**: Make tool-gated RTL/ngspice tests runnable-and-required in at least one CI environment (iverilog tests skip everywhere in CI today) *(curated)*
+- **#620**: RTL equivalence tests for rct_apt.v do not pin the APT cutoff boundary (>= vs > survives) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#601**: Add direct unit tests for layout/cells/_build_cli.py message contract *(architect)*
+- **#614**: Add unit tests for the shared layout generator check/main factories in layout/cells/_build_cli.py *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
-- **#603**: Remove dead functions clk_at, contract_rows, convergence_text (and dead local ctrl) *(hermit)*
 
 ## Epics
 
@@ -80,10 +76,10 @@ _None._
 | Operator merge-risk holds | 2 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 2 |
-| Curated | 12 |
-| Architect / Hermit proposals | 3 |
+| Curated | 11 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

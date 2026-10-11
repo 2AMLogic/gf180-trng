@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #619**: test: cover signoff publishers (refusals, --backend argv, publication fields)
+- **Issue #611** (closed): Add unit tests for the signoff publication scripts (publish_item7_analog, publish_combiner_sampler_pex) and dedupe their shared run_pex
 - **PR #616**: Reserve klt output destinations before submission (#610)
 - **PR #615**: chore: remove dead clk_at, contract_rows, convergence_text, unused ctrl
 - **PR #613**: test: pin the _build_cli.py message contract with direct unit tests
