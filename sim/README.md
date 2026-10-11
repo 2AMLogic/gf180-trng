@@ -182,6 +182,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `pdk` | PDK name and version/tag (e.g. `gf180mcuC @ <version>`). |
 | `pdk.models` | The corner model file(s) actually included. |
 | `tool.ngspice` | Full `ngspice -v` version string. |
+| `tool.ngspice_startup` / `tool.ngspice_startup_flags` / `tool.ngspice_startup_spinit` / `tool.ngspice_startup_spinit_sha256` | *Additive; records from `run_corners.py` after #575.* The ngspice start-up-configuration policy in force (`no-user-init+pinned-spinit/1`), its command-line flag (`-n`), and the repo path and SHA-256 of the pinned `spinit` used as the system script. See [ngspice start-up configuration](#ngspice-start-up-configuration-575). Records without these lines predate the field and stay valid unchanged. |
 | `tool.platform` | OS/arch the run executed on. |
 | `corner.process` | `tt` / `ss` / `ff` / `sf` / `fs` (as named by the PDK). |
 | `corner.voltage` | Supply(s) in volts, with the nominal noted. |
@@ -461,6 +462,39 @@ kept so the deck and log of a failing point can be inspected; it is
 git-ignored and is not evidence. Remove a run's directory yourself when you
 are done with it (`rm -rf sim/.work/<testbench>/run-XXXXXXXX`).
 
+## ngspice start-up configuration (#575)
+
+ngspice runs initialization scripts before the netlist, and they can change
+simulator behaviour. Evidence-producing harness runs therefore launch
+ngspice through one command/environment builder
+(`runner.ngspice_command` and `harness/startup.py`), shared by the
+watchdog and the no-`timeout(1)` fallback paths, with an explicit policy
+measured in
+[`tool-experiments/2026-10-11-ngspice-startup-config/`](tool-experiments/2026-10-11-ngspice-startup-config/README.md)
+(ngspice-42; see that README for what was and was not measured):
+
+| Start-up input (batch mode) | Control |
+|---|---|
+| Work-directory `.spiceinit` | `-n` |
+| User `~/.spiceinit` | `-n` |
+| System `spinit` | `-n` does **not** suppress it; `SPICE_SCRIPTS` is set to `sim/harness/ngspice_scripts/`, whose `spinit` is checked in and content-pinned |
+| `SPICE_LIB_DIR` | removed from the child environment (and overridden by `SPICE_SCRIPTS`) |
+
+The pinned `spinit` contains no commands: no aliases and no code-model or
+OSDI loading, so a testbench that needs an XSPICE code model or an OSDI
+device would fail loudly rather than inherit whatever the host loads. Its
+SHA-256 is recorded in every new evidence record (`tool.ngspice_startup_*`),
+so changing it is visible. Timeout, process-group and `cwd` handling are
+unchanged.
+
+Remaining ambient inputs, not controlled: other environment variables the
+simulator reads, the ngspice build itself (recorded as `tool.ngspice`), and
+behaviour on builds other than the one measured. `sim/tools/` scripts that
+launch ngspice on their own (for example `run_array_liveness_tap_phase.py`)
+do not go through this launcher and are outside this policy. Records minted
+before #575 did not state a policy; they are unchanged and make no claim
+either way.
+
 ## Hung and timed-out runs
 
 Every corner `run_corners.py` simulates is bounded by `--timeout` (default
@@ -631,6 +665,12 @@ Include policy:
   Absolute paths, sub-directories, `..`, missing files and include cycles fail
   before any simulation, naming the file and line. `.lib` and the other
   harness-owned directives stay forbidden.
+- An included file may not share a name with a file the harness writes into
+  the same raw directory: `tb.manifest.json`, `pdk-models.json`,
+  `pdk-models.after-run.json`, the fragment/DUT snapshots, or any planned
+  `<corner_id>.spice`/`.log` (`<corner_id>-run<N>.spice`/`.log` for seeded
+  runs). Such a plan is refused before any record or scratch directory is
+  allocated; the diagnostic names the include and suggests a rename.
 - External PDK models are not snapshotted; they keep the live-PDK policy,
   with their content identity recorded as described next.
 

@@ -32,11 +32,12 @@ import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
-from . import pdk_models, runner
+from . import pdk_models, runner, startup
 from .corners import PvtPoint
 from .pdk import Pdk
 from .pdk_models import ModelManifest
 from .runner import RunResult
+from .testbench import MANIFEST_SNAPSHOT_NAME as _MANIFEST_SNAPSHOT_NAME
 from .testbench import Testbench, write_input_snapshots
 
 RECORDS_DIRNAME = "records"
@@ -102,7 +103,21 @@ def sha256_file(path: Path) -> str:
 
 
 #: Name of the per-record copy of the loaded ``tb.json`` kept in the raw dir.
-MANIFEST_SNAPSHOT_NAME = "tb.manifest.json"
+MANIFEST_SNAPSHOT_NAME = _MANIFEST_SNAPSHOT_NAME
+
+
+def _write_idempotent(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path``; identical existing bytes are a no-op.
+
+    Different existing bytes raise ``RuntimeError`` and are left untouched.
+    """
+    if path.exists():
+        if path.read_bytes() != data:
+            raise RuntimeError(
+                f"{path}: refusing to overwrite an existing file with different content"
+            )
+        return
+    path.write_bytes(data)
 
 
 def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
@@ -116,7 +131,7 @@ def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
         return None
     raw_dir.mkdir(parents=True, exist_ok=True)
     path = raw_dir / MANIFEST_SNAPSHOT_NAME
-    path.write_bytes(tb.manifest_bytes)
+    _write_idempotent(path, tb.manifest_bytes)
     return MANIFEST_SNAPSHOT_NAME, sha256_file(path)
 
 
@@ -310,6 +325,20 @@ def _yaml_str(value: str) -> str:
     return value
 
 
+def _startup_lines(record: dict) -> list[str]:
+    """Additive ``tool`` lines for the ngspice start-up policy; absent for
+    records built without it (older callers, hand-built dicts)."""
+    meta = record.get("tool_ngspice_startup")
+    if not meta:
+        return []
+    return [
+        f"  ngspice_startup: {_yaml_str(meta['policy'])}",
+        f"  ngspice_startup_flags: {_yaml_str(meta['flags'])}",
+        f"  ngspice_startup_spinit: {_yaml_str(meta['spinit'])}",
+        f"  ngspice_startup_spinit_sha256: {meta['spinit_sha256']}",
+    ]
+
+
 def build_record(
     tb: Testbench,
     pdk: Pdk,
@@ -416,6 +445,7 @@ def build_record(
         "pdk_content_complete": model_manifest.complete,
         "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
+        "tool_ngspice_startup": startup.metadata(),
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
@@ -457,7 +487,7 @@ def write_model_manifest(manifest: ModelManifest, raw_dir: Path, name: str = "")
     """Write ``manifest`` as ``raw_dir/pdk-models.json`` (or ``name``)."""
     raw_dir.mkdir(parents=True, exist_ok=True)
     path = raw_dir / (name or pdk_models.MANIFEST_NAME)
-    path.write_bytes(manifest.to_json_bytes())
+    _write_idempotent(path, manifest.to_json_bytes())
     return path
 
 
@@ -530,6 +560,7 @@ def render_frontmatter(record: dict) -> str:
         "",
         "tool:",
         f"  ngspice: {_yaml_str(record['tool_ngspice'])}",
+        *_startup_lines(record),
         f"  platform: {_yaml_str(record['tool_platform'])}",
         "",
         "corner:",

@@ -8,6 +8,8 @@ PDK layout; actual ngspice execution is exercised by sim/selftest.sh instead.
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 import os
 import sys
 import tempfile
@@ -19,7 +21,7 @@ from unittest import mock
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import corners, runner, testbench  # noqa: E402
+from harness import corners, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
 
@@ -673,3 +675,122 @@ class InputCaptureDeckTests(unittest.TestCase):
         deck = runner.compose_deck(tb, self.pdk, self.points[0], snapshot_dir=self.root / "w")
         self.assertIn(str(self.frag), deck)
         self.assertNotIn("tb.fragment.spice", deck)
+
+
+class ArtifactCollisionTests(unittest.TestCase):
+    """run_one refuses a colliding DUT include before writing or launching."""
+
+    def test_run_one_refuses_before_any_write_or_launch(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            dutdir = root / "dutdir"
+            dutdir.mkdir()
+            (dutdir / "dut.spice").write_text('.include "tt_27c_3.30v.spice"\n')
+            (dutdir / "tt_27c_3.30v.spice").write_text("* dep\n")
+            tbd = root / "tb" / "x"
+            tbd.mkdir(parents=True)
+            (tbd / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+            (tbd / "tb.json").write_text(json.dumps({
+                "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+                "design_netlist": str(dutdir / "dut.spice"),
+            }))
+            tb = testbench.load(tbd)
+            point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+            workdir = root / "work"
+            with mock.patch.object(runner.subprocess, "Popen") as popen:
+                with self.assertRaises(ValueError) as ctx:
+                    runner.run_one(tb, fake_pdk(root / "pdk"), point, workdir)
+            self.assertIn("tt_27c_3.30v.spice", str(ctx.exception))
+            popen.assert_not_called()
+            self.assertFalse(workdir.exists())
+
+
+class StartupPolicyTests(unittest.TestCase):
+    """Issue #575: both launch paths enforce one explicit ngspice start-up
+    policy (``-n`` + pinned ``SPICE_SCRIPTS``), proven against hostile
+    initialization fixtures that live only in temporary directories."""
+
+    def _launch(self, watchdog):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        tb = testbench.load(root / "tb")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        proc = mock.Mock(returncode=0)
+        proc.communicate.return_value = ("m_vout = 1.65\n", "")
+        proc.pid = 1
+        with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen, \
+                mock.patch.dict(os.environ, {"SPICE_SCRIPTS": "/hostile", "SPICE_LIB_DIR": "/hostile"}):
+            runner.run_one(tb, fake_pdk(root / "gf180mcuD"), point, root / "work", timeout_s=9)
+        return popen.call_args
+
+    def test_both_launch_paths_carry_the_same_policy(self):
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog):
+                call = self._launch(watchdog)
+                cmd = call.args[0]
+                at = cmd.index(runner.NGSPICE)
+                self.assertEqual(cmd[at:at + 3], [runner.NGSPICE, "-n", "-b"])
+                self.assertEqual(cmd[0] == "/usr/bin/timeout", watchdog is not None)
+                env = call.kwargs["env"]
+                self.assertEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                self.assertNotIn("SPICE_LIB_DIR", env)
+                self.assertTrue(call.kwargs["start_new_session"])
+
+    def test_pinned_spinit_is_inert_and_its_hash_is_reported(self):
+        lines = [
+            ln for ln in startup.SPINIT_PATH.read_text().splitlines()
+            if ln.strip() and not ln.lstrip().startswith("*")
+        ]
+        self.assertEqual(lines, [])
+        meta = startup.metadata()
+        self.assertEqual(meta["spinit_sha256"], startup.spinit_sha256())
+        self.assertEqual(len(meta["spinit_sha256"]), 64)
+        self.assertTrue((SIM_DIR.parent / meta["spinit"]).is_file())
+
+    @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; hostile-fixture probe skipped")
+    def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for d in ("home", "work", "scripts"):
+                (root / d).mkdir()
+            (root / "home" / ".spiceinit").write_text("echo SENTINEL_USER\n")
+            (root / "work" / ".spiceinit").write_text("echo SENTINEL_WORK\n")
+            (root / "scripts" / "spinit").write_text("echo SENTINEL_SYSTEM\n")
+            deck = root / "work" / "d.cir"
+            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            hostile = {
+                **{k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
+                "HOME": str(root / "home"),
+                "SPICE_SCRIPTS": str(root / "scripts"),
+            }
+
+            def run(cmd, env, cwd):
+                return subprocess.run(
+                    cmd, env=env, cwd=cwd, capture_output=True, text=True, timeout=60
+                ).stdout
+
+            # Sanity: the fixtures are effective under ordinary batch mode
+            # (work-directory file shadows the user file; spinit comes from
+            # SPICE_SCRIPTS).
+            plain = run(["ngspice", "-b", str(deck)], hostile, root / "work")
+            self.assertIn("SENTINEL_WORK", plain)
+            self.assertIn("SENTINEL_SYSTEM", plain)
+            nowork = root / "nowork"
+            nowork.mkdir()
+            plain_user = run(["ngspice", "-b", str(deck)], hostile, nowork)
+            self.assertIn("SENTINEL_USER", plain_user)
+
+            # Controlled launch (command builder + environment builder).
+            cmd = runner.ngspice_command(deck, None, 60)
+            env = startup.environment(hostile)
+            for cwd in (root / "work", nowork):
+                out = run(cmd, env, cwd)
+                self.assertNotIn("SENTINEL", out)
+                self.assertIn("Circuit:", out)

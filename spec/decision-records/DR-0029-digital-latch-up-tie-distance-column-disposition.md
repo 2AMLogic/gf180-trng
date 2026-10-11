@@ -15,6 +15,10 @@ related: "#449 (this investigation; stays open), #448 (the measurement), #411 (a
 
 - 2026-10-10: Proposed. The source-confirmation criterion of #449 is **not
   met** (see "Evidence gap"). The original defect remains open.
+- 2026-10-11: Amended by
+  [DR-0030](DR-0030-digital-latch-up-source-confirmation-outcome.md), which
+  records the follow-up source search (#486): no controlled DRM revision was
+  obtainable, so the evidence gap below is unchanged.
 
 ## Context
 

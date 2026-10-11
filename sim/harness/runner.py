@@ -14,9 +14,16 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import startup
 from .corners import PvtPoint
 from .pdk import Pdk
-from .testbench import Testbench, validate_seed_ownership, write_input_snapshots
+from .testbench import (
+    Testbench,
+    run_artifact_names,
+    validate_artifact_namespace,
+    validate_seed_ownership,
+    write_input_snapshots,
+)
 
 NGSPICE = "ngspice"
 DEFAULT_TIMEOUT_S = 300
@@ -124,6 +131,20 @@ def _kill_process_group(pid: int) -> None:
         os.killpg(pgid, signal.SIGKILL)
     except ProcessLookupError:
         pass
+
+
+def ngspice_command(deck_path: Path, watchdog: str | None, timeout_s: int) -> list[str]:
+    """The one place the ngspice batch command line is built.
+
+    Both launch paths (OS watchdog and the no-``timeout(1)`` fallback) use
+    it, so they enforce the same start-up policy (:mod:`harness.startup`:
+    ``-n`` plus a pinned ``SPICE_SCRIPTS`` environment, applied by
+    :func:`harness.startup.environment` at spawn time).
+    """
+    base = [NGSPICE, *startup.batch_flags(), str(deck_path)]
+    if watchdog is None:
+        return base
+    return [watchdog, f"--kill-after={KILL_GRACE_S}s", f"{timeout_s}s", *base]
 
 
 def ngspice_version() -> str:
@@ -432,10 +453,11 @@ def run_one(
     :func:`validate_timeout_s`.
     """
     validate_timeout_s(timeout_s)
+    validate_artifact_namespace(tb, [(point.corner_id, seed, run_index)])
     workdir.mkdir(parents=True, exist_ok=True)
-    stem = f"{point.corner_id}-run{run_index}" if seed is not None else point.corner_id
-    deck_path = workdir / f"{stem}.spice"
-    log_path = workdir / f"{stem}.log"
+    deck_name, log_name = run_artifact_names(point.corner_id, seed, run_index)
+    deck_path = workdir / deck_name
+    log_path = workdir / log_name
     # Freeze the SPICE inputs captured at load into the corner's own
     # directory and compose the deck against those copies, never the
     # working-tree originals (which may change between corner launches).
@@ -443,13 +465,8 @@ def run_one(
     deck_path.write_text(compose_deck(tb, pdk, point, seed=seed, snapshot_dir=workdir))
 
     watchdog = timeout_bin()
+    cmd = ngspice_command(deck_path, watchdog, timeout_s)
     if watchdog is not None:
-        cmd = [
-            watchdog,
-            f"--kill-after={KILL_GRACE_S}s",
-            f"{timeout_s}s",
-            NGSPICE, "-b", str(deck_path),
-        ]
         # This harness process may die before the watchdog's own bound
         # elapses; pad the in-process guard well past it so the watchdog is
         # given the chance to act first, and this guard is only a fallback
@@ -459,7 +476,6 @@ def run_one(
         # No coreutils timeout(1)/gtimeout on PATH: fall back to the
         # in-process guard alone. It cannot survive this harness process
         # itself dying (see issue #83) -- `--check-env` warns about this.
-        cmd = [NGSPICE, "-b", str(deck_path)]
         guard_s = timeout_s
 
     started = time.monotonic()
@@ -470,6 +486,7 @@ def run_one(
             stderr=subprocess.PIPE,
             text=True,
             cwd=workdir,
+            env=startup.environment(),
             start_new_session=True,
         )
     except FileNotFoundError as exc:

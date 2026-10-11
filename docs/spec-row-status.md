@@ -309,6 +309,58 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
   137.7 % above: that figure predated issues #119/#135's analog-region
   resizes and was computed against the older 269.4 % baseline.
 
+### 2026-10-11 — what the 351.6 % figure is, and one superseded sentence (#495)
+
+Appended; the 2026-10-10 entry above is unchanged. This entry corrects its
+description of where the figure comes from. Source read:
+[`layout/floorplan/reports/area.json`](../layout/floorplan/reports/area.json)
+(`rollup.share_of_budget_pct` = 351.6), the footprint table in
+[`layout/floorplan/floorplan.py`](../layout/floorplan/floorplan.py)
+(`ASSEMBLED_RING_GDS`), and the committed digital place-and-route in
+[`layout/digital/`](../layout/digital/) (`trng_top.gds`,
+`reports/place_and_route.json`).
+
+**Superseded statement.** The sentence in the 2026-10-10 bullet above reading
+"It is an inventory estimate with a stated method — no synthesiser, placer or
+router has run on this block — so it is not a measurement" is no longer
+accurate for the current figure, and is superseded by this entry. It described
+the pre-layout inventory (the 0.06885 mm² / 137.7 % and 0.13918 mm² / 278.4 %
+numbers, which really are bottom-up estimates). The digital section has been
+synthesised, placed and routed since #170, and the current 351.6 % figure is
+not that inventory.
+
+**What the 351.6 % is.** In `area.json` the rollup's `floorplan_area_um2` is
+the sum of the guarded-region areas plus the declared 20 µm isolation channels:
+175 789.9 µm² = 167 271.3 µm² guarded regions + 8 518.6 µm² channels, against
+the 50 000 µm² budget. Each of the four regions is sized from the bounding box
+of its committed, DRC-checked assembled GDS, not from a cell-area estimate:
+the digital region from `layout/digital/trng_top.gds` (398.93 × 398.93 µm, the
+`FIFO_DEPTH = 2` place-and-route; 160 744.9 µm² guarded, 91 % of the total),
+the analog regions from their ring and `combiner_sampler` assemblies. So the
+figure is a footprint read from real committed layout geometry, composed by the
+floorplan; it is not an inventory estimate. The per-region `cell_area_um2`
+values (the standard-cell inventory, 34 447.2 µm² in total) are still
+estimates, but they do not enter the 351.6 %.
+
+**What it is not.** It is not a signoff die area. It is a sum of region areas
+(guard rings and channels included), not the area of one placed-and-routed
+die: the row bounding box, 934.4 × 416.7 µm, is reported separately; the
+digital block's die was sized from a utilisation input rather than minimised
+(see [`layout/digital/README.md`](../layout/digital/README.md#area)); and the
+reported total excludes the ring liveness monitor
+(`area.json` `excluded.ring_liveness_monitor_DR0016`, 2 849.4 µm² of cell
+area). No physical validation beyond the committed DRC/LVS reports is claimed.
+
+**Tag.** `missed` stays: the Status-tags table above allows it for Area when
+the figure is read from the regenerated floorplan rollup, and the figure does
+not satisfy `< 0.05 mm²`. The README Area tag already says "regenerated
+floorplan" and is not misleading, so it is unchanged. The target and
+[DR-0019] are untouched. The module docstring of `floorplan.py` and the
+`_comment` field of `area.json` still carry the older "no synthesiser, placer
+or router has been run" wording; they are generated or code-side text outside
+this docs-only change and describe the estimate method only, not the footprint
+sizing above.
+
 ## Operating envelope
 
 ### 2026-10-10 — relocated from `README.md` (#481)
