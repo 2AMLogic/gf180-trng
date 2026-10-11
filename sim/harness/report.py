@@ -32,7 +32,7 @@ import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
-from . import pdk_models, runner
+from . import pdk_models, runner, startup
 from .corners import PvtPoint
 from .pdk import Pdk
 from .pdk_models import ModelManifest
@@ -325,6 +325,20 @@ def _yaml_str(value: str) -> str:
     return value
 
 
+def _startup_lines(record: dict) -> list[str]:
+    """Additive ``tool`` lines for the ngspice start-up policy; absent for
+    records built without it (older callers, hand-built dicts)."""
+    meta = record.get("tool_ngspice_startup")
+    if not meta:
+        return []
+    return [
+        f"  ngspice_startup: {_yaml_str(meta['policy'])}",
+        f"  ngspice_startup_flags: {_yaml_str(meta['flags'])}",
+        f"  ngspice_startup_spinit: {_yaml_str(meta['spinit'])}",
+        f"  ngspice_startup_spinit_sha256: {meta['spinit_sha256']}",
+    ]
+
+
 def build_record(
     tb: Testbench,
     pdk: Pdk,
@@ -431,6 +445,7 @@ def build_record(
         "pdk_content_complete": model_manifest.complete,
         "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
+        "tool_ngspice_startup": startup.metadata(),
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
@@ -545,6 +560,7 @@ def render_frontmatter(record: dict) -> str:
         "",
         "tool:",
         f"  ngspice: {_yaml_str(record['tool_ngspice'])}",
+        *_startup_lines(record),
         f"  platform: {_yaml_str(record['tool_platform'])}",
         "",
         "corner:",
