@@ -17,7 +17,6 @@ Three groups, matching ``sim/tests/test_health_test.py``'s structure:
 from __future__ import annotations
 
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -32,10 +31,12 @@ HT_DIR = REPO_ROOT / "design" / "health_test"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(HT_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 import rct_apt as ht  # noqa: E402
 import ring_liveness as rl  # noqa: E402
 import ring_source_model as source_model  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 RTL = HT_DIR / "ring_liveness.v"
 RTL_TB = TB_DIR / "tb_rtl_equivalence.v"
@@ -166,10 +167,10 @@ class FaultInjectionTests(unittest.TestCase):
         self.assertEqual(result["any_events"], [])
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- RTL/model equivalence not checked here "
-    "(install iverilog to run it; see sim/tb/ring-liveness-fault-injection/README.md)",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- RTL/model equivalence not checked here "
+           "(install iverilog to run it; see sim/tb/ring-liveness-fault-injection/README.md)",
 )
 class RtlEquivalenceTests(unittest.TestCase):
     """The RTL must reproduce the behavioural model pulse for pulse.

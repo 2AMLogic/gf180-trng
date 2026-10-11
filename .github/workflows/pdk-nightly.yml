@@ -17,6 +17,11 @@ name: PDK nightly
 # to xschem and resolves the gf180mcu xschem symbol library through the PDK, so
 # it cannot run on the PR path.
 #
+# The unit-test suite (`npm run test`) runs here too, with Icarus Verilog
+# installed and REQUIRE_RTL_TOOLS=1 set, so its RTL equivalence and ngspice
+# probe tests -- which skip on the PR path for want of those tools -- must run
+# rather than skip (#618; see the step's own comment).
+#
 # It has no `push` / `pull_request` trigger by construction: a pull request
 # must never block on a source build plus a PDK download.
 #
@@ -503,6 +508,39 @@ jobs:
       - name: Tap-distance report regeneration guard
         if: always()
         run: python3 layout/digital/tap_distance.py --check --require-tools
+
+      # The unit-test suite with its simulator-gated tests made mandatory
+      # (#618). The RTL/model equivalence and fault-injection classes in
+      # sim/tests/ need Icarus Verilog, and two runner probes need ngspice; on
+      # the PR path (ci.yml, stdlib-only, no installs) neither tool exists, so
+      # those tests skip there. This is the one environment where they must
+      # run: REQUIRE_RTL_TOOLS=1 makes sim/tests/_tool_gate.py fail, naming
+      # the missing tool, instead of skipping. ngspice is the pinned build put
+      # on PATH above.
+      #
+      # Icarus Verilog comes from the runner's distro, like xschem and for the
+      # same reason: the tests compare the RTL against the Python models
+      # cycle by cycle, not against recorded numerics, and use only plain
+      # `iverilog -g2012` compiles (the 13.0+ floor in
+      # sim/tb/digital-sta-power/README.md is for the SDF flows, which no unit
+      # test runs). The step prints the version it used.
+      #
+      # `if: always()` so an unrelated earlier failure (a PDK or klt step)
+      # does not hide an RTL regression.
+      - name: Install Icarus Verilog (RTL simulator for the unit tests)
+        id: iverilog
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog
+          iverilog -V 2>&1 | head -n 1
+
+      - name: Unit tests with simulator-gated tests required
+        if: always() && steps.iverilog.outcome == 'success'
+        env:
+          REQUIRE_RTL_TOOLS: "1"
+        run: npm run test
 
       # `if: always()` so the no-write contract is still enforced when an
       # earlier verification step failed (an unrelated failure must not hide

@@ -23,7 +23,13 @@ name: CI
 #
 #   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test`.
+#       `npm run test`. The tests that need an external simulator (the RTL
+#       equivalence classes need Icarus Verilog; two runner probes need
+#       ngspice) SKIP here, since this job installs nothing. They run
+#       strictly in pdk-nightly.yml, which installs both and sets
+#       REQUIRE_RTL_TOOLS=1 so a missing tool fails instead of skipping
+#       (#618). Every such gate goes through sim/tests/_tool_gate.py;
+#       sim/tests/test_tool_gate_discipline.py fails on one that does not.
 #
 #   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
