@@ -12,6 +12,7 @@ import contextlib
 import io
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -169,6 +170,154 @@ class RunTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 kreq.run_klt_request(self.outdir, "grid", self.req, "batch", cleanup=lambda: events.append("cleanup"))
         self.assertEqual(events, ["call", "cleanup"])
+
+
+class ReservationTests(unittest.TestCase):
+    """The output namespace is reserved before klt runs (issue #610)."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.req = self.root / "request-grid.json"
+        self.req.write_text("{}\n")
+        self.outdir = self.root / "out"
+        self.outdir.mkdir()
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _run(self, call=no_klt, **kw):
+        err = io.StringIO()
+        with mock.patch("subprocess.call", call), contextlib.redirect_stderr(err), \
+                contextlib.redirect_stdout(io.StringIO()):
+            rc = kreq.run_klt_request(self.outdir, "grid", self.req, "batch", **kw)
+        return rc, err.getvalue()
+
+    def test_occupied_destination_is_refused_and_prior_files_are_untouched(self):
+        report = self.outdir / "grid.report.json"
+        stderr = self.outdir / "grid.stderr.txt"
+        report.write_bytes(b'{"prior": 1}\n')
+        stderr.write_bytes(b"prior diagnostics\n")
+        unrelated = self.outdir / "other.report.json"
+        unrelated.write_bytes(b"other\n")
+        events = []
+        rc, msg = self._run(cleanup=lambda: events.append("cleanup"))
+        self.assertNotEqual(rc, 0)
+        self.assertIn("fresh output directory", msg)
+        self.assertEqual(report.read_bytes(), b'{"prior": 1}\n')
+        self.assertEqual(stderr.read_bytes(), b"prior diagnostics\n")
+        self.assertEqual(unrelated.read_bytes(), b"other\n")
+        self.assertEqual(events, ["cleanup"])
+
+    def test_a_lone_prior_stderr_file_is_also_occupied(self):
+        stderr = self.outdir / "grid.stderr.txt"
+        stderr.write_bytes(b"prior\n")
+        rc, _ = self._run()
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(stderr.read_bytes(), b"prior\n")
+        self.assertFalse((self.outdir / "grid.report.json").exists(),
+                         "a refused run must not leave a half reservation behind")
+
+    def test_backend_output_without_a_response_is_occupied(self):
+        product = self.outdir / "grid.corners.csv"
+        product.write_bytes(b"backend\n")
+        rc, msg = self._run()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("grid.corners.csv", msg)
+        self.assertEqual(product.read_bytes(), b"backend\n")
+        self.assertEqual(sorted(p.name for p in self.outdir.iterdir()), ["grid.corners.csv"])
+
+    def test_backend_output_directory_is_occupied(self):
+        (self.outdir / "grid").mkdir()
+        rc, _ = self._run()
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(sorted(p.name for p in self.outdir.iterdir()), ["grid"])
+
+    def test_a_sibling_request_name_does_not_collide(self):
+        (self.outdir / "grid2.report.json").write_bytes(b"x")
+        (self.outdir / "other.report.json").write_bytes(b"y")
+        rc, _ = self._run(call=lambda cmd, stdout=None, stderr=None: 0)
+        self.assertEqual(rc, 0)
+
+    def test_fresh_submission_keeps_the_current_filenames(self):
+        def fake_call(cmd, stdout=None, stderr=None):
+            stdout.write('{"ok": true}\n')
+            stderr.write("note\n")
+            return 0
+
+        rc, _ = self._run(call=fake_call)
+        self.assertEqual(rc, 0)
+        self.assertEqual((self.outdir / "grid.report.json").read_text(), '{"ok": true}\n')
+        self.assertEqual((self.outdir / "grid.stderr.txt").read_text(), "note\n")
+
+    def test_failure_before_subprocess_startup_keeps_diagnostics_and_a_later_run_is_refused(self):
+        calls = []
+
+        def missing(cmd, stdout=None, stderr=None):
+            calls.append(cmd)
+            raise FileNotFoundError(2, "No such file or directory: 'klt'")
+
+        events = []
+        rc, _ = self._run(call=missing, cleanup=lambda: events.append("cleanup"))
+        self.assertEqual(rc, 127)
+        self.assertEqual(events, ["cleanup"])
+        self.assertIn("klt", (self.outdir / "grid.stderr.txt").read_text())
+        before = (self.outdir / "grid.stderr.txt").read_bytes()
+        rc2, _ = self._run()
+        self.assertNotEqual(rc2, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual((self.outdir / "grid.stderr.txt").read_bytes(), before)
+
+    def test_backend_failure_keeps_its_own_diagnostics_and_blocks_replacement(self):
+        def failing(cmd, stdout=None, stderr=None):
+            stderr.write("backend said no\n")
+            return 4
+
+        rc, _ = self._run(call=failing)
+        self.assertEqual(rc, 4)
+        rc2, _ = self._run()
+        self.assertNotEqual(rc2, 0)
+        self.assertEqual((self.outdir / "grid.stderr.txt").read_text(), "backend said no\n")
+
+    def test_concurrent_attempts_allow_at_most_one_submission(self):
+        n = 8
+        barrier = threading.Barrier(n)
+        gate = threading.Event()
+        calls, rcs = [], []
+        lock = threading.Lock()
+
+        def slow_call(cmd, stdout=None, stderr=None):
+            with lock:
+                calls.append(cmd)
+            gate.wait(5)
+            return 0
+
+        def worker():
+            barrier.wait()
+            with contextlib.redirect_stderr(io.StringIO()):
+                rc = kreq.run_klt_request(self.outdir, "grid", self.req, "batch")
+            with lock:
+                rcs.append(rc)
+                if len(rcs) == n - 1:
+                    gate.set()
+
+        with mock.patch("subprocess.call", slow_call), contextlib.redirect_stdout(io.StringIO()):
+            threads = [threading.Thread(target=worker) for _ in range(n)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(10)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(sorted(rcs).count(0), 1)
+        self.assertEqual(len([r for r in rcs if r != 0]), n - 1)
+
+    def test_cleanup_runs_on_the_local_grid_refusal_too(self):
+        events = []
+        with mock.patch("subprocess.call", no_klt), contextlib.redirect_stderr(io.StringIO()):
+            rc = kreq.run_klt_request(self.outdir, "grid", self.req, "local",
+                                      cleanup=lambda: events.append("cleanup"))
+        self.assertEqual(rc, 2)
+        self.assertEqual(events, ["cleanup"])
 
 
 if __name__ == "__main__":
