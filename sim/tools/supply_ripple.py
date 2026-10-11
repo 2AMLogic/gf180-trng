@@ -564,7 +564,6 @@ def _fmt(x: float | None, spec: str = ".3g") -> str:
 def sensitivity_rows(an: dict) -> list[str]:
     """Markdown rows: per unit, tone response and the control it is read against."""
     rows = []
-    ctrl = next((u for u in an["units"] if u["amp_v"] == 0.0), None)
     for u in an["units"]:
         if "error" in u:
             rows.append(f"| {u['corner_id']} | error: {u['error']} |")
@@ -586,7 +585,6 @@ def sensitivity_rows(an: dict) -> list[str]:
             _fmt(u["ring1"]["frac_explained"], ".4f"),
         ]
         rows.append("| " + " | ".join(cells) + " |")
-    _ = ctrl
     return rows
 
 
@@ -595,30 +593,6 @@ TABLE_HEAD = (
     "ring1 ffm (ppm/mV) | ring1 resid rms (ps) | ring1 tone/sigma | tone explains |\n"
     "|---|---|---|---|---|---|---|---|---|---|"
 )
-
-
-def convergence_text(main: dict, finer: dict[str, dict]) -> str:
-    """Compare the both/50 mV and control units of binding-beat across solver steps."""
-    def pick(an: dict, ctrl: bool) -> dict | None:
-        for u in an["units"]:
-            if "error" in u:
-                continue
-            if ctrl and u["amp_v"] == 0.0:
-                return u
-            if not ctrl and abs(u["amp_v"] - 0.05) < 1e-12 and (u["m1"], u["m2"]) == (1, 1):
-                return u
-        return None
-
-    lines = ["| solver step | control ring1 x (ps) | 50 mV both ring1 x (ps) | rel. change vs 10 ps |", "|---|---|---|---|"]
-    ref = pick(main, False)
-    for label, an in [("10 ps", main)] + sorted(finer.items()):
-        c, s = pick(an, True), pick(an, False)
-        if c is None or s is None or ref is None:
-            lines.append(f"| {label} | n/a | n/a | n/a |")
-            continue
-        rel = (s["ring1"]["amp"] - ref["ring1"]["amp"]) / ref["ring1"]["amp"]
-        lines.append(f"| {label} | {c['ring1']['amp'] * 1e12:.3g} | {s['ring1']['amp'] * 1e12:.3g} | {rel:+.2%} |")
-    return "\n".join(lines)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
