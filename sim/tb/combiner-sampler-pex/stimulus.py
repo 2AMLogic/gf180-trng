@@ -131,11 +131,6 @@ def _level(events: list[tuple], t: float, col: int = 1):
     return val
 
 
-def clk_at(t: float) -> int:
-    phase = t % PERIOD
-    return 1 if 20.0 <= phase < 40.0 else 0
-
-
 def expected() -> dict[str, int]:
     """Contract-model value of every sampled node at every SAMPLES time."""
     events = sorted(
@@ -275,12 +270,6 @@ def render_request() -> dict:
 
 def render_request_text() -> str:
     return json.dumps(render_request(), indent=2) + "\n"
-
-
-def contract_rows() -> dict[str, dict]:
-    """name -> {"min"/"max"} for every limited row, from the committed request."""
-    req = json.loads(REQUEST.read_text())
-    return {m["name"]: m["limits"] for m in req["measurements"] if m.get("limits")}
 
 
 def main(argv: list[str] | None = None) -> int:

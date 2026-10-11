@@ -564,7 +564,6 @@ def _fmt(x: float | None, spec: str = ".3g") -> str:
 def sensitivity_rows(an: dict) -> list[str]:
     """Markdown rows: per unit, tone response and the control it is read against."""
     rows = []
-    ctrl = next((u for u in an["units"] if u["amp_v"] == 0.0), None)
     for u in an["units"]:
         if "error" in u:
             rows.append(f"| {u['corner_id']} | error: {u['error']} |")
@@ -586,7 +585,6 @@ def sensitivity_rows(an: dict) -> list[str]:
             _fmt(u["ring1"]["frac_explained"], ".4f"),
         ]
         rows.append("| " + " | ".join(cells) + " |")
-    _ = ctrl
     return rows
 
 
