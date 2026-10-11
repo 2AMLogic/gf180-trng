@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
@@ -130,12 +130,15 @@ def verify_one(path: Path, tracked: set[str] | None = None) -> list[str]:
         except report.RawSectionError:
             raw_path, raw_files = "", []  # already reported by verify_record_file
         if raw_path:
-            raw_dir = REPO_ROOT / raw_path
-            for name, _digest in raw_files:
-                candidate = raw_dir / name
+            # Same validator as the checksum half: a path that escapes the
+            # raw root was already reported there and is never tracked-checked.
+            raw_dir, artifacts, _bad = report.validate_raw_artifacts(
+                REPO_ROOT, path.resolve().parent / report.RAW_DIRNAME, raw_path, raw_files
+            )
+            for name, candidate in artifacts if raw_dir is not None else []:
                 if not candidate.is_file():
                     continue  # already reported as missing above
-                rel = str(candidate.relative_to(REPO_ROOT))
+                rel = (PurePosixPath(raw_path) / name).as_posix()
                 if rel not in tracked:
                     problems.append(f"{name}: not committed (git add {rel})")
     return problems
@@ -192,7 +195,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         try:
             problems = verify_one(path, tracked)
-        except (OSError, UnicodeDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
             problems = [f"cannot read record: {exc}"]
         if problems:
             failures += 1

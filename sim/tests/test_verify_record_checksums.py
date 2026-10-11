@@ -27,6 +27,7 @@ sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import verify_record_checksums as vrc  # noqa: E402
+from harness import report  # noqa: E402
 
 GIT = shutil.which("git")
 
@@ -225,6 +226,103 @@ class MainExitPathTests(_TempRepoCase):
         self.assertEqual(rc, 0, err)
         self.assertIn(f"ok   {STEM}.md", out)
         self.assertIn("PASS: 1 record(s) match their committed raw output.", out)
+
+
+class RawPathContainmentTests(_TempRepoCase):
+    """raw.path / raw.files must stay inside the repo's evidence raw root."""
+
+    DATA = b"* deck\n"
+
+    def _record(self, raw_path: str, names: list[str], stem: str = STEM) -> Path:
+        lines = ["---", "status: valid", "raw:", f"  path: {raw_path}", "  files:"]
+        digest = hashlib.sha256(self.DATA).hexdigest()
+        lines += [f"    - {n}  sha256:{digest}" for n in names]
+        lines += ["---", "", "# Example", ""]
+        path = self.records / f"{stem}.md"
+        path.write_text("\n".join(lines))
+        return path
+
+    def _outside(self) -> Path:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out = Path(tmp.name).resolve()
+        (out / "deck.cir").write_bytes(self.DATA)
+        return out
+
+    def _assert_rejected(self, record: Path, needle: str) -> None:
+        for extra in ([], ["--no-git"]):
+            with mock.patch.object(report, "sha256_file") as spy:
+                rc, _out, err = self.run_cli([str(record), *extra])
+            self.assertEqual(rc, 1, err)
+            self.assertIn(needle, err)
+            self.assertNotIn("Traceback", err)
+            spy.assert_not_called()  # rejected before any artifact is hashed
+
+    def test_valid_record_passes_library_and_cli(self):
+        self.init_repo()
+        record = self.write_record({"deck.cir": self.DATA})
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "record")
+        self.assertEqual(report.verify_record_file(record, self.repo), [])
+        rc, _out, err = self.run_cli([str(record)])
+        self.assertEqual(rc, 0, err)
+
+    def test_external_absolute_raw_path_fails_without_traceback(self):
+        self.init_repo()
+        record = self._record(str(self._outside()), ["deck.cir"])
+        self._assert_rejected(record, "repository-relative")
+
+    def test_parent_traversal_in_raw_path_fails(self):
+        self.init_repo()
+        out = self._outside()
+        rel = os.path.relpath(out, self.repo)
+        self.assertTrue(rel.startswith(".."))
+        self._assert_rejected(self._record(rel, ["deck.cir"]), "'..'")
+
+    def test_raw_path_in_repo_but_outside_raw_root_fails(self):
+        self.init_repo()
+        (self.sim / "other").mkdir()
+        (self.sim / "other" / "deck.cir").write_bytes(self.DATA)
+        self._assert_rejected(self._record("sim/other", ["deck.cir"]), "evidence raw root")
+
+    def test_parent_traversal_in_file_name_fails(self):
+        self.init_repo()
+        (self.raw_dir.parent / "deck.cir").write_bytes(self.DATA)
+        self._assert_rejected(self._record(f"sim/records/raw/{STEM}", ["../deck.cir"]),
+                              "simple file name")
+
+    def test_absolute_file_name_fails(self):
+        self.init_repo()
+        out = self._outside()
+        self._assert_rejected(self._record(f"sim/records/raw/{STEM}", [str(out / "deck.cir")]),
+                              "simple file name")
+
+    def test_symlinked_file_escape_fails(self):
+        self.init_repo()
+        out = self._outside()
+        os.symlink(out / "deck.cir", self.raw_dir / "deck.cir")
+        self._assert_rejected(self._record(f"sim/records/raw/{STEM}", ["deck.cir"]),
+                              "outside the raw directory")
+
+    def test_symlinked_raw_dir_escape_fails(self):
+        self.init_repo()
+        out = self._outside()
+        link = self.raw_dir.parent / "2026-01-01-link-01"
+        os.symlink(out, link)
+        self._assert_rejected(self._record(f"sim/records/raw/{link.name}", ["deck.cir"]),
+                              "outside")
+
+    def test_mixed_records_all_processed_and_exit_1(self):
+        self.init_repo()
+        good = self.write_record({"deck.cir": self.DATA})
+        bad = self._record(str(self._outside()), ["deck.cir"], stem="2026-01-02-bad-01")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "records")
+        rc, out, err = self.run_cli([str(bad), str(good)])
+        self.assertEqual(rc, 1, err)
+        self.assertIn("FAIL 2026-01-02-bad-01.md", err)
+        self.assertIn(f"ok   {STEM}.md", out)
+        self.assertNotIn("Traceback", err)
 
 
 if __name__ == "__main__":
