@@ -555,3 +555,63 @@ class TimeoutTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InputCaptureDeckTests(unittest.TestCase):
+    """Decks consume the SPICE bytes captured at load, not the live files
+    (#515). A stub ngspice keeps this PDK- and simulator-free."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tbd = self.root / "tb"
+        tbd.mkdir()
+        self.frag = tbd / "x.spice"
+        self.dut = self.root / "dut.spice"
+        self.frag.write_text("v1 out 0 dc {vdd_val}\n")
+        self.dut.write_text("* dut original\n")
+        (tbd / "tb.json").write_text(json.dumps({
+            "name": "x", "netlist": "x.spice", "design_netlist": str(self.dut),
+            "measure": {"vout": "v(out)"},
+        }))
+        self.tb = testbench.load(tbd)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), (27,), [3.3])
+
+    def _included(self, deck: str, name: str) -> Path:
+        for line in deck.splitlines():
+            if line.startswith(".include") and name in line:
+                return Path(line.split('"')[1])
+        self.fail(f"no include of {name} in deck")
+
+    def test_edits_between_corner_launches_do_not_reach_later_decks(self):
+        decks = []
+        with mock.patch.object(runner, "NGSPICE", "true"), \
+                mock.patch.object(runner, "timeout_bin", return_value=None):
+            for i, point in enumerate(self.points):
+                if i == 1:  # mutate the originals between corner launches
+                    self.frag.write_text("v1 out 0 dc 99\n")
+                    self.dut.write_text("* dut MUTATED\n")
+                wd = self.root / "work" / point.corner_id
+                runner.run_one(self.tb, self.pdk, point, wd, timeout_s=5)
+                decks.append((wd, (wd / f"{point.corner_id}.spice").read_text()))
+        for wd, deck in decks:
+            frag = self._included(deck, "tb.fragment.spice")
+            dut = self._included(deck, "dut.netlist.spice")
+            self.assertEqual(frag.parent, wd)
+            self.assertEqual(frag.read_text(), "v1 out 0 dc {vdd_val}\n")
+            self.assertEqual(dut.read_text(), "* dut original\n")
+            self.assertNotIn(str(self.frag), deck)
+            self.assertNotIn(str(self.dut), deck)
+
+    def test_without_snapshot_dir_live_paths_are_used(self):
+        deck = runner.compose_deck(self.tb, self.pdk, self.points[0])
+        self.assertIn(str(self.frag.resolve()), deck)
+        self.assertIn(str(self.dut), deck)
+
+    def test_hand_built_testbench_keeps_live_paths(self):
+        tb = testbench.Testbench(directory=self.root, slug="h", netlist=self.frag)
+        deck = runner.compose_deck(tb, self.pdk, self.points[0], snapshot_dir=self.root / "w")
+        self.assertIn(str(self.frag), deck)
+        self.assertNotIn("tb.fragment.spice", deck)

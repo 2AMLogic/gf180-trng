@@ -177,6 +177,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `raw.path` | Repo-relative path to the raw-output directory for this record. |
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
 | `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
+| `inputs.testbench_snapshot` / `inputs.testbench_sha256` / `inputs.netlist_snapshot` / `inputs.netlist_sha256` / `inputs.netlist_dependencies` | *Additive; records from `run_corners.py` after #515.* The SPICE fragment and DUT netlist bytes ngspice actually consumed, as snapshot files in the raw directory (`tb.fragment.spice`, `dut.netlist.spice`; when there is no separate `design_netlist` both names refer to the fragment) with their SHA-256, plus any sibling files the DUT netlist `.include`s. All are listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
 | `wall_time` | Wall-clock cost of the run. Makes future coverage/cost trade-offs honest. |
 
 If a required field genuinely does not apply, write the field with an
@@ -554,6 +555,43 @@ the tree was `-dirty` or `tb.json` has since changed, compare
 the snapshot's content in place (in a scratch worktree, never in committed
 evidence) before running. Legacy records have no snapshot: use `repo_commit`
 alone, and treat a `-dirty` one as not exactly reproducible.
+
+### SPICE input snapshots (#515)
+
+`run_corners.py` reads the testbench fragment, the DUT netlist
+(`design_netlist`) and any sibling files that netlist `.include`s exactly once,
+when the manifest is loaded. Each corner's directory (`raw/<stem>/`, or the
+scratch directory for `--no-write`) receives byte-for-byte copies, and the
+composed deck `.include`s *those copies* rather than the working-tree files.
+Editing the originals while a sweep is running therefore cannot change what
+later corners simulate, and `testbench.sha`/`netlist.sha` are the git blob
+hashes of the captured bytes (identical to `git rev-parse HEAD:<path>` when the
+tree was clean, and still correct for dirty-tree bring-up). The copies are
+listed in `raw.files` and covered by `verify_record_checksums.py`; an `inputs:`
+digest that disagrees with its `raw.files` entry is also flagged. A snapshot
+found modified while the record is being built aborts the record rather than
+hashing bytes ngspice did not read.
+
+Include policy:
+
+- The testbench fragment may not contain `.include`/`.inc`/`.lib` (unchanged;
+  `.inc` is now rejected too).
+- The DUT netlist may `.include`/`.inc` only a **bare file name** next to the
+  including file (as the extracted-parasitics netlists do). Those files are
+  captured transitively and copied beside the DUT snapshot under the same
+  name, so ngspice resolves them exactly as before but from frozen copies.
+  Absolute paths, sub-directories, `..`, missing files and include cycles fail
+  before any simulation, naming the file and line. `.lib` and the other
+  harness-owned directives stay forbidden.
+- External PDK models stay under the existing PDK provenance policy; this
+  does not freeze a PDK installation.
+
+To reproduce a historical run from snapshots, restore `tb.fragment.spice`,
+`dut.netlist.spice` and any listed dependencies over the originals named by
+`testbench.path`/`netlist.path` (in a scratch worktree, never in committed
+evidence), together with the manifest snapshot above. A hand-built `Testbench`
+(not produced by `testbench.load`) has no captured bytes and keeps using the
+live files. Legacy records have no snapshots.
 
 ### Checking that evidence stays append-only
 

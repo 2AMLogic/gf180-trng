@@ -66,6 +66,78 @@ class TestbenchLoadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             testbench.load(self._write('.include "sneaky.spice"\nv1 out 0 dc 3.3\n'))
 
+    def test_rejects_the_inc_abbreviation(self):
+        with self.assertRaises(ValueError):
+            testbench.load(self._write('.inc "sneaky.spice"\nv1 out 0 dc 3.3\n'))
+
+    def test_captures_fragment_and_dut_bytes_once(self):
+        dut = self.dir / "dut.spice"
+        dut.write_bytes(b".subckt c a\n.ends\n")
+        d = self._write("v1 out 0 dc 3.3\n", {"design_netlist": str(dut)})
+        tb = testbench.load(d)
+        dut.write_text("* edited\n")
+        (d / "x.spice").write_text("* edited\n")
+        self.assertEqual(tb.netlist_bytes, b"v1 out 0 dc 3.3\n")
+        self.assertEqual(tb.design_netlist_bytes, b".subckt c a\n.ends\n")
+        self.assertEqual(tb.dut_netlist_bytes, tb.design_netlist_bytes)
+
+    def test_fragment_is_its_own_dut_when_no_design_netlist(self):
+        tb = testbench.load(self._write("v1 out 0 dc 3.3\n"))
+        self.assertEqual(tb.dut_netlist_bytes, tb.netlist_bytes)
+        self.assertEqual([n for n, _ in tb.input_snapshots()], [testbench.FRAGMENT_SNAPSHOT_NAME])
+
+    def _dut_tb(self, dut_text: str, extra: dict[str, str] | None = None) -> Path:
+        dutdir = self.dir / "dutdir"
+        dutdir.mkdir(exist_ok=True)
+        dut = dutdir / "dut.spice"
+        dut.write_text(dut_text)
+        for name, text in (extra or {}).items():
+            (dutdir / name).write_text(text)
+        return self._write("v1 out 0 dc 3.3\n", {"design_netlist": str(dut)})
+
+    def test_dut_sibling_includes_are_captured_transitively(self):
+        d = self._dut_tb(
+            '.include "a.spice"\n', {"a.spice": '.inc b.spice\n* a\n', "b.spice": "* b\n"}
+        )
+        tb = testbench.load(d)
+        (self.dir / "dutdir" / "b.spice").write_text("* edited\n")
+        self.assertEqual(
+            dict(tb.design_dependencies), {"a.spice": b".inc b.spice\n* a\n", "b.spice": b"* b\n"}
+        )
+        names = [n for n, _ in tb.input_snapshots()]
+        self.assertEqual(names[:2], [testbench.FRAGMENT_SNAPSHOT_NAME, testbench.DUT_SNAPSHOT_NAME])
+        self.assertEqual(set(names[2:]), {"a.spice", "b.spice"})
+
+    def test_rejects_unsupported_dut_include_forms(self):
+        cases = {
+            "absolute": '.include "/etc/models.spice"',
+            "parent": '.include "../x.spice"',
+            "subdir": '.include "sub/x.spice"',
+            "lib": '.lib "m.lib" tt',
+            "missing": '.include "nope.spice"',
+        }
+        for label, line in cases.items():
+            with self.subTest(label):
+                d = self._dut_tb(f"* dut\n{line}\n")
+                with self.assertRaisesRegex((ValueError, FileNotFoundError), r"dut\.spice(:2:|: DUT netlists must not contain.*\n  line 2:)"):
+                    testbench.load(d)
+
+    def test_unsupported_include_error_is_actionable(self):
+        with self.assertRaisesRegex(ValueError, r"dut\.spice:2: .*\n.*bare file name"):
+            testbench.load(self._dut_tb('* dut\n.include "../x.spice"\n'))
+
+    def test_rejects_forbidden_directive_inside_a_dut_dependency(self):
+        d = self._dut_tb('.include "a.spice"\n', {"a.spice": ".temp 27\n"})
+        with self.assertRaisesRegex(ValueError, r"a\.spice.*\n\s+line 1: \.temp"):
+            testbench.load(d)
+
+    def test_rejects_include_cycles(self):
+        d = self._dut_tb(
+            '.include "a.spice"\n', {"a.spice": '.include "b.spice"\n', "b.spice": '.include "a.spice"\n'}
+        )
+        with self.assertRaisesRegex(ValueError, "cycle"):
+            testbench.load(d)
+
     def test_rejects_a_manifest_without_measurements(self):
         with self.assertRaises(ValueError):
             testbench.load(self._write("v1 out 0 dc 3.3\n", {"measure": {}}))
