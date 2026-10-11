@@ -89,6 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
     VariantBase,
@@ -245,23 +246,14 @@ def _load(spec, *, required: bool = True, include_superseded: bool = False) -> V
     ``include_superseded=True`` is the explicit historical read.
     """
     label, glob, manifest, difference = spec
-    matches = []
-    for path in sorted(RECORDS.glob(glob)):
-        rec = Record(path)
-        if not include_superseded and rec.status != "valid":
-            continue
-        if rec.corner != CORNER or "sigma_1" not in rec.values:
-            continue
-        matches.append(rec)
-    if not matches:
-        if not required:
-            return None
-        raise RecordError(
-            f"variant {label!r}: no valid sim/records/{glob} record at {CORNER} "
-            "carries a sigma_1, so this variant cannot be compared"
-        )
-    # Latest record wins; earlier ones stay on file as append-only evidence.
-    return Variant(label, matches[-1], manifest, difference)
+    rec = latest_current_record(
+        RECORDS, glob, make=Record, corner=CORNER, requires=("sigma_1",),
+        include_superseded=include_superseded, error_cls=RecordError, required=required,
+        context=f"variant {label!r}: ", hint=", so this variant cannot be compared",
+    )
+    if rec is None:
+        return None
+    return Variant(label, rec, manifest, difference)
 
 
 def load_variants(

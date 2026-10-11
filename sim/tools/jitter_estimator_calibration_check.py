@@ -45,7 +45,7 @@ from statistics import NormalDist
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import parse_result_values, parse_status  # noqa: E402
+from _record_parsing import latest_current_record, parse_result_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -107,20 +107,10 @@ def latest_record(*, include_superseded: bool = False) -> Path:
     as given, whatever its lifecycle: naming one is an intentional
     (possibly historical) read, not an automatic selection.
     """
-    candidates = sorted(RECORDS.glob(f"*-{SLUG}-*.md"))
-    if not candidates:
-        raise RecordError(f"no committed record matches sim/records/*-{SLUG}-*.md")
-    if not include_superseded:
-        candidates = [
-            c for c in candidates
-            if parse_status(c.read_text(), label=c.stem, error_cls=RecordError) == "valid"
-        ]
-        if not candidates:
-            raise RecordError(
-                f"no valid record matches sim/records/*-{SLUG}-*.md "
-                "(every match is superseded)"
-            )
-    return candidates[-1]
+    return latest_current_record(
+        RECORDS, f"*-{SLUG}-*.md",
+        include_superseded=include_superseded, error_cls=RecordError,
+    )
 
 
 def read_record(path: Path) -> dict[str, float]:

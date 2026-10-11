@@ -61,6 +61,7 @@ sys.path.insert(0, str(TOOLS_DIR))
 import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
 from _record_parsing import (  # noqa: E402
+    current_records,
     field,
     format_corner,
     iter_result_seed_summaries,
@@ -135,11 +136,13 @@ def load_records(*, include_superseded: bool = False) -> list[BitstreamRecord]:
     # pre-layout family) can never be silently read as a pre-layout
     # transistor-level point -- same rule and reason as
     # sim/tools/power_rollup.py's ARRAY_GLOBS.
-    paths = sorted(RECORDS.glob(f"*-{SLUG}-[0-9]*.md"))
-    if not paths:
-        raise RecordError(f"no sim/records/*-{SLUG}-[0-9]*.md records found")
-    recs = [BitstreamRecord(p) for p in paths]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    glob = f"*-{SLUG}-[0-9]*.md"
+    if not current_records(RECORDS, glob, include_superseded=True, error_cls=RecordError):
+        raise RecordError(f"no sim/records/{glob} records found")
+    return current_records(
+        RECORDS, glob, make=BitstreamRecord, include_superseded=include_superseded,
+        error_cls=RecordError,
+    )
 
 
 def missing_corners(records: list[BitstreamRecord]) -> list[str]:

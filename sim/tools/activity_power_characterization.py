@@ -54,7 +54,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "trng-top-post-route"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 
-from _record_parsing import parse_result_values  # noqa: E402
+from _record_parsing import current_records, parse_result_values  # noqa: E402
 
 import hashlib  # noqa: E402
 
@@ -129,8 +129,8 @@ class Rec:
 
 
 def load_family() -> dict[str, Rec]:
-    recs = [Rec(p) for p in sorted(RECORDS.glob("*-digital-sta-activity-[0-9]*.md"))]
-    recs = [r for r in recs if r.status == "valid"]
+    recs = current_records(
+        RECORDS, "*-digital-sta-activity-[0-9]*.md", make=Rec, error_cls=CheckError)
     cur_def = blob_sha(REPO_ROOT / "layout/digital/trng_top.def")
     cur_pnr = blob_sha(REPO_ROOT / "layout/digital/trng_top.pnr.v")
     fam: dict[str, Rec] = {}
@@ -232,10 +232,10 @@ def check(fam: dict[str, Rec], expected: tuple[str, ...] | None = None) -> list[
             problems.append(f"workload {name}: records are stale (stimulus changed)")
     # Like-for-like re-verification against the default flow's records.
     default = {}
-    for p in sorted(RECORDS.glob("*-digital-sta-power-[0-9]*.md")):
+    for p in current_records(
+        RECORDS, "*-digital-sta-power-[0-9]*.md", error_cls=CheckError
+    ):
         t = p.read_text()
-        if "status: valid" not in t.split("\n---")[0]:
-            continue
         m = re.search(r"^netlist:\s*\n\s+path:.*\n\s+sha:\s*([0-9a-f]+)", t, re.M)
         lib = re.search(r"^\s+liberty:\s*\S+__(\S+)", t, re.M)
         rc = re.search(r"^\s+interconnect:\s*(\S+)", t, re.M)
