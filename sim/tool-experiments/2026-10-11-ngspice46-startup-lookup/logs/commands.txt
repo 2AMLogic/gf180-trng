@@ -1,0 +1,22 @@
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir && ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+01_all_deckdir_cwd exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/nowork && ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+02_all_cleancwd exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cwdh && ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+03_deck_and_cwd exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cwdh && ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cleand/d.cir)
+04_cwd_only exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/nowork && ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cleand/d.cir)
+05_user_only exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/nowork && ngspice -n -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cleand/d.cir)
+06_user_only_dash_n exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir && ngspice -n -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+07_dash_n_all exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir && env SPICE_SCRIPTS=/tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/scripts ngspice -n -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+07b_dash_n_scripts exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir && env SPICE_LIB_DIR=/tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/lib SPICE_SCRIPTS=/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-584/sim/harness/ngspice_scripts ngspice -n -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+08_policy_deckdir exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/nowork && env SPICE_LIB_DIR=/tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/lib SPICE_SCRIPTS=/home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-584/sim/harness/ngspice_scripts ngspice -n -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/ddir/d.cir)
+09_policy_cleancwd exit=0
+(cd /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/nowork && env SPICE_LIB_DIR=/tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/lib ngspice -b /tmp/loom-nt/340ab2b6-e2c4-431f-a04e-241721bfabf0/tmp.ujeBzJ8tSg/cleand/d.cir)
+10_lib_dir exit=0

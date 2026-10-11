@@ -472,14 +472,23 @@ ngspice through one command/environment builder
 watchdog and the no-`timeout(1)` fallback paths, with an explicit policy
 measured in
 [`tool-experiments/2026-10-11-ngspice-startup-config/`](tool-experiments/2026-10-11-ngspice-startup-config/README.md)
-(ngspice-42; see that README for what was and was not measured):
+(ngspice-42) and
+[`tool-experiments/2026-10-11-ngspice46-startup-lookup/`](tool-experiments/2026-10-11-ngspice46-startup-lookup/README.md)
+(ngspice-46, the minimum this README requires; see each README for what was
+and was not measured):
 
 | Start-up input (batch mode) | Control |
 |---|---|
-| Work-directory `.spiceinit` | `-n` |
-| User `~/.spiceinit` | `-n` |
+| Deck-directory `.spiceinit` — searched first on ngspice-46; on ngspice-42 this slot was the working-directory file, and the deck's directory was not searched | `-n` |
+| Working-directory `.spiceinit` — ngspice-46 falls back to it only when the deck's directory has none; `$HOME/.spiceinit` is the last fallback on both measured builds | `-n` |
 | System `spinit` | `-n` does **not** suppress it; `SPICE_SCRIPTS` is set to `sim/harness/ngspice_scripts/`, whose `spinit` is checked in and content-pinned |
 | `SPICE_LIB_DIR` | removed from the child environment (and overridden by `SPICE_SCRIPTS`) |
+
+Only one of the three `.spiceinit` locations is read per launch (first match
+wins) on both measured builds, and the suppression behaviour (`-n` scope,
+`SPICE_SCRIPTS`, `SPICE_LIB_DIR`) is the same on both; the lookup-order
+difference is the only measured change between the builds, and neither
+measurement is generalized to other versions.
 
 The pinned `spinit` contains no commands: no aliases and no code-model or
 OSDI loading, so a testbench that needs an XSPICE code model or an OSDI

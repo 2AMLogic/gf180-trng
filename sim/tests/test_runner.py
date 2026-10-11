@@ -846,13 +846,22 @@ class StartupPolicyTests(unittest.TestCase):
     def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for d in ("home", "work", "scripts"):
+            for d in ("home", "work", "scripts", "userdeck"):
                 (root / d).mkdir()
             (root / "home" / ".spiceinit").write_text("echo SENTINEL_USER\n")
             (root / "work" / ".spiceinit").write_text("echo SENTINEL_WORK\n")
             (root / "scripts" / "spinit").write_text("echo SENTINEL_SYSTEM\n")
+            deck_text = "* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n"
             deck = root / "work" / "d.cir"
-            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            deck.write_text(deck_text)
+            # Deck copy outside every hostile .spiceinit directory. The
+            # user-init sanity case must not reuse the work-directory deck:
+            # ngspice-46 searches the deck's directory first (measured in
+            # sim/tool-experiments/2026-10-11-ngspice46-startup-lookup/),
+            # so a deck inside work/ keeps SENTINEL_WORK reachable however
+            # the cwd moves.
+            userdeck = root / "userdeck" / "d.cir"
+            userdeck.write_text(deck_text)
             hostile = {
                 **{k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
                 "HOME": str(root / "home"),
@@ -864,16 +873,23 @@ class StartupPolicyTests(unittest.TestCase):
                     cmd, env=env, cwd=cwd, capture_output=True, text=True, timeout=60
                 ).stdout
 
-            # Sanity: the fixtures are effective under ordinary batch mode
-            # (work-directory file shadows the user file; spinit comes from
-            # SPICE_SCRIPTS).
+            # Sanity: the fixtures are effective under ordinary batch mode.
+            # Each plain launch leaves exactly one .spiceinit reachable for
+            # the source it names -- whichever of the working directory
+            # (ngspice-42) or the deck's directory (ngspice-46) is searched,
+            # the work launch runs where the two coincide, and the user
+            # launch uses a deck copy with no .spiceinit around it -- plus
+            # spinit from SPICE_SCRIPTS. Only one of the two .spiceinit
+            # fixtures runs per launch on both measured builds.
             plain = run(["ngspice", "-b", str(deck)], hostile, root / "work")
             self.assertIn("SENTINEL_WORK", plain)
             self.assertIn("SENTINEL_SYSTEM", plain)
+            self.assertNotIn("SENTINEL_USER", plain)
             nowork = root / "nowork"
             nowork.mkdir()
-            plain_user = run(["ngspice", "-b", str(deck)], hostile, nowork)
+            plain_user = run(["ngspice", "-b", str(userdeck)], hostile, root / "userdeck")
             self.assertIn("SENTINEL_USER", plain_user)
+            self.assertNotIn("SENTINEL_WORK", plain_user)
 
             # Controlled launch (command builder + environment builder).
             cmd = runner.ngspice_command(deck, None, 60)
