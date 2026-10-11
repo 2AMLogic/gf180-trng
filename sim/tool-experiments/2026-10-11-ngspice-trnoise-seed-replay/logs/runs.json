@@ -1,0 +1,803 @@
+{
+  "H_seed11_run1": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "-5.2961875e-01",
+      "-9.4028679e-01",
+      "1.16268618e+00",
+      "-1.6743707e+00",
+      "1.65704228e+00",
+      "4.96851906e-01",
+      "1.00762229e+00",
+      "1.82283145e+00",
+      "-3.9029676e-01",
+      "-2.1118937e+00",
+      "-1.0351281e-01",
+      "8.85362863e-01",
+      "3.37026053e-01",
+      "-1.3531478e+00",
+      "-4.0054449e-01",
+      "5.18795319e-02"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "H_seed11_run2": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "-5.3054054e-01",
+      "1.33958508e-01",
+      "-1.1456968e+00",
+      "-6.0687141e-01",
+      "-9.9425335e-01",
+      "-1.2319000e-01",
+      "-7.7604857e-01",
+      "-7.8638375e-01",
+      "-3.1825068e-01",
+      "2.64759441e-01",
+      "-1.3746264e+00",
+      "1.06878103e+00",
+      "-1.2440239e+00",
+      "8.44848762e-01",
+      "2.57845257e-01",
+      "-1.4516499e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "H_seed12": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "3.59725736e-01",
+      "-6.4433640e-01",
+      "1.40620517e+00",
+      "1.26395012e+00",
+      "-4.5693574e-01",
+      "-1.0579166e+00",
+      "-1.0098415e+00",
+      "4.76220134e-01",
+      "-4.6929345e-01",
+      "-1.0435703e+00",
+      "-1.4839976e+00",
+      "-5.9568884e-01",
+      "-1.6832417e-01",
+      "1.17971124e+00",
+      "-1.6923223e-01",
+      "8.21857663e-02"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  },
+  "S_spinit_setseed11_run1": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-setseed11",
+    "spice_scripts_spinit_sha256": "9facc582307bfd326da604b5eb7fb7edb45881279eef04b29e69ef0a1b208070",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_SETSEED_11"
+    ],
+    "v_n1": [
+      "1.10633970e+00",
+      "-1.7285744e-01",
+      "4.45475134e-01",
+      "-9.8317783e-01",
+      "-6.0458360e-01",
+      "9.15545334e-01",
+      "-1.4605374e+00",
+      "-1.0830812e+00",
+      "-2.3382919e-02",
+      "-2.1004878e+00",
+      "-6.5505475e-01",
+      "-5.5471733e-01",
+      "9.05245309e-02",
+      "-1.3465620e+00",
+      "1.42424732e+00",
+      "-6.6467781e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "S_spinit_setseed11_run2": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-setseed11",
+    "spice_scripts_spinit_sha256": "9facc582307bfd326da604b5eb7fb7edb45881279eef04b29e69ef0a1b208070",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_SETSEED_11"
+    ],
+    "v_n1": [
+      "-1.0585648e+00",
+      "-1.7528834e+00",
+      "-1.6604823e+00",
+      "7.99833053e-01",
+      "1.39702045e+00",
+      "-9.3513520e-02",
+      "4.79935552e-01",
+      "1.08389599e+00",
+      "-4.8632372e-01",
+      "1.19595254e+00",
+      "-9.3437697e-01",
+      "-6.4867951e-01",
+      "3.66805623e-01",
+      "-5.4177489e-01",
+      "-8.2976503e-01",
+      "7.59083082e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "S_spinit_setseed12": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-setseed12",
+    "spice_scripts_spinit_sha256": "e070fee66fb5202168f44a9aa0980fa7e1f88d78d6c3bdfdceada2d5b81a6738",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_SETSEED_12"
+    ],
+    "v_n1": [
+      "1.57543813e+00",
+      "2.16583864e-01",
+      "-1.9255456e+00",
+      "9.99584436e-01",
+      "6.25407172e-01",
+      "-6.8170302e-01",
+      "1.85086526e+00",
+      "4.54767816e-02",
+      "-7.1837471e-01",
+      "2.00857821e+00",
+      "2.01631014e+00",
+      "2.71360017e-01",
+      "-5.5401390e-01",
+      "3.76740572e-01",
+      "1.69909178e-01",
+      "8.73789875e-01"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  },
+  "R_spinit_rndseed11_run1": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-rndseed11",
+    "spice_scripts_spinit_sha256": "90c4efab865d45de6ca29860660bf25b95db231b7517308c3a7f1c3d65aa70f1",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_RNDSEED_11"
+    ],
+    "v_n1": [
+      "1.28188492e-01",
+      "1.38195445e+00",
+      "2.36120731e-01",
+      "2.23708887e+00",
+      "6.15976674e-03",
+      "1.10284864e-01",
+      "2.97486771e-01",
+      "2.27271786e+00",
+      "-8.5181109e-01",
+      "-1.9304643e+00",
+      "1.86260670e-01",
+      "-4.8141857e-01",
+      "1.50409153e+00",
+      "-1.8975271e-01",
+      "-4.9550460e-02",
+      "-9.3908240e-02"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "R_spinit_rndseed11_run2": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-rndseed11",
+    "spice_scripts_spinit_sha256": "90c4efab865d45de6ca29860660bf25b95db231b7517308c3a7f1c3d65aa70f1",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_RNDSEED_11"
+    ],
+    "v_n1": [
+      "1.47116538e+00",
+      "-6.9505033e-01",
+      "4.78370264e-01",
+      "-2.0102647e+00",
+      "1.41841789e+00",
+      "4.48335621e-01",
+      "-2.7175713e-01",
+      "-1.1860067e+00",
+      "1.21570806e+00",
+      "1.34747070e-01",
+      "9.27232932e-01",
+      "4.36787939e-01",
+      "4.76166850e-01",
+      "-1.2350866e-01",
+      "4.24584407e-01",
+      "7.98004580e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "R_spinit_rndseed12": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "seed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "spinit-rndseed12",
+    "spice_scripts_spinit_sha256": "7367ddba72f724160333f86941e598ca5d3d766c384c01f30b5d539d2b563ba7",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_SPINIT_RNDSEED_12"
+    ],
+    "v_n1": [
+      "6.94360162e-02",
+      "1.25656041e+00",
+      "6.25296023e-01",
+      "-1.4729522e+00",
+      "2.10670766e+00",
+      "4.76007208e-01",
+      "-5.6095818e-02",
+      "2.55294321e-01",
+      "1.45355222e+00",
+      "5.44523936e-01",
+      "5.67908623e-01",
+      "5.86493314e-01",
+      "5.26698196e-01",
+      "7.99824200e-01",
+      "-6.3010702e-01",
+      "-7.6035791e-02"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  },
+  "U_userinit_setseed11_run1": {
+    "argv": [
+      "ngspice",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-setseed11",
+    "work_spiceinit": null,
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_USERINIT_SETSEED_11"
+    ],
+    "v_n1": [
+      "1.07513424e+00",
+      "-3.9527592e-01",
+      "-7.5992478e-01",
+      "-1.6013330e+00",
+      "-2.5746588e-01",
+      "4.91433758e-01",
+      "1.05039568e+00",
+      "1.37177261e+00",
+      "3.06097503e-01",
+      "1.30437555e+00",
+      "1.12467991e+00",
+      "8.33490064e-01",
+      "5.68834406e-01",
+      "-2.0604565e+00",
+      "5.23947794e-01",
+      "-2.6333195e-02"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "U_userinit_setseed11_run2": {
+    "argv": [
+      "ngspice",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-setseed11",
+    "work_spiceinit": null,
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_USERINIT_SETSEED_11"
+    ],
+    "v_n1": [
+      "-4.0816606e-01",
+      "-6.1255379e-01",
+      "-1.4523187e+00",
+      "7.93410273e-02",
+      "1.40422187e+00",
+      "2.20031228e-01",
+      "-6.9081267e-03",
+      "8.08958581e-01",
+      "1.06850440e+00",
+      "9.55744101e-01",
+      "8.93618840e-01",
+      "-4.1776164e-01",
+      "1.12730471e+00",
+      "-1.7002744e+00",
+      "5.97182294e-01",
+      "-9.3828937e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "U_userinit_setseed12": {
+    "argv": [
+      "ngspice",
+      "-b",
+      "seed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-setseed12",
+    "work_spiceinit": null,
+    "exit": 0,
+    "sentinels": [
+      "STARTUP_USERINIT_SETSEED_12"
+    ],
+    "v_n1": [
+      "-1.1002510e+00",
+      "-2.7312758e-01",
+      "4.76073842e-01",
+      "-1.8782987e+00",
+      "2.09524594e-01",
+      "8.22008916e-02",
+      "1.23769070e+00",
+      "-1.5790953e+00",
+      "4.48127585e-01",
+      "7.32685848e-01",
+      "-4.0430619e-01",
+      "1.11859270e+00",
+      "-1.4476453e-01",
+      "1.25452309e+00",
+      "-2.5198164e-01",
+      "-1.0666585e-01"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  },
+  "C_ctl_setseed11_run1": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "ctl_setseed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "-1.0111393e+00",
+      "-5.5348687e-01",
+      "-1.5720809e+00",
+      "1.40983611e-01",
+      "-7.7422586e-01",
+      "-7.5319047e-01",
+      "3.32992857e-01",
+      "7.27546223e-01",
+      "3.12754501e-01",
+      "1.52596438e+00",
+      "-7.7444018e-01",
+      "1.57871133e+00",
+      "-6.0740999e-01",
+      "6.16055745e-01",
+      "6.90705980e-01",
+      "1.25436127e+00"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "C_ctl_setseed11_run2": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "ctl_setseed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "-8.5322503e-01",
+      "7.82620478e-01",
+      "-4.2255815e-01",
+      "1.35111686e+00",
+      "1.00383167e+00",
+      "1.31104827e+00",
+      "5.45226285e-01",
+      "1.55631460e+00",
+      "-1.2727286e+00",
+      "-4.3963362e-01",
+      "1.20331335e+00",
+      "2.26652166e-01",
+      "-1.9547204e+00",
+      "-6.1950479e-01",
+      "5.31409625e-01",
+      "3.45679108e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "C_ctl_setseed12": {
+    "argv": [
+      "ngspice",
+      "-n",
+      "-b",
+      "ctl_setseed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "9.39703253e-01",
+      "8.83913911e-01",
+      "6.29899420e-01",
+      "-1.2305680e+00",
+      "-1.1473826e+00",
+      "7.54518146e-02",
+      "1.35258605e-01",
+      "-2.6193018e-01",
+      "8.51844089e-01",
+      "3.68732213e-01",
+      "5.19951847e-01",
+      "1.03019502e-02",
+      "-2.5474242e-03",
+      "7.70148685e-02",
+      "1.29947436e-01",
+      "-1.0626271e+00"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  },
+  "P_pidns_seed11_run1": {
+    "argv": [
+      "unshare",
+      "--user",
+      "--pid",
+      "--fork",
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "6.63511854e-01",
+      "7.22975338e-01",
+      "-8.4314039e-01",
+      "-4.3612689e-02",
+      "8.11723540e-01",
+      "-2.0161933e+00",
+      "9.46518116e-02",
+      "-6.1902113e-01",
+      "5.38335674e-01",
+      "6.65765589e-01",
+      "6.69180077e-01",
+      "-6.6793842e-01",
+      "1.45141170e-01",
+      "-8.0152297e-01",
+      "-7.2371014e-01",
+      "1.90382357e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "P_pidns_seed11_run2": {
+    "argv": [
+      "unshare",
+      "--user",
+      "--pid",
+      "--fork",
+      "ngspice",
+      "-n",
+      "-b",
+      "seed11.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "6.63511854e-01",
+      "7.22975338e-01",
+      "-8.4314039e-01",
+      "-4.3612689e-02",
+      "8.11723540e-01",
+      "-2.0161933e+00",
+      "9.46518116e-02",
+      "-6.1902113e-01",
+      "5.38335674e-01",
+      "6.65765589e-01",
+      "6.69180077e-01",
+      "-6.6793842e-01",
+      "1.45141170e-01",
+      "-8.0152297e-01",
+      "-7.2371014e-01",
+      "1.90382357e-01"
+    ],
+    "p0": "3.48538000e-01",
+    "g": [
+      "3.48537837e-01",
+      "2.16137408e+00",
+      "-6.7894073e-02"
+    ]
+  },
+  "P_pidns_seed12": {
+    "argv": [
+      "unshare",
+      "--user",
+      "--pid",
+      "--fork",
+      "ngspice",
+      "-n",
+      "-b",
+      "seed12.cir"
+    ],
+    "cwd": "<tmp>/work",
+    "env": {
+      "HOME": "<tmp>/home",
+      "SPICE_SCRIPTS": "<tmp>/scripts"
+    },
+    "spice_scripts_spinit": "harness-spinit",
+    "spice_scripts_spinit_sha256": "d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941",
+    "home_spiceinit": "spiceinit-hostile",
+    "work_spiceinit": "spiceinit-hostile",
+    "exit": 0,
+    "sentinels": [],
+    "v_n1": [
+      "6.63511854e-01",
+      "7.22975338e-01",
+      "-8.4314039e-01",
+      "-4.3612689e-02",
+      "8.11723540e-01",
+      "-2.0161933e+00",
+      "9.46518116e-02",
+      "-6.1902113e-01",
+      "5.38335674e-01",
+      "6.65765589e-01",
+      "6.69180077e-01",
+      "-6.6793842e-01",
+      "1.45141170e-01",
+      "-8.0152297e-01",
+      "-7.2371014e-01",
+      "1.90382357e-01"
+    ],
+    "p0": "-1.1814000e+00",
+    "g": [
+      "-1.1814041e+00",
+      "4.77968617e-01",
+      "1.60282891e-01"
+    ]
+  }
+}

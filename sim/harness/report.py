@@ -43,6 +43,34 @@ from .testbench import Testbench, write_input_snapshots
 RECORDS_DIRNAME = "records"
 RAW_DIRNAME = "raw"
 
+#: Analysis types whose records carry the transient-noise reproduction scope
+#: (#574, DR-0031). Only ``tran-noise``: the replay limit was measured for
+#: ``trnoise`` sources, and is not assigned to deterministic or Monte Carlo
+#: records.
+TRNOISE_REPLAY_ANALYSIS_TYPES = ("tran-noise",)
+#: The experiment that measured it and the decision record that adopts it.
+TRNOISE_REPLAY_EVIDENCE = "sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/"
+TRNOISE_REPLAY_DECISION = "DR-0031-transient-noise-reproducibility"
+
+
+def reproduction_scope(analysis_type: str) -> dict | None:
+    """What re-running a record of ``analysis_type`` reproduces, or ``None``
+    when no limit has been measured for that type.
+
+    For ``tran-noise`` the recorded seeds replay the deck and configuration
+    (and every seeded non-``trnoise`` draw) but not the ``trnoise``
+    waveforms: on the measured ngspice-46 build no seed or start-up control
+    reproduced them across processes.
+    """
+    if analysis_type not in TRNOISE_REPLAY_ANALYSIS_TYPES:
+        return None
+    return {
+        "scope": "deck-and-configuration",
+        "trnoise_waveform_replay": False,
+        "basis": TRNOISE_REPLAY_EVIDENCE,
+        "decision": TRNOISE_REPLAY_DECISION,
+    }
+
 
 class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
@@ -474,7 +502,10 @@ def build_record(
         "analysis_noise_params": tb.noise_params or "n/a",
         "analysis_runs": len(results),
         "seeds": seeds if seeds else "n/a (deterministic analysis)",
-        "raw_path": _relpath(repo_root, raw_dir) + "/",
+        # Additive (#574): absent (None) for analysis types with no measured
+        # replay limit, so their records render exactly as before.
+        "reproduction": reproduction_scope(tb.analysis_type),
+        "raw_path":_relpath(repo_root, raw_dir) + "/",
         "raw_files": raw_files,
         # Not rendered: kept so the record can be re-verified against the
         # directory it was actually hashed from (see verify_record).
@@ -597,6 +628,18 @@ def render_frontmatter(record: dict) -> str:
         lines.append(f"seeds: [{', '.join(str(s) for s in seeds)}]")
     else:
         lines.append(f"seeds: {seeds}")
+    # Additive (#574, DR-0031): only tran-noise records carry it; records
+    # without the block (older ones, other analysis types) stay valid.
+    reproduction = record.get("reproduction")
+    if reproduction:
+        lines += [
+            "reproduction:",
+            f"  scope: {reproduction['scope']}",
+            "  trnoise_waveform_replay: "
+            f"{'true' if reproduction['trnoise_waveform_replay'] else 'false'}",
+            f"  basis: {reproduction['basis']}",
+            f"  decision: {reproduction['decision']}",
+        ]
     lines += [
         "",
         "raw:",
@@ -711,6 +754,22 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
             f"--temps {_fmt(record['corner_temperature'])} {supply_args}{timeout_args}--no-write"
         )
     lines += ["```", ""]
+    reproduction = record.get("reproduction")
+    if reproduction and not reproduction["trnoise_waveform_replay"]:
+        lines += [
+            "These commands replay the deck and configuration with the recorded "
+            "seed(s). The seeds fix the netlist-parameter and control-language "
+            "random draws, but they do not reproduce the `trnoise` transient-noise "
+            "waveforms: on the ngspice-46 build measured in "
+            f"`{reproduction['basis']}` no seed or start-up control made them "
+            "repeat across simulator processes, so a re-run draws a fresh noise "
+            "realization and its measured values will differ from the ones "
+            "above. Exact waveform replay is not claimed. Agreement between a "
+            "re-run and this record is a statistical claim that needs its own "
+            "tolerance and evidence; this record does not demonstrate it. See "
+            f"`spec/decision-records/{reproduction['decision']}.md`.",
+            "",
+        ]
     if record.get("manifest_sha256"):
         lines += [
             f"The manifest used is snapshotted as `{record['raw_path']}"

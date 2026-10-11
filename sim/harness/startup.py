@@ -21,6 +21,12 @@ copy into every run's raw-artifact directory (:func:`write_snapshot`) and
 points ``SPICE_SCRIPTS`` at that directory, so every point and seed consumes
 the same captured bytes and the digest recorded for a run is the digest of
 what ngspice read, not of the working tree at publication time (#582).
+
+The pinned script sets no random seed. A ``setseed`` or ``set rndseed`` in
+a start-up file was measured on ngspice-46 not to make ``trnoise`` waveforms
+repeat (``sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/``,
+#574, DR-0031), so adding one would not buy reproducibility and would
+compete with the harness-owned ``.option seed``.
 """
 
 from __future__ import annotations

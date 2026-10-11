@@ -1429,3 +1429,105 @@ class StartupSnapshotRecordTests(unittest.TestCase):
         self.assertNotIn("ngspice_startup_spinit_snapshot", text)
         self.assertEqual(report.verify_startup_reference(text, rec["raw_files"]), [])
         self.assertEqual(report.verify_startup_reference("---\nrecord: x\n---\n", []), [])
+
+
+class TransientNoiseReproductionScopeTests(unittest.TestCase):
+    """#574 / DR-0031: a tran-noise record states that its seeds replay the
+    deck and configuration but not the trnoise waveforms; deterministic and
+    Monte Carlo records are not given that (unmeasured) limit. No PDK, no
+    ngspice."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def _record(self, analysis_type, seeds, stem):
+        tb_dir = self.root / "tb" / stem
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("vn out 0 dc 0 trnoise(1m 1n 0 0)\nr1 out 0 1k\n")
+        (tb_dir / "tb.json").write_text(json.dumps({
+            "name": stem, "netlist": "x.spice", "measure": {"vout": "v(out)"},
+            "analysis_type": analysis_type,
+        }))
+        tb = testbench.load(tb_dir)
+        raw_dir = self.root / "records" / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        results = []
+        for i, seed in enumerate(seeds):
+            deck, log = testbench.run_artifact_names(self.point.corner_id, seed, i)
+            (raw_dir / deck).write_text("* deck\n")
+            (raw_dir / log).write_text("m_vout = 1\n")
+            results.append(runner.RunResult(
+                point=self.point, seed=seed, status="ok", measurements={"vout": 1.0 + i},
+                deck_name=deck, log_name=log,
+            ))
+        testbench.write_input_snapshots(tb, raw_dir)
+        record = report.build_record(
+            tb=tb, pdk=self.pdk, point=self.point, results=results,
+            ngspice="ngspice-46", repo_root=self.root, stem=stem,
+            completed_utc=_dt.datetime(2026, 10, 11, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": False},
+        )
+        return tb, record
+
+    def test_tran_noise_record_states_configuration_replay_only(self):
+        tb, rec = self._record("tran-noise", [11, 12], "2026-10-11-tn-01")
+        front = report.render_frontmatter(rec)
+        self.assertIn(
+            "reproduction:\n"
+            "  scope: deck-and-configuration\n"
+            "  trnoise_waveform_replay: false\n"
+            f"  basis: {report.TRNOISE_REPLAY_EVIDENCE}\n"
+            f"  decision: {report.TRNOISE_REPLAY_DECISION}\n",
+            front,
+        )
+        # Seeds are still recorded verbatim, in run order.
+        self.assertIn("seeds: [11, 12]", front)
+        text = report.render_reproduce_section(rec, tb)
+        self.assertIn("--seeds 11 ", text)
+        self.assertIn("--seeds 12 ", text)
+        self.assertIn("do not reproduce the `trnoise` transient-noise", text)
+        self.assertIn("Exact waveform replay is not claimed.", text)
+        self.assertIn("statistical claim that needs its own", text)
+        self.assertIn(report.TRNOISE_REPLAY_EVIDENCE, text)
+
+    def test_tran_noise_record_round_trips_through_the_verifiers(self):
+        tb, rec = self._record("tran-noise", [3], "2026-10-11-tn-02")
+        path = report.write_record(rec, tb, self.root / "records", ["c"])
+        raw_path, files = report.parse_raw_section(path.read_text())
+        self.assertEqual(raw_path, rec["raw_path"])
+        self.assertEqual(files, rec["raw_files"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+
+    def test_mc_and_deterministic_records_carry_no_trnoise_limit(self):
+        for analysis_type, seeds, stem in (
+            ("mc", [1, 2], "2026-10-11-mc-01"),
+            ("tran", [None], "2026-10-11-tr-01"),
+            ("op", [None], "2026-10-11-op-01"),
+        ):
+            with self.subTest(analysis_type=analysis_type):
+                tb, rec = self._record(analysis_type, seeds, stem)
+                self.assertIsNone(rec["reproduction"])
+                self.assertNotIn("reproduction:", report.render_frontmatter(rec))
+                self.assertNotIn("trnoise", report.render_reproduce_section(rec, tb))
+
+    def test_record_dicts_without_the_field_still_render(self):
+        tb, rec = self._record("tran-noise", [5], "2026-10-11-tn-03")
+        legacy = {k: v for k, v in rec.items() if k != "reproduction"}
+        self.assertNotIn("reproduction:", report.render_frontmatter(legacy))
+        self.assertNotIn("trnoise", report.render_reproduce_section(legacy, tb))
+
+    def test_cited_experiment_and_decision_record_exist_and_verify(self):
+        experiment = REPO_ROOT / report.TRNOISE_REPLAY_EVIDENCE
+        self.assertTrue((experiment / "README.md").is_file())
+        decision = REPO_ROOT / "spec" / "decision-records" / f"{report.TRNOISE_REPLAY_DECISION}.md"
+        self.assertTrue(decision.is_file())
+        sums = (experiment / "SHA256SUMS").read_text().splitlines()
+        self.assertTrue(sums)
+        for line in sums:
+            digest, name = line.split("  ", 1)
+            data = (experiment / name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)

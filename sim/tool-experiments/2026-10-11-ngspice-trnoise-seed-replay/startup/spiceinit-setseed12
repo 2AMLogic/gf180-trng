@@ -1,0 +1,2 @@
+echo STARTUP_USERINIT_SETSEED_12
+setseed 12

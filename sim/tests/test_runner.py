@@ -92,6 +92,46 @@ class DeckTests(unittest.TestCase):
         self.assertIn(".option seed=7", deck_seeded)
 
 
+class TransientNoiseSeedControlTests(unittest.TestCase):
+    """#574 / DR-0031: no tested control made trnoise replay, so none was
+    integrated. A seeded tran-noise deck carries exactly the harness's one
+    ``.option seed=<n>`` and no start-up or control-block seed command, and
+    decks for different seeds differ only in that line."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("vn out 0 dc 0 trnoise(1m 1n 0 0)\nr1 out 0 1k\n")
+        (root / "tb" / "tb.json").write_text(json.dumps({
+            "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+            "analysis_type": "tran-noise", "analyses": ["tran 1n 16n"],
+        }))
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def test_one_harness_seed_line_and_nothing_else(self):
+        for seed in (11, 12):
+            deck = runner.compose_deck(self.tb, self.pdk, self.point, seed=seed)
+            found = testbench.scan_seed_controls(deck)
+            self.assertEqual(len(found), 1, found)
+            self.assertIn(f".option seed={seed}", found[0])
+
+    def test_decks_for_two_seeds_differ_only_in_the_seed_line(self):
+        a = runner.compose_deck(self.tb, self.pdk, self.point, seed=11).splitlines()
+        b = runner.compose_deck(self.tb, self.pdk, self.point, seed=12).splitlines()
+        diff = [(x, y) for x, y in zip(a, b) if x != y]
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(diff, [(".option seed=11", ".option seed=12")])
+
+    def test_pinned_startup_script_sets_no_seed(self):
+        self.assertEqual(
+            testbench.scan_seed_controls(startup.SPINIT_PATH.read_text()), []
+        )
+
+
 class AnalysisContextSubstitutionTests(unittest.TestCase):
     """``analyses`` entries get {vdd_val}-style fields substituted in Python
     before ngspice ever sees them (see ``runner._analysis_context``): the
