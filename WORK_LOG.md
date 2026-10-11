@@ -6,6 +6,25 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #616**: Reserve klt output destinations before submission (#610)
+- **PR #615**: chore: remove dead clk_at, contract_rows, convergence_text, unused ctrl
+- **PR #613**: test: pin the _build_cli.py message contract with direct unit tests
+- **PR #612**: Guard tran-noise records against duplicated noise realizations (#605)
+- **PR #609**: fix: isolate each hostile-init sanity launch to the startup source it names
+- **PR #608**: Share one klt-request emit/run scaffold across the sim evidence tools
+- **PR #606**: Record that trnoise waveforms are not seed-reproducible on ngspice-46 (#574)
+- **PR #604**: Add shellcheck lint:shell step (#591)
+- **PR #600**: Replace hand-copied path-based module loaders with one helper (#553)
+- **Issue #610** (closed): Reserve klt simulation output destinations before submission to preserve prior responses
+- **Issue #605** (closed): Guard tran-noise records against duplicated noise realizations when runs share a process id
+- **Issue #603** (closed): Remove dead functions clk_at, contract_rows, convergence_text (and dead local ctrl)
+- **Issue #601** (closed): Add direct unit tests for layout/cells/_build_cli.py message contract
+- **Issue #591** (closed): Run shellcheck over tracked shell scripts in lint and CI (bash -n is the only check today)
+- **Issue #590** (closed): Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once
+- **Issue #584** (closed): test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46
+- **Issue #574** (closed): ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed
+- **Issue #553** (closed): Replace 24 hand-copied path-based module loaders with one helper
+
 - **PR #599**: refactor: dedupe the layout generators' gds_path/check/main tail into _build_cli
 - **PR #598**: docs: record the second-pass LU.3/LU.4 source re-check in DR-0030
 - **PR #597**: spec: DR-0020 status note, FIFO_DEPTH = 2 holds at the 2 kbps raw rate
