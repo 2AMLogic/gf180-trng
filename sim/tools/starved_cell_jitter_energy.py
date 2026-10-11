@@ -90,6 +90,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _record_parsing import (  # noqa: E402
+    current_records,
+    latest_current_record,
     format_corner,
     iter_result_seed_summaries,
     parse_corner,
@@ -177,8 +179,9 @@ def load_family(glob: str, *, include_superseded: bool = False) -> list[Record]:
     ones are excluded unless ``include_superseded`` requests an explicit
     historical read (issue #425). Older records that remain ``status: valid``
     are always returned."""
-    recs = [Record(p) for p in sorted(RECORDS.glob(glob))]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    return current_records(
+        RECORDS, glob, make=Record, include_superseded=include_superseded,
+        error_cls=RecordError)
 
 
 def window_geometry(manifest_path: Path = TB_MANIFEST) -> tuple[int, int]:
@@ -456,20 +459,12 @@ def load_variants_by_glob(variants, corner: str, factory, *, include_superseded:
     """
     out = []
     for label, glob, *rest in variants:
-        matches = []
-        for path in sorted(RECORDS.glob(glob)):
-            rec = Record(path)
-            if not include_superseded and rec.status != "valid":
-                continue
-            if rec.corner != corner or "sigma_1" not in rec.values:
-                continue
-            matches.append(rec)
-        if not matches:
-            raise RecordError(
-                f"variant {label!r}: no valid sim/records/{glob} record at {corner} "
-                "carries a sigma_1, so this variant cannot be compared"
-            )
-        out.append(factory(label, matches[-1], *rest))
+        rec = latest_current_record(
+            RECORDS, glob, make=Record, corner=corner, requires=("sigma_1",),
+            include_superseded=include_superseded, error_cls=RecordError,
+            context=f"variant {label!r}: ", hint=", so this variant cannot be compared",
+        )
+        out.append(factory(label, rec, *rest))
     return out
 
 

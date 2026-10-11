@@ -86,7 +86,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _record_parsing import parse_result_values  # noqa: E402
+from _record_parsing import current_records, parse_result_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -339,13 +339,14 @@ def _latest_per_corner(records: list[Record]) -> dict[str, Record]:
 
 
 def _read_all(records_dir: Path) -> list[Record]:
-    records = [Record(p) for p in sorted(records_dir.glob(RECORD_GLOB))]
-    if not records:
+    if not current_records(
+        records_dir, RECORD_GLOB, include_superseded=True, error_cls=RecordError
+    ):
         raise RecordError(
             f"no records matching {RECORD_GLOB} under {records_dir} -- run "
             "`python3 sim/tb/digital-sta-power/run_sta.py` first"
         )
-    return [r for r in records if r.valid]
+    return current_records(records_dir, RECORD_GLOB, make=Record, error_cls=RecordError)
 
 
 def load_historical(records_dir: Path | None = None) -> list[Record]:

@@ -66,7 +66,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
+from _record_parsing import current_records, format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -115,8 +115,8 @@ class Record:
 def load(glob: str, *, include_superseded: bool = False) -> list[Record]:
     """Records matching ``glob``; ``status: superseded`` ones are excluded
     unless ``include_superseded`` requests an explicit historical read."""
-    recs = [Record(p) for p in sorted(RECORDS.glob(glob))]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    return current_records(
+        RECORDS, glob, make=Record, include_superseded=include_superseded)
 
 
 #: Every record family that measures the shipped array's per-ring period and

@@ -30,8 +30,9 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Iterator
-from typing import NamedTuple
+from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path
+from typing import Any, NamedTuple
 
 #: The numeric token of a result bullet: the one definition of "what a number
 #: may look like" among the sim tools. Embed it (unparenthesised) in a larger
@@ -464,6 +465,125 @@ def parse_status(
             f"{', '.join(STATUS_VALUES)})"
         )
     return value
+
+
+def _records_label(records_dir: Path) -> str:
+    return "sim/records" if records_dir.name == "records" else str(records_dir)
+
+
+def _scan_records(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None,
+    corner: str | None,
+    requires: Sequence[str],
+    include_superseded: bool,
+    error_cls: type[Exception],
+) -> tuple[int, int, list[Any]]:
+    """``(matched, current, selected)`` for one glob, in sorted-stem order."""
+    matched = current = 0
+    selected: list[Any] = []
+    for path in sorted(records_dir.glob(glob)):
+        matched += 1
+        text = path.read_text()
+        status = parse_status(text, label=path.stem, error_cls=error_cls)
+        if not include_superseded and status != "valid":
+            continue
+        current += 1
+        if make is not None:
+            # The caller's own record object already parsed the corner and
+            # the measurements (its way: e.g. multi-seed bullets), so filter
+            # on its ``corner`` / ``values`` rather than parsing a second time.
+            item = make(path)
+            got, values = item.corner, item.values
+        else:
+            item = path
+            got = values = None
+            if corner is not None:
+                got = format_corner(*parse_corner(text, label=path.stem, error_cls=error_cls))
+            if requires:
+                values = parse_result_values(text, label=path.stem, error_cls=error_cls)
+        if corner is not None and got != corner:
+            continue
+        if any(key not in values for key in requires):
+            continue
+        selected.append(item)
+    return matched, current, selected
+
+
+def current_records(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None = None,
+    corner: str | None = None,
+    requires: Sequence[str] = (),
+    include_superseded: bool = False,
+    error_cls: type[Exception] = RuntimeError,
+) -> list[Any]:
+    """The current-evidence records matching ``glob``, oldest first.
+
+    This is the one place that applies the record lifecycle to a directory
+    read: ``status: superseded`` records are dropped unless
+    ``include_superseded`` asks for an explicit historical read, and every
+    matched record must carry a readable ``status:`` (``error_cls`` names the
+    record otherwise). Stems begin with the run date and sequence number, so
+    sorted order is chronological. ``corner`` (a :func:`format_corner` label)
+    and ``requires`` (Result-section keys that must be present) narrow the
+    selection further. ``make`` turns each surviving path into the caller's
+    own record object (which must then expose ``.corner`` and ``.values`` if
+    those filters are used); without it the paths are returned.
+    """
+    return _scan_records(
+        records_dir, glob, make=make, corner=corner, requires=requires,
+        include_superseded=include_superseded, error_cls=error_cls,
+    )[2]
+
+
+def latest_current_record(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None = None,
+    corner: str | None = None,
+    requires: Sequence[str] = (),
+    include_superseded: bool = False,
+    error_cls: type[Exception] = RuntimeError,
+    required: bool = True,
+    context: str = "",
+    hint: str = "",
+) -> Any | None:
+    """The newest record :func:`current_records` selects ("latest wins";
+    earlier records stay on file as append-only evidence).
+
+    When nothing is left, ``error_cls`` is raised with one of three
+    wordings: no record matches the glob, every match is superseded, or no
+    current match meets the ``corner``/``requires`` filters. With
+    ``required=False`` all three return ``None`` instead. ``context``
+    prefixes and ``hint`` suffixes the message, e.g. to name the variant.
+    """
+    matched, current, selected = _scan_records(
+        records_dir, glob, make=make, corner=corner, requires=requires,
+        include_superseded=include_superseded, error_cls=error_cls,
+    )
+    where = f"{_records_label(records_dir)}/{glob}"
+    if selected:
+        return selected[-1]
+    if not required:
+        return None
+    if not matched:
+        raise error_cls(f"{context}no committed record matches {where}{hint}")
+    if not current:
+        raise error_cls(
+            f"{context}no valid record matches {where} (every match is superseded){hint}"
+        )
+    parts = []
+    if corner is not None:
+        parts.append(f"at {corner}")
+    if requires:
+        parts.append("carries " + ", ".join(requires))
+    raise error_cls(f"{context}no valid {where} record {' '.join(parts)}{hint}")
 
 
 def format_corner(process: str, temp_c: float, vdd: float) -> str:

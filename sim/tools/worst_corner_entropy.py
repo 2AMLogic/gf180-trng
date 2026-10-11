@@ -102,7 +102,7 @@ from array_sizing import (  # noqa: E402
     shipped_ring_count,
 )
 from starved_cell_jitter_energy import load_points as load_starved_points  # noqa: E402
-from _record_parsing import iter_result_seed_summaries, parse_status  # noqa: E402
+from _record_parsing import current_records, iter_result_seed_summaries  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -355,10 +355,10 @@ def report_mc_ro_freq(*, include_superseded: bool = False) -> None:
     # extends this one's as a substring -- are never swept in here as if they
     # were mismatch-enabled MC data.
     records = []
-    for rec_path in sorted(RECORDS.glob("*-ro-array-core-mc-freq-[0-9]*.md")):
-        text = rec_path.read_text()
-        if include_superseded or parse_status(text, label=rec_path.stem) == "valid":
-            records.append((rec_path, text))
+    for rec_path in current_records(
+        RECORDS, "*-ro-array-core-mc-freq-[0-9]*.md", include_superseded=include_superseded
+    ):
+        records.append((rec_path, rec_path.read_text()))
     if not records:
         print("  (no valid sim/records/*-ro-array-core-mc-freq-[0-9]*.md record committed yet)")
         return
@@ -432,16 +432,12 @@ def _sampler_offset(
     # (sim/tb/sampler-dff-mc-offset-control/, issue #146) -- whose slug
     # extends this one's as a substring -- are never picked up here as if
     # they were mismatch-enabled MC data.
-    records = sorted(RECORDS.glob("*-sampler-dff-mc-offset-[0-9]*.md"))
-    if not records:
-        raise RuntimeError(
-            "no sim/records/*-sampler-dff-mc-offset-[0-9]*.md record committed yet"
-        )
+    glob = "*-sampler-dff-mc-offset-[0-9]*.md"
+    if not current_records(RECORDS, glob, include_superseded=True):
+        raise RuntimeError(f"no sim/records/{glob} record committed yet")
     candidates = []
-    for rec_path in records:
+    for rec_path in current_records(RECORDS, glob, include_superseded=include_superseded):
         text = rec_path.read_text()
-        if not include_superseded and parse_status(text, label=rec_path.stem) != "valid":
-            continue
         process_m = re.search(r"process:\s*(\w+)", text)
         temp_m = re.search(r"temperature:\s*(-?[\d.]+)", text)
         vdd_m = re.search(r"voltage:\s*([\d.]+)", text)
