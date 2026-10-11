@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .corners import PvtPoint
 from .pdk import Pdk
-from .testbench import Testbench, write_input_snapshots
+from .testbench import Testbench, validate_seed_ownership, write_input_snapshots
 
 NGSPICE = "ngspice"
 DEFAULT_TIMEOUT_S = 300
@@ -191,6 +191,8 @@ def compose_deck(
     files, so every corner of an invocation consumes identical SPICE inputs.
     A hand-built ``tb`` without captured bytes falls back to the live paths.
     """
+    if seed is not None:
+        validate_seed_ownership(tb)
     dut_include = tb.design_netlist
     fragment_include = tb.netlist
     if snapshot_dir is not None:
@@ -577,6 +579,7 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
     """
     if not tb.stochastic:
         return [(None, 0)]
+    validate_seed_ownership(tb)
     if not seeds:
         raise ValueError(
             f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "

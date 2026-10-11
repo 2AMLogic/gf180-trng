@@ -26,6 +26,7 @@ design/.work/
 # "sim/ results are append-only evidence").
 !sim/records/raw/**/*.log
 !sim/records/raw/**/*.raw
+!sim/tool-experiments/**/*.log
 
 # Agent session isolation worktrees (created inside the main checkout by the
 # harness's `isolation: worktree` mechanism, same role as .loom/worktrees/).

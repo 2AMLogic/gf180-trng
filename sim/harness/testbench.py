@@ -16,6 +16,11 @@ harness hands the fragment these parameters:
 
 plus anything in the manifest's ``params`` map, and (for stochastic
 testbenches) the seed injected via ``.option seed=<value>``.
+
+Seed control is harness-owned for stochastic testbenches: manifest ``options``,
+``analyses``, the fragment, the DUT netlist and its captured includes must not
+set a seed (``.option seed=``, ``setseed``, ``set rndseed=``); see
+``validate_seed_ownership``. Seeds come from the CLI ``--seeds`` list.
 """
 
 from __future__ import annotations
@@ -23,6 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -267,6 +273,7 @@ def load(directory: str | Path) -> Testbench:
         design_dependencies=design_dependencies,
     )
     validate_netlist(tb)
+    validate_seed_ownership(tb)
     # The manifest drives deck composition and measurement interpretation, so
     # refuse to proceed if it was edited while we were loading it: the
     # snapshot would otherwise not be the configuration actually used.
@@ -369,6 +376,135 @@ def _capture_dut_dependencies(
 
     visit(dut, dut.name, data)
     return tuple(found.items())
+
+
+_TOKEN_RE = re.compile(r"[^\s=,()]+")
+
+
+def _logical_lines(text: str) -> list[tuple[int, str]]:
+    """``(first line number, text)`` per logical SPICE/control line.
+
+    ``+`` continuation lines are joined to their predecessor; ``*`` comment
+    lines are dropped and trailing ``;`` / ``$`` comments are stripped.
+    """
+    out: list[tuple[int, str]] = []
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        line = raw.strip()
+        if not line or line.startswith("*"):
+            continue
+        for marker in (";", " $"):
+            cut = line.find(marker)
+            if cut >= 0:
+                line = line[:cut].strip()
+        if line.startswith("+") and out:
+            out[-1] = (out[-1][0], out[-1][1] + " " + line[1:].strip())
+        elif line:
+            out.append((lineno, line))
+    return out
+
+
+# ngspice-46 reads the seed from any netlist line whose first token starts
+# with ".opt" (src/frontend/options.c inp_getopts: ciprefix(".opt", line)) by
+# a plain substring search for "seed=" (src/frontend/inp.c eval_opt), so
+# ".opt seed=3" and ".option xseed=3" set the seed too. The pattern below is a
+# deliberate superset of that search (it also tolerates blanks around "=").
+_OPTION_SEED_RE = re.compile(r"seed\s*=")
+
+
+def _seed_control_reason(line: str, *, bare_options: bool = False) -> str | None:
+    """Why ``line`` competes with the harness-owned seed (``None`` if it doesn't).
+
+    Recognized ngspice seed-setting forms (case-insensitive), each backed by
+    the ngspice-46 manual and source and exercised by the experiment in
+    ``sim/tool-experiments/2026-10-11-ngspice-seed-control/``:
+
+    * a netlist option line (first token ``.opt...``, i.e. ``.opt``,
+      ``.option``, ``.options``) containing ``seed=`` -- manual 11.1.1 option
+      ``SEED``. With several, ngspice warns and the *first* one in the deck
+      wins, so a later one is silently ignored;
+    * the ``option`` / ``options`` control command with a seed option --
+      manual 13.5.54 / 13.7. Measured to have no effect on the generator in
+      ngspice-46, but it declares a seed the run would not use;
+    * the ``setseed [n]`` control command -- manual 13.5.76; reseeds every
+      later draw;
+    * ``set rndseed=<n>`` / ``unset rndseed`` -- manual 13.7; reseeds the
+      control-language random functions and a later bare ``setseed``.
+
+    With ``bare_options`` the line is a bare option list (the manifest
+    ``options`` field, emitted as ``.options <entry>``). Other solver options
+    (``reltol``, ``method``, ``seedinfo`` ...) are not touched.
+    """
+    tokens = [t.lower() for t in _TOKEN_RE.findall(line)]
+    if not tokens:
+        return None
+    head, rest = tokens[0], tokens[1:]
+    lowered = line.lower()
+    if bare_options:
+        if "seed" in tokens or _OPTION_SEED_RE.search(lowered):
+            return "option 'seed'"
+    elif head.startswith(".opt") or head in ("option", "options"):
+        if "seed" in rest or _OPTION_SEED_RE.search(lowered):
+            return "option 'seed'"
+    if head == "setseed":
+        return "'setseed' command"
+    if head in ("set", "unset") and "rndseed" in rest:
+        return "'rndseed' variable"
+    return None
+
+
+def scan_seed_controls(text: str, *, bare_options: bool = False) -> list[str]:
+    """Lines of ``text`` that set the random seed, as ``line N: ... (why)``."""
+    problems: list[str] = []
+    for lineno, line in _logical_lines(text):
+        reason = _seed_control_reason(line, bare_options=bare_options)
+        if reason:
+            problems.append(f"  line {lineno}: {line} ({reason})")
+    return problems
+
+
+def validate_seed_ownership(tb: Testbench) -> None:
+    """Reject manifest, SPICE-input and analysis content that sets a seed.
+
+    For a stochastic testbench the harness alone owns the RNG seed: it emits
+    one ``.option seed=<n>`` per run from the CLI seed list, and a second
+    declaration (manifest ``options``, fragment, DUT or any captured include,
+    or an ``analyses`` command) would leave the random sequence ambiguous
+    while the record reports only the planned seed. Raises ``ValueError``
+    naming each offending source; deterministic testbenches are not checked.
+    """
+    if not tb.stochastic:
+        return
+    sources: list[tuple[str, list[str]]] = []
+    for i, option in enumerate(tb.options):
+        sources.append((
+            f"{tb.manifest_path} options[{i}]",
+            scan_seed_controls(f"x {option}", bare_options=True),
+        ))
+    for i, analysis in enumerate(tb.analyses):
+        sources.append((f"{tb.manifest_path} analyses[{i}]", scan_seed_controls(analysis)))
+    fragment = tb.netlist_bytes if tb.netlist_bytes is not None else tb.netlist.read_bytes()
+    sources.append((str(tb.netlist), scan_seed_controls(fragment.decode("utf-8", errors="replace"))))
+    if tb.design_netlist is not None:
+        if tb.design_netlist_bytes is not None:
+            captured = [(tb.design_netlist.name, tb.design_netlist_bytes), *tb.design_dependencies]
+        else:
+            dut_bytes = tb.design_netlist.read_bytes()
+            captured = [
+                (tb.design_netlist.name, dut_bytes),
+                *_capture_dut_dependencies(tb.design_netlist, dut_bytes),
+            ]
+        for name, data in captured:
+            sources.append((
+                str(tb.design_netlist.parent / name),
+                scan_seed_controls(data.decode("utf-8", errors="replace")),
+            ))
+    messages = [f"{src}:\n" + "\n".join(p) for src, p in sources if p]
+    if messages:
+        raise ValueError(
+            f"{tb.slug}: stochastic testbench declares its own random seed -- seeds are "
+            "owned by the harness; remove these and pass seeds with --seeds:\n"
+            + "\n".join(messages)
+        )
 
 
 def validate_netlist(tb: Testbench) -> None:
