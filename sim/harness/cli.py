@@ -430,10 +430,17 @@ def run(args: argparse.Namespace) -> int:
                 (point.corner_id, workdirs[point_index], pre.describe_differences(post))
             )
             point_ok = False
+        # Duplicated trnoise realizations (#605): withhold the record.
+        duplicated = "" if changed else runner.duplicate_realization_problem(tb, results)
+        if duplicated:
+            point_ok = False
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
-            if changed:
+            if duplicated:
+                flag = "FAILED-DUPLICATE-NOISE"
+                detail = f"{duplicated}; record withheld"
+            elif changed:
                 flag = "FAILED-PDK-CHANGED"
                 detail = "PDK model files changed during the run; record withheld"
             elif point_ok:
@@ -456,6 +463,9 @@ def run(args: argparse.Namespace) -> int:
             print(f"[{i:>3}/{len(points)}] {flag} {point.corner_id:<22} {detail}")
 
         if changed:
+            return
+        if duplicated:
+            print(f"error: {point.corner_id}: {duplicated}", file=sys.stderr)
             return
         if not args.no_write:
             record = report.build_record(
