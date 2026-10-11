@@ -18,6 +18,11 @@ related: "#486 (this investigation; criterion stays unresolved), #449 (original 
   supersede DR-0029: DR-0029's decision, its measurement provenance and its
   "Evidence gap" section remain in force and unedited. The source-confirmation
   criterion of #486 is **not met**.
+- 2026-10-11 (second pass): re-verified the revisit triggers after the
+  open-PDK repositories moved to the FOSSi Foundation. No revision-bearing
+  source appeared anywhere in the moved ecosystem; the design-manual content
+  is byte-identical to the checksums below. See "Re-check (2026-10-11, second
+  pass)". The criterion is still **not met**.
 
 ## Context
 
@@ -155,4 +160,31 @@ cannot be shown to be the current revision.
   are unaffected.
 - **Revisit if**: the controlled DRM or a foundry confirmation is supplied,
   whichever column it assigns; or the open-PDK documentation adds a revision
-  stamp or a definition of `MV`.
+  stamp or a definition of `MV` (the watch point is now the FOSSi Foundation
+  continuation, `fossi-foundation/gf180mcu-pdk` and its
+  `globalfoundries-pdk-libs-*` repositories, supplanting the archived
+  `google/gf180mcu-pdk`).
+
+## Re-check (2026-10-11, second pass)
+
+A second dispatch on #486 re-verified the revisit triggers above after
+discovering that the open-PDK ecosystem had moved. All retrievals on
+2026-10-11, from public endpoints, without credentials.
+
+| Check | Result |
+|---|---|
+| `google/gf180mcu-pdk` (the repository pinned above) | **Archived** (GitHub `archived: true`). `main` HEAD is still `de3240d7529a6970437ac3344820aaae7839f215` (2023-05-31): the transcription recorded above is still its last content state. |
+| `fossi-foundation/gf180mcu-pdk` | Fork of the archived repository, HEAD `25ed9c64b64b8e1b93cc4d2d5cade4cd82383a9a` (pushed 2026-05-23): three commits on top of `de3240d`, all Read the Docs build configuration — one repoints the docs at the fork, and one **disables PDF output** to fit the build-time limit (which is why the PDF download above returns 404). No tags, no releases. **No `docs/` content change.** |
+| Byte-identity at the fork HEAD | `drm_14_3_1.rst` `ccd536ae6b58…`, `55_Latch-up_152.csv` `50f0f0274baf…`, `01_Document_rev2_3_4.csv` `165851db9c1d…`, `02_Process_Identification7.csv` `215a57055b83…` — identical to the checksums recorded above. The rendered `latest` page re-retrieved: 28,760 bytes, SHA-256 `171588c71102…`, identical again. |
+| Read the Docs versioned builds | `en/v0.0.0/…/drm_14_3_1.html` returns 404; `latest` remains the only build, still without a revision identifier. |
+| `fossi-foundation/globalfoundries-pdk-libs-gf180mcu_fd_pv` (the active DRC/LVS deck repository, pushed 2026-10-06) | Still no `LU.*` rule: there is no latch-up rule deck; `rule_decks/guard_ring.rb` codes GR.* only; `rule_decks/dualgate.rb` codes DV.* including DV.9 ("3.3V and 5V/6V PMOS cannot be sitting inside same NWELL"), which corroborates the DualGate = 5V/6V semantics but adds nothing about the LU column. Per the #486 clarification an executable deck is not source for the column in any case. |
+| `fossi-foundation/globalfoundries-pdk-libs-gf180mcu_fd_sc_mcu9t5v0` (the 9t 5 V library repository, active) | README and tree carry no latch-up or device-class documentation; per-cell datasheets only. |
+| Other canonical locations | No `gf180mcu-pdk` GitHub organization exists (404). The `foss-eda-tools.googlesource.com/gf180mcu-pdk` Gitiles mirror exposes only `main` and `v0.0.0`, both matching GitHub. GlobalFoundries' former product-page URL no longer resolves (404 after redirect to `gf.com`). |
+
+Outcome: the revisit triggers have not fired anywhere in the moved ecosystem —
+no revision stamp, no definition of `MV`, no numbered release, and no new
+executable latch-up rule. The source-confirmation criterion of #486 stays
+unresolved, and the access requirement in Decision item 3 is unchanged (a
+controlled, numbered DRM revision or written foundry confirmation; an
+operator/foundry-contact step). No spec, measurement, test or report change
+follows from this re-check.
