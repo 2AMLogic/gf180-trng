@@ -51,6 +51,30 @@ class ChecksumTests(unittest.TestCase):
             self.assertNotEqual(report.blob_sha(root, a), report.blob_sha(root, b))
 
 
+class RawPathValidationTests(unittest.TestCase):
+    def test_library_rejects_escapes_before_hashing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp).resolve()
+            records = repo / "sim" / "records"
+            (records / "raw" / "s").mkdir(parents=True)
+            outside = repo.parent / "outside-raw-dir"
+            outside.mkdir(exist_ok=True)
+            self.addCleanup(outside.rmdir)
+            digest = "0" * 64
+            for raw_path, name in (
+                (str(outside), "a.log"), ("../outside-raw-dir", "a.log"),
+                ("sim/records/raw/s", "../a.log"), ("sim/records/raw/s", "/etc/hostname"),
+            ):
+                rec = records / "r.md"
+                rec.write_text(
+                    f"---\nraw:\n  path: {raw_path}\n  files:\n    - {name}  sha256:{digest}\n---\n"
+                )
+                with mock.patch.object(report, "sha256_file") as spy:
+                    problems = report.verify_record_file(rec, repo)
+                self.assertTrue(problems and "invalid raw provenance" in problems[0], problems)
+                spy.assert_not_called()
+
+
 class RecordStemTests(unittest.TestCase):
     def test_first_allocation_is_01(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -767,8 +791,8 @@ class RawFileVerificationTests(unittest.TestCase):
         self.tb = testbench.load(tb_dir)
         self.pdk = fake_pdk(root / "gf180mcuD")
         self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
-        self.raw_dir = root / "raw"
-        self.raw_dir.mkdir()
+        self.raw_dir = root / "records" / "raw" / "2026-07-31-an-experiment-01"
+        self.raw_dir.mkdir(parents=True)
         self.deck = self.raw_dir / "tt_27c_3.30v.spice"
         self.log = self.raw_dir / "tt_27c_3.30v.log"
         self.deck.write_text("* deck from the first invocation\n")
@@ -1003,7 +1027,7 @@ class ManifestSnapshotTests(unittest.TestCase):
             {"name": "an-experiment", "netlist": "x.spice", "measure": {"vout": measure_expr}}
         ))
         tb = testbench.load(self.tb_dir)
-        raw_dir = self.root / "raw" / stem
+        raw_dir = self.root / "records" / "raw" / stem
         raw_dir.mkdir(parents=True)
         (raw_dir / "d.spice").write_text("* deck\n")
         (raw_dir / "d.log").write_text("m_vout = 1\n")

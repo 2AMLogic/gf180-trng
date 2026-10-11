@@ -28,7 +28,7 @@ import platform
 import re
 import statistics
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
 from . import runner
@@ -765,18 +765,74 @@ def verify_record(record: dict, *, check_unlisted: bool = True) -> list[str]:
     )
 
 
+def _is_within(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def validate_raw_artifacts(
+    repo_root: Path, raw_root: Path, raw_path: str, raw_files: list[tuple[str, str]]
+) -> tuple[Path | None, list[tuple[str, Path]], list[str]]:
+    """Check a record's declared artifacts live inside its raw directory.
+
+    ``raw_path`` must be repository-relative (no absolute form, no ``..``)
+    and resolve strictly inside ``raw_root`` (the evidence raw root, itself
+    inside ``repo_root``). Each ``raw_files`` name must be a simple file name
+    and, after resolving symlinks, stay inside the raw directory. Returns
+    ``(raw_dir, [(name, path)], problems)``; when ``problems`` is non-empty
+    nothing may be read or hashed. Pure path logic: never opens a file.
+    """
+    pure = PurePosixPath(raw_path)
+    if not raw_path or "\\" in raw_path or pure.is_absolute() or PureWindowsPath(raw_path).drive:
+        return None, [], [f"raw.path {raw_path!r} must be a repository-relative path"]
+    if ".." in pure.parts:
+        return None, [], [f"raw.path {raw_path!r} must not contain '..'"]
+    root = repo_root.resolve()
+    base = raw_root.resolve()
+    raw_dir = repo_root / raw_path
+    resolved = raw_dir.resolve()
+    if not _is_within(resolved, root):
+        return None, [], [f"raw.path {raw_path!r} resolves outside the repository"]
+    if resolved == base or not _is_within(resolved, base):
+        return None, [], [
+            f"raw.path {raw_path!r} resolves outside the evidence raw root "
+            f"{base.relative_to(root) if _is_within(base, root) else base}"
+        ]
+    problems: list[str] = []
+    artifacts: list[tuple[str, Path]] = []
+    for name, _digest in raw_files:
+        if name in (".", "..") or "/" in name or "\\" in name or PureWindowsPath(name).drive:
+            problems.append(f"raw.files name {name!r} must be a simple file name")
+            continue
+        candidate = raw_dir / name
+        if not _is_within(candidate.resolve(), resolved):
+            problems.append(f"raw.files name {name!r} resolves outside the raw directory")
+            continue
+        artifacts.append((name, candidate))
+    return raw_dir, artifacts, problems
+
+
 def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = True) -> list[str]:
     """``verify_raw_files`` for a record already written to disk."""
     try:
-        raw_path, raw_files = parse_raw_section(path.read_text())
+        text = path.read_text()
+        raw_path, raw_files = parse_raw_section(text)
     except RawSectionError as exc:
         return [f"{path.name}: malformed raw provenance: {exc}"]
     if not raw_path:
         return [f"{path.name}: no raw.path in frontmatter"]
     if not raw_files:
         return [f"{path.name}: raw.files lists no files"]
-    problems = verify_raw_files(repo_root / raw_path, raw_files, check_unlisted=check_unlisted)
-    problems += verify_manifest_reference(path.read_text(), raw_files)
+    raw_dir, _artifacts, bad = validate_raw_artifacts(
+        repo_root, path.resolve().parent / RAW_DIRNAME, raw_path, raw_files
+    )
+    if bad or raw_dir is None:
+        return [f"{path.name}: invalid raw provenance: {p}" for p in bad]
+    problems = verify_raw_files(raw_dir, raw_files, check_unlisted=check_unlisted)
+    problems += verify_manifest_reference(text, raw_files)
     return problems
 
 
