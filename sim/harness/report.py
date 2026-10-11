@@ -35,7 +35,7 @@ from . import runner
 from .corners import PvtPoint
 from .pdk import Pdk
 from .runner import RunResult
-from .testbench import Testbench
+from .testbench import Testbench, write_input_snapshots
 
 RECORDS_DIRNAME = "records"
 RAW_DIRNAME = "raw"
@@ -356,6 +356,21 @@ def build_record(
     if manifest_snapshot is not None:
         raw_files.append(manifest_snapshot)
 
+    # The SPICE inputs ngspice consumed: the run already materialized them
+    # (runner.run_one); this re-checks they still equal the bytes captured at
+    # load (raising if a snapshot was mutated mid-run) and lists them.
+    input_snapshots = write_input_snapshots(tb, raw_dir)
+    raw_files.extend(input_snapshots)
+    if tb.netlist_bytes is not None:
+        testbench_sha = _git_blob_sha1(tb.netlist_bytes)
+        netlist_sha = _git_blob_sha1(tb.dut_netlist_bytes)
+    else:
+        testbench_sha = blob_sha(repo_root, tb.netlist)
+        netlist_sha = blob_sha(repo_root, tb.dut_netlist)
+    snapshot_digest = dict(input_snapshots)
+    fragment_snapshot = tb.fragment_snapshot_name if input_snapshots else None
+    dut_snapshot = tb.dut_snapshot_name if input_snapshots else None
+
     return {
         "record": stem,
         "date": completed_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -368,9 +383,9 @@ def build_record(
         # data (all runs failed to converge)" instead of the numbers above.
         "timeout_s": timeout_s,
         "testbench_path": _relpath(repo_root, tb.netlist),
-        "testbench_sha": blob_sha(repo_root, tb.netlist),
+        "testbench_sha": testbench_sha,
         "netlist_path": _relpath(repo_root, tb.dut_netlist),
-        "netlist_sha": blob_sha(repo_root, tb.dut_netlist),
+        "netlist_sha": netlist_sha,
         "repo_commit": repo_commit_field(git),
         "pdk": f"{pdk.variant} @ {pdk.version}",
         "pdk_models": [
@@ -407,6 +422,11 @@ def build_record(
         "manifest_snapshot": manifest_snapshot[0] if manifest_snapshot else "",
         "manifest_sha256": manifest_snapshot[1] if manifest_snapshot else "",
         "manifest_sha": _git_blob_sha1(tb.manifest_bytes) if manifest_snapshot else "",
+        "testbench_snapshot": fragment_snapshot or "",
+        "testbench_sha256": snapshot_digest.get(fragment_snapshot, ""),
+        "netlist_snapshot": dut_snapshot or "",
+        "netlist_sha256": snapshot_digest.get(dut_snapshot, ""),
+        "netlist_dependencies": [name for name, _ in tb.design_dependencies],
     }
 
 
@@ -442,6 +462,20 @@ def render_frontmatter(record: dict) -> str:
             f"  snapshot: {record['manifest_snapshot']}",
             f"  sha256: {record['manifest_sha256']}",
         ]
+    # Additive: records predating the SPICE-input snapshots (#515) have no
+    # ``inputs:`` block and stay valid as they are.
+    if record.get("testbench_sha256"):
+        lines += [
+            "inputs:",
+            f"  testbench_snapshot: {record['testbench_snapshot']}",
+            f"  testbench_sha256: {record['testbench_sha256']}",
+            f"  netlist_snapshot: {record['netlist_snapshot']}",
+            f"  netlist_sha256: {record['netlist_sha256']}",
+        ]
+        if record.get("netlist_dependencies"):
+            lines.append(
+                f"  netlist_dependencies: {', '.join(record['netlist_dependencies'])}"
+            )
     lines += [
         "",
         f"pdk: {_yaml_str(record['pdk'])}",
@@ -595,6 +629,17 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
             "out `repo_commit` and, if the snapshot differs from the tree "
             "(`diff`), restore the snapshot over it before re-running. See "
             "`sim/README.md`.",
+            "",
+        ]
+    if record.get("testbench_sha256"):
+        lines += [
+            f"The SPICE inputs ngspice consumed are snapshotted next to the decks as "
+            f"`{record['raw_path']}{record['testbench_snapshot']}` and "
+            f"`{record['raw_path']}{record['netlist_snapshot']}` (the decks include "
+            "these copies, not the working-tree files). `testbench.sha`/`netlist.sha` "
+            "hash those same bytes; if they differ from the tree at `repo_commit`, "
+            "the run used dirty-tree input -- restore the snapshots over the "
+            "originals (in a scratch worktree) before re-running. See `sim/README.md`.",
             "",
         ]
     return "\n".join(lines)
@@ -833,6 +878,7 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
         return [f"{path.name}: invalid raw provenance: {p}" for p in bad]
     problems = verify_raw_files(raw_dir, raw_files, check_unlisted=check_unlisted)
     problems += verify_manifest_reference(text, raw_files)
+    problems += verify_inputs_reference(text, raw_files)
     return problems
 
 
@@ -872,3 +918,48 @@ def verify_manifest_reference(text: str, raw_files: list[tuple[str, str]]) -> li
     if listed[name] != digest.removeprefix("sha256:"):
         return [f"manifest.sha256 {digest} != {listed[name]} recorded for {name} in raw.files"]
     return []
+
+
+def parse_inputs_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``inputs:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "inputs:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_inputs_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """Each SPICE-input digest a record declares must match its raw.files entry.
+
+    Legacy records without an ``inputs:`` block yield no problems.
+    """
+    ref = parse_inputs_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    problems: list[str] = []
+    for role in ("testbench", "netlist"):
+        name = ref.get(f"{role}_snapshot", "")
+        digest = ref.get(f"{role}_sha256", "")
+        if not name or name not in listed:
+            problems.append(f"inputs.{role}_snapshot {name!r} is not listed in raw.files")
+        elif listed[name] != digest.removeprefix("sha256:"):
+            problems.append(
+                f"inputs.{role}_sha256 {digest} != {listed[name]} recorded for {name} in raw.files"
+            )
+    for dep in [d.strip() for d in ref.get("netlist_dependencies", "").split(",") if d.strip()]:
+        if dep not in listed:
+            problems.append(f"inputs.netlist_dependencies {dep!r} is not listed in raw.files")
+    return problems

@@ -1004,10 +1004,6 @@ class StochasticRecordTests(unittest.TestCase):
         self.assertIn("over 2 seeds", text)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ManifestSnapshotTests(unittest.TestCase):
     """The loaded tb.json is snapshotted and checksummed with the raw output
     (#510). No PDK or ngspice involved."""
@@ -1105,3 +1101,120 @@ class ManifestSnapshotTests(unittest.TestCase):
         self.assertEqual(report.verify_record(legacy), [])
         path = report.write_record(legacy, self.tb, self.root / "records", ["c"])
         self.assertEqual(report.verify_record_file(path, self.root), [])
+
+
+class InputSnapshotTests(unittest.TestCase):
+    """The SPICE fragment and DUT netlist are captured once at load, frozen
+    into each corner's directory, and hashed from those same bytes (#515).
+    No PDK and no ngspice involved."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.tb_dir = self.root / "tb" / "an-experiment"
+        self.tb_dir.mkdir(parents=True)
+        self.frag = self.tb_dir / "x.spice"
+        self.dut = self.root / "dut.spice"
+        self.frag.write_text("v1 out 0 dc {vdd_val}\n")
+        self.dut.write_text(".subckt cell a b\nr1 a b 1k\n.ends\n")
+        (self.tb_dir / "tb.json").write_text(json.dumps({
+            "name": "an-experiment", "netlist": "x.spice",
+            "design_netlist": str(self.dut), "measure": {"vout": "v(out)"},
+        }))
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.tb = testbench.load(self.tb_dir)
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.orig_frag = self.frag.read_bytes()
+        self.orig_dut = self.dut.read_bytes()
+
+    def _run_corner(self, stem: str) -> dict:
+        raw_dir = self.root / "records" / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        (raw_dir / "d.spice").write_text("* deck\n")
+        (raw_dir / "d.log").write_text("m_vout = 1\n")
+        testbench.write_input_snapshots(self.tb, raw_dir)
+        results = [runner.RunResult(
+            point=self.point, seed=None, status="ok", measurements={"vout": 1.0},
+            deck_name="d.spice", log_name="d.log",
+        )]
+        return report.build_record(
+            tb=self.tb, pdk=self.pdk, point=self.point, results=results,
+            ngspice="ngspice-46", repo_root=self.root, stem=stem,
+            completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": True},
+        )
+
+    def test_hashes_are_of_captured_bytes_even_after_edit(self):
+        self.frag.write_text("v1 out 0 dc 99\n")
+        self.dut.write_text("* changed\n")
+        rec = self._run_corner("2026-07-31-an-experiment-01")
+        self.assertEqual(rec["testbench_sha"], report._git_blob_sha1(self.orig_frag))
+        self.assertEqual(rec["netlist_sha"], report._git_blob_sha1(self.orig_dut))
+        raw = Path(rec["raw_dir"])
+        self.assertEqual((raw / testbench.FRAGMENT_SNAPSHOT_NAME).read_bytes(), self.orig_frag)
+        self.assertEqual((raw / testbench.DUT_SNAPSHOT_NAME).read_bytes(), self.orig_dut)
+        names = {n for n, _ in rec["raw_files"]}
+        self.assertLessEqual(
+            {testbench.FRAGMENT_SNAPSHOT_NAME, testbench.DUT_SNAPSHOT_NAME}, names
+        )
+        self.assertEqual(report.verify_record(rec), [])
+
+    def test_frontmatter_block_and_verification(self):
+        rec = self._run_corner("2026-07-31-an-experiment-01")
+        text = report.render_frontmatter(rec)
+        self.assertIn("inputs:", text)
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+        bad = path.read_text().replace(rec["testbench_sha256"], "0" * 64, 1)
+        problems = report.verify_inputs_reference(bad, rec["raw_files"])
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_mutated_snapshot_is_detected(self):
+        rec = self._run_corner("2026-07-31-an-experiment-01")
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        (Path(rec["raw_dir"]) / testbench.DUT_SNAPSHOT_NAME).write_text("* tampered\n")
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any(testbench.DUT_SNAPSHOT_NAME in p for p in problems), problems)
+
+    def test_snapshot_mutated_before_record_is_refused(self):
+        raw_dir = self.root / "records" / "raw" / "s"
+        testbench.write_input_snapshots(self.tb, raw_dir)
+        (raw_dir / testbench.FRAGMENT_SNAPSHOT_NAME).write_text("* tampered\n")
+        with self.assertRaisesRegex(RuntimeError, "modified during the run"):
+            testbench.write_input_snapshots(self.tb, raw_dir)
+
+    def test_legacy_record_without_inputs_block_is_unchanged(self):
+        rec = self._run_corner("2026-07-31-an-experiment-01")
+        for key in ("testbench_sha256", "testbench_snapshot", "netlist_sha256", "netlist_snapshot"):
+            rec[key] = ""
+        self.assertNotIn("inputs:", report.render_frontmatter(rec))
+        self.assertEqual(report.verify_inputs_reference("---\nrecord: x\n---\n", []), [])
+
+    def test_dut_dependencies_are_snapshotted_hashed_and_verified(self):
+        (self.root / "extra.spice").write_text("* extra original\n")
+        self.dut.write_text('.include "extra.spice"\n.subckt cell a b\n.ends\n')
+        self.tb = testbench.load(self.tb_dir)
+        (self.root / "extra.spice").write_text("* extra MUTATED\n")
+        rec = self._run_corner("2026-07-31-an-experiment-01")
+        raw = Path(rec["raw_dir"])
+        self.assertEqual((raw / "extra.spice").read_text(), "* extra original\n")
+        self.assertIn("extra.spice", dict(rec["raw_files"]))
+        self.assertEqual(report.verify_record(rec), [])
+        text = report.render_frontmatter(rec)
+        self.assertIn("netlist_dependencies: extra.spice", text)
+        self.assertEqual(report.verify_inputs_reference(text, rec["raw_files"]), [])
+        self.assertEqual(
+            len(report.verify_inputs_reference(text, [r for r in rec["raw_files"] if r[0] != "extra.spice"])), 1
+        )
+        (raw / "extra.spice").write_text("* tampered\n")
+        self.assertTrue(any("extra.spice" in p for p in report.verify_record(rec)))
+
+    def test_hand_built_testbench_falls_back_to_live_files(self):
+        tb = testbench.Testbench(directory=self.tb_dir, slug="h", netlist=self.frag)
+        self.assertEqual(testbench.write_input_snapshots(tb, self.root / "o"), [])
+        self.assertEqual(tb.input_snapshots(), [])
+
+
+if __name__ == "__main__":
+    unittest.main()
