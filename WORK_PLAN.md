@@ -22,28 +22,27 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
-- **#507**: Build/runtime failure on main: nightly SDF freshness fails on engine_version
-- **#515**: Freeze SPICE source inputs for consistent multi-corner evidence
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
-- **#539**: Use exclusive publication for SPICE evidence Markdown
-- **#541**: Validate raw-artifact path containment before verifying evidence
+- **#553**: Replace 24 hand-copied path-based module loaders with one helper
+- **#563**: Reject nonpositive simulation timeout bounds before launching ngspice
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#545**: Validate raw-artifact path containment before verifying evidence
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#567**: Deduplicate git blob SHA-1 helper onto sim/harness/report.py (#557)
 
 ## Proposed
 
@@ -55,12 +54,17 @@ Issues carrying `loom:curated`.
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
-- **#507**: Build/runtime failure on main: nightly SDF freshness fails on engine_version *(curated)*
+- **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
+- **#553**: Replace 24 hand-copied path-based module loaders with one helper *(curated)*
+- **#557**: Deduplicate git blob SHA-1 helper: 4 copies across sim/harness and sim/tools *(curated)*
+- **#563**: Reject nonpositive simulation timeout bounds before launching ngspice *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#544**: Pin GitHub Actions to commit SHAs and add update automation *(architect)*
+- **#565**: Reject DUT include filenames that collide with generated simulation artifacts *(architect)*
+- **#566**: Enforce harness ownership of stochastic simulation seed controls *(architect)*
+- **#570**: Add a relative markdown link guard to npm run lint (and fix existing broken links) *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -73,11 +77,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 4 |
+| Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 8 |
-| Architect / Hermit proposals | 2 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 11 |
+| Architect / Hermit proposals | 4 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
