@@ -11,7 +11,16 @@ Canary block: a true random number generator on gf180mcu. Apache-2.0.
   someone who has read this repo's spec is a bad tool issue.
 - **Verification is the product**: no claim without a testbench. PVT
   corners on every recorded result. `sim/` results are append-only
-  evidence.
+  evidence. Find the checks in [`package.json`](package.json) (commands)
+  and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (what CI
+  runs). Before review, run the applicable complete cheap suites on the
+  final tree, not single tests. New evidence or decision records need
+  `check:spec` (corpus counts); geometry changes need the downstream
+  consumer suite. `check:ci` ends in `sim/selftest.sh`, which simulates
+  when ngspice and the PDK exist; keep simulations opt-in and do not run
+  host-mutating suites unasked. Report each command run, its exit status,
+  and any unavailable check with its reason; never call an unrun check
+  passing.
 - **Publication**: this repo is public (the pre-publication audit, #22,
   closed 2026-07-31) — the visibility flip was an operator action, not an
   agent one. Write every commit message, issue, and document here as if a
