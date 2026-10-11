@@ -422,6 +422,7 @@ def run_one(
     seed: int | None = None,
     run_index: int = 0,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> RunResult:
     """Simulate one (PVT point, seed) pair. Never raises for sim failure.
 
@@ -462,6 +463,12 @@ def run_one(
     # directory and compose the deck against those copies, never the
     # working-tree originals (which may change between corner launches).
     write_input_snapshots(tb, workdir)
+    # Likewise the ngspice start-up script: the bytes captured once by the
+    # caller before its first launch (captured here only for a direct caller
+    # that did not pass one), served to the child as SPICE_SCRIPTS=workdir.
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
+    startup.write_snapshot(startup_snapshot, workdir)
     deck_path.write_text(compose_deck(tb, pdk, point, seed=seed, snapshot_dir=workdir))
 
     watchdog = timeout_bin()
@@ -486,7 +493,7 @@ def run_one(
             stderr=subprocess.PIPE,
             text=True,
             cwd=workdir,
-            env=startup.environment(),
+            env=startup.environment(scripts_dir=workdir.resolve()),
             start_new_session=True,
         )
     except FileNotFoundError as exc:
@@ -634,10 +641,16 @@ def run_point(
     workdir: Path,
     seeds: list[int] | None,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> list[RunResult]:
     """Run every seed (or the single deterministic run) for one PVT point."""
     validate_timeout_s(timeout_s)
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
     return [
-        run_one(tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s)
+        run_one(
+            tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s,
+            startup_snapshot=startup_snapshot,
+        )
         for seed, index in plan_runs(tb, seeds)
     ]

@@ -336,6 +336,11 @@ def _startup_lines(record: dict) -> list[str]:
         f"  ngspice_startup_flags: {_yaml_str(meta['flags'])}",
         f"  ngspice_startup_spinit: {_yaml_str(meta['spinit'])}",
         f"  ngspice_startup_spinit_sha256: {meta['spinit_sha256']}",
+        *(
+            [f"  ngspice_startup_spinit_snapshot: {_yaml_str(meta['spinit_snapshot'])}"]
+            if meta.get("spinit_snapshot")
+            else []
+        ),
     ]
 
 
@@ -354,6 +359,7 @@ def build_record(
     supersedes: str = "",
     timeout_s: int | None = None,
     model_manifest: ModelManifest | None = None,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
     (testbench, PVT point) record.
@@ -361,6 +367,12 @@ def build_record(
     ``model_manifest`` is the PDK model-content manifest (#562) captured
     before the run; ``sim/run_corners.py`` passes the pre-run capture after
     re-checking it. When omitted it is computed here from the live PDK.
+
+    ``startup_snapshot`` is the ngspice start-up script captured before the
+    invocation's first launch (#582). The record's digest comes from those
+    bytes, never from re-reading the checkout, and the copy the runs
+    consumed is listed in ``raw.files``. When omitted the legacy metadata
+    (live-file digest, no snapshot claim) is emitted.
     """
     # "status" here is the record's append-only lifecycle state (valid vs.
     # superseded, per sim/README.md), not a pass/fail verdict on the
@@ -398,6 +410,10 @@ def build_record(
     # load (raising if a snapshot was mutated mid-run) and lists them.
     input_snapshots = write_input_snapshots(tb, raw_dir)
     raw_files.extend(input_snapshots)
+    if startup_snapshot is not None:
+        # Re-checked like the SPICE inputs: raises if the copy ngspice read
+        # no longer equals the captured bytes.
+        raw_files.append(startup.write_snapshot(startup_snapshot, raw_dir))
     if tb.netlist_bytes is not None:
         testbench_sha = git_blob_sha1(tb.netlist_bytes)
         netlist_sha = git_blob_sha1(tb.dut_netlist_bytes)
@@ -445,7 +461,7 @@ def build_record(
         "pdk_content_complete": model_manifest.complete,
         "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
-        "tool_ngspice_startup": startup.metadata(),
+        "tool_ngspice_startup": startup.metadata(startup_snapshot),
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
@@ -960,6 +976,7 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
     problems += verify_manifest_reference(text, raw_files)
     problems += verify_inputs_reference(text, raw_files)
     problems += verify_pdk_content_reference(text, raw_files, raw_dir)
+    problems += verify_startup_reference(text, raw_files)
     return problems
 
 
@@ -1114,3 +1131,54 @@ def verify_pdk_content_reference(
     if ref.get("complete") != complete or doc.get("complete") is not (complete == "true"):
         problems.append(f"pdk_content.complete {ref.get('complete')} disagrees with {name}")
     return problems
+
+
+_STARTUP_KEY_PREFIX = "ngspice_startup_"
+
+
+def parse_startup_section(text: str) -> dict[str, str]:
+    """Read the ``ngspice_startup_*`` lines of the frontmatter ``tool:`` block.
+
+    Keys are returned without the prefix (``spinit_sha256``,
+    ``spinit_snapshot``, ...). Empty for records without the lines.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "tool:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            if key.startswith(_STARTUP_KEY_PREFIX):
+                out[key[len(_STARTUP_KEY_PREFIX):]] = value.strip().strip('"')
+    return out
+
+
+def verify_startup_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """A declared start-up snapshot must be listed with the declared digest.
+
+    (The snapshot's bytes are covered by the raw.files re-hash.) Records
+    without ``ngspice_startup_spinit_snapshot`` -- legacy records and the
+    #575 format that hashed the live checkout file -- yield no problems.
+    """
+    ref = parse_startup_section(text)
+    name = ref.get("spinit_snapshot", "")
+    if not name:
+        return []
+    listed = dict(raw_files)
+    digest = ref.get("spinit_sha256", "")
+    if name not in listed:
+        return [f"tool.ngspice_startup_spinit_snapshot {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [
+            f"tool.ngspice_startup_spinit_sha256 {digest} != {listed[name]} "
+            f"recorded for {name} in raw.files"
+        ]
+    return []

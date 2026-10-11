@@ -183,6 +183,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `pdk.models` | The corner model file(s) actually included. |
 | `tool.ngspice` | Full `ngspice -v` version string. |
 | `tool.ngspice_startup` / `tool.ngspice_startup_flags` / `tool.ngspice_startup_spinit` / `tool.ngspice_startup_spinit_sha256` | *Additive; records from `run_corners.py` after #575.* The ngspice start-up-configuration policy in force (`no-user-init+pinned-spinit/1`), its command-line flag (`-n`), and the repo path and SHA-256 of the pinned `spinit` used as the system script. See [ngspice start-up configuration](#ngspice-start-up-configuration-575). Records without these lines predate the field and stay valid unchanged. |
+| `tool.ngspice_startup_spinit_snapshot` | *Additive; records from `run_corners.py` after #582.* Name (`spinit`) of the byte-for-byte copy of the start-up script that ngspice actually read, kept in the record's raw directory and listed in `raw.files`. When present, `tool.ngspice_startup_spinit_sha256` is the digest of that copy and `sim/tools/verify_record_checksums.py` cross-checks the two. Records without it (including #575-format records, whose digest was read from the checkout) stay valid unchanged. |
 | `tool.platform` | OS/arch the run executed on. |
 | `corner.process` | `tt` / `ss` / `ff` / `sf` / `fs` (as named by the PDK). |
 | `corner.voltage` | Supply(s) in volts, with the nominal noted. |
@@ -486,6 +487,24 @@ device would fail loudly rather than inherit whatever the host loads. Its
 SHA-256 is recorded in every new evidence record (`tool.ngspice_startup_*`),
 so changing it is visible. Timeout, process-group and `cwd` handling are
 unchanged.
+
+**Frozen once per invocation (#582).** The checked-in script is only the
+source. `run_corners.py` reads it once, before the first simulator starts,
+writes those bytes as `spinit` into every point's raw directory (scratch
+directory under `--no-write`) and points `SPICE_SCRIPTS` at that directory.
+All points and seeds, serial or `-j`, with or without the `timeout(1)`
+watchdog, therefore read the same captured bytes, and the recorded digest is
+computed from them rather than from the working tree at publication time. An
+edit to `sim/harness/ngspice_scripts/spinit` while a sweep runs does not
+affect that sweep. The copy appears in `raw.files`, so
+`sim/tools/verify_record_checksums.py` detects a missing or altered snapshot and a
+`ngspice_startup_spinit_sha256` that disagrees with it.
+
+To reproduce a run, including one made from a dirty tree, in a scratch
+worktree: check out the record's `repo_commit`, then copy the record's
+`<raw.path>spinit` over `sim/harness/ngspice_scripts/spinit` before running
+(a plain `diff` shows whether the checkout differed), or run ngspice with
+`SPICE_SCRIPTS` set to a directory containing that file and `-n -b`.
 
 Remaining ambient inputs, not controlled: other environment variables the
 simulator reads, the ngspice build itself (recorded as `tool.ngspice`), and

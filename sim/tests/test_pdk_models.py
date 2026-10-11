@@ -346,7 +346,7 @@ class MidRunModelChangeTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def _install_runner(self, on_run=None):
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             deck = workdir / f"{point.corner_id}.spice"
             log = workdir / f"{point.corner_id}.log"

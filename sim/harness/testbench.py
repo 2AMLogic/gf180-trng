@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
-from . import pdk_models
+from . import pdk_models, startup
 from .corners import (
     DEFAULT_CORNER_SET,
     DEFAULT_NOMINAL_SUPPLY_V,
@@ -595,6 +595,7 @@ def fixed_artifact_names() -> dict[str, str]:
         FRAGMENT_SNAPSHOT_NAME: "the testbench fragment snapshot",
         DUT_SNAPSHOT_NAME: "the DUT netlist snapshot",
         MANIFEST_SNAPSHOT_NAME: "the testbench manifest snapshot",
+        startup.SNAPSHOT_NAME: "the ngspice start-up script snapshot",
         pdk_models.MANIFEST_NAME: "the PDK model manifest",
         pdk_models.CHANGED_MANIFEST_NAME: "the post-run PDK model manifest",
     }
