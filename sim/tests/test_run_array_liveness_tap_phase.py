@@ -44,6 +44,7 @@ def record_text(*, seeds: int = 4, sigma_1: bool = True, temp: str = "27") -> st
         "  voltage: 3.300 V (nominal 3.3 V)\n"
         f"  temperature: {temp}\n"
         "---\n\n"
+        "## Result\n\n"
     )
     if sigma_1:
         text += f"- `sigma_1`: mean 1.0e-12 over {seeds} seeds (sd 1.0e-13)\n"

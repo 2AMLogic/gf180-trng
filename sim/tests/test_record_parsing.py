@@ -41,9 +41,12 @@ from _record_parsing import (  # noqa: E402
     field,
     format_corner,
     frontmatter,
+    iter_result_seed_summaries,
     iter_seed_summaries,
     parse_corner,
+    parse_result_values,
     parse_values,
+    result_section,
 )
 
 #: The committed record the excerpt below is copied from (read only).
@@ -416,6 +419,133 @@ class RecordExcerptProvenanceTests(unittest.TestCase):
             if line:
                 with self.subTest(line=line):
                     self.assertIn(line, record_lines)
+
+
+def _record(result: str, *, caveats: str = "", reproduce: str = "", front: str = "") -> str:
+    """A record laid out like ``sim/harness/report.py`` emits one."""
+    return (
+        f"---\nrecord: fixture\nstatus: valid\n{front}---\n\n"
+        f"## Result\n\n{result}\n"
+        f"## How to reproduce\n\n```sh\n{reproduce}```\n\n"
+        f"## Caveats\n\n{caveats}"
+    )
+
+
+class ResultSectionTests(unittest.TestCase):
+    """The whole-record boundary (issue #548)."""
+
+    def test_caveats_and_reproduce_examples_do_not_replace_result(self) -> None:
+        text = _record(
+            "- `p_total_w`: 1e-6\n",
+            reproduce="- `p_total_w`: 98\n",
+            caveats="- Example only:\n- `p_total_w`: 99\n",
+        )
+        self.assertEqual(parse_result_values(text, label="r"), {"p_total_w": 1e-6})
+        # The snippet primitive keeps its last-value contract on the same text.
+        self.assertEqual(parse_values(text), {"p_total_w": 99.0})
+
+    def test_fenced_example_inside_result_is_ignored(self) -> None:
+        text = _record(
+            "- `x`: 1.5\n\n```\n- `x`: 99\n## Result\n```\n\n~~~\n- `y`: 7\n~~~\n"
+        )
+        self.assertEqual(parse_result_values(text, label="r"), {"x": 1.5})
+
+    def test_longer_fence_is_not_closed_by_a_shorter_one(self) -> None:
+        text = _record("- `x`: 1\n\n````\n```\n- `x`: 2\n````\n")
+        self.assertEqual(parse_result_values(text, label="r"), {"x": 1.0})
+
+    def test_subheadings_stay_inside_result(self) -> None:
+        text = _record("- `a`: 1\n\n### tt / 27 C\n\n- `b`: 2\n")
+        self.assertEqual(parse_result_values(text, label="r"), {"a": 1.0, "b": 2.0})
+
+    def test_other_level_two_section_is_excluded(self) -> None:
+        text = _record("- `a`: 1\n\n## Pre/post comparison\n\n- `b`: 2\n")
+        self.assertEqual(parse_result_values(text, label="r"), {"a": 1.0})
+
+    def test_frontmatter_is_not_scanned(self) -> None:
+        text = _record("- `a`: 1\n", front="note: |\n  ## Result\n")
+        self.assertEqual(parse_result_values(text, label="r"), {"a": 1.0})
+
+    def test_duplicate_key_in_result_raises_with_context(self) -> None:
+        text = _record("- `x`: 1\n- `y`: 2\n- `x`: 3\n")
+        with self.assertRaisesRegex(ValueError, r"rec-a: duplicate measurement `x`"):
+            parse_result_values(text, label="rec-a")
+
+    def test_duplicate_key_uses_callers_error_class(self) -> None:
+        class MyError(RuntimeError):
+            pass
+
+        with self.assertRaises(MyError):
+            parse_result_values(_record("- `x`: 1\n- `x`: 2\n"), label="r", error_cls=MyError)
+        with self.assertRaises(MyError):
+            iter_result_seed_summaries(
+                _record("- `x`: mean 1 over 3 seeds (sd 0.1)\n- `x`: 2\n"),
+                label="r",
+                error_cls=MyError,
+            )
+
+    def test_missing_result_section_raises_without_fallback(self) -> None:
+        text = "---\nstatus: valid\n---\n\n- `x`: 1\n\n## Caveats\n\n- `x`: 2\n"
+        with self.assertRaisesRegex(ValueError, "rec-b: no `## Result` section"):
+            parse_result_values(text, label="rec-b")
+        with self.assertRaisesRegex(ValueError, "rec-b: no `## Result` section"):
+            iter_result_seed_summaries(text, label="rec-b")
+
+    def test_result_heading_only_inside_fence_is_missing(self) -> None:
+        text = "---\nstatus: valid\n---\n\n```\n## Result\n- `x`: 1\n```\n"
+        with self.assertRaisesRegex(ValueError, "no `## Result` section"):
+            result_section(text, label="r")
+
+    def test_ambiguous_result_sections_raise_with_lines(self) -> None:
+        text = _record("- `x`: 1\n") + "\n## Result\n\n- `x`: 2\n"
+        with self.assertRaisesRegex(ValueError, r"rec-c: ambiguous record: 2 `## Result`"):
+            parse_result_values(text, label="rec-c")
+
+    def test_unterminated_fence_raises(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unterminated fenced"):
+            result_section("## Result\n\n```\n- `x`: 1\n", label="r")
+
+    def test_failed_run_diagnostics_are_not_primary_measurements(self) -> None:
+        result = (
+            "- `x`: 1.0\n\nRuns: 1 of 2 successful.\n\n"
+            "Run failures (nonzero exit):\n- seed 2: failed -- boom\n\n"
+            "Failed-run diagnostics (values parsed from runs that did not "
+            "succeed; NOT included in the summaries above, not evidence "
+            "about the device):\n"
+            "- seed 2 (failed: boom):\n  - `x`: 55\n  - `z`: 66\n"
+            "- `q`: 77\n\n- `w`: 4\n"
+        )
+        text = _record(result)
+        self.assertEqual(parse_result_values(text, label="r"), {"x": 1.0, "w": 4.0})
+        self.assertNotIn("55", result_section(text, label="r"))
+
+    def test_seed_summaries_come_from_result_only(self) -> None:
+        text = _record(
+            "- `s`: mean 2e-12 over 4 seeds (sd 1e-13)\n",
+            caveats="- `s`: mean 9 over 2 seeds (sd 1)\n",
+        )
+        self.assertEqual(
+            iter_result_seed_summaries(text, label="r"),
+            [("s", next(iter_seed_summaries("- `s`: mean 2e-12 over 4 seeds (sd 1e-13)"))[1])],
+        )
+
+    def test_malformed_number_still_names_record_and_key(self) -> None:
+        with self.assertRaisesRegex(ValueError, r"rec-d: malformed number `1e\+` in `x`"):
+            parse_result_values(_record("- `x`: 1e+\n"), label="rec-d")
+
+    def test_committed_records_yield_one_result_section(self) -> None:
+        for path in sorted((SIM_DIR / "records").glob("*.md")):
+            with self.subTest(record=path.stem):
+                text = path.read_text()
+                self.assertEqual(
+                    parse_result_values(text, label=path.stem),
+                    parse_values(text),
+                    "a legitimate measurement was excluded or a prose bullet was kept",
+                )
+                self.assertEqual(
+                    iter_result_seed_summaries(text, label=path.stem),
+                    list(iter_seed_summaries(text)),
+                )
 
 
 if __name__ == "__main__":

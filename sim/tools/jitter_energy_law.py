@@ -58,7 +58,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_values  # noqa: E402
+from _record_parsing import format_corner, parse_corner, parse_result_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -90,7 +90,7 @@ def read_record(stem: str) -> tuple[dict[str, float], dict[str, object]]:
     if not path.is_file():
         raise RecordError(f"no such record: sim/records/{stem}.md")
     text = path.read_text()
-    values = parse_values(text, label=stem, error_cls=RecordError)
+    values = parse_result_values(text, label=stem, error_cls=RecordError)
     process, temp_c, vdd = parse_corner(text, label=stem, error_cls=RecordError)
     corner = {"process": process, "temp_c": temp_c, "vdd": vdd}
     return values, corner

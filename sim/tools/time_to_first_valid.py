@@ -69,7 +69,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_status, parse_values  # noqa: E402
+from _record_parsing import format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -111,7 +111,7 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = parse_values(text, label=self.stem, error_cls=RuntimeError)
+        self.values = parse_result_values(text, label=self.stem, error_cls=RuntimeError)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         self.status = parse_status(text, label=self.stem)
 

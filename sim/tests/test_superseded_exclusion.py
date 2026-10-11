@@ -29,7 +29,7 @@ def record(status: str | None, temp: float = 27, extra: str = "") -> str:
     if status is not None:
         lines.append(f"status: {status}")
     lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V",
-              "---", "", "- `i_avdd`: 1e-6", extra]
+              "---", "", "## Result", "", "- `i_avdd`: 1e-6", extra]
     return "\n".join(lines) + "\n"
 
 
@@ -153,7 +153,7 @@ def frontmatter(status: str | None, temp: float = 27) -> str:
     if status is not None:
         lines.append(f"status: {status}")
     lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V"]
-    return "\n".join(lines + ["---", ""]) + "\n\n"
+    return "\n".join(lines + ["---", "", "## Result"]) + "\n\n"
 
 
 def mean_bullet(key: str, mean: float, sd: float = 0.0, seeds: int = 4) -> str:

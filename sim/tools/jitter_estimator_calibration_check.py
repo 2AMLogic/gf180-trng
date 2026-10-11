@@ -45,7 +45,7 @@ from statistics import NormalDist
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import parse_status, parse_values  # noqa: E402
+from _record_parsing import parse_result_values, parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -127,7 +127,7 @@ def read_record(path: Path) -> dict[str, float]:
     if not path.is_file():
         raise RecordError(f"no such record: {path}")
     text = path.read_text()
-    return parse_values(text, label=path.stem, error_cls=RecordError)
+    return parse_result_values(text, label=path.stem, error_cls=RecordError)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -63,7 +63,7 @@ import starved_cell_jitter_energy as scje  # noqa: E402
 from _record_parsing import (  # noqa: E402
     field,
     format_corner,
-    iter_seed_summaries,
+    iter_result_seed_summaries,
     parse_corner,
     parse_status,
 )
@@ -97,7 +97,9 @@ class BitstreamRecord:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.n_seeds = 1
-        for key, summary in iter_seed_summaries(text):
+        for key, summary in iter_result_seed_summaries(
+            text, label=self.stem, error_cls=RecordError
+        ):
             self.values[key] = summary.mean
             self.n_seeds = summary.n_seeds
             self.sd[key] = summary.sd

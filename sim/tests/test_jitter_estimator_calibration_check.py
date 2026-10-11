@@ -37,7 +37,7 @@ import jitter_estimator_calibration_check as jc  # noqa: E402
 
 def record_text(status: str | None, *, body: str = "") -> str:
     """A record whose measured P(bit=1) hits every level's target exactly."""
-    head = "---\n" + ("" if status is None else f"status: {status}\n") + "---\n\n"
+    head = "---\n" + ("" if status is None else f"status: {status}\n") + "---\n\n## Result\n\n"
     bullets = "".join(
         f"- `{name}`: {jc.p1_target(h)!r}\n" for name, h in jc.LEVELS
     )

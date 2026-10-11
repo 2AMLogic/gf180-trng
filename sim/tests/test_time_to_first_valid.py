@@ -26,7 +26,7 @@ import time_to_first_valid as ttfv  # noqa: E402
 
 FRONTMATTER = (
     "---\nrecord: fixture\nstatus: valid\nprocess: tt\n"
-    "temperature: 27\nvoltage: 3.3\n---\n\n"
+    "temperature: 27\nvoltage: 3.3\n---\n\n## Result\n\n"
 )
 
 
