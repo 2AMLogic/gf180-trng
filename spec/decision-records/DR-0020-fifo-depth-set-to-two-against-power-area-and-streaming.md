@@ -28,6 +28,94 @@ related: "#99 (origin), #96/PR #98 (DR-0019, which named this record as its unfi
   issue as of this date) remains the honest next step; this record's Decision
   item 1 already said the RTL change is not done by the pull request that
   proposes (or, now, ratifies) this record.
+- 2026-10-11: **Status note (#583) -- the "[DR-0010]'s rate row does not land at
+  500 bps" Revisit-if trigger fired; re-examined; the decision HOLDS.** This
+  note does not edit the Decision text and does not supersede this record.
+  Status stays **Accepted**; `FIFO_DEPTH = 2` stands.
+
+  *Rate row cited.* [DR-0011-rate] (Accepted 2026-10-10, ratified under #480)
+  sets the raw rate at **> 2 kbps sustained at the raw tap**, superseding
+  [DR-0010] §1's 500 bps. As of this note, `README.md` on `main` still shows the
+  Raw rate row at `> 1 Mbps` ([DR-0003]); the README edit is DR-0011's
+  separate follow-up (its Status says the ratification PR does not execute
+  checklist item 4) and is not made here. The figure used below is therefore
+  DR-0011's ratified `> 2 kbps`, not the README's current text. `> 2 kbps` is a
+  *floor* at the row's binding corner (`ss` / -10 % / +125 °C); the array runs
+  faster at faster corners, which shortens every deadline below further.
+
+  *Arithmetic* (same method as the Context section above: a word period times
+  `FIFO_DEPTH`; a raw word is 32 raw samples per [DR-0013] §3, a conditioned
+  word is one 256-sample conditioner block per [DR-0008] at K = 8). At 2 kbps a
+  raw word is 32 / 2000 = **16 ms** and a conditioned word is 256 / 2000 =
+  **128 ms**, both exactly 1/4 of the 500 bps figures (64 ms, 512 ms):
+
+  | `FIFO_DEPTH` | raw deadline / mode-switch cost @ 2 kbps | conditioned deadline / mode-switch cost @ 2 kbps | (raw, @ 500 bps, for comparison) |
+  |---:|---:|---:|---:|
+  | 8 (shipped RTL default) | 128 ms | 1.024 s | 512 ms |
+  | 4 | 64 ms | 512 ms | 256 ms |
+  | **2 (this record)** | **32 ms** | **256 ms** | 128 ms |
+  | 1 | 16 ms | 128 ms | 64 ms |
+
+  Reading the table: the deadline is the time a reader has before the incoming
+  word is dropped and `OVF_RAW` / `OVF_DATA` is set. The mode-switch cost is
+  the same product, the accumulation discarded by an `OUT_MODE` write
+  ([DR-0013] §Consequences: up to `FIFO_DEPTH` buffered raw words *plus a
+  partial word*, so add up to one further word period, 16 ms raw, to the raw
+  column; the conditioned-side flush likewise discards a partially filled
+  256-sample block). The start-up scenario's 1280 samples to the first
+  readable conditioned word ([DR-0013]) is 640 ms at 2 kbps (2.56 s at
+  500 bps). A [DR-0004] 10^6-sample sequential dataset is 500 s, 31 250 raw
+  words, at 2 kbps. These are arithmetic on cited figures, not measurements.
+
+  *Does depth 2 still answer the streaming question?* Yes, with a stated
+  narrower margin.
+  - **Direction of the choice.** This record's rule is "the smallest value the
+    streaming contract can defend". Every figure moved by the same factor, so
+    depth 2 sits where depth 0.5 sat at 500 bps; the relative ordering of the
+    four candidates, and the structural reason depth 1 fails (the register read
+    and the stream share one queue, so no elasticity behind the word in
+    flight, [DR-0013] §3), are rate-independent. this record's own Follow-up
+    said the direction "holds for any rate far below 1 Mbps"; 2 kbps is still
+    500x below it.
+  - **The raw deadline against [DR-0004]'s contiguous-capture requirement.**
+    [DR-0004]'s sequential dataset (>= 10^6 consecutive samples) is defined
+    "from the raw tap", i.e. the sampler output, and its pre-silicon form is a
+    simulation capture that no FIFO or reader sits on; so 32 ms is not a
+    constraint on that pre-silicon dataset. It is a constraint on the
+    post-silicon equivalent: a register-polled or software-serviced capture host
+    must service the raw queue at least once per 32 ms (two words of slack
+    behind the word in flight) for 500 s without a stall. That is four times
+    tighter than the 128 ms this record accepted, and a non-realtime OS can
+    miss it. A hardware valid/ready consumer (FPGA FIFO, DMA engine) meets it
+    trivially. This is the same accepted cost this record already carried
+    ("a register-polled capture host on a non-realtime OS ... will drop a raw
+    word and end a contiguous run"), made 4x tighter, not a new kind of cost.
+  - **`OVF_RAW` reasoning carried over unchanged.** A full FIFO drops the
+    *incoming* word, so what survives is always a contiguous run, and the
+    sticky `OVF_RAW` bit tells the reader the run ended ([DR-0013] §2). A
+    missed 32 ms window therefore ends a run visibly, not silently, which is
+    the property [DR-0001] required; the dataset-integrity hazard is converted
+    into a retry, at 4x the retry frequency for a given host-stall
+    distribution.
+  - **The alternative is not free and is not evidenced.** Depth 4 restores the
+    64 ms raw deadline this record found acceptable only as the depth-1 figure
+    (and called slackless there for a single-entry buffer), at the area cost
+    [DR-0019]'s table prices (47 581 µm² digital cell area, 176.3 % of the
+    `< 0.05 mm²` row at 60 % utilisation, against 34 129 µm² and 129.4 % at
+    depth 2) and ~0.8 µA per halving of idle current ([DR-0017] §B). The
+    power row gets no vote at any depth, the area row is monotone in depth,
+    and no capture campaign has shown 32 ms to be insufficient, which is this
+    record's own evidence bar for reopening via alternative E. No area or
+    power row is relaxed by this note.
+
+  *What would reopen it.* The existing Revisit-if clauses stand, now read at
+  2 kbps: a capture campaign showing 32 ms (raw) is not enough is alternative
+  E's evidence; and a sustained raw rate materially above 2 kbps at any corner
+  in the operating envelope shortens the deadlines in proportion (each further
+  doubling halves the 32 ms) and should be re-checked against this table.
+  Nothing in the RTL, register map, estimate scripts or floorplan changes in
+  this note; the Follow-up above (set `FIFO_DEPTH = 2` in the shipped design)
+  is still owed exactly as written.
 
 Until the follow-up lands, `FIFO_DEPTH = 8` stands as the shipped default,
 even though the record that decides what it *should* be is now ratified. **No
@@ -455,6 +543,7 @@ Specifically, on acceptance:
 [DR-0004]: DR-0004-sp-800-90b-path-pre-silicon.md
 [DR-0008]: DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
+[DR-0011-rate]: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 [DR-0013]: DR-0013-interface-register-map-and-streaming-semantics.md
 [DR-0016]: DR-0016-per-ring-liveness-monitor.md
 [DR-0017]: DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
