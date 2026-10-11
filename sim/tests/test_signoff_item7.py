@@ -2,7 +2,6 @@
 
 import contextlib
 import copy
-import importlib.util
 import io
 import json
 import shutil
@@ -12,23 +11,18 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("signoff_check", ROOT / "signoff" / "check.py")
-check = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check)
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+check = load_module_from_path("signoff_check", ROOT / "signoff" / "check.py")
 
-pub_spec = importlib.util.spec_from_file_location(
+sys.modules.setdefault("check", check)  # publish_item7 does `import check`
+publish = load_module_from_path(
     "signoff_publish_item7", ROOT / "signoff" / "publish_item7.py"
 )
-publish = importlib.util.module_from_spec(pub_spec)
-sys.modules.setdefault("check", check)  # publish_item7 does `import check`
-pub_spec.loader.exec_module(publish)
 
 TB = ROOT / "sim" / "tb" / "trng-top-post-route"
-inv_spec = importlib.util.spec_from_file_location(
-    "input_inventory", TB / "input_inventory.py"
-)
-input_inventory = importlib.util.module_from_spec(inv_spec)
-inv_spec.loader.exec_module(input_inventory)
+input_inventory = load_module_from_path("input_inventory", TB / "input_inventory.py")
 
 STEM = "2099-01-01-trng-top-post-route-01"
 STEM_OLD = "2098-01-01-trng-top-post-route-01"
