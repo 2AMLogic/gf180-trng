@@ -50,11 +50,13 @@ from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
+sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "trng-top-post-route"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 
 from _record_parsing import current_records, parse_result_values  # noqa: E402
+from harness.report import git_blob_sha1  # noqa: E402
 
 import hashlib  # noqa: E402
 
@@ -76,8 +78,7 @@ class CheckError(RuntimeError):
 
 
 def blob_sha(path: Path) -> str:
-    data = path.read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1(path.read_bytes())
 
 
 class Rec:

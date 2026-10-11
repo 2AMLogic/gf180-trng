@@ -78,7 +78,6 @@ tool supplies the measurement, states it against the row, and stops there.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -86,7 +85,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _record_parsing import current_records, parse_result_values  # noqa: E402
+from harness.report import git_blob_sha1  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -325,8 +326,7 @@ def blob_sha(path: Path) -> str:
     Same value as ``git hash-object`` / ``git rev-parse HEAD:<path>`` (the
     convention ``run_sta.py`` records as ``netlist.sha``), without needing
     git or a committed file."""
-    data = path.read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1(path.read_bytes())
 
 
 def _latest_per_corner(records: list[Record]) -> dict[str, Record]:

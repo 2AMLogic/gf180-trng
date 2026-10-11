@@ -39,13 +39,15 @@ rows (13 significant digits via ``measureprec``); everything else is offline.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import shlex
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from harness.report import git_blob_sha1  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-array-supply-ripple"
@@ -284,8 +286,7 @@ def plan_text() -> str:
 
 
 def dut_blob_sha() -> str:
-    data = (REPO_ROOT / DUT_PATH).read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes())
 
 
 # --------------------------------------------------------------------------
