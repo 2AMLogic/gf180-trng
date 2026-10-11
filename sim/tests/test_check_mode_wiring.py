@@ -46,6 +46,10 @@ UNWIRED_ALLOWLIST = {
         "enforced by the `lint` script (`python3 -m sim.tools.unused_names --check`), which "
         "check:ci runs first; it is a source linter, not a spec/evidence gate"
     ),
+    "verify_markdown_links.py": (
+        "enforced by the `lint` script (`python3 -m sim.tools.verify_markdown_links --check`), "
+        "which check:ci runs first; it is a documentation link guard, not a spec/evidence gate"
+    ),
     "liveness_sampler_power.py": (
         "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_liveness_sampler_power.py"
