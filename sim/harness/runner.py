@@ -316,6 +316,10 @@ class RunResult:
     deck_name: str = ""
     log_name: str = ""
     message: str = ""
+    # Process id of the launched child (``Popen.pid``) as seen by this
+    # harness; 0 when no process was started. Used by
+    # :func:`duplicate_realization_problem` (#605).
+    pid: int = 0
 
 
 def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
@@ -585,6 +589,7 @@ def run_one(
             deck_name=deck_path.name,
             log_name=log_path.name,
             message="; ".join(parts),
+            pid=proc.pid,
         )
 
     return RunResult(
@@ -595,6 +600,55 @@ def run_one(
         seconds=elapsed,
         deck_name=deck_path.name,
         log_name=log_path.name,
+        pid=proc.pid,
+    )
+
+
+def duplicate_realization_problem(tb: Testbench, results: list[RunResult]) -> str:
+    """Why a multi-seed ``tran-noise`` point may hold duplicated noise, or "".
+
+    On the measured ngspice-46 build ``trnoise`` is seeded from the process
+    id, not ``.option seed`` (DR-0031), so runs that share a process id (one
+    container or PID namespace per run) would replay one realization under N
+    distinct seeds. Two cheap checks, applied to the completed runs of one
+    PVT point:
+
+    - two runs recorded the same child process id; or
+    - two runs have bit-identical values for every requested measurement.
+
+    This guards against duplication only; it does not establish statistical
+    independence between runs.
+    """
+    if tb.analysis_type != "tran-noise":
+        return ""
+    ok = [r for r in results if r.status == "ok"]
+    if len(ok) < 2:
+        return ""
+    problems: list[str] = []
+    by_pid: dict[int, list[int | None]] = {}
+    for r in ok:
+        if r.pid:
+            by_pid.setdefault(r.pid, []).append(r.seed)
+    for pid, seeds in by_pid.items():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} ran as the same process id {pid}"
+            )
+    by_values: dict[tuple, list[int | None]] = {}
+    for r in ok:
+        key = tuple(r.measurements.get(name) for name in tb.measure)
+        if tb.measure and all(v is not None for v in key):
+            by_values.setdefault(key, []).append(r.seed)
+    for seeds in by_values.values():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} have bit-identical measurements"
+            )
+    if not problems:
+        return ""
+    return (
+        "possible duplicated trnoise realizations (" + "; ".join(problems) + "); "
+        "trnoise is seeded from the process id, not the seed (DR-0031)"
     )
 
 

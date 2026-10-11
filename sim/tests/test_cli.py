@@ -161,7 +161,8 @@ class RunIntegrityTests(unittest.TestCase):
             if on_run is not None:
                 on_run(point, workdir)
             return runner.RunResult(
-                point=point, seed=seed, status="ok", measurements={"vout": 1.65},
+                point=point, seed=seed, status="ok",
+                measurements={"vout": 1.65 + 0.001 * (seed or 0)},
                 seconds=0.1, deck_name=deck.name, log_name=log.name,
             )
 
@@ -725,7 +726,8 @@ class TimeoutSummaryTests(unittest.TestCase):
             log = workdir / f"{stem}.log"
             log.write_text("m_vout = 1.65\n")
             return runner.RunResult(
-                point=point, seed=seed, status="ok", measurements={"vout": 1.65},
+                point=point, seed=seed, status="ok",
+                measurements={"vout": 1.65 + 0.001 * (seed or 0)},
                 seconds=0.1, deck_name=deck.name, log_name=log.name,
             )
 
