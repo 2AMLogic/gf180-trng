@@ -403,24 +403,48 @@ def _logical_lines(text: str) -> list[tuple[int, str]]:
     return out
 
 
+# ngspice-46 reads the seed from any netlist line whose first token starts
+# with ".opt" (src/frontend/options.c inp_getopts: ciprefix(".opt", line)) by
+# a plain substring search for "seed=" (src/frontend/inp.c eval_opt), so
+# ".opt seed=3" and ".option xseed=3" set the seed too. The pattern below is a
+# deliberate superset of that search (it also tolerates blanks around "=").
+_OPTION_SEED_RE = re.compile(r"seed\s*=")
+
+
 def _seed_control_reason(line: str, *, bare_options: bool = False) -> str | None:
     """Why ``line`` competes with the harness-owned seed (``None`` if it doesn't).
 
-    Recognized ngspice seed-setting forms (token-aware, case-insensitive):
-    ``.option[s] ... seed=<n>`` (also the ``option`` control command and, with
-    ``bare_options``, a bare option list as in the manifest ``options`` field),
-    ``setseed <n>`` and ``set rndseed=<n>`` / ``unset rndseed``. Other solver
-    options (``reltol``, ``method`` ...) are not touched.
+    Recognized ngspice seed-setting forms (case-insensitive), each backed by
+    the ngspice-46 manual and source and exercised by the experiment in
+    ``sim/tool-experiments/2026-10-11-ngspice-seed-control/``:
+
+    * a netlist option line (first token ``.opt...``, i.e. ``.opt``,
+      ``.option``, ``.options``) containing ``seed=`` -- manual 11.1.1 option
+      ``SEED``. With several, ngspice warns and the *first* one in the deck
+      wins, so a later one is silently ignored;
+    * the ``option`` / ``options`` control command with a seed option --
+      manual 13.5.54 / 13.7. Measured to have no effect on the generator in
+      ngspice-46, but it declares a seed the run would not use;
+    * the ``setseed [n]`` control command -- manual 13.5.76; reseeds every
+      later draw;
+    * ``set rndseed=<n>`` / ``unset rndseed`` -- manual 13.7; reseeds the
+      control-language random functions and a later bare ``setseed``.
+
+    With ``bare_options`` the line is a bare option list (the manifest
+    ``options`` field, emitted as ``.options <entry>``). Other solver options
+    (``reltol``, ``method``, ``seedinfo`` ...) are not touched.
     """
     tokens = [t.lower() for t in _TOKEN_RE.findall(line)]
     if not tokens:
         return None
     head, rest = tokens[0], tokens[1:]
+    lowered = line.lower()
     if bare_options:
-        if "seed" in tokens:
+        if "seed" in tokens or _OPTION_SEED_RE.search(lowered):
             return "option 'seed'"
-    elif head in (".option", ".options", "option", "options") and "seed" in rest:
-        return "option 'seed'"
+    elif head.startswith(".opt") or head in ("option", "options"):
+        if "seed" in rest or _OPTION_SEED_RE.search(lowered):
+            return "option 'seed'"
     if head == "setseed":
         return "'setseed' command"
     if head in ("set", "unset") and "rndseed" in rest:

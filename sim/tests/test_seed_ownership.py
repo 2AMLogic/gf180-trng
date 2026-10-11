@@ -51,10 +51,34 @@ class SeedOwnershipTests(unittest.TestCase):
                      ".option reltol=1e-4\n+ seed=7", ".option seed=random"):
             self.assertRejected("x.spice", fragment=f"r1 out 0 1k\n{line}\n")
 
+    def test_option_prefix_and_substring_forms_rejected(self):
+        # ngspice-46 treats any line starting ".opt" as an option line and
+        # finds the seed by a substring search for "seed=" (inp_getopts /
+        # eval_opt); see sim/tool-experiments/2026-10-11-ngspice-seed-control/.
+        for line in (".opt seed=5", ".OPT reltol=1e-4 seed=5", ".option xseed=5",
+                     ".options seed = 5"):
+            self.assertRejected("x.spice", fragment=f"r1 out 0 1k\n{line}\n")
+        self.assertRejected("options[0]", options=["xseed=5"])
+
+    def test_experiment_competing_forms_rejected(self):
+        # The competing forms the seed-control experiment exercised: a second,
+        # later option line (ignored by ngspice with a warning -- probe C),
+        # control-block setseed (overrides later draws -- probe D), control
+        # option seed= (declared but ineffective -- probe E) and set rndseed
+        # (reseeds control-language draws -- probe E).
+        self.assertRejected("options[0]", options=["seed=12"])
+        self.assertRejected("x.spice", fragment="r1 out 0 1k\n.options seed=12\n")
+        for cmd in ("setseed 12", "setseed", "option seed=12", "options seed=12",
+                    "set rndseed=12", "set rndseed = 12"):
+            self.assertRejected("analyses[0]", analyses=[cmd])
+
     def test_analysis_seed_commands_rejected(self):
         for cmd in ("setseed 4", "set rndseed=4", "unset rndseed",
                     "option seed=4", "tran 1n 1u\nsetseed 9"):
             self.assertRejected("analyses[0]", analyses=[cmd])
+
+    def test_later_analysis_seed_command_names_its_index(self):
+        self.assertRejected("analyses[1]", analyses=["tran 1n 6n", "setseed 12"])
 
     def test_mc_type_is_covered(self):
         self.assertRejected("options[0]", analysis_type="mc", options=["seed=1"])
@@ -63,7 +87,7 @@ class SeedOwnershipTests(unittest.TestCase):
         tb = testbench.load(self.make(
             options=["reltol=1e-5", "method=gear"],
             fragment="* seed=3 in a comment\nr1 out 0 1k ; .option seed=4\n"
-                     ".option reltol=1e-4\n.param seedling=1\n",
+                     ".option reltol=1e-4\n.option seedinfo\n.param seedling=1\n",
             analyses=["tran 1n 1u", "set numdgt=8"],
         ))
         self.assertEqual(runner.plan_runs(tb, [1, 2]), [(1, 0), (2, 1)])

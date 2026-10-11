@@ -75,6 +75,18 @@ realization twice in a record's mean and spread; a repeated id would put
 two points' decks and logs in the same place. Run a repeated diagnostic as
 a separate invocation instead.
 
+For a stochastic testbench the harness alone sets the seed. It writes one
+`.option seed=<n>` per run from `--seeds`. Before planning, the harness
+refuses any input that sets its own seed: a seed entry in the manifest
+`options`, an option line containing `seed=` in the fragment, the DUT or a
+captured include, or `setseed`, `option seed=`, `set rndseed` or
+`unset rndseed` in `analyses`. The error names the source and line. The forms
+covered and the reasons are in
+[`tool-experiments/2026-10-11-ngspice-seed-control/`](tool-experiments/2026-10-11-ngspice-seed-control/README.md).
+In ngspice-46 a later competing option line is ignored, and a control-block
+`setseed` overrides the seed. That experiment also found that `trnoise`
+waveforms do not repeat under the same seed (#574).
+
 Everything below is mechanics in service of those two rules.
 
 ---
@@ -90,6 +102,8 @@ sim/
     <YYYY-MM-DD>-<testbench-slug>-<nn>.md
     raw/
       <YYYY-MM-DD>-<testbench-slug>-<nn>/   raw output for that record
+  tool-experiments/             APPEND-ONLY simulator-behaviour probes
+    <YYYY-MM-DD>-<topic>/       decks, logs, SHA256SUMS and a README
 ```
 
 - `sim/tb/` is ordinary source. Edit it, review it, refactor it.
@@ -97,6 +111,10 @@ sim/
   anything already committed under `sim/records/` are a review-blocking
   defect, with one exception: adding a `superseded_by` field to an existing
   record (see [Superseding](#superseding-a-record)).
+- `sim/tool-experiments/` holds small, PDK-free experiments on the
+  simulator itself (for example how ngspice applies seed controls). The
+  harness code relies on these results. They are not testbench records and
+  have no PVT grid. Like records, they are append-only.
 
 ### Record naming
 
