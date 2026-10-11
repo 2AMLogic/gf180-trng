@@ -102,7 +102,7 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = parse_values(text)
+        self.values = parse_values(text, label=self.stem, error_cls=RuntimeError)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         self.status = parse_status(text, label=self.stem)
         self.temp_k = self.temp_c + 273.15

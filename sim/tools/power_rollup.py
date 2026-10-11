@@ -197,7 +197,7 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = parse_values(text)
+        self.values = parse_values(text, label=self.stem, error_cls=RuntimeError)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         #: ``valid`` or ``superseded`` (``sim/README.md``); a record with any
         #: other lifecycle raises here, naming the record.
@@ -470,10 +470,14 @@ def main(argv=None) -> int:
                         "question, routed through spec/, not a tool failure.")
     args = p.parse_args(argv)
 
-    arrays = by_corner(load(ARRAY_GLOBS), prefer="pvt-q")
-    samplers = by_corner(load(SAMPLER_ACTIVE_GLOB))
-    idles = by_corner(load(IDLE_GLOB))
-    lives = by_corner(load(LIVENESS_GLOB))
+    try:
+        arrays = by_corner(load(ARRAY_GLOBS), prefer="pvt-q")
+        samplers = by_corner(load(SAMPLER_ACTIVE_GLOB))
+        idles = by_corner(load(IDLE_GLOB))
+        lives = by_corner(load(LIVENESS_GLOB))
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     inv = inventory_check(shipped_instances())
 
     missing = [name for name, d in

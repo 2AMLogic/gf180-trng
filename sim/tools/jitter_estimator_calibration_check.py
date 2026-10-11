@@ -127,7 +127,7 @@ def read_record(path: Path) -> dict[str, float]:
     if not path.is_file():
         raise RecordError(f"no such record: {path}")
     text = path.read_text()
-    return parse_values(text)
+    return parse_values(text, label=path.stem, error_cls=RecordError)
 
 
 def main(argv: list[str] | None = None) -> int:

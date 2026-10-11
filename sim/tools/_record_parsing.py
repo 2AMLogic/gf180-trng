@@ -43,7 +43,18 @@ NUMBER_PATTERN = r"-?[\d.]+(?:e[-+]?\d+)?"
 #: the "mean" of a multi-seed bullet so its point estimate is still
 #: captured; the seed count / standard deviation of that form are read by
 #: :data:`SEED_SUMMARY_RE` / :func:`iter_seed_summaries`.
-VALUE_RE = re.compile(rf"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?({NUMBER_PATTERN})", re.M)
+#:
+#: Group 2 is the numeric *candidate*: a signed run of digits and dots,
+#: followed by any number of ``e``/``E`` groups, each with an optional sign
+#: and a run of digits and dots. It is deliberately looser than a valid
+#: number so a malformed token (``1e+``, ``1.2.3``, ``1e2.3``, ``1e2e3``) is
+#: captured whole and rejected by :func:`parse_values` rather than silently
+#: matching its valid prefix. The token ends at the first character that
+#: cannot continue a number; anything after it (a unit suffix such as ``ns``)
+#: is ignored and never scaled.
+VALUE_RE = re.compile(
+    r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*)", re.M
+)
 
 #: A multi-seed bullet "- `key`: mean X over N seeds (sd Y": groups are
 #: key, mean, seed count, standard deviation.
@@ -52,6 +63,11 @@ SEED_SUMMARY_RE = re.compile(
     rf"\s*\(sd\s+({NUMBER_PATTERN})",
     re.M,
 )
+
+#: A complete numeric token: digits with an optional fraction (``1``, ``1.``,
+#: ``1.5``, ``.5``), then an optional ``e``/``E`` exponent with at least one
+#: digit.
+_NUMBER_TOKEN_RE = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
 
 _FRONTMATTER_RE = re.compile(r"---[ \t]*\n(.*?)^---[ \t]*$", re.S | re.M)
 _NUMBER = r"[-+]?\d+(?:\.\d+)?"
@@ -62,9 +78,32 @@ _TEMPERATURE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*(?:°C|C))?" + _REMARK)
 _VOLTAGE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*V)?" + _REMARK)
 
 
-def parse_values(text: str) -> dict[str, float]:
-    """Every ``- `key`: value`` bullet in ``text``, keyed by ``key``."""
-    return {m.group(1): float(m.group(2)) for m in VALUE_RE.finditer(text)}
+def parse_values(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> dict[str, float]:
+    """Every ``- `key`: value`` bullet in ``text``, keyed by ``key``.
+
+    The numeric token of each value must be complete (digits, optional
+    fraction, optional ``e``/``E`` exponent with digits) and finite. A
+    malformed token (``1.2.3``, ``1e+``) or an overflow (``1e999``) raises
+    ``error_cls`` naming ``label`` (typically the record's stem) and the
+    bullet's key; it never falls back to a valid-looking prefix. A unit
+    suffix after the number is ignored, not scaled.
+    """
+    prefix = f"{label}: " if label else ""
+    values: dict[str, float] = {}
+    for m in VALUE_RE.finditer(text):
+        key, token = m.group(1), m.group(2)
+        if _NUMBER_TOKEN_RE.fullmatch(token) is None:
+            raise error_cls(f"{prefix}malformed number `{token}` in `{key}`")
+        number = float(token)
+        if not math.isfinite(number):
+            raise error_cls(f"{prefix}non-finite number `{token}` in `{key}`")
+        values[key] = number
+    return values
 
 
 class SeedSummary(NamedTuple):
