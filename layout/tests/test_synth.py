@@ -41,7 +41,6 @@ raises `SynthError` naming the shape, rather than being silently coerced.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -52,21 +51,17 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 
 def _load(name: str, path: Path):
     """Load a flat top-level driver script as a module.
 
-    The same `importlib.util.spec_from_file_location` pattern
-    `layout/tests/test_digital_reports.py` and `layout/tests/test_verify.py`
-    use: `design/synth.py` is a script run by path, not a package member, so
-    there is no import path to reach it by.
+    `design/synth.py` is a script run by path, not a package member, so
+    there is no import path to reach it by; `load_module_from_path` loads it
+    from its own file under a unique module name.
     """
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 synth = _load("design_synth", REPO_ROOT / "design" / "synth.py")

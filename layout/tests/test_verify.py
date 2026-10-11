@@ -23,7 +23,6 @@ Two things this suite must prove, per #148's acceptance criteria:
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 import sys
 import tempfile
@@ -35,6 +34,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 # `layout/verify.py` is a flat module, not a package member of anything else
 # under `layout/` (see `layout/_klt.py`'s own docstring on the same point),
@@ -44,11 +44,7 @@ if str(REPO_ROOT) not in sys.path:
 # way `verify.py`'s own `_load_build_module` loads its cell/block modules,
 # so a second, unrelated test module named `verify` elsewhere can't shadow
 # it via `sys.modules`.
-_SPEC = importlib.util.spec_from_file_location(
-    "layout_tests_verify_module", LAYOUT_DIR / "verify.py"
-)
-verify = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(verify)
+verify = load_module_from_path("layout_tests_verify_module", LAYOUT_DIR / "verify.py")
 
 
 #: A representative `klt extract` report -- the only report kind that ever

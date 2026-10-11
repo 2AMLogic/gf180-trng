@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import contextlib
 import copy
-import importlib.util
 import io
 import json
 import re
@@ -27,16 +26,15 @@ from pathlib import Path
 from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 DIGITAL = REPO / "layout" / "digital"
 STRICT = "python3 layout/digital/tap_distance.py --check --require-tools"
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("tap_distance_wiring", DIGITAL / "tap_distance.py")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["tap_distance_wiring"] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path("tap_distance_wiring", DIGITAL / "tap_distance.py")
 
 
 td = _load()

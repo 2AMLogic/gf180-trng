@@ -17,7 +17,6 @@ the bounding box of the rectangles that were written.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -28,14 +27,11 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 
 def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module  # dataclasses resolves annotations via sys.modules
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 build = _load("layout_digital_build_checks", LAYOUT_DIR / "digital" / "build.py")
