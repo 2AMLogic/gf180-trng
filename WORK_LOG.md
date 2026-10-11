@@ -6,6 +6,14 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #599**: refactor: dedupe the layout generators' gds_path/check/main tail into _build_cli
+- **PR #598**: docs: record the second-pass LU.3/LU.4 source re-check in DR-0030
+- **PR #597**: spec: DR-0020 status note, FIFO_DEPTH = 2 holds at the 2 kbps raw rate
+- **PR #596**: Reject tracked raw simulation artifacts with no evidence record
+- **PR #595**: Migrate sim/tests loaders to load_module_from_path (#553, batch 2)
+- **Issue #593** (closed): Reject tracked raw simulation artifacts with no evidence record
+- **Issue #589** (closed): Dedup the gds_path/check/main boilerplate repeated in every layout generator
+- **Issue #583** (closed): DR-0020 revisit trigger fired: re-examine output FIFO_DEPTH at the 2 kbps raw rate
 - **PR #592**: Redact absolute parameterized PDK paths from model manifest diagnostics
 - **PR #588**: Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
 - **PR #587**: Add load_module_from_path helper and migrate production loaders (batch 1 of #553)
