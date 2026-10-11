@@ -40,6 +40,29 @@ class CampaignTableTests(unittest.TestCase):
         self.assertIn("--jobs", cmd)
         self.assertIn("4", cmd)
 
+    def test_default_jobs_is_bounded_and_not_core_count(self):
+        self.assertEqual(characterize.DEFAULT_JOBS, 2)
+        self.assertIsNone(characterize.build_parser().parse_args([]).jobs)
+
+    def _dry_run(self, *extra):
+        out = subprocess.run(
+            [sys.executable, str(SIM_DIR / "characterize.py"), "--dry-run", *extra],
+            capture_output=True, text=True, check=True,
+        ).stdout
+        return [l for l in out.splitlines() if "--jobs" in l and l.startswith("  ")]
+
+    def test_dry_run_forwards_bounded_default_to_every_command(self):
+        lines = self._dry_run()
+        self.assertTrue(lines)
+        for l in lines:
+            self.assertEqual(l.split("--jobs")[1].split()[0], "2", l)
+
+    def test_dry_run_forwards_explicit_jobs_unchanged(self):
+        lines = self._dry_run("--jobs", "7")
+        self.assertTrue(lines)
+        for l in lines:
+            self.assertEqual(l.split("--jobs")[1].split()[0], "7", l)
+
     def test_fully_uncovered_rows_absent_from_campaign_rows(self):
         # ROWS_NOT_COVERED documents rows (or row *terms*, e.g. "D (digital
         # term)") this script does not produce evidence for. A row with no
