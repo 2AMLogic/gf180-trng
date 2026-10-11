@@ -48,6 +48,20 @@ def _resolve_tb_path(argument: str) -> Path:
     )
 
 
+def _positive_int(text: str) -> int:
+    """argparse ``type=`` for a strictly positive integer (e.g. ``--timeout``)."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid integer value: {text!r}") from None
+    if value <= 0:
+        raise argparse.ArgumentTypeError(
+            f"must be a positive integer number of seconds, got {value} "
+            "(0 would disable the per-run watchdog)"
+        )
+    return value
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="run_corners.py",
@@ -89,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
              "(default 1 = sequential). Records are still written in grid order.",
     )
     parser.add_argument(
-        "--timeout", type=int, default=runner.DEFAULT_TIMEOUT_S,
+        "--timeout", type=_positive_int, default=runner.DEFAULT_TIMEOUT_S,
         help="per-run ngspice wall-clock bound in seconds, enforced by an OS-level "
              "watchdog (timeout(1)/gtimeout, see --check-env) so it survives even if "
              "run_corners.py itself is killed; a killed run reports as FAILED-TIMEOUT",
@@ -234,6 +248,15 @@ def _default_caveats(tb, point, jobs: int = 1, manifest=None) -> list[str]:
 
 
 def run(args: argparse.Namespace) -> int:
+    # Reject an invalid watchdog bound before PDK discovery, record-stem
+    # reservation, or any simulator launch (argparse already checks the
+    # CLI path; this covers callers that build the Namespace directly).
+    try:
+        runner.validate_timeout_s(args.timeout)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
 
