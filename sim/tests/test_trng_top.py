@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import random
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -46,10 +45,12 @@ sys.path.insert(0, str(TOP_DIR))
 sys.path.insert(0, str(DESIGN_DIR / "conditioner"))
 sys.path.insert(0, str(DESIGN_DIR / "health_test"))
 sys.path.insert(0, str(IFACE_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 import regmap  # noqa: E402
 import rct_apt as ht  # noqa: E402
 import trng_top as top  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 TRNG_TOP_SPICE = DESIGN_DIR / "trng_top.spice"
 SAMPLER_CORE_SPICE = DESIGN_DIR / "sampler_core.spice"
@@ -344,9 +345,9 @@ class TopLevelBehaviouralTests(unittest.TestCase):
         self.assertEqual(t.health.apt_failures, 0)
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- trng_top.v is not compile-checked here",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- trng_top.v is not compile-checked here",
 )
 class RtlWiringTests(unittest.TestCase):
     """trng_top.v elaborates against the three real synthesisable modules,
@@ -448,10 +449,10 @@ def _mixed_vectors(seed: int, n_cycles: int, rct_fail_at: int | None = None, res
     return vectors
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- the assembled RTL/model cross-check is "
-    "not run here",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- the assembled RTL/model cross-check is "
+           "not run here",
 )
 class AssembledCrossCheckTests(unittest.TestCase):
     """The assembled RTL (``trng_top.v``) and the assembled behavioural model

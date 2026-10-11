@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 import subprocess
 import os
 import sys
@@ -21,9 +20,11 @@ from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 from harness import corners, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 
 def fake_pdk(root: Path) -> Pdk:
@@ -856,7 +857,7 @@ class StartupPolicyTests(unittest.TestCase):
     def test_dut_include_may_not_take_the_snapshot_name(self):
         self.assertIn(startup.SNAPSHOT_NAME, testbench.fixed_artifact_names())
 
-    @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; snapshot probe skipped")
+    @requires_tools("ngspice", reason="ngspice not on PATH; snapshot probe skipped")
     def test_ngspice_reads_the_snapshot_not_the_live_script(self):
         """PDK-free: a sentinel in the captured copy is echoed by ngspice;
         a different sentinel in the live file (edited after capture) is not."""
@@ -882,7 +883,7 @@ class StartupPolicyTests(unittest.TestCase):
             self.assertIn("SENTINEL_CAPTURED", out)
             self.assertNotIn("SENTINEL_LIVE_EDIT", out)
 
-    @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; hostile-fixture probe skipped")
+    @requires_tools("ngspice", reason="ngspice not on PATH; hostile-fixture probe skipped")
     def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
