@@ -186,6 +186,7 @@ SYS_PATH_INSERT_ALLOWLIST = frozenset({
     "sim/tests/test_trng_top.py",
     "sim/tests/test_unused_names.py",
     "sim/tests/test_verify_evidence_history.py",
+    "sim/tests/test_verify_markdown_links.py",
     "sim/tests/test_verify_record_checksums.py",
     "sim/tests/test_vss_trunk_ir_drop.py",
     "sim/tests/test_worst_corner_entropy.py",
