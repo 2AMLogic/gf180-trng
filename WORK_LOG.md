@@ -6,6 +6,17 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #568**: Record PDK model-content identity in new simulation evidence
+- **PR #564**: Bound the default concurrency of sim/characterize.py
+- **PR #560**: ci: pin GitHub Actions to verified commit SHAs and guard against mutable refs
+- **PR #559**: Publish SPICE evidence records with exclusive creation
+- **PR #555**: Centralise the superseded-record filter and latest-record selection (#554)
+- **Issue #562** (closed): Record PDK model-content fingerprints in new simulation evidence
+- **Issue #561** (closed): Auditor Capability Request: Python interpreter unavailable for repository checks
+- **Issue #558** (closed): Bound the default concurrency of sim/characterize.py instead of using every core
+- **Issue #554** (closed): Centralise the superseded-record filter and latest-record selection in one shared reader
+- **Issue #544** (closed): Pin GitHub Actions to commit SHAs and guard against mutable refs
+- **Issue #539** (closed): Use exclusive publication for SPICE evidence Markdown
 - **PR #552**: Scope whole-record measurement readers to the primary Result section
 - **PR #551**: Validate multi-seed summary bullets in the shared record parser
 - **PR #550**: Freeze SPICE inputs per invocation and hash the captured bytes
