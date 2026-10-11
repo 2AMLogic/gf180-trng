@@ -7,7 +7,6 @@ match is exercised on the real block's topology.
 """
 
 import copy
-import importlib.util
 import json
 import re
 import sys
@@ -15,14 +14,14 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 TB = ROOT / "sim" / "tb" / "combiner-sampler-pex"
 
 
 def _load(name, path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    return load_module_from_path(name, path)
 
 
 bd = _load("cs_build_dut", TB / "build_dut.py")

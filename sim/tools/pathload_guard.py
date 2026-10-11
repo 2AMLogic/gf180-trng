@@ -45,14 +45,6 @@ ALLOWLIST = frozenset({
     "layout/tests/test_synth.py",
     "layout/tests/test_tap_distance_ci_wiring.py",
     "layout/tests/test_verify.py",
-    "sim/tests/test_build_dut_port_map.py",
-    "sim/tests/test_combiner_sampler_pex.py",
-    "sim/tests/test_ring2_pex.py",
-    "sim/tests/test_signoff_current_status.py",
-    "sim/tests/test_signoff_freshness.py",
-    "sim/tests/test_signoff_item7.py",
-    "sim/tests/test_signoff_item7_analog.py",
-    "sim/tests/test_signoff_record_compare.py",
 })
 
 

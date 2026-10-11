@@ -3,16 +3,17 @@
 Synthetic extracted netlists only; no klt, ngspice or PDK.
 """
 
-import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location(
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+bd = load_module_from_path(
     "build_dut", ROOT / "sim" / "tb" / "ro-ring11-pex" / "build_dut.py"
 )
-bd = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bd)
 
 RING = [f"a|y{'' if i == 0 else '$' + str(i)}" for i in range(11)]
 NAMED = ["en", "vddr", "vss", "vsubs"]
