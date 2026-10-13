@@ -7,6 +7,7 @@ Every fixture is written to a temporary directory that the loaders' module
 
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -28,8 +29,8 @@ def record(status: str | None, temp: float = 27, extra: str = "") -> str:
     lines = ["---", "record: fixture"]
     if status is not None:
         lines.append(f"status: {status}")
-    lines += ["---", "", "process: tt", f"temperature: {temp}", "voltage: 3.30",
-              "", "- `i_avdd`: 1e-6", extra]
+    lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V",
+              "---", "", "## Result", "", "- `i_avdd`: 1e-6", extra]
     return "\n".join(lines) + "\n"
 
 
@@ -54,6 +55,15 @@ class ParseStatusTests(unittest.TestCase):
         text = record(None, extra="status: valid")
         with self.assertRaises(RuntimeError):
             rp.parse_status(text, label="rec-d")
+
+    def test_duplicate_status_is_rejected(self):
+        text = "---\nrecord: x\nstatus: valid\nstatus: superseded\n---\nbody\n"
+        with self.assertRaisesRegex(RuntimeError, "rec-g: .*2 `status:` fields"):
+            rp.parse_status(text, label="rec-g")
+
+    def test_unclosed_frontmatter(self):
+        with self.assertRaisesRegex(RuntimeError, "rec-h: no frontmatter"):
+            rp.parse_status("---\nstatus: valid\n", label="rec-h")
 
     def test_no_frontmatter(self):
         with self.assertRaisesRegex(RuntimeError, "rec-e: no frontmatter"):
@@ -139,15 +149,12 @@ class ArraySizingTests(_Fixture):
         self.assertEqual(len(hist), 2)
 
 
-def frontmatter(status: str | None) -> str:
+def frontmatter(status: str | None, temp: float = 27) -> str:
     lines = ["---", "record: fixture"]
     if status is not None:
         lines.append(f"status: {status}")
-    return "\n".join(lines + ["---", ""]) + "\n"
-
-
-def corner_block(temp: float = 27) -> str:
-    return f"process: tt\ntemperature: {temp}\nvoltage: 3.30\n\n"
+    lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V"]
+    return "\n".join(lines + ["---", "", "## Result"]) + "\n\n"
 
 
 def mean_bullet(key: str, mean: float, sd: float = 0.0, seeds: int = 4) -> str:
@@ -160,7 +167,7 @@ class RawMinEntropyTests(_Fixture):
 
     def write_bits(self, name: str, status: str | None, bits: list[int],
                    temp: float = 27) -> None:
-        text = frontmatter(status) + corner_block(temp) + "seeds: [1, 2]\n\n"
+        text = frontmatter(status, temp) + "seeds: [1, 2]\n\n"
         for i, b in enumerate(bits):
             text += mean_bullet(f"b{i}_v", 3.3 if b else 0.0)
         (self.dir / name).write_text(text)
@@ -204,7 +211,7 @@ class StarvedCellJitterEnergyTests(_Fixture):
             self.addCleanup(p.stop)
 
     def write_jitter(self, name: str, status: str | None, temp: float = 27) -> None:
-        text = frontmatter(status) + corner_block(temp)
+        text = frontmatter(status, temp)
         for lag in (1, 2, 4, 8):
             text += mean_bullet(f"sigma_{lag}", 1e-12 * lag ** 0.5, 5e-14)
         text += "- `period`: 2.8e-09\n- `p_active_w`: 1e-04\n"
@@ -213,7 +220,7 @@ class StarvedCellJitterEnergyTests(_Fixture):
     def write_noise(self, name: str, status: str | None, dens: float,
                     temp: float = 27) -> None:
         (self.dir / name).write_text(
-            frontmatter(status) + corner_block(temp) + f"- `inoise_dens_1g`: {dens!r}\n"
+            frontmatter(status, temp) + f"- `inoise_dens_1g`: {dens!r}\n"
         )
 
     def test_superseded_noise_record_does_not_win_corner(self):
@@ -245,6 +252,108 @@ class StarvedCellJitterEnergyTests(_Fixture):
         self.write_noise("2026-01-01-rostage-noise-01.md", "stale", 1e-8)
         with self.assertRaisesRegex(scje.RecordError, "2026-01-01-rostage-noise-01"):
             scje.load_points()
+
+
+#: Tools that read a records directory directly, with the reason each is
+#: allowed to see every record (``status: superseded`` included) and how many
+#: such globs it holds. Anything not listed must go through
+#: ``_record_parsing.current_records`` / ``latest_current_record``, which
+#: apply the lifecycle filter and the latest-record-wins rule in one place
+#: (#554). Adding a line here is the explicit statement "reads historical
+#: records on purpose".
+DIRECT_GLOB_ALLOWLIST = {
+    "tools/_record_parsing.py": (1, "the shared selection helper itself"),
+    "tools/verify_record_checksums.py": (1, "checksums every record, superseded included"),
+    "tools/corpus_counts.py": (1, "counts the whole corpus by lifecycle status"),
+    "harness/report.py": (1, "stem allocation must see every existing stem"),
+    "tools/run_array_liveness_tap_phase.py": (
+        2, "resume/clean-up logic inspects every attempt's record, not the latest valid one"),
+    "tools/power_rollup.py": (
+        1, "multi-record rollup: filters by lifecycle but keeps every valid record, "
+           "not only the latest"),
+}
+
+_DIRECT_GLOB = re.compile(r"\b(?:RECORDS|RECORDS_DIR|records_dir)\s*\.\s*r?glob\s*\(")
+
+
+def direct_record_globs() -> dict[str, int]:
+    found = {}
+    for sub in ("tools", "harness"):
+        for path in sorted((SIM_DIR / sub).glob("*.py")):
+            n = len(_DIRECT_GLOB.findall(path.read_text()))
+            if n:
+                found[f"{sub}/{path.name}"] = n
+    return found
+
+
+class DirectGlobGuardTests(unittest.TestCase):
+    def test_no_unlisted_direct_records_glob(self):
+        found = direct_record_globs()
+        allowed = {name: n for name, (n, _why) in DIRECT_GLOB_ALLOWLIST.items()}
+        unlisted = {k: v for k, v in found.items() if k not in allowed}
+        self.assertEqual(
+            unlisted, {},
+            "direct records-directory glob outside the allowlist; use "
+            "_record_parsing.current_records / latest_current_record",
+        )
+        grown = {k: v for k, v in found.items() if v > allowed.get(k, v)}
+        self.assertEqual(grown, {}, "more direct globs than the allowlist records")
+
+    def test_allowlist_has_no_stale_entries(self):
+        found = direct_record_globs()
+        stale = [k for k in DIRECT_GLOB_ALLOWLIST if found.get(k) != DIRECT_GLOB_ALLOWLIST[k][0]]
+        self.assertEqual(stale, [], "allowlist entry no longer matches the source")
+
+    def test_guard_detects_a_bare_glob(self):
+        self.assertTrue(_DIRECT_GLOB.search('x = sorted(RECORDS.glob("*.md"))'))
+        self.assertTrue(_DIRECT_GLOB.search("records_dir.glob(pat)"))
+        self.assertFalse(_DIRECT_GLOB.search("current_records(RECORDS, pat)"))
+
+
+class SelectionHelperTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.dir = Path(self._tmp.name)
+
+    def put(self, name, status, temp=27, extra=""):
+        (self.dir / name).write_text(record(status, temp, extra))
+
+    def test_filters_and_orders(self):
+        self.put("2026-01-02-fx-01.md", "valid")
+        self.put("2026-01-01-fx-01.md", "valid")
+        self.put("2026-01-03-fx-01.md", "superseded")
+        got = rp.current_records(self.dir, "*-fx-*.md")
+        self.assertEqual([p.stem for p in got], ["2026-01-01-fx-01", "2026-01-02-fx-01"])
+        every = rp.current_records(self.dir, "*-fx-*.md", include_superseded=True)
+        self.assertEqual(len(every), 3)
+
+    def test_latest_skips_superseded_and_filters(self):
+        self.put("2026-01-01-fx-01.md", "valid", temp=27)
+        self.put("2026-01-02-fx-01.md", "valid", temp=85)
+        self.put("2026-01-03-fx-01.md", "superseded", temp=27)
+        got = rp.latest_current_record(self.dir, "*-fx-*.md", corner="tt/27/3.30")
+        self.assertEqual(got.stem, "2026-01-01-fx-01")
+        got = rp.latest_current_record(self.dir, "*-fx-*.md", requires=("i_avdd",))
+        self.assertEqual(got.stem, "2026-01-02-fx-01")
+
+    def test_three_distinct_errors(self):
+        with self.assertRaisesRegex(RuntimeError, "no committed record matches"):
+            rp.latest_current_record(self.dir, "*-none-*.md")
+        self.put("2026-01-01-fx-01.md", "superseded")
+        with self.assertRaisesRegex(RuntimeError, "every match is superseded"):
+            rp.latest_current_record(self.dir, "*-fx-*.md")
+        self.put("2026-01-02-fx-01.md", "valid")
+        with self.assertRaisesRegex(RuntimeError, "no valid .* at tt/85/3.30 carries i_avdd"):
+            rp.latest_current_record(
+                self.dir, "*-fx-*.md", corner="tt/85/3.30", requires=("i_avdd",))
+        self.assertIsNone(rp.latest_current_record(
+            self.dir, "*-fx-*.md", corner="tt/85/3.30", required=False))
+
+    def test_unreadable_status_names_record(self):
+        self.put("2026-01-01-fx-01.md", None)
+        with self.assertRaisesRegex(RuntimeError, "2026-01-01-fx-01"):
+            rp.current_records(self.dir, "*-fx-*.md")
 
 
 if __name__ == "__main__":

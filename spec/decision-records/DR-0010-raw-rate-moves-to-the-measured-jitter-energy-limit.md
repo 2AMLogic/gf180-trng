@@ -1,9 +1,9 @@
 ---
 dr: DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit
 title: Resolve the DR-0007-versus-Power-row collision by moving the raw-rate row to the rate a minimum-energy ring array delivers inside the ratified power budget
-status: Proposed
+status: Accepted
 date: 2026-08-01
-deciders: Proposed by #7 (entropy-source array sizing). NOT ratified — acceptance is an operator decision, as DR-0001…DR-0004 and DR-0007 were.
+deciders: Proposed by #7 (entropy-source array sizing). Accepted 2026-10-10 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work), tracked as #480 -- see Status.
 supersedes: "DR-0003-throughput-defined-at-the-raw-tap — its rate VALUE only, and only on acceptance. DR-0003's definition of where the rate is measured (the raw tap), what 'sustained' means, and its binding corner all stand unchanged."
 superseded_by: n/a
 related: "#7 (origin — array sizing), #32/PR #38 (sim/characterization-supply-current-and-leakage.md), #29/#1 (DR-0007 ratification), #4 (sim/characterization-ro-delay-cell-jitter.md), #8 (conditioner K), #9 (sampler clock), #11 (health-test RTL), #12/#13 (array H and minimum-Q corner), #16 (isolation),
@@ -15,9 +15,22 @@ related: "#7 (origin — array sizing), #32/PR #38 (sim/characterization-supply-
 ## Status
 
 - 2026-08-01: Proposed, by #7. Not ratified.
+- 2026-10-10: **Accepted** via the two-key ratification mechanism (`2AMLogic/2am#372`: EE key + market key both review this repo's ratification pull request, tracked as #480) per the operator's 2026-08-27 comment on #150, which superseded the earlier "acceptance is an operator decision" language and ruled that cutting this ratification PR is ordinary agent work. Ratified together with
+  [`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md),
+  which supersedes this record's §1 rate VALUE (500 bps) and nothing else: this
+  record is therefore `Accepted` and **superseded in part** -- §1's value is
+  stale, while `(★)` as the sizing law, N = 2, eleven stages and §§2-5 stand.
+  `superseded_by` is left `n/a` because the supersession is partial and the
+  tooling reads that field as whole-record.
+- 2026-10-10: **The three edits listed below are NOT made by the ratification
+  pull request.** Edit 1 changes the value of a ratified target-spec row, and
+  the ratification pull request edits only decision-record status and
+  provenance commentary (the #213 precedent). They are the mechanical
+  follow-up of the pair's acceptance and are tracked separately; until they
+  land, `README.md`'s `Raw rate` row still reads as ratified on 2026-07-31.
 
 On acceptance, three edits follow and are deliberately **not** made by the pull
-request that proposes this record:
+request that proposes this record (nor by the one that ratifies it, see above):
 
 1. `README.md`'s `Raw rate` row changes to this record's number and cites this
    record alongside DR-0003.
@@ -28,8 +41,8 @@ request that proposes this record:
    `N₀ = 560` is annotated as answered by this record. Its §1 topology and §2
    sizing law are **not** touched; this record uses both unchanged.
 
-Until then the ratified rows stand as written, and this record is a proposal
-that must not be cited as though it were spec.
+Until they land, the ratified rows stand as written in `README.md`; this
+record is `Accepted`, but its §1 value is superseded in part by DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.
 
 ## Context
 

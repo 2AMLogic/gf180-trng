@@ -22,7 +22,6 @@ Four groups, matching ``sim/tests/test_conditioner.py``'s structure:
 from __future__ import annotations
 
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -37,9 +36,11 @@ TB_DIR = SIM_DIR / "tb" / "health-test-fault-injection"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "health_test"))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 import rct_apt as ht  # noqa: E402
 import fault_injection as source_model  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 RTL = REPO_ROOT / "design" / "health_test" / "rct_apt.v"
 RTL_TB = TB_DIR / "tb_rtl_equivalence.v"
@@ -340,10 +341,10 @@ class FaultInjectionTests(unittest.TestCase):
         self.assertLessEqual(predicted_rate, 1.0)
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- RTL/model equivalence not checked here "
-    "(install iverilog to run it; see sim/tb/health-test-fault-injection/README.md)",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- RTL/model equivalence not checked here "
+           "(install iverilog to run it; see sim/tb/health-test-fault-injection/README.md)",
 )
 class RtlEquivalenceTests(unittest.TestCase):
     """The RTL must reproduce the behavioural model pulse for pulse.
@@ -414,6 +415,67 @@ class RtlEquivalenceTests(unittest.TestCase):
         bits, _, _ = source_model.biased_bits("rtl-biased-fail", 203, 1024 * 3, "0.1")
         vectors = [(b, 1, 0) for b in bits]
         self.assertEqual(self._run_rtl(vectors), self._model_pulses(vectors))
+
+
+    # --- Constructed boundary vectors (cutoff off-by-one coverage) -------
+    #
+    # Random or strongly biased streams never land a count exactly on a
+    # cutoff, so an off-by-one in a comparison (>= vs >) would pass the
+    # RTL/model equivalence check unnoticed. These streams are built so the
+    # count is exactly C or C-1, and the pulse position is asserted too.
+
+    @staticmethod
+    def _apt_window(ref, matches, w=1024, max_run=80):
+        """One full window, first sample = ``ref``, exactly ``matches`` samples
+        equal to ``ref`` (reference sample included). Non-matching samples are
+        spread evenly, so no run approaches the RCT cutoff."""
+        other = w - matches
+        bits = []
+        placed = 0
+        for i in range(w):
+            if (i + 1) * other // w > placed:
+                placed += 1
+                bits.append(ref ^ 1)
+            else:
+                bits.append(ref)
+        assert bits[0] == ref and bits.count(ref) == matches
+        return bits
+
+    def _assert_pulses_at(self, vectors, expect):
+        """RTL == model, and the pulses are exactly ``expect``:
+        a dict {index: (rct, apt, startup_pass)}; all other cycles are idle."""
+        model = self._model_pulses(vectors)
+        self.assertEqual(self._run_rtl(vectors), model)
+        actual = {i: p for i, p in enumerate(model) if any(p)}
+        self.assertEqual(actual, expect)
+
+    def test_rtl_apt_fires_when_window_matches_equal_the_cutoff(self):
+        for ref in (0, 1):
+            with self.subTest(ref=ref):
+                vectors = [(b, 1, 0) for b in self._apt_window(ref, 824)]
+                # The failing window ends at sample 1023; start-up pass is withheld.
+                self._assert_pulses_at(vectors, {1023: (False, True, False)})
+
+    def test_rtl_apt_does_not_fire_one_match_below_the_cutoff(self):
+        for ref in (0, 1):
+            with self.subTest(ref=ref):
+                vectors = [(b, 1, 0) for b in self._apt_window(ref, 823)]
+                self._assert_pulses_at(vectors, {1023: (False, False, True)})
+
+    def test_rtl_rct_fires_on_a_run_of_exactly_the_cutoff(self):
+        for value in (0, 1):
+            with self.subTest(value=value):
+                bits = [value] * 81 + [value ^ 1, value, value ^ 1]
+                vectors = [(b, 1, 0) for b in bits]
+                # Fires on the 81st identical sample, not on the change after.
+                self._assert_pulses_at(vectors, {80: (True, False, False)})
+
+    def test_rtl_rct_does_not_fire_on_a_run_one_below_the_cutoff(self):
+        for value in (0, 1):
+            with self.subTest(value=value):
+                bits = [value] * 80 + [value ^ 1, value, value ^ 1]
+                vectors = [(b, 1, 0) for b in bits]
+                self._assert_pulses_at(vectors, {})
 
 
 if __name__ == "__main__":

@@ -1,0 +1,159 @@
+# ngspice-46 transient-noise seed-replay experiment (2026-10-11)
+
+Append-only evidence. This directory records one small, PDK-free experiment
+on whether any seed or start-up control makes ngspice `trnoise` waveforms
+repeat across separate simulator processes. It follows up the finding of
+[`../2026-10-11-ngspice-seed-control/`](../2026-10-11-ngspice-seed-control/README.md)
+(issue #574) and backs the reproduction contract in
+[`sim/README.md`](../../README.md) and
+[DR-0031](../../../spec/decision-records/DR-0031-transient-noise-reproducibility.md).
+It is a simulator-behaviour probe on ideal elements, not a harness run of a
+testbench, so it is not a `sim/records/` record. **PVT corners do not apply**:
+the decks contain only an ideal noise voltage source, ideal resistors and a
+behavioural source, none of which has a process, supply or temperature
+dependence in the quantities compared. Do not edit the files here; a later
+experiment gets its own dated directory.
+
+## Question
+
+1. Under the harness start-up policy, do two separate ngspice processes with
+   the same `.option seed` produce the same `trnoise` samples?
+2. Does any of these controls make them do so: `setseed N` in an explicitly
+   supplied system `spinit`; `set rndseed=N` in that `spinit`; `setseed N` in
+   a user `.spiceinit` (the ngspice-46 manual, section 11.3, p. 332); a
+   control-block `setseed N` before `tran`?
+3. Diagnostic only: does the waveform follow the simulator's process id?
+
+## Setup
+
+- Simulator: `logs/ngspice-version.log` (`ngspice -v`): `ngspice-46 : Circuit
+  level simulation program`, `Compiled with KLU Direct Linear Solver`,
+  `Creation Date: Sat Aug  1 17:32:09 UTC 2026`. The SHA-256 of the
+  executable is in `logs/ngspice-binary.sha256`. This is a different build
+  of the ngspice-46 release from the one the seed-control experiment used
+  (creation date `Wed Aug 5 10:12:28 UTC 2026`). Platform:
+  `logs/uname.log`; `unshare` version: `logs/unshare-version.log`.
+- Deck (`decks/seed11.cir`, `decks/seed12.cir`): probe A of the seed-control
+  experiment with a longer transient. Three random mechanisms:
+  - `p0` -- `.param pm = agauss(0, 1, 1)`, read back as `p[0]`;
+  - `g` -- control-language `sgauss(vector(3))` after the transient;
+  - `v(n1)` -- `trnoise(1 1n 0 0)` (1 V rms white noise, a new sample every
+    1 ns), printed by `tran 1n 16n`; compared at t = 1..16 ns.
+  `decks/ctl_setseed*.cir` add `setseed N` in the control block before
+  `tran`.
+- Start-up files (`startup/`), each supplied explicitly in a fresh
+  `mktemp` directory; no user or system init file on the host was read for
+  writing or modified:
+  - `harness-spinit` -- byte copy of `sim/harness/ngspice_scripts/spinit`
+    (SHA-256 `d09f10cc519effe56d97820ea6da54750a66c9ddc4561e7bda9aa77486bc5941`,
+    equal to the checked-in script at the time of the run);
+  - `spinit-setseed11|12`, `spinit-rndseed11|12` -- that copy plus a sentinel
+    `echo` and `setseed N` or `set rndseed=N`;
+  - `spiceinit-setseed11|12` -- a sentinel `echo` and `setseed N`;
+  - `spiceinit-hostile` -- a sentinel `echo`, `setseed 99` and
+    `set rndseed=99`, placed as both `$HOME/.spiceinit` and the work
+    directory `.spiceinit` in every run that passes `-n`, to show they are
+    not read.
+- `probe.py` applies the harness policy through `sim/harness/startup.py`
+  itself: `batch_flags()` (`-n -b`), `environment()` (drops `SPICE_LIB_DIR`,
+  sets `SPICE_SCRIPTS`) and `write_snapshot()` of the chosen script bytes.
+  `HOME` points at the temporary home and every inherited `SPICE_*`
+  variable is removed. Groups:
+
+  | Group | Command | `SPICE_SCRIPTS/spinit` | `.spiceinit` read |
+  |---|---|---|---|
+  | H | `ngspice -n -b seedN.cir` | `harness-spinit` | none (hostile files present) |
+  | S | `ngspice -n -b seedN.cir` | `spinit-setseedN` | none (hostile files present) |
+  | R | `ngspice -n -b seedN.cir` | `spinit-rndseedN` | none (hostile files present) |
+  | U | `ngspice -b seedN.cir` | `harness-spinit` | `$HOME/.spiceinit` = `spiceinit-setseedN` |
+  | C | `ngspice -n -b ctl_setseedN.cir` | `harness-spinit` | none (hostile files present) |
+  | P | `unshare --user --pid --fork ngspice -n -b seedN.cir` | `harness-spinit` | none (hostile files present) |
+
+  Each group ran seed 11 twice and seed 12 once: 18 processes, one at a
+  time.
+- Command, from the repository root:
+  `PYTHONPATH=. python3 sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/probe.py sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/logs > .../logs/probe.stdout 2>&1`.
+  The probe exited 0 and every ngspice process exited 0
+  (`logs/probe.stdout`, `exit` in `logs/runs.json`).
+- Outputs: `logs/<run>.log` (combined ngspice output, unedited; they contain
+  a timestamp, so they are compared by value, not byte for byte),
+  `logs/runs.json` (argv, temporary paths shown as `<tmp>`, exit status,
+  sentinels seen, startup-script digest, parsed samples) and
+  `logs/compare.txt` (the comparison below, generated by `probe.py`).
+
+## Results
+
+Printed values (`numdgt=8`) compared for exact equality. Full values in
+`logs/compare.txt` and `logs/runs.json`.
+
+| Group | Sentinels printed | `v(n1)` equal, seed 11 run 1 vs run 2 | `v(n1)` equal, seed 11 vs 12 | `p0`, `g` repeat for seed 11 / differ for 12 |
+|---|---|---|---|---|
+| H harness policy | none | 0 of 16 | 0 of 16 | yes / yes |
+| S `setseed` in `spinit` | `STARTUP_SPINIT_SETSEED_N` | 0 of 16 | 0 of 16 | yes / yes |
+| R `set rndseed` in `spinit` | `STARTUP_SPINIT_RNDSEED_N` | 0 of 16 | 0 of 16 | yes / yes |
+| U `setseed` in `.spiceinit` | `STARTUP_USERINIT_SETSEED_N` | 0 of 16 | 0 of 16 | yes / yes |
+| C control-block `setseed` | none | 0 of 16 | 0 of 16 | yes / yes |
+| P new PID namespace | none | **16 of 16** | **16 of 16** | yes / yes |
+
+For example, `v(n1)` at 1 ns was `-5.2961875e-01` and `-5.3054054e-01` in
+H seed 11 runs 1 and 2, and `6.63511854e-01` in all three P runs, including
+seed 12. In every run `p0` was `3.48538000e-01` for seed 11 and
+`-1.1814000e+00` for seed 12.
+
+## Findings
+
+Measured on the build identified above:
+
+1. **No tested control makes `trnoise` repeat.** With the harness policy
+   alone, and with each of `setseed` or `set rndseed` in an explicitly
+   supplied `spinit`, `setseed` in a user `.spiceinit` and a control-block
+   `setseed`, two processes given the same seed shared none of the 16 noise
+   samples. The sentinels show the start-up files were actually read (S, R,
+   U), so the result is not a lookup failure.
+2. **The seed does reproduce the other random draws.** `p0` (`agauss`) and
+   `g` (`sgauss`) repeated exactly for the same seed and changed with the
+   seed in every group, as in the seed-control experiment.
+3. **The harness policy kept the hostile `.spiceinit` files out** (no
+   `STARTUP_HOSTILE_INIT_READ` sentinel in any `-n` run) on this
+   ngspice-46 build.
+4. **The noise follows the process id, not the seed (diagnostic).** In a
+   new PID namespace ngspice runs as process 1 every time; there the noise
+   repeated exactly, and it was *the same for seed 12 as for seed 11*.
+   So, in this build, the seed has no influence on these `trnoise` samples,
+   and two runs are different realizations only because they ran as
+   different processes. The PID namespace is not a seed control: it would
+   make every seed produce the same noise, so it is recorded here as a
+   diagnostic and is not used by the harness.
+
+Source reading, not measured here: in the ngspice-46 source, `main.c` calls
+`initw()` (`src/frontend/trannoise/wallace.c`) after the start-up files have
+been read; `initw()` calls `srand(getpid())`, reseeds the uniform generator
+and fills the Wallace Gaussian pool that `trnoise` white noise draws from
+(`GaussWa`, `src/frontend/trannoise/1-f-code.c`). `setseed`
+(`com_sseed`) and the `rndseed` check (`checkseed`) in
+`src/maths/misc/randnumb.c` reseed the uniform generator only and do not
+refill the pool. This is consistent with findings 1 and 4. The probe covers
+the first 16 samples, well inside one pool (pool refreshes, which use the
+reseeded uniform generator for addressing, were not exercised).
+
+Not tested: ngspice builds other than the one identified above; `trnoise`
+1/f, random-telegraph or `trrandom` sources; the shared-library mode; a
+`SPICE_USERINIT_DIR` init file; `.option seed=random`. Whether two runs in
+different processes are statistically independent is a separate question
+this experiment does not answer.
+
+## Consequences
+
+- A transient-noise record cannot be replayed sample for sample by
+  re-running its seed. Its seeds still identify the runs and still fix the
+  non-`trnoise` random draws (`agauss` mismatch, control-language
+  functions). The README contract and DR-0031 record what a re-run does
+  reproduce.
+- No harness change can integrate a seed control for `trnoise`, because no
+  tested control works. The harness keeps emitting `.option seed=<n>` and
+  keeps the existing seed-ownership checks.
+
+## Files
+
+`SHA256SUMS` lists every deck, start-up file, the probe and every file in
+`logs/`.

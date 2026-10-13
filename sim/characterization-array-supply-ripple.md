@@ -63,6 +63,13 @@ runner image accepts the client, run the six requests with
 `supply_ripple.py run` and mint records with the repository's append-only
 conventions.
 
+A further single-request retry on 2026-10-09 (`supply_ripple.py run nominal-beat`,
+fleet job `klt-sim-d94c2476733f`, c7i.8xlarge Spot) was accepted by the fleet but
+failed identically: exit 87, `runner_compatibility: mismatch` (runner klt 0.5.0,
+client klt 0.7.0), all 7 units `batch_job_failed`, no measurements. The other
+five requests were not submitted, and nothing was run as a local loop. No record
+was minted; results remain pending.
+
 The only simulation performed was an unrecorded two-unit local pipeline smoke
 check (a control and one 150 mV unit at `tt`/27 C/3.30 V, 10.5 MHz, one corner)
 to confirm that the deck's `alter` parameters take effect, that the `.meas` edge

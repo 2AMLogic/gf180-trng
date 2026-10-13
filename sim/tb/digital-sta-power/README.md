@@ -71,8 +71,10 @@ Every session also carries the inter-region trunks that terminate on
 `trng_top`'s own pins — `clk`, `rst_n`, `raw_bit`, `raw_valid`,
 `ring_bit[0]`, `ring_bit[1]` as the DEF names them — as a
 `set_input_transition` per port, derived at run time from
-`layout/floorplan/reports/interregion.json`'s as-built `trunk_length_um` and
-[DR-0025]'s Metal4 coefficients. It is **permanent**, not a flag-gated
+`layout/floorplan/reports/interregion.json`'s as-built `trunk_length_um`
+(Metal4 coefficients per [DR-0025]) and, since #456, the per-endpoint `legs`
+(Metal4 stub, Metal5 track, Metal3 flank riser of the top-edge pins) at each
+layer's own coefficients ([DR-0028]). It is **permanent**, not a flag-gated
 scenario: re-deriving costs nothing per run, and a pinned constant would go
 stale the moment #222's routing moves. Each record's `interface_loads:` block
 states the per-port R, C and stated transition, and the convention they are
@@ -153,13 +155,33 @@ aggregates them into the Fmax / area / power answer, and
 `python3 sim/tools/digital_corner_characterization.py`, which re-derives
 every figure in that document from the records themselves.
 
+## Observed switching activity (opt-in, #453)
+
+The default flow above prices power at a declared uniform activity. DR-0023
+named a per-net activity annotation from post-route gate simulation as its
+follow-up; it is available behind a flag and changes nothing by default:
+
+```sh
+python3 sim/tb/digital-sta-power/activity.py capture      # seeded traces -> layout/.work/digital-sta-activity/
+python3 sim/tb/digital-sta-power/run_sta.py --activity --no-write
+python3 sim/tb/digital-sta-power/run_sta.py --activity    # 15 `digital-sta-activity` records
+python3 sim/tb/digital-sta-power/activity_power.py negative-controls
+python3 sim/tools/activity_power_characterization.py --check
+```
+
+Needs `iverilog` 13.0+ as well. The workloads and capture windows are
+`sim/tb/trng-top-post-route/activity_workloads.py`; the records use their own
+slug, so the fifteen `digital-sta-power` records and the rollup baseline are
+not touched. Read the results through
+`sim/characterization-digital-activity-power.md`.
+
 ## What this is not
 
 - Not signoff. Real extraction, but not a foundry-signed one; and the DEF it
   reads has no power delivery at all (#171, klayout-tools#1091), so nothing
   here sees IR drop.
 - Not a supply-current measurement. Power carries a declared uniform
-  switching activity (0.25 transitions/net/cycle, duty 0.5), chosen to match
+  switching activity (or, with `--activity`, a recorded synthetic-workload one) (0.25 transitions/net/cycle, duty 0.5), chosen to match
   the estimate it is compared against. Leakage is the one column with no
   activity assumption in it.
 - Not a re-run of the flow. The placement and routing are #111's, unchanged;
@@ -172,3 +194,4 @@ every figure in that document from the records themselves.
 [DR-0003]: ../../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0021]: ../../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0025]: ../../../spec/decision-records/DR-0025-full-chip-pex-scope.md
+[DR-0028]: ../../../spec/decision-records/DR-0028-top-edge-legs-are-priced-in-the-sta-interface-load.md

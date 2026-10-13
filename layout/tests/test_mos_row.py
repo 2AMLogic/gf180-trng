@@ -16,7 +16,6 @@ Helpers covered: `_pad_half`, `_place_row`, `_terminal`, `_route_nets` and
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -24,11 +23,13 @@ from collections import defaultdict
 from pathlib import Path
 from unittest import mock
 
-_MOS_ROW_PATH = Path(__file__).resolve().parents[1] / "cells" / "_mos_row.py"
-_SPEC = importlib.util.spec_from_file_location("_mos_row_under_test", _MOS_ROW_PATH)
-mos_row = importlib.util.module_from_spec(_SPEC)
-sys.modules[_SPEC.name] = mos_row  # dataclasses resolves annotations via sys.modules
-_SPEC.loader.exec_module(mos_row)  # type: ignore[union-attr]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
+
+_MOS_ROW_PATH = REPO_ROOT / "layout" / "cells" / "_mos_row.py"
+mos_row = load_module_from_path("_mos_row_under_test", _MOS_ROW_PATH)
 
 Device = mos_row.Device
 

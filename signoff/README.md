@@ -15,7 +15,7 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-**Today: `tier: null`, T1 8 of 22 items met.** A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 8 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
 22 rows. The eight met are item 3 (DRC), item 4 (LVS), item 7 (post-layout
 verification) and item 8 (characterization report) on **both** partitions.
@@ -341,6 +341,71 @@ so step 1d currently has nothing to check. A single-corner debug probe
 (tt / 3.30 V / 27 °C, local backend) measured all 66 rows on both sides
 within limits, and extracted clock-to-Q was about 4x the schematic value.
 That probe is a debug observation, not a PVT record.
+
+**Attempt log (2026-10-10).** With the pinned producer
+(`klayout-tools==0.6.0`, `klayout==0.30.10`), the offline checks and
+`build_dut.py --check` passed. Two further `publish_combiner_sampler_pex.py
+--backend batch` submissions both failed on the schematic side with
+`batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of
+the 30 pools after 3 attempt(s)`. `klt pex` reported
+`nothing published`, so no evidence was written and the grid was again not run
+locally. This remains unrun; see klayout-tools#2989 and #2990.
+
+**Attempt log (2026-10-10, second session).** Same pin, same host rules (grid
+only through `klt pex --backend batch`; no local fallback). The offline
+checks (`stimulus.py --check`, `build_dut.py --check-source`, the 34-test
+regression, `build_dut.py --check`) passed. Four further
+`publish_combiner_sampler_pex.py --backend batch` submissions were made and
+none produced a complete two-sided response:
+
+* The first failed on the schematic side with
+  `batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any
+  of the 30 pools after 3 attempt(s)`.
+* Two retries after a wait of about 150 s each returned `klt pex` exit 4 with
+  a native envelope whose 1782 delta rows (27 corners x 66 rows) were all
+  `status: error`, with no per-row reason in the envelope.
+* A diagnostic re-run with `--format text` showed the schematic side
+  completing and the extracted side failing with the same capacity refusal
+  text as above.
+
+The publisher refused to publish, so nothing was committed and no row counts
+as a pass. The incomplete envelopes were not kept as evidence because they
+carry no measurement. A run with the host-default `klt` (0.7.0, not the
+pin) also errored and was discarded; it is not the producer of record. The
+grid was not run locally. The item remains unrun and the issue open. See
+klayout-tools#2989 and #2990.
+
+**Attempt log (2026-10-10, third session).** Same pin and host rules (batch
+only; no local fallback). The offline checks passed. Two
+`publish_combiner_sampler_pex.py --backend batch` submissions, about 100 s
+apart, both failed on the schematic side with
+`batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of
+the 30 pools after 3 attempt(s) — this is the capacity-refusal case, and it
+is now visible instead of silent`. `klt pex` reported `nothing published`; the
+partial extraction netlist it left behind was removed, so no evidence is
+committed and no row counts as a pass. The grid remains unrun and #418 open.
+See klayout-tools#2989 and #2990.
+
+**Attempt log (2026-10-10, fourth session).** Same pin and host rules (batch
+only; no local fallback). The offline checks, the 34-test regression and
+`build_dut.py --check` passed. One `publish_combiner_sampler_pex.py --backend
+batch` submission returned `klt pex` exit 4; a diagnostic `--format text`
+re-run reported `corners: 27  rows: 1782  passed: 0  failed: 0  errored: 1782`
+with every schematic and extracted value `None`. The publisher refused to
+publish, the partial extraction netlist it left behind was removed, and no row
+counts as a pass. The grid remains unrun and #418 open. See klayout-tools#2989
+and #2990.
+
+**Attempt log (2026-10-10, fifth session).** Same pin and host rules (batch
+only; no local fallback). The offline checks, the 34-test regression and
+`build_dut.py --check` passed. One `publish_combiner_sampler_pex.py --backend
+batch` submission ran for about 100 s and `klt pex` exited 4 ("klt pex failed
+(exit 4); nothing published"); a direct `klt pex ... --format text --backend
+batch` re-run printed `status: error`, `corners: 27  rows: 1782  passed: 0
+failed: 0  errored: 1782` and wrote nothing to stderr, so the cause (capacity
+refusal or another fleet failure) is not distinguishable from the output. No
+envelope was kept and no row counts as a pass. The grid remains unrun and #418
+open. See klayout-tools#2989 and #2990.
 
 ## Why each item reads the way it does
 
@@ -757,9 +822,11 @@ Three things remain, none touched by this change:
   floorplan abstract, which also contains the digital region); the supply
   names are the cell-level `vddr`, not the region-level `vddr1`/`vddr2`; and
   the LVS `power_connectivity` (`"unchecked"`) and `body_verification`
-  (`"unverified"`) fields remain exactly as disclosed above. Only the rings'
-  and combiner's own GDS are covered: the composed floorplan stream was not
-  run through `klt erc`.
+  (`"unverified"`) fields remain exactly as disclosed above. These three
+  reports cover only the rings' and combiner's own GDS. The composed floorplan
+  stream has its own whole-block run, `layout/floorplan/reports/erc-supply.json`
+  (issue #447; five region-level supplies, Metal1-Metal5, clean), which is
+  not cited by any manifest item here and changes no tier.
 - The digital column's additional requirement, `power_connectivity.status:
   "match"` on item 4's LVS citation, stays `"unchecked"`, for the reason
   "Item 4 is `met` twice" above already documents. A `met` supply-spec run
@@ -943,9 +1010,13 @@ to `evidence/post-layout/ring2/` with a recomputed, never-passing-when-incomplet
 verdict; `check.py` checks the fixture and any such publication in step 1c',
 independently of ring1, and fails if the manifest cites it.
 
-**Currently unrun.** The batch fleet refused the 27-corner submission for
-capacity, and the grid was not run locally, so no ring2 result is committed. The
-README in that directory has the reproduction commands. Whatever it eventually
+**Currently unrun.** The batch fleet first refused the 27-corner submission for
+capacity. A second attempt (#476) ran on the fleet, but every corner on both
+sides errored unmeasured, because the pinned 0.6.0 client does not ship the
+`.include`d DUT and the fleet runner is klt 0.5.0
+(`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`). The grid was
+not run locally, so no ring2 result is committed. The README in that directory
+has the reproduction commands. Whatever it eventually
 reports describes a layout with floating PMOS wells (#339/#411) and is a
 diagnostic under that limitation: no entropy, full-chip timing or
 silicon-performance claim.

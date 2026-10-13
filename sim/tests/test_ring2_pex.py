@@ -5,20 +5,19 @@ publication tests build a synthetic publication in a scratch copy of the paths.
 """
 
 import copy
-import importlib.util
 import json
-import tempfile
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 
 
 def _load(name, rel):
-    spec = importlib.util.spec_from_file_location(name, ROOT / rel)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    return load_module_from_path(name, ROOT / rel)
 
 
 bd = _load("ring_build_dut", "sim/tb/ro-ring11-pex/build_dut.py")

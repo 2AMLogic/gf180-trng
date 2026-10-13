@@ -4,6 +4,7 @@ seeded runs, for stochastic testbenches)."""
 from __future__ import annotations
 
 import functools
+import math
 import os
 import re
 import shutil
@@ -13,9 +14,16 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import startup
 from .corners import PvtPoint
 from .pdk import Pdk
-from .testbench import Testbench
+from .testbench import (
+    Testbench,
+    run_artifact_names,
+    validate_artifact_namespace,
+    validate_seed_ownership,
+    write_input_snapshots,
+)
 
 NGSPICE = "ngspice"
 DEFAULT_TIMEOUT_S = 300
@@ -48,8 +56,30 @@ _GUARD_PAD_S = 30
 _WATCHDOG_EXIT_CODES = frozenset({124, 137, 143})
 
 # `print` output for a length-1 vector: "m_vout = 6.9043645202e-01"
-_MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
-_ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
+# Literal inf/infinity/nan spellings are matched too, but only so they can be
+# reported as non-finite (issue #527) -- never accepted as a measurement.
+_MEAS_RE = re.compile(
+    r"^\s*m_(\w+)\s*=\s*"
+    r"([-+]?(?:[0-9.]+(?:[eE][-+]?[0-9]+)?|(?i:inf(?:inity)?|nan)))\s*$"
+)
+# Fatal-diagnostic policy (issue #498). A run is only "ok" when ngspice exited
+# 0 AND every requested measurement parsed AND no line of output *starts with*
+# one of these markers. Anchoring at line start (after whitespace) and
+# excluding "Warning" keeps ordinary warnings (e.g. "Warning: ...", notes
+# mentioning the word "error" mid-line) from failing a run, while still
+# catching ngspice's fatal "Error: ..." / "doAnalyses: ..." analysis aborts.
+# Two `.meas` diagnostics are NON-fatal and are excluded: ngspice prints
+# "Error: measure X when(WHEN) : out of interval" (a crossing that never
+# happens) and 'Error: RHS "..." invalid' (a derived .meas whose inputs are
+# missing) yet still exits 0 with the other measurements intact; both occur in
+# committed evidence. A requested-but-absent measurement is already caught by
+# the `missing` check, so these lines add nothing as a failure signal.
+_ERROR_RE = re.compile(
+    r"^\s*(?!Error:\s+measure\s.*:\s*out of interval)"
+    r"(?!Error:\s+RHS\s.*\sinvalid)"
+    r"(?:Error|ERROR|Fatal|fatal error|doAnalyses:)",
+    re.MULTILINE,
+)
 
 
 class NgspiceMissing(RuntimeError):
@@ -103,6 +133,20 @@ def _kill_process_group(pid: int) -> None:
         pass
 
 
+def ngspice_command(deck_path: Path, watchdog: str | None, timeout_s: int) -> list[str]:
+    """The one place the ngspice batch command line is built.
+
+    Both launch paths (OS watchdog and the no-``timeout(1)`` fallback) use
+    it, so they enforce the same start-up policy (:mod:`harness.startup`:
+    ``-n`` plus a pinned ``SPICE_SCRIPTS`` environment, applied by
+    :func:`harness.startup.environment` at spawn time).
+    """
+    base = [NGSPICE, *startup.batch_flags(), str(deck_path)]
+    if watchdog is None:
+        return base
+    return [watchdog, f"--kill-after={KILL_GRACE_S}s", f"{timeout_s}s", *base]
+
+
 def ngspice_version() -> str:
     exe = shutil.which(NGSPICE)
     if not exe:
@@ -148,14 +192,40 @@ def _analysis_context(tb: Testbench, point: PvtPoint) -> dict[str, float]:
     }
 
 
-def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint, seed: int | None = None) -> str:
+def compose_deck(
+    tb: Testbench,
+    pdk: Pdk,
+    point: PvtPoint,
+    seed: int | None = None,
+    snapshot_dir: Path | None = None,
+) -> str:
     """Build the complete, self-contained ngspice deck for one PVT point.
 
     ``seed`` -- when given -- is emitted as ``.option seed=<seed>`` ahead of
-    the model include, so it governs every random draw in the run (device
-    mismatch, ``trnoise()`` sources, Monte Carlo skew). Required by the
-    harness for any testbench whose ``analysis_type`` is stochastic.
+    the model include. It governs the netlist-parameter draws (device
+    mismatch, Monte Carlo skew) and the control-language random functions.
+    It does **not** govern ``trnoise()`` sources: on the measured ngspice-46
+    build their white noise comes from a generator seeded from the process
+    id at start-up, and no tested seed or start-up control changes that
+    (``sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/``,
+    DR-0031). Required by the harness for any testbench whose
+    ``analysis_type`` is stochastic.
+
+    ``snapshot_dir`` -- when given and ``tb`` carries bytes captured at load --
+    makes the deck include the frozen snapshots in that directory (see
+    :func:`testbench.write_input_snapshots`) instead of the live working-tree
+    files, so every corner of an invocation consumes identical SPICE inputs.
+    A hand-built ``tb`` without captured bytes falls back to the live paths.
     """
+    if seed is not None:
+        validate_seed_ownership(tb)
+    dut_include = tb.design_netlist
+    fragment_include = tb.netlist
+    if snapshot_dir is not None:
+        if tb.design_netlist is not None and tb.dut_snapshot_name:
+            dut_include = snapshot_dir / tb.dut_snapshot_name
+        if tb.fragment_snapshot_name:
+            fragment_include = snapshot_dir / tb.fragment_snapshot_name
     lines: list[str] = [
         f"* {tb.slug} @ {point.corner_id} -- GENERATED by sim/harness, do not edit",
         f"* corner={point.corner.name} ({point.corner.description})",
@@ -206,13 +276,13 @@ def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint, seed: int | None = No
         lines += [
             "",
             "* ---- device under test (schematic-derived, design/netlist.py) -------",
-            f'.include "{tb.design_netlist}"',
+            f'.include "{dut_include}"',
         ]
 
     lines += [
         "",
         "* ---- testbench ------------------------------------------------------",
-        f'.include "{tb.netlist}"',
+        f'.include "{fragment_include}"',
         "",
         "* ---- measurement ----------------------------------------------------",
         ".control",
@@ -238,22 +308,59 @@ class RunResult:
     status: str                                   # "ok" | "failed" | "error" | "timeout"
     measurements: dict[str, float] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
+    # Requested measurements ngspice printed but whose value is not a finite
+    # number (overflow such as `1e999`, or a literal inf/nan). Kept apart
+    # from `missing` so "absent" and "invalid" stay distinguishable.
+    non_finite: list[str] = field(default_factory=list)
     seconds: float = 0.0
     deck_name: str = ""
     log_name: str = ""
     message: str = ""
+    # Process id of the launched child (``Popen.pid``) as seen by this
+    # harness; 0 when no process was started. Used by
+    # :func:`duplicate_realization_problem` (#605).
+    pid: int = 0
+
+
+def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
+    """Split printed ``m_<name> = <value>`` lines into finite measurements and
+    non-finite ones (name -> the raw printed text).
+
+    ``float()`` does not raise on an out-of-range exponent: ``1e999`` becomes
+    ``inf`` silently, so finiteness is checked explicitly rather than relying
+    on the regex or on ``ValueError`` (issue #527). When a name is printed
+    more than once, the last line wins, whichever bucket it lands in.
+    """
+    finite: dict[str, float] = {}
+    non_finite: dict[str, str] = {}
+    for line in text.splitlines():
+        match = _MEAS_RE.match(line)
+        if not match:
+            continue
+        name, raw = match.group(1), match.group(2)
+        try:
+            value = float(raw)
+        except ValueError:  # e.g. a bare "." -- not a number at all
+            continue
+        if math.isfinite(value):
+            finite[name] = value
+            non_finite.pop(name, None)
+        else:
+            non_finite[name] = raw
+            finite.pop(name, None)
+    return finite, non_finite
 
 
 def parse_measurements(text: str) -> dict[str, float]:
-    found: dict[str, float] = {}
-    for line in text.splitlines():
-        match = _MEAS_RE.match(line)
-        if match:
-            try:
-                found[match.group(1)] = float(match.group(2))
-            except ValueError:  # pragma: no cover - regex already constrains this
-                continue
-    return found
+    """Finite measurements printed by ngspice; non-finite values are dropped
+    (see :func:`parse_non_finite_measurements`)."""
+    return _scan_measurements(text)[0]
+
+
+def parse_non_finite_measurements(text: str) -> dict[str, str]:
+    """Measurements printed with a non-finite value, mapped to the raw text
+    ngspice printed for them (e.g. ``{"vout": "1e999"}``)."""
+    return _scan_measurements(text)[1]
 
 
 def _timeout_result(
@@ -298,6 +405,24 @@ def _timeout_result(
     )
 
 
+def validate_timeout_s(timeout_s: object) -> int:
+    """Return ``timeout_s`` if it is a strictly positive integer, else raise.
+
+    coreutils ``timeout(1)`` treats a zero duration as "no timeout", so a
+    zero bound would silently disable the independent OS-level watchdog
+    that survives this harness dying (#83); a negative bound is simply
+    invalid. Both are rejected up front, before anything is created or
+    launched, rather than being replaced by a default or treated as
+    unbounded.
+    """
+    if isinstance(timeout_s, bool) or not isinstance(timeout_s, int) or timeout_s <= 0:
+        raise ValueError(
+            f"timeout_s must be a positive integer number of seconds (got {timeout_s!r}); "
+            "a zero or negative bound would disable the per-run watchdog"
+        )
+    return timeout_s
+
+
 def run_one(
     tb: Testbench,
     pdk: Pdk,
@@ -306,6 +431,7 @@ def run_one(
     seed: int | None = None,
     run_index: int = 0,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> RunResult:
     """Simulate one (PVT point, seed) pair. Never raises for sim failure.
 
@@ -331,21 +457,32 @@ def run_one(
     -- whether the watchdog's own default group-kill or this function's
     :func:`_kill_process_group` fallback -- reaches every descendant, not
     just the direct child.
+
+    Raises ``ValueError`` (before creating ``workdir`` or spawning anything)
+    if ``timeout_s`` is not a strictly positive integer; see
+    :func:`validate_timeout_s`.
     """
+    validate_timeout_s(timeout_s)
+    validate_artifact_namespace(tb, [(point.corner_id, seed, run_index)])
     workdir.mkdir(parents=True, exist_ok=True)
-    stem = f"{point.corner_id}-run{run_index}" if seed is not None else point.corner_id
-    deck_path = workdir / f"{stem}.spice"
-    log_path = workdir / f"{stem}.log"
-    deck_path.write_text(compose_deck(tb, pdk, point, seed=seed))
+    deck_name, log_name = run_artifact_names(point.corner_id, seed, run_index)
+    deck_path = workdir / deck_name
+    log_path = workdir / log_name
+    # Freeze the SPICE inputs captured at load into the corner's own
+    # directory and compose the deck against those copies, never the
+    # working-tree originals (which may change between corner launches).
+    write_input_snapshots(tb, workdir)
+    # Likewise the ngspice start-up script: the bytes captured once by the
+    # caller before its first launch (captured here only for a direct caller
+    # that did not pass one), served to the child as SPICE_SCRIPTS=workdir.
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
+    startup.write_snapshot(startup_snapshot, workdir)
+    deck_path.write_text(compose_deck(tb, pdk, point, seed=seed, snapshot_dir=workdir))
 
     watchdog = timeout_bin()
+    cmd = ngspice_command(deck_path, watchdog, timeout_s)
     if watchdog is not None:
-        cmd = [
-            watchdog,
-            f"--kill-after={KILL_GRACE_S}s",
-            f"{timeout_s}s",
-            NGSPICE, "-b", str(deck_path),
-        ]
         # This harness process may die before the watchdog's own bound
         # elapses; pad the in-process guard well past it so the watchdog is
         # given the chance to act first, and this guard is only a fallback
@@ -355,7 +492,6 @@ def run_one(
         # No coreutils timeout(1)/gtimeout on PATH: fall back to the
         # in-process guard alone. It cannot survive this harness process
         # itself dying (see issue #83) -- `--check-env` warns about this.
-        cmd = [NGSPICE, "-b", str(deck_path)]
         guard_s = timeout_s
 
     started = time.monotonic()
@@ -366,6 +502,7 @@ def run_one(
             stderr=subprocess.PIPE,
             text=True,
             cwd=workdir,
+            env=startup.environment(scripts_dir=workdir.resolve()),
             start_new_session=True,
         )
     except FileNotFoundError as exc:
@@ -408,24 +545,51 @@ def run_one(
 
     log_path.write_text(output)
 
-    measurements = parse_measurements(output)
-    missing = [name for name in tb.measure if name not in measurements]
+    measurements, invalid = _scan_measurements(output)
+    # A requested value that is present but non-finite is invalid, not
+    # absent: it fails the run under its own reason (issue #527).
+    non_finite = [name for name in tb.measure if name in invalid]
+    missing = [
+        name for name in tb.measure
+        if name not in measurements and name not in invalid
+    ]
 
-    if missing:
-        errors = "; ".join(_ERROR_RE.findall(output)[:3])
-        first_error = next(
-            (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
-        )
+    first_error = next(
+        (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
+    )
+
+    if missing or non_finite or returncode != 0 or first_error:
+        # Parsed (finite) measurements and the raw log are kept in the failed
+        # result so the evidence stays available for diagnosis; the raw log
+        # also keeps any non-finite text exactly as ngspice printed it.
+        parts = []
+        if returncode != 0:
+            parts.append(f"ngspice exit {returncode}")
+        if first_error:
+            parts.append(first_error)
+        if non_finite:
+            parts.append(
+                f"non-finite measurements: {', '.join(non_finite)} ("
+                + ", ".join(f"{name} = {invalid[name]}" for name in non_finite)
+                + ")"
+            )
+        if missing:
+            parts.append(
+                "no measurements parsed" if not measurements and not non_finite
+                else f"missing measurements: {', '.join(missing)}"
+            )
         return RunResult(
             point=point,
             seed=seed,
             status="failed",
             measurements=measurements,
             missing=missing,
+            non_finite=non_finite,
             seconds=elapsed,
             deck_name=deck_path.name,
             log_name=log_path.name,
-            message=first_error or errors or f"ngspice exit {returncode}, no measurements parsed",
+            message="; ".join(parts),
+            pid=proc.pid,
         )
 
     return RunResult(
@@ -436,6 +600,55 @@ def run_one(
         seconds=elapsed,
         deck_name=deck_path.name,
         log_name=log_path.name,
+        pid=proc.pid,
+    )
+
+
+def duplicate_realization_problem(tb: Testbench, results: list[RunResult]) -> str:
+    """Why a multi-seed ``tran-noise`` point may hold duplicated noise, or "".
+
+    On the measured ngspice-46 build ``trnoise`` is seeded from the process
+    id, not ``.option seed`` (DR-0031), so runs that share a process id (one
+    container or PID namespace per run) would replay one realization under N
+    distinct seeds. Two cheap checks, applied to the completed runs of one
+    PVT point:
+
+    - two runs recorded the same child process id; or
+    - two runs have bit-identical values for every requested measurement.
+
+    This guards against duplication only; it does not establish statistical
+    independence between runs.
+    """
+    if tb.analysis_type != "tran-noise":
+        return ""
+    ok = [r for r in results if r.status == "ok"]
+    if len(ok) < 2:
+        return ""
+    problems: list[str] = []
+    by_pid: dict[int, list[int | None]] = {}
+    for r in ok:
+        if r.pid:
+            by_pid.setdefault(r.pid, []).append(r.seed)
+    for pid, seeds in by_pid.items():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} ran as the same process id {pid}"
+            )
+    by_values: dict[tuple, list[int | None]] = {}
+    for r in ok:
+        key = tuple(r.measurements.get(name) for name in tb.measure)
+        if tb.measure and all(v is not None for v in key):
+            by_values.setdefault(key, []).append(r.seed)
+    for seeds in by_values.values():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} have bit-identical measurements"
+            )
+    if not problems:
+        return ""
+    return (
+        "possible duplicated trnoise realizations (" + "; ".join(problems) + "); "
+        "trnoise is seeded from the process id, not the seed (DR-0031)"
     )
 
 
@@ -443,17 +656,44 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
     """The ``(seed, run_index)`` pairs one PVT point needs.
 
     This is where the "no seed, no evidence" rule from ``sim/README.md`` is
-    enforced, so that both the serial (:func:`run_point`) and the parallel
-    (``run_corners.py -j``) execution paths inherit it from one place.
+    enforced, together with the rule that every seed is distinct, so that
+    both the serial (:func:`run_point`) and the parallel (``run_corners.py
+    -j``) execution paths inherit them from one place.
     """
     if not tb.stochastic:
         return [(None, 0)]
+    validate_seed_ownership(tb)
     if not seeds:
         raise ValueError(
             f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
             "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
         )
+    # Each seed labels one run; report.py summarizes the per-seed values as
+    # a sample (mean, stdev), so a repeated seed would count the seeded draws
+    # of one realization twice. Reject rather than deduplicate, so the
+    # requested and executed sample counts never silently differ. Distinct
+    # seeds do not by themselves make trnoise() realizations distinct (they
+    # differ because each run is a separate ngspice process; DR-0031), and
+    # nothing here establishes statistical independence between runs.
+    repeated = _repeated(seeds)
+    if repeated:
+        raise ValueError(
+            f"{tb.slug}: duplicate seed(s) {', '.join(str(s) for s in repeated)} -- "
+            "each stochastic run needs a distinct seed; a repeated seed would count "
+            "the same realization twice"
+        )
     return [(seed, i) for i, seed in enumerate(seeds)]
+
+
+def _repeated(values: list) -> list:
+    """Values that occur more than once, in first-occurrence order."""
+    seen: set = set()
+    repeated: list = []
+    for value in values:
+        if value in seen and value not in repeated:
+            repeated.append(value)
+        seen.add(value)
+    return repeated
 
 
 def run_point(
@@ -463,9 +703,16 @@ def run_point(
     workdir: Path,
     seeds: list[int] | None,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> list[RunResult]:
     """Run every seed (or the single deterministic run) for one PVT point."""
+    validate_timeout_s(timeout_s)
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
     return [
-        run_one(tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s)
+        run_one(
+            tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s,
+            startup_snapshot=startup_snapshot,
+        )
         for seed, index in plan_runs(tb, seeds)
     ]

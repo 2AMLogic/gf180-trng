@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "_comment": [
+    "Input spec for layout/digital/tap_distance.py -- the well/substrate",
+    "tap-DISTANCE check on the digital partition's routed GDS (issue #448).",
+    "",
+    "This is deliberately a separate artifact from erc-supply-spec.json: that",
+    "spec asks 'does every well have a tie at all' (klt erc erc.missing_tie,",
+    "presence only). The rules here ask 'how far is every diffusion from its",
+    "nearest tie', which is a different, distance-valued question. Neither",
+    "result implies the other; reports/erc-supply.json keeps its narrower",
+    "meaning unchanged.",
+    "",
+    "Rule source: GlobalFoundries GF180MCU Design Rule Manual (DRM), section",
+    "14.3 'Latch-up Rules and Guidelines', 14.3.1 'Core Latch-up Rules and",
+    "Guidelines', as published in the open PDK documentation at",
+    "https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html",
+    "(retrieved 2026-10-10). The installed open-PDK KLayout rule decks",
+    "(libs.tech/klayout/tech/drc/rule_decks, pinned variant gf180mcuD) do NOT",
+    "code any LU.* rule (their own comments reference latch-up only in",
+    "MDP/LDMOS notes), and klt's curated gf180mcu deck has no tie-distance",
+    "rule either (`klt deck rules --deck gf180mcu` lists none), so these",
+    "limits are transcribed from the DRM text, not read from an executable",
+    "deck. The DRM table has two voltage columns, LV (3.3 V devices) and MV",
+    "(5 V / 6 V devices), and three sub-cases a/b/c keyed on an N-well /",
+    "LVPWELL clearance (x or y): for LV the limit is 50 / 30 / 15 um, for MV",
+    "it is 15 um in every sub-case. The digital library here",
+    "(gf180mcu_fd_sc_mcu9t5v0) is a 5 V library: every gate (Poly2 n Comp) in",
+    "the committed GDS lies inside DualGate (55/0), which the tool verifies",
+    "before it applies the MV column; if any gate were outside DualGate the",
+    "rule would be reported unsupported, because the LV limit depends on the",
+    "clearance x/y which this tool does not measure.",
+    "",
+    "Distance definition used (the DRM says 'space ... to every point on the",
+    "boundary of'): for every point on the boundary of a 'subject' polygon,",
+    "the Euclidean distance to the nearest point of any qualifying 'tap'",
+    "polygon of the same well/substrate must not exceed the limit. Euclidean",
+    "(not Manhattan) is KLayout's own DRC 'space' default and is the smaller",
+    "of the two metrics, so a Manhattan reading could only fail more. The",
+    "tap polygon is the tap diffusion itself (distance is to its nearest",
+    "edge, not to a contact or its centre).",
+    "",
+    "Layer algebra, taken from the PDK's own main.drc:",
+    "  ncomp = Comp & Nplus        pcomp = Comp & Pplus",
+    "  ntap  = ncomp & Nwell       ptap  = pcomp - Nwell",
+    "",
+    "Rules checked:",
+    "- LU.4 (no DNWELL): subject = pcomp & Nwell (PCOMP inside Nwell);",
+    "  tap = ntap, in the SAME Nwell island as the subject point (a tap in a",
+    "  different, merely nearby well does not tie this well).",
+    "- LU.3 (no DNWELL): subject = ncomp - Nwell (NCOMP outside Nwell); tap =",
+    "  ptap (Psub/LVPWELL tap outside Nwell). The substrate is one body, so",
+    "  there is no island restriction.",
+    "Electrical identity (DRM guidelines LU.9 / LU.10: Nwell taps to the most",
+    "positive potential, Psub taps to the most negative): a tap only counts",
+    "toward LU.3/LU.4 if its extracted net carries a supply name for the",
+    "required rail (ntap -> VDD side, ptap -> VSS side). Connectivity is",
+    "extracted from the stream (tap diffusion -> Contact -> Metal1 -> Via1 ->",
+    "... -> Metal5, with 34/10 and 81/10 text as net names). A nearby tap on",
+    "the wrong rail, or on a net that carries neither rail name, is reported",
+    "and EXCLUDED from coverage. Reporting also records the geometry-only",
+    "worst distance so the effect of the exclusion is visible.",
+    "",
+    "Not checked, and reported as not_applicable (provably absent geometry)",
+    "or unsupported (never as pass): LU.1 / LU.2 (apply inside DNWELL; the",
+    "stream has no DNWELL 12/0 -- verified, else unsupported), LU.5 (NAT 5/0",
+    "present only; verified absent), LU.7 / LU.8 (guidelines), LU.9 / LU.10",
+    "(guidelines; identity above is an input to LU.3/LU.4, not a proof of",
+    "potential ordering), and DRM 14.3.2 (I/O latch-up; needs the",
+    "Latchup_MK 137/5 marker semantics the tool does not evaluate).",
+    "",
+    "The OpenROAD `tapcell -distance 100` configured in build.py is a",
+    "placement parameter. It is not used or trusted here; only the committed",
+    "stream's geometry is measured."
+  ],
+  "layers": {
+    "comp": "22/0",
+    "nplus": "32/0",
+    "pplus": "31/0",
+    "nwell": "21/0",
+    "dnwell": "12/0",
+    "nat": "5/0",
+    "dualgate": "55/0",
+    "poly2": "30/0",
+    "latchup_mk": "137/5",
+    "contact": "33/0",
+    "conductors": ["34/0", "36/0", "42/0", "46/0", "81/0"],
+    "vias": ["35/0", "38/0", "40/0", "41/0"],
+    "label_layers": ["34/10", "81/10"]
+  },
+  "supply_names": {
+    "VDD": ["VDD", "vddd"],
+    "VSS": ["VSS", "vss"]
+  },
+  "measurement": {
+    "metric": "euclidean_boundary_to_nearest_tap_edge",
+    "polygon_sides": 128,
+    "bisection_resolution_um": 0.005,
+    "profile_multiples_of_limit": [0.5, 1.0, 2.0, 3.0, 4.0],
+    "max_worst_locations": 5
+  },
+  "rules": [
+    {
+      "id": "LU.4",
+      "kind": "max_tap_distance",
+      "description": "Max Nwell tap space to every point on the boundary of PCOMP inside Nwell (outside DNWELL)",
+      "subject": "pcomp_in_nwell",
+      "tap": "ntap",
+      "supply": "VDD",
+      "group_by": "nwell_island",
+      "limit_um": { "LV": [50, 30, 15], "MV": 15 },
+      "applies_column": "MV"
+    },
+    {
+      "id": "LU.3",
+      "kind": "max_tap_distance",
+      "description": "Max Psub (LVPWELL) tap space to every point on the boundary of NCOMP outside Nwell (outside DNWELL)",
+      "subject": "ncomp_outside_nwell",
+      "tap": "ptap",
+      "supply": "VSS",
+      "group_by": "global",
+      "limit_um": { "LV": [50, 30, 15], "MV": 15 },
+      "applies_column": "MV"
+    },
+    {
+      "id": "LU.1",
+      "kind": "requires_layer",
+      "description": "Max Nwell/DNWELL tap space for PCOMP inside DNWELL",
+      "requires_absent": "dnwell"
+    },
+    {
+      "id": "LU.2",
+      "kind": "requires_layer",
+      "description": "Max LVPWELL tap space for NCOMP inside LVPWELL within DNWELL",
+      "requires_absent": "dnwell"
+    },
+    {
+      "id": "LU.5",
+      "kind": "requires_layer",
+      "description": "Native-Vt NMOS (NAT) must be surrounded by a PCOMP guard ring",
+      "requires_absent": "nat"
+    },
+    {
+      "id": "LU.7",
+      "kind": "unsupported",
+      "reason": "Guideline (contact count / 3% equivalent contact area); not coded by the DRM (Appendix B) and not measured here."
+    },
+    {
+      "id": "LU.8",
+      "kind": "unsupported",
+      "reason": "Guideline (butted substrate contact to source); not coded by the DRM and not measured here."
+    },
+    {
+      "id": "LU.9",
+      "kind": "unsupported",
+      "reason": "Guideline (Nwell taps at the highest potential). Rail identity is used as an input to LU.3/LU.4, but potential ordering is not proven."
+    },
+    {
+      "id": "LU.10",
+      "kind": "unsupported",
+      "reason": "Guideline (Psub at the lowest potential). Rail identity is used as an input to LU.3/LU.4, but potential ordering is not proven."
+    },
+    {
+      "id": "DRM-14.3.2",
+      "kind": "unsupported",
+      "reason": "I/O latch-up rules (Latchup_MK-marked diffusions) are not evaluated by this tool."
+    }
+  ]
+}

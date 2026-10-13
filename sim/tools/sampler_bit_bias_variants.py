@@ -139,6 +139,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import Record, RecordError  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -467,27 +468,28 @@ class Pair:
         return self.n * (1.0 - m) / 2.0
 
 
-def _load(slug: str) -> Variant:
-    matches = []
-    for path in sorted(RECORDS.glob(f"*-{slug}-*.md")):
-        rec = Record(path)
-        if rec.corner != CORNER or "ones_frac" not in rec.values:
-            continue
-        matches.append(rec)
-    if not matches:
-        raise RecordError(
-            f"no sim/records/*-{slug}-*.md record at {CORNER} carries an "
-            "ones_frac, so this variant cannot be compared"
-        )
-    # Latest record wins; earlier ones stay on file as append-only evidence.
-    return Variant(slug, matches[-1])
+def _load(slug: str, *, include_superseded: bool = False) -> Variant:
+    """The latest record for ``slug`` at :data:`CORNER` carrying ``ones_frac``.
+
+    Records whose frontmatter says ``status: superseded`` are dropped before
+    the latest is chosen (issue #427), so a superseded-only slug is missing
+    evidence (``RecordError``). Every matched record must carry a readable
+    ``status:``. ``include_superseded=True`` is the explicit historical read.
+    """
+    rec = latest_current_record(
+        RECORDS, f"*-{slug}-*.md", make=Record, corner=CORNER, requires=("ones_frac",),
+        include_superseded=include_superseded, error_cls=RecordError,
+        hint=", so this variant cannot be compared",
+    )
+    return Variant(slug, rec)
 
 
-def load_pairs() -> list[Pair]:
+def load_pairs(*, include_superseded: bool = False) -> list[Pair]:
+    kw = {"include_superseded": include_superseded}
     return [
         Pair(key, label, why,
-             _load(f"sampler-bit-bias-clocked-{key}"),
-             _load(f"sampler-bit-bias-static-{key}"))
+             _load(f"sampler-bit-bias-clocked-{key}", **kw),
+             _load(f"sampler-bit-bias-static-{key}", **kw))
         for key, label, why in RATES
     ]
 

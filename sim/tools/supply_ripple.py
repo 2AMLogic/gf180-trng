@@ -39,13 +39,14 @@ rows (13 significant digits via ``measureprec``); everything else is offline.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
-import shlex
-import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from harness import klt_request as _kreq  # noqa: E402
+from harness.report import git_blob_sha1  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-array-supply-ripple"
@@ -284,8 +285,7 @@ def plan_text() -> str:
 
 
 def dut_blob_sha() -> str:
-    data = (REPO_ROOT / DUT_PATH).read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes())
 
 
 # --------------------------------------------------------------------------
@@ -564,7 +564,6 @@ def _fmt(x: float | None, spec: str = ".3g") -> str:
 def sensitivity_rows(an: dict) -> list[str]:
     """Markdown rows: per unit, tone response and the control it is read against."""
     rows = []
-    ctrl = next((u for u in an["units"] if u["amp_v"] == 0.0), None)
     for u in an["units"]:
         if "error" in u:
             rows.append(f"| {u['corner_id']} | error: {u['error']} |")
@@ -586,7 +585,6 @@ def sensitivity_rows(an: dict) -> list[str]:
             _fmt(u["ring1"]["frac_explained"], ".4f"),
         ]
         rows.append("| " + " | ".join(cells) + " |")
-    _ = ctrl
     return rows
 
 
@@ -595,30 +593,6 @@ TABLE_HEAD = (
     "ring1 ffm (ppm/mV) | ring1 resid rms (ps) | ring1 tone/sigma | tone explains |\n"
     "|---|---|---|---|---|---|---|---|---|---|"
 )
-
-
-def convergence_text(main: dict, finer: dict[str, dict]) -> str:
-    """Compare the both/50 mV and control units of binding-beat across solver steps."""
-    def pick(an: dict, ctrl: bool) -> dict | None:
-        for u in an["units"]:
-            if "error" in u:
-                continue
-            if ctrl and u["amp_v"] == 0.0:
-                return u
-            if not ctrl and abs(u["amp_v"] - 0.05) < 1e-12 and (u["m1"], u["m2"]) == (1, 1):
-                return u
-        return None
-
-    lines = ["| solver step | control ring1 x (ps) | 50 mV both ring1 x (ps) | rel. change vs 10 ps |", "|---|---|---|---|"]
-    ref = pick(main, False)
-    for label, an in [("10 ps", main)] + sorted(finer.items()):
-        c, s = pick(an, True), pick(an, False)
-        if c is None or s is None or ref is None:
-            lines.append(f"| {label} | n/a | n/a | n/a |")
-            continue
-        rel = (s["ring1"]["amp"] - ref["ring1"]["amp"]) / ref["ring1"]["amp"]
-        lines.append(f"| {label} | {c['ring1']['amp'] * 1e12:.3g} | {s['ring1']['amp'] * 1e12:.3g} | {rel:+.2%} |")
-    return "\n".join(lines)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
@@ -650,36 +624,17 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 def cmd_emit(check: bool) -> int:
-    bad = 0
-    for name, req in all_requests().items():
-        path = request_path(name)
-        text = render(req)
-        if check:
-            if not path.exists() or path.read_text() != text:
-                print(f"DRIFT: {path.relative_to(REPO_ROOT)} does not match the declared grid")
-                bad += 1
-        else:
-            path.write_text(text)
-            print(f"wrote {path.relative_to(REPO_ROOT)}")
-    if check and not bad:
-        print(f"ok: {len(REQUESTS)} requests match the declared grid")
-    return 1 if bad else 0
+    return _kreq.emit_requests(
+        ((request_path(name), render(req)) for name, req in all_requests().items()),
+        check, repo_root=REPO_ROOT,
+        ok=lambda: print(f"ok: {len(REQUESTS)} requests match the declared grid"))
 
 
 def cmd_run(name: str, outdir: str, backend: str, klt_cmd: str = "klt") -> int:
     if name not in {r[0] for r in REQUESTS}:
         print(f"unknown request {name!r}; choices: {', '.join(r[0] for r in REQUESTS)}", file=sys.stderr)
         return 2
-    out = Path(outdir)
-    out.mkdir(parents=True, exist_ok=True)
-    report = out / f"{name}.report.json"
-    cmd = [*shlex.split(klt_cmd), "sim", str(request_path(name)), "--backend", backend, "-o", str(out / name),
-           "--format", "json"]
-    print("running:", " ".join(cmd))
-    with open(report, "w") as fh, open(out / f"{name}.stderr.txt", "w") as err:
-        rc = subprocess.call(cmd, stdout=fh, stderr=err)
-    print(f"klt exit {rc}; report: {report}; stderr: {out / (name + '.stderr.txt')}")
-    return rc
+    return _kreq.run_klt_request(outdir, name, request_path(name), backend, klt_cmd)
 
 
 def main(argv: list[str] | None = None) -> int:

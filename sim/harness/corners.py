@@ -26,6 +26,7 @@ which fails loudly if a corner selection stops changing device behavior).
 from __future__ import annotations
 
 import itertools
+import math
 from dataclasses import dataclass, field
 
 # Default PVT axes. CLAUDE.md mandates these on every recorded result.
@@ -139,14 +140,35 @@ def supply_points(
     nominal_v: float = DEFAULT_NOMINAL_SUPPLY_V,
     tolerance: float = DEFAULT_SUPPLY_TOLERANCE,
 ) -> list[float]:
-    """Nominal supply and its +/- tolerance rails, low to high."""
-    if tolerance <= 0:
+    """Nominal supply and its +/- tolerance rails, low to high.
+
+    Raises :class:`ValueError` for a non-finite or non-positive nominal
+    supply, a non-finite or negative tolerance, or a tolerance so large that
+    a generated rail is not positive. A tolerance of exactly zero is the
+    supported single-supply request. Values outside the ratified operating
+    envelope are accepted: diagnostics may probe beyond it.
+    """
+    problems: list[str] = []
+    if not (isinstance(nominal_v, (int, float)) and math.isfinite(nominal_v) and nominal_v > 0):
+        problems.append(f"nominal supply must be finite and > 0 V, got {nominal_v!r}")
+    if not (isinstance(tolerance, (int, float)) and math.isfinite(tolerance) and tolerance >= 0):
+        problems.append(f"supply tolerance must be finite and >= 0, got {tolerance!r}")
+    if problems:
+        raise ValueError("invalid PVT plan -- " + "; ".join(problems))
+    if tolerance == 0:
         return [round(nominal_v, 6)]
-    return [
+    rails = [
         round(nominal_v * (1.0 - tolerance), 6),
         round(nominal_v, 6),
         round(nominal_v * (1.0 + tolerance), 6),
     ]
+    bad = [r for r in rails if not (math.isfinite(r) and r > 0)]
+    if bad:
+        raise ValueError(
+            f"invalid PVT plan -- supply tolerance {tolerance!r} with nominal "
+            f"{nominal_v!r} V generates non-positive or non-finite rail(s) {bad!r}"
+        )
+    return rails
 
 
 @dataclass(frozen=True)
@@ -177,3 +199,70 @@ def build_grid(
         )
     ]
     return points
+
+
+def validate_grid(points: list[PvtPoint]) -> None:
+    """Reject a grid that would schedule competing writes.
+
+    Every point owns one evidence record and one raw/scratch directory named
+    by its :attr:`PvtPoint.corner_id`, so the grid must contain no repeated
+    effective point (e.g. a temperature passed twice) and no two distinct
+    points whose formatted ids collide (supply is formatted to 10 mV and
+    temperature with ``:g``, so e.g. 3.301 V and 3.304 V alias). Raises
+    :class:`ValueError` naming every offending value, and also for an empty
+    grid or a non-finite temperature / non-finite or non-positive supply; valid grids are left
+    untouched, in their original order. Repeated points are rejected rather
+    than silently dropped so the requested and executed plans never differ.
+    """
+    problems: list[str] = []
+    if not points:
+        raise ValueError(
+            "invalid PVT plan -- the grid is empty (no corner, temperature or "
+            "supply to simulate); check for an empty temperature or corner list"
+        )
+    for point in points:
+        if not math.isfinite(point.temp_c):
+            problems.append(
+                f"temperature must be finite, got {point.temp_c!r} C "
+                f"(corner={point.corner.name})"
+            )
+        if not (math.isfinite(point.vdd) and point.vdd > 0):
+            problems.append(
+                f"supply must be finite and > 0 V, got {point.vdd!r} V "
+                f"(corner={point.corner.name})"
+            )
+    if problems:
+        raise ValueError("invalid PVT plan -- " + "; ".join(dict.fromkeys(problems)))
+    first_by_key: dict[tuple, PvtPoint] = {}
+    first_by_id: dict[str, PvtPoint] = {}
+    reported_keys: set[tuple] = set()
+    reported_ids: set[str] = set()
+    for point in points:
+        key = (point.corner.name, point.temp_c, point.vdd)
+        cid = point.corner_id
+        if key in first_by_key:
+            if key not in reported_keys:
+                reported_keys.add(key)
+                problems.append(
+                    f"repeated PVT point {cid} (corner={point.corner.name}, "
+                    f"temp={point.temp_c:g} C, vdd={point.vdd!r} V)"
+                )
+            continue
+        first_by_key[key] = point
+        if cid in first_by_id:
+            if cid not in reported_ids:
+                reported_ids.add(cid)
+                other = first_by_id[cid]
+                problems.append(
+                    f"distinct PVT points share the output id {cid} "
+                    f"(temp={other.temp_c!r} C, vdd={other.vdd!r} V vs "
+                    f"temp={point.temp_c!r} C, vdd={point.vdd!r} V)"
+                )
+            continue
+        first_by_id[cid] = point
+    if problems:
+        raise ValueError(
+            "invalid PVT plan -- " + "; ".join(problems)
+            + ". Each point must be distinct and map to its own output id; "
+            "run repeated diagnostics as separate invocations."
+        )

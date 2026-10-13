@@ -274,24 +274,24 @@
         "bbox_um": {
           "x0": 0.0,
           "y0": 0.0,
-          "x1": 548.825,
-          "y1": 548.825
+          "x1": 398.93,
+          "y1": 398.93
         }
       },
-      "inner_w_um": 549.625,
-      "inner_h_um": 549.625,
+      "inner_w_um": 399.73,
+      "inner_h_um": 399.73,
       "ring_placement_clearance_um": 0.4,
       "ring_band_width_um": 0.6,
-      "guarded_w_um": 550.825,
-      "guarded_h_um": 550.825,
-      "guarded_area_um2": 303408.18,
-      "guard_taps": 1100,
+      "guarded_w_um": 400.93,
+      "guarded_h_um": 400.93,
+      "guarded_area_um2": 160744.86,
+      "guard_taps": 800,
       "ring_content_report": "fp_ring_content_digital.json",
       "ring_content_bbox_um": {
         "x0": 0.0,
         "y0": 0.0,
-        "x1": 548.825,
-        "y1": 548.825
+        "x1": 398.93,
+        "y1": 398.93
       }
     }
   ],
@@ -324,16 +324,16 @@
           "digital"
         ],
         "width_um": 20.0,
-        "span_um": 550.825,
-        "area_um2": 11016.5
+        "span_um": 400.93,
+        "area_um2": 8018.6
       }
     ],
-    "guarded_region_area_um2": 309934.58,
-    "isolation_channel_area_um2": 11516.5,
-    "floorplan_area_um2": 321451.08,
+    "guarded_region_area_um2": 167271.26,
+    "isolation_channel_area_um2": 8518.6,
+    "floorplan_area_um2": 175789.86,
     "row_bbox_um": {
-      "w": 1070.405,
-      "h": 561.975
+      "w": 934.36,
+      "h": 416.73
     },
     "placed_area_um2": {
       "60pct": 57411.99,
@@ -357,13 +357,13 @@
           "digital"
         ],
         "cell_area_um2": 33654.61,
-        "guarded_area_um2": 303408.18,
+        "guarded_area_um2": 160744.86,
         "isolation_channel_area_um2": 0,
-        "area_um2": 303408.18,
-        "share_of_budget_pct": 606.82
+        "area_um2": 160744.86,
+        "share_of_budget_pct": 321.49
       }
     },
-    "share_of_budget_pct": 642.9,
+    "share_of_budget_pct": 351.6,
     "excluded": {
       "ring_liveness_monitor_DR0016": {
         "cells": 85,

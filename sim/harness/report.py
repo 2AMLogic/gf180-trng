@@ -24,21 +24,52 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
+import json
 import platform
 import re
 import statistics
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
-from . import runner
+from . import pdk_models, runner, startup
 from .corners import PvtPoint
 from .pdk import Pdk
+from .pdk_models import ModelManifest
 from .runner import RunResult
-from .testbench import Testbench
+from .testbench import MANIFEST_SNAPSHOT_NAME as _MANIFEST_SNAPSHOT_NAME
+from .testbench import Testbench, write_input_snapshots
 
 RECORDS_DIRNAME = "records"
 RAW_DIRNAME = "raw"
+
+#: Analysis types whose records carry the transient-noise reproduction scope
+#: (#574, DR-0031). Only ``tran-noise``: the replay limit was measured for
+#: ``trnoise`` sources, and is not assigned to deterministic or Monte Carlo
+#: records.
+TRNOISE_REPLAY_ANALYSIS_TYPES = ("tran-noise",)
+#: The experiment that measured it and the decision record that adopts it.
+TRNOISE_REPLAY_EVIDENCE = "sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/"
+TRNOISE_REPLAY_DECISION = "DR-0031-transient-noise-reproducibility"
+
+
+def reproduction_scope(analysis_type: str) -> dict | None:
+    """What re-running a record of ``analysis_type`` reproduces, or ``None``
+    when no limit has been measured for that type.
+
+    For ``tran-noise`` the recorded seeds replay the deck and configuration
+    (and every seeded non-``trnoise`` draw) but not the ``trnoise``
+    waveforms: on the measured ngspice-46 build no seed or start-up control
+    reproduced them across processes.
+    """
+    if analysis_type not in TRNOISE_REPLAY_ANALYSIS_TYPES:
+        return None
+    return {
+        "scope": "deck-and-configuration",
+        "trnoise_waveform_replay": False,
+        "basis": TRNOISE_REPLAY_EVIDENCE,
+        "decision": TRNOISE_REPLAY_DECISION,
+    }
 
 
 class RecordExists(RuntimeError):
@@ -88,10 +119,48 @@ def blob_sha(repo_root: Path, path: Path) -> str:
     return out or "unknown"
 
 
+def git_blob_sha1(data: bytes) -> str:
+    """Git blob SHA of ``data`` (what ``git hash-object`` yields), no subprocess."""
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+#: Name of the per-record copy of the loaded ``tb.json`` kept in the raw dir.
+MANIFEST_SNAPSHOT_NAME = _MANIFEST_SNAPSHOT_NAME
+
+
+def _write_idempotent(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path``; identical existing bytes are a no-op.
+
+    Different existing bytes raise ``RuntimeError`` and are left untouched.
+    """
+    if path.exists():
+        if path.read_bytes() != data:
+            raise RuntimeError(
+                f"{path}: refusing to overwrite an existing file with different content"
+            )
+        return
+    path.write_bytes(data)
+
+
+def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
+    """Write the manifest bytes ``tb`` was loaded from into ``raw_dir``.
+
+    Returns ``(file name, sha256)`` or ``None`` if ``tb`` carries no loaded
+    bytes. Uses the bytes captured at load time, never the file's current
+    content, so a manifest edited after loading cannot leak into the record.
+    """
+    if tb.manifest_bytes is None:
+        return None
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    path = raw_dir / MANIFEST_SNAPSHOT_NAME
+    _write_idempotent(path, tb.manifest_bytes)
+    return MANIFEST_SNAPSHOT_NAME, sha256_file(path)
 
 
 def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
@@ -177,11 +246,11 @@ def finalize_record(
     slug: str,
     render: Callable[[str, Path], str],
 ) -> Path:
-    """Allocate a record stem, hand its raw directory to ``render``, and
-    write the markdown text it returns to ``records/<stem>.md``.
+    """Reserve a record stem, hand its raw directory to ``render``, and
+    publish the markdown text it returns as ``records/<stem>.md``.
 
-    This is the "allocate -> mkdir -> write artifacts -> guard -> write
-    markdown" skeleton shared by every ``sim/tb/*/run_demo.py`` script:
+    This is the "reserve -> write artifacts -> publish markdown" skeleton
+    shared by the callback-based behavioral writers (``sim/tb/*/run_*.py``):
     ``render(stem, raw_dir)`` does the testbench-specific work (writing raw
     artifact files under ``raw_dir``, hashing them into a ``raw_files``
     list, and rendering the frontmatter/body), and this function owns the
@@ -190,19 +259,52 @@ def finalize_record(
     ``sim/run_corners.py`` and takes an already-built record dict rather
     than a render callback.
 
-    Raises ``RecordExists`` if ``records/<stem>.md`` already exists --
-    normally prevented by ``allocate_record_stem`` minting an unused stem,
-    but checked explicitly (as every caller did before this helper existed)
-    since ``render`` runs between allocation and the check.
+    Guarantees for callback writers (#514):
+
+    * The stem is claimed with ``reserve_record_stems`` -- an atomic
+      ``mkdir`` of ``raw/<stem>/`` -- *before* ``render`` runs, so two
+      concurrent invocations for the same date and slug always receive
+      distinct stems and disjoint raw directories. ``render`` is handed a
+      directory that already exists, is empty, and belongs to this call
+      alone; it must write only inside it.
+    * If ``render`` raises, the exception propagates and the reserved raw
+      directory (with whatever ``render`` had written so far) is left in
+      place. The stem stays occupied, so a later invocation mints the next
+      number instead of reusing a directory holding a failed attempt's
+      partial output -- the same policy as ``sim/run_corners.py``.
+    * The markdown is published with exclusive creation (``open(..., "x")``),
+      so an existing ``records/<stem>.md`` is never overwritten, even one
+      that appeared between reservation and publication. That collision
+      raises ``RecordExists``; the raw directory is kept.
     """
-    stem = allocate_record_stem(records_dir, date, slug)
+    stem = reserve_record_stems(records_dir, date, slug, 1)[0]
     raw_dir = records_dir / RAW_DIRNAME / stem
-    raw_dir.mkdir(parents=True, exist_ok=True)
     text = render(stem, raw_dir)
-    path = records_dir / f"{stem}.md"
-    if path.exists():  # pragma: no cover - allocate_record_stem prevents this
-        raise RecordExists(f"{path} already exists")
-    path.write_text(text)
+    return publish_record_text(records_dir / f"{stem}.md", text)
+
+
+def publish_record_text(path: Path, text: str) -> Path:
+    """Create ``path`` holding ``text``; never replace an existing file.
+
+    Exclusive creation (``O_CREAT | O_EXCL``) makes the existence check and
+    the write one atomic step, so there is no window in which another
+    writer's record could be clobbered. Raises ``RecordExists`` if ``path``
+    is already present. If the write itself fails after creation, the
+    partial file -- which this call alone created -- is removed so it
+    cannot be mistaken for a record.
+    """
+    try:
+        handle = open(path, "x")
+    except FileExistsError:
+        raise RecordExists(
+            f"{path} already exists; records are append-only -- mint a new record stem"
+        ) from None
+    try:
+        with handle:
+            handle.write(text)
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
     return path
 
 
@@ -251,6 +353,25 @@ def _yaml_str(value: str) -> str:
     return value
 
 
+def _startup_lines(record: dict) -> list[str]:
+    """Additive ``tool`` lines for the ngspice start-up policy; absent for
+    records built without it (older callers, hand-built dicts)."""
+    meta = record.get("tool_ngspice_startup")
+    if not meta:
+        return []
+    return [
+        f"  ngspice_startup: {_yaml_str(meta['policy'])}",
+        f"  ngspice_startup_flags: {_yaml_str(meta['flags'])}",
+        f"  ngspice_startup_spinit: {_yaml_str(meta['spinit'])}",
+        f"  ngspice_startup_spinit_sha256: {meta['spinit_sha256']}",
+        *(
+            [f"  ngspice_startup_spinit_snapshot: {_yaml_str(meta['spinit_snapshot'])}"]
+            if meta.get("spinit_snapshot")
+            else []
+        ),
+    ]
+
+
 def build_record(
     tb: Testbench,
     pdk: Pdk,
@@ -265,9 +386,22 @@ def build_record(
     git: dict,
     supersedes: str = "",
     timeout_s: int | None = None,
+    model_manifest: ModelManifest | None = None,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
-    (testbench, PVT point) record."""
+    (testbench, PVT point) record.
+
+    ``model_manifest`` is the PDK model-content manifest (#562) captured
+    before the run; ``sim/run_corners.py`` passes the pre-run capture after
+    re-checking it. When omitted it is computed here from the live PDK.
+
+    ``startup_snapshot`` is the ngspice start-up script captured before the
+    invocation's first launch (#582). The record's digest comes from those
+    bytes, never from re-reading the checkout, and the copy the runs
+    consumed is listed in ``raw.files``. When omitted the legacy metadata
+    (live-file digest, no snapshot claim) is emitted.
+    """
     # "status" here is the record's append-only lifecycle state (valid vs.
     # superseded, per sim/README.md), not a pass/fail verdict on the
     # measurement -- a failed simulation is still an honestly recorded fact,
@@ -277,7 +411,13 @@ def build_record(
 
     measure_names = list(tb.measure)
     samples: dict[str, list[float]] = {name: [] for name in measure_names}
+    # Only status-ok runs feed the primary summaries. A failed run keeps its
+    # parsed measurements (runner.run_one retains them for diagnosis), but
+    # they are surfaced separately as failed-run diagnostics, never averaged
+    # in with successful values.
     for r in results:
+        if r.status != "ok":
+            continue
         for name in measure_names:
             if name in r.measurements:
                 samples[name].append(r.measurements[name])
@@ -288,6 +428,38 @@ def build_record(
             path = raw_dir / fname
             if path.is_file():
                 raw_files.append((fname, sha256_file(path)))
+
+    manifest_snapshot = snapshot_manifest(tb, raw_dir)
+    if manifest_snapshot is not None:
+        raw_files.append(manifest_snapshot)
+
+    # The SPICE inputs ngspice consumed: the run already materialized them
+    # (runner.run_one); this re-checks they still equal the bytes captured at
+    # load (raising if a snapshot was mutated mid-run) and lists them.
+    input_snapshots = write_input_snapshots(tb, raw_dir)
+    raw_files.extend(input_snapshots)
+    if startup_snapshot is not None:
+        # Re-checked like the SPICE inputs: raises if the copy ngspice read
+        # no longer equals the captured bytes.
+        raw_files.append(startup.write_snapshot(startup_snapshot, raw_dir))
+    if tb.netlist_bytes is not None:
+        testbench_sha = git_blob_sha1(tb.netlist_bytes)
+        netlist_sha = git_blob_sha1(tb.dut_netlist_bytes)
+    else:
+        testbench_sha = blob_sha(repo_root, tb.netlist)
+        netlist_sha = blob_sha(repo_root, tb.dut_netlist)
+    snapshot_digest = dict(input_snapshots)
+
+    # PDK model-content identity (#562): which model files, by PDK-relative
+    # path and SHA-256, the deck's .include/.lib entry points reach.
+    lib_sections = list(tb.extra_lib_sections or point.corner.sections)
+    if model_manifest is None:
+        model_manifest = pdk_models.manifest_for_deck(pdk, lib_sections)
+    models_path = write_model_manifest(model_manifest, raw_dir)
+    models_sha256 = sha256_file(models_path)
+    raw_files.append((models_path.name, models_sha256))
+    fragment_snapshot = tb.fragment_snapshot_name if input_snapshots else None
+    dut_snapshot = tb.dut_snapshot_name if input_snapshots else None
 
     return {
         "record": stem,
@@ -301,16 +473,23 @@ def build_record(
         # data (all runs failed to converge)" instead of the numbers above.
         "timeout_s": timeout_s,
         "testbench_path": _relpath(repo_root, tb.netlist),
-        "testbench_sha": blob_sha(repo_root, tb.netlist),
+        "testbench_sha": testbench_sha,
         "netlist_path": _relpath(repo_root, tb.dut_netlist),
-        "netlist_sha": blob_sha(repo_root, tb.dut_netlist),
+        "netlist_sha": netlist_sha,
         "repo_commit": repo_commit_field(git),
         "pdk": f"{pdk.variant} @ {pdk.version}",
         "pdk_models": [
             f"{pdk.model_lib} (sections: "
             f"{' '.join(tb.extra_lib_sections or point.corner.sections)})"
         ],
+        "pdk_content_manifest": models_path.name,
+        "pdk_content_sha256": models_sha256,
+        "pdk_content_identity": model_manifest.identity,
+        "pdk_content_files": len(model_manifest.files),
+        "pdk_content_complete": model_manifest.complete,
+        "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
+        "tool_ngspice_startup": startup.metadata(startup_snapshot),
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
@@ -323,7 +502,10 @@ def build_record(
         "analysis_noise_params": tb.noise_params or "n/a",
         "analysis_runs": len(results),
         "seeds": seeds if seeds else "n/a (deterministic analysis)",
-        "raw_path": _relpath(repo_root, raw_dir) + "/",
+        # Additive (#574): absent (None) for analysis types with no measured
+        # replay limit, so their records render exactly as before.
+        "reproduction": reproduction_scope(tb.analysis_type),
+        "raw_path":_relpath(repo_root, raw_dir) + "/",
         "raw_files": raw_files,
         # Not rendered: kept so the record can be re-verified against the
         # directory it was actually hashed from (see verify_record).
@@ -331,11 +513,29 @@ def build_record(
         "wall_time": _fmt_wall(wall_seconds),
         "measure_names": measure_names,
         "samples": samples,
+        "runs_attempted": len(results),
+        "runs_ok": sum(1 for r in results if r.status == "ok"),
         "results": results,
         "tb_slug": tb.slug,
         "netlist_rel": _relpath(repo_root, tb.dut_netlist),
         "manifest_rel": _relpath(repo_root, tb.manifest_path),
+        "manifest_snapshot": manifest_snapshot[0] if manifest_snapshot else "",
+        "manifest_sha256": manifest_snapshot[1] if manifest_snapshot else "",
+        "manifest_sha": git_blob_sha1(tb.manifest_bytes) if manifest_snapshot else "",
+        "testbench_snapshot": fragment_snapshot or "",
+        "testbench_sha256": snapshot_digest.get(fragment_snapshot, ""),
+        "netlist_snapshot": dut_snapshot or "",
+        "netlist_sha256": snapshot_digest.get(dut_snapshot, ""),
+        "netlist_dependencies": [name for name, _ in tb.design_dependencies],
     }
+
+
+def write_model_manifest(manifest: ModelManifest, raw_dir: Path, name: str = "") -> Path:
+    """Write ``manifest`` as ``raw_dir/pdk-models.json`` (or ``name``)."""
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    path = raw_dir / (name or pdk_models.MANIFEST_NAME)
+    _write_idempotent(path, manifest.to_json_bytes())
+    return path
 
 
 def _relpath(repo_root: Path, path: Path) -> str:
@@ -359,16 +559,55 @@ def render_frontmatter(record: dict) -> str:
         f"  path: {record['netlist_path']}",
         f"  sha: {record['netlist_sha']}",
         f"repo_commit: {record['repo_commit']}",
+    ]
+    # Additive: records predating the manifest snapshot (#510) have no
+    # ``manifest:`` block and stay valid as they are.
+    if record.get("manifest_sha256"):
+        lines += [
+            "manifest:",
+            f"  path: {record['manifest_rel']}",
+            f"  sha: {record['manifest_sha']}",
+            f"  snapshot: {record['manifest_snapshot']}",
+            f"  sha256: {record['manifest_sha256']}",
+        ]
+    # Additive: records predating the SPICE-input snapshots (#515) have no
+    # ``inputs:`` block and stay valid as they are.
+    if record.get("testbench_sha256"):
+        lines += [
+            "inputs:",
+            f"  testbench_snapshot: {record['testbench_snapshot']}",
+            f"  testbench_sha256: {record['testbench_sha256']}",
+            f"  netlist_snapshot: {record['netlist_snapshot']}",
+            f"  netlist_sha256: {record['netlist_sha256']}",
+        ]
+        if record.get("netlist_dependencies"):
+            lines.append(
+                f"  netlist_dependencies: {', '.join(record['netlist_dependencies'])}"
+            )
+    lines += [
         "",
         f"pdk: {_yaml_str(record['pdk'])}",
         "pdk.models:",
     ]
     for entry in record["pdk_models"]:
         lines.append(f"  - {entry}")
+    # Additive: records predating the model-content manifest (#562) have no
+    # ``pdk_content:`` block and stay valid as they are.
+    if record.get("pdk_content_sha256"):
+        lines += [
+            "pdk_content:",
+            f"  manifest_file: {record['pdk_content_manifest']}",
+            f"  sha256: {record['pdk_content_sha256']}",
+            f"  identity: {record['pdk_content_identity']}",
+            f"  file_count: {record['pdk_content_files']}",
+            f"  complete: {'true' if record['pdk_content_complete'] else 'false'}",
+            f"  problems: {len(record.get('pdk_content_problems') or [])}",
+        ]
     lines += [
         "",
         "tool:",
         f"  ngspice: {_yaml_str(record['tool_ngspice'])}",
+        *_startup_lines(record),
         f"  platform: {_yaml_str(record['tool_platform'])}",
         "",
         "corner:",
@@ -389,6 +628,18 @@ def render_frontmatter(record: dict) -> str:
         lines.append(f"seeds: [{', '.join(str(s) for s in seeds)}]")
     else:
         lines.append(f"seeds: {seeds}")
+    # Additive (#574, DR-0031): only tran-noise records carry it; records
+    # without the block (older ones, other analysis types) stay valid.
+    reproduction = record.get("reproduction")
+    if reproduction:
+        lines += [
+            "reproduction:",
+            f"  scope: {reproduction['scope']}",
+            "  trnoise_waveform_replay: "
+            f"{'true' if reproduction['trnoise_waveform_replay'] else 'false'}",
+            f"  basis: {reproduction['basis']}",
+            f"  decision: {reproduction['decision']}",
+        ]
     lines += [
         "",
         "raw:",
@@ -406,11 +657,24 @@ def render_frontmatter(record: dict) -> str:
 
 
 def render_result_section(record: dict) -> str:
+    """Render the "Result" prose.
+
+    Primary measurement lines summarize status-ok runs only. Measurements a
+    failed run happened to retain are listed afterward under an explicit
+    "Failed-run diagnostics" heading with the failure reason, and are never
+    folded into the means above.
+    """
+    results = record["results"]
+    attempted = record.get("runs_attempted", len(results))
+    ok = record.get("runs_ok", sum(1 for r in results if r.status == "ok"))
     lines = ["## Result", ""]
     for name in record["measure_names"]:
         values = record["samples"][name]
         if not values:
-            lines.append(f"- `{name}`: no data (all runs failed to converge)")
+            lines.append(
+                f"- `{name}`: no successful-run data "
+                f"({ok} of {attempted} runs succeeded)"
+            )
             continue
         if len(values) == 1:
             lines.append(f"- `{name}`: {_fmt(values[0])}")
@@ -427,12 +691,32 @@ def render_result_section(record: dict) -> str:
                 f"- `{name}`: mean {_fmt(mean)} over {len(values)} seeds "
                 f"(sd {_fmt(sd)}{rel}; min {_fmt(min(values))}, max {_fmt(max(values))})"
             )
-    failed = [r for r in record["results"] if r.status != "ok"]
+    lines.append("")
+    lines.append(
+        f"Runs: {ok} of {attempted} successful. Summaries above use "
+        "successful runs only."
+    )
+    failed = [r for r in results if r.status != "ok"]
     if failed:
         lines.append("")
-        lines.append("Run failures:")
+        lines.append(
+            "Run failures (nonzero exit, simulator error or analysis error, "
+            "missing or non-finite measurements, or timeout):"
+        )
         for r in failed:
             lines.append(f"- seed {r.seed}: {r.status} -- {r.message}")
+        retained = [r for r in failed if r.measurements]
+        if retained:
+            lines.append("")
+            lines.append(
+                "Failed-run diagnostics (values parsed from runs that did not "
+                "succeed; NOT included in the summaries above, not evidence "
+                "about the device):"
+            )
+            for r in retained:
+                lines.append(f"- seed {r.seed} ({r.status}: {r.message}):")
+                for name, value in r.measurements.items():
+                    lines.append(f"  - `{name}`: {_fmt(value)}")
     lines.append("")
     lines.append("Numbers only. No entropy-rate or spec-compliance claim is made by this record.")
     lines.append("")
@@ -470,6 +754,43 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
             f"--temps {_fmt(record['corner_temperature'])} {supply_args}{timeout_args}--no-write"
         )
     lines += ["```", ""]
+    reproduction = record.get("reproduction")
+    if reproduction and not reproduction["trnoise_waveform_replay"]:
+        lines += [
+            "These commands replay the deck and configuration with the recorded "
+            "seed(s). The seeds fix the netlist-parameter and control-language "
+            "random draws, but they do not reproduce the `trnoise` transient-noise "
+            "waveforms: on the ngspice-46 build measured in "
+            f"`{reproduction['basis']}` no seed or start-up control made them "
+            "repeat across simulator processes, so a re-run draws a fresh noise "
+            "realization and its measured values will differ from the ones "
+            "above. Exact waveform replay is not claimed. Agreement between a "
+            "re-run and this record is a statistical claim that needs its own "
+            "tolerance and evidence; this record does not demonstrate it. See "
+            f"`spec/decision-records/{reproduction['decision']}.md`.",
+            "",
+        ]
+    if record.get("manifest_sha256"):
+        lines += [
+            f"The manifest used is snapshotted as `{record['raw_path']}"
+            f"{record['manifest_snapshot']}` (sha256 `{record['manifest_sha256']}`). "
+            f"The commands above read the CURRENT `{record['manifest_rel']}`; check "
+            "out `repo_commit` and, if the snapshot differs from the tree "
+            "(`diff`), restore the snapshot over it before re-running. See "
+            "`sim/README.md`.",
+            "",
+        ]
+    if record.get("testbench_sha256"):
+        lines += [
+            f"The SPICE inputs ngspice consumed are snapshotted next to the decks as "
+            f"`{record['raw_path']}{record['testbench_snapshot']}` and "
+            f"`{record['raw_path']}{record['netlist_snapshot']}` (the decks include "
+            "these copies, not the working-tree files). `testbench.sha`/`netlist.sha` "
+            "hash those same bytes; if they differ from the tree at `repo_commit`, "
+            "the run used dirty-tree input -- restore the snapshots over the "
+            "originals (in a scratch worktree) before re-running. See `sim/README.md`.",
+            "",
+        ]
     return "\n".join(lines)
 
 
@@ -503,6 +824,12 @@ def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[s
     Raises ``RawFilesMismatch`` if the raw output has changed underneath the
     record between hashing (``build_record``) and writing -- a record whose
     checksums are already wrong at birth must not reach the disk.
+
+    The early existence check gives a fast ``RecordExists`` that takes
+    precedence over a raw-file mismatch, but it is not the authority: the
+    rendered Markdown is published through ``publish_record_text``, whose
+    exclusive creation refuses a destination that appeared after the check
+    and removes its own partial file if the write fails.
     """
     records_dir.mkdir(parents=True, exist_ok=True)
     path = records_dir / f"{record['record']}.md"
@@ -517,8 +844,8 @@ def write_record(record: dict, tb: Testbench, records_dir: Path, caveats: list[s
             "(another run_corners.py invocation writing into the same raw "
             "directory?)\n  " + "\n  ".join(problems)
         )
-    path.write_text(render_record(record, tb, caveats))
-    return path
+    text = render_record(record, tb, caveats)
+    return publish_record_text(path, text)
 
 
 RAW_FILE_LINE = re.compile(r"^\s*-\s+(?P<name>\S+)\s+sha256:(?P<digest>[0-9a-f]{64})\s*$")
@@ -638,14 +965,279 @@ def verify_record(record: dict, *, check_unlisted: bool = True) -> list[str]:
     )
 
 
+def _is_within(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def validate_raw_artifacts(
+    repo_root: Path, raw_root: Path, raw_path: str, raw_files: list[tuple[str, str]]
+) -> tuple[Path | None, list[tuple[str, Path]], list[str]]:
+    """Check a record's declared artifacts live inside its raw directory.
+
+    ``raw_path`` must be repository-relative (no absolute form, no ``..``)
+    and resolve strictly inside ``raw_root`` (the evidence raw root, itself
+    inside ``repo_root``). Each ``raw_files`` name must be a simple file name
+    and, after resolving symlinks, stay inside the raw directory. Returns
+    ``(raw_dir, [(name, path)], problems)``; when ``problems`` is non-empty
+    nothing may be read or hashed. Pure path logic: never opens a file.
+    """
+    pure = PurePosixPath(raw_path)
+    if not raw_path or "\\" in raw_path or pure.is_absolute() or PureWindowsPath(raw_path).drive:
+        return None, [], [f"raw.path {raw_path!r} must be a repository-relative path"]
+    if ".." in pure.parts:
+        return None, [], [f"raw.path {raw_path!r} must not contain '..'"]
+    root = repo_root.resolve()
+    base = raw_root.resolve()
+    raw_dir = repo_root / raw_path
+    resolved = raw_dir.resolve()
+    if not _is_within(resolved, root):
+        return None, [], [f"raw.path {raw_path!r} resolves outside the repository"]
+    if resolved == base or not _is_within(resolved, base):
+        return None, [], [
+            f"raw.path {raw_path!r} resolves outside the evidence raw root "
+            f"{base.relative_to(root) if _is_within(base, root) else base}"
+        ]
+    problems: list[str] = []
+    artifacts: list[tuple[str, Path]] = []
+    for name, _digest in raw_files:
+        if name in (".", "..") or "/" in name or "\\" in name or PureWindowsPath(name).drive:
+            problems.append(f"raw.files name {name!r} must be a simple file name")
+            continue
+        candidate = raw_dir / name
+        if not _is_within(candidate.resolve(), resolved):
+            problems.append(f"raw.files name {name!r} resolves outside the raw directory")
+            continue
+        artifacts.append((name, candidate))
+    return raw_dir, artifacts, problems
+
+
 def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = True) -> list[str]:
     """``verify_raw_files`` for a record already written to disk."""
     try:
-        raw_path, raw_files = parse_raw_section(path.read_text())
+        text = path.read_text()
+        raw_path, raw_files = parse_raw_section(text)
     except RawSectionError as exc:
         return [f"{path.name}: malformed raw provenance: {exc}"]
     if not raw_path:
         return [f"{path.name}: no raw.path in frontmatter"]
     if not raw_files:
         return [f"{path.name}: raw.files lists no files"]
-    return verify_raw_files(repo_root / raw_path, raw_files, check_unlisted=check_unlisted)
+    raw_dir, _artifacts, bad = validate_raw_artifacts(
+        repo_root, path.resolve().parent / RAW_DIRNAME, raw_path, raw_files
+    )
+    if bad or raw_dir is None:
+        return [f"{path.name}: invalid raw provenance: {p}" for p in bad]
+    problems = verify_raw_files(raw_dir, raw_files, check_unlisted=check_unlisted)
+    problems += verify_manifest_reference(text, raw_files)
+    problems += verify_inputs_reference(text, raw_files)
+    problems += verify_pdk_content_reference(text, raw_files, raw_dir)
+    problems += verify_startup_reference(text, raw_files)
+    return problems
+
+
+def parse_manifest_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``manifest:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "manifest:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_manifest_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """The ``manifest.sha256`` a record declares must match its raw.files entry.
+
+    (The snapshot's bytes themselves are covered by the raw.files re-hash.)
+    Legacy records without a ``manifest:`` block yield no problems.
+    """
+    ref = parse_manifest_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    name, digest = ref.get("snapshot", ""), ref.get("sha256", "")
+    if not name or name not in listed:
+        return [f"manifest.snapshot {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [f"manifest.sha256 {digest} != {listed[name]} recorded for {name} in raw.files"]
+    return []
+
+
+def parse_inputs_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``inputs:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "inputs:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_inputs_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """Each SPICE-input digest a record declares must match its raw.files entry.
+
+    Legacy records without an ``inputs:`` block yield no problems.
+    """
+    ref = parse_inputs_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    problems: list[str] = []
+    for role in ("testbench", "netlist"):
+        name = ref.get(f"{role}_snapshot", "")
+        digest = ref.get(f"{role}_sha256", "")
+        if not name or name not in listed:
+            problems.append(f"inputs.{role}_snapshot {name!r} is not listed in raw.files")
+        elif listed[name] != digest.removeprefix("sha256:"):
+            problems.append(
+                f"inputs.{role}_sha256 {digest} != {listed[name]} recorded for {name} in raw.files"
+            )
+    for dep in [d.strip() for d in ref.get("netlist_dependencies", "").split(",") if d.strip()]:
+        if dep not in listed:
+            problems.append(f"inputs.netlist_dependencies {dep!r} is not listed in raw.files")
+    return problems
+
+
+def parse_pdk_content_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``pdk_content:`` block (empty if absent)."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "pdk_content:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            out[key] = value.strip()
+    return out
+
+
+def verify_pdk_content_reference(
+    text: str, raw_files: list[tuple[str, str]], raw_dir: Path | None = None
+) -> list[str]:
+    """The ``pdk_content`` block must agree with its manifest in raw.files.
+
+    The manifest's bytes are covered by the raw.files re-hash; this checks
+    the block names a listed file with the listed digest and -- when the raw
+    directory is available -- that the identity, file count and completeness
+    it declares are the ones recomputed from that manifest. Legacy records
+    without a ``pdk_content:`` block yield no problems.
+    """
+    ref = parse_pdk_content_section(text)
+    if not ref:
+        return []
+    listed = dict(raw_files)
+    name, digest = ref.get("manifest_file", ""), ref.get("sha256", "")
+    if not name or name not in listed:
+        return [f"pdk_content.manifest_file {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [f"pdk_content.sha256 {digest} != {listed[name]} recorded for {name} in raw.files"]
+    if raw_dir is None:
+        return []
+    path = raw_dir / name
+    if not path.is_file() or sha256_file(path) != listed[name]:
+        return []  # already reported by the raw.files re-hash
+    try:
+        doc = json.loads(path.read_text())
+    except (ValueError, UnicodeDecodeError) as exc:
+        return [f"pdk_content.manifest_file {name} is not valid JSON: {exc}"]
+    if not isinstance(doc, dict):
+        return [f"pdk_content.manifest_file {name} is not a JSON object"]
+    problems: list[str] = []
+    identity = pdk_models.identity_from_document(doc)
+    if ref.get("identity") != identity or doc.get("identity") != identity:
+        problems.append(
+            f"pdk_content.identity {ref.get('identity')} does not match {identity} "
+            f"recomputed from {name}"
+        )
+    files = doc.get("files") if isinstance(doc.get("files"), list) else []
+    if ref.get("file_count") != str(len(files)):
+        problems.append(
+            f"pdk_content.file_count {ref.get('file_count')} != {len(files)} listed in {name}"
+        )
+    doc_problems = doc.get("problems") if isinstance(doc.get("problems"), list) else []
+    complete = "true" if not doc_problems else "false"
+    if ref.get("complete") != complete or doc.get("complete") is not (complete == "true"):
+        problems.append(f"pdk_content.complete {ref.get('complete')} disagrees with {name}")
+    return problems
+
+
+_STARTUP_KEY_PREFIX = "ngspice_startup_"
+
+
+def parse_startup_section(text: str) -> dict[str, str]:
+    """Read the ``ngspice_startup_*`` lines of the frontmatter ``tool:`` block.
+
+    Keys are returned without the prefix (``spinit_sha256``,
+    ``spinit_snapshot``, ...). Empty for records without the lines.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "tool:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            if key.startswith(_STARTUP_KEY_PREFIX):
+                out[key[len(_STARTUP_KEY_PREFIX):]] = value.strip().strip('"')
+    return out
+
+
+def verify_startup_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """A declared start-up snapshot must be listed with the declared digest.
+
+    (The snapshot's bytes are covered by the raw.files re-hash.) Records
+    without ``ngspice_startup_spinit_snapshot`` -- legacy records and the
+    #575 format that hashed the live checkout file -- yield no problems.
+    """
+    ref = parse_startup_section(text)
+    name = ref.get("spinit_snapshot", "")
+    if not name:
+        return []
+    listed = dict(raw_files)
+    digest = ref.get("spinit_sha256", "")
+    if name not in listed:
+        return [f"tool.ngspice_startup_spinit_snapshot {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [
+            f"tool.ngspice_startup_spinit_sha256 {digest} != {listed[name]} "
+            f"recorded for {name} in raw.files"
+        ]
+    return []

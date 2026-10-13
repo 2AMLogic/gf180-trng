@@ -89,7 +89,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_status  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    current_records,
+    latest_current_record,
+    format_corner,
+    iter_result_seed_summaries,
+    parse_corner,
+    parse_status,
+    parse_result_values,
+)  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -118,13 +126,6 @@ PLAIN_TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "ro-inv-05stage-jitter" / "tb.jso
 #: and still rejects the ~30x-too-tight signature of the array-sanity run.
 SPREAD_TOLERANCE = 3.0
 
-_MEAN = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)",
-    re.M,
-)
-_SINGLE = re.compile(r"^- `([a-z0-9_]+)`:\s*(-?[\d.]+(?:e[-+]?\d+)?)\s*$", re.M)
-
 
 class RecordError(RuntimeError):
     pass
@@ -141,12 +142,15 @@ class Record:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.seeds = 1
-        for m in _SINGLE.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-        for m in _MEAN.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-            self.seeds = int(m.group(3))
-            self.sd[m.group(1)] = float(m.group(4))
+        self.values.update(
+            parse_result_values(text, label=self.stem, error_cls=RecordError)
+        )
+        for key, summary in iter_result_seed_summaries(
+            text, label=self.stem, error_cls=RecordError
+        ):
+            self.values[key] = summary.mean
+            self.seeds = summary.n_seeds
+            self.sd[key] = summary.sd
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )
@@ -159,9 +163,8 @@ class Record:
     @property
     def status(self) -> str:
         """Frontmatter lifecycle (``valid``/``superseded``), parsed on demand
-        so callers that never filter on it (the variant-comparison scripts and
-        their fixtures) need not carry one; a missing or unknown value raises
-        ``RecordError`` naming the record."""
+        (only the loaders that select evidence read it); a missing or unknown
+        value raises ``RecordError`` naming the record."""
         return parse_status(self._text, label=self.stem, error_cls=RecordError)
 
     def spread(self, key: str) -> float | None:
@@ -176,8 +179,9 @@ def load_family(glob: str, *, include_superseded: bool = False) -> list[Record]:
     ones are excluded unless ``include_superseded`` requests an explicit
     historical read (issue #425). Older records that remain ``status: valid``
     are always returned."""
-    recs = [Record(p) for p in sorted(RECORDS.glob(glob))]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    return current_records(
+        RECORDS, glob, make=Record, include_superseded=include_superseded,
+        error_cls=RecordError)
 
 
 def window_geometry(manifest_path: Path = TB_MANIFEST) -> tuple[int, int]:
@@ -426,7 +430,7 @@ class Point:
         return self.rec.spread("sigma_1")
 
 
-def load_variants_by_glob(variants, corner: str, factory):
+def load_variants_by_glob(variants, corner: str, factory, *, include_superseded: bool = False):
     """Load one ``factory``-built object per entry of a ``VARIANTS``-style
     sequence of ``(label, glob, *rest)`` tuples, filtered to records at
     ``corner`` that carry a ``sigma_1``.
@@ -445,21 +449,22 @@ def load_variants_by_glob(variants, corner: str, factory):
     value (measurements come back "no data"), so it never reaches the filter
     below in the first place -- it is the ``"sigma_1" not in rec.values``
     check that excludes it, not any special-casing of failure.
+
+    Records whose frontmatter says ``status: superseded`` are dropped before
+    the latest is chosen (issue #427), so a superseded record that sorts last
+    is never compared, and a variant with only superseded records at
+    ``corner`` is missing evidence (``RecordError``). Every matched record
+    must carry a readable ``status:``. ``include_superseded=True`` is the
+    explicit historical read.
     """
     out = []
     for label, glob, *rest in variants:
-        matches = []
-        for path in sorted(RECORDS.glob(glob)):
-            rec = Record(path)
-            if rec.corner != corner or "sigma_1" not in rec.values:
-                continue
-            matches.append(rec)
-        if not matches:
-            raise RecordError(
-                f"variant {label!r}: no sim/records/{glob} record at {corner} carries a "
-                "sigma_1, so this variant cannot be compared"
-            )
-        out.append(factory(label, matches[-1], *rest))
+        rec = latest_current_record(
+            RECORDS, glob, make=Record, corner=corner, requires=("sigma_1",),
+            include_superseded=include_superseded, error_cls=RecordError,
+            context=f"variant {label!r}: ", hint=", so this variant cannot be compared",
+        )
+        out.append(factory(label, rec, *rest))
     return out
 
 

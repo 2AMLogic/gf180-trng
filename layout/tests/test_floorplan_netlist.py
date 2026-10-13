@@ -23,7 +23,6 @@ Two things this suite has to prove, per #221's own acceptance criteria:
 from __future__ import annotations
 
 import copy
-import importlib.util
 import sys
 import unittest
 from pathlib import Path
@@ -32,18 +31,17 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 # `design/floorplan_netlist.py` is a flat module (see its own docstring on
 # why it lives under `design/`, not as a package member of anything) --
 # loaded from its own file path, the same way `layout/tests/test_verify.py`
 # loads `layout/verify.py`, so a second, unrelated module of the same name
 # elsewhere can never shadow it via `sys.modules`.
-_SPEC = importlib.util.spec_from_file_location(
+fn = load_module_from_path(
     "layout_tests_floorplan_netlist_module",
     REPO_ROOT / "design" / "floorplan_netlist.py",
 )
-fn = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(fn)
 
 
 class ValidateInterRegionNetsTests(unittest.TestCase):

@@ -23,7 +23,13 @@ name: CI
 #
 #   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test`.
+#       `npm run test`. The tests that need an external simulator (the RTL
+#       equivalence classes need Icarus Verilog; two runner probes need
+#       ngspice) SKIP here, since this job installs nothing. They run
+#       strictly in pdk-nightly.yml, which installs both and sets
+#       REQUIRE_RTL_TOOLS=1 so a missing tool fails instead of skipping
+#       (#618). Every such gate goes through sim/tests/_tool_gate.py;
+#       sim/tests/test_tool_gate_discipline.py fails on one that does not.
 #
 #   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
@@ -77,13 +83,15 @@ name: CI
 #   sim/tools/time_to_first_valid.py --check
 #   sim/tools/power_rollup.py --check
 #   sim/tools/digital_corner_characterization.py --check
+#   sim/tools/activity_power_characterization.py --check
 #   sim/tools/vss_trunk_ir_drop.py --check
+#   sim/tools/digital_supply_ir_drop.py --check
 #   sim/tools/corpus_counts.py --check
 #   sim/tools/klt_pin_sites.py --check
 #   sim/tools/jitter_estimator_calibration_check.py --check
 #   sim/tools/statistical_battery.py --check
 #       RUN on every push/PR via `npm run check:spec` (package.json is the
-#       single list of all seventeen). Every one is a pure derivation over
+#       single list of all nineteen). Every one is a pure derivation over
 #       records already committed under sim/records/ -- stdlib-only, no
 #       ngspice, no PDK, sub-second -- so a newly appended record cannot
 #       silently move a conclusion a summary document still asserts. See the
@@ -159,6 +167,19 @@ name: CI
 #       catches it at the point a schematic comment is authored rather than
 #       the next scheduled pdk-nightly.yml run.
 #
+#   sim/tools/unused_names.py --check (unused import / local guard, #494)
+#   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
+#   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
+#       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
+#       and so into this job's first step; all are stdlib-only and need no
+#       PDK. verify_markdown_links walks the git-tracked *.md files (outside
+#       the append-only sim/records/ tree and the installed .loom/, .claude/
+#       and .agents/ surfaces) and fails on any relative inline link or
+#       reference-style definition whose target is not a tracked file or
+#       directory -- decision-record citations in evidence summaries are the
+#       audit trail for spec claims, and nothing else checks they resolve.
+#       File existence only; anchors are out of scope.
+#
 #   layout/testcells/build.py --check (layout test-cell staleness guard)
 #   layout/verify.py (DRC/LVS flow, self-skips without klt/the PDK)
 #   layout/floorplan/floorplan.py (floorplan abstract + area rollup, same
@@ -168,6 +189,16 @@ name: CI
 #       own argument handling, tool probe and skip path -- a skip is not a
 #       pass, so exercising the skip path itself is still worth a green check
 #       here; `npm run check:all` runs the latter two with --require-tools.
+#
+#   layout/digital/tap_distance.py --check (tap-distance report freshness)
+#       RUN on every push/PR via `npm run check:digital-tap-distance`, which
+#       self-skips (explicitly, on stderr) when the `klayout` Python module is
+#       absent, as on this runner. The mandatory `--check --require-tools`
+#       form runs in the provisioned nightly layout job (pdk-nightly.yml),
+#       where a missing module fails rather than skips. It only compares and
+#       never rewrites the committed report. It judges report freshness, not
+#       physical compliance (a current report may still disclose a failing
+#       verdict; that decision is tracked separately).
 #
 #   signoff/check.py (T1 tier-report re-grade + evidence-freshness gate)
 #       RUN on every push/PR, in its own `signoff` job below, with
@@ -215,6 +246,12 @@ jobs:
   harness:
     name: harness (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs of this job take 47-83 s across
+    # both Python versions (last 20 successful runs); 5 min is ~3.5x the
+    # slowest, so suite growth and a cold runner do not trip it, but a stuck
+    # step fails in minutes instead of holding the runner and the
+    # `ci-<ref>` concurrency group for GitHub's 360-minute default.
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -223,13 +260,13 @@ jobs:
         # oldest interpreter it is known to run on.
         python-version: ["3.10", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Full history: the evidence-history step below needs the PR base
           # (or pushed-from) commit and a merge-base with HEAD.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -239,8 +276,16 @@ jobs:
       # xschem's own parser silently mis-handles and turns into a corrupted
       # netlist (#61). No xschem, no PDK, so it belongs here rather than on
       # .github/workflows/pdk-nightly.yml with design/netlist.py --check.
+      # The chain ends with the unused-name and relative markdown link guards
+      # (see the inventory above).
       - name: Lint (syntax check, shell check, schematic brace guard)
         run: npm run lint
+
+      # shellcheck (warning severity) over the tracked first-party *.sh (#591).
+      # ubuntu-latest ships shellcheck; --require-tools makes a missing
+      # binary a failure here instead of the local skip.
+      - name: Shell lint (shellcheck)
+        run: python3 -m sim.tools.lint_shell --require-tools
 
       - name: Harness unit tests
         run: npm run test
@@ -253,7 +298,7 @@ jobs:
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. Run via `npm run check:spec` -- the full
-      # list of seventeen lives in package.json, not here (issue #97).
+      # list of nineteen lives in package.json, not here (issue #97).
       # jitter_energy_law.py --check fails if the three record families it
       # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
       # --check fails if the shipped array stops satisfying DR-0007 §2 at any
@@ -363,6 +408,12 @@ jobs:
       - name: Register-map staleness guard
         run: npm run check:regmap
 
+      # Tracked generated JSON under design/, layout/ and signoff/ must not
+      # embed absolute /home/<user>/ or /Users/<user>/ paths. One historical
+      # native response is exempt by exact path and SHA-256. Stdlib only.
+      - name: Generated-report host-path guard
+        run: npm run check:no-host-paths
+
       # design/floorplan_netlist.py's own inter-region net list (issue #221,
       # phase 1 of the #219 floorplan-composition epic) against the four
       # regions' own committed reference netlists, and the composed
@@ -407,6 +458,15 @@ jobs:
       - name: Entropy-source floorplan self-check (self-skips on a hosted runner)
         run: npm run check:floorplan
 
+      # Tap-distance report freshness (#448/#458). Re-measures the committed
+      # trng_top.gds and compares with layout/digital/reports/tap-distance.json.
+      # Needs only the `klayout` Python module, which this runner does not
+      # install, so it prints "the `klayout` Python module is not installed;
+      # skipping" and exits 0 -- a skip, not a pass. The mandatory form
+      # (--check --require-tools) runs in pdk-nightly.yml. Read-only.
+      - name: Tap-distance report freshness (self-skips on a hosted runner)
+        run: npm run check:digital-tap-distance
+
       # sim/selftest.sh re-runs the unit tests and the record-checksum check
       # as its own stages 1-2; the few seconds of overlap buy coverage of the
       # acceptance script itself -- its argument handling, its environment
@@ -422,10 +482,14 @@ jobs:
   signoff:
     name: T1 tier report (klt signoff --manifest, no PDK required)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs take 9-14 s (last 20 successful
+    # runs, dominated by the klayout-tools install); 2 min leaves room for a
+    # slow package-index fetch while still failing a stuck step quickly.
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
 

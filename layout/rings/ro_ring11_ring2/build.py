@@ -58,9 +58,7 @@ other build script in this repository.
 
 from __future__ import annotations
 
-import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -75,6 +73,7 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout.cells._build_cli import make_pdk_check, make_pdk_main  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers (layout/testcells/build.py's own set, plus
@@ -157,8 +156,6 @@ assert (M2_PAD - VIA_SZ) / 2 >= 0.01, "metal2.enclosing.via1.1 (0.01)"
 assert M2_PAD >= 0.28, "metal2.width.1 (0.28)"
 
 DECK = "gf180mcu"
-EXIT_OK = 0
-EXIT_FAIL = 1
 
 
 # --------------------------------------------------------------------------- #
@@ -369,67 +366,26 @@ def build(pdk_variant: str, path: Path | None = None) -> bytes:
     return gds_bytes
 
 
-def check() -> int:
-    """Rebuild into scratch and byte-compare against the committed .gds.
-
-    Matches `layout/cells/*/build.py`'s own `check()` contract
-    (`layout/verify.py`'s `_STALENESS_CHECKS` calls it with no arguments and
-    treats a nonzero return as a hard failure) -- `klt`/the PDK are already
-    confirmed present by the time `layout/verify.py` reaches this call, so
-    resolving the PDK variant here does not need its own skip path.
-    """
-    path = gds_path()
-    shown = os.path.relpath(path, os.getcwd())
-    if not path.exists():
-        print(f"MISSING: {shown} -- run `python3 layout/rings/ro_ring11_ring2/build.py`")
-        return 1
-    pdk = resolve_pdk()
-    if pdk is None:
-        print(f"SKIP-AS-STALE: {shown} -- no gf180mcu PDK install found")
-        return 1
-    scratch = WORK_DIR / f"{TOP_CELL}.check.gds"
-    rebuilt = build(pdk.variant, scratch)
-    committed = path.read_bytes()
-    if rebuilt != committed:
-        print(
-            f"STALE: {shown} does not match build.py "
-            f"({len(committed)} bytes committed, {len(rebuilt)} rebuilt) -- "
-            f"run `python3 layout/rings/ro_ring11_ring2/build.py`"
-        )
-        return 1
-    print(f"ok: {shown}")
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true",
-                         help="verify the committed .gds matches this script, and exit")
-    parser.add_argument("--require-tools", action="store_true",
-                         help="fail instead of skipping when klt or the PDK is absent")
-    args = parser.parse_args(argv)
-
-    version = klt_version()
-    pdk = resolve_pdk()
-    missing = []
-    if version is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
-    if pdk is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
-    if missing:
-        for line in missing:
-            print(f"  - {line}")
-        if args.require_tools:
-            print("FAIL: --require-tools was given and the flow cannot run")
-            return EXIT_FAIL
-        print("SKIP: ro_ring11_ring2 build -- the tools above are not available.")
-        return EXIT_OK
-
-    if args.check:
-        return check()
-    build(pdk.variant)
-    print(f"wrote {gds_path()}")
-    return EXIT_OK
+# The check/CLI tail is the shared one (`layout/cells/_build_cli.py`, #589);
+# `layout/verify.py`'s `_STALENESS_CHECKS` calls this module's `check()`
+# with no arguments.
+check = make_pdk_check(
+    gds_path=gds_path,
+    build=build,
+    resolve_pdk=resolve_pdk,
+    work_dir=WORK_DIR,
+    top_cell=TOP_CELL,
+    script="layout/rings/ro_ring11_ring2/build.py",
+)
+main = make_pdk_main(
+    check=check,
+    gds_path=gds_path,
+    build=build,
+    resolve_pdk=resolve_pdk,
+    klt_version=klt_version,
+    top_cell=TOP_CELL,
+    description=__doc__.splitlines()[0],
+)
 
 
 if __name__ == "__main__":

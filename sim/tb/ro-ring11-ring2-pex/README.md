@@ -12,8 +12,22 @@ offline; no ring2 `klt pex` result is committed. The one attempt to submit the
 27-corner grid to the batch backend (two tries, `klayout-tools==0.6.0`) was
 refused by the fleet for capacity (`8 instance(s) already running + 1
 requested exceeds BATCH_MAX_CONCURRENT_INSTANCES=8`, then `no capacity in any
-of the 30 pools`). The grid was deliberately not run locally. No number from
-ring2 appears anywhere in this repository because of this work.
+of the 30 pools`). The grid was deliberately not run locally.
+
+A second attempt (#476, 2026-10-10, same pin) got past capacity. Both fleet
+jobs ran, but all 54 grid units (27 corners x 2 sides) errored with no
+measurement. The 0.6.0 batch client uploads only the testbench body and the
+request, not the DUT the body `.include`s, so on the fleet neither side has a
+`ro_ring11_ring2` subcircuit. The fleet runner also reports klt 0.5.0. A
+client that stages includes (0.7.0) is refused by that runner, and the
+publisher accepts only the 0.6.0 pin. Nothing was published. The jobs, logs,
+errored envelope and one single-corner local debug probe (showing the fixture
+simulates) are in
+[`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`](../../records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md).
+The campaign stays blocked until the fleet runner and a producer pin that
+stages `.include` dependencies are compatible (upstream
+2AMLogic/klayout-tools#2485, #2882). No ring2 schematic-versus-extracted
+comparison result exists in this repository.
 
 | File | Role |
 |---|---|

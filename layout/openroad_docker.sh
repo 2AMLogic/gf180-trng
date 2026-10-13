@@ -30,9 +30,11 @@
 # of $(pwd).
 #
 # -- pinned version -- keep in sync with layout/digital/README.md ----------
-# `openroad -version` inside this image reports 26Q3-1260-g06a5a02279.
-OPENROAD_DOCKER_IMAGE="${OPENROAD_DOCKER_IMAGE:-openroad/orfs:26Q3-296-gda37dce1c}"
-OPENROAD_DOCKER_DIGEST="${OPENROAD_DOCKER_DIGEST:-sha256:ebc8142da6d65d1a1e9a528aa2cedcde356243465dd859af8d3ade51075f8cb2}"
+# `openroad -version` inside this image reports 26Q3-1510-g6cb3f2b704, the
+# build that produced the committed place-and-route and SDF artefacts (#507;
+# the previous pin, 26Q3-296-gda37dce1c, reports 26Q3-1260-g06a5a02279).
+OPENROAD_DOCKER_IMAGE="${OPENROAD_DOCKER_IMAGE:-openroad/orfs:26Q3-383-g205191eb2}"
+OPENROAD_DOCKER_DIGEST="${OPENROAD_DOCKER_DIGEST:-sha256:bb7f31697fb8466ab61852fc796376cc16d9df38f762ccb733218b8a5e55824b}"
 # ----------------------------------------------------------------------------
 
 set -euo pipefail

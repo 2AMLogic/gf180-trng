@@ -8,7 +8,8 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-_None._
+- **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
 
 ## Operator Priority
 
@@ -20,16 +21,15 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#387**: lvs.py: fix two latent gaps (SPICE continuation after comment; _bit_names net<id> fallback)
-- **#406**: Resolve the README's untracked 'still owed' min-entropy re-run at ss/+125C/3.63V
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
+- **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#315**: Inter-region stubs miss digital's top-edge pins after the re-place-and-route (clk, rst_n, raw_bit, raw_valid, ring_bit unjoined)
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
-- **#403**: Unit-test build_dut.py's extraction_port_map refusal branches offline
+_None._
 
 ## PRs Awaiting Review
 
@@ -41,20 +41,25 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#409**: test(sim): unit-test build_dut port map refusal branches offline
+- **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
-- **#315**: Inter-region stubs miss digital's top-edge pins after the re-place-and-route (clk, rst_n, raw_bit, raw_valid, ring_bit unjoined) *(curated)*
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
-- **#387**: lvs.py: fix two latent gaps (SPICE continuation after comment; _bit_names net<id> fallback) *(curated)*
+- **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
+- **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
+- **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
+- **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
+- **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
+- **#491**: Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures) *(curated)*
+- **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#404**: Committed generated reports embed absolute host paths (home dir, worktree); add a guard *(architect)*
-- **#408**: check:all omits the append-only evidence-history guard that check:ci runs *(architect)*
 - **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
 
 ## Epics
@@ -65,13 +70,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 2 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 3 |
+| Ready (`loom:issue`) | 3 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 3 |
-| Architect / Hermit proposals | 3 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 9 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

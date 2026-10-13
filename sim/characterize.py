@@ -23,7 +23,10 @@ for prerequisites, expected wall-clock, core count, and the full row ->
 output-file mapping (also summarized in ROWS_NOT_COVERED below).
 
 Scope: this script wraps the ngspice-based analog PVT sweep only -- the
-"sim/ harness" sim/README.md and CLAUDE.md describe. Rows D/E/G's
+"sim/ harness" sim/README.md and CLAUDE.md describe. Row D's required
+liveness-sampler term (``sim/tb/sampler-core-liveness-active/``, #463/#528) is
+NOT run here either: it has no tb.json by design and its full grid is opt-in
+through ``klt sim --backend batch`` (see ROW_D_EVIDENCE below). Rows D/E/G's
 digital-gate-level term (``sim/tb/digital-sta-power/``, needs OpenROAD),
 Row H's health-test-cutoff formula (``design/health_test/rct_apt.py``) and
 Row I's layout area estimate (``layout/floorplan/floorplan.py``, needs
@@ -35,7 +38,6 @@ each of those too.
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -104,17 +106,99 @@ CAMPAIGNS: tuple[Campaign, ...] = (
         rows=("C",),
         extra_args=("--corners", "tt", "--temps", "27", "--supply", "3.30", "--supply-tol", "0"),
         note="Row C raw-bitstream functional demonstration at tt/27C/3.30V -- "
-        "one of the two corners a real bitstream exists for (see the "
-        "proposal's Row C caveats: this is not an entropy measurement).",
+        "one of the three corners a real bitstream exists for (see the "
+        "proposal's Row C caveats: this is not an entropy measurement). "
+        "Default seeds (1001..1003), the convention every prior record uses.",
     ),
     Campaign(
         "sampler-array-digitize",
         rows=("C",),
         extra_args=("--corners", "ss", "--temps", "-40", "--supply", "3.63", "--supply-tol", "0"),
         note="Row C raw-bitstream functional demonstration at ss/-40C/3.63V -- "
-        "the other of the two corners a real bitstream exists for.",
+        "the second of the three corners a real bitstream exists for.",
+    ),
+    Campaign(
+        "sampler-array-digitize",
+        rows=("C",),
+        extra_args=("--corners", "ss", "--temps", "125", "--supply", "3.63", "--supply-tol", "0"),
+        note="Row C raw-bitstream functional demonstration at ss/+125C/3.63V -- "
+        "the measured entropy-binding corner (#13, re-run in #406). Ten "
+        "of ten bits were 1 at every seed there: a stuck-high observation, "
+        "not an entropy measurement.",
     ),
 )
+
+# Row D (active power) is the sum of the terms power_rollup.LEDGER_TERMS names
+# plus the digital section. This table declares, per required term, how a
+# reviewer reproduces it, so a term cannot be required by the ledger and left
+# out of the independent-verification recipe (sim/tests/test_characterize.py
+# ties the two together offline). "flow" is "campaign" (a CAMPAIGNS testbench
+# run by this script), "separate" (a different tool/backend, not run here).
+LIVENESS_TB = "sampler-core-liveness-active"
+LIVENESS_TOOL = "python3 sim/tools/liveness_sampler_power.py"
+LIVENESS_SUMMARY = (
+    "request-generation `emit [--check]`, opt-in batch run `run --outdir DIR` "
+    "(klt sim --backend batch), record ingestion `record REPORT...`, via "
+    + LIVENESS_TOOL
+)
+LIVENESS_COMMANDS: tuple[tuple[str, str], ...] = (
+    (f"{LIVENESS_TOOL} plan", "print the declared 27-unit grid and method; offline"),
+    (f"{LIVENESS_TOOL} emit --check", "fail if the committed request-grid.json drifted from the grid; offline"),
+    (f"{LIVENESS_TOOL} emit", "(re)generate sim/tb/sampler-core-liveness-active/request-grid.json; offline"),
+    (f"{LIVENESS_TOOL} run --outdir DIR", "OPT-IN: submit the whole grid with `klt sim --backend batch`; "
+     "needs klt and batch-backend access; a failed submit is reported, never rerun locally"),
+    (f"{LIVENESS_TOOL} analyze DIR/grid.report.json", "derive the ledger terms from the report; offline"),
+    (f"{LIVENESS_TOOL} record DIR/grid.report.json", "mint NEW append-only records "
+     "sim/records/<date>-sampler-core-liveness-active-NN.md; existing records are never edited"),
+)
+
+
+@dataclass(frozen=True)
+class RowDEvidence:
+    """How one Row D active-power term is reproduced."""
+
+    term: str  # power_rollup.LEDGER_TERMS name, or "digital"
+    flow: str  # "campaign" | "separate"
+    testbenches: tuple[str, ...]
+    how: str
+    prerequisites: str
+
+
+ROW_D_EVIDENCE: tuple[RowDEvidence, ...] = (
+    RowDEvidence(
+        "array", "campaign", ("ro-array-core-pvt-q",),
+        "make characterize (this script)", "ngspice >= 46 + gf180mcu PDK",
+    ),
+    RowDEvidence(
+        "sampler_raw", "campaign", ("sampler-dff-active-current",),
+        "make characterize (this script)", "ngspice >= 46 + gf180mcu PDK",
+    ),
+    RowDEvidence(
+        "liveness", "separate", (LIVENESS_TB,),
+        "opt-in klt campaign: " + LIVENESS_SUMMARY,
+        "klayout-tools (klt) with batch-backend access; NOT run by make characterize "
+        "or CI, and without new records the committed ones are reused, not regenerated",
+    ),
+    RowDEvidence(
+        "digital", "separate", ("digital-sta-power",),
+        "python3 sim/tb/digital-sta-power/run_sta.py", "OpenROAD on PATH",
+    ),
+)
+
+
+def row_d_summary() -> list[str]:
+    """Lines for the dry-run's Row D section: every required evidence family."""
+    lines = ["# Row D evidence (all required active-power terms; roll up with power_rollup.py):"]
+    for e in ROW_D_EVIDENCE:
+        where = "make characterize" if e.flow == "campaign" else "SEPARATE flow, not run by make characterize"
+        lines.append(f"#   {e.term} [{where}]: {', '.join(e.testbenches)}")
+        lines.append(f"#     how: {e.how}")
+        lines.append(f"#     needs: {e.prerequisites}")
+    lines.append(f"# liveness campaign commands (all from {LIVENESS_TOOL}):")
+    for cmd, what in LIVENESS_COMMANDS:
+        lines.append(f"#   {cmd}   -- {what}")
+    return lines
+
 
 # Rows this script does not produce evidence for, and where that evidence
 # comes from instead -- kept alongside CAMPAIGNS so --dry-run's summary and
@@ -123,6 +207,9 @@ ROWS_NOT_COVERED: dict[str, str] = {
     "B": "not a PVT sweep -- derived by sim/tools/jitter_energy_law.py and "
     "starved_cell_jitter_energy.py --check from the existing rostage-noise / "
     "ro-ring5-starved-jitter-long records (npm run check:spec).",
+    "D (liveness term)": "REQUIRED power-ledger term, opt-in batch campaign -- "
+    "not a tb.json, never swept locally: " + LIVENESS_SUMMARY + " (see the dry-run "
+    "'Row D evidence' section or the README for the exact commands).",
     "D (digital term)": "gate-level, not ngspice: python3 sim/tb/digital-sta-power/run_sta.py "
     "(needs OpenROAD on PATH).",
     "E (digital term)": "same gate-level flow as the Row D digital term above.",
@@ -134,8 +221,10 @@ ROWS_NOT_COVERED: dict[str, str] = {
 }
 
 
-def _default_jobs() -> int:
-    return os.cpu_count() or 1
+# Deliberately small: the campaign is 153 ngspice points and usually runs on a
+# shared machine, so the default must not scale with the core count. Ask for
+# more explicitly with --jobs N (or JOBS=N through make).
+DEFAULT_JOBS = 2
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -145,9 +234,9 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--jobs", "-j", type=int, default=_default_jobs(),
+        "--jobs", "-j", type=int, default=None,
         help="parallel ngspice runs per testbench, forwarded to run_corners.py "
-        "-j (default: os.cpu_count())",
+        f"-j (default: {DEFAULT_JOBS}, not every core; pass --jobs N to use more)",
     )
     parser.add_argument(
         "--rows", nargs="+", metavar="ROW",
@@ -165,25 +254,43 @@ def build_parser() -> argparse.ArgumentParser:
 def _select(rows: list[str] | None) -> list[Campaign]:
     if not rows:
         return list(CAMPAIGNS)
-    wanted = {r.upper() for r in rows}
-    selected = [c for c in CAMPAIGNS if wanted & set(c.rows)]
-    if not selected:
-        known = sorted({r for c in CAMPAIGNS for r in c.rows})
+    wanted = {r.strip().upper() for r in rows}
+    covered = {r for c in CAMPAIGNS for r in c.rows}
+    # Recognized rows handled by a separate flow, keyed by their leading letter.
+    out_of_scope = {k.split()[0].upper(): v for k, v in ROWS_NOT_COVERED.items()}
+    problems: list[str] = []
+    for row in sorted(wanted - covered):
+        if row in out_of_scope:
+            problems.append(
+                f"  row {row}: not produced by this script (separate flow): "
+                f"{out_of_scope[row]}"
+            )
+        else:
+            problems.append(f"  row {row}: unknown")
+    if problems:
         raise SystemExit(
-            f"error: no campaign feeds row(s) {sorted(wanted)!r}; known rows: {known}"
+            "error: unsupported row selection; refusing to run a partial "
+            f"campaign. Covered rows: {sorted(covered)}\n" + "\n".join(problems)
         )
+    selected = [c for c in CAMPAIGNS if wanted & set(c.rows)]
     return selected
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    jobs_source = "default" if args.jobs is None else "--jobs"
+    if args.jobs is None:
+        args.jobs = DEFAULT_JOBS
     campaigns = _select(args.rows)
 
     if args.dry_run:
-        print(f"# make characterize -- dry run (jobs={args.jobs})")
+        print(f"# make characterize -- dry run (jobs={args.jobs}, {jobs_source})")
         for c in campaigns:
             print(f"\n# rows {','.join(c.rows)}: {c.note}")
             print("  " + " ".join(c.command(args.jobs)))
+        if not args.rows or "D" in {r.strip().upper() for r in args.rows}:
+            print()
+            print("\n".join(row_d_summary()))
         if not args.rows:
             print("\n# rows not produced by this script (see README for how to regenerate them):")
             for row, where in ROWS_NOT_COVERED.items():
@@ -205,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return EXIT_ENVIRONMENT
 
-    print(f"\ncharacterize: {len(campaigns)} campaign step(s), jobs={args.jobs}\n")
+    print(f"\ncharacterize: {len(campaigns)} campaign step(s), jobs={args.jobs} ({jobs_source})\n")
 
     failures: list[str] = []
     for i, campaign in enumerate(campaigns, start=1):
@@ -226,6 +333,8 @@ def main(argv: list[str] | None = None) -> int:
     print("Roll up the fresh evidence with:")
     print("  python3 sim/tools/power_rollup.py")
     print("  python3 sim/tools/time_to_first_valid.py")
+    print("\nRow D is NOT fully reproduced by this run: the liveness and digital terms are")
+    print("separate flows (see --dry-run --rows D). Run them, then re-run power_rollup.py.")
     print("\nRows not produced by this script (see README for how to regenerate them):")
     for row, where in ROWS_NOT_COVERED.items():
         print(f"  {row}: {where}")

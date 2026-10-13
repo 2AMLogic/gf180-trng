@@ -1,0 +1,1614 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": null,
+    "scope": "external"
+  },
+  "status": "error",
+  "corner_count": 27,
+  "passed": 0,
+  "failed": 0,
+  "errored": 27,
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+    "netlist_sha256": "1a377116c2d3574590231aba6d617a5f4dee2202af5b03f99fa9315efebd5d6e",
+    "timeout_preflight_warning": "options.timeout_s (600s) looks implausible for a tran analysis with ~1.3e+05 timepoints (10p step, 1300n window) -- even 50 timepoints/s (a generous floor, not a real engine-rate estimate) would need 2.6e+03s per corner. This is only a coarse, advisory pre-grid heuristic -- it does not block the sweep, and a plausible-looking budget can still turn out to be too short in practice."
+  },
+  "provenance": {
+    "klt_version": "0.5.0",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "PDK_ROOT environment variable",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+      "released": false
+    },
+    "input": null
+  },
+  "measurements": [
+    {
+      "name": "period_s",
+      "unit": "s",
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/2.970V/-40C",
+        "value": null,
+        "margin": null
+      }
+    },
+    {
+      "name": "supply_current_avg_a",
+      "unit": "A",
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/2.970V/-40C",
+        "value": null,
+        "margin": null
+      }
+    },
+    {
+      "name": "ro_swing_v",
+      "unit": "V",
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/2.970V/-40C",
+        "value": null,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/2.970V/-40C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.334,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/2.970V/27C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.334,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/2.970V/125C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.300V/-40C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.300V/27C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.300V/125C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.630V/-40C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.004,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.630V/27C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/3.630V/125C",
+      "process": "tt",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/2.970V/-40C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/2.970V/27C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/2.970V/125C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.300V/-40C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.004,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.300V/27C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.300V/125C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.630V/-40C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.630V/27C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.630V/125C",
+      "process": "ff",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/2.970V/-40C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/2.970V/27C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.004,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/2.970V/125C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 2.97
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.300V/-40C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.004,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.300V/27C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.300V/125C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.3
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.630V/-40C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": -40,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.630V/27C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 27,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.630V/125C",
+      "process": "ss",
+      "supply_v": {
+        "vsupply": 3.63
+      },
+      "temperature_c": 125,
+      "status": "error",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "period_s",
+          "value": null,
+          "unit": "s",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "supply_current_avg_a",
+          "value": null,
+          "unit": "A",
+          "status": "error",
+          "margin": null
+        },
+        {
+          "name": "ro_swing_v",
+          "value": null,
+          "unit": "V",
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'period_s' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'supply_current_avg_a' produced no value"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'ro_swing_v' produced no value"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    }
+  ]
+}

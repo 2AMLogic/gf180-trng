@@ -98,6 +98,7 @@ import digital_power_estimate as digital  # noqa: E402  (design/)
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
 from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
+from layout.floorplan import erc_supply  # noqa: E402  (issue #447)
 from layout.floorplan import interregion  # noqa: E402  (issue #222, phase 2)
 
 # The standard-cell glob `digital`'s own standalone LVS (`layout/digital/
@@ -2222,6 +2223,20 @@ def main(argv: list[str] | None = None) -> int:
             return EXIT_FAIL
     print()
 
+    # Issue #447: the committed whole-block `klt erc` report must pin the
+    # committed stream and spec by hash. Hash/JSON reads only -- no `klt`
+    # needed -- so it runs before the tool gate, like the check above. Under
+    # `--write` the report is regenerated below instead.
+    if not args.write:
+        erc_stale = erc_supply.freshness_problems()
+        if erc_stale:
+            print("FAIL: layout/floorplan/reports/erc-supply.json is not current evidence:")
+            for problem in erc_stale:
+                print(f"  - {problem}")
+            return EXIT_FAIL
+        print("ok   reports/erc-supply.json pins the committed stream and spec")
+        print()
+
     version = klt_version()
     pdk = resolve_pdk()
     missing = []
@@ -2304,6 +2319,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.write:
         written = write_artefacts(report)
         print(f"== artefacts ==\n  wrote {len(written)} files under layout/floorplan/")
+        # Issue #447: whole-block supply ERC over the stream just written.
+        # The report is written even when it carries findings (failed
+        # evidence is retained); the run then fails below.
+        print("== supply ERC (klt erc, one run; takes minutes) ==")
+        try:
+            erc_report = erc_supply.run_erc(_shared_run_klt)
+        except (FlowError, RuntimeError) as exc:
+            print(f"FAIL: {exc}")
+            return EXIT_FAIL
+        erc_supply.REPORT.write_text(json.dumps(erc_report, indent=2) + "\n")
+        print(f"  wrote {erc_supply.REPORT.relative_to(REPO_ROOT)}")
+        failures.extend(erc_supply.report_problems(erc_report))
     else:
         drift = compare_artefacts(report)
         print("== artefacts ==")

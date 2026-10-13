@@ -45,7 +45,7 @@ from statistics import NormalDist
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import parse_values  # noqa: E402
+from _record_parsing import latest_current_record, parse_result_values  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -96,18 +96,28 @@ def h_hat(p1: float) -> float:
     return -math.log2(max(p1, 1.0 - p1))
 
 
-def latest_record() -> Path:
-    candidates = sorted(RECORDS.glob(f"*-{SLUG}-*.md"))
-    if not candidates:
-        raise RecordError(f"no committed record matches sim/records/*-{SLUG}-*.md")
-    return candidates[-1]
+def latest_record(*, include_superseded: bool = False) -> Path:
+    """The newest ``sim/records/*-{SLUG}-*.md`` record that is current evidence.
+
+    Records whose frontmatter says ``status: superseded`` are skipped before
+    the newest one is chosen (issue #427), so a superseded record that sorts
+    last never becomes the default. A missing or unknown ``status:`` raises
+    :class:`RecordError` naming the record. ``include_superseded=True`` is
+    the explicit historical read. A record named on the command line is read
+    as given, whatever its lifecycle: naming one is an intentional
+    (possibly historical) read, not an automatic selection.
+    """
+    return latest_current_record(
+        RECORDS, f"*-{SLUG}-*.md",
+        include_superseded=include_superseded, error_cls=RecordError,
+    )
 
 
 def read_record(path: Path) -> dict[str, float]:
     if not path.is_file():
         raise RecordError(f"no such record: {path}")
     text = path.read_text()
-    return parse_values(text)
+    return parse_result_values(text, label=path.stem, error_cls=RecordError)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -118,7 +128,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "record", nargs="?", metavar="RECORD_STEM_OR_PATH",
-        help=f"record to check (default: newest sim/records/*-{SLUG}-*.md)",
+        help=f"record to check (default: newest sim/records/*-{SLUG}-*.md whose "
+        "status is valid; a record named here is read whatever its status)",
     )
     parser.add_argument(
         "--check", action="store_true",

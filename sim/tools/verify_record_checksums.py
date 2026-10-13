@@ -20,8 +20,16 @@ exited OK. The harness now refuses to write or finish such a record; this
 script is the same check applied to what is already on disk, so the
 pre-commit item is a command rather than an eyeball.
 
+Run with no record arguments, git-aware, over the whole corpus, it also checks
+the reverse direction (5): every git-tracked file under sim/records/raw/ must be
+named by some record's validated `raw.files`, so an abandoned run that was
+staged without a record cannot enter the corpus unverified. Untracked local
+work is ignored. Record-scoped runs (explicit records, `--changed`) and
+`--no-git` do not claim corpus-wide inventory coverage and skip (5).
+
 Usage:
   python3 sim/tools/verify_record_checksums.py                 # every record
+                                                               # + raw inventory
   python3 sim/tools/verify_record_checksums.py <record.md>...  # named records
   python3 sim/tools/verify_record_checksums.py --changed       # records this
                                                                # branch adds
@@ -39,7 +47,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
@@ -130,15 +138,50 @@ def verify_one(path: Path, tracked: set[str] | None = None) -> list[str]:
         except report.RawSectionError:
             raw_path, raw_files = "", []  # already reported by verify_record_file
         if raw_path:
-            raw_dir = REPO_ROOT / raw_path
-            for name, _digest in raw_files:
-                candidate = raw_dir / name
+            # Same validator as the checksum half: a path that escapes the
+            # raw root was already reported there and is never tracked-checked.
+            raw_dir, artifacts, _bad = report.validate_raw_artifacts(
+                REPO_ROOT, path.resolve().parent / report.RAW_DIRNAME, raw_path, raw_files
+            )
+            for name, candidate in artifacts if raw_dir is not None else []:
                 if not candidate.is_file():
                     continue  # already reported as missing above
-                rel = str(candidate.relative_to(REPO_ROOT))
+                rel = (PurePosixPath(raw_path) / name).as_posix()
                 if rel not in tracked:
                     problems.append(f"{name}: not committed (git add {rel})")
     return problems
+
+
+def declared_raw_paths(records: list[Path]) -> set[str]:
+    """Repo-relative POSIX paths of every artifact the records validly declare.
+
+    Uses the same parser and path validator as the per-record check; a record
+    that cannot be parsed or whose paths escape the raw root contributes
+    nothing (it already fails per-record, and an invalid path must not
+    legitimise a tracked file).
+    """
+    declared: set[str] = set()
+    for path in records:
+        try:
+            raw_path, raw_files = report.parse_raw_section(path.read_text())
+        except (report.RawSectionError, OSError, UnicodeDecodeError, ValueError):
+            continue
+        if not raw_path:
+            continue
+        raw_dir, artifacts, bad = report.validate_raw_artifacts(
+            REPO_ROOT, path.resolve().parent / report.RAW_DIRNAME, raw_path, raw_files
+        )
+        if raw_dir is None or bad:
+            continue
+        base = PurePosixPath(raw_path)
+        declared.update((base / name).as_posix() for name, _ in artifacts)
+    return declared
+
+
+def orphan_raw_files(tracked: set[str], records: list[Path]) -> list[str]:
+    """Tracked raw files that no record's validated `raw.files` names."""
+    declared = declared_raw_paths(records)
+    return sorted(t for t in tracked if PurePosixPath(t).as_posix() not in declared)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -155,6 +198,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--quiet", action="store_true", help="print failures only")
     args = parser.parse_args(argv)
 
+    full_inventory = not (args.records or args.changed or args.no_git)
     if args.records:
         records = [Path(r) for r in args.records]
     elif args.changed:
@@ -167,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         records = sorted(RECORDS_DIR.glob("*.md"))
 
-    if not records:
+    if not records and not full_inventory:
         print("no records to check")
         return 0
 
@@ -184,6 +228,14 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
 
+    orphans: list[str] = []
+    if full_inventory and tracked is not None:
+        orphans = orphan_raw_files(tracked, records)
+
+    if not records and not orphans:
+        print("no records to check")
+        return 0
+
     failures = 0
     for path in records:
         if not path.is_file():
@@ -192,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         try:
             problems = verify_one(path, tracked)
-        except (OSError, UnicodeDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
             problems = [f"cannot read record: {exc}"]
         if problems:
             failures += 1
@@ -203,6 +255,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ok   {path.name}")
 
     print()
+    if orphans:
+        print(
+            f"FAIL: {len(orphans)} tracked raw file(s) under sim/records/raw/ are "
+            "not listed in any record's raw.files:",
+            file=sys.stderr,
+        )
+        for rel in orphans:
+            print(f"  - {rel}", file=sys.stderr)
+        print(
+            "Publishing raw output requires a record that cites it with its "
+            "checksums. Add the missing record, or unstage the files (`git rm "
+            "--cached`); this check never deletes or invents evidence.",
+            file=sys.stderr,
+        )
     if failures:
         print(
             f"FAIL: {failures} of {len(records)} record(s) did not verify. A record "
@@ -210,6 +276,8 @@ def main(argv: list[str] | None = None) -> int:
             "cannot tie its numbers to the run that produced them.",
             file=sys.stderr,
         )
+        return 1
+    if orphans:
         return 1
     scope = "raw output" if args.no_git else "committed raw output"
     print(f"PASS: {len(records)} record(s) match their {scope}.")

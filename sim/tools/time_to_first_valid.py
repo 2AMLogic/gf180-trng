@@ -69,7 +69,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_status, parse_values  # noqa: E402
+from _record_parsing import current_records, format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -111,7 +111,7 @@ class Record:
     def __init__(self, path: Path) -> None:
         text = path.read_text()
         self.stem = path.stem
-        self.values = parse_values(text)
+        self.values = parse_result_values(text, label=self.stem, error_cls=RuntimeError)
         self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
         self.status = parse_status(text, label=self.stem)
 
@@ -127,8 +127,8 @@ def load_startup_records(*, include_superseded: bool = False) -> list[Record]:
     reach corner selection; ``include_superseded=True`` is the explicit
     historical read.
     """
-    recs = [Record(p) for p in sorted(RECORDS.glob(STARTUP_GLOB))]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    return current_records(
+        RECORDS, STARTUP_GLOB, make=Record, include_superseded=include_superseded)
 
 
 def dedupe_by_corner(records: list[Record]) -> list[Record]:
@@ -267,7 +267,11 @@ def main(argv=None) -> int:
                         "README's arithmetic floor")
     args = p.parse_args(argv)
 
-    records = load_startup_records()
+    try:
+        records = load_startup_records()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     if not records:
         print(f"ERROR: no start-up records found (glob: {STARTUP_GLOB})", file=sys.stderr)
         return 2

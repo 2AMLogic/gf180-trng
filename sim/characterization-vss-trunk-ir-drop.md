@@ -230,12 +230,16 @@ is either already-committed geometry or an already-recorded `sim/` figure.
   own *internal* PDN drop — its dense multi-strap grid needs a different
   model than this trunk's single-riser-per-region chain, and no such model
   exists in this repository as of this writing.
+  ([#464] has since added that model separately, in
+  [`characterization-digital-supply-ir-drop.md`](characterization-digital-supply-ir-drop.md);
+  this chain and its numbers are unchanged by it.)
 
 [#222]: https://github.com/2AMLogic/gf180-trng/issues/222
 [#224]: https://github.com/2AMLogic/gf180-trng/issues/224
 [#225]: https://github.com/2AMLogic/gf180-trng/issues/225
 [#232]: https://github.com/2AMLogic/gf180-trng/issues/232
 [#234]: https://github.com/2AMLogic/gf180-trng/issues/234
+[#464]: https://github.com/2AMLogic/gf180-trng/issues/464
 [DR-0007]: ../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0016]: ../spec/decision-records/DR-0016-per-ring-liveness-monitor.md

@@ -913,6 +913,46 @@ timing the design without its interface load.
 
 ---
 
+## 2b. Update — the top-edge legs are priced ([#456], [DR-0028])
+
+§2a's trunk-only arithmetic (and the 8.202 ps figure) describes the depth-8
+geometry. After [#256] regenerated `interregion.json` for the depth-2
+place-and-route, each of the six `digital`-facing nets also carries the
+[#315] Metal4 stub, Metal5 track and Metal3 east-flank riser, about 544 to
+637 um per net, which [DR-0027] recorded as unpriced. The sweep now prices
+them. The leg lengths come from the report itself (`legs` on each
+`digital_pin_top` endpoint, emitted by `layout/floorplan/interregion.py`'s
+`top_edge_legs`), and each layer uses its own row of the `klt` gf180mcu
+deck's `PARASITICS` table (Metal3 0.09 ohm/sq, 0.010094 fF/um^2, 0.030021
+fF/um; Metal4 0.09, 0.007602, 0.028153; Metal5 0.06, 0.005798, 0.030386).
+Vias, landing pads and coupling are still not priced, so this remains a
+floor on the real load, not a measurement.
+
+New records: `sim/records/2026-10-10-digital-sta-power-01` to `-15`, all 15
+corners, against the committed depth-2 DEF. They supersede the 2026-10-07
+family for the current-layout reads (newest record per corner wins); the
+older records are unchanged.
+
+| net | trunk-only C / R / transition (DR-0027) | with legs C / R | with legs, stated transition |
+|---|---|---|---|
+| `raw_bit` | 35.8 fF / 183 ohm / 11.1 ps | 74.4 fF / 347 ohm | **43.8 ps** |
+| `raw_valid` | 32.3 / 165 / 9.0 ps | 71.2 / 331 | 39.9 ps |
+| `ring_bit[0]` (`ring_bit1`) | 28.8 / 147 / 7.2 ps | 65.4 / 306 | 33.9 ps |
+| `clk` | 25.4 / 130 / 5.6 ps | 59.6 / 280 | 28.3 ps |
+| `rst_n` | 25.4 / 130 / 5.6 ps | 61.5 / 286 | 29.8 ps |
+| `ring_bit[1]` (`ring_bit2`) | 25.2 / 129 / 5.5 ps | 65.3 / 299 | 33.0 ps |
+
+The worst case is 43.8 ps (`raw_bit`), checked against the computation and
+not carried over from [DR-0027]'s crude 45 ps all-Metal4 bound. Against the
+library's `max_transition` it is a factor of about 100 below the tightest
+deck (4.4 ns at `ff_n40C_3v60`; margin 4.356 ns) and about 300 below the
+loosest (13.2 ns at `ss_125C_3v00`; margin 13.156 ns), per each record's
+`interface_load_transition_margin_ns`. No trunk port violates at any of the 15
+corners (`interface_load_max_slew_violations: 0`). Relative to the 2026-10-07
+family, pricing the legs moved worst setup slack by at most 10 fs, worst
+hold slack by at most 1 fs, the Fmax not at all and 1 MHz total power by at
+most 0.004 %, for the structural reason §2a gives.
+
 ## 3. Area: 118 975 µm² placed, 1.60× the inventory estimate
 
 Status: re-measured against the [#240] rebuild (`max_transition_ns`/
@@ -1434,3 +1474,7 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [DR-0022]: ../spec/decision-records/DR-0022-post-route-gate-level-simulation-records.md
 [DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
 [DR-0025]: ../spec/decision-records/DR-0025-full-chip-pex-scope.md
+[#315]: https://github.com/2AMLogic/gf180-trng/issues/315
+[#456]: https://github.com/2AMLogic/gf180-trng/issues/456
+[DR-0027]: ../spec/decision-records/DR-0027-digital-facing-trunk-estimates-follow-the-regenerated-geometry.md
+[DR-0028]: ../spec/decision-records/DR-0028-top-edge-legs-are-priced-in-the-sta-interface-load.md

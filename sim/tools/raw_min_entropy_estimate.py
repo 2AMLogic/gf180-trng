@@ -60,15 +60,17 @@ TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "sampler-array-digitize" / "tb.json"
 sys.path.insert(0, str(TOOLS_DIR))
 import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
-from _record_parsing import field, format_corner, parse_corner, parse_status  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    current_records,
+    field,
+    format_corner,
+    iter_result_seed_summaries,
+    parse_corner,
+    parse_status,
+)
 
 SLUG = "sampler-array-digitize"
 
-_VALUE_MEAN = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)",
-    re.M,
-)
 _BIT_KEY = re.compile(r"^b(\d+)_v$")
 
 
@@ -96,10 +98,12 @@ class BitstreamRecord:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.n_seeds = 1
-        for m in _VALUE_MEAN.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-            self.n_seeds = int(m.group(3))
-            self.sd[m.group(1)] = float(m.group(4))
+        for key, summary in iter_result_seed_summaries(
+            text, label=self.stem, error_cls=RecordError
+        ):
+            self.values[key] = summary.mean
+            self.n_seeds = summary.n_seeds
+            self.sd[key] = summary.sd
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )
@@ -132,11 +136,13 @@ def load_records(*, include_superseded: bool = False) -> list[BitstreamRecord]:
     # pre-layout family) can never be silently read as a pre-layout
     # transistor-level point -- same rule and reason as
     # sim/tools/power_rollup.py's ARRAY_GLOBS.
-    paths = sorted(RECORDS.glob(f"*-{SLUG}-[0-9]*.md"))
-    if not paths:
-        raise RecordError(f"no sim/records/*-{SLUG}-[0-9]*.md records found")
-    recs = [BitstreamRecord(p) for p in paths]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    glob = f"*-{SLUG}-[0-9]*.md"
+    if not current_records(RECORDS, glob, include_superseded=True, error_cls=RecordError):
+        raise RecordError(f"no sim/records/{glob} records found")
+    return current_records(
+        RECORDS, glob, make=BitstreamRecord, include_superseded=include_superseded,
+        error_cls=RecordError,
+    )
 
 
 def missing_corners(records: list[BitstreamRecord]) -> list[str]:

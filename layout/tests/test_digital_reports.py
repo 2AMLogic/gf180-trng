@@ -38,7 +38,6 @@ party can re-grade.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import sys
 import unittest
@@ -48,6 +47,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 DIGITAL_DIR = LAYOUT_DIR / "digital"
 REPORTS_DIR = DIGITAL_DIR / "reports"
@@ -59,16 +59,11 @@ MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 def _load(name: str, path: Path):
     """Load a flat `layout/digital/*.py` driver as a module.
 
-    The same `importlib.util.spec_from_file_location` pattern
-    `layout/tests/test_verify.py` and `layout/verify.py`'s own
-    `_load_build_module` use: these are scripts run by path, not package
-    members, so there is no import path to reach them by.
+    These are scripts run by path, not package members, so there is no
+    import path to reach them by; `load_module_from_path` loads each from its
+    own file under a unique module name.
     """
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 build = _load("layout_digital_build", DIGITAL_DIR / "build.py")
@@ -96,6 +91,28 @@ class CommittedViewTests(unittest.TestCase):
             "provenance": {"input": {"content_hash": "sha256:abc"}},
         }
         self.assertEqual(build._drc_committed_view(payload), payload)
+
+    def test_pnr_committed_view_restates_nested_def_path_without_mutation(self):
+        import copy
+
+        payload = {
+            "power": {"placed": {"def_path": "/home/u/wt/x.def", "status": "complete"}, "other": 1},
+            "verdict": "pass",
+        }
+        before = copy.deepcopy(payload)
+        view = build._committed_view(payload)
+        self.assertEqual(payload, before)
+        self.assertEqual(view["power"]["placed"]["def_path"], "layout/digital/trng_top.def")
+        self.assertEqual(view["power"]["placed"]["status"], "complete")
+        self.assertEqual(view["power"]["other"], 1)
+        self.assertEqual(view["verdict"], "pass")
+
+    def test_pnr_committed_view_keeps_absent_and_null_def_path(self):
+        for power in (None, {}, {"placed": None}, {"placed": {}}, {"placed": {"def_path": None}}):
+            payload = {"power": power}
+            view = build._committed_view(payload)
+            self.assertEqual(view["power"], power)
+        self.assertNotIn("power", build._committed_view({}))
 
     def test_drc_committed_view_copies_rather_than_aliases(self):
         """A caller that mutates the payload afterwards (as `build()` does,

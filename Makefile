@@ -11,7 +11,10 @@
 # npm scripts -- they add no new simulation logic of their own.
 
 PYTHON ?= python3
-JOBS ?= $(shell $(PYTHON) -c "import os; print(os.cpu_count() or 1)")
+# Empty by default: sim/characterize.py then applies its own bounded default
+# (DEFAULT_JOBS). Set JOBS=n to run more ngspice processes at once.
+JOBS ?=
+JOBS_FLAG = $(if $(JOBS),--jobs $(JOBS),)
 
 .PHONY: help smoke check characterize characterize-dry-run clean
 
@@ -25,8 +28,8 @@ help:
 	@echo "  make characterize  full ngspice PVT/corner campaign behind"
 	@echo "                     docs/chipalooza/challenge-3-proposal.md's spec table;"
 	@echo "                     writes evidence under sim/records/ per sim/README.md."
-	@echo "                     JOBS=$(JOBS) by default (os.cpu_count()); override with"
-	@echo "                     'make characterize JOBS=4'. Try 'make characterize-dry-run'"
+	@echo "                     bounded concurrency by default (2 ngspice runs); use"
+	@echo "                     'make characterize JOBS=8' for more. Try 'make characterize-dry-run'"
 	@echo "                     first to see the plan without running anything."
 	@echo "  make characterize-dry-run"
 	@echo "                     print the run_corners.py invocations 'make characterize'"
@@ -59,10 +62,10 @@ smoke:
 # under sim/records/ per sim/README.md's append-only format -- it never
 # edits or replaces an existing record.
 characterize:
-	$(PYTHON) sim/characterize.py --jobs $(JOBS)
+	$(PYTHON) sim/characterize.py $(JOBS_FLAG)
 
 characterize-dry-run:
-	$(PYTHON) sim/characterize.py --dry-run --jobs $(JOBS)
+	$(PYTHON) sim/characterize.py --dry-run $(JOBS_FLAG)
 
 clean:
 	rm -rf sim/.work

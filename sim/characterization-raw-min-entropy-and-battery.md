@@ -106,7 +106,7 @@ this is exactly the expected outcome and not a simulation anomaly.
 
 ### Physical cross-check: is this the rate that entropy lives at, or not?
 
-[`DR-0007`](spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md)
+[`DR-0007`](../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md)
 §2 sizes the shipped array against `Q_array(T_s) = kappa^2 * T_s / T0^2`,
 summed over rings, and states the array needs `Q_array >= M * Q_H0 =
 1.5 * 4.0e-3 = 6.0e-3` for `H = 0.5` to be a supportable design point.
@@ -165,7 +165,7 @@ those records as inflated by concurrent-job contention, so read as an
 order of magnitude, not a benchmark) — extrapolating linearly puts a single
 run of the *same ten bits* at `T_s = 2` ms at **roughly 4–8 years** of
 ngspice time. That is the same order of magnitude as
-[`DR-0009`](spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md)'s
+[`DR-0009`](../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md)'s
 independently-derived cost table (~1.9 days for one 256-bit conditioner
 block at the *ratified* 1 Mbps rate; DR-0004 Tier 2's 10⁶-sample dataset at
 ~20 years), arrived at here from a different starting record family. There
@@ -324,10 +324,10 @@ already argues through.
   by [DR-0010]'s own "Revisit if" as the kind of change that would move this
   conclusion; nothing in this repository's toolchain provides one today.
 
-[DR-0002]: spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
-[DR-0003]: spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
-[DR-0004]: spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
-[DR-0007]: spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
-[DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
-[DR-0010]: spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
-[DR-0012]: spec/decision-records/DR-0012-transient-noise-simulation-methodology.md
+[DR-0002]: ../spec/decision-records/DR-0002-health-test-parameters-and-failure-behavior.md
+[DR-0003]: ../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[DR-0004]: ../spec/decision-records/DR-0004-sp-800-90b-path-pre-silicon.md
+[DR-0007]: ../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
+[DR-0009]: ../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
+[DR-0010]: ../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
+[DR-0012]: ../spec/decision-records/DR-0012-transient-noise-simulation-methodology.md

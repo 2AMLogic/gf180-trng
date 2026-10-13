@@ -89,6 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
     VariantBase,
@@ -225,7 +226,7 @@ class Variant(VariantBase):
         self.period_r2 = record.values.get("period_r2", float("nan"))
 
 
-def _load(spec, *, required: bool = True) -> Variant | None:
+def _load(spec, *, required: bool = True, include_superseded: bool = False) -> Variant | None:
     """The latest record for one variant at :data:`CORNER`, or ``None``.
 
     ``required=False`` returns ``None`` for a variant with no record rather
@@ -237,33 +238,36 @@ def _load(spec, *, required: bool = True) -> Variant | None:
     measured unreadable. It never invents a variant -- a missing one is
     reported as missing, and every ratio that would need it is reported as
     not measured rather than estimated.
+
+    Records whose frontmatter says ``status: superseded`` are dropped before
+    the latest is chosen (issue #427): a superseded-only variant is missing
+    evidence -- ``None`` when optional, ``RecordError`` when required. Every
+    matched record must carry a readable ``status:``.
+    ``include_superseded=True`` is the explicit historical read.
     """
     label, glob, manifest, difference = spec
-    matches = []
-    for path in sorted(RECORDS.glob(glob)):
-        rec = Record(path)
-        if rec.corner != CORNER or "sigma_1" not in rec.values:
-            continue
-        matches.append(rec)
-    if not matches:
-        if not required:
-            return None
-        raise RecordError(
-            f"variant {label!r}: no sim/records/{glob} record at {CORNER} carries a "
-            "sigma_1, so this variant cannot be compared"
-        )
-    # Latest record wins; earlier ones stay on file as append-only evidence.
-    return Variant(label, matches[-1], manifest, difference)
+    rec = latest_current_record(
+        RECORDS, glob, make=Record, corner=CORNER, requires=("sigma_1",),
+        include_superseded=include_superseded, error_cls=RecordError, required=required,
+        context=f"variant {label!r}: ", hint=", so this variant cannot be compared",
+    )
+    if rec is None:
+        return None
+    return Variant(label, rec, manifest, difference)
 
 
-def load_variants() -> tuple[list[Variant | None], list[Variant]]:
+def load_variants(
+    *, include_superseded: bool = False,
+) -> tuple[list[Variant | None], list[Variant]]:
     """This experiment's four variants (any of which may be ``None`` if its
     deck has not been run yet) and #76's two, which are committed evidence and
     so are required: without them there is no bound to state anything against.
+    ``include_superseded`` is passed to :func:`_load`.
     """
+    kw = {"include_superseded": include_superseded}
     return (
-        [_load(s, required=False) for s in VARIANTS],
-        [_load(s) for s in BOUND_VARIANTS],
+        [_load(s, required=False, **kw) for s in VARIANTS],
+        [_load(s, **kw) for s in BOUND_VARIANTS],
     )
 
 

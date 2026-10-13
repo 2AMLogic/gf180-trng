@@ -15,7 +15,6 @@ the `Rect` dataclass's degenerate-rectangle validation.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import struct
 import tempfile
@@ -23,11 +22,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_GDSII_PATH = Path(__file__).resolve().parents[1] / "testcells" / "gdsii.py"
-_SPEC = importlib.util.spec_from_file_location("_gdsii_under_test", _GDSII_PATH)
-gdsii = importlib.util.module_from_spec(_SPEC)
-sys.modules[_SPEC.name] = gdsii  # dataclasses resolves annotations via sys.modules
-_SPEC.loader.exec_module(gdsii)  # type: ignore[union-attr]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
+
+_GDSII_PATH = REPO_ROOT / "layout" / "testcells" / "gdsii.py"
+gdsii = load_module_from_path("_gdsii_under_test", _GDSII_PATH)
 
 UNITS_HEX = ("3e4189374bc6a7f0", "3944b82fa09b5a54")  # 1e-3 and 1e-9
 

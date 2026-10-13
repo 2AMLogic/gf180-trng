@@ -26,6 +26,7 @@ design/.work/
 # "sim/ results are append-only evidence").
 !sim/records/raw/**/*.log
 !sim/records/raw/**/*.raw
+!sim/tool-experiments/**/*.log
 
 # Agent session isolation worktrees (created inside the main checkout by the
 # harness's `isolation: worktree` mechanism, same role as .loom/worktrees/).
@@ -58,6 +59,7 @@ design/.work/
 .loom/claims/
 .loom/locks/
 .loom/signals/
+.loom/sweep-dispatch-tap/
 .loom/status/
 .loom/retry-state/
 .loom/exit-codes/
@@ -66,9 +68,10 @@ design/.work/
 .loom/targets/
 .loom/target*/
 .cargo-target*/
+.loom-target/
+/target-*/
 .loom/state/*
 !.loom/state/detect-unlabeled-epics-dismissed
-.loom/concierge/
 .loom/stats/
 .loom/diagnostics/
 .loom/guide-docs-state.json

@@ -1,0 +1,367 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vsup                                       3.3
+ph                                           0
+rel                                      5e-07
+thw                                      2e-11
+en                                         3.3
+vdd                                        3.3
+vddr1                                      3.3
+vddr2                                      3.3
+xs.xdut.xr1.xg.py                      1.58325
+xs.xdut.xr1.n1                               0
+xs.xdut.rn1                        1.24708e-07
+xs.xdut.xr1.xg.nm                            0
+xs.xdut.xr1.xg.ny                            0
+xs.xdut.xr1.x1.py                          3.3
+xs.xdut.xr1.n2                             3.3
+xs.xdut.xr1.x1.ny                  2.35462e-08
+xs.xdut.xr1.x2.py                          3.3
+xs.xdut.xr1.n3                     1.24708e-07
+xs.xdut.xr1.x2.ny                  1.06256e-07
+xs.xdut.xr1.x3.py                          3.3
+xs.xdut.xr1.n4                             3.3
+xs.xdut.xr1.x3.ny                  2.35463e-08
+xs.xdut.xr1.x4.py                          3.3
+xs.xdut.xr1.n5                     1.24708e-07
+xs.xdut.xr1.x4.ny                  1.06256e-07
+xs.xdut.xr1.x5.py                          3.3
+xs.xdut.xr1.n6                             3.3
+xs.xdut.xr1.x5.ny                  2.35463e-08
+xs.xdut.xr1.x6.py                          3.3
+xs.xdut.xr1.n7                     1.24708e-07
+xs.xdut.xr1.x6.ny                  1.06256e-07
+xs.xdut.xr1.x7.py                          3.3
+xs.xdut.xr1.n8                             3.3
+xs.xdut.xr1.x7.ny                  2.35463e-08
+xs.xdut.xr1.x8.py                          3.3
+xs.xdut.xr1.n9                     1.24708e-07
+xs.xdut.xr1.x8.ny                  1.06256e-07
+xs.xdut.xr1.x9.py                          3.3
+xs.xdut.xr1.n10                            3.3
+xs.xdut.xr1.x9.ny                  2.35463e-08
+xs.xdut.xr1.x10.py                         3.3
+xs.xdut.xr1.x10.ny                 1.06256e-07
+xs.xdut.xr2.xg.py                      1.59988
+xs.xdut.xr2.n1                               0
+xs.xdut.rn2                        1.17147e-07
+xs.xdut.xr2.xg.nm                -2.73051e-254
+xs.xdut.xr2.xg.ny                -2.53588e-254
+xs.xdut.xr2.x1.py                          3.3
+xs.xdut.xr2.n2                             3.3
+xs.xdut.xr2.x1.ny                  2.18706e-08
+xs.xdut.xr2.x2.py                          3.3
+xs.xdut.xr2.n3                     1.17147e-07
+xs.xdut.xr2.x2.ny                   9.8695e-08
+xs.xdut.xr2.x3.py                          3.3
+xs.xdut.xr2.n4                             3.3
+xs.xdut.xr2.x3.ny                  2.18707e-08
+xs.xdut.xr2.x4.py                          3.3
+xs.xdut.xr2.n5                     1.17147e-07
+xs.xdut.xr2.x4.ny                   9.8695e-08
+xs.xdut.xr2.x5.py                          3.3
+xs.xdut.xr2.n6                             3.3
+xs.xdut.xr2.x5.ny                  2.18707e-08
+xs.xdut.xr2.x6.py                          3.3
+xs.xdut.xr2.n7                     1.17147e-07
+xs.xdut.xr2.x6.ny                   9.8695e-08
+xs.xdut.xr2.x7.py                          3.3
+xs.xdut.xr2.n8                             3.3
+xs.xdut.xr2.x7.ny                  2.18707e-08
+xs.xdut.xr2.x8.py                          3.3
+xs.xdut.xr2.n9                     1.17147e-07
+xs.xdut.xr2.x8.ny                   9.8695e-08
+xs.xdut.xr2.x9.py                          3.3
+xs.xdut.xr2.n10                            3.3
+xs.xdut.xr2.x9.ny                  2.18707e-08
+xs.xdut.xr2.x10.py                         3.3
+xs.xdut.xr2.x10.ny                  9.8695e-08
+xs.ro1                                     3.3
+xs.ro2                                     3.3
+xs.xdut.xa1.an                     1.84515e-08
+xs.xdut.xa1.bn                     1.84515e-08
+xs.xdut.xa1.mid                       0.783853
+xs.xo                              1.79154e-07
+xs.xdut.xa1.s1                     8.95769e-08
+xs.xdut.xa1.s2                     3.77441e-08
+xs.xsb.clkb                                3.3
+clk                                          0
+xs.xsb.m                           2.15826e-07
+xs.xsb.mb                                  3.3
+rst_n                                        0
+xs.xsb.mmid                          0.0420082
+xs.xsb.mc                          3.68602e-08
+xs.xsb.s                                   3.3
+raw_bit                            1.84515e-08
+xs.xsb.qb                                  3.3
+xs.xsb.s2mid                         0.0420078
+xs.xsv.clkb                                3.3
+xs.xsv.m                                   3.3
+xs.xsv.mb                                  3.3
+xs.xsv.mmid                            2.76248
+xs.xsv.mc                          4.09919e-08
+xs.xsv.s                                   3.3
+raw_valid                          1.84515e-08
+xs.xsv.qb                                  3.3
+xs.xsv.s2mid                          0.042008
+xs.xsr1.clkb                               3.3
+xs.xsr1.m                                  3.3
+xs.xsr1.mb                                 3.3
+xs.xsr1.mmid                           2.76248
+xs.xsr1.mc                         4.09919e-08
+xs.xsr1.s                                  3.3
+ring_bit1                          1.84515e-08
+xs.xsr1.qb                                 3.3
+xs.xsr1.s2mid                        0.0420078
+xs.xsr2.clkb                               3.3
+xs.xsr2.m                                  3.3
+xs.xsr2.mb                                 3.3
+xs.xsr2.mmid                           2.76248
+xs.xsr2.mc                         4.09919e-08
+xs.xsr2.s                                  3.3
+ring_bit2                          1.84515e-08
+xs.xsr2.qb                                 3.3
+xs.xsr2.s2mid                        0.0420079
+vth                                       1.65
+vlo                                      0.825
+vhi                                       2.64
+bvhi#branch                                  0
+bvlo#branch                                  0
+bvth#branch                                  0
+brst#branch                                  0
+bclk#branch                                  0
+een#branch                                   0
+vr2#branch                        -9.82236e-06
+vr1#branch                        -9.26862e-06
+vtr#branch                        -2.26918e-10
+vthw#branch                                  0
+vrel#branch                                  0
+vph#branch                                   0
+vsupply#branch                    -1.90912e-05
+
+
+No. of Data Rows : 362008
+
+  Measurements for Transient Analysis
+
+
+Error: measure  te_0  when(WHEN) : out of interval
+ .meas tran te_0 when v(clk)=v(vth) rise=1 failed!
+
+
+Error: measure  xl_0  find(AT) : out of interval
+ .meas tran xl_0 find v(xs.xo) when v(clk)=v(vlo) rise=1 failed!
+
+
+Error: measure  xm_0  find(AT) : out of interval
+ .meas tran xm_0 find v(xs.xo) when v(clk)=v(vth) rise=1 failed!
+
+
+Error: measure  xh_0  find(AT) : out of interval
+ .meas tran xh_0 find v(xs.xo) when v(clk)=v(vhi) rise=1 failed!
+
+
+Error: measure  te_1  when(WHEN) : out of interval
+ .meas tran te_1 when v(clk)=v(vth) rise=2 failed!
+
+
+Error: measure  xl_1  find(AT) : out of interval
+ .meas tran xl_1 find v(xs.xo) when v(clk)=v(vlo) rise=2 failed!
+
+
+Error: measure  xm_1  find(AT) : out of interval
+ .meas tran xm_1 find v(xs.xo) when v(clk)=v(vth) rise=2 failed!
+
+
+Error: measure  xh_1  find(AT) : out of interval
+ .meas tran xh_1 find v(xs.xo) when v(clk)=v(vhi) rise=2 failed!
+
+
+Error: measure  te_2  when(WHEN) : out of interval
+ .meas tran te_2 when v(clk)=v(vth) rise=3 failed!
+
+
+Error: measure  xl_2  find(AT) : out of interval
+ .meas tran xl_2 find v(xs.xo) when v(clk)=v(vlo) rise=3 failed!
+
+
+Error: measure  xm_2  find(AT) : out of interval
+ .meas tran xm_2 find v(xs.xo) when v(clk)=v(vth) rise=3 failed!
+
+
+Error: measure  xh_2  find(AT) : out of interval
+ .meas tran xh_2 find v(xs.xo) when v(clk)=v(vhi) rise=3 failed!
+
+
+Error: measure  te_3  when(WHEN) : out of interval
+ .meas tran te_3 when v(clk)=v(vth) rise=4 failed!
+
+
+Error: measure  xl_3  find(AT) : out of interval
+ .meas tran xl_3 find v(xs.xo) when v(clk)=v(vlo) rise=4 failed!
+
+
+Error: measure  xm_3  find(AT) : out of interval
+ .meas tran xm_3 find v(xs.xo) when v(clk)=v(vth) rise=4 failed!
+
+
+Error: measure  xh_3  find(AT) : out of interval
+ .meas tran xh_3 find v(xs.xo) when v(clk)=v(vhi) rise=4 failed!
+
+r1_rise_8           =   5.35388e-08
+r1_fall_8           =   5.03787e-08
+r1_rise_9           =   6.02094e-08
+r1_fall_9           =   5.70640e-08
+r1_rise_10          =   6.68747e-08
+r1_fall_10          =   6.37310e-08
+r1_rise_11          =   7.35407e-08
+r1_fall_11          =   7.03971e-08
+r1_rise_12          =   8.02068e-08
+r1_fall_12          =   7.70632e-08
+r1_rise_13          =   8.68729e-08
+r1_fall_13          =   8.37292e-08
+r1_rise_14          =   9.35388e-08
+r1_fall_14          =   9.03953e-08
+r1_rise_15          =   1.00202e-07
+r1_fall_15          =   9.70708e-08
+r1_rise_16          =   1.06868e-07
+r1_fall_16          =   1.03727e-07
+r1_rise_17          =   1.13536e-07
+r1_fall_17          =   1.10384e-07
+r1_rise_18          =   1.20203e-07
+r1_fall_18          =   1.17051e-07
+r1_rise_19          =   1.26869e-07
+r1_fall_19          =   1.23717e-07
+r1_rise_20          =   1.33536e-07
+r1_fall_20          =   1.30383e-07
+r1_rise_21          =   1.40202e-07
+r1_fall_21          =   1.37050e-07
+r1_rise_22          =   1.46867e-07
+r1_fall_22          =   1.43702e-07
+r1_rise_23          =   1.53538e-07
+r1_fall_23          =   1.50388e-07
+r1_max              =  3.386123e+00 at=  2.031028e-07
+r1_min              =  -2.332501e-02 at=  1.997028e-07
+r2_rise_8           =   5.00641e-08
+r2_fall_8           =   4.71208e-08
+r2_rise_9           =   5.62947e-08
+r2_fall_9           =   5.33576e-08
+r2_rise_10          =   6.25256e-08
+r2_fall_10          =   5.95884e-08
+r2_rise_11          =   6.87564e-08
+r2_fall_11          =   6.58193e-08
+r2_rise_12          =   7.49874e-08
+r2_fall_12          =   7.20502e-08
+r2_rise_13          =   8.12183e-08
+r2_fall_13          =   7.82812e-08
+r2_rise_14          =   8.74478e-08
+r2_fall_14          =   8.45125e-08
+r2_rise_15          =   9.36829e-08
+r2_fall_15          =   9.07451e-08
+r2_rise_16          =   9.99111e-08
+r2_fall_16          =   9.69711e-08
+r2_rise_17          =   1.06143e-07
+r2_fall_17          =   1.03202e-07
+r2_rise_18          =   1.12375e-07
+r2_fall_18          =   1.09433e-07
+r2_rise_19          =   1.18606e-07
+r2_fall_19          =   1.15664e-07
+r2_rise_20          =   1.24837e-07
+r2_fall_20          =   1.21895e-07
+r2_rise_21          =   1.31068e-07
+r2_fall_21          =   1.28126e-07
+r2_rise_22          =   1.37299e-07
+r2_fall_22          =   1.34356e-07
+r2_rise_23          =   1.43528e-07
+r2_fall_23          =   1.40583e-07
+r2_max              =  3.322238e+00 at=  2.770828e-07
+r2_min              =  -2.318611e-02 at=  2.802828e-07
+xo_rise_8           =   2.53210e-08
+xo_fall_8           =   2.70212e-08
+xo_rise_9           =   2.86228e-08
+xo_fall_9           =   3.06002e-08
+xo_rise_10          =   3.15519e-08
+xo_fall_10          =   3.36875e-08
+xo_rise_11          =   3.48532e-08
+xo_fall_11          =   3.72665e-08
+xo_rise_12          =   3.77825e-08
+xo_fall_12          =   4.03538e-08
+xo_rise_13          =   4.10826e-08
+xo_fall_13          =   4.70340e-08
+xo_rise_14          =   4.72514e-08
+xo_fall_14          =   5.02217e-08
+xo_rise_15          =   5.05353e-08
+xo_fall_15          =   5.64270e-08
+xo_rise_16          =   5.72423e-08
+xo_fall_16          =   5.98023e-08
+xo_rise_17          =   6.03845e-08
+xo_fall_17          =   6.26580e-08
+xo_rise_18          =   6.39099e-08
+xo_fall_18          =   6.60332e-08
+xo_rise_19          =   6.70499e-08
+xo_fall_19          =   6.88888e-08
+xo_rise_20          =   7.05762e-08
+xo_fall_20          =   7.22641e-08
+xo_rise_21          =   7.37159e-08
+xo_fall_21          =   7.51197e-08
+xo_rise_22          =   7.72425e-08
+xo_fall_22          =   7.84951e-08
+xo_rise_23          =   8.03819e-08
+xo_fall_23          =   8.13505e-08
+xo_rise_24          =   8.39087e-08
+xo_fall_24          =   8.47262e-08
+xo_rise_25          =   8.70480e-08
+xo_fall_25          =   8.75767e-08
+xo_rise_26          =   9.05758e-08
+xo_fall_26          =   9.09516e-08
+xo_rise_27          =   9.71385e-08
+xo_fall_27          =   9.71984e-08
+xo_rise_28          =   1.00092e-07
+xo_fall_28          =   1.00279e-07
+xo_rise_29          =   1.03396e-07
+xo_fall_29          =   1.03935e-07
+xo_rise_30          =   1.06322e-07
+xo_fall_30          =   1.07012e-07
+xo_rise_31          =   1.09625e-07
+xo_fall_31          =   1.10594e-07
+xo_max              =  3.365545e+00 at=  2.466228e-07
+xo_min              =  -3.196322e-02 at=  1.903328e-07
+rb_0_8              =  1.853606e-08
+rv_0_8              =  1.823044e-08
+rb_0_50             =  9.087507e-09
+rv_0_50             =  1.842793e-08
+rb_0_300            =  8.459221e-08
+rv_0_300            =  2.004212e-08
+rb_1_8              =  1.959761e-08
+rv_1_8              =  1.883562e-08
+rb_1_50             =  9.889983e-07
+rv_1_50             =  1.849513e-08
+rb_1_300            =  -3.490354e-06
+rv_1_300            =  1.845207e-08
+rb_2_8              =  1.877097e-08
+rv_2_8              =  1.883660e-08
+rb_2_50             =  2.881627e-06
+rv_2_50             =  1.849511e-08
+rb_2_300            =  7.422407e-06
+rv_2_300            =  1.845192e-08
+rb_3_8              =  2.151187e-08
+rv_3_8              =  1.883617e-08
+rb_3_50             =  -8.569695e-06
+rv_3_50             =  1.849508e-08
+rb_3_300            =  -3.382286e-05
+rv_3_300            =  1.845212e-08
+
+ngspice-42 done

@@ -1,0 +1,3 @@
+echo STARTUP_HOSTILE_INIT_READ
+setseed 99
+set rndseed=99

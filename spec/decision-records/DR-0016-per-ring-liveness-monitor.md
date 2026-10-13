@@ -1,9 +1,9 @@
 ---
 dr: DR-0016-per-ring-liveness-monitor
 title: Detect a stuck or dead ring by reusing DR-0002's RCT test per ring, and flag (not hard-stop) into the same latch-and-gate path
-status: Proposed
+status: Accepted
 date: 2026-08-02
-deciders: Proposed by #44 (Builder). NOT ratified -- acceptance is an operator decision, as DR-0001...DR-0004, DR-0007, DR-0010...DR-0012 and DR-0015 were.
+deciders: Proposed by #44 (Builder). Accepted 2026-10-10 via the two-key ratification mechanism (`2AMLogic/2am#372`; the operator's 2026-08-27 ruling on #150 that cutting this repo's ratification PR is ordinary agent work), tracked as #480 -- see Status.
 supersedes: n/a
 superseded_by: n/a
 related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1), #7 / PR #45 (RO core schematic -- the two observation points this record chooses between), #11 / PR #57 (health-test RTL this monitor lives beside), #26 (design/interface/, the latch-and-gate mechanism this record extends); DR-0001 (raw tap / no exposed per-ring pin), DR-0002 (RCT/APT parameters and failure behavior -- the mechanism and the failure-behavior precedent this record reuses), DR-0007 §Consequences (first flags the per-ring-liveness gap), DR-0009 (behavioral/transistor verification split), DR-0010 §Consequences (N=2 makes one dead ring half the array; the Power row's ~85 uW headroom this record bounds against), DR-0012-sampler-fixed-external-clock (the digitizer's clock source), DR-0014 (sampler_dff's gated-reset cell, reused unmodified as the per-ring digitizer); design/README.md 'Per-ring liveness'; design/health_test/README.md; sim/tb/ring-liveness-fault-injection/, sim/tb/ring-liveness-tap-power/; #76 (phase cost of the same tap -- delivered, see Status/A2 and 'Phase cost'), #51/PR #67 (the coupling topology #76 measures this tap against), #75/#80/#78 and DR-0018 (the per-ring output buffer the digitizers now tap, and which removes 96.5 % of the phase cost), sim/characterization-liveness-tap-phase-cost.md, sim/tb/ring-liveness-tap-phase-{clk-high,clk-low,clocked,buffered,buffered-static}/; #86 (does that phase cost reach the SAMPLED BIT -- delivered, see Status/A3 and 'The bit-level follow-up'), sim/characterization-sampler-bit-bias.md, sim/tb/sampler-bit-bias-{clocked,static}-{integer,generic,clk-floor}/; #87 (the SHIPPED array's phase cost, and the xsb-on-xo path A2 left unmeasured -- delivered, see Status/A4 and 'On the shipped array'), sim/characterization-shipped-array-tap-phase.md, sim/tb/array-liveness-tap-phase-{clocked,static,xsb-clocked,xsb-static}/"
@@ -14,6 +14,9 @@ related: "#44 (origin), #65 (integration follow-up -- delivered, see Status/A1),
 ## Status
 
 - 2026-08-02: Proposed, by #44 (Builder). Not ratified.
+- 2026-10-10: **Accepted** via the two-key ratification mechanism (`2AMLogic/2am#372`: EE key + market key both review this repo's ratification pull request, tracked as #480) per the operator's 2026-08-27 comment on #150, which superseded the earlier "acceptance is an operator decision" language and ruled that cutting this ratification PR is ordinary agent work. The
+  amendments A1-A4 below are historical and are not edited; their phrase "the
+  record still stands as Proposed" described the record on their own dates.
 - 2026-08-02: **Amendment A1 (#65) -- the two integrations this record left as
   follow-up are built. No decision, parameter, cutoff or mechanism in this
   record changed; the record still stands as Proposed, and A1 only replaces
