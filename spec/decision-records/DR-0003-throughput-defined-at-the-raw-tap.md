@@ -45,10 +45,12 @@ related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), 
   reported, untargeted figure (§5), the conditioned rate as `R_raw / K`
   owned by #8 (§6), and the healthy-ungated scope (§7). The §2 stretch value
   (`> 4 Mbps`) was not re-derived by either superseding record. `status`
-  stays `Accepted` and `superseded_by` stays `n/a` deliberately: this is a
-  value-only, partial supersession, and that field reads as whole-record —
-  the same treatment DR-0010's own Status records for its partial
-  supersession. The decision text below is not rewritten.
+  stays `Accepted`: this is a value-only, partial supersession. The
+  `superseded_by` field now names DR-0011 (per the 2026-10-13 two-key
+  ruling), and is read as scoped to the §1 rate VALUE only — not as
+  whole-record supersession; its text carries that scope and everything
+  that stands. DR-0010's own Status records its partial supersession the
+  same way. The decision text below is not rewritten.
 
 ## Context
 
