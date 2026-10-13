@@ -324,6 +324,14 @@ measured data rather than on the plain-cell trend. This addendum does not change
 any constant or margin: `sizing_constant()` and the Raw-rate margin recompute
 depend on PR #586 and stay open on issue #628.
 
+**Effect on the tools' corner-mean constants.** The tool averages `a` over every
+record it finds, so its "mean over corners" figures are now over four corners:
+asymptotic 11.768 -> 10.932, lag-1 24.843 -> 23.255. The three-corner values quoted
+elsewhere in this document and in `characterization-post-layout-extracted.md` are
+the results as computed when each was written and are not edited; the live
+aggregate, `characterization-analog-summary.md`, now quotes the four-corner
+rates (4141 and 8810 bps) and is checked against the tool.
+
 How these records differ from the three above, all stated in the record itself:
 
 - **Run on the batch fleet**, not by `sim/run_corners.py`. The bench is
