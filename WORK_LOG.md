@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-11.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-13.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-13
+
+- **PR #631**: Design study: price higher raw-rate entropy-source options from existing evidence (#629)
+- **Issue #629** (closed): Design study: a higher-rate entropy source (multi-RO / metastability hybrid tap) if Mbps-class rates are needed
 
 ### 2026-10-11
 
