@@ -544,7 +544,14 @@ class SizingConstant:
 
     @property
     def is_smallest(self) -> bool:
-        return self.by_corner[self.corner] <= min(self.by_corner.values())
+        # Fail closed on a NaN anywhere: ``min`` is order-dependent when a
+        # NaN is present (``nan < x`` and ``x < nan`` are both False), so a
+        # NaN at another corner could otherwise hide behind dict order and
+        # leave an unfounded "smallest" claim standing.
+        values = list(self.by_corner.values())
+        if any(math.isnan(v) for v in values):
+            return False
+        return self.by_corner[self.corner] <= min(values)
 
 
 def sizing_constant(points: list[Point] | None = None,

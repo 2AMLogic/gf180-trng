@@ -365,6 +365,33 @@ class SizingConstantSelectionTests(StarvedCellTestCase):
         self.assertTrue(sel.is_smallest)
         self.assertEqual(set(sel.by_corner), {c for c, _a, _l in COMMITTED_SHAPE})
 
+    def test_is_smallest_fails_closed_on_nan_at_another_corner(self) -> None:
+        # A NaN corner's true asymptotic a is unknown; the "selected is
+        # smallest" claim must not survive it. min() is order-dependent in
+        # the presence of a NaN, so both dict orders are pinned.
+        nan = float("nan")
+        for by_corner in (
+            {"ss/-40/3.63": 7.322, "tt/27/3.30": nan},
+            {"tt/27/3.30": nan, "ss/-40/3.63": 7.322},
+        ):
+            with self.subTest(order=list(by_corner)):
+                sel = sc.SizingConstant(7.322, "ss/-40/3.63", "stem", by_corner)
+                self.assertFalse(sel.is_smallest)
+
+    def test_is_smallest_fails_closed_on_nan_at_the_selected_corner(self) -> None:
+        sel = sc.SizingConstant(
+            float("nan"), "ss/-40/3.63", "stem",
+            {"ss/-40/3.63": float("nan"), "tt/27/3.30": 9.0},
+        )
+        self.assertFalse(sel.is_smallest)
+
+    def test_is_smallest_unaffected_by_dict_order_without_nan(self) -> None:
+        by_corner = {"ss/-40/3.63": 7.322, "tt/27/3.30": 9.0}
+        for order in (dict(by_corner), dict(reversed(list(by_corner.items())))):
+            with self.subTest(order=list(order)):
+                sel = sc.SizingConstant(7.322, "ss/-40/3.63", "stem", order)
+                self.assertTrue(sel.is_smallest)
+
     def test_newest_record_at_the_corner_wins(self) -> None:
         pts = self.points() + [_fake_point("ss/-40/3.63", 7.5, 22.0, stem="newer")]
         sel = sc.sizing_constant(pts)

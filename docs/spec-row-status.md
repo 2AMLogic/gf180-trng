@@ -108,8 +108,10 @@ What the new figure is, and is not:
   The decision record's own 2664 bps was computed at `ss`/−40 °C/3.63 V on
   pre-#78 records; the corner and the records moved, the conclusion did not.
 - **Stretch.** Neither rate decision re-derives DR-0003's `> 4 Mbps` stretch,
-  so it is left as written and marked as such; it is far above the 2.77 kbps
-  edge above.
+  so it is left as written and marked as such: it is **unattainable under the
+  measured jitter-energy law**, far above the 2.77 kbps edge above — which is
+  also the row's maximum sample clock (2773 bps at the entropy-binding corner,
+  `array_sizing.py --check`).
 - **Entropy caveats unchanged.** The constant carries the fixed-injection
   scaling uncertainty [DR-0011-rate] states (~2–4× on `a`), it is measured on
   a five-stage ring, and `H` remains unmeasured (#12).
@@ -187,7 +189,9 @@ at the raw-rate row's binding corner, K = 8 retained (see
 [Conditioning](#conditioning)). Still `derived from target`: it is arithmetic
 on the raw-rate *target*, and becomes measured only when `R_raw` does. The
 `> 500 kbps` stretch figure is left tied to DR-0003's original stretch, which
-neither rate decision re-derives. The `> 125 kbps` entry above is the
+neither rate decision re-derives: it is **unattainable under the measured
+jitter-energy law**, since it presupposes the `> 4 Mbps` raw stretch (see
+[Raw rate](#raw-rate)). The `> 125 kbps` entry above is the
 superseded 1 Mbps figure.
 
 ## Health tests

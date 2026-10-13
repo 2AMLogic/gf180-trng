@@ -5,7 +5,7 @@ status: Accepted
 date: 2026-07-31
 deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amendments landed by #29
 supersedes: n/a
-superseded_by: n/a
+superseded_by: "DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy — §1's rate VALUE only, and only through the chain DR-0010 §1 (superseded this record's > 1 Mbps first) → DR-0011 §1 (> 2 kbps). Everything else in this record stands and is cited unchanged by both: the raw-tap measurement point, what 'sustained' means, and the binding corner"
 related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), #8, #9, #12, #13; README §Target specification — Raw rate row; DR-0001 (raw tap), DR-0002 (gating), DR-0007 (entropy source sized to hold H₀ at this rate)"
 ---
 
