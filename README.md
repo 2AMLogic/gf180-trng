@@ -14,7 +14,7 @@ measured on silicon.** What exists today is an evidence-record convention,
 [thirty-one decision records](spec/decision-records/), an entropy-source
 architecture survey, a PVT corner simulation harness and a gate-level
 static-timing and power flow, together producing twenty characterization
-summaries (`sim/characterization-*.md`) resting on 1030 append-only evidence
+summaries (`sim/characterization-*.md`) resting on 1032 append-only evidence
 records under [`sim/records/`](sim/records/). `design/` holds the analog
 entropy source and sampler as xschem schematics plus four digital blocks, each
 a behavioural model with RTL checked against it. `layout/` holds a DRC/LVS

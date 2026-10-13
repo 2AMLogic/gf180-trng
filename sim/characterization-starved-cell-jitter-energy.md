@@ -293,6 +293,63 @@ is dominated by a deterministic neighbour-driven beat and is not that ring's
 jitter.** What the array's own `σ` is, with that term removed, is still
 unmeasured — `sim/tb/ro-array-sanity-jitter/` has not been re-run.
 
+## Addendum: the hot corner `ss` / +125 °C / 3.63 V (issue #628)
+
+DR-0015 moved the entropy-binding corner to `ss` / +125 °C / 3.63 V, a corner
+the three records above do not cover (the family's `ss` record is at −40 °C).
+Two records were added, nothing existing was edited:
+
+| What | Record |
+|---|---|
+| ring jitter, 8 units, `tstop` = 3.1 µs | [`2026-10-13-ro-ring5-starved-jitter-long-01`](records/2026-10-13-ro-ring5-starved-jitter-long-01.md) |
+| device-noise density of the cell, same corner | [`2026-10-13-rostage-noise-01`](records/2026-10-13-rostage-noise-01.md) (the only earlier +125 °C noise record, `2026-08-01-rostage-noise-04`, is at 2.97 V and is a different corner) |
+
+`python3 sim/tools/starved_cell_jitter_energy.py` reads both with no change and
+reports, for the new corner:
+
+| `T0` | `P_ring` | `σ₁` | exponent | `κ²` (lag 1) | `κ²` (asymptotic) | `a` (lag 1) | `a` (asymptotic) |
+|---|---|---|---|---|---|---|---|
+| 3.781 ns | 55.7 µW | 2.626 ps | 0.427 | 1.824 × 10⁻¹⁵ | 8.304 × 10⁻¹⁶ | 18.49 | **8.42** |
+
+`--check` passes with the new record: the lag-1 seed spread is 3.63 % against
+the 2.69 % reference (ratio 1.35, inside the 3× gate), and the per-block period
+drift is 10 ppm before and 14 ppm inside the window, i.e. no start-up drift
+inflates the long-lag `σ`.
+
+**Reading.** The asymptotic `a` at the hot corner, **8.42**, is *above* the
+−40 °C figure of 7.32 that [`DR-0011`](../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+and the rate-sizing arithmetic above use, by 15 %; the lag-1 `a` is lower (18.5
+against 21.4). So for the asymptotic definition the earlier choice was the conservative one, on
+measured data rather than on the plain-cell trend. This addendum does not change
+any constant or margin: `sizing_constant()` and the Raw-rate margin recompute
+depend on PR #586 and stay open on issue #628.
+
+**Effect on the tools' corner-mean constants.** The tool averages `a` over every
+record it finds, so its "mean over corners" figures are now over four corners:
+asymptotic 11.768 -> 10.932, lag-1 24.843 -> 23.255. The three-corner values quoted
+elsewhere in this document and in `characterization-post-layout-extracted.md` are
+the results as computed when each was written and are not edited; the live
+aggregate, `characterization-analog-summary.md`, now quotes the four-corner
+rates (4141 and 8810 bps) and is checked against the tool.
+
+How these records differ from the three above, all stated in the record itself:
+
+- **Run on the batch fleet**, not by `sim/run_corners.py`. The bench is
+  `sim/tb/ro-ring5-starved-jitter-long-batch/` (same circuit and stimulus), run
+  through `klt sim` by `sim/tools/starved_hot_corner.py`, which asks the fleet
+  for the 769 edge times and the charge readings and computes the family's
+  estimators from them with the definitions in `ro-ring5-starved-jitter-long/tb.json`
+  (unit-tested against those definitions). The `seeds` in that record are unit
+  indices; `trnoise` draws are not seed-controlled (DR-0031).
+- **`tstop` = 3.1 µs, not 2.4 µs.** The ring runs at 3.78 ns here, so the 770th
+  edge the window needs falls at ~2.92 µs; 2.4 µs would end ~640 edges in.
+- The fleet worker's PDK model content is the same open_pdks revision as the
+  earlier records (`c6d73a35`); `sm141064.ngspice` was not hashed on the worker.
+  The rostage-noise record was made locally on this host (a single small
+  `.noise` point) against a different open_pdks revision (`f6eeac7`), so its
+  PDK differs from the ring record's; the density it supplies is a
+  small-signal quantity and the difference was not quantified.
+
 ## What this means for DR-0010 §1
 
 **The rate row moves — up — and it moves by a superseding decision record, not

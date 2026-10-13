@@ -67,8 +67,8 @@ QUOTED = [
     ("**`ss`/125 °C/3.63 V** at every jitter-energy constant", "entropy",
      r"OK: ss/125/3\.63 minimizes Q over all 27 covered grid points at every constant"),
     ("**678.1 bps**", "entropy", r"ss/125/3\.63\s+8\.1376e-03\s+1\.36x\s+678\.1"),
-    ("**4458 bps**", "entropy", r"ss/125/3\.63\s+5\.3501e-02\s+8\.92x\s+4458"),
-    ("**9412 bps**", "entropy", r"ss/125/3\.63\s+1\.1294e-01\s+18\.82x\s+9412"),
+    ("**4141 bps**", "entropy", r"ss/125/3\.63\s+4\.9697e-02\s+8\.28x\s+4141"),
+    ("**8810 bps**", "entropy", r"ss/125/3\.63\s+1\.0572e-01\s+17\.62x\s+8810"),
     ("1.356× (pre-layout)", "entropy", r"ss/125/3\.63\s+8\.1376e-03\s+1\.36x"),
     # Health-test bias ceiling
     ("`p_major` = 0.5078", "entropy", r"at ss/-40/3\.63\): p_major = 0\.5078"),
