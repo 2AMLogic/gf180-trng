@@ -202,9 +202,14 @@ def compose_deck(
     """Build the complete, self-contained ngspice deck for one PVT point.
 
     ``seed`` -- when given -- is emitted as ``.option seed=<seed>`` ahead of
-    the model include, so it governs every random draw in the run (device
-    mismatch, ``trnoise()`` sources, Monte Carlo skew). Required by the
-    harness for any testbench whose ``analysis_type`` is stochastic.
+    the model include. It governs the netlist-parameter draws (device
+    mismatch, Monte Carlo skew) and the control-language random functions.
+    It does **not** govern ``trnoise()`` sources: on the measured ngspice-46
+    build their white noise comes from a generator seeded from the process
+    id at start-up, and no tested seed or start-up control changes that
+    (``sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/``,
+    DR-0031). Required by the harness for any testbench whose
+    ``analysis_type`` is stochastic.
 
     ``snapshot_dir`` -- when given and ``tb`` carries bytes captured at load --
     makes the deck include the frozen snapshots in that directory (see
@@ -311,6 +316,10 @@ class RunResult:
     deck_name: str = ""
     log_name: str = ""
     message: str = ""
+    # Process id of the launched child (``Popen.pid``) as seen by this
+    # harness; 0 when no process was started. Used by
+    # :func:`duplicate_realization_problem` (#605).
+    pid: int = 0
 
 
 def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
@@ -422,6 +431,7 @@ def run_one(
     seed: int | None = None,
     run_index: int = 0,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> RunResult:
     """Simulate one (PVT point, seed) pair. Never raises for sim failure.
 
@@ -462,6 +472,12 @@ def run_one(
     # directory and compose the deck against those copies, never the
     # working-tree originals (which may change between corner launches).
     write_input_snapshots(tb, workdir)
+    # Likewise the ngspice start-up script: the bytes captured once by the
+    # caller before its first launch (captured here only for a direct caller
+    # that did not pass one), served to the child as SPICE_SCRIPTS=workdir.
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
+    startup.write_snapshot(startup_snapshot, workdir)
     deck_path.write_text(compose_deck(tb, pdk, point, seed=seed, snapshot_dir=workdir))
 
     watchdog = timeout_bin()
@@ -486,7 +502,7 @@ def run_one(
             stderr=subprocess.PIPE,
             text=True,
             cwd=workdir,
-            env=startup.environment(),
+            env=startup.environment(scripts_dir=workdir.resolve()),
             start_new_session=True,
         )
     except FileNotFoundError as exc:
@@ -573,6 +589,7 @@ def run_one(
             deck_name=deck_path.name,
             log_name=log_path.name,
             message="; ".join(parts),
+            pid=proc.pid,
         )
 
     return RunResult(
@@ -583,6 +600,55 @@ def run_one(
         seconds=elapsed,
         deck_name=deck_path.name,
         log_name=log_path.name,
+        pid=proc.pid,
+    )
+
+
+def duplicate_realization_problem(tb: Testbench, results: list[RunResult]) -> str:
+    """Why a multi-seed ``tran-noise`` point may hold duplicated noise, or "".
+
+    On the measured ngspice-46 build ``trnoise`` is seeded from the process
+    id, not ``.option seed`` (DR-0031), so runs that share a process id (one
+    container or PID namespace per run) would replay one realization under N
+    distinct seeds. Two cheap checks, applied to the completed runs of one
+    PVT point:
+
+    - two runs recorded the same child process id; or
+    - two runs have bit-identical values for every requested measurement.
+
+    This guards against duplication only; it does not establish statistical
+    independence between runs.
+    """
+    if tb.analysis_type != "tran-noise":
+        return ""
+    ok = [r for r in results if r.status == "ok"]
+    if len(ok) < 2:
+        return ""
+    problems: list[str] = []
+    by_pid: dict[int, list[int | None]] = {}
+    for r in ok:
+        if r.pid:
+            by_pid.setdefault(r.pid, []).append(r.seed)
+    for pid, seeds in by_pid.items():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} ran as the same process id {pid}"
+            )
+    by_values: dict[tuple, list[int | None]] = {}
+    for r in ok:
+        key = tuple(r.measurements.get(name) for name in tb.measure)
+        if tb.measure and all(v is not None for v in key):
+            by_values.setdefault(key, []).append(r.seed)
+    for seeds in by_values.values():
+        if len(seeds) > 1:
+            problems.append(
+                f"seeds {', '.join(str(s) for s in seeds)} have bit-identical measurements"
+            )
+    if not problems:
+        return ""
+    return (
+        "possible duplicated trnoise realizations (" + "; ".join(problems) + "); "
+        "trnoise is seeded from the process id, not the seed (DR-0031)"
     )
 
 
@@ -602,10 +668,13 @@ def plan_runs(tb: Testbench, seeds: list[int] | None) -> list[tuple[int | None, 
             f"{tb.slug}: stochastic testbench (analysis_type={tb.analysis_type!r}) "
             "requires at least one seed -- sim/README.md: 'no seed, no evidence'"
         )
-    # Each seed is one independent realization; report.py summarizes the
-    # per-seed values as a sample (mean, stdev), so a repeated seed would be
-    # the same realization counted twice. Reject rather than deduplicate, so
-    # the requested and executed sample counts never silently differ.
+    # Each seed labels one run; report.py summarizes the per-seed values as
+    # a sample (mean, stdev), so a repeated seed would count the seeded draws
+    # of one realization twice. Reject rather than deduplicate, so the
+    # requested and executed sample counts never silently differ. Distinct
+    # seeds do not by themselves make trnoise() realizations distinct (they
+    # differ because each run is a separate ngspice process; DR-0031), and
+    # nothing here establishes statistical independence between runs.
     repeated = _repeated(seeds)
     if repeated:
         raise ValueError(
@@ -634,10 +703,16 @@ def run_point(
     workdir: Path,
     seeds: list[int] | None,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> list[RunResult]:
     """Run every seed (or the single deterministic run) for one PVT point."""
     validate_timeout_s(timeout_s)
+    if startup_snapshot is None:
+        startup_snapshot = startup.capture()
     return [
-        run_one(tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s)
+        run_one(
+            tb, pdk, point, workdir, seed=seed, run_index=index, timeout_s=timeout_s,
+            startup_snapshot=startup_snapshot,
+        )
         for seed, index in plan_runs(tb, seeds)
     ]

@@ -7,8 +7,8 @@ PDK layout; actual ngspice execution is exercised by sim/selftest.sh instead.
 
 from __future__ import annotations
 
+import hashlib
 import json
-import shutil
 import subprocess
 import os
 import sys
@@ -20,9 +20,11 @@ from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 from harness import corners, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 
 def fake_pdk(root: Path) -> Pdk:
@@ -89,6 +91,46 @@ class DeckTests(unittest.TestCase):
         self.assertNotIn(".option seed=", deck_no_seed)
         deck_seeded = runner.compose_deck(self.tb, self.pdk, self.point, seed=7)
         self.assertIn(".option seed=7", deck_seeded)
+
+
+class TransientNoiseSeedControlTests(unittest.TestCase):
+    """#574 / DR-0031: no tested control made trnoise replay, so none was
+    integrated. A seeded tran-noise deck carries exactly the harness's one
+    ``.option seed=<n>`` and no start-up or control-block seed command, and
+    decks for different seeds differ only in that line."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("vn out 0 dc 0 trnoise(1m 1n 0 0)\nr1 out 0 1k\n")
+        (root / "tb" / "tb.json").write_text(json.dumps({
+            "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+            "analysis_type": "tran-noise", "analyses": ["tran 1n 16n"],
+        }))
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def test_one_harness_seed_line_and_nothing_else(self):
+        for seed in (11, 12):
+            deck = runner.compose_deck(self.tb, self.pdk, self.point, seed=seed)
+            found = testbench.scan_seed_controls(deck)
+            self.assertEqual(len(found), 1, found)
+            self.assertIn(f".option seed={seed}", found[0])
+
+    def test_decks_for_two_seeds_differ_only_in_the_seed_line(self):
+        a = runner.compose_deck(self.tb, self.pdk, self.point, seed=11).splitlines()
+        b = runner.compose_deck(self.tb, self.pdk, self.point, seed=12).splitlines()
+        diff = [(x, y) for x, y in zip(a, b) if x != y]
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(diff, [(".option seed=11", ".option seed=12")])
+
+    def test_pinned_startup_script_sets_no_seed(self):
+        self.assertEqual(
+            testbench.scan_seed_controls(startup.SPINIT_PATH.read_text()), []
+        )
 
 
 class AnalysisContextSubstitutionTests(unittest.TestCase):
@@ -739,7 +781,13 @@ class StartupPolicyTests(unittest.TestCase):
                 self.assertEqual(cmd[at:at + 3], [runner.NGSPICE, "-n", "-b"])
                 self.assertEqual(cmd[0] == "/usr/bin/timeout", watchdog is not None)
                 env = call.kwargs["env"]
-                self.assertEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                # The child reads the run's own captured copy (#582), not the
+                # live checkout directory.
+                self.assertEqual(env["SPICE_SCRIPTS"], str(call.kwargs["cwd"].resolve()))
+                self.assertNotEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                self.assertEqual(
+                    (call.kwargs["cwd"] / "spinit").read_bytes(), startup.SPINIT_PATH.read_bytes()
+                )
                 self.assertNotIn("SPICE_LIB_DIR", env)
                 self.assertTrue(call.kwargs["start_new_session"])
 
@@ -754,17 +802,107 @@ class StartupPolicyTests(unittest.TestCase):
         self.assertEqual(len(meta["spinit_sha256"]), 64)
         self.assertTrue((SIM_DIR.parent / meta["spinit"]).is_file())
 
-    @unittest.skipUnless(shutil.which("ngspice"), "ngspice not on PATH; hostile-fixture probe skipped")
+    def _tb_and_point(self, root):
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        return testbench.load(root / "tb"), point
+
+    def test_edit_after_capture_changes_neither_consumed_bytes_nor_digest(self):
+        """#582: every launch (both watchdog paths, several points) consumes
+        the bytes captured before the first one, and the recorded digest
+        identifies those bytes, whatever the live file does afterwards."""
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                live = root / "live-spinit"
+                live.write_bytes(b"* original\n")
+                tb, point = self._tb_and_point(root)
+                proc = mock.Mock(returncode=0)
+                proc.communicate.return_value = ("m_vout = 1.65\n", "")
+                proc.pid = 1
+                with mock.patch.object(startup, "SPINIT_PATH", live):
+                    snap = startup.capture()
+                live.write_bytes(b"echo EDITED_AFTER_CAPTURE\n")  # mid-sweep edit
+                calls = []
+                with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                        mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen, \
+                        mock.patch.object(startup, "SPINIT_PATH", live):
+                    for name in ("pt-a", "pt-b"):
+                        runner.run_one(
+                            tb, fake_pdk(root / "gf180mcuD"), point, root / name,
+                            timeout_s=9, startup_snapshot=snap,
+                        )
+                        calls.append(popen.call_args)
+                    meta = startup.metadata(snap)
+                for call, name in zip(calls, ("pt-a", "pt-b")):
+                    scripts = Path(call.kwargs["env"]["SPICE_SCRIPTS"])
+                    self.assertEqual(scripts, (root / name).resolve())
+                    self.assertEqual((scripts / "spinit").read_bytes(), b"* original\n")
+                self.assertEqual(meta["spinit_sha256"], hashlib.sha256(b"* original\n").hexdigest())
+                self.assertEqual(meta["spinit_snapshot"], "spinit")
+
+    def test_write_snapshot_refuses_a_changed_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = startup.Snapshot(b"* a\n")
+            startup.write_snapshot(snap, Path(tmp))
+            startup.write_snapshot(snap, Path(tmp))  # identical: no-op
+            (Path(tmp) / "spinit").write_bytes(b"* b\n")
+            with self.assertRaisesRegex(RuntimeError, "modified during the run"):
+                startup.write_snapshot(snap, Path(tmp))
+
+    def test_dut_include_may_not_take_the_snapshot_name(self):
+        self.assertIn(startup.SNAPSHOT_NAME, testbench.fixed_artifact_names())
+
+    @requires_tools("ngspice", reason="ngspice not on PATH; snapshot probe skipped")
+    def test_ngspice_reads_the_snapshot_not_the_live_script(self):
+        """PDK-free: a sentinel in the captured copy is echoed by ngspice;
+        a different sentinel in the live file (edited after capture) is not."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            live = root / "live-spinit"
+            live.write_text("echo SENTINEL_CAPTURED\n")
+            with mock.patch.object(startup, "SPINIT_PATH", live):
+                snap = startup.capture()
+            live.write_text("echo SENTINEL_LIVE_EDIT\n")
+            work = root / "work"
+            startup.write_snapshot(snap, work)
+            deck = work / "d.cir"
+            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            env = startup.environment(
+                {k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
+                scripts_dir=work.resolve(),
+            )
+            out = subprocess.run(
+                runner.ngspice_command(deck, None, 60), env=env, cwd=work,
+                capture_output=True, text=True, timeout=60,
+            ).stdout
+            self.assertIn("SENTINEL_CAPTURED", out)
+            self.assertNotIn("SENTINEL_LIVE_EDIT", out)
+
+    @requires_tools("ngspice", reason="ngspice not on PATH; hostile-fixture probe skipped")
     def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for d in ("home", "work", "scripts"):
+            for d in ("home", "work", "scripts", "userdeck"):
                 (root / d).mkdir()
             (root / "home" / ".spiceinit").write_text("echo SENTINEL_USER\n")
             (root / "work" / ".spiceinit").write_text("echo SENTINEL_WORK\n")
             (root / "scripts" / "spinit").write_text("echo SENTINEL_SYSTEM\n")
+            deck_text = "* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n"
             deck = root / "work" / "d.cir"
-            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            deck.write_text(deck_text)
+            # Deck copy outside every hostile .spiceinit directory. The
+            # user-init sanity case must not reuse the work-directory deck:
+            # ngspice-46 searches the deck's directory first (measured in
+            # sim/tool-experiments/2026-10-11-ngspice46-startup-lookup/),
+            # so a deck inside work/ keeps SENTINEL_WORK reachable however
+            # the cwd moves.
+            userdeck = root / "userdeck" / "d.cir"
+            userdeck.write_text(deck_text)
             hostile = {
                 **{k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
                 "HOME": str(root / "home"),
@@ -776,16 +914,23 @@ class StartupPolicyTests(unittest.TestCase):
                     cmd, env=env, cwd=cwd, capture_output=True, text=True, timeout=60
                 ).stdout
 
-            # Sanity: the fixtures are effective under ordinary batch mode
-            # (work-directory file shadows the user file; spinit comes from
-            # SPICE_SCRIPTS).
+            # Sanity: the fixtures are effective under ordinary batch mode.
+            # Each plain launch leaves exactly one .spiceinit reachable for
+            # the source it names -- whichever of the working directory
+            # (ngspice-42) or the deck's directory (ngspice-46) is searched,
+            # the work launch runs where the two coincide, and the user
+            # launch uses a deck copy with no .spiceinit around it -- plus
+            # spinit from SPICE_SCRIPTS. Only one of the two .spiceinit
+            # fixtures runs per launch on both measured builds.
             plain = run(["ngspice", "-b", str(deck)], hostile, root / "work")
             self.assertIn("SENTINEL_WORK", plain)
             self.assertIn("SENTINEL_SYSTEM", plain)
+            self.assertNotIn("SENTINEL_USER", plain)
             nowork = root / "nowork"
             nowork.mkdir()
-            plain_user = run(["ngspice", "-b", str(deck)], hostile, nowork)
+            plain_user = run(["ngspice", "-b", str(userdeck)], hostile, root / "userdeck")
             self.assertIn("SENTINEL_USER", plain_user)
+            self.assertNotIn("SENTINEL_WORK", plain_user)
 
             # Controlled launch (command builder + environment builder).
             cmd = runner.ngspice_command(deck, None, 60)

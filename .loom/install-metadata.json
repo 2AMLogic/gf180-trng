@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1050",
-  "loom_commit": "abf3f7109328fd66ec77827f5fd849f5279fee82",
+  "loom_version": "0.19.1152",
+  "loom_commit": "2d5fe17958dca799058f16bdd74a12336990bec0",
   "install_date": "2026-07-29",
   "installed_files": [
     ".claude/agents/loom-architect.md",
@@ -370,9 +370,30 @@
     ".loom/docs/native-sweep.md",
     ".loom/docs/premise-gate.md",
     ".loom/scripts/tests/test-premise-check.sh",
-    ".loom/runtimes/gemini.json"
+    ".loom/runtimes/gemini.json",
+    ".claude/commands/loom/sweep-doctor-glm-escalation.md",
+    ".loom/docs/stale-check-inputs.md",
+    ".loom/docs/fleet-config-lifecycle.md",
+    ".loom/docs/session-output.md",
+    ".loom/docs/forge-events.md",
+    ".loom/scripts/tests/test-check-promotion-landed.sh",
+    ".loom/scripts/tests/test-judge-payload-drop-guard.sh",
+    ".loom/scripts/tests/test-merge-pr-closed-issue-cleanup.sh",
+    ".loom/scripts/tests/test-post-verdict-gate.sh",
+    ".loom/scripts/tests/test-merge-pr-chain-lock.sh",
+    ".loom/docs/configuring-resources.md",
+    ".loom/docs/gh-cached.md",
+    ".loom/docs/hyperparameters.md",
+    ".loom/docs/runtime-model-trials.md",
+    ".loom/scripts/classify-ac-verification.sh",
+    ".loom/scripts/extract-capability-markers.sh",
+    ".loom/scripts/tests/test-classify-error.sh",
+    ".loom/scripts/tests/test-gh-cached.sh",
+    ".loom/scripts/tests/test-merge-pr-auto-blocked-settle.sh",
+    ".loom/scripts/tests/test-merge-pr-head-mismatch.sh",
+    ".loom/scripts/tests/test-resync-installed-stamp.sh"
   ],
-  "last_resync": "2026-10-11",
-  "loom_source_remote": "git@github.com:rjwalters/loom.git",
-  "requires_daemon": "0.19.772"
+  "last_resync": "2026-10-13",
+  "loom_source_remote": "https://github.com/rjwalters/loom.git",
+  "requires_daemon": "0.19.1081"
 }

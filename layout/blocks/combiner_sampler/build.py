@@ -174,7 +174,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -189,6 +188,7 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout.cells._build_cli import make_pdk_check  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers. Metal3/Via2 for the block-level routing
@@ -596,34 +596,18 @@ def build(pdk_variant: str, path: Path | None = None) -> bytes:
     return gds_bytes
 
 
-def check() -> int:
-    """Rebuild into scratch and byte-compare against the committed .gds.
-
-    Matches `layout/rings/ro_ring11/build.py`'s own `check()` contract --
-    `layout/verify.py`'s `_STALENESS_CHECKS` calls it with no arguments and
-    treats a nonzero return as a hard failure.
-    """
-    path = gds_path()
-    shown = os.path.relpath(path, os.getcwd())
-    if not path.exists():
-        print(f"MISSING: {shown} -- run `python3 layout/blocks/combiner_sampler/build.py`")
-        return 1
-    pdk = resolve_pdk()
-    if pdk is None:
-        print(f"SKIP-AS-STALE: {shown} -- no gf180mcu PDK install found")
-        return 1
-    scratch = WORK_DIR / f"{TOP_CELL}.check.gds"
-    rebuilt = build(pdk.variant, scratch)
-    committed = path.read_bytes()
-    if rebuilt != committed:
-        print(
-            f"STALE: {shown} does not match build.py "
-            f"({len(committed)} bytes committed, {len(rebuilt)} rebuilt) -- "
-            f"run `python3 layout/blocks/combiner_sampler/build.py`"
-        )
-        return 1
-    print(f"ok: {shown}")
-    return 0
+# The check is the shared one (`layout/cells/_build_cli.py`, #589);
+# `layout/verify.py`'s `_STALENESS_CHECKS` calls this module's `check()`
+# with no arguments. `main()` stays local: it also carries this block's
+# `--list` row-placement table.
+check = make_pdk_check(
+    gds_path=gds_path,
+    build=build,
+    resolve_pdk=resolve_pdk,
+    work_dir=WORK_DIR,
+    top_cell=TOP_CELL,
+    script="layout/blocks/combiner_sampler/build.py",
+)
 
 
 def print_table() -> None:

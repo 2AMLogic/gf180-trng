@@ -184,6 +184,25 @@ class ManifestIdentityTests(unittest.TestCase):
         # No host path leaks into the problems (they feed the identity).
         self.assertNotIn(str(self.base), text)
 
+    def test_absolute_parameterized_path_is_redacted(self):
+        pdk = make_fixture_pdk(self.base / "gf180mcuD")
+        private = "private-dir-4f9c2a"
+        lines = ["* design\n"]
+        for marker in ("{corner}", "$CORNER", "~user", "`corner`"):
+            lines.append(f".include '/home/example/{private}/{marker}/models.spice'\n")
+        (pdk.path / "libs.tech/ngspice/design.ngspice").write_text("".join(lines))
+        m = self._manifest(pdk)
+        self.assertFalse(m.complete)
+        caveats = "\n".join(cli._model_caveats(m))
+        blob = m.to_json_bytes().decode()
+        where = "libs.tech/ngspice/design.ngspice"
+        for surface in (blob, caveats):
+            for forbidden in (private, "/home/example", "models.spice"):
+                self.assertNotIn(forbidden, surface)
+            for line in (2, 3, 4, 5):
+                self.assertIn(f"{where}:{line}: unsupported parameterized path an absolute path", surface)
+            self.assertNotIn("outside the PDK variant directory", surface)
+
     def test_continuations_comments_and_cycles(self):
         pdk = make_fixture_pdk(self.base / "gf180mcuD")
         ng = pdk.path / "libs.tech/ngspice"
@@ -346,7 +365,7 @@ class MidRunModelChangeTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def _install_runner(self, on_run=None):
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             deck = workdir / f"{point.corner_id}.spice"
             log = workdir / f"{point.corner_id}.log"

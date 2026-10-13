@@ -6,6 +6,62 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-11
 
+- **PR #625**: test: skip changed-record end-to-end case when origin/main is not fetched
+- **PR #624**: test: pin RCT/APT cutoff boundaries in RTL equivalence tests
+- **PR #622**: test: require simulator-gated unit tests in the nightly
+- **Issue #621** (closed): test_report end-to-end case errors when origin/main is not fetched (nightly dispatched on a branch)
+- **Issue #620** (closed): RTL equivalence tests for rct_apt.v do not pin the APT cutoff boundary (>= vs > survives)
+- **Issue #618** (closed): Make tool-gated RTL/ngspice tests runnable-and-required in at least one CI environment (iverilog tests skip everywhere in CI today)
+- **Issue #614** (closed): Add unit tests for the shared layout generator check/main factories in layout/cells/_build_cli.py
+- **PR #619**: test: cover signoff publishers (refusals, --backend argv, publication fields)
+- **Issue #611** (closed): Add unit tests for the signoff publication scripts (publish_item7_analog, publish_combiner_sampler_pex) and dedupe their shared run_pex
+- **PR #616**: Reserve klt output destinations before submission (#610)
+- **PR #615**: chore: remove dead clk_at, contract_rows, convergence_text, unused ctrl
+- **PR #613**: test: pin the _build_cli.py message contract with direct unit tests
+- **PR #612**: Guard tran-noise records against duplicated noise realizations (#605)
+- **PR #609**: fix: isolate each hostile-init sanity launch to the startup source it names
+- **PR #608**: Share one klt-request emit/run scaffold across the sim evidence tools
+- **PR #606**: Record that trnoise waveforms are not seed-reproducible on ngspice-46 (#574)
+- **PR #604**: Add shellcheck lint:shell step (#591)
+- **PR #600**: Replace hand-copied path-based module loaders with one helper (#553)
+- **Issue #610** (closed): Reserve klt simulation output destinations before submission to preserve prior responses
+- **Issue #605** (closed): Guard tran-noise records against duplicated noise realizations when runs share a process id
+- **Issue #603** (closed): Remove dead functions clk_at, contract_rows, convergence_text (and dead local ctrl)
+- **Issue #601** (closed): Add direct unit tests for layout/cells/_build_cli.py message contract
+- **Issue #591** (closed): Run shellcheck over tracked shell scripts in lint and CI (bash -n is the only check today)
+- **Issue #590** (closed): Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once
+- **Issue #584** (closed): test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46
+- **Issue #574** (closed): ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed
+- **Issue #553** (closed): Replace 24 hand-copied path-based module loaders with one helper
+
+- **PR #599**: refactor: dedupe the layout generators' gds_path/check/main tail into _build_cli
+- **PR #598**: docs: record the second-pass LU.3/LU.4 source re-check in DR-0030
+- **PR #597**: spec: DR-0020 status note, FIFO_DEPTH = 2 holds at the 2 kbps raw rate
+- **PR #596**: Reject tracked raw simulation artifacts with no evidence record
+- **PR #595**: Migrate sim/tests loaders to load_module_from_path (#553, batch 2)
+- **Issue #593** (closed): Reject tracked raw simulation artifacts with no evidence record
+- **Issue #589** (closed): Dedup the gds_path/check/main boilerplate repeated in every layout generator
+- **Issue #583** (closed): DR-0020 revisit trigger fired: re-examine output FIFO_DEPTH at the 2 kbps raw rate
+- **PR #592**: Redact absolute parameterized PDK paths from model manifest diagnostics
+- **PR #588**: Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **PR #587**: Add load_module_from_path helper and migrate production loaders (batch 1 of #553)
+- **PR #580**: docs: correct what the Area row's 351.6 % figure is (#495)
+- **PR #579**: Control ambient ngspice start-up configuration in harness runs
+- **PR #578**: Reject DUT includes that collide with generated simulation artifacts
+- **PR #577**: Record the outcome of the LU.3/LU.4 controlled-DRM source search (#486)
+- **PR #576**: Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **PR #573**: Enforce harness ownership of stochastic simulation seed controls
+- **PR #572**: Reject nonpositive simulation timeout bounds before launching ngspice
+- **PR #567**: Deduplicate git blob SHA-1 helper onto sim/harness/report.py (#557)
+- **Issue #582** (closed): Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **Issue #575** (closed): Control ambient ngspice startup configuration in evidence-producing harness runs
+- **Issue #570** (closed): Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **Issue #569** (closed): Redact absolute parameterized PDK paths from model manifest diagnostics
+- **Issue #566** (closed): Enforce harness ownership of stochastic simulation seed controls
+- **Issue #565** (closed): Reject DUT include filenames that collide with generated simulation artifacts
+- **Issue #563** (closed): Reject nonpositive simulation timeout bounds before launching ngspice
+- **Issue #557** (closed): Deduplicate git blob SHA-1 helper: 4 copies across sim/harness and sim/tools
+- **Issue #495** (closed): Area row status text predates the composed layout
 - **PR #568**: Record PDK model-content identity in new simulation evidence
 - **PR #564**: Bound the default concurrency of sim/characterize.py
 - **PR #560**: ci: pin GitHub Actions to verified commit SHAs and guard against mutable refs

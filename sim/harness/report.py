@@ -43,6 +43,34 @@ from .testbench import Testbench, write_input_snapshots
 RECORDS_DIRNAME = "records"
 RAW_DIRNAME = "raw"
 
+#: Analysis types whose records carry the transient-noise reproduction scope
+#: (#574, DR-0031). Only ``tran-noise``: the replay limit was measured for
+#: ``trnoise`` sources, and is not assigned to deterministic or Monte Carlo
+#: records.
+TRNOISE_REPLAY_ANALYSIS_TYPES = ("tran-noise",)
+#: The experiment that measured it and the decision record that adopts it.
+TRNOISE_REPLAY_EVIDENCE = "sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/"
+TRNOISE_REPLAY_DECISION = "DR-0031-transient-noise-reproducibility"
+
+
+def reproduction_scope(analysis_type: str) -> dict | None:
+    """What re-running a record of ``analysis_type`` reproduces, or ``None``
+    when no limit has been measured for that type.
+
+    For ``tran-noise`` the recorded seeds replay the deck and configuration
+    (and every seeded non-``trnoise`` draw) but not the ``trnoise``
+    waveforms: on the measured ngspice-46 build no seed or start-up control
+    reproduced them across processes.
+    """
+    if analysis_type not in TRNOISE_REPLAY_ANALYSIS_TYPES:
+        return None
+    return {
+        "scope": "deck-and-configuration",
+        "trnoise_waveform_replay": False,
+        "basis": TRNOISE_REPLAY_EVIDENCE,
+        "decision": TRNOISE_REPLAY_DECISION,
+    }
+
 
 class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
@@ -336,6 +364,11 @@ def _startup_lines(record: dict) -> list[str]:
         f"  ngspice_startup_flags: {_yaml_str(meta['flags'])}",
         f"  ngspice_startup_spinit: {_yaml_str(meta['spinit'])}",
         f"  ngspice_startup_spinit_sha256: {meta['spinit_sha256']}",
+        *(
+            [f"  ngspice_startup_spinit_snapshot: {_yaml_str(meta['spinit_snapshot'])}"]
+            if meta.get("spinit_snapshot")
+            else []
+        ),
     ]
 
 
@@ -354,6 +387,7 @@ def build_record(
     supersedes: str = "",
     timeout_s: int | None = None,
     model_manifest: ModelManifest | None = None,
+    startup_snapshot: startup.Snapshot | None = None,
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
     (testbench, PVT point) record.
@@ -361,6 +395,12 @@ def build_record(
     ``model_manifest`` is the PDK model-content manifest (#562) captured
     before the run; ``sim/run_corners.py`` passes the pre-run capture after
     re-checking it. When omitted it is computed here from the live PDK.
+
+    ``startup_snapshot`` is the ngspice start-up script captured before the
+    invocation's first launch (#582). The record's digest comes from those
+    bytes, never from re-reading the checkout, and the copy the runs
+    consumed is listed in ``raw.files``. When omitted the legacy metadata
+    (live-file digest, no snapshot claim) is emitted.
     """
     # "status" here is the record's append-only lifecycle state (valid vs.
     # superseded, per sim/README.md), not a pass/fail verdict on the
@@ -398,6 +438,10 @@ def build_record(
     # load (raising if a snapshot was mutated mid-run) and lists them.
     input_snapshots = write_input_snapshots(tb, raw_dir)
     raw_files.extend(input_snapshots)
+    if startup_snapshot is not None:
+        # Re-checked like the SPICE inputs: raises if the copy ngspice read
+        # no longer equals the captured bytes.
+        raw_files.append(startup.write_snapshot(startup_snapshot, raw_dir))
     if tb.netlist_bytes is not None:
         testbench_sha = git_blob_sha1(tb.netlist_bytes)
         netlist_sha = git_blob_sha1(tb.dut_netlist_bytes)
@@ -445,7 +489,7 @@ def build_record(
         "pdk_content_complete": model_manifest.complete,
         "pdk_content_problems": list(model_manifest.problems),
         "tool_ngspice": ngspice,
-        "tool_ngspice_startup": startup.metadata(),
+        "tool_ngspice_startup": startup.metadata(startup_snapshot),
         "tool_platform": platform.platform(),
         "corner_process": point.corner.name,
         "corner_voltage": _voltage_label(point.vdd, tb.nominal_supply_v),
@@ -458,7 +502,10 @@ def build_record(
         "analysis_noise_params": tb.noise_params or "n/a",
         "analysis_runs": len(results),
         "seeds": seeds if seeds else "n/a (deterministic analysis)",
-        "raw_path": _relpath(repo_root, raw_dir) + "/",
+        # Additive (#574): absent (None) for analysis types with no measured
+        # replay limit, so their records render exactly as before.
+        "reproduction": reproduction_scope(tb.analysis_type),
+        "raw_path":_relpath(repo_root, raw_dir) + "/",
         "raw_files": raw_files,
         # Not rendered: kept so the record can be re-verified against the
         # directory it was actually hashed from (see verify_record).
@@ -581,6 +628,18 @@ def render_frontmatter(record: dict) -> str:
         lines.append(f"seeds: [{', '.join(str(s) for s in seeds)}]")
     else:
         lines.append(f"seeds: {seeds}")
+    # Additive (#574, DR-0031): only tran-noise records carry it; records
+    # without the block (older ones, other analysis types) stay valid.
+    reproduction = record.get("reproduction")
+    if reproduction:
+        lines += [
+            "reproduction:",
+            f"  scope: {reproduction['scope']}",
+            "  trnoise_waveform_replay: "
+            f"{'true' if reproduction['trnoise_waveform_replay'] else 'false'}",
+            f"  basis: {reproduction['basis']}",
+            f"  decision: {reproduction['decision']}",
+        ]
     lines += [
         "",
         "raw:",
@@ -695,6 +754,22 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
             f"--temps {_fmt(record['corner_temperature'])} {supply_args}{timeout_args}--no-write"
         )
     lines += ["```", ""]
+    reproduction = record.get("reproduction")
+    if reproduction and not reproduction["trnoise_waveform_replay"]:
+        lines += [
+            "These commands replay the deck and configuration with the recorded "
+            "seed(s). The seeds fix the netlist-parameter and control-language "
+            "random draws, but they do not reproduce the `trnoise` transient-noise "
+            "waveforms: on the ngspice-46 build measured in "
+            f"`{reproduction['basis']}` no seed or start-up control made them "
+            "repeat across simulator processes, so a re-run draws a fresh noise "
+            "realization and its measured values will differ from the ones "
+            "above. Exact waveform replay is not claimed. Agreement between a "
+            "re-run and this record is a statistical claim that needs its own "
+            "tolerance and evidence; this record does not demonstrate it. See "
+            f"`spec/decision-records/{reproduction['decision']}.md`.",
+            "",
+        ]
     if record.get("manifest_sha256"):
         lines += [
             f"The manifest used is snapshotted as `{record['raw_path']}"
@@ -960,6 +1035,7 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
     problems += verify_manifest_reference(text, raw_files)
     problems += verify_inputs_reference(text, raw_files)
     problems += verify_pdk_content_reference(text, raw_files, raw_dir)
+    problems += verify_startup_reference(text, raw_files)
     return problems
 
 
@@ -1114,3 +1190,54 @@ def verify_pdk_content_reference(
     if ref.get("complete") != complete or doc.get("complete") is not (complete == "true"):
         problems.append(f"pdk_content.complete {ref.get('complete')} disagrees with {name}")
     return problems
+
+
+_STARTUP_KEY_PREFIX = "ngspice_startup_"
+
+
+def parse_startup_section(text: str) -> dict[str, str]:
+    """Read the ``ngspice_startup_*`` lines of the frontmatter ``tool:`` block.
+
+    Keys are returned without the prefix (``spinit_sha256``,
+    ``spinit_snapshot``, ...). Empty for records without the lines.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}
+    front = lines[1:lines.index("---", 1)]
+    out: dict[str, str] = {}
+    in_block = False
+    for line in front:
+        if line.rstrip() == "tool:":
+            in_block = True
+            continue
+        if in_block:
+            if line[:1] not in (" ", "\t"):
+                break
+            key, _, value = line.strip().partition(":")
+            if key.startswith(_STARTUP_KEY_PREFIX):
+                out[key[len(_STARTUP_KEY_PREFIX):]] = value.strip().strip('"')
+    return out
+
+
+def verify_startup_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
+    """A declared start-up snapshot must be listed with the declared digest.
+
+    (The snapshot's bytes are covered by the raw.files re-hash.) Records
+    without ``ngspice_startup_spinit_snapshot`` -- legacy records and the
+    #575 format that hashed the live checkout file -- yield no problems.
+    """
+    ref = parse_startup_section(text)
+    name = ref.get("spinit_snapshot", "")
+    if not name:
+        return []
+    listed = dict(raw_files)
+    digest = ref.get("spinit_sha256", "")
+    if name not in listed:
+        return [f"tool.ngspice_startup_spinit_snapshot {name!r} is not listed in raw.files"]
+    if listed[name] != digest.removeprefix("sha256:"):
+        return [
+            f"tool.ngspice_startup_spinit_sha256 {digest} != {listed[name]} "
+            f"recorded for {name} in raw.files"
+        ]
+    return []

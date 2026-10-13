@@ -20,7 +20,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import corners, pdk_models, report, runner, testbench  # noqa: E402
+from harness import corners, pdk_models, report, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
 
@@ -688,7 +688,25 @@ class ChangedRecordDiscoveryTests(unittest.TestCase):
 
     def test_changed_records_that_exist_are_reported_as_existing(self):
         """End-to-end against the real repo: whatever this branch added must
-        resolve to files on disk, never to a doubled `sim/sim/...` path."""
+        resolve to files on disk, never to a doubled `sim/sim/...` path.
+
+        Needs a local `origin/main` to diff against. That is an environment
+        precondition, not the behaviour under test: a shallow single-branch
+        checkout or a clone without an `origin` remote lacks it (#621). Skip
+        then, unless the strict switch (`REQUIRE_RTL_TOOLS=1`, set by the
+        nightly, which fetches full history) is on -- there a missing ref is
+        a broken environment and must fail rather than hide the check."""
+        have_base = (
+            subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet", "origin/main^{commit}"],
+                cwd=self.vrc.REPO_ROOT,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
+        if not have_base and os.environ.get("REQUIRE_RTL_TOOLS") != "1":
+            self.skipTest("origin/main is not fetched; cannot diff changed records")
         for path in self.vrc._changed_records("origin/main"):
             with self.subTest(path=str(path)):
                 self.assertTrue(path.is_file(), f"discovered a path that does not exist: {path}")
@@ -1344,3 +1362,190 @@ class InputSnapshotTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StartupSnapshotRecordTests(unittest.TestCase):
+    """#582: the start-up script the runs consumed is listed in raw.files and
+    the metadata digest is cross-checked against it. No PDK, no ngspice."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tb_dir = self.root / "tb" / "an-experiment"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps({"name": "an-experiment", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.tb = testbench.load(tb_dir)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.live = self.root / "live-spinit"
+        self.live.write_bytes(b"* captured\n")
+        with mock.patch.object(startup, "SPINIT_PATH", self.live):
+            self.snap = startup.capture()
+        self.live.write_bytes(b"echo EDITED\n")  # after capture, before publication
+
+    def _record(self, snapshot, stem="2026-07-31-an-experiment-01"):
+        raw_dir = self.root / "records" / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        (raw_dir / "d.spice").write_text("* deck\n")
+        (raw_dir / "d.log").write_text("m_vout = 1\n")
+        testbench.write_input_snapshots(self.tb, raw_dir)
+        if snapshot is not None:
+            startup.write_snapshot(snapshot, raw_dir)
+        results = [runner.RunResult(
+            point=self.point, seed=None, status="ok", measurements={"vout": 1.0},
+            deck_name="d.spice", log_name="d.log",
+        )]
+        with mock.patch.object(startup, "SPINIT_PATH", self.live):
+            return report.build_record(
+                tb=self.tb, pdk=self.pdk, point=self.point, results=results,
+                ngspice="ngspice-46", repo_root=self.root, stem=stem,
+                completed_utc=_dt.datetime(2026, 7, 31, 12, 0, 0, tzinfo=_dt.timezone.utc),
+                wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": True},
+                startup_snapshot=snapshot,
+            )
+
+    def test_digest_and_raw_file_are_of_the_captured_bytes(self):
+        rec = self._record(self.snap)
+        self.assertEqual(rec["tool_ngspice_startup"]["spinit_sha256"], self.snap.sha256)
+        self.assertIn(("spinit", self.snap.sha256), rec["raw_files"])
+        self.assertEqual((Path(rec["raw_dir"]) / "spinit").read_bytes(), b"* captured\n")
+        text = report.render_frontmatter(rec)
+        self.assertIn("  ngspice_startup_spinit_snapshot: spinit", text)
+        self.assertEqual(report.verify_record(rec), [])
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+
+    def test_missing_or_changed_snapshot_is_detected(self):
+        rec = self._record(self.snap)
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        spinit = Path(rec["raw_dir"]) / "spinit"
+        spinit.write_bytes(b"echo TAMPERED\n")
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any(p.startswith("spinit:") for p in problems), problems)
+        spinit.unlink()
+        problems = report.verify_record_file(path, self.root)
+        self.assertTrue(any("spinit" in p and "not present" in p for p in problems), problems)
+
+    def test_inconsistent_metadata_digest_is_detected(self):
+        rec = self._record(self.snap)
+        path = report.write_record(rec, self.tb, self.root / "records", ["c"])
+        bad = path.read_text().replace(self.snap.sha256, "0" * 64, 1)
+        problems = report.verify_startup_reference(bad, rec["raw_files"])
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("ngspice_startup_spinit_sha256", problems[0])
+        unlisted = [f for f in rec["raw_files"] if f[0] != "spinit"]
+        self.assertEqual(len(report.verify_startup_reference(path.read_text(), unlisted)), 1)
+
+    def test_legacy_formats_stay_valid(self):
+        rec = self._record(None, stem="2026-07-31-an-experiment-02")
+        self.assertNotIn("spinit_snapshot", rec["tool_ngspice_startup"])
+        text = report.render_frontmatter(rec)
+        self.assertNotIn("ngspice_startup_spinit_snapshot", text)
+        self.assertEqual(report.verify_startup_reference(text, rec["raw_files"]), [])
+        self.assertEqual(report.verify_startup_reference("---\nrecord: x\n---\n", []), [])
+
+
+class TransientNoiseReproductionScopeTests(unittest.TestCase):
+    """#574 / DR-0031: a tran-noise record states that its seeds replay the
+    deck and configuration but not the trnoise waveforms; deterministic and
+    Monte Carlo records are not given that (unmeasured) limit. No PDK, no
+    ngspice."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def _record(self, analysis_type, seeds, stem):
+        tb_dir = self.root / "tb" / stem
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("vn out 0 dc 0 trnoise(1m 1n 0 0)\nr1 out 0 1k\n")
+        (tb_dir / "tb.json").write_text(json.dumps({
+            "name": stem, "netlist": "x.spice", "measure": {"vout": "v(out)"},
+            "analysis_type": analysis_type,
+        }))
+        tb = testbench.load(tb_dir)
+        raw_dir = self.root / "records" / "raw" / stem
+        raw_dir.mkdir(parents=True)
+        results = []
+        for i, seed in enumerate(seeds):
+            deck, log = testbench.run_artifact_names(self.point.corner_id, seed, i)
+            (raw_dir / deck).write_text("* deck\n")
+            (raw_dir / log).write_text("m_vout = 1\n")
+            results.append(runner.RunResult(
+                point=self.point, seed=seed, status="ok", measurements={"vout": 1.0 + i},
+                deck_name=deck, log_name=log,
+            ))
+        testbench.write_input_snapshots(tb, raw_dir)
+        record = report.build_record(
+            tb=tb, pdk=self.pdk, point=self.point, results=results,
+            ngspice="ngspice-46", repo_root=self.root, stem=stem,
+            completed_utc=_dt.datetime(2026, 10, 11, 12, 0, 0, tzinfo=_dt.timezone.utc),
+            wall_seconds=1.0, raw_dir=raw_dir, git={"commit": "f" * 40, "dirty": False},
+        )
+        return tb, record
+
+    def test_tran_noise_record_states_configuration_replay_only(self):
+        tb, rec = self._record("tran-noise", [11, 12], "2026-10-11-tn-01")
+        front = report.render_frontmatter(rec)
+        self.assertIn(
+            "reproduction:\n"
+            "  scope: deck-and-configuration\n"
+            "  trnoise_waveform_replay: false\n"
+            f"  basis: {report.TRNOISE_REPLAY_EVIDENCE}\n"
+            f"  decision: {report.TRNOISE_REPLAY_DECISION}\n",
+            front,
+        )
+        # Seeds are still recorded verbatim, in run order.
+        self.assertIn("seeds: [11, 12]", front)
+        text = report.render_reproduce_section(rec, tb)
+        self.assertIn("--seeds 11 ", text)
+        self.assertIn("--seeds 12 ", text)
+        self.assertIn("do not reproduce the `trnoise` transient-noise", text)
+        self.assertIn("Exact waveform replay is not claimed.", text)
+        self.assertIn("statistical claim that needs its own", text)
+        self.assertIn(report.TRNOISE_REPLAY_EVIDENCE, text)
+
+    def test_tran_noise_record_round_trips_through_the_verifiers(self):
+        tb, rec = self._record("tran-noise", [3], "2026-10-11-tn-02")
+        path = report.write_record(rec, tb, self.root / "records", ["c"])
+        raw_path, files = report.parse_raw_section(path.read_text())
+        self.assertEqual(raw_path, rec["raw_path"])
+        self.assertEqual(files, rec["raw_files"])
+        self.assertEqual(report.verify_record_file(path, self.root), [])
+
+    def test_mc_and_deterministic_records_carry_no_trnoise_limit(self):
+        for analysis_type, seeds, stem in (
+            ("mc", [1, 2], "2026-10-11-mc-01"),
+            ("tran", [None], "2026-10-11-tr-01"),
+            ("op", [None], "2026-10-11-op-01"),
+        ):
+            with self.subTest(analysis_type=analysis_type):
+                tb, rec = self._record(analysis_type, seeds, stem)
+                self.assertIsNone(rec["reproduction"])
+                self.assertNotIn("reproduction:", report.render_frontmatter(rec))
+                self.assertNotIn("trnoise", report.render_reproduce_section(rec, tb))
+
+    def test_record_dicts_without_the_field_still_render(self):
+        tb, rec = self._record("tran-noise", [5], "2026-10-11-tn-03")
+        legacy = {k: v for k, v in rec.items() if k != "reproduction"}
+        self.assertNotIn("reproduction:", report.render_frontmatter(legacy))
+        self.assertNotIn("trnoise", report.render_reproduce_section(legacy, tb))
+
+    def test_cited_experiment_and_decision_record_exist_and_verify(self):
+        experiment = REPO_ROOT / report.TRNOISE_REPLAY_EVIDENCE
+        self.assertTrue((experiment / "README.md").is_file())
+        decision = REPO_ROOT / "spec" / "decision-records" / f"{report.TRNOISE_REPLAY_DECISION}.md"
+        self.assertTrue(decision.is_file())
+        sums = (experiment / "SHA256SUMS").read_text().splitlines()
+        self.assertTrue(sums)
+        for line in sums:
+            digest, name = line.split("  ", 1)
+            data = (experiment / name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)

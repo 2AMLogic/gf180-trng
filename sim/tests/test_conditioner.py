@@ -16,7 +16,6 @@ Three groups:
 from __future__ import annotations
 
 import hashlib
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -31,10 +30,12 @@ TB_DIR = SIM_DIR / "tb" / "conditioner-crc32"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 import crc32_conditioner as cond  # noqa: E402
 import source_model  # noqa: E402
 import sp800_90b  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 RTL = REPO_ROOT / "design" / "conditioner" / "crc32_conditioner.v"
 RTL_TB = TB_DIR / "tb_rtl_equivalence.v"
@@ -250,10 +251,10 @@ def _model_words(vectors):
     return words
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- RTL/model equivalence not checked here "
-    "(install iverilog to run it; see sim/tb/conditioner-crc32/README.md)",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- RTL/model equivalence not checked here "
+           "(install iverilog to run it; see sim/tb/conditioner-crc32/README.md)",
 )
 class RtlEquivalenceTests(unittest.TestCase):
     """The RTL must reproduce the behavioural model word for word.

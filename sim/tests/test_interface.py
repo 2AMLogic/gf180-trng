@@ -22,7 +22,6 @@ Four groups:
 
 from __future__ import annotations
 
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -36,9 +35,11 @@ TB_DIR = SIM_DIR / "tb" / "interface-regfile"
 
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(IFACE_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
 import regmap  # noqa: E402
 import trng_interface as iface  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 RTL = IFACE_DIR / "trng_interface.v"
 RTL_TB = TB_DIR / "tb_rtl_equivalence.v"
@@ -927,10 +928,10 @@ def _mixed_vectors():
     return vectors
 
 
-@unittest.skipUnless(
-    shutil.which("iverilog") and shutil.which("vvp"),
-    "Icarus Verilog not installed -- RTL/model equivalence not checked here "
-    "(install iverilog to run it; see sim/tb/interface-regfile/README.md)",
+@requires_tools(
+    "iverilog", "vvp",
+    reason="Icarus Verilog not installed -- RTL/model equivalence not checked here "
+           "(install iverilog to run it; see sim/tb/interface-regfile/README.md)",
 )
 class RtlEquivalenceTests(unittest.TestCase):
     """The RTL must reproduce the behavioural model output for output, cycle

@@ -11,7 +11,7 @@ which says what each report answers and whether it is complete.
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** What exists today is an evidence-record convention,
-[thirty decision records](spec/decision-records/), an entropy-source
+[thirty-one decision records](spec/decision-records/), an entropy-source
 architecture survey, a PVT corner simulation harness and a gate-level
 static-timing and power flow, together producing twenty characterization
 summaries (`sim/characterization-*.md`) resting on 1030 append-only evidence
@@ -314,8 +314,9 @@ calling `npm run <script>` once per group — `package.json` is the one
 inventory of what each check is, and the workflow is a runner over it rather
 than a second list that can say something different (#97):
 
-- **`npm run lint`** — a Python/shell syntax check and the schematic
-  text-block brace guard (`design/netlist.py --lint`, #61);
+- **`npm run lint`** — Python/shell syntax and lightweight static guards for
+  schematic text blocks, unused Python names, path-based module loading, and
+  relative Markdown links;
 - **`npm run test`** — the harness unit tests;
 - **`npm run check:spec`**, **nineteen spec-arithmetic self-checks** — pure
   derivations over records already committed under `sim/records/`, so a newly

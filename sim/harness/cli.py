@@ -15,7 +15,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, pdk_models, report, runner, testbench as tb_mod
+from . import HARNESS_VERSION, corners as corners_mod, pdk_models, report, runner, startup as startup_mod, testbench as tb_mod
 from .pdk import PdkNotFound, find_all_variant_dirs, find_pdk
 from .runner import NgspiceMissing
 
@@ -309,6 +309,12 @@ def run(args: argparse.Namespace) -> int:
 
     git = report.git_provenance(REPO_ROOT)
 
+    # ngspice start-up script (#582): captured once, here, BEFORE any
+    # simulator starts. Every point and seed -- serial, parallel, watchdog or
+    # fallback -- is served these bytes from its own raw directory, and the
+    # published digest is of these bytes.
+    startup_snapshot = startup_mod.capture()
+
     # PDK model-content identity (#562), captured once per distinct set of
     # library sections BEFORE any simulator starts; each point is re-checked
     # against it before its record is published (see _emit).
@@ -383,6 +389,7 @@ def run(args: argparse.Namespace) -> int:
         result = runner.run_one(
             tb, pdk, points[point_index], workdirs[point_index],
             seed=seed, run_index=run_index, timeout_s=args.timeout,
+            startup_snapshot=startup_snapshot,
         )
         return point_index, run_index, result
 
@@ -423,10 +430,17 @@ def run(args: argparse.Namespace) -> int:
                 (point.corner_id, workdirs[point_index], pre.describe_differences(post))
             )
             point_ok = False
+        # Duplicated trnoise realizations (#605): withhold the record.
+        duplicated = "" if changed else runner.duplicate_realization_problem(tb, results)
+        if duplicated:
+            point_ok = False
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
-            if changed:
+            if duplicated:
+                flag = "FAILED-DUPLICATE-NOISE"
+                detail = f"{duplicated}; record withheld"
+            elif changed:
                 flag = "FAILED-PDK-CHANGED"
                 detail = "PDK model files changed during the run; record withheld"
             elif point_ok:
@@ -450,13 +464,16 @@ def run(args: argparse.Namespace) -> int:
 
         if changed:
             return
+        if duplicated:
+            print(f"error: {point.corner_id}: {duplicated}", file=sys.stderr)
+            return
         if not args.no_write:
             record = report.build_record(
                 tb=tb, pdk=pdk, point=point, results=results, ngspice=ngspice,
                 repo_root=REPO_ROOT, stem=stems[point_index], completed_utc=completed_utc,
                 wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
                 supersedes=args.supersedes, timeout_s=args.timeout,
-                model_manifest=pre,
+                model_manifest=pre, startup_snapshot=startup_snapshot,
             )
             path = report.write_record(
                 record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs, pre)

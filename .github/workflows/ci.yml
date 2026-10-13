@@ -23,7 +23,13 @@ name: CI
 #
 #   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test`.
+#       `npm run test`. The tests that need an external simulator (the RTL
+#       equivalence classes need Icarus Verilog; two runner probes need
+#       ngspice) SKIP here, since this job installs nothing. They run
+#       strictly in pdk-nightly.yml, which installs both and sets
+#       REQUIRE_RTL_TOOLS=1 so a missing tool fails instead of skipping
+#       (#618). Every such gate goes through sim/tests/_tool_gate.py;
+#       sim/tests/test_tool_gate_discipline.py fails on one that does not.
 #
 #   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
@@ -163,8 +169,9 @@ name: CI
 #
 #   sim/tools/unused_names.py --check (unused import / local guard, #494)
 #   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
+#   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
-#       and so into this job's first step; both are stdlib-only and need no
+#       and so into this job's first step; all are stdlib-only and need no
 #       PDK. verify_markdown_links walks the git-tracked *.md files (outside
 #       the append-only sim/records/ tree and the installed .loom/, .claude/
 #       and .agents/ surfaces) and fails on any relative inline link or
@@ -273,6 +280,12 @@ jobs:
       # (see the inventory above).
       - name: Lint (syntax check, shell check, schematic brace guard)
         run: npm run lint
+
+      # shellcheck (warning severity) over the tracked first-party *.sh (#591).
+      # ubuntu-latest ships shellcheck; --require-tools makes a missing
+      # binary a failure here instead of the local skip.
+      - name: Shell lint (shellcheck)
+        run: python3 -m sim.tools.lint_shell --require-tools
 
       - name: Harness unit tests
         run: npm run test

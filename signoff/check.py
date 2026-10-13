@@ -98,6 +98,13 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Appended, not prepended: this file is run by path (so `signoff/`, not the
+# repository root, is on `sys.path`) and only needs the shared path loader.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.append(str(REPO_ROOT))
+
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 RECORD = REPO_ROOT / "signoff" / "records" / "t1-tier-report.json"
 EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence"
@@ -324,13 +331,8 @@ def _ring_port_check(netlist: Path, ring: str = "ring1") -> str | None:
 
 
 def _load_build_dut():
-    import importlib.util
-
     path = REPO_ROOT / ITEM7A_TB_DIR / "build_dut.py"
-    spec = importlib.util.spec_from_file_location("ro_ring11_pex_build_dut", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    return load_module_from_path("ro_ring11_pex_build_dut", path)
 
 
 def item7_analog_dut_source_problems(pub: dict | None = None, ring: str = "ring1") -> list[str]:
@@ -539,13 +541,8 @@ CS_PUBLICATION_SCHEMA = "gf180-trng/combiner-sampler-pex-publication/1"
 
 
 def _load_tb_module(tb_dir: str, name: str):
-    import importlib.util
-
     path = REPO_ROOT / tb_dir / f"{name}.py"
-    spec = importlib.util.spec_from_file_location(f"{Path(tb_dir).name.replace('-', '_')}_{name}", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    return load_module_from_path(f"{Path(tb_dir).name.replace('-', '_')}_{name}", path)
 
 
 def request_corner_ids(request: dict) -> list[str]:

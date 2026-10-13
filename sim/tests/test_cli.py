@@ -6,6 +6,7 @@ in #39, and the raw-output integrity check a completed run must pass (#60).
 from __future__ import annotations
 
 import io
+import hashlib
 import json
 import os
 import sys
@@ -150,7 +151,7 @@ class RunIntegrityTests(unittest.TestCase):
 
     def _install_runner(self, on_run=None):
         """Stub run_one: write the deck + log a real run would leave behind."""
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             stem = point.corner_id
             deck = workdir / f"{stem}.spice"
@@ -160,7 +161,8 @@ class RunIntegrityTests(unittest.TestCase):
             if on_run is not None:
                 on_run(point, workdir)
             return runner.RunResult(
-                point=point, seed=seed, status="ok", measurements={"vout": 1.65},
+                point=point, seed=seed, status="ok",
+                measurements={"vout": 1.65 + 0.001 * (seed or 0)},
                 seconds=0.1, deck_name=deck.name, log_name=log.name,
             )
 
@@ -188,6 +190,40 @@ class RunIntegrityTests(unittest.TestCase):
         for stem in stems:
             problems = report.verify_record_file(self.records_dir / f"{stem}.md", self.root)
             self.assertEqual(problems, [], problems)
+
+    def test_startup_script_is_captured_once_and_edits_mid_sweep_are_not_consumed(self):
+        """#582: the snapshot is captured before the first launch, shared by
+        every point, and published records hash those bytes -- not the
+        working-tree file edited after the first point started."""
+        from harness import startup
+        live = self.root / "live-spinit"
+        live.write_bytes(b"* captured before launch\n")
+        patcher = mock.patch.object(startup, "SPINIT_PATH", live)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        seen: list = []
+
+        def on_run(point, workdir):
+            live.write_bytes(b"echo EDITED_MID_SWEEP\n")
+
+        self._install_runner(on_run=on_run)
+        real = cli.runner.run_one
+
+        def recording(tb, pdk, point, workdir, **kw):
+            seen.append(kw["startup_snapshot"])
+            startup.write_snapshot(kw["startup_snapshot"], workdir)
+            return real(tb, pdk, point, workdir, **kw)
+
+        with mock.patch.object(cli.runner, "run_one", side_effect=recording):
+            status, out, _err = self._run()
+        self.assertEqual(status, cli.EXIT_OK, out)
+        self.assertGreaterEqual(len(seen), 2)
+        self.assertTrue(all(snap is seen[0] for snap in seen))
+        want = hashlib.sha256(b"* captured before launch\n").hexdigest()
+        for path in sorted(self.records_dir.glob("*.md")):
+            text = path.read_text()
+            self.assertIn(f"ngspice_startup_spinit_sha256: {want}", text)
+            self.assertEqual(report.verify_record_file(path, self.root), [])
 
     def test_a_second_writer_clobbering_raw_output_fails_the_run(self):
         """The record for point 1 is written, then its raw output is
@@ -266,7 +302,7 @@ class NoWriteScratchIsolationTests(RunIntegrityTests):
         seen: dict[str, Path] = {}
         inner: dict[str, tuple] = {}
 
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             deck = workdir / f"{point.corner_id}.spice"
             log = workdir / f"{point.corner_id}.log"
@@ -315,7 +351,7 @@ class NoWriteScratchIsolationTests(RunIntegrityTests):
         seen: dict[str, Path] = {}
         inner: dict[str, tuple] = {}
 
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             log = workdir / f"{point.corner_id}.log"
             if "outer" not in seen:
@@ -670,7 +706,7 @@ class TimeoutSummaryTests(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def _install_runner(self, timed_out_corner: str):
-        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0):
+        def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
             workdir.mkdir(parents=True, exist_ok=True)
             stem = point.corner_id
             deck = workdir / f"{stem}.spice"
@@ -690,7 +726,8 @@ class TimeoutSummaryTests(unittest.TestCase):
             log = workdir / f"{stem}.log"
             log.write_text("m_vout = 1.65\n")
             return runner.RunResult(
-                point=point, seed=seed, status="ok", measurements={"vout": 1.65},
+                point=point, seed=seed, status="ok",
+                measurements={"vout": 1.65 + 0.001 * (seed or 0)},
                 seconds=0.1, deck_name=deck.name, log_name=log.name,
             )
 

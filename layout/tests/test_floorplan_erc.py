@@ -19,7 +19,6 @@ Two groups:
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 import re
 import shutil
@@ -36,12 +35,10 @@ sys.path.insert(0, str(REPO_ROOT / "design"))
 
 from layout.floorplan import erc_supply  # noqa: E402
 from layout.floorplan import floorplan  # noqa: E402
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 _GDSII = REPO_ROOT / "layout" / "testcells" / "gdsii.py"
-_spec = importlib.util.spec_from_file_location("_gdsii_for_erc_tests", _GDSII)
-gdsii = importlib.util.module_from_spec(_spec)
-sys.modules[_spec.name] = gdsii
-_spec.loader.exec_module(gdsii)
+gdsii = load_module_from_path("_gdsii_for_erc_tests", _GDSII)
 
 Rect, Label = gdsii.Rect, gdsii.Label
 METALS = (34, 36, 42, 46, 81)

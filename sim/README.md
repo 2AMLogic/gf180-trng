@@ -87,6 +87,40 @@ In ngspice-46 a later competing option line is ignored, and a control-block
 `setseed` overrides the seed. That experiment also found that `trnoise`
 waveforms do not repeat under the same seed (#574).
 
+### What a transient-noise seed reproduces (#574, DR-0031)
+
+On the ngspice-46 build measured in
+[`tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/`](tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/README.md),
+the seed does **not** reproduce `trnoise` waveforms. Two processes with the
+same seed shared none of 16 noise samples under the harness start-up policy.
+The same held with `setseed` or `set rndseed` in an explicitly supplied
+`spinit`, with `setseed` in a user `.spiceinit` (the manual's suggestion)
+and with a control-block `setseed`. The noise followed the simulator's
+process id instead. The same seed did reproduce the `agauss` parameter and
+control-language draws. Other ngspice builds have not been measured.
+[DR-0031](../spec/decision-records/DR-0031-transient-noise-reproducibility.md)
+sets the contract that follows:
+
+- **Seeds are still required** and still owned by the harness; rule 2 and
+  the checks above are unchanged. For a transient-noise run the seeds fix
+  the non-`trnoise` random draws and identify the runs.
+- **Replay means deck and configuration, not waveform.** Re-running a
+  `tran-noise` record's commands at its `repo_commit` with its snapshots
+  rebuilds the same decks, PVT point and start-up configuration, but draws
+  fresh `trnoise` noise. Its numbers are a new sample and will differ from
+  the record's. New `tran-noise` records carry a `reproduction` block and
+  say this in "How to reproduce". Deterministic and `mc` records do not:
+  no limit was measured for them.
+- **Distinct seeds do not make the noise distinct.** Runs get different
+  noise because each is a separate ngspice process. Neither the seeds nor
+  the experiment establish that runs are statistically independent.
+- **Statistical repeatability is a separate claim.** Saying a re-run agrees
+  with a record within its spread needs its own tolerance and evidence. It
+  is not demonstrated here.
+
+Records written before DR-0031 have no `reproduction` block and are not
+edited. Read their "How to reproduce" sections under this contract.
+
 Everything below is mechanics in service of those two rules.
 
 ---
@@ -183,6 +217,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `pdk.models` | The corner model file(s) actually included. |
 | `tool.ngspice` | Full `ngspice -v` version string. |
 | `tool.ngspice_startup` / `tool.ngspice_startup_flags` / `tool.ngspice_startup_spinit` / `tool.ngspice_startup_spinit_sha256` | *Additive; records from `run_corners.py` after #575.* The ngspice start-up-configuration policy in force (`no-user-init+pinned-spinit/1`), its command-line flag (`-n`), and the repo path and SHA-256 of the pinned `spinit` used as the system script. See [ngspice start-up configuration](#ngspice-start-up-configuration-575). Records without these lines predate the field and stay valid unchanged. |
+| `tool.ngspice_startup_spinit_snapshot` | *Additive; records from `run_corners.py` after #582.* Name (`spinit`) of the byte-for-byte copy of the start-up script that ngspice actually read, kept in the record's raw directory and listed in `raw.files`. When present, `tool.ngspice_startup_spinit_sha256` is the digest of that copy and `sim/tools/verify_record_checksums.py` cross-checks the two. Records without it (including #575-format records, whose digest was read from the checkout) stay valid unchanged. |
 | `tool.platform` | OS/arch the run executed on. |
 | `corner.process` | `tt` / `ss` / `ff` / `sf` / `fs` (as named by the PDK). |
 | `corner.voltage` | Supply(s) in volts, with the nominal noted. |
@@ -193,6 +228,7 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `analysis.noise_params` | For `tran-noise`: `NOISETSTEP` / `NOISEFMAX` / equivalent, verbatim. |
 | `analysis.runs` | Number of independent runs aggregated into this record. |
 | `seeds` | **Every** seed used, in run order. Required whenever the analysis is stochastic; write `seeds: n/a (deterministic analysis)` otherwise. |
+| `reproduction.scope` / `reproduction.trnoise_waveform_replay` / `reproduction.basis` / `reproduction.decision` | *Additive; `tran-noise` records from `run_corners.py` after #574.* What the "How to reproduce" commands replay: `deck-and-configuration`, with `trnoise_waveform_replay: false`, the tool experiment that measured it and the decision record that adopts it. See [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031). Records of other analysis types, and records written before #574, have no such block and stay valid unchanged. |
 | `raw.path` | Repo-relative path to the raw-output directory for this record. |
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
 | `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
@@ -211,7 +247,9 @@ indistinguishable from a forgotten one.
   claims.
 - **How to reproduce** — the exact command(s), runnable from the repo root,
   including the seed(s). Someone with the repo and ngspice must be able to
-  copy-paste this.
+  copy-paste this. For a `tran-noise` record the commands replay the deck
+  and configuration, not the `trnoise` waveforms, and the section says so
+  (see [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031)).
 - **Caveats** — what this run does *not* show (method limits, truncated
   accumulation time, known weak spots such as flicker-noise handling in
   transient noise). Stating a limit is not a weakness in the record; an
@@ -471,14 +509,23 @@ ngspice through one command/environment builder
 watchdog and the no-`timeout(1)` fallback paths, with an explicit policy
 measured in
 [`tool-experiments/2026-10-11-ngspice-startup-config/`](tool-experiments/2026-10-11-ngspice-startup-config/README.md)
-(ngspice-42; see that README for what was and was not measured):
+(ngspice-42) and
+[`tool-experiments/2026-10-11-ngspice46-startup-lookup/`](tool-experiments/2026-10-11-ngspice46-startup-lookup/README.md)
+(ngspice-46, the minimum this README requires; see each README for what was
+and was not measured):
 
 | Start-up input (batch mode) | Control |
 |---|---|
-| Work-directory `.spiceinit` | `-n` |
-| User `~/.spiceinit` | `-n` |
+| Deck-directory `.spiceinit` — searched first on ngspice-46; on ngspice-42 this slot was the working-directory file, and the deck's directory was not searched | `-n` |
+| Working-directory `.spiceinit` — ngspice-46 falls back to it only when the deck's directory has none; `$HOME/.spiceinit` is the last fallback on both measured builds | `-n` |
 | System `spinit` | `-n` does **not** suppress it; `SPICE_SCRIPTS` is set to `sim/harness/ngspice_scripts/`, whose `spinit` is checked in and content-pinned |
 | `SPICE_LIB_DIR` | removed from the child environment (and overridden by `SPICE_SCRIPTS`) |
+
+Only one of the three `.spiceinit` locations is read per launch (first match
+wins) on both measured builds, and the suppression behaviour (`-n` scope,
+`SPICE_SCRIPTS`, `SPICE_LIB_DIR`) is the same on both; the lookup-order
+difference is the only measured change between the builds, and neither
+measurement is generalized to other versions.
 
 The pinned `spinit` contains no commands: no aliases and no code-model or
 OSDI loading, so a testbench that needs an XSPICE code model or an OSDI
@@ -486,6 +533,24 @@ device would fail loudly rather than inherit whatever the host loads. Its
 SHA-256 is recorded in every new evidence record (`tool.ngspice_startup_*`),
 so changing it is visible. Timeout, process-group and `cwd` handling are
 unchanged.
+
+**Frozen once per invocation (#582).** The checked-in script is only the
+source. `run_corners.py` reads it once, before the first simulator starts,
+writes those bytes as `spinit` into every point's raw directory (scratch
+directory under `--no-write`) and points `SPICE_SCRIPTS` at that directory.
+All points and seeds, serial or `-j`, with or without the `timeout(1)`
+watchdog, therefore read the same captured bytes, and the recorded digest is
+computed from them rather than from the working tree at publication time. An
+edit to `sim/harness/ngspice_scripts/spinit` while a sweep runs does not
+affect that sweep. The copy appears in `raw.files`, so
+`sim/tools/verify_record_checksums.py` detects a missing or altered snapshot and a
+`ngspice_startup_spinit_sha256` that disagrees with it.
+
+To reproduce a run, including one made from a dirty tree, in a scratch
+worktree: check out the record's `repo_commit`, then copy the record's
+`<raw.path>spinit` over `sim/harness/ngspice_scripts/spinit` before running
+(a plain `diff` shows whether the checkout differed), or run ngspice with
+`SPICE_SCRIPTS` set to a directory containing that file and `-n -b`.
 
 Remaining ambient inputs, not controlled: other environment variables the
 simulator reads, the ngspice build itself (recorded as `tool.ngspice`), and
@@ -590,6 +655,17 @@ If git itself cannot answer (not run from a checkout, git not installed), it
 exits 2 naming git as the cause rather than reporting every file uncommitted.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
+
+Only the default invocation (no record arguments, no `--changed`, no
+`--no-git`) validates the whole evidence inventory. It also runs the reverse
+check: every file `git` tracks (or has staged) under `sim/records/raw/` must be
+named in some record's validated `raw.files`, otherwise the run fails and lists
+the orphan paths, including when no records exist at all. This catches an
+abandoned run staged without a record. Untracked local directories are ignored,
+so unfinished work does not break the check. The fix is to add the record that
+cites the output or unstage it (`git rm --cached`); the tool never deletes or
+invents evidence. Record-scoped runs (named records, `--changed`) and `--no-git`
+check only what they select and make no claim about the rest of the inventory.
 
 ### Manifest snapshot and reproducing a historical run
 

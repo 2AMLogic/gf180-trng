@@ -1,0 +1,18 @@
+trnoise replay probe: .option seed=12, control setseed 12
+.param pm = agauss(0, 1, 1)
+vn n1 0 dc 0 trnoise(1 1n 0 0)
+rn n1 0 1k
+bp n2 0 v = pm
+rp n2 0 1k
+.option seed=12
+.control
+set numdgt=8
+setseed 12
+tran 1n 16n
+print v(n1)
+let p = v(n2)
+print p[0]
+let g = sgauss(vector(3))
+print g
+.endc
+.end
