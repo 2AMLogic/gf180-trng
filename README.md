@@ -318,7 +318,7 @@ than a second list that can say something different (#97):
   schematic text blocks, unused Python names, path-based module loading, and
   relative Markdown links;
 - **`npm run test`** — the harness unit tests;
-- **`npm run check:spec`**, **nineteen spec-arithmetic self-checks** — pure
+- **`npm run check:spec`**, **twenty spec-arithmetic self-checks** — pure
   derivations over records already committed under `sim/records/`, so a newly
   appended record cannot silently move a conclusion a summary document still
   asserts: `jitter_energy_law.py`, `starved_cell_jitter_energy.py`,
@@ -329,7 +329,8 @@ than a second list that can say something different (#97):
   `digital_corner_characterization.py`, `activity_power_characterization.py`,
   `vss_trunk_ir_drop.py`, `digital_supply_ir_drop.py`,
   `corpus_counts.py`, `klt_pin_sites.py`,
-  `jitter_estimator_calibration_check.py` and `statistical_battery.py`, each
+  `jitter_estimator_calibration_check.py`, `statistical_battery.py` and
+  `higher_rate_options.py`, each
   `--check`;
 - `sim/tools/verify_record_checksums.py`, which re-hashes every file each
   record's `raw.files` cites against `sim/records/raw/` (#60) — run as its own

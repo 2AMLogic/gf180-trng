@@ -90,8 +90,9 @@ name: CI
 #   sim/tools/klt_pin_sites.py --check
 #   sim/tools/jitter_estimator_calibration_check.py --check
 #   sim/tools/statistical_battery.py --check
+#   sim/tools/higher_rate_options.py --check
 #       RUN on every push/PR via `npm run check:spec` (package.json is the
-#       single list of all nineteen). Every one is a pure derivation over
+#       single list of all twenty). Every one is a pure derivation over
 #       records already committed under sim/records/ -- stdlib-only, no
 #       ngspice, no PDK, sub-second -- so a newly appended record cannot
 #       silently move a conclusion a summary document still asserts. See the
@@ -298,7 +299,7 @@ jobs:
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. Run via `npm run check:spec` -- the full
-      # list of nineteen lives in package.json, not here (issue #97).
+      # list of twenty lives in package.json, not here (issue #97).
       # jitter_energy_law.py --check fails if the three record families it
       # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
       # --check fails if the shipped array stops satisfying DR-0007 §2 at any
@@ -360,6 +361,11 @@ jobs:
       # IS missed, by 4.5x, and that is routed through DR-0017 rather than
       # through a red build. It degrades to the measured-silicon-only view on
       # this runner, which has no PDK and therefore no Liberty library.
+      # higher_rate_options.py --check (issue #629) fails if the starved-cell
+      # constant it sizes with drifts from starved_cell_jitter_energy.py, if
+      # its law stops reproducing the shipped ring count, or if any figure
+      # docs/higher-rate-source-options-study.md quotes stops reproducing
+      # from the committed records it reads.
       - name: "Spec arithmetic self-checks (jitter-energy law, array sizing, entropy corner, ring coupling, issue 14 rollups)"
         run: npm run check:spec
 

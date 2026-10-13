@@ -52,6 +52,7 @@ These are forward-looking documents. They run no simulation, are not evidence
 records, and are not part of the report index above.
 
 - [`../docs/out-of-envelope-characterization-plan.md`](../docs/out-of-envelope-characterization-plan.md) -- Model-bound audit and execution plan for health-test behaviour just outside the operating envelope. Status: plan (#467); no supported simulation grid and over the CPU budget as of its writing, so the envelope row's out-of-envelope clause remains unverified.
+- [`../docs/higher-rate-source-options-study.md`](../docs/higher-rate-source-options-study.md) -- Design study: what a raw rate of 100 kbps, 1 Mbps or 4 Mbps would cost on gf180, as more XOR-combined starved-cell rings (DR-0007 sizing law at the starved-cell `a`) or as the metastability-hybrid tap, priced from existing records by `sim/tools/higher_rate_options.py`. Status: study (#629); runs no simulation, proposes no row change, makes no entropy claim.
 
 ---
 
