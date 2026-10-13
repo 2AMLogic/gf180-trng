@@ -733,7 +733,7 @@ The same reading applies as on the digital side: **`met` means the
 aggregate exists and is current, not that its rows pass.** Exactly one
 analog-facing row is met (time-to-first-valid, 1.281 ms). The disclosed
 exceptions travel with the claim. The DR-0007 sizing law holds at the
-entropy-binding corner only up to 678–9412 bps, against the ratified 1 Mbps
+entropy-binding corner only up to 678–8810 bps, against the ratified 1 Mbps
 raw rate. Raw min-entropy is unmeasured and cannot be measured by
 transistor-level simulation at the rates under consideration, so the Tier 2
 quality estimate is not delivered. The analog power and area terms fit
