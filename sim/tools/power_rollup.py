@@ -163,9 +163,17 @@ IDLE_SCOPE = "sampler_core"
 ACTIVE_BUDGET_W = 500e-6
 IDLE_BUDGET_A = 1e-6
 
-#: DR-0003's ratified raw rate; DR-0010 proposes 500 bps (Proposed, not
-#: ratified).
-RATIFIED_RAW_RATE_BPS = 1e6
+#: The current ratified raw rate: 2000 bps, per
+#: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy (DR-0010's 500 bps
+#: value and DR-0003's 1 Mbps are superseded and survive only as historical
+#: figures; reproduce them with an explicit ``--rate``).
+RATIFIED_RAW_RATE_BPS = 2000.0
+
+#: The fixed clock rate the committed gate-level digital power records were
+#: measured at. ``digital_measured`` scales its dynamic term relative to THIS
+#: rate, never relative to the current ratified rate: moving the default above
+#: must not change the normalization of a measurement taken at 1 MHz.
+DIGITAL_MEASUREMENT_RATE_HZ = 1e6
 
 #: Fraction of each clock period in which the sampler's master transmission
 #: gate is transparent. The real clock is 50 % duty; the active-current deck's
@@ -315,7 +323,7 @@ def digital_measured(rate_bps: float) -> dict:
     p = dcc.power(records)
     leak_w = p["max_leakage_w"]
     dyn_w_at_1mhz = p["max_1mhz_w"] - leak_w
-    active_w = leak_w + dyn_w_at_1mhz * (rate_bps / RATIFIED_RAW_RATE_BPS)
+    active_w = leak_w + dyn_w_at_1mhz * (rate_bps / DIGITAL_MEASUREMENT_RATE_HZ)
     # Leakage does not depend on the interconnect corner (it is a device-only
     # quantity), so `p["max_leakage_corner"]` names an arbitrary rc suffix --
     # whichever of the three tied interconnect corners `dcc.power()`'s own
@@ -453,7 +461,10 @@ def main(argv=None) -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     p.add_argument("--rate", type=float, default=RATIFIED_RAW_RATE_BPS,
-                   help="sample-clock rate in Hz (default 1e6, DR-0003's ratified row)")
+                   help=f"sample-clock rate in Hz (default {RATIFIED_RAW_RATE_BPS:g}, the "
+                        "ratified row per DR-0011-raw-rate-at-the-measured-"
+                        "starved-cell-jitter-energy; pass --rate 1e6 or --rate 500 "
+                        "to reproduce the historical DR-0003 / DR-0010 figures)")
     p.add_argument("--no-digital", action="store_true",
                    help="report only the transistor-level measured terms")
     p.add_argument("--require-digital", action="store_true",

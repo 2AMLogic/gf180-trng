@@ -571,6 +571,48 @@ def _flops(inventory) -> int:
                for s, n in counts.items() if s.startswith("dff"))
 
 
+class DigitalRateNormalizationTests(unittest.TestCase):
+    """``digital_measured`` scales from the fixed 1 MHz measurement, not from
+    the current ratified rate, so moving the default must not move the
+    normalization (#585)."""
+
+    RATES = (2000.0, 500.0, 1e6, 20e6)
+
+    def test_current_default_is_2000_bps_and_measurement_rate_is_fixed(self):
+        self.assertEqual(pr.RATIFIED_RAW_RATE_BPS, 2000.0)
+        self.assertEqual(pr.DIGITAL_MEASUREMENT_RATE_HZ, 1e6)
+
+    def test_leakage_is_rate_independent_and_dynamic_scales_linearly(self):
+        ref = pr.digital_measured(pr.DIGITAL_MEASUREMENT_RATE_HZ)
+        leak = ref["leakage_w"]
+        dyn_1mhz = ref["active_w"] - leak
+        self.assertGreater(dyn_1mhz, 0.0)
+        # At the measurement rate the scaled figure is the measured figure.
+        self.assertAlmostEqual(ref["active_w"], ref["active_w_at_1mhz"], places=12)
+        for rate in self.RATES:
+            with self.subTest(rate=rate):
+                d = pr.digital_measured(rate)
+                self.assertEqual(d["leakage_w"], leak)
+                self.assertEqual(d["active_w_at_1mhz"], ref["active_w_at_1mhz"])
+                self.assertAlmostEqual(
+                    d["active_w"], leak + dyn_1mhz * rate / 1e6,
+                    delta=1e-12 * max(1.0, d["active_w"]))
+
+    def test_2000_bps_does_not_keep_the_full_1mhz_dynamic_term(self):
+        d = pr.digital_measured(2000.0)
+        dyn_1mhz = d["active_w_at_1mhz"] - d["leakage_w"]
+        self.assertAlmostEqual(d["active_w"] - d["leakage_w"], dyn_1mhz * 2e-3,
+                               delta=1e-12 * dyn_1mhz)
+
+    def test_20mhz_agrees_with_the_committed_record_pair(self):
+        # The family's own 20 MHz records agree with the linear model to
+        # better than 2e-6 relative (digital_measured's docstring).
+        import digital_corner_characterization as dcc  # noqa: PLC0415
+        p20 = dcc.power(dcc.load())
+        self.assertAlmostEqual(
+            pr.digital_measured(20e6)["active_w"] / p20["max_20mhz_w"], 1.0, delta=1e-4)
+
+
 class InventoryStalenessTests(unittest.TestCase):
     """Fail if the RTL moves out from under the gate inventories.
 

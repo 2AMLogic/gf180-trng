@@ -98,6 +98,7 @@ from array_sizing import (  # noqa: E402
     MARGIN_M,
     Q_H0,
     DR0010_RATE_BPS,
+    RAW_RATE_BPS,
     load,
     shipped_ring_count,
 )
@@ -695,8 +696,11 @@ def main(argv: list[str] | None = None) -> int:
                     "and the device-mismatch bias measured at the nominal corner.",
     )
     parser.add_argument(
-        "--rate", type=float, default=DR0010_RATE_BPS, metavar="BPS",
-        help=f"raw rate to evaluate Q at (default {DR0010_RATE_BPS:g} bps, DR-0010 §1)",
+        "--rate", type=float, default=RAW_RATE_BPS, metavar="BPS",
+        help=f"raw rate to evaluate Q at (default {RAW_RATE_BPS:g} bps, the ratified rate "
+             "per DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy; "
+             f"pass --rate {DR0010_RATE_BPS:g} to reproduce the historical "
+             "DR-0010 §1 tables)",
     )
     parser.add_argument(
         "--full", action="store_true",

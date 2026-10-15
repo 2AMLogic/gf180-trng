@@ -360,5 +360,27 @@ class SamplerOffsetLifecycleTests(LifecycleTestCase):
                     wce._sampler_offset(self.CORNER)
 
 
+class DefaultRateTests(unittest.TestCase):
+    """The ``--rate`` default is the ratified 2 kbps; DR-0010's 500 bps stays
+    reachable explicitly so committed 500 bps tables remain reproducible (#585)."""
+
+    def _rate_default(self) -> float:
+        import argparse  # noqa: PLC0415
+        captured = {}
+
+        def spy(self_, args=None, namespace=None):
+            captured["defaults"] = {a.dest: a.default for a in self_._actions}
+            raise SystemExit(0)
+
+        with mock.patch.object(argparse.ArgumentParser, "parse_args", spy):
+            with contextlib.suppress(SystemExit):
+                wce.main([])
+        return captured["defaults"]["rate"]
+
+    def test_default_is_the_ratified_rate_and_500_is_explicit(self) -> None:
+        self.assertEqual(self._rate_default(), 2000.0)
+        self.assertEqual(wce.DR0010_RATE_BPS, 500.0)
+
+
 if __name__ == "__main__":
     unittest.main()
