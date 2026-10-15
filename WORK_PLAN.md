@@ -6,14 +6,19 @@ dependency block or an operator-only decision.
 <!-- guide:plan-body:start -->
 ## Operator Attention: Merge-Risk-Hold Pileup
 
-Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
+Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
-- **#586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
 
-## Operator Priority
+## Very Important
 
-Issues the operator starred (`loom:operator-priority`); land these first.
+`loom:very-important` (one counts per workspace); every stage takes these first.
+
+_None._
+
+## Important
+
+`loom:important`; taken before unlabelled work.
 
 _None._
 
@@ -29,7 +34,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array
 
 ## PRs Awaiting Review
 
@@ -42,21 +47,22 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
-- **#586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
+- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array *(curated)*
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
-- **#491**: Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures) *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
+- **#585**: Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps *(curated)*
+- **#628**: Measure starved-cell jitter energy at the entropy-binding corner ss/+125C/3.63V (sizing currently applies the -40C value) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -68,15 +74,16 @@ _None._
 
 ## Backlog Balance
 
-| Tier | Count |
+| Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
-| Operator priority | 0 |
+| Operator merge-risk holds | 1 |
+| Very important | 0 |
+| Important | 0 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 9 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 11 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
