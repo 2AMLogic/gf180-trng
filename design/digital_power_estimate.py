@@ -51,7 +51,8 @@ This estimate has since been measured against (issue #145)
 (#111, with #171's power-delivery network) did not exist when this script was
 written; they do now, and ``sim/characterization-digital-sta-area-power.md``
 reports the same quantity measured from the placed netlist across the corner
-set, at the same 1 MHz raw rate and the same switching-activity assumption.
+set, at its fixed 1 MHz measurement rate and the same switching-activity
+assumption.
 Headline: **measured dynamic power is 10-14x this estimate**, while
 **measured leakage lands within 0.89-3.76x of it** (0.63-1.32x before #171
 added a tapcell/endcap/filler population this estimate has no term for) --
@@ -141,10 +142,11 @@ CORNER_SLOW = "ss_125C_3v00"
 ACTIVE_BUDGET_W = 500e-6
 IDLE_BUDGET_A = 1e-6
 
-#: Ratified sample-clock rate (DR-0003). DR-0010 proposes 500 bps; it is
-#: Proposed, not ratified, so the default here is the ratified row and the
-#: proposed rate is available via --raw-rate.
-RAW_RATE_HZ = 1e6
+#: Ratified sample-clock rate: 2000 bps, per
+#: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy. DR-0010's
+#: 500 bps value and DR-0003's 1 Mbps are superseded and survive only as
+#: historical figures; reproduce them with an explicit ``--raw-rate``.
+RAW_RATE_HZ = 2000.0
 
 # ---------------------------------------------------------------------------
 # Gate-level inventories
@@ -838,8 +840,11 @@ def main(argv=None) -> int:
     p.add_argument("--all-corners", action="store_true",
                    help="report every characterised corner in the 3.3 V family")
     p.add_argument("--raw-rate", type=float, default=RAW_RATE_HZ,
-                   help="sample-clock rate in Hz (default 1e6, the ratified row; "
-                        "DR-0010 proposes 500)")
+                   help=f"sample-clock rate in Hz (default {RAW_RATE_HZ:g}, the "
+                        "ratified row per DR-0011-raw-rate-at-the-measured-"
+                        "starved-cell-jitter-energy; pass --raw-rate 1e6 or "
+                        "--raw-rate 500 to reproduce the historical DR-0003 / "
+                        "DR-0010 figures)")
     p.add_argument("--activity", type=float, default=DEFAULT_ACTIVITY)
     p.add_argument("--fanout", type=float, default=DEFAULT_FANOUT)
     p.add_argument("--wire-cap-ff", type=float, default=DEFAULT_WIRE_CAP_F * 1e15)
