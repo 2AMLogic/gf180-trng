@@ -38,7 +38,10 @@ RUNS = {
     "power_analog": ["power_rollup.py", "--no-digital"],
     # --check prints the same report plus its own OK verdict line, and exits
     # non-zero if the records stop supporting the stated corner or floor.
-    "ttfv": ["time_to_first_valid.py", "--check"],
+    # The summary quotes its time-to-first-valid figures at DR-0003's original
+    # 1 Mbps (the rate #14 reported at); the tool's default is now the ratified
+    # 2 kbps, so the historical rate is pinned explicitly here.
+    "ttfv": ["time_to_first_valid.py", "--check", "--rate", "1e6"],
     "entropy": ["worst_corner_entropy.py", "--check"],
 }
 

@@ -206,7 +206,7 @@ def q_context(corner: str, t_s: float) -> dict | None:
     for rec in records:
         if rec.corner != corner:
             continue
-        point_plain = asiz.ArrayPoint(rec, a=asiz.A_JITTER_ENERGY)
+        point_plain = asiz.ArrayPoint(rec, a=asiz.A_PLAIN_CELL)
         if point_plain.n != shipped_n:
             continue
         point_starved = asiz.ArrayPoint(rec, a=a_starved)
@@ -216,7 +216,7 @@ def q_context(corner: str, t_s: float) -> dict | None:
             "t_s": t_s,
             "q_plain": point_plain.q_array(1.0 / t_s),
             "q_starved": point_starved.q_array(1.0 / t_s),
-            "a_plain": asiz.A_JITTER_ENERGY,
+            "a_plain": asiz.A_PLAIN_CELL,
             "a_starved": a_starved,
             "need": need,
         }

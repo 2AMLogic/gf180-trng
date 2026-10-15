@@ -16,6 +16,18 @@ related: "#29 (origin — amendment A1), #1 (ratification), #7 (consumer: RO cor
 - 2026-07-31: Accepted (ratified with DR-0001…DR-0004 via #1; this record is
   amendment A1 of the #29 review package, which is the item that required a
   live architectural decision rather than transcription).
+- 2026-10-11: **§3's indicative `N₀ = 560` is answered** (#491), as
+  [`DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit`](DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md)
+  directs on its acceptance (2026-10-10, #480). That first cut assumed the
+  1 Mbps rate and a white-noise-only 5-stage ring; DR-0010 §3 sized the
+  shipped array at **N = 2** eleven-stage starved rings inside the `Power` row
+  by moving the raw-rate row instead, and
+  [`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+  re-derived that row at **`> 2 kbps`** from the shipped cell's measured
+  jitter-energy constant. §3 stays as written, as the record of the first
+  cut. §1's topology and §2's sizing law are not touched — both records use
+  them unchanged, and `python3 sim/tools/array_sizing.py --check` evaluates
+  §2's inequality, at 2 kbps, over the covered grid.
 
 ## Context
 
