@@ -5,7 +5,7 @@ status: Accepted
 date: 2026-07-31
 deciders: Robb Walters (engineering) — ratified via #1 (operator decision, 2026-07-31), amendments landed by #29
 supersedes: n/a
-superseded_by: n/a
+superseded_by: "DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy — §1's rate VALUE only, and only through the chain DR-0010 §1 (superseded this record's > 1 Mbps first) → DR-0011 §1 (> 2 kbps). Everything else in this record stands and is cited unchanged by both: the raw-tap measurement point, what 'sustained' means, and the binding corner"
 related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), #8, #9, #12, #13; README §Target specification — Raw rate row; DR-0001 (raw tap), DR-0002 (gating), DR-0007 (entropy source sized to hold H₀ at this rate)"
 ---
 
@@ -32,6 +32,25 @@ related: "#6 (origin), #1 (ratification), #29 (ratification amendment package), 
     is not settled and the corner *metric* depends on the sampler clock source
     #9 has yet to pin. Read `ff`/+10 %/−40 °C in the table below as "cold /
     +10 % supply, process letter TBD by #13".
+- 2026-10-11: **Rate VALUE superseded; everything else stands** (#491).
+  §2's `> 1 Mbps` target was superseded in value by
+  [`DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit`](DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md)
+  §1 (`> 500 bps`), whose value was in turn superseded by
+  [`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+  §1: the README `Raw rate` row now reads **`> 2 kbps`**. Both were accepted
+  2026-10-10 (#480). Still in force from this record, unchanged: the
+  measurement point at the raw tap (§1), the meaning of *sustained* and the
+  FIFO no-underflow condition (§2), the rate-binding corner `ss` / −10 % /
+  +125 °C (§3), the opposite-corner reporting obligation (§4), `R_H` as a
+  reported, untargeted figure (§5), the conditioned rate as `R_raw / K`
+  owned by #8 (§6), and the healthy-ungated scope (§7). The §2 stretch value
+  (`> 4 Mbps`) was not re-derived by either superseding record. `status`
+  stays `Accepted`: this is a value-only, partial supersession. The
+  `superseded_by` field now names DR-0011 (per the 2026-10-13 two-key
+  ruling), and is read as scoped to the §1 rate VALUE only — not as
+  whole-record supersession; its text carries that scope and everything
+  that stands. DR-0010's own Status records its partial supersession the
+  same way. The decision text below is not rewritten.
 
 ## Context
 

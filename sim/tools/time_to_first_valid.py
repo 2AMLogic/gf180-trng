@@ -3,17 +3,23 @@
 
     python3 sim/tools/time_to_first_valid.py              # per-corner table
     python3 sim/tools/time_to_first_valid.py --check      # assert the README row
-    python3 sim/tools/time_to_first_valid.py --rate 500   # DR-0010's proposed rate
+    python3 sim/tools/time_to_first_valid.py --rate 1e6   # DR-0003's historical rate
     python3 sim/tools/time_to_first_valid.py --tolerance 0.005
 
 What the README row says today
 ------------------------------
-> **>= ~1.28 ms** at 1 Mbps -- an arithmetic floor, not a measurement: 1024
-> consecutive raw samples for the start-up health test (1.024 ms) plus 256
-> samples of conditioner latency (0.256 ms), which do **not** overlap because
+> **>= ~0.640 s** at 2 kbps -- an arithmetic floor, not a measurement: 1024
+> consecutive raw samples for the start-up health test (0.512 s) plus 256
+> samples of conditioner latency (0.128 s), which do **not** overlap because
 > the conditioner is held flushed while gated.
 
-Two things are missing from that, and this script supplies both:
+The rate is the ratified Raw rate row,
+[DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy] §1 (> 2 kbps).
+Until that row moved, the README stated this row at DR-0003's 1 Mbps as
+>= ~1.28 ms, and #14's 1.281 ms total was reported at that rate; both remain
+reproducible with ``--rate 1e6`` and are historical, not a 2 kbps result.
+
+Two things are missing from that floor, and this script supplies both:
 
 1. **The oscillator does not start instantly.** The floor above begins counting
    at the first raw sample, as if the entropy source were already running.
@@ -22,10 +28,10 @@ Two things are missing from that, and this script supplies both:
    of the 27-point covered grid, and this script extracts a start-up time from
    those edge times rather than assuming one.
 2. **The two fixed sample counts are counts, not times.** Turning them into a
-   time needs a rate. The README uses the ratified 1 Mbps
-   ([DR-0003]); [DR-0010] proposes 500 bps and is **Proposed, not ratified**,
-   which changes this row by ~2000x. ``--rate`` makes that explicit instead of
-   burying one choice in prose.
+   time needs a rate. The README uses the ratified 2 kbps; ``--rate`` makes
+   any other choice explicit instead of burying it in prose. Because the
+   sample clock is a fixed external clock (DR-0012), the digital terms scale
+   exactly as ``1 / rate`` and the oscillator term does not scale at all.
 
 How the start-up time is extracted
 ----------------------------------
@@ -58,12 +64,13 @@ What this does NOT do
 
 [DR-0003]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
 [DR-0009]: ../../spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
-[DR-0010]: ../../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
+[DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy]: ../../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 """
 
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -96,15 +103,27 @@ CONDITIONER_SAMPLES = 8 * 32
 #: rising edge after release, all 45 points).
 SAMPLER_SAMPLES = 1
 
-#: DR-0003's ratified raw rate, bits per second. The README's Time-to-first-
-#: valid row is stated at this rate.
-RATIFIED_RAW_RATE_BPS = 1e6
+#: The ratified raw rate, bits per second:
+#: DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §1 (> 2 kbps).
+#: The README's Time-to-first-valid row is stated at this rate.
+RATIFIED_RAW_RATE_BPS = 2000.0
 
-#: DR-0010 §1's PROPOSED raw rate. Proposed, not ratified.
+#: The README's current arithmetic floor, seconds, at the ratified rate:
+#: (STARTUP_SAMPLES + CONDITIONER_SAMPLES) / RATIFIED_RAW_RATE_BPS
+#: = 1280 / 2000 = 0.640 s. Counts only the two DR-0002/DR-0008 windows; the
+#: sampler clock and the measured oscillator start-up are strictly additional.
+README_FLOOR_S = 0.640
+
+#: Historical rates, kept so the figures recorded at them stay reproducible
+#: with an explicit ``--rate``: DR-0003's original > 1 Mbps (the rate #14's
+#: 1.281 ms total and the 1.28 ms floor were stated at), and DR-0010 §1's
+#: > 500 bps (superseded in value by DR-0011-raw-rate-at-the-measured-starved-
+#: cell-jitter-energy). Neither is a default.
+DR0003_RAW_RATE_BPS = 1e6
 DR0010_RAW_RATE_BPS = 500.0
 
-#: The README's current arithmetic floor, seconds, at the ratified rate.
-README_FLOOR_S = 1.28e-3
+#: The 1 Mbps-era floor the README stated before the rate row moved, seconds.
+DR0003_FLOOR_S = 1.28e-3
 
 
 class Record:
@@ -252,13 +271,26 @@ def _s(x: float) -> str:
     return f"{x:g} s"
 
 
+def _positive_finite(text: str) -> float:
+    """argparse type: a positive, finite rate."""
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {text!r}") from None
+    if not (math.isfinite(value) and value > 0):
+        raise argparse.ArgumentTypeError(f"must be a positive finite number, got {text!r}")
+    return value
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--rate", type=float, default=RATIFIED_RAW_RATE_BPS,
-                   help="raw sample rate in bit/s (default 1e6, DR-0003's ratified row; "
-                        "DR-0010 proposes 500)")
+    p.add_argument("--rate", type=_positive_finite, default=RATIFIED_RAW_RATE_BPS,
+                   help=f"raw sample rate in bit/s (default {RATIFIED_RAW_RATE_BPS:g}, the "
+                        "ratified Raw rate row, DR-0011-raw-rate-at-the-measured-starved-"
+                        f"cell-jitter-energy; historical: {DR0003_RAW_RATE_BPS:g} DR-0003, "
+                        f"{DR0010_RAW_RATE_BPS:g} DR-0010)")
     p.add_argument("--tolerance", type=float, default=0.01,
                    help="relative period-convergence band (default 0.01 = 1 %%)")
     p.add_argument("--check", action="store_true",
@@ -288,7 +320,10 @@ def main(argv=None) -> int:
         print(f"                   ({found} found; {superseded_in_effect} older "
               f"measurement(s) of an already-covered corner not used -- see "
               f"dedupe_by_corner)")
-    print(f"raw sample rate  : {args.rate:g} bit/s  (sample period {_s(b['sample_period_s'])})")
+    overridden = abs(args.rate - RATIFIED_RAW_RATE_BPS) / RATIFIED_RAW_RATE_BPS >= 1e-9
+    print(f"raw sample rate  : {args.rate:g} bit/s  (sample period {_s(b['sample_period_s'])})"
+          + (f"  <-- OVERRIDDEN via --rate (the ratified row is {RATIFIED_RAW_RATE_BPS:g})"
+             if overridden else "  -- the ratified Raw rate row"))
     print(f"convergence band : +/-{args.tolerance:.1%} of the last measured period")
     print()
     print("Fixed, corner-independent sample-count terms (behavioural, DR-0009):")
@@ -339,11 +374,13 @@ def main(argv=None) -> int:
     print(f"  TIME-TO-FIRST-VALID            : {_s(total)}")
     print(f"  oscillator share of that total : {res.t_startup / total:.3%}")
     print()
-    if abs(args.rate - RATIFIED_RAW_RATE_BPS) / RATIFIED_RAW_RATE_BPS < 1e-9:
+    if not overridden:
         print(f"README row (arithmetic floor)    : >= ~{_s(README_FLOOR_S)}")
-        print(f"measured total vs that floor     : {total / README_FLOOR_S:.5f}x")
+        print(f"total vs that floor              : {total / README_FLOOR_S:.5f}x")
         print("The floor is not contradicted: it counts only the 1280 fixed digital")
         print("samples, and the measured oscillator start-up is strictly additional.")
+        print("The total is arithmetic at the ratified rate on top of the measured")
+        print("oscillator start-up, not a transient simulation run at that rate.")
     else:
         ratified = max(
             r.t_startup + budget(RATIFIED_RAW_RATE_BPS)["digital_total_s"]
@@ -351,6 +388,9 @@ def main(argv=None) -> int:
         )
         print(f"At this rate the total is {total / ratified:.4g}x the same figure at the")
         print(f"ratified {RATIFIED_RAW_RATE_BPS:g} bit/s ({_s(ratified)}). The rate row is what moves it.")
+        if abs(args.rate - DR0003_RAW_RATE_BPS) / DR0003_RAW_RATE_BPS < 1e-9:
+            print(f"(Historical: the README stated >= ~{_s(DR0003_FLOOR_S)} at this rate "
+                  "until the Raw rate row moved to 2 kbps.)")
     print()
     print("Swing check (early window / late window, ring 1): a value near 1 means the")
     print("amplitude had already settled by 15-45 ns after en, i.e. the period-based")

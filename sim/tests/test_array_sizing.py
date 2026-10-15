@@ -2,14 +2,18 @@
 """Unit tests for ``sim/tools/array_sizing.py`` (issue #357).
 
 ``array_sizing.py --check`` guards DR-0007 §2's sizing inequality and the
-DR-0010 jitter-energy constant. ``npm run check:spec`` shows it passes against
-today's corpus; these tests show it *fails* when it should, on small synthetic
-record sets in a temporary directory (``RECORDS`` is patched; the design
-netlist ring count and the re-derivation of ``a`` are patched too, so no
+stated jitter-energy constant (DR-0011-raw-rate-at-the-measured-starved-cell-
+jitter-energy §2's 7.32, issue #491). ``npm run check:spec`` shows it passes
+against today's corpus; these tests show it *fails* when it should, on small
+synthetic record sets in a temporary directory (``RECORDS`` is patched; the
+design netlist ring count and the re-derivation of ``a`` are patched too, so no
 committed record, netlist or ngspice is involved).
 
-Two halves: the arithmetic against hand-computed values, and ``main(["--check"])``
-returning non-zero on a violating set and zero on a satisfying one.
+Three parts: the arithmetic against hand-computed values; ``main(["--check"])``
+returning non-zero on a violating set and zero on a satisfying one; and the
+stated constant and default rate held to the accepted decision, including
+that the re-derivation reads the starved cell's binding-corner asymptotic
+constant rather than the plain cell, a mean or a lag-1 figure.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import array_sizing as sizing  # noqa: E402
 import jitter_energy_law  # noqa: E402
+import starved_cell_jitter_energy  # noqa: E402
 
 KT_300 = sizing.KB * 300.15  # 27 degC
 
@@ -127,11 +132,15 @@ class CheckGateTests(unittest.TestCase):
         p.start()
         self.addCleanup(p.stop)
 
-    def set_derived(self, a: float | None) -> None:
-        self.patch(
-            sizing, "derived_law_constant",
-            lambda: (a, "synthetic" if a is not None else "could not be re-derived"),
-        )
+    def set_derived(self, a: float | None, *, others: dict[str, float] | None = None) -> None:
+        if a is None:
+            result = (None, "could not be re-derived: synthetic")
+        else:
+            by_corner = {starved_cell_jitter_energy.SIZING_CONSTANT_CORNER: a, **(others or {})}
+            sel = starved_cell_jitter_energy.SizingConstant(
+                a, starved_cell_jitter_energy.SIZING_CONSTANT_CORNER, "synthetic", by_corner)
+            result = (sel, "synthetic")
+        self.patch(sizing, "derived_sizing_constant", lambda: result)
 
     def write(self, name: str, text: str) -> None:
         (self.root / name).write_text(text)
@@ -165,6 +174,38 @@ class CheckGateTests(unittest.TestCase):
         self.assertEqual(self.run_main("--check", "--rate", "500")[0], 0)
         self.assertEqual(self.run_main("--check", "--rate", "1e6")[0], 1)
 
+    def test_default_rate_is_the_ratified_row_and_matches_explicit_2000(self) -> None:
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        code_d, out_d, _ = self.run_main("--check")
+        code_e, out_e, _ = self.run_main("--check", "--rate", "2000")
+        self.assertEqual((code_d, code_e), (0, 0))
+        self.assertEqual(out_d, out_e)
+        self.assertIn("2000 bps", out_d)
+        self.assertIn("the ratified Raw rate row", out_d)
+        self.assertNotIn("OVERRIDDEN", out_d)
+
+    def test_rate_override_is_labelled(self) -> None:
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        code, out, _ = self.run_main("--rate", "500")
+        self.assertEqual(code, 0)
+        self.assertIn("OVERRIDDEN via --rate", out)
+
+    def test_impossible_rate_or_constant_is_rejected(self) -> None:
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        for args in (("--rate", "0"), ("--rate", "-5"), ("--rate", "nan"),
+                     ("--rate", "inf"), ("--a", "0"), ("--a", "nan")):
+            with self.subTest(args=args), self.assertRaises(SystemExit) as ctx:
+                with contextlib.redirect_stderr(io.StringIO()):
+                    sizing.main(list(args))
+            self.assertEqual(ctx.exception.code, 2)
+
+    def test_rate_above_the_edge_fails_visibly(self) -> None:
+        # g ~ 45 per second of T_s: R_max = g / 6e-3 ~ 7.5 kbps for this set.
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        code, _, err = self.run_main("--check", "--rate", "1e5")
+        self.assertEqual(code, 1)
+        self.assertIn("Q_array", err)
+
     def test_check_fails_when_stated_constant_drifts_from_derivation(self) -> None:
         self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
         self.set_derived(sizing.A_JITTER_ENERGY * (1 + 2 * sizing.A_TOLERANCE))
@@ -177,6 +218,39 @@ class CheckGateTests(unittest.TestCase):
         self.set_derived(sizing.A_JITTER_ENERGY * (1 + sizing.A_TOLERANCE / 2))
         self.assertEqual(self.run_main("--check")[0], 0)
 
+    def test_check_fails_on_rounded_constant_drift(self) -> None:
+        # A derivation that rounds to a different stated value (7.4, 7.2) is
+        # outside the 1 % tolerance; only the 3-s.f. rounding of 7.322 passes.
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        for derived in (7.40, 7.24):
+            with self.subTest(derived=derived):
+                self.set_derived(derived)
+                self.assertEqual(self.run_main("--check")[0], 1)
+        self.set_derived(7.322)
+        self.assertEqual(self.run_main("--check")[0], 0)
+
+    def test_check_rejects_every_wrong_estimator(self) -> None:
+        # Hold the stated 7.32 against what each rejected alternative would
+        # derive: the three-corner asymptotic mean, the lag-1 figures, the
+        # next corner's asymptotic value, and the plain cell.
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        for name, wrong in (("asymptotic mean", 11.768), ("lag-1 mean", 24.843),
+                            ("lag-1 at the corner", 21.392),
+                            ("tt asymptotic", 10.874), ("plain cell", 1.792)):
+            with self.subTest(name=name):
+                self.set_derived(wrong)
+                code, _, err = self.run_main("--check")
+                self.assertEqual(code, 1)
+                self.assertIn("drifted", err)
+
+    def test_check_fails_when_selected_corner_is_not_the_smallest(self) -> None:
+        self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
+        self.set_derived(sizing.A_JITTER_ENERGY, others={"ss/125/3.63": 6.0})
+        code, _, err = self.run_main("--check")
+        self.assertEqual(code, 1)
+        self.assertIn("no longer the smallest", err)
+        self.assertIn("ss/125/3.63", err)
+
     def test_check_fails_when_derivation_cannot_run(self) -> None:
         self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
         self.set_derived(None)
@@ -185,17 +259,30 @@ class CheckGateTests(unittest.TestCase):
         self.assertIn("FAIL", err)
 
     def test_unpatched_derivation_failure_is_reported_not_swallowed(self) -> None:
-        # Restore the real derived_law_constant, but give the law an empty corpus.
-        self.patch(sizing, "derived_law_constant", self._real_derived)
+        # Restore the real derived_sizing_constant, but give the starved-cell
+        # derivation an empty corpus: missing evidence fails closed.
+        self.patch(sizing, "derived_sizing_constant", self._real_derived)
         self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
         empty = tempfile.TemporaryDirectory()
         self.addCleanup(empty.cleanup)
-        with mock.patch.object(jitter_energy_law, "RECORDS", Path(empty.name)):
-            value, note = sizing.derived_law_constant()
+        with mock.patch.object(starved_cell_jitter_energy, "RECORDS", Path(empty.name)):
+            value, note = sizing.derived_sizing_constant()
+            code, _, err = self.run_main("--check")
         self.assertIsNone(value)
         self.assertIn("could not be re-derived", note)
+        self.assertEqual(code, 2)
+        self.assertIn("FAIL", err)
 
-    _real_derived = staticmethod(sizing.derived_law_constant)
+    def test_derivation_does_not_consult_the_plain_cell_law(self) -> None:
+        # An empty plain-cell corpus must not affect the sizing derivation.
+        empty = tempfile.TemporaryDirectory()
+        self.addCleanup(empty.cleanup)
+        with mock.patch.object(jitter_energy_law, "RECORDS", Path(empty.name)):
+            sel, _note = self._real_derived()
+        self.assertIsNotNone(sel)
+        self.assertEqual(sel.corner, "ss/-40/3.63")
+
+    _real_derived = staticmethod(sizing.derived_sizing_constant)
 
     def test_check_rejects_an_overridden_constant(self) -> None:
         self.write("2026-01-01-ro-array-core-power-01.md", array_record_text(period=1.0e-9))
@@ -219,6 +306,29 @@ class CheckGateTests(unittest.TestCase):
         self.write("2026-01-01-ro-array-core-power-BUFFERED-01.md",
                    array_record_text(period=1.0e-7, temp_c=125.0))
         self.assertEqual(self.run_main("--check")[0], 0)
+
+
+class StatedValuesTests(unittest.TestCase):
+    """The stated constant and default rate are the accepted decision's."""
+
+    def test_stated_constant_and_rate(self) -> None:
+        self.assertEqual(sizing.A_JITTER_ENERGY, 7.32)
+        self.assertEqual(sizing.RAW_RATE_BPS, 2000.0)
+        self.assertEqual(sizing.A_PLAIN_CELL, 1.79)
+
+    def test_tolerance_covers_rounding_but_not_the_nearest_wrong_estimator(self) -> None:
+        rounding = 0.005 / sizing.A_JITTER_ENERGY  # half a unit in the 3rd s.f.
+        nearest_wrong = (10.874 - sizing.A_JITTER_ENERGY) / sizing.A_JITTER_ENERGY
+        self.assertGreater(sizing.A_TOLERANCE, rounding)
+        self.assertLess(sizing.A_TOLERANCE, nearest_wrong / 10)
+
+    def test_committed_records_derive_the_stated_constant(self) -> None:
+        sel, _note = sizing.derived_sizing_constant()
+        self.assertIsNotNone(sel)
+        self.assertEqual(sel.corner, "ss/-40/3.63")
+        self.assertLessEqual(abs(sel.value - sizing.A_JITTER_ENERGY) / sizing.A_JITTER_ENERGY,
+                             sizing.A_TOLERANCE)
+        self.assertTrue(sel.is_smallest)
 
 
 if __name__ == "__main__":

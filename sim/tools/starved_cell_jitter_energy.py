@@ -126,6 +126,18 @@ PLAIN_TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "ro-inv-05stage-jitter" / "tb.jso
 #: and still rejects the ~30x-too-tight signature of the array-sanity run.
 SPREAD_TOLERANCE = 3.0
 
+#: The corner whose OWN asymptotic constant sizes the shipped array.
+#: ``DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`` §2 selects
+#: ``a_asym`` at this corner (7.32), not the three-corner asymptotic mean
+#: (11.77) and not any lag-1 figure, because "the corner that binds should
+#: supply its own constant". It was the entropy-binding corner when that
+#: record was written. ``DR-0015`` has since moved the entropy-binding corner
+#: to ``ss``/+125 C/3.63 V, where this family has no record; the value here
+#: remains the SELECTED constant because it is also the smallest asymptotic
+#: ``a`` measured at any corner, which :func:`sizing_constant` reports and
+#: ``sim/tools/array_sizing.py --check`` enforces.
+SIZING_CONSTANT_CORNER = "ss/-40/3.63"
+
 
 class RecordError(RuntimeError):
     pass
@@ -509,6 +521,75 @@ def load_points(*, include_superseded: bool = False) -> tuple[list[Point], list[
     return points, skipped
 
 
+class SizingConstant:
+    """The array-sizing jitter-energy constant, with its provenance.
+
+    ``value`` is ``a`` from the asymptotic slope (``kappa2_asym``) at
+    :data:`SIZING_CONSTANT_CORNER`; ``stem`` names the record it came from;
+    ``by_corner`` holds every measured corner's asymptotic ``a``, so a caller
+    can show that the selected value is the smallest of them rather than
+    assert it.
+    """
+
+    def __init__(self, value: float, corner: str, stem: str,
+                 by_corner: dict[str, float]) -> None:
+        self.value = value
+        self.corner = corner
+        self.stem = stem
+        self.by_corner = by_corner
+
+    @property
+    def smallest_corner(self) -> str:
+        return min(self.by_corner, key=self.by_corner.__getitem__)
+
+    @property
+    def is_smallest(self) -> bool:
+        # Fail closed on a NaN anywhere: ``min`` is order-dependent when a
+        # NaN is present (``nan < x`` and ``x < nan`` are both False), so a
+        # NaN at another corner could otherwise hide behind dict order and
+        # leave an unfounded "smallest" claim standing.
+        values = list(self.by_corner.values())
+        if any(math.isnan(v) for v in values):
+            return False
+        return self.by_corner[self.corner] <= min(values)
+
+
+def sizing_constant(points: list[Point] | None = None,
+                    corner: str = SIZING_CONSTANT_CORNER) -> SizingConstant:
+    """Derive the array-sizing constant from committed starved-cell records.
+
+    Selects the asymptotic ``a`` at ``corner`` -- by corner identity, never by
+    taking a mean, a minimum or a lag-1 figure -- per
+    ``DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`` §2. Where
+    the family holds more than one record at that corner, the newest wins
+    (records load chronologically), which is the convention every other
+    reader of ``sim/records/`` follows.
+
+    Fails closed: raises :class:`RecordError` when the family is missing, when
+    no usable record measures ``corner``, or when the derived value is not a
+    positive finite number. A sizing constant that cannot be derived is a
+    ``--check`` failure for the caller, not a default to fall back on.
+    """
+    if points is None:
+        points, _skipped = load_points()
+    by_corner: dict[str, float] = {}
+    chosen: Point | None = None
+    for p in points:
+        by_corner[p.rec.corner] = p.a(p.kappa2_asym)
+        if p.rec.corner == corner:
+            chosen = p
+    if chosen is None:
+        raise RecordError(
+            f"no usable sim/records/{JITTER_GLOB} record at {corner}, the corner "
+            "DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2 takes "
+            "the sizing constant from"
+        )
+    value = by_corner[corner]
+    if not (math.isfinite(value) and value > 0):
+        raise RecordError(f"{chosen.rec.stem}: asymptotic a = {value!r} is not a positive finite number")
+    return SizingConstant(value, corner, chosen.rec.stem, by_corner)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="starved_cell_jitter_energy.py",
@@ -605,6 +686,18 @@ def main(argv: list[str] | None = None) -> int:
         f"a (asymptotic slope over lags {points[0].tail_lags}): mean {mean_asym:.3f}  ->  "
         f"{mean_asym / a_plain:.2f}x the plain cell's {a_plain:.2f}"
     )
+    try:
+        sel = sizing_constant(points)
+    except RecordError as exc:
+        print(f"array-sizing constant: NOT DERIVABLE -- {exc}")
+    else:
+        print(
+            f"array-sizing constant (DR-0011-raw-rate-at-the-measured-starved-cell-"
+            f"jitter-energy §2: asymptotic a at {sel.corner}, not a mean): "
+            f"{sel.value:.3f} from {sel.stem}; smallest measured asymptotic a is at "
+            f"{sel.smallest_corner}. sim/tools/array_sizing.py --check holds its stated "
+            f"constant to this value."
+        )
 
     if args.check:
         if not ok:

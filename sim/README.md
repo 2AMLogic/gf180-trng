@@ -41,7 +41,7 @@ from this list or a listed file does not exist.
 - [`characterization-sampler-bit-bias.md`](characterization-sampler-bit-bias.md) -- Whether the clock-locked liveness modulation reaches the sampled bit. Status: complete (#86).
 - [`characterization-shipped-array-tap-phase.md`](characterization-shipped-array-tap-phase.md) -- Clock-locked digitizer disturbance in the array as shipped. Status: complete (#87).
 - [`characterization-startup-and-power-budget.md`](characterization-startup-and-power-budget.md) -- Time-to-first-valid and whole-block Power rows. Status: complete (#14); depth-2 figures supersede depth-8 ones in-document.
-- [`characterization-starved-cell-jitter-energy.md`](characterization-starved-cell-jitter-energy.md) -- Jitter-energy law on the shipped starved delay cell. Status: complete (#46).
+- [`characterization-starved-cell-jitter-energy.md`](characterization-starved-cell-jitter-energy.md) -- Jitter-energy law on the shipped starved delay cell. Status: complete (#46); hot-corner (ss/+125 C/3.63 V) addendum (#628).
 - [`characterization-supply-current-and-leakage.md`](characterization-supply-current-and-leakage.md) -- Per-ring active supply current and stopped-ring leakage (Power row inputs). Status: complete (#32).
 - [`characterization-vss-trunk-ir-drop.md`](characterization-vss-trunk-ir-drop.md) -- IR drop on the shared vss return trunk, per region. Status: complete (#234); verdict: not material.
 - [`characterization-worst-corner-and-mc-mismatch.md`](characterization-worst-corner-and-mc-mismatch.md) -- Entropy-binding PVT corner over the full 27-point grid, and Monte Carlo mismatch bias. Status: complete (#13).
@@ -52,6 +52,7 @@ These are forward-looking documents. They run no simulation, are not evidence
 records, and are not part of the report index above.
 
 - [`../docs/out-of-envelope-characterization-plan.md`](../docs/out-of-envelope-characterization-plan.md) -- Model-bound audit and execution plan for health-test behaviour just outside the operating envelope. Status: plan (#467); no supported simulation grid and over the CPU budget as of its writing, so the envelope row's out-of-envelope clause remains unverified.
+- [`../docs/higher-rate-source-options-study.md`](../docs/higher-rate-source-options-study.md) -- Design study: what a raw rate of 100 kbps, 1 Mbps or 4 Mbps would cost on gf180, as more XOR-combined starved-cell rings (DR-0007 sizing law at the starved-cell `a`) or as the metastability-hybrid tap, priced from existing records by `sim/tools/higher_rate_options.py`. Status: study (#629); runs no simulation, proposes no row change, makes no entropy claim.
 
 ---
 
