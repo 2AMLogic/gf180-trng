@@ -398,6 +398,24 @@ class SizingConstantSelectionTests(StarvedCellTestCase):
         self.assertAlmostEqual(sel.value, 7.5)
         self.assertEqual(sel.stem, "newer")
 
+    def test_reports_the_hot_binding_corner_beside_the_stated_constant(self) -> None:
+        shape = COMMITTED_SHAPE + [("ss/125/3.63", 8.421, 18.492)]
+        sel = sc.sizing_constant(self.points(shape))
+        self.assertEqual(sc.BINDING_CORNER, "ss/125/3.63")
+        # The stated constant must stay the ss/-40 value even though the
+        # binding corner is measured: reporting is not selecting (issue #628).
+        self.assertEqual(sel.corner, "ss/-40/3.63")
+        self.assertAlmostEqual(sel.value, 7.322)
+        self.assertEqual(sel.binding_corner, "ss/125/3.63")
+        self.assertAlmostEqual(sel.binding_value, 8.421)
+        self.assertEqual(sel.binding_stem, "rec-ss/125/3.63")
+        self.assertTrue(sel.is_smallest)
+
+    def test_binding_corner_is_none_when_unmeasured(self) -> None:
+        sel = sc.sizing_constant(self.points())
+        self.assertIsNone(sel.binding_value)
+        self.assertIsNone(sel.binding_corner)
+
     def test_missing_binding_corner_fails_closed(self) -> None:
         with self.assertRaises(sc.RecordError) as ctx:
             sc.sizing_constant(self.points(COMMITTED_SHAPE[1:]))

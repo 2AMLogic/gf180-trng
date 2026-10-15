@@ -321,8 +321,11 @@ inflates the long-lag `σ`.
 and the rate-sizing arithmetic above use, by 15 %; the lag-1 `a` is lower (18.5
 against 21.4). So for the asymptotic definition the earlier choice was the conservative one, on
 measured data rather than on the plain-cell trend. This addendum does not change
-any constant or margin: `sizing_constant()` and the Raw-rate margin recompute
-depend on PR #586 and stay open on issue #628.
+any constant or margin. Per the operator ruling on issue #628, `sizing_constant()`
+keeps 7.32 (ss/−40 °C) as the stated constant and now also *reports* the
+ss/+125 °C/3.63 V value (8.42, 1.15× the stated one) beside it, with a regression
+test that fails if the selection silently moves. The published margin (1.39× at
+2 kbps) and rate ceiling (2773 bps) are not raised from one eight-seed record.
 
 **Effect on the tools' corner-mean constants.** The tool averages `a` over every
 record it finds, so its "mean over corners" figures are now over four corners:
