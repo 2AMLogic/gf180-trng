@@ -43,6 +43,7 @@ import datetime as _dt
 import json
 import math
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -119,12 +120,23 @@ TSTEP_MAIN_S = 10e-12
 #: Edge-count safety margin: a ring may slow by this factor under ripple.
 SLOWDOWN_MARGIN = 1.10
 
+#: The 2 MHz grid is submitted as LOWF_PARTS requests of identical units: the
+#: first batch jobs carrying all 7 units at once were killed at the fleet's
+#: 3600 s whole-job ceiling. Each part leads with its own zero-amplitude control
+#: (repeated, identical deck) and takes an equal share of the perturbed units, in
+#: grid order. Only the batching changes; the declared grid does not.
+LOWF_PARTS = 3
+
 #: (request name, corner, freq key, tstep). The convergence requests re-run the
 #: control and the "both"/50 mV unit of binding-beat at finer solver steps.
 REQUESTS = (
-    ("nominal-lowf", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p1", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p2", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p3", "nominal", "lowf", TSTEP_MAIN_S),
     ("nominal-beat", "nominal", "beat", TSTEP_MAIN_S),
-    ("binding-lowf", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p1", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p2", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p3", "binding", "lowf", TSTEP_MAIN_S),
     ("binding-beat", "binding", "beat", TSTEP_MAIN_S),
     ("conv-binding-beat-5p", "binding", "beat", 5e-12),
     ("conv-binding-beat-2p5", "binding", "beat", 2.5e-12),
@@ -167,15 +179,27 @@ def edge_counts(corner: str, tstop_s: float) -> tuple[int, int]:
     return out[0], out[1]
 
 
-def units(name: str) -> list[tuple[float, int, int]]:
-    """(amplitude_V, m1, m2) per grid point; the control (0, 0, 0) is first."""
-    if name.startswith("conv-"):
-        return list(CONVERGENCE_UNITS)
+def full_grid() -> list[tuple[float, int, int]]:
+    """(amplitude_V, m1, m2) for the whole declared grid; the control is first."""
     grid = [(0.0, 0, 0)]
     for _, m1, m2 in MODES:
         for amp in AMPS_V:
             grid.append((amp, m1, m2))
     return grid
+
+
+def units(name: str) -> list[tuple[float, int, int]]:
+    """(amplitude_V, m1, m2) per grid point; the control (0, 0, 0) is first."""
+    if name.startswith("conv-"):
+        return list(CONVERGENCE_UNITS)
+    grid = full_grid()
+    m = re.search(r"-lowf-p(\d+)$", name)
+    if m is None:
+        return grid
+    perturbed = grid[1:]
+    share = len(perturbed) // LOWF_PARTS
+    part = int(m.group(1)) - 1
+    return [grid[0], *perturbed[part * share:(part + 1) * share]]
 
 
 def build_request(name: str, corner: str, freq_key: str, tstep_s: float) -> dict:
