@@ -39,14 +39,18 @@ rows (13 significant digits via ``measureprec``); everything else is offline.
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import math
+import platform
+import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
 from harness.report import git_blob_sha1  # noqa: E402
+from harness import report as _rep  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-array-supply-ripple"
@@ -619,6 +623,124 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 # --------------------------------------------------------------------------
+# Record ingestion (append-only evidence; one record per request)
+# --------------------------------------------------------------------------
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def render_record(stem: str, name: str, report: dict, an: dict, raw_files: list[tuple[str, str]],
+                  wall_s: float, date: str, commit: str, tb_sha: str, dut_sha: str) -> str:
+    cname, freq_key, tstep = next((c, f, t) for n, c, f, t in REQUESTS if n == name)
+    cfg = CORNERS[cname]
+    env = report.get("environment", {})
+    remote = env.get("remote") or {}
+    fleet = remote.get("fleet") or ([remote] if remote.get("job_id") else [])
+    jobs = [f.get("job_id") for f in fleet if f.get("job_id")]
+    stamps = sorted({(f.get("worker_environment") or {}).get("pdk", {}).get("stamp_text", "")
+                     for f in fleet} - {""})
+    pdk_ver = stamps[0].replace("open_pdks ", "") if len(stamps) == 1 else (
+        "; ".join(stamps) or (report.get("provenance", {}).get("pdk") or {}).get("version") or "unknown")
+    banners = sorted({((f.get("worker_environment") or {}).get("simulator") or {})
+                      .get("version_banner", "").split("\n")[1].strip("* ").strip()
+                      for f in fleet if ((f.get("worker_environment") or {}).get("simulator") or {})
+                      .get("version_banner")})
+    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
+    klt_ver = report.get("provenance", {}).get("klt_version") or "unknown"
+    tstop = TSTOP_S[freq_key]
+    f_hz = an["f_hz"]
+    n = len(report["corners"])
+    fm = [
+        "---", f"record: {stem}", f"date: {date}", "status: valid", "",
+        "testbench:", f"  path: sim/tb/ro-array-supply-ripple/{DECK}", f"  sha: {tb_sha}",
+        "netlist:", f"  path: {DUT_PATH}", f"  sha: {dut_sha}",
+        f"repo_commit: {commit}", "",
+        f"pdk: gf180mcuD @ {pdk_ver}", "pdk.models:",
+        f"  - libs.tech/ngspice/sm141064.ngspice (sections: {' '.join(PROCESS_SECTIONS[cfg['process']])})", "",
+        "tool:", f"  klt: {klt_ver} (client; batch backend)", f"  ngspice: \"{ngspice} (batch fleet)\"",
+        f"  platform: \"{platform.platform()} (submitting host)\"", "",
+        "corner:", f"  process: {cfg['process']}",
+        f"  voltage: {cfg['vdd']:.3f} V (nominal 3.3 V)", f"  temperature: {cfg['temp_c']}", "",
+        "analysis:", "  type: tran", f"  tstop: {tstop * 1e9:g}n", f"  tstep: {tstep * 1e12:g}p",
+        "  tmax: n/a", "  noise_params: n/a (deterministic: no noise, no mismatch)", f"  runs: {n}",
+        "seeds: n/a (deterministic analysis)", "",
+        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
+    ]
+    fm += [f"    - {fn}  sha256:{d}" for fn, d in raw_files]
+    fm += [f"wall_time: {_rep._fmt_wall(wall_s)}", "---", ""]
+    body = ["## Result", "",
+            f"Request `{name}` ({n} units, one per control or perturbed case), executed on the batch fleet "
+            f"through `klt sim` (fleet jobs: {', '.join(jobs) or 'not reported'}). Ripple frequency "
+            f"{f_hz / 1e6:g} MHz; solver step {tstep * 1e12:g} ps. Schematic-level deterministic "
+            "susceptibility of `design/ro_array_core.spice` to an ideal series sinusoid on the ring "
+            "supply pin(s). The zero-amplitude row is the control. Produced by "
+            "`python3 sim/tools/supply_ripple.py analyze`.", "",
+            TABLE_HEAD, *sensitivity_rows(an), "",
+            "x = displacement amplitude at the injected frequency; ffm = fractional-frequency modulation; "
+            "`OUT` in `rails` would mark a perturbed rail outside the "
+            f"{ENVELOPE_V[0]}-{ENVELOPE_V[1]} V envelope.", "",
+            "Limits of interpretation:", ""]
+    body += [f"- {line}" for line in LIMITS]
+    body += ["", "## How to reproduce", "", "```sh", "python3 sim/tools/supply_ripple.py emit --check",
+             f"python3 sim/tools/supply_ripple.py run {name} --outdir DIR",
+             f"python3 sim/tools/supply_ripple.py analyze DIR/{name}.report.json", "```", "",
+             "The simulation is deterministic (no noise, no mismatch), so a re-run reproduces the "
+             "edge times up to solver and PDK-version differences.", "",
+             "## Caveats", "",
+             "- Not a supply network, substrate, aggressor or noise model; no min-entropy, "
+             "filter-sizing or signoff claim is made.",
+             "- The PDK model content on the fleet is the one named in `pdk:` above; compare `pdk:` "
+             "lines before pooling across records.",
+             "", "---", "",
+             "Written by `sim/tools/supply_ripple.py ingest`. Append-only: never edit or delete this "
+             "file -- a re-run or correction mints a new record and points back here via "
+             "`supersedes` (see `sim/README.md`).", ""]
+    return "\n".join(fm + body)
+
+
+def cmd_ingest(name: str, report_path: Path, stderr_path: Path | None, records_dir: Path) -> int:
+    if name not in {r[0] for r in REQUESTS}:
+        print(f"unknown request {name!r}; choices: {', '.join(r[0] for r in REQUESTS)}", file=sys.stderr)
+        return 2
+    report = json.loads(report_path.read_text())
+    req = json.loads(request_path(name).read_text())
+    n_expected = len(req["corners"]["supply_v"]["vamp"]) if isinstance(
+        req["corners"]["supply_v"], dict) and isinstance(req["corners"]["supply_v"].get("vamp"), list) else None
+    corners = report.get("corners", [])
+    bad = [c.get("corner_id") for c in corners if c.get("status") != "pass"]
+    if not corners or bad or (n_expected is not None and len(corners) != n_expected):
+        print(f"refused: {len(corners)} units, non-passing: {bad}", file=sys.stderr)
+        return 2
+    an = analyse_report(report)
+    if any("error" in u for u in an["units"]):
+        print("refused: analysis error in a unit", file=sys.stderr)
+        return 2
+    now = _dt.datetime.now(_dt.timezone.utc)
+    stem = _rep.allocate_record_stems(records_dir, now.strftime("%Y-%m-%d"),
+                                      f"ro-array-supply-ripple-{name}", 1)[0]
+    raw_dir = records_dir / "raw" / stem
+    raw_dir.mkdir(parents=True, exist_ok=False)
+    (raw_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
+    (raw_dir / "request.json").write_text(request_path(name).read_text())
+    if stderr_path and stderr_path.exists():
+        (raw_dir / "stderr.txt").write_text(stderr_path.read_text())
+    raw_files = [(p.name, _rep.sha256_file(p)) for p in sorted(raw_dir.iterdir())]
+    # units of one batch job run concurrently and each reports a job-scale runtime: take the
+    # longest unit as the request wall time, never the sum
+    wall = max(float(c.get("runtime_s") or 0.0) for c in corners)
+    commit = _git("rev-parse", "HEAD") + ("-dirty" if _git("status", "--porcelain") else "")
+    tb_sha = git_blob_sha1((TB_DIR / DECK).read_bytes())
+    text = render_record(stem, name, report, an, raw_files, wall, now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         commit, tb_sha, dut_blob_sha())
+    _rep.publish_record_text(records_dir / f"{stem}.md", text)
+    print(f"wrote sim/records/{stem}.md")
+    return 0
+
+
+# --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
 
@@ -650,6 +772,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--klt", default="klt", dest="klt_cmd",
                    help="klt command; e.g. 'uvx --from klayout-tools==X.Y.Z klt' when the "
                    "fleet runner pins a different klt than the installed client")
+    i = sub.add_parser("ingest")
+    i.add_argument("name")
+    i.add_argument("--report", required=True)
+    i.add_argument("--stderr")
+    i.add_argument("--records-dir", default=str(REPO_ROOT / "sim" / "records"))
     a = sub.add_parser("analyze")
     a.add_argument("reports", nargs="+")
     a.add_argument("--json", action="store_true")
@@ -661,6 +788,9 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_emit(args.check)
     if args.cmd == "run":
         return cmd_run(args.name, args.outdir, args.backend, args.klt_cmd)
+    if args.cmd == "ingest":
+        return cmd_ingest(args.name, Path(args.report), Path(args.stderr) if args.stderr else None,
+                          Path(args.records_dir))
     return cmd_analyze(args.reports, args.json)
 
 
