@@ -6,6 +6,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-15
 
+- **PR #648**: refactor(layout): share ring NAND2 and ring assembly generators across ring1/ring2
+- **Issue #346** (closed): Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code
+- **PR #647**: sim: report binding-corner jitter constant beside the stated sizing constant
+- **Issue #628** (closed): Measure starved-cell jitter energy at the entropy-binding corner ss/+125C/3.63V (sizing currently applies the -40C value)
 - **PR #641**: sim: run 2 MHz supply-ripple points as split fleet requests and record results
 - **PR #640**: design: default digital_power_estimate to the ratified 2000 bps raw rate
 - **Issue #639** (closed): Follow-on from PR #638: digital_power_estimate.py still cites DR-0010 as proposed and defaults to 1 Mbps
