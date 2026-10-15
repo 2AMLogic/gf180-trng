@@ -6,6 +6,9 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-15
 
+- **PR #638**: sim: carry ratified 2 kbps rate through rollup tools and docs; mark older rates historical
+- **PR #637**: sim: supply-ripple susceptibility results, beat + convergence (part of #414)
+- **Issue #585** (closed): Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps
 - **PR #586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
 - **Issue #491** (closed): Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures)
 - **PR #634**: Bump Repo Skills 0.19.5 -> 0.24.1
