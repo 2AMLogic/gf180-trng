@@ -24,10 +24,13 @@ here: everything in this file runs with no ngspice and no PDK.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
@@ -611,6 +614,35 @@ class DigitalRateNormalizationTests(unittest.TestCase):
         p20 = dcc.power(dcc.load())
         self.assertAlmostEqual(
             pr.digital_measured(20e6)["active_w"] / p20["max_20mhz_w"], 1.0, delta=1e-4)
+
+
+class EstimateDefaultRateTests(unittest.TestCase):
+    """``design/digital_power_estimate.py`` defaults to the ratified 2000 bps
+    (DR-0011); older rates are reachable only via an explicit ``--raw-rate``."""
+
+    def test_default_constant_is_2000_bps(self):
+        self.assertEqual(dpe.RAW_RATE_HZ, 2000.0)
+        self.assertEqual(dpe.RAW_RATE_HZ, pr.RATIFIED_RAW_RATE_BPS)
+
+    def _rate_passed_to_run(self, argv):
+        seen = []
+
+        def fake_run(root, corner, raw_rate_hz, *a, **k):
+            seen.append(raw_rate_hz)
+            return {"raw_rate_hz": raw_rate_hz}
+
+        with mock.patch.object(dpe, "run", fake_run), \
+                contextlib.redirect_stdout(io.StringIO()):
+            rc = dpe.main(["--pdk-root", "/nonexistent", "--json", *argv])
+        self.assertEqual(rc, 0)
+        return seen
+
+    def test_default_reaches_run(self):
+        self.assertEqual(self._rate_passed_to_run([]), [2000.0])
+
+    def test_explicit_rate_passes_through(self):
+        self.assertEqual(self._rate_passed_to_run(["--raw-rate", "1e6"]), [1e6])
+        self.assertEqual(self._rate_passed_to_run(["--raw-rate", "500"]), [500.0])
 
 
 class InventoryStalenessTests(unittest.TestCase):
