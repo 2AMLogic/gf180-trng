@@ -1,10 +1,11 @@
 # Deterministic supply-ripple susceptibility of the buffered RO array
 
 Issue [#414](https://github.com/2AMLogic/gf180-trng/issues/414). Status:
-**partial.** Four of the six requests have run on the batch fleet and are
-recorded (both beat-frequency requests and both convergence re-runs); the two
-2 MHz requests (`nominal-lowf`, `binding-lowf`) did not complete, so no 2 MHz
-sensitivity exists yet. See "Results" and "Run status".
+**complete for the declared grid.** The beat-frequency requests and both
+convergence re-runs are recorded; the 2 MHz points are recorded from six
+smaller requests (`nominal-lowf-p1..p3`, `binding-lowf-p1..p3`) carrying the
+same 14 units that a single 7-unit request per corner could not finish within
+the fleet's per-job ceiling. See "Results" and "Run status".
 
 This is characterization of one named coupling path, not a verdict. It changes
 no spec target, no decision record and no signoff verdict, and it makes no
@@ -38,8 +39,14 @@ phase at the injected frequency. Declared before any run (`sim/tb/ro-array-suppl
   (10.50 MHz nominal, 7.65 MHz binding);
 - numerical checks: the binding-corner beat point re-run at 5 ps and 2.5 ps
   against the 10 ps main grid, and a one-cycle-shorter fit window on every unit;
-- 32 simulation units in 6 `klt sim` requests, about 1.1 CPU-hours (a planning
-  estimate from one local probe), nothing run by CI or `sim/selftest.sh`.
+- 36 simulation units in 10 `klt sim` requests, about 1.3 CPU-hours (a planning
+  estimate from one local probe; `python3 sim/tools/supply_ripple.py plan`),
+  nothing run by CI or `sim/selftest.sh`. The 2 MHz grid of each corner is
+  submitted as three requests of a control plus two perturbed units, the
+  control repeated with an identical deck; the unit set, amplitudes,
+  placements, frequency, corner and solver step are those of the original
+  7-unit request. (The first declaration was 32 units in 6 requests; only the
+  batching of the 2 MHz units changed.)
 
 Because the binding corner already sits at the top of the 2.97-3.63 V envelope,
 any positive excursion there leaves it; each perturbed rail is labelled `in` or
@@ -118,8 +125,58 @@ re-run at finer steps (`...-conv-binding-beat-5p-01`, `...-conv-binding-beat-2p5
 The three-digit values do not change between 10 ps and 2.5 ps, so the step is
 not what limits these numbers. The control floor moves by about 0.03 ps.
 
-Not obtained: the 2 MHz (low-frequency) points at either corner. A one-cycle-shorter
-fit-window check was not tabulated separately.
+2 MHz points, 10 ps step, 2.7 us window. Each part carries its own control
+(identical deck, so the three controls agree to the digit shown). Rows below are
+in grid order; the records are
+`2026-10-15-ro-array-supply-ripple-<corner>-lowf-p<k>-01` (k = 1..3).
+
+Nominal, `tt`/27 C/3.30 V:
+
+| placement | amp (mV) | rails | ring1 x (ps) | ring2 x (ps) | beat-phase x (ps) | ring1 ffm (ppm/mV) |
+|---|---|---|---|---|---|---|
+| control | 0 | - | 0.145 | 0.0821 | 0.214 | n/a |
+| ring1 | 10 | in | 265 | 0.029 | 265 | 333 |
+| ring1 | 50 | in | 1320 | 0.136 | 1320 | 333 |
+| ring1 | 150 | in | 3970 | 0.146 | 3970 | 333 |
+| both | 10 | in | 264 | 261 | 14.7 | 332 |
+| both | 50 | in | 1320 | 1310 | 72.7 | 333 |
+| both | 150 | in | 3970 | 3920 | 218 | 333 |
+
+Entropy-binding, `ss`/125 C/3.63 V (every perturbed rail is `OUT` of the envelope,
+as at 7.65 MHz):
+
+| placement | amp (mV) | rails | ring1 x (ps) | ring2 x (ps) | beat-phase x (ps) | ring1 ffm (ppm/mV) |
+|---|---|---|---|---|---|---|
+| control | 0 | - | 0.0968 | 0.108 | 0.142 | n/a |
+| ring1 | 10 | OUT | 252 | 0.165 | 252 | 316 |
+| ring1 | 50 | OUT | 1260 | 0.305 | 1260 | 317 |
+| ring1 | 150 | OUT | 3780 | 0.0619 | 3780 | 317 |
+| both | 10 | OUT | 252 | 249 | 14.7 | 317 |
+| both | 50 | OUT | 1260 | 1240 | 73.1 | 317 |
+| both | 150 | OUT | 3780 | 3730 | 219 | 317 |
+
+Observations at 2 MHz (synthetic aggressor only):
+
+- The control tone (0.1-0.2 ps) is three orders of magnitude below the 10 mV
+  response (252-265 ps).
+- The response per millivolt (ffm 316-333 ppm/mV) is the same as at the beat
+  frequency within about 5 percent at each corner, and linear in amplitude to
+  within 0.5 percent; the 2 MHz displacement is about 5 times the beat-frequency
+  one because the same fractional-frequency modulation integrates over a
+  period 3.8-5.3 times longer.
+- A ring that does not carry the ripple stays at the control floor, as before.
+- In-phase ripple on both rails leaves a relative (beat-phase) displacement of
+  5.5-5.8 percent of a single-ring displacement (14.7 ps against 265 ps at 10 mV,
+  72.7 ps against 1320 ps at 50 mV; 219 ps against 3780 ps at 150 mV in the binding
+  corner), i.e. largely common-mode, as at the beat frequency. This says nothing
+  about unequal-phase or unequal-amplitude ripple (untested).
+- At 150 mV the single-ring fit residual rises (nominal 16.5-16.9 ps against
+  2.2-2.8 ps at lower amplitudes; binding 8.7-9.8 ps), so the single-tone model
+  explains slightly less there (`tone explains` still rounds to 1.0000); read the
+  150 mV rows as having a larger harmonic or non-sinusoidal remainder.
+- No separate step-convergence or shorter-window re-run was made at 2 MHz; the
+  convergence check above is at the beat point only, so numerical sensitivity at
+  2 MHz is not bounded independently.
 
 ## Run status
 
@@ -179,10 +236,34 @@ The fleet now accepts the client (`runner_compatibility: match`, runner klt
   deck (the passing `nominal-beat` job needed 2329 s for 7 units of a shorter
   window), consistent with the per-corner cost that grows with corners per job
   already described in 2AMLogic/klayout-tools#2970; no new tool issue was filed.
-  Splitting the 2 MHz requests would change the committed request grid and is
-  out of scope here, so they remain pending.
+  Splitting the 2 MHz requests was left for a later increment (below).
 - The `wall_time` in each record is the longest unit's `runtime_s` (units of a
   job report a job-scale time), not a sum.
+
+### Update 2026-10-15 (2 MHz requests split into parts)
+
+Each 2 MHz request was replaced by three requests (`<corner>-lowf-p1..p3`) that
+together carry exactly the same 7 units (a test asserts the union equals the
+declared grid); each part leads with its own zero-amplitude control. The
+superseded `request-nominal-lowf.json` and `request-binding-lowf.json` are
+removed from the generator; their fleet failures above stand as recorded. The
+parts were submitted one at a time with `supply_ripple.py run`
+(`KLT_SIM_BACKEND=batch`, nothing as a local grid), and all units of all six
+parts passed on the first submit, each job finishing in well under a minute
+(longest unit 33.7-39.9 s):
+
+| request | fleet job |
+|---|---|
+| `nominal-lowf-p1` | `klt-sim-be91bc34af67` |
+| `nominal-lowf-p2` | `klt-sim-4bbe251252a5` |
+| `nominal-lowf-p3` | `klt-sim-bccb21ba5196` |
+| `binding-lowf-p1` | `klt-sim-819597cbfe6b` |
+| `binding-lowf-p2` | `klt-sim-668edd045d0a` |
+| `binding-lowf-p3` | `klt-sim-35fa68b49079` |
+
+So the 7-unit jobs were limited by units-per-job, not by the deck (consistent
+with 2AMLogic/klayout-tools#2970). The bounded exit for a repeat timeout was not
+needed.
 
 ## Tested versus not tested
 
