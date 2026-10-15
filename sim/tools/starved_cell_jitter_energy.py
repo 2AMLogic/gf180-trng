@@ -138,6 +138,13 @@ SPREAD_TOLERANCE = 3.0
 #: ``sim/tools/array_sizing.py --check`` enforces.
 SIZING_CONSTANT_CORNER = "ss/-40/3.63"
 
+#: The entropy-binding corner per ``DR-0015``. Its measured asymptotic ``a``
+#: (8.42, issue #628) is REPORTED beside the stated constant and never
+#: substituted for it: the operator ruled (issue #628, 2026-10-15) to keep
+#: :data:`SIZING_CONSTANT_CORNER` as the sizing constant and not to raise any
+#: published margin or rate ceiling from one eight-seed record.
+BINDING_CORNER = "ss/125/3.63"
+
 
 class RecordError(RuntimeError):
     pass
@@ -528,15 +535,23 @@ class SizingConstant:
     :data:`SIZING_CONSTANT_CORNER`; ``stem`` names the record it came from;
     ``by_corner`` holds every measured corner's asymptotic ``a``, so a caller
     can show that the selected value is the smallest of them rather than
-    assert it.
+    assert it. ``binding_corner`` / ``binding_value`` / ``binding_stem``
+    report the asymptotic ``a`` at :data:`BINDING_CORNER` (``None`` when no
+    record measures it); they are informational and do not change ``value``.
     """
 
     def __init__(self, value: float, corner: str, stem: str,
-                 by_corner: dict[str, float]) -> None:
+                 by_corner: dict[str, float],
+                 binding_corner: str | None = None,
+                 binding_value: float | None = None,
+                 binding_stem: str | None = None) -> None:
         self.value = value
         self.corner = corner
         self.stem = stem
         self.by_corner = by_corner
+        self.binding_corner = binding_corner
+        self.binding_value = binding_value
+        self.binding_stem = binding_stem
 
     @property
     def smallest_corner(self) -> str:
@@ -569,15 +584,22 @@ def sizing_constant(points: list[Point] | None = None,
     no usable record measures ``corner``, or when the derived value is not a
     positive finite number. A sizing constant that cannot be derived is a
     ``--check`` failure for the caller, not a default to fall back on.
+
+    The binding corner's own ``a`` is reported alongside (see
+    :data:`BINDING_CORNER`); a missing binding record leaves it ``None``
+    rather than failing, since it does not feed the sizing.
     """
     if points is None:
         points, _skipped = load_points()
     by_corner: dict[str, float] = {}
     chosen: Point | None = None
+    binding: Point | None = None
     for p in points:
         by_corner[p.rec.corner] = p.a(p.kappa2_asym)
         if p.rec.corner == corner:
             chosen = p
+        if p.rec.corner == BINDING_CORNER:
+            binding = p
     if chosen is None:
         raise RecordError(
             f"no usable sim/records/{JITTER_GLOB} record at {corner}, the corner "
@@ -587,7 +609,11 @@ def sizing_constant(points: list[Point] | None = None,
     value = by_corner[corner]
     if not (math.isfinite(value) and value > 0):
         raise RecordError(f"{chosen.rec.stem}: asymptotic a = {value!r} is not a positive finite number")
-    return SizingConstant(value, corner, chosen.rec.stem, by_corner)
+    if binding is None:
+        return SizingConstant(value, corner, chosen.rec.stem, by_corner)
+    return SizingConstant(value, corner, chosen.rec.stem, by_corner,
+                          BINDING_CORNER, by_corner[BINDING_CORNER],
+                          binding.rec.stem)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -698,6 +724,14 @@ def main(argv: list[str] | None = None) -> int:
             f"{sel.smallest_corner}. sim/tools/array_sizing.py --check holds its stated "
             f"constant to this value."
         )
+        if sel.binding_value is not None:
+            print(
+                f"binding corner (DR-0015) {sel.binding_corner}: asymptotic a = "
+                f"{sel.binding_value:.3f} from {sel.binding_stem}, "
+                f"{sel.binding_value / sel.value:.2f}x the stated constant; reported "
+                f"only -- the stated constant and the published margin and rate "
+                f"ceiling are not raised from it (issue #628)."
+            )
 
     if args.check:
         if not ok:
