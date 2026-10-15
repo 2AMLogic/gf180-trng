@@ -142,7 +142,6 @@ other build script in this repository.
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -156,16 +155,9 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout._klt import klt_version, resolve_pdk  # noqa: E402
 from layout.cells._build_cli import make_pdk_check, make_pdk_main  # noqa: E402
-
-# --------------------------------------------------------------------------- #
-# Layers -- gf180mcu drawn layers (layout/testcells/build.py's own set, plus
-# Metal2/Via1 for the rails -- see the module docstring).
-# --------------------------------------------------------------------------- #
-METAL1 = [34, 0]
-METAL2 = [36, 0]
-VIA1 = [35, 0]
+from layout.rings import _ring_common  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Drawn-cell geometry -- bbox_um and every named pin's own (x_um, y_um),
@@ -219,6 +211,7 @@ WRAP_TRACK = (3.90, 4.20)
 VDDR_M2_BAND = (1.75, 2.05)
 VSS_M2_BAND = (0.02, 0.32)
 
+METAL1 = _ring_common.METAL1
 STUB_W = 0.30
 VIA_SZ = 0.26  # gf180mcu DRM 7.14 "Vn.1": Via1..Via4 are a fixed 0.26um square
 M2_PAD = 0.30
@@ -231,211 +224,53 @@ assert M2_PAD >= 0.28, "metal2.width.1 (0.28)"
 
 DECK = "gf180mcu"
 
+# --------------------------------------------------------------------------- #
+# Shared assembly (layout/rings/_ring_common.py) driven by this ring's own
+# constants above. `row_offsets`/`_bboxes_and_locals` keep their signatures:
+# layout/pex/build.py calls them on this module.
+# --------------------------------------------------------------------------- #
 
-# --------------------------------------------------------------------------- #
-# Row placement
-# --------------------------------------------------------------------------- #
+SPEC = _ring_common.RingSpec(
+    repo_root=REPO_ROOT,
+    top_cell=TOP_CELL,
+    stage_cell="ro_stage",
+    nand_cell="ro_nand2",
+    stage_bbox=STAGE_BBOX,
+    stage_local=STAGE_LOCAL,
+    nand_bbox=NAND_BBOX,
+    nand_local=NAND_LOCAL,
+    nand_a_waypoints=NAND_A_WAYPOINTS,
+    nand_y_waypoints=NAND_Y_WAYPOINTS,
+    row_order=ROW_ORDER,
+    row_gap_um=ROW_GAP_UM,
+    short_track=SHORT_TRACK,
+    wrap_track=WRAP_TRACK,
+    vddr_m2_band=VDDR_M2_BAND,
+    vss_m2_band=VSS_M2_BAND,
+    stub_w=STUB_W,
+    via_sz=VIA_SZ,
+    m2_pad=M2_PAD,
+)
 
 
 def row_offsets(order: list[str], bboxes: dict[str, dict]) -> dict[str, float]:
-    """Left-to-right row offsets, `ROW_GAP_UM` apart -- the same arithmetic
-    `klt gen-compose`'s own `placement.strategy: "row"` uses
-    (`compute_row_offsets` in klayout-tools' `gen_compose.py`), computed
-    here in plain Python because the wiring geometry needs these same
-    numbers before `gen-compose` is ever invoked (see module docstring)."""
-    offsets: dict[str, float] = {}
-    cursor_x1: float | None = None
-    for block_id in order:
-        bbox = bboxes[block_id]
-        offset_x = 0.0 if cursor_x1 is None else (cursor_x1 + ROW_GAP_UM) - bbox["x0"]
-        offsets[block_id] = offset_x
-        cursor_x1 = bbox["x1"] + offset_x
-    return offsets
+    return _ring_common.row_offsets(order, bboxes, ROW_GAP_UM)
 
 
 def _bboxes_and_locals() -> tuple[dict[str, dict], dict[str, dict]]:
-    bboxes = {"xg": NAND_BBOX}
-    locals_ = {"xg": NAND_LOCAL}
-    for i in range(1, 11):
-        bboxes[f"x{i}"] = STAGE_BBOX
-        locals_[f"x{i}"] = STAGE_LOCAL
-    return bboxes, locals_
-
-
-# --------------------------------------------------------------------------- #
-# Wiring geometry (klt draw's own JSON shape list)
-# --------------------------------------------------------------------------- #
+    return _ring_common.bboxes_and_locals(SPEC)
 
 
 def _wiring_shapes(offsets: dict[str, float], locals_: dict[str, dict]) -> list[dict]:
-    shapes: list[dict] = []
-
-    def stub_up(x: float, y_bottom: float, y_top: float) -> None:
-        shapes.append(_rect(METAL1, x - STUB_W / 2, y_bottom, x + STUB_W / 2, y_top))
-
-    def hjog(y0: float, y1: float, x_lo: float, x_hi: float) -> None:
-        shapes.append(_rect(METAL1, x_lo - STUB_W / 2, y0, x_hi + STUB_W / 2, y1))
-
-    def polyline(points: list[tuple[float, float]]) -> None:
-        """Draw a Manhattan polyline as a sequence of STUB_W-wide rects.
-
-        Each segment's own endpoint is extended along the segment's axis by
-        STUB_W/2 only when that endpoint is an *interior* joint (shared with
-        the previous/next segment), squaring off the corner so consecutive
-        segments overlap cleanly. The polyline's true first and last
-        endpoints (a pin pad, or a track's own edge) are left exact --
-        over-extending those risks landing too close to unrelated geometry
-        just past them (this shipped once, as a real metal1.space.1
-        failure against the wrap track, before this docstring existed).
-        """
-        n = len(points) - 1
-        for i, ((x0, y0), (x1, y1)) in enumerate(zip(points, points[1:])):
-            horizontal = y0 == y1
-            ext_lo = STUB_W / 2 if i > 0 else 0.0
-            ext_hi = STUB_W / 2 if i < n - 1 else 0.0
-            if horizontal:
-                lx0, lx1 = sorted((x0, x1))
-                if x0 > x1:
-                    ext_lo, ext_hi = ext_hi, ext_lo
-                lx0 -= ext_lo
-                lx1 += ext_hi
-                ly0, ly1 = y0 - STUB_W / 2, y0 + STUB_W / 2
-            else:
-                ly0, ly1 = sorted((y0, y1))
-                if y0 > y1:
-                    ext_lo, ext_hi = ext_hi, ext_lo
-                ly0 -= ext_lo
-                ly1 += ext_hi
-                lx0, lx1 = x0 - STUB_W / 2, x0 + STUB_W / 2
-            shapes.append(_rect(METAL1, lx0, ly0, lx1, ly1))
-
-    # --- the ring's own a/y chain, xg.y -> x1.a -> x1.y -> x2.a -> ... ---
-    for k in range(len(ROW_ORDER)):
-        src, dst = ROW_ORDER[k], ROW_ORDER[(k + 1) % len(ROW_ORDER)]
-        is_wrap = dst == "xg"  # the one link that closes the loop
-        track = WRAP_TRACK if is_wrap else SHORT_TRACK
-
-        if src == "xg":
-            polyline(NAND_Y_WAYPOINTS)
-            src_exit_x = NAND_Y_WAYPOINTS[-1][0]
-        else:
-            sx = locals_[src]["y"][0] + offsets[src]
-            stub_up(sx, locals_[src]["y"][1], track[1])
-            src_exit_x = sx
-
-        if dst == "xg":
-            polyline(NAND_A_WAYPOINTS)
-            dst_exit_x = NAND_A_WAYPOINTS[-1][0]
-        else:
-            dx = locals_[dst]["a"][0] + offsets[dst]
-            stub_up(dx, locals_[dst]["a"][1], track[1])
-            dst_exit_x = dx
-
-        hjog(track[0], track[1], min(src_exit_x, dst_exit_x), max(src_exit_x, dst_exit_x))
-
-    # --- vddr/vss rails: one Metal2 strip per rail, one Via1 drop per cell ---
-    row_x0 = min(STAGE_BBOX["x0"] + offsets[b] if b != "xg" else NAND_BBOX["x0"] + offsets[b]
-                 for b in ROW_ORDER)
-    row_x1 = max(STAGE_BBOX["x1"] + offsets[b] if b != "xg" else NAND_BBOX["x1"] + offsets[b]
-                 for b in ROW_ORDER)
-    shapes.append(_rect(METAL2, row_x0 - 1.0, VDDR_M2_BAND[0], row_x1 + 1.0, VDDR_M2_BAND[1]))
-    shapes.append(_rect(METAL2, row_x0 - 1.0, VSS_M2_BAND[0], row_x1 + 1.0, VSS_M2_BAND[1]))
-    for b in ROW_ORDER:
-        for net, band in (("vddr", VDDR_M2_BAND), ("vss", VSS_M2_BAND)):
-            lx, ly = locals_[b][net]
-            gx = lx + offsets[b]
-            shapes.append(_rect(VIA1, gx - VIA_SZ / 2, ly - VIA_SZ / 2, gx + VIA_SZ / 2, ly + VIA_SZ / 2))
-            shapes.append(_rect(METAL2, gx - M2_PAD / 2, ly - M2_PAD / 2, gx + M2_PAD / 2, ly + M2_PAD / 2))
-
-    return shapes
-
-
-# --------------------------------------------------------------------------- #
-# Build
-# --------------------------------------------------------------------------- #
+    return _ring_common.wiring_shapes(SPEC, offsets, locals_)
 
 
 def gds_path() -> Path:
-    return CELL_DIR / f"{TOP_CELL}.gds"
+    return SPEC.gds_path()
 
 
 def build(pdk_variant: str, path: Path | None = None) -> bytes:
-    """Draw the wiring, compose the row, and return the normalised GDS bytes.
-
-    Writes scratch artefacts under `layout/.work/`; the composed, normalised
-    stream is returned (and, unless `path` overrides it, also written to
-    `path` -- the caller decides whether that lands on the committed
-    `ro_ring11.gds` or a throwaway compare target, the same convention
-    `layout/cells/*/build.py`'s own `build()` follows).
-    """
-    WORK_DIR.mkdir(parents=True, exist_ok=True)
-    bboxes, locals_ = _bboxes_and_locals()
-    offsets = row_offsets(ROW_ORDER, bboxes)
-
-    shapes = _wiring_shapes(offsets, locals_)
-    draw_params_path = WORK_DIR / "ro_ring11_wiring_params.json"
-    draw_params_path.write_text(json.dumps({"shapes": shapes}, indent=2) + "\n")
-    wiring_gds = WORK_DIR / "ro_ring11_wiring.gds"
-    draw_resp = _run_klt([
-        "draw", "--params", str(draw_params_path.relative_to(REPO_ROOT)),
-        "--cell-name", "ro_ring11_wiring",
-        "-o", str(wiring_gds.relative_to(REPO_ROOT)),
-    ])
-
-    def _report(generator: str, cell_name: str, gds: Path, bbox: dict) -> dict:
-        return {
-            "generator": generator, "cell_name": cell_name,
-            "gds_path": str(gds.relative_to(REPO_ROOT) if gds.is_absolute() else gds),
-            "bbox_um": bbox, "ports": [],
-        }
-
-    gr_stage = _report("layout.cells.ro_stage", "ro_stage",
-                        REPO_ROOT / "layout/cells/ro_stage/ro_stage.gds", STAGE_BBOX)
-    gr_nand = _report("layout.cells.ro_nand2", "ro_nand2",
-                       REPO_ROOT / "layout/cells/ro_nand2/ro_nand2.gds", NAND_BBOX)
-    gr_wire = _report("layout.rings.ro_ring11.wiring", "ro_ring11_wiring",
-                       wiring_gds, draw_resp["bbox_um"])
-
-    reports = {"stage": WORK_DIR / "ro_ring11_gr_stage.json",
-               "nand": WORK_DIR / "ro_ring11_gr_nand.json",
-               "wire": WORK_DIR / "ro_ring11_gr_wire.json"}
-    reports["stage"].write_text(json.dumps(gr_stage, indent=2) + "\n")
-    reports["nand"].write_text(json.dumps(gr_nand, indent=2) + "\n")
-    reports["wire"].write_text(json.dumps(gr_wire, indent=2) + "\n")
-
-    blocks = []
-    origins = {}
-    for b in ROW_ORDER:
-        report_path = reports["nand"] if b == "xg" else reports["stage"]
-        # Relative to the request document's own directory (WORK_DIR, same
-        # as request_path below), not the repo root -- klayout-tools#328,
-        # the same convention layout/floorplan/floorplan.py's own compose()
-        # already follows.
-        blocks.append({"id": b, "generator_report": report_path.name})
-        origins[b] = {"x": offsets[b], "y": 0.0}
-    blocks.append({"id": "wire", "generator_report": reports["wire"].name})
-    origins["wire"] = {"x": 0.0, "y": 0.0}
-
-    compose_request = {
-        "_comment": (
-            "Generated by layout/rings/ro_ring11/build.py. Re-run by hand with: "
-            "klt gen-compose layout/.work/ro_ring11-compose-request.json (from "
-            "the repo root, so options.output lands at "
-            "layout/.work/ro_ring11.gds)"
-        ),
-        "blocks": blocks,
-        "placement": {"strategy": "explicit", "order": ROW_ORDER + ["wire"], "origins_um": origins},
-        "pdk": {"variant": pdk_variant},
-        "options": {"cell_name": TOP_CELL, "output": "layout/.work/ro_ring11.gds"},
-    }
-    request_path = WORK_DIR / "ro_ring11-compose-request.json"
-    request_path.write_text(json.dumps(compose_request, indent=2) + "\n")
-    _run_klt(["gen-compose", str(request_path.relative_to(REPO_ROOT))])
-
-    gds_bytes = normalise_gds((WORK_DIR / "ro_ring11.gds").read_bytes())
-    target = path or gds_path()
-    target.write_bytes(gds_bytes)
-    return gds_bytes
+    return _ring_common.build(SPEC, pdk_variant, path)
 
 
 # The check/CLI tail is the shared one (`layout/cells/_build_cli.py`, #589);
