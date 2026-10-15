@@ -134,6 +134,7 @@ WRAP_TRACK = (3.90, 4.20)
 VDDR_M2_BAND = (1.75, 2.05)
 VSS_M2_BAND = (0.02, 0.32)
 
+METAL1 = _ring_common.METAL1
 STUB_W = 0.30
 VIA_SZ = 0.26  # gf180mcu DRM 7.14 "Vn.1": Via1..Via4 are a fixed 0.26um square
 M2_PAD = 0.30
@@ -183,6 +184,10 @@ def row_offsets(order: list[str], bboxes: dict[str, dict]) -> dict[str, float]:
 
 def _bboxes_and_locals() -> tuple[dict[str, dict], dict[str, dict]]:
     return _ring_common.bboxes_and_locals(SPEC)
+
+
+def _wiring_shapes(offsets: dict[str, float], locals_: dict[str, dict]) -> list[dict]:
+    return _ring_common.wiring_shapes(SPEC, offsets, locals_)
 
 
 def gds_path() -> Path:
