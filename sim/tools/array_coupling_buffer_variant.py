@@ -299,8 +299,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--rate", type=float, default=pr.RATIFIED_RAW_RATE_BPS, metavar="BPS",
         help="raw output rate the sampler and digital terms of the block rollup "
-             "are priced at (default: DR-0003's ratified 1 Mbps, the same "
-             "default sim/tools/power_rollup.py uses)",
+             "are priced at (default: the current ratified 2000 bps, "
+             "DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy, the same "
+             "default sim/tools/power_rollup.py uses; --rate 1e6 reproduces the "
+             "historical DR-0003 figures)",
     )
     parser.add_argument(
         "--no-power", action="store_true",

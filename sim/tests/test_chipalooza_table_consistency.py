@@ -35,8 +35,11 @@ def _row(letter: str) -> str:
 
 
 def _rollup() -> str:
+    # The proposal table quotes Row D at DR-0003's original 1 MHz sample clock
+    # (historical; the tool's default is now the ratified 2 kbps), so pin it.
     proc = subprocess.run(
-        [sys.executable, "-I", str(SIM_DIR / "tools" / "power_rollup.py")],
+        [sys.executable, "-I", str(SIM_DIR / "tools" / "power_rollup.py"),
+         "--rate", "1e6"],
         capture_output=True, text=True, cwd=REPO_ROOT, check=True,
     )
     return proc.stdout

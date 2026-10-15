@@ -205,11 +205,13 @@ multi-corner result.
 **What may be cited from this, and what may not.** The 50 ns constraint is
 this run's own input, not a spec row: no issue in this repository has set a
 digital-section Fmax requirement. The ratified requirement the clock rate
-has to satisfy is the raw-rate row (`README.md`, [DR-0003][dr3]): > 1 Mbps
-sustained at the sampler output, one raw bit per `clk` edge, so > 1 MHz, with
-the stretch row at > 4 MHz. This run closes at 20 MHz with 28.4 ns of slack
-at a slow-process/hot/−10 %-supply corner, which is 5–20× the rate the spec
-asks for — that is a *margin statement about this implementation*, not an
+has to satisfy is the raw-rate row (`README.md`), now > 2 kbps
+([DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy][dr11rate]).
+The 20 MHz target was chosen against [DR-0003][dr3]'s original (historical)
+> 1 Mbps: one raw bit per `clk` edge, so > 1 MHz, with the stretch row at
+> 4 MHz. This run closes at 20 MHz with 28.4 ns of slack
+at a slow-process/hot/−10 %-supply corner, which is 5–20× that original
+rate and far above the current one — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
 deliverable, and it is #145 that gets to state them.
 
@@ -425,7 +427,7 @@ it is **not** a power result, it does not supersede
 [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md),
 from this directory's own committed, powered DEF re-timed at fifteen corners
 with extracted parasitics: 8.56 mW at this corner at 20 MHz and 432 µW at
-DR-0003's ratified 1 MHz raw rate, under a declared 0.25 transitions/net/cycle
+the 1 MHz measurement rate (DR-0003's original raw rate, now historical), under a declared 0.25 transitions/net/cycle
 activity, against the library-based estimate's 16.7 µW. Leakage at this
 corner is 3.95 µW, up from 1.39 µW pre-[#171][gf171] — [#171]'s
 tapcell/endcap/filler population now contributes its own leakage, on top of
@@ -1079,6 +1081,7 @@ boundary.
 [klt1310]: https://github.com/2AMLogic/klayout-tools/pull/1310
 [klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[dr11rate]: ../../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 [dr20]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
 [gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html

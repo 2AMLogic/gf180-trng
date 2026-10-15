@@ -187,10 +187,11 @@ CORNER = "ss_125C_3v00"
 #:   must not be read as an area result; `layout/digital/README.md`'s "Area"
 #:   section says what may be compared against the floorplan estimate.
 #: - `clock_period_ns`: 50 ns (20 MHz). No issue in this repository has set
-#:   a digital-section Fmax requirement, but the ratified raw-rate row
-#:   (README.md, DR-0003) needs > 1 Mbps sustained at the sampler output --
-#:   one raw bit per `clk` edge, so > 1 MHz, with the stretch row at
-#:   > 4 MHz. 20 MHz is 5-20x that, chosen so the timing-driven placement,
+#:   a digital-section Fmax requirement. The raw-rate row is now > 2 kbps
+#:   (README.md, DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy);
+#:   this constraint was chosen against DR-0003's original > 1 Mbps (one raw
+#:   bit per `clk` edge, so > 1 MHz, stretch row > 4 MHz), which is historical
+#:   and kept as a deliberately conservative target. 20 MHz is 5-20x that, chosen so the timing-driven placement,
 #:   CTS and routing stages have a target with real headroom to optimize
 #:   toward; the reported slack is against *this* constraint, not against a
 #:   spec row.

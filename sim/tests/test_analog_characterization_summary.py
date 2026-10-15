@@ -33,16 +33,25 @@ SUMMARY = SIM_DIR / "characterization-analog-summary.md"
 AREA = REPO_ROOT / "layout" / "floorplan" / "reports" / "area.json"
 TOOLS = SIM_DIR / "tools"
 
+# The summary's §1 figures are HISTORICAL: power and time-to-first-valid are
+# quoted at DR-0003's original 1 Mbps, the sizing/entropy tables at DR-0010's
+# superseded 500 bps. The tools' defaults are now the ratified 2 kbps
+# (DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy), so every
+# historical rate is pinned explicitly here and the summary names the same
+# command beside each figure.
 RUNS = {
-    "power": ["power_rollup.py"],
-    "power_analog": ["power_rollup.py", "--no-digital"],
+    "power": ["power_rollup.py", "--rate", "1e6"],
+    "power_analog": ["power_rollup.py", "--no-digital", "--rate", "1e6"],
     # --check prints the same report plus its own OK verdict line, and exits
     # non-zero if the records stop supporting the stated corner or floor.
     # The summary quotes its time-to-first-valid figures at DR-0003's original
     # 1 Mbps (the rate #14 reported at); the tool's default is now the ratified
     # 2 kbps, so the historical rate is pinned explicitly here.
     "ttfv": ["time_to_first_valid.py", "--check", "--rate", "1e6"],
-    "entropy": ["worst_corner_entropy.py", "--check"],
+    "entropy": ["worst_corner_entropy.py", "--check", "--rate", "500"],
+    # Current-rate (2 kbps) derivations quoted in the summary: the tools' defaults.
+    "power_current": ["power_rollup.py"],
+    "ttfv_current": ["time_to_first_valid.py", "--check"],
 }
 
 #: (snippet in the summary, tool run, regex over that run's stdout)
@@ -59,6 +68,13 @@ QUOTED = [
     ("**32.77 nA**", "power", r"analog, whole sampler_core \(measured\):\s*32\.77 nA"),
     ("**2.211 µA = 221 %**", "power", r"Worst idle corner: ff/125/3\.63\s*-> 2\.211 uA\s*= 221%"),
     ("digital leakage at 2.178 µA", "power", r"digital leakage \(MEASURED-at-gate-level\): 2\.178 uA"),
+    # Current ratified rate (2 kbps), DERIVED -- section 1.1 of the summary
+    ("**8.523 µW** at 2 kbps", "power_current", r"digital \(MEASURED-at-gate-level\): 8\.523 uW"),
+    ("**418.5 µW = 83.7 %**", "power_current",
+     r"Worst active corner: ff/-40/3\.63\s*-> 418\.5 uW\s*= 83\.7%"),
+    ("**2.211 µA = 221 %**", "power_current",
+     r"Worst idle corner: ff/125/3\.63\s*-> 2\.211 uA\s*= 221%"),
+    ("**640.5 ms** at 2 kbps", "ttfv_current", r"TIME-TO-FIRST-VALID\s*: 640\.5 ms"),
     # Time-to-first-valid and the rate-binding period
     ("**1.281 ms**, binding at `ss`/125 °C/2.97 V", "ttfv", r"Binding corner \(longest total\): ss/125/2\.97"),
     ("**1.281 ms**", "ttfv", r"TIME-TO-FIRST-VALID\s*: 1\.281 ms"),
