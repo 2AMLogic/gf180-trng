@@ -6,6 +6,9 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-15
 
+- **PR #641**: sim: run 2 MHz supply-ripple points as split fleet requests and record results
+- **PR #640**: design: default digital_power_estimate to the ratified 2000 bps raw rate
+- **Issue #639** (closed): Follow-on from PR #638: digital_power_estimate.py still cites DR-0010 as proposed and defaults to 1 Mbps
 - **PR #638**: sim: carry ratified 2 kbps rate through rollup tools and docs; mark older rates historical
 - **PR #637**: sim: supply-ripple susceptibility results, beat + convergence (part of #414)
 - **Issue #585** (closed): Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps
