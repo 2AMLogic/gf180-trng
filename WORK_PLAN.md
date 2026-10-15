@@ -20,7 +20,7 @@ _None._
 
 `loom:important`; taken before unlabelled work.
 
-_None._
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 
 ## Ready
 
@@ -34,7 +34,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array
+_None._
 
 ## PRs Awaiting Review
 
@@ -61,7 +61,6 @@ Issues carrying `loom:curated`.
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
-- **#585**: Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps *(curated)*
 - **#628**: Measure starved-cell jitter energy at the entropy-binding corner ss/+125C/3.63V (sizing currently applies the -40C value) *(curated)*
 
 ## Proposed (Architect / Hermit)
@@ -78,12 +77,12 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Very important | 0 |
-| Important | 0 |
+| Important | 1 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 11 |
+| Curated | 10 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
