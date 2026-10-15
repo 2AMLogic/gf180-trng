@@ -1,11 +1,16 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-13.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-15.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
+### 2026-10-15
+
+- **PR #634**: Bump Repo Skills 0.19.5 -> 0.24.1
+
 ### 2026-10-13
 
+- **PR #633**: sim: starved-cell jitter-energy at ss/+125C/3.63V on the batch fleet (Part A of #628)
 - **PR #631**: Design study: price higher raw-rate entropy-source options from existing evidence (#629)
 - **Issue #629** (closed): Design study: a higher-rate entropy source (multi-RO / metastability hybrid tap) if Mbps-class rates are needed
 
