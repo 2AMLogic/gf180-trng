@@ -9,6 +9,7 @@ dependency block or an operator-only decision.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#646**: ci(nightly): pin yowasp-yosys to 0.69.0.0.post1233
 
 ## Very Important
 
@@ -34,7 +35,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#630**: PDK nightly red: Yosys 0.70 (yowasp-yosys, unpinned) makes trng_top.synth.{v,json} STALE
 
 ## PRs Awaiting Review
 
@@ -47,6 +48,7 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#646**: ci(nightly): pin yowasp-yosys to 0.69.0.0.post1233
 
 ## Proposed
 
@@ -61,11 +63,11 @@ Issues carrying `loom:curated`.
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
-- **#628**: Measure starved-cell jitter energy at the entropy-binding corner ss/+125C/3.63V (sizing currently applies the -40C value) *(curated)*
+- **#630**: PDK nightly red: Yosys 0.70 (yowasp-yosys, unpinned) makes trng_top.synth.{v,json} STALE *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#346**: Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code *(hermit)*
+_None._
 
 ## Epics
 
@@ -75,14 +77,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 2 |
 | Curated | 10 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
