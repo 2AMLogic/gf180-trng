@@ -24,6 +24,7 @@ from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 item7 = load_module_from_path("signoff_publish_item7_analog", ROOT / "signoff" / "publish_item7_analog.py")
 cs = load_module_from_path("signoff_publish_combiner_sampler_pex", ROOT / "signoff" / "publish_combiner_sampler_pex.py")
 check = item7.check
+common = item7.common
 
 VERDICT = {"verdict": "pass", "counts": {"unmeasured": 0}}
 
@@ -65,11 +66,51 @@ class Scratch(unittest.TestCase):
             return fn(*args, **kw), err.getvalue()
 
 
+class CommonSteps(Scratch):
+    """The shared publisher steps directly (signoff/publish_common.py)."""
+
+    mod = item7  # Scratch needs a module with REPO_ROOT/SCRATCH; common takes `root` explicitly
+
+    def test_envelope_refusals_lists_every_gate(self):
+        env = _envelope("0.0.1", pin_count_mismatch={"d": 1}, flat_dut_mismatch={"d": 2})
+        got = common.envelope_refusals(self.root, env, "n.spice")
+        self.assertEqual(len(got), 4)
+        for text, line in zip(("not the producer pin", "pin_count_mismatch", "flat_dut_mismatch", "n.spice is missing"), got):
+            self.assertIn(text, line)
+
+    def test_envelope_refusals_clean(self):
+        self.write("n.spice")
+        self.assertEqual(common.envelope_refusals(self.root, _envelope(), "n.spice"), [])
+
+    def publish(self, build, validate, dest, allow=False):
+        pub_path = self.root / "pub.json"
+        return self.run_quiet(common.publish_envelope, "x: refusing", dest, b"new", build, validate, allow, pub_path)
+
+    def test_failure_restores_previous_and_removes_new(self):
+        old = self.write("old.json", "previous")
+        pub, err = self.publish(lambda sha: {}, lambda p: ["bad"], old)
+        self.assertIsNone(pub)
+        self.assertEqual(old.read_text(), "previous")
+        self.assertIn("x: refusing -- envelope not written", err)
+        new = self.root / "sub" / "new.json"
+        pub, _ = self.publish(lambda sha: (_ for _ in ()).throw(KeyError("k")), lambda p: [], new)
+        self.assertIsNone(pub)
+        self.assertFalse(new.exists())
+        self.assertFalse((self.root / "pub.json").exists())
+
+    def test_success_writes_envelope_and_publication_with_sha(self):
+        dest = self.root / "e.json"
+        pub, _ = self.publish(lambda sha: {"sha": sha}, lambda p: [], dest)
+        self.assertEqual(dest.read_bytes(), b"new")
+        self.assertEqual(pub["sha"], check.sha256_file(dest))
+        self.assertEqual(json.loads((self.root / "pub.json").read_text()), pub)
+
+
 class Item7RunPex(Scratch):
     mod = item7
 
     def argv(self, env, *args, **kw):
-        with mock.patch.dict(os.environ, env), mock.patch.object(item7.subprocess, "run") as run:
+        with mock.patch.dict(os.environ, env), mock.patch.object(common.subprocess, "run") as run:
             self.run_quiet(item7.run_pex, *args, **kw)
         self.assertEqual(run.call_count, 1)
         return run.call_args.args[0], run.call_args.kwargs
@@ -97,7 +138,7 @@ class Item7RunPex(Scratch):
         self.assertTrue(item7.RING2_SCRATCH.name.endswith("ring2-pex"))
 
     def test_stdout_goes_to_the_response_file(self):
-        with mock.patch.dict(os.environ, {"KLT": "klt"}), mock.patch.object(item7.subprocess, "run") as run, \
+        with mock.patch.dict(os.environ, {"KLT": "klt"}), mock.patch.object(common.subprocess, "run") as run, \
                 mock.patch.object(item7, "RING2_SCRATCH", self.root / "r2"):
             out, _ = self.run_quiet(item7.run_pex, "ring2")
         self.assertEqual(out, self.root / "r2" / "klt_pex_response.json")
@@ -113,7 +154,7 @@ class Item7Refusals(Scratch):
 
     def test_ring1_stale_dut_runs_nothing(self):
         with mock.patch.object(check, "item7_analog_dut_source_problems", return_value=["stale"]), \
-                mock.patch.object(item7.subprocess, "run") as run, \
+                mock.patch.object(common.subprocess, "run") as run, \
                 mock.patch.object(sys, "argv", ["publish_item7_analog.py"]):
             rc, err = self.run_quiet(item7.main)
         self.assertEqual(rc, 1)
@@ -123,7 +164,7 @@ class Item7Refusals(Scratch):
     def test_ring2_stale_fixture_runs_nothing(self):
         with mock.patch.object(check, "item7_analog_dut_source_problems", return_value=[]), \
                 mock.patch.object(check, "ring2_request_problems", return_value=["old request"]), \
-                mock.patch.object(item7.subprocess, "run") as run:
+                mock.patch.object(common.subprocess, "run") as run:
             rc, err = self.run_quiet(item7.publish_ring2, self.args(ring="ring2"))
         self.assertEqual(rc, 1)
         run.assert_not_called()
@@ -254,7 +295,7 @@ class CombinerSamplerRunPex(Scratch):
     mod = cs
 
     def argv(self, env, backend):
-        with mock.patch.dict(os.environ, env), mock.patch.object(cs.subprocess, "run") as run:
+        with mock.patch.dict(os.environ, env), mock.patch.object(common.subprocess, "run") as run:
             self.run_quiet(cs.run_pex, backend)
         self.assertEqual(run.call_count, 1)
         return run.call_args.args[0], run.call_args.kwargs
@@ -273,7 +314,7 @@ class CombinerSamplerRunPex(Scratch):
 
     def test_default_klt_when_unset(self):
         env = {k: v for k, v in os.environ.items() if k != "KLT"}
-        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(cs.subprocess, "run") as run:
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(common.subprocess, "run") as run:
             self.run_quiet(cs.run_pex, "local")
         self.assertEqual(run.call_args.args[0][0], "klt")
 
@@ -292,7 +333,7 @@ class CombinerSamplerMain(Scratch):
                 return self.run_quiet(cs.main, argv)
 
     def test_stale_fixture_runs_nothing(self):
-        with mock.patch.object(cs.subprocess, "run") as run:
+        with mock.patch.object(common.subprocess, "run") as run:
             rc, err = self.main([], stale=["stale dut"])
         self.assertEqual(rc, 1)
         run.assert_not_called()
