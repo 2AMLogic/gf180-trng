@@ -364,6 +364,54 @@ def fake_pdk(root: Path) -> Pdk:
     return Pdk(path=root, variant=root.name, source="test")
 
 
+class BehavioralFrontmatterTests(unittest.TestCase):
+    def _render(self, **overrides) -> str:
+        kwargs = dict(
+            stem="2026-01-02-demo-01",
+            git={"commit": "abc123", "dirty": True},
+            raw_files=[("a.txt", "d1")],
+            repo_root=Path(__file__).resolve().parents[2],
+            testbench="sim/harness/report.py",
+            netlist="sim/harness/runner.py",
+            netlist_note=["line one", "line two"],
+            analysis_type="behavioral-bitstream",
+            tstop="n/a (cycle-count driven: 8 sampler clocks)",
+            noise_params="n/a",
+            seeds="[1]",
+            wall_time="1.0s",
+            sections=[["source_model:", "  kind: x"]],
+        )
+        kwargs.update(overrides)
+        return report.behavioral_frontmatter(**kwargs)
+
+    def test_skeleton_and_parameters(self):
+        text = self._render()
+        lines = text.split("\n")
+        self.assertEqual(lines[0], "---")
+        self.assertEqual(lines[-1], "---")
+        self.assertIn("record: 2026-01-02-demo-01", lines)
+        self.assertIn("repo_commit: abc123-dirty", lines)
+        self.assertIn("    line two", lines)
+        self.assertIn("  type: behavioral-bitstream", lines)
+        self.assertIn("    - a.txt  sha256:d1", lines)
+        self.assertIn("wall_time: 1.0s", lines)
+        self.assertIn("source_model:\n  kind: x\n\nraw:", text)
+        self.assertIn(report.BEHAVIORAL_NGSPICE, text)
+
+    def test_pre_commit_section_and_overrides(self):
+        text = self._render(
+            pre_commit_sections=[["analog_boundary:", "  schematic: s"]],
+            tool_extra=["  extra_sha: 1"],
+            level_suffix=" -- suffix",
+            pdk="custom pdk",
+        )
+        self.assertIn("note: >-\n    line one\n    line two\n\nanalog_boundary:", text)
+        self.assertIn("  schematic: s\n\nrepo_commit:", text)
+        self.assertIn("-- suffix\n", text)
+        self.assertIn("pdk: custom pdk\n", text)
+        self.assertRegex(text, r'python: "[^"]+"\n  extra_sha: 1\n  platform:')
+
+
 class BuildRecordTests(unittest.TestCase):
     """The rendered record carries exactly the fields sim/README.md requires."""
 
