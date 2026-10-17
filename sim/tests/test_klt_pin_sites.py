@@ -139,6 +139,33 @@ class KltPinSitesTest(unittest.TestCase):
                 self.assertIn("doc.md:1:", problems[0])
                 self.assertIn("exempts no mismatching pin", problems[0])
 
+    def test_grader_marker_holds_a_line_to_the_grader_pin(self):
+        grader = "2.0.0"
+        check_py = CHECK_PY + f'KLT_GRADER_PIN = "{grader}"\n'
+        files = dict(GOOD)
+        files["ci.yml.md"] = f"`{pin('klayout-tools', grader)}` # {kps.GRADER_MARKER}\n"
+        self.assertEqual(self.run_tree(files, check_py=check_py), [])
+        # The producer pin on a grader line, and the grader pin on an
+        # unmarked line, both fail.
+        files["ci.yml.md"] = f"`{pin('klayout-tools', KLT)}` # {kps.GRADER_MARKER}\n"
+        files["other.md"] = f"`{pin('klayout-tools', grader)}`\n"
+        problems = self.run_tree(files, check_py=check_py)
+        self.assertEqual(len(problems), 2)
+        self.assertIn(f"pins klayout-tools=={grader}", problems[0])
+        self.assertIn(kps.GRADER_MARKER, problems[1])
+
+    def test_grader_marker_without_a_pin_fails(self):
+        files = dict(GOOD)
+        files["doc.md"] = f"no pin here # {kps.GRADER_MARKER}\n"
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("no klayout-tools== mention", problems[0])
+
+    def test_grader_pin_is_optional_and_defaults_to_the_producer_pin(self):
+        files = dict(GOOD)
+        files["doc.md"] = f"`{pin('klayout-tools', KLT)}` # {kps.GRADER_MARKER}\n"
+        self.assertEqual(self.run_tree(files), [])
+
     def test_append_only_evidence_and_untracked_files_are_not_scanned(self):
         stale = f"`{pin('klayout-tools', '0.1.0')}`\n"
         files = dict(GOOD)

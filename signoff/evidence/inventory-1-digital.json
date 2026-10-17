@@ -1,0 +1,69 @@
+{
+  "inventory": "design-sources",
+  "t1_item": 1,
+  "partition": "digital",
+  "gates": [
+    {
+      "command": "python3 design/interface/regmap.py --check",
+      "runs_in": ".github/workflows/ci.yml",
+      "runs_without_pdk_or_external_tools": true,
+      "note": "stdlib only; runs in the PR-blocking job"
+    },
+    {
+      "command": "python3 design/synth.py --check",
+      "runs_in": ".github/workflows/pdk-nightly.yml",
+      "runs_without_pdk_or_external_tools": false,
+      "note": "needs klt synthesize (Yosys); runs in pdk-nightly.yml, never in the PR-blocking job"
+    }
+  ],
+  "rtl_sources": [
+    {
+      "path": "design/conditioner/crc32_conditioner.v",
+      "sha256": "sha256:d1ba83f0327e50867c5b65d8a876da8a574d63e7f16a33a96cf58c734718b808"
+    },
+    {
+      "path": "design/health_test/rct_apt.v",
+      "sha256": "sha256:c7e301661caefb15bf9559a061189d496e36d6a15d1dfc1f42fff829e9db8303"
+    },
+    {
+      "path": "design/health_test/ring_liveness.v",
+      "sha256": "sha256:f64a4d4ce86c757bfea49e120323eba33f449c7df76481b0d2b104f0ef5ef620"
+    },
+    {
+      "path": "design/interface/trng_interface.v",
+      "sha256": "sha256:41ab916a6309e2edc31c7ab26b67c41da7f817ece86de78a2d6c5a7be4de676e"
+    },
+    {
+      "path": "design/trng_top/trng_top.v",
+      "sha256": "sha256:0ce4c694ac2a627afe3ef653241dcb6ff7d0791b415a922669deddeaa91cdd16"
+    }
+  ],
+  "generated": [
+    {
+      "path": "design/interface/REGMAP.md",
+      "sha256": "sha256:b78617093f54807152294d5e80f0d37923f2af75adc89ad2ae0217946f707299"
+    },
+    {
+      "path": "design/interface/trng_regmap.vh",
+      "sha256": "sha256:16ee218cdcab1df31e8d162833b85da7351560885cb96f9b010f7c3818fcaf1e"
+    },
+    {
+      "path": "design/trng_top/trng_top.synth.json",
+      "sha256": "sha256:752a867831c1d49a26e02bfe2968cb47eee0715a38874fd62aaf99651e75165d"
+    },
+    {
+      "path": "design/trng_top/trng_top.synth.v",
+      "sha256": "sha256:a370c452c3a44fb5bed0d43dc785e98f88d322ab0fe4130d171ee5d576024244"
+    }
+  ],
+  "gate_scripts": [
+    {
+      "path": "design/interface/regmap.py",
+      "sha256": "sha256:0c43d12fea9a3207d6606a168222092b5a839b8380f1f0fe7ffa8cabde229046"
+    },
+    {
+      "path": "design/synth.py",
+      "sha256": "sha256:cdeaa0953e59c335f18e6478fa01c9efcc523f5b9b1080d3d6f76ccafae71849"
+    }
+  ]
+}
