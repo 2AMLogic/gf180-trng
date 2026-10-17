@@ -420,7 +420,7 @@ requires of the claimant rather than of the tool.
 | 2 Layout | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Both layouts exist and are committed (`layout/cells/`, `layout/rings/`, `layout/blocks/`, `layout/digital/trng_top.gds`, composed into `layout/floorplan/`). Same reason: uncited on purpose, not absent. |
 | 3 DRC clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.drc.json`, digital cites `layout/digital/reports/drc.json` — both `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 0`). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies power connectivity or body ties: `power_connectivity.status` is `"unchecked"` on both, and `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
-| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
+| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
@@ -933,6 +933,58 @@ be emitted as a graded `klt` envelope. Findings against the pinned klt 0.6.0
   is unchanged. When the upstream gaps close, the sweep's producer is the
   caller that should switch to `klt sta`.
 
+## Item 5 analog: which spec rows a `klt sim` envelope could cover
+
+[#654](https://github.com/2AMLogic/gf180-trng/issues/654) asked whether
+klayout-tools 0.7.0 (#2533: a `klt sim` `measurements[]` entry may carry a
+single-line `expr`, evaluated inside `klt sim`'s own `.control` block) opens
+`5.analog`. The tool no longer stands in the way. This section is the
+enumeration the issue asked for, row by row, against the README's target
+specification and the status tags defined in
+[`docs/spec-row-status.md`](../docs/spec-row-status.md#status-tags). The
+question for each row is whether a *measured quantity with a ratified bound*
+exists for a `klt sim` envelope to report pass/fail on.
+
+**Result: none does, so no envelope is written and `5.analog` stays uncited.**
+Writing one anyway would have meant choosing a bound the spec does not state,
+which is the thing this repository's spec process exists to prevent.
+
+| Spec row | Status tag | Analog quantity | Expressed? | Why |
+|---|---|---|---|---|
+| Entropy source | `specified` | the jitter-budget inequality `Q_array ≥ 1.5 × 4.0×10⁻³` (DR-0007 §2) | declared gap | A design decision with no measured quantity to meet or miss. The inequality is evaluated by `sim/tools/array_sizing.py` from committed period and supply-current records plus a constant `a = 7.32` taken from a long-transient jitter measurement (`sim/tb/ro-ring5-starved-jitter-long-batch/request-ring5-hot.json`); the statistic over that long transient is not a scalar `expr`, and no transistor-level run of the array's own `σ_acc` is affordable. |
+| Raw rate | unratified (`unmeasured`) | — | excluded | One of the four rows `README.md` says are still unratified. |
+| Raw min-entropy per bit | unratified (`unmeasured placeholder`) | — | excluded | Same; no `H` figure is supportable by transistor-level simulation. |
+| Quality | `specified` | none | declared gap | A conformance statement; 90B validation is deferred to measured silicon (DR-0004). |
+| Conditioning | `specified` | none (digital, behavioral per DR-0009) | declared gap | Not an analog quantity; and ratified unmeasured. |
+| Delivered rate | `derived from target` | none | declared gap | Arithmetic on the unmeasured raw-rate target. |
+| Health tests | `specified` | none (closed-form, digital) | declared gap | No PVT dependence and no analog quantity. |
+| Time-to-first-valid | `derived from target` | oscillator start-up, 27 points (`sim/tb/ro-array-core-startup/`) | declared gap | The row's bound (`≥ ~0.640 s`) is an arithmetic floor made of sample counts at the unmeasured 2 kbps; the oscillator term is 4–13 ns against it and has **no bound of its own**. The bench reports edge times and swings, and `sim/tools/time_to_first_valid.py` applies a 1 % first-and-thereafter convergence walk to them, a tolerance the records deliberately leave out. An envelope would need a start-up limit the spec does not state. |
+| Power | unratified (`missed`) | — | excluded | The four-row exclusion. |
+| Area | unratified (`missed`) | — | excluded | The four-row exclusion; not a simulation quantity. |
+| Operating envelope | `specified` | the corner set itself | declared gap | Defines the corners every other row is evaluated over; it is not a quantity with a pass/fail. |
+| Interface | `specified` | none | declared gap | A digital interface decision. |
+
+No row has a `met` or `missed` tag outside the four-row exclusion, which is
+the repository's own definition of "has a measured quantity". Counting rows
+with a measured analog quantity *and* a ratified bound gives zero, so there
+are no per-corner values to compare against `sim/records/`: the agreement
+check in the issue has nothing to compare, and no existing record or spec
+bound is touched.
+
+Two facts about the grader bear on any later attempt:
+
+- The grader pin stays at 0.6.0. Citing an `expr` measurement needs the 0.7.0
+  bump, but with nothing to cite the bump would only re-render the record.
+- The 0.7.0 wheel grades item 5 from **one** `sim` envelope per partition. The
+  declared-row-set support for several envelopes (klayout-tools#2959, closed
+  2026-10-15) is not in the 0.7.0 `signoff.py`. A block whose analog spec
+  needs several testbenches therefore cannot cite them as a set at a released
+  build yet; this is already tracked upstream, so no new issue is filed.
+
+What would change this: a ratified bound on a quantity a bench measures (a
+start-up limit, a jitter figure, a rate), by a superseding decision record,
+not by an edit here.
+
 ## What would move the needle
 
 In dependency order, not effort order:
@@ -961,9 +1013,11 @@ In dependency order, not effort order:
    parasitics at a chosen interconnect corner, interconnect-corner matrix,
    per-port input transition). Item 5's *design* gap (four ratified
    rows still missed) is real and separate. The analog half is not on this
-   list as work this block can do today: `klt sim` is uncitable for a spec
-   needing caller-side post-processing until klayout-tools#2533 resolves --
-   see item 5's row above.
+   list as work this block can do today, for a different reason than it was:
+   `klt sim` can express a caller-side post-processed measurement since
+   klayout-tools 0.7.0 (#2533), but no ratified analog row has a measured
+   quantity and a bound to put in one -- see "Item 5 analog: which spec rows a
+   `klt sim` envelope could cover".
 4. ~~**A `klt pex` report** over the post-layout extraction that already
    exists (item 7).~~ **Done for ring1 only** —
    [#326](https://github.com/2AMLogic/gf180-trng/issues/326) cites a native
@@ -995,7 +1049,7 @@ gap; item 11's remaining gaps are tracked under
 general gap-to-T1 tracker. Tool-side friction this surfaces is filed at
 `2AMLogic/klayout-tools`, per this repo's friction protocol (`CLAUDE.md`) —
 so far klayout-tools#2342, #2531 (item 6's `klt yield` unreachable from any
-published release), #2533 (item 5's analog half uncitable at any release)
+published release), #2533 (item 5's analog half uncitable before 0.7.0; resolved there)
 and #2526 (a pinned klayout-tools version does not pin the grading
 ruleset).
 
