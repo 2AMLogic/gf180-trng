@@ -1,8 +1,19 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-16.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-17.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-17
+
+- **PR #664**: lvs: compare digital layout to trng_top.pnr.v as gate-level Verilog
+- **PR #661**: signoff: cite hashed inventories for T1 items 1, 2, 9 and 10 on both partitions
+- **PR #659**: docs(signoff): enumerate analog spec rows against klt 0.7.0 expr, declare no citable row
+- **PR #658**: signoff: cite item 11 as a compound evidence set so both partitions grade
+- **PR #657**: docs(signoff): record that no reproducible klt yield install route exists for item 6
+- **Issue #662** (closed): T1 item 11 digital: compute LVS power_connectivity from a gate-level Verilog reference
+- **Issue #655** (closed): T1 item 11: cite the ERC, LVS and P&R evidence as one compound set so the row grades for real instead of wrong_kind
+- **Issue #653** (closed): T1 items 1, 2, 9 and 10: cite artifact-anchored evidence in both partitions
 
 ### 2026-10-16
 
