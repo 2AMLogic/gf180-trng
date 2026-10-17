@@ -77,6 +77,7 @@ signoff/
   evidence/post-layout/ro_ring11.extracted.spice   the netlist that klt pex run extracted and simulated
   evidence/post-layout/publication.json            its testbench-side pins (request, testbench body, schematic DUT) and body_bias status
   publish_item7_analog.py                          runs klt pex over ring1 and publishes it as the 7.analog citation
+  publish_common.py                                the klt pex publishers' shared run / refuse / write-or-restore steps
   check.py                                         re-grade + freshness gate (CI runs this)
 ```
 
