@@ -82,7 +82,7 @@ class CompareRecord(TempRepo):
         self.assertIn("stale", err)
         self.assertIn("klt 0.5.0", err)
         self.assertIn("klt 0.6.1", err)
-        self.assertIn(f"klt {check.KLT_PIN}", err)
+        self.assertIn(f"klt {check.KLT_GRADER_PIN}", err)
 
     def test_differing_report_prints_item_diff(self):
         self.write_record(make_report([item(1)]))

@@ -3,7 +3,7 @@
 
     python3 signoff/check.py                  # verify; self-skips the re-grade if klt is absent
     python3 signoff/check.py --require-tools  # verify; fail instead of skipping (CI, check:all)
-    python3 signoff/check.py --write          # regenerate signoff/records/t1-tier-report.json
+    python3 signoff/check.py --write          # rebuild the item 1/2/9/10 inventories, then signoff/records/t1-tier-report.json
 
 `signoff/records/t1-tier-report.json` is this block's **verdict of record**
 against the klayout-tools design-evidence ladder: the literal output of
@@ -62,6 +62,16 @@ signoff/README.md (fenced by `current-t1-status` marker comments) are compared
 with the committed record's tier, met count and item count (stdlib-only,
 always run, fails on mismatch or a missing/malformed block).
 
+T1 items 1, 2, 9 and 10 have no `klt` verb behind them, so each of the eight
+(item, partition) citations is an artifact-anchored generic envelope
+(klayout-tools 0.7.0) bound to an inventory in `signoff/evidence/`, built by
+`signoff/inventories.py`. Step 1 also re-derives every inventory from the live
+tree: an inventoried file that changed, vanished or appeared fails by name, and
+`--write` is the only way to re-pin. That re-derivation proves the files still
+hash to what was inventoried; it does not run the regeneration or DRC/LVS
+gates the inventories name (they need the PDK, xschem or Yosys and run in
+`pdk-nightly.yml`).
+
 Step 1 and step 2 are stdlib-only and always run -- they need no `klt`, no
 PDK and no network, which is why the freshness half of this gate is on the
 PR-blocking path unconditionally. Steps 3 and 4 need the grader; without it
@@ -77,7 +87,7 @@ Why the grader's version is pinned
 `docs/design-evidence-tiers.md`, bundled inside the installed wheel. The tool
 version therefore *is* the yardstick: klayout-tools 0.5.0 renders a ten-item
 checklist and no item-11 row at all, because T1 item 11 ("Power delivery
-(structural)", klayout-tools#2025) landed after that release. `KLT_PIN` below
+(structural)", klayout-tools#2025) landed after that release. `KLT_GRADER_PIN` below
 is a published PyPI release so a third party can reproduce the committed
 record with one `pip install`, and the record itself carries `build.version`,
 `build.grading_ruleset_id` and `source_doc_content_hash`, so a bump is visible
@@ -89,7 +99,6 @@ signoff/README.md's per-item notes against anything the bump adds or rewords.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import shutil
@@ -105,12 +114,23 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
 from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+
+inventories = load_module_from_path("signoff_inventories", REPO_ROOT / "signoff" / "inventories.py")
 MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 RECORD = REPO_ROOT / "signoff" / "records" / "t1-tier-report.json"
 EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence"
 
-#: The klayout-tools release that grades this block. See the module docstring.
+#: The klayout-tools release that PRODUCES this block's layout reports
+#: (DR-0026): publish_*.py and layout/floorplan/erc_supply.py refuse a response
+#: from any other build. It is not the grader; see KLT_GRADER_PIN.
 KLT_PIN = "0.6.0"
+#: The klayout-tools release that GRADES this block (`klt signoff`). Since
+#: #653 it is newer than the producer: 0.7.0 is the first release that grades
+#: the artifact-anchored generic envelopes for T1 items 1, 2, 9 and 10
+#: (klayout-tools#2718/#2843), and moving it re-renders the verdict but does
+#: not re-produce any report. sim/tools/klt_pin_sites.py holds every
+#: restatement of the grader pin (see that tool's "Grader mentions") to this constant.
+KLT_GRADER_PIN = "0.7.0"
 #: The KLayout engine release KLT_PIN is installed with (DR-0026): the engine
 #: the release records it was tested against. Not checked by this script --
 #: `klt signoff` does not depend on it -- but it is half of the normative
@@ -119,7 +139,7 @@ KLT_PIN = "0.6.0"
 #: these two constants by sim/tools/klt_pin_sites.py --check (npm run
 #: check:spec); a pin bump edits them here first, then the sites it lists.
 KLAYOUT_PIN = "0.30.10"
-KLT_INSTALL_HINT = f'pip install "klayout-tools=={KLT_PIN}"'
+KLT_INSTALL_HINT = f'pip install "klayout-tools=={KLT_GRADER_PIN}"'
 
 #: `klt signoff` exit codes that mean "the grader ran fine".
 #: 0 = every T1 item met; 3 = ran fine, not yet T1.
@@ -757,8 +777,7 @@ def verify_combiner_sampler_publication() -> list[str]:
     )
 
 
-def sha256_file(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+sha256_file = inventories.sha256_file
 
 
 def pinned_input_hash(envelope: dict) -> str | None:
@@ -932,7 +951,10 @@ def freshness_gate(manifest: dict) -> int:
         named = part.get("file")
         if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE):
             cited.append(REPO_ROOT / named)
-    for path in sorted(set(cited) | set(EVIDENCE_DIR.glob("*.json"))):
+    # The item 1/2/9/10 inventories are not envelopes (they name no input);
+    # their freshness is the member-by-member re-derivation in step 1e.
+    committed = {p for p in EVIDENCE_DIR.glob("*.json") if not p.name.startswith("inventory-")}
+    for path in sorted(set(cited) | committed):
         if not path.is_file():
             failures.append(
                 f"{path.relative_to(REPO_ROOT)}: cited by the manifest but not "
@@ -975,6 +997,14 @@ def freshness_gate(manifest: dict) -> int:
 
     # Step 1d: uncited combiner/sampler post-layout coverage (#418; see CS_*).
     failures += [f"combiner_sampler pex: {p}" for p in verify_combiner_sampler_publication()]
+
+    # Step 1e: the artifact-anchored citations for items 1, 2, 9 and 10 (see
+    # signoff/inventories.py): every inventory is re-derived from the live tree.
+    for item, partition in inventories.all_units():
+        problems = inventories.verify_item(REPO_ROOT, item, partition, manifest)
+        failures += [f"T1 item {item} {partition}: {p}" for p in problems]
+        if not problems:
+            verified += 1
 
     if failures:
         print("signoff/check.py: freshness verification FAILED", file=sys.stderr)
@@ -1048,7 +1078,7 @@ def compare_record(report: dict) -> int:
             f"  {RECORD.relative_to(REPO_ROOT)}. That is not a tool bug: either\n"
             "  this block's evidence moved, or the checklist did, or the grader\n"
             f"  did (record: klt {record_build}, this run: klt {fresh_build};\n"
-            f"  the pin this repo grades against is klt {KLT_PIN}).\n"
+            f"  the pin this repo grades against is klt {KLT_GRADER_PIN}).\n"
             "  Regenerate with\n"
             "    python3 signoff/check.py --write\n"
             "  commit the result, and update signoff/README.md's reading of any\n"
@@ -1087,12 +1117,37 @@ def _print_item_diff(committed: dict, fresh: dict) -> None:
             )
 
 
+def write_inventories(manifest: dict) -> dict | None:
+    """Rebuild the item 1/2/9/10 inventories and envelopes and re-pin their
+    manifest citations (`--write`). Returns the updated manifest, or None when
+    the tree does not support the claims (nothing is written in that case)."""
+    try:
+        pins = inventories.write_all(REPO_ROOT)
+    except inventories.AuditError as exc:
+        print(f"signoff/check.py: inventory audit FAILED: {exc}", file=sys.stderr)
+        return None
+    evidence = manifest.setdefault("evidence", {})
+    for (item, partition), pin in pins.items():
+        evidence[inventories.manifest_key(item, partition)] = {
+            "file": inventories.envelope_path(item, partition),
+            "content_hash": pin,
+        }
+    manifest["evidence"] = dict(sorted(evidence.items()))
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(
+        f"signoff/check.py: wrote {len(pins)} inventories, envelopes and manifest pins "
+        "for T1 items 1, 2, 9 and 10"
+    )
+    return manifest
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--write",
         action="store_true",
-        help="regenerate signoff/records/t1-tier-report.json instead of diffing it",
+        help="rebuild the item 1/2/9/10 inventories, envelopes and manifest pins, then "
+        "regenerate signoff/records/t1-tier-report.json instead of diffing it",
     )
     parser.add_argument(
         "--require-tools",
@@ -1110,6 +1165,11 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+
+    if args.write:
+        manifest = write_inventories(manifest)
+        if manifest is None:
+            return 1
 
     rc = freshness_gate(manifest)
     if rc:

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "t1_item": 10,
+  "status": "pass",
+  "summary": "Audited inventory for T1 item 10 (Repo hygiene), analog partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
+  "source": "signoff/evidence/inventory-10-analog.json",
+  "provenance": {
+    "klt_version": null,
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/evidence/inventory-10-analog.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:e990ae169330b458d6e0f607b3a72f39f30989557726cc6890df3660a3948d2d"
+    }
+  }
+}

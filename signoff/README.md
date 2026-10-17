@@ -15,13 +15,18 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-<!-- current-t1-status:begin -->**Today: `tier: null`, T1 9 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 17 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The nine met are item 3 (DRC), item 4 (LVS), item 7 (post-layout
-verification) and item 8 (characterization report) on **both** partitions,
-plus item 11 (power delivery) on the **digital** partition only
+22 rows. The seventeen met are item 1 (design sources), item 2 (layout), item 3
+(DRC), item 4 (LVS), item 7 (post-layout verification), item 8
+(characterization report), item 9 (testbenches shipped) and item 10 (repo
+hygiene) on **both** partitions, plus item 11 (power delivery) on the
+**digital** partition only
 ([#662](https://github.com/2AMLogic/gf180-trng/issues/662): see "Item 11's
-`ties[]`" below).
+`ties[]`" below). Items 1, 2, 9 and 10 are `met` on an
+artifact-anchored inventory, which means something much narrower than their
+names suggest: see "Items 1, 2, 9 and 10 are cited from hashed inventories"
+below before reading anything into them.
 Item 7 digital is
 [#314](https://github.com/2AMLogic/gf180-trng/issues/314): see "Item 7 digital"
 below for what that citation does and does not mean. Item 7 analog is
@@ -33,7 +38,7 @@ reading anything into it. Item 8 analog is
 `met` on both partitions" below. An item-8 `met` means a current aggregate
 exists, not that the rows in it pass.
 That is the honest state of the block; the rest of this file is why each of
-the other thirteen reads the way it does.
+the other five reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -117,7 +122,7 @@ label.
 ## Running it
 
 ```bash
-pip install "klayout-tools==0.6.0"   # the grader; no PDK, no KLayout GUI needed
+pip install "klayout-tools==0.7.0"   # the grader; no PDK, no KLayout GUI needed (klt-pin: grader)
 python3 signoff/check.py             # verify (what CI runs)
 python3 signoff/check.py --write     # regenerate the verdict of record
 npm run check:signoff                # same as `python3 signoff/check.py`
@@ -129,7 +134,8 @@ load-bearing: `klt signoff` parses the T1 item list out of klayout-tools' own
 tool version is the yardstick**. klayout-tools 0.5.0 renders a ten-item
 checklist and no item-11 row at all, because T1 item 11 ("Power delivery
 (structural)", klayout-tools#2025) landed after that release. 0.6.0 renders
-eleven. The record carries `build.version`, `build.git_commit`,
+eleven. 0.7.0 renders the same eleven and is the first release that grades the
+artifact-anchored generic envelopes behind items 1, 2, 9 and 10. The record carries `build.version`, `build.git_commit`,
 `build.grading_ruleset_id` and `source_doc_content_hash`, so which checklist
 and which grading rules produced a given verdict is recorded in the verdict,
 not inferred from the date on it.
@@ -149,15 +155,18 @@ not inferred from the date on it.
    [#281](https://github.com/2AMLogic/gf180-trng/issues/281), `7.analog` in
    [#326](https://github.com/2AMLogic/gf180-trng/issues/326)).
    `check.py` covers the whole set regardless of envelope kind — it
-   verified 12 of 12 on the run that produced the committed record (one of
+   verified 28 of 28 on the run that produced the committed record (one of
    them the 7.digital publication, checked by its own pins, see "Item 7
    digital"; the 7.analog publication's testbench-side pins are checked on
-   top, see "Item 7 analog"). Edit
+   top, see "Item 7 analog"; and eight of them the item 1/2/9/10 inventories,
+   each re-derived member by member from the live tree, see "Items 1, 2, 9 and
+   10 are cited from hashed inventories"). Edit
    `layout/blocks/combiner_sampler/combiner_sampler.gds`,
    `layout/digital/trng_top.gds`, `layout/digital/trng_top.extracted.spice`,
    `sim/characterization-digital-sta-area-power.md` or
-   `sim/characterization-analog-summary.md` without re-running the
-   evidence behind them and this fails.
+   `sim/characterization-analog-summary.md`, or any file an item 1/2/9/10
+   inventory lists, without re-running the evidence behind it (or, for an
+   inventory, regenerating it with `--write`) and this fails.
 2. **The manifest and the envelope disagree about the pin**, so a
    half-finished re-pin fails loudly instead of silently rendering the item
    `stale_evidence`.
@@ -419,16 +428,16 @@ requires of the claimant rather than of the tool.
 
 | # | analog | digital | Reading |
 |---|---|---|---|
-| 1 Design sources | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Both partitions' artifacts exist and are guarded: `design/xschem/*.sch` → `design/netlist.py --check`, and `design/trng_top/*.v` → `design/synth.py --check` plus `design/interface/regmap.py --check`. None of those guards emits a `klt` envelope. Uncited on purpose — see "Items 1, 2, 9 and 10" below. |
-| 2 Layout | `unmet` / `no_evidence` | `unmet` / `no_evidence` | Both layouts exist and are committed (`layout/cells/`, `layout/rings/`, `layout/blocks/`, `layout/digital/trng_top.gds`, composed into `layout/floorplan/`). Same reason: uncited on purpose, not absent. |
+| 1 Design sources | **`met`** | **`met`** | Cites `evidence/t1-item-1-{analog,digital}.json`, bound to `evidence/inventory-1-{analog,digital}.json`: every `design/xschem/*.sch`/`.sym` and the seven derived `design/*.spice` netlists (analog), and the RTL under `design/trng_top/`, `design/conditioner/`, `design/health_test/` and `design/interface/` with its synthesized netlist and generated register map (digital), each with its sha256. The regeneration gates are named, not run: `design/netlist.py --check` (xschem + PDK) and `design/synth.py --check` (`klt synthesize`) run only in `pdk-nightly.yml`; `design/netlist.py --lint` and `design/interface/regmap.py --check` are PDK-free and run in the PR-blocking job. See "Items 1, 2, 9 and 10 are cited from hashed inventories". |
+| 2 Layout | **`met`** | **`met`** | Cites `evidence/t1-item-2-{analog,digital}.json`, bound to `evidence/inventory-2-{analog,digital}.json`: the hand-drawn cell, ring and block streams with their reference netlists and the composed `layout/floorplan/trng_floorplan.gds` (analog), and `layout/digital/trng_top.gds` with its DEF, as-built netlist, SDF and LVS reference (digital). The stream the item 3/4 citations pin (`layout/blocks/combiner_sampler/combiner_sampler.gds`, `layout/digital/trng_top.gds`) is a member of its inventory and `check.py` holds its hash to those manifest pins. DRC/LVS are not re-run: `layout/verify.py --require-tools` and the other tool-gated checks run only in `pdk-nightly.yml`. The `met` does not assert the layout meets the area budget. |
 | 3 DRC clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.drc.json`, digital cites `layout/digital/reports/drc.json` — both `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 1`, the `topology.power_only_pruned` warning only). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies body ties: `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). Power connectivity is `"unchecked"` on analog and a computed `"match"` on digital since [#662](https://github.com/2AMLogic/gf180-trng/issues/662). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
 | 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists. As of 2026-10-17 no reproducible install route for `klt yield` exists at any released `klayout-tools`: the verb needs the `klt_yield_native` extension, and `uvx --from "klayout-tools[yield]==0.7.0" klt yield --help` fails to resolve (`klt-yield-native` is not on PyPI, HTTP 404 on its simple index), while the `klayout-tools` GitHub releases carry no wheel assets. The wheel publication is tracked upstream as klayout-tools#2900 (open); klayout-tools#2531 and #2714 are closed but did not make a wheel reachable. The only remaining route is an unpinned Rust source build, which is rejected as non-reproducible. See "Item 6: install route and statistical rows" below. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
-| 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
-| 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
+| 9 Testbenches shipped | **`met`** | **`met`** | Cites `evidence/t1-item-9-{analog,digital}.json`, bound to `evidence/inventory-9-{analog,digital}.json`: every file of the `sim/tb/` testbench directories, split by partition (a directory with an ngspice `.sp` deck is analog; the nine behavioural/RTL/gate-level ones listed in `signoff/inventories.py`'s `DIGITAL_TESTBENCHES` are digital), each with its documented cold-start invocation, and the PDK revision `pdk-nightly.yml` pins (open_pdks `f6eeac7d…`, variant `gf180mcuD`), which `check.py` requires `README.md` to state too. A new `sim/tb/` directory that is neither fails the audit. No testbench is run here. |
+| 10 Repo hygiene | **`met`** | **`met`** | Cites `evidence/t1-item-10-{analog,digital}.json`, bound to `evidence/inventory-10-{analog,digital}.json`: `README.md`, `LICENSE` (Apache-2.0), the ratified spec table, `sim/README.md` and `.github/workflows/ci.yml`, with assertions about each (the README's sections, that it documents how that partition is reproduced, that the workflow runs the named commands). **CI status is not captured**: the workflow file is hashed and its commands named, but whether its last run was green is a property of a run, not of a file, and is not part of what this `met` asserts. |
 | 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | **`met`** | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. Since [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the LVS envelope compares against `trng_top.pnr.v` as `reference.form: "gate-level-verilog"`, so `power_connectivity.status` is a computed `"match"` (4960 instances, zero findings) and the row reads `met`. See "Item 11's `ties[]`" below. |
 
 ### Item 6: install route and statistical rows
@@ -580,14 +589,16 @@ purpose:
 
 | Role | Build | Where it is pinned |
 |---|---|---|
-| **Grader** — parses the T1 checklist and renders the verdict | `0.6.0` (released) | `signoff/check.py`'s `KLT_PIN`; CI's `signoff` job |
+| **Grader** — parses the T1 checklist and renders the verdict | `0.7.0` (released) | `signoff/check.py`'s `KLT_GRADER_PIN`; CI's `signoff` job |
 | **Producer, analog** — `layout/reports/*` | `0.6.0` (released; tag `v0.6.0`, commit `c622e8addb36`), with `klayout==0.30.10` | `.github/workflows/pdk-nightly.yml`, per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md) as amended; `layout/reports/environment.json`'s `klt_origin` |
 | **Producer, digital** — `layout/digital/reports/*` | `0.6.0` for DRC/LVS; `0.5.0+g32f69f811682` for the place-and-route that built the stream | recorded in each envelope's own `provenance.klt_version` |
 
 The grader pin is deliberately independent of any producer pin — it grades
 committed JSON and needs no PDK, so a third party reproduces the verdict with
-one `pip install`. That the grader and the analog producer both read `0.6.0`
-today is a coincidence of timing, not a coupling. The digital partition's DRC
+one `pip install`. The grader and the analog producer both read `0.6.0` from #281 until #653, a
+coincidence of timing, not a coupling: #653 moved the grader to `0.7.0` (the
+first release that grades items 1, 2, 9 and 10) and left the producer pins
+alone. The digital partition's DRC
 and LVS were re-emitted under `0.6.0` by #273; the analog partition's
 `layout/reports/` followed in
 [#281](https://github.com/2AMLogic/gf180-trng/issues/281), once DR-0026
@@ -915,19 +926,83 @@ reasons:
   input path for consumer-side freshness checks, is filed generically as
   `2AMLogic/klayout-tools#3751`.
 
-### Items 1, 2, 9 and 10 are uncited on purpose
+### Items 1, 2, 9 and 10 are cited from hashed inventories
 
 `design-evidence-tiers.md` says plainly that these four have no tool behind
-them. `klt signoff` therefore grades them on "some passing envelope was cited
-at all", not on whether the cited evidence is topically relevant — it cannot
-check that, and it does not try. Citing a clean DRC report for item 10 ("a
-README, a licence, CI") would produce a `met` row the tool has no basis to
-object to and that would mean nothing to a reader.
+them, and until klayout-tools 0.7.0 `klt signoff` could grade them only on
+"some passing envelope was cited at all", which a clean DRC report would
+satisfy for item 10 without meaning anything. That is why they were left
+`unmet` / `no_evidence` through 8 of 22 (#124): the honest artifact did not
+exist as a format. klayout-tools#2718/#2843 (released in 0.7.0) added it: a
+`kind: generic` envelope that declares `"t1_item": <n>` and binds the audited
+artifact by path and content hash, so the row goes `met` only while that
+artifact re-hashes to the pinned value (`citation.input_verified: true`, and an
+`artifact_binding` block disclosing what was bound). Since
+[#653](https://github.com/2AMLogic/gf180-trng/issues/653) each of the eight
+rows cites one.
 
-All four are, in substance, satisfied by this repo. They are still left
-`unmet`/`no_evidence`, because that is the accurate machine-readable
-statement: *no check backs this claim*. `klt signoff`'s own documentation
-names this as the safest default.
+What is bound is an **inventory**, not the files themselves:
+`signoff/evidence/inventory-{1,2,9,10}-{analog,digital}.json`, written by
+`signoff/inventories.py` and cited through
+`signoff/evidence/t1-item-{1,2,9,10}-{analog,digital}.json`. An inventory lists
+every member file with its sha256 and the item's mechanical checks, with
+where each one runs. `signoff/check.py` (step 1e) rebuilds every inventory
+from the live tree and compares it member by member, so an inventoried file
+that changed, was deleted or newly appeared fails by name even though the
+inventory's own bytes did not move. `python3 signoff/check.py --write` is the
+only thing that re-pins them, and it refuses to write an envelope when the
+tree no longer supports the audit (a netlist with no schematic, a layout
+directory with no stream, a `sim/tb/` directory nobody classified, a gate the
+workflow does not run, a README that no longer states the pinned PDK commit).
+
+**What a `met` here means, and does not.** It means the inventoried files still
+hash to the values pinned when the inventory was written, and the inventory's
+structural audit held on that tree. It does **not** mean the gates named in
+the inventory passed today, and `signoff/check.py` does not run them:
+
+| Item | Named gate | Runs without the PDK? | Where it runs |
+|---|---|---|---|
+| 1 analog | `design/netlist.py --check` | no (xschem + PDK) | `pdk-nightly.yml` |
+| 1 analog | `design/netlist.py --lint` | yes | `ci.yml`, via `npm run lint` |
+| 1 digital | `design/interface/regmap.py --check` | yes | `ci.yml`, via `npm run check:regmap` |
+| 1 digital | `design/synth.py --check` | no (`klt synthesize`, Yosys) | `pdk-nightly.yml` |
+| 2 analog | `design/floorplan_netlist.py --check` | yes | `ci.yml`, via `npm run check:floorplan-netlist` |
+| 2 analog | `layout/verify.py --require-tools`, `layout/floorplan/floorplan.py --require-tools` | no (klt + PDK) | `pdk-nightly.yml` (the PR job's `check:layout` / `check:floorplan` self-skip) |
+| 2 digital | `layout/digital/build.py --check-input` | yes | `ci.yml`, via `npm run check:digital-input` |
+| 2 digital | `layout/digital/tap_distance.py --check --require-tools` | no (klt + PDK) | `pdk-nightly.yml` |
+| 9 | `python3 sim/run_corners.py --check-env`, `sim/selftest.sh --require-pdk` | no (ngspice + PDK) | `pdk-nightly.yml` |
+| 9 | `npm run test` (drives the behavioural benches; those needing Icarus Verilog self-skip) | yes | `ci.yml` |
+| 10 | `python3 signoff/check.py --require-tools` | yes | `ci.yml` |
+
+Each envelope's `summary` says the same thing about its own gates. Further
+limits that travel with these citations:
+
+- **Item 2 asserts the layout exists and is the one DRC/LVS graded**, not that
+  it meets the area budget or that any region beyond the cited stream is
+  clean. The analog inventory also lists streams (rings, cells, the composed
+  floorplan) that no item 3/4 citation pins; their hashes are held fresh, not
+  verified by a tool.
+- **Item 9 does not run or re-derive any measurement**, and the digital
+  benches' inventory says nothing about whether they pass. The analog
+  partition's benches are started in several ways (`tb.json` corner runs via
+  `sim/run_corners.py`, `klt sim` request decks, README-documented tools); the
+  invocation, or the file that documents it, is recorded per directory.
+- **Item 10 does not capture CI status.** See the row above.
+- **The partition split of item 1 follows `design/`'s own layout**
+  (`design/xschem/` + `design/*.spice` analog; the `.v` trees digital).
+  `design/xschem/trng_top.sch` is analog-side capture of the top-level wiring.
+
+**Grader pin move.** These rows need klayout-tools 0.7.0, so
+`signoff/check.py`'s new `KLT_GRADER_PIN` is `0.7.0`. `KLT_PIN` stays `0.6.0`:
+it is the **producer** pin DR-0026 ratifies for the layout reports, and the
+publishers and `layout/floorplan/erc_supply.py` refuse any other build. The
+two had been equal since #281; they were already documented as independent
+(see "Which `klt` produced what"). Effect of the move, measured by re-grading
+the manifest as it stood before #653 under 0.7.0: **no row changed status or
+reason**, 8 of 22 stayed 8 of 22, and only the report's `build.*`,
+`grading_ruleset_id` and `source_doc_content_hash` (and the checklist prose
+copied into each row) moved. The eight new `met` rows are therefore entirely
+the new citations, not the pin.
 
 ### Disclosures the claimant owes, not the grader
 
@@ -1123,11 +1198,11 @@ In dependency order, not effort order:
    reference became gate-level Verilog and `power_connectivity.status` became
    `"match"` — see "Item 11's `ties[]`" above.
 
-Items 1, 2, 9 and 10 need nothing built — only an honest artifact to cite, if
-one ever exists.
+Items 1, 2, 9 and 10 were the ones that needed nothing built — only an honest
+artifact to cite. [#653](https://github.com/2AMLogic/gf180-trng/issues/653)
+did that (see "Items 1, 2, 9 and 10 are cited from hashed inventories").
 
-Items 1 and 2 are tracked here as part of this block's own evidence-format
-gap; item 11's remaining gaps are tracked under
+Item 11's remaining gaps are tracked under
 [#124](https://github.com/2AMLogic/gf180-trng/issues/124), this repo's
 general gap-to-T1 tracker. Tool-side friction this surfaces is filed at
 `2AMLogic/klayout-tools`, per this repo's friction protocol (`CLAUDE.md`) —

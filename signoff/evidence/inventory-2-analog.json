@@ -1,0 +1,171 @@
+{
+  "inventory": "layout",
+  "t1_item": 2,
+  "partition": "analog",
+  "gates": [
+    {
+      "command": "python3 design/floorplan_netlist.py --check",
+      "runs_in": ".github/workflows/ci.yml",
+      "runs_without_pdk_or_external_tools": true,
+      "note": "stdlib only; runs in the PR-blocking job"
+    },
+    {
+      "command": "python3 layout/verify.py --require-tools",
+      "runs_in": ".github/workflows/pdk-nightly.yml",
+      "runs_without_pdk_or_external_tools": false,
+      "note": "needs klt and the PDK (DRC/LVS); the PR-blocking job runs `npm run check:layout`, which self-skips without them"
+    },
+    {
+      "command": "python3 layout/floorplan/floorplan.py --require-tools",
+      "runs_in": ".github/workflows/pdk-nightly.yml",
+      "runs_without_pdk_or_external_tools": false,
+      "note": "needs klt and the PDK; the PR-blocking job runs `npm run check:floorplan`, which self-skips without them"
+    }
+  ],
+  "cells": [
+    {
+      "path": "layout/cells/ro_buf/build.py",
+      "sha256": "sha256:96d3e0d81f2972926cf17fe47a403df63576d7b9b26f57b8c8eccad0c91bb9b4"
+    },
+    {
+      "path": "layout/cells/ro_buf/ro_buf.gds",
+      "sha256": "sha256:d505cac28dd185e7c8fa4ce7a6055af01e017ddf9c4caaaa4bab80eb2429dfab"
+    },
+    {
+      "path": "layout/cells/ro_buf/ro_buf.spice",
+      "sha256": "sha256:87260d8fe8b7471c05f2da0cc00af3ef437b50bd97a0ec3485206e1db9da372e"
+    },
+    {
+      "path": "layout/cells/ro_nand2/build.py",
+      "sha256": "sha256:1417411dd22d5635f9080d89bb28b7eb64b6a2a2b233dffa0d936023cd08fa42"
+    },
+    {
+      "path": "layout/cells/ro_nand2/ro_nand2.gds",
+      "sha256": "sha256:f769791b1d5702aeb633c6ea3e1f231fae25282e135e64fe33deab7ceb44b915"
+    },
+    {
+      "path": "layout/cells/ro_nand2/ro_nand2.spice",
+      "sha256": "sha256:647a90f6e954876ac9a18d1c8fd8110005daae4065503ab420608648f41942f0"
+    },
+    {
+      "path": "layout/cells/ro_nand2_ring2/build.py",
+      "sha256": "sha256:dc7e2a57b9ac6b50d590bed4cec56540d067b3209c7c0b6cd1a435fd62b51973"
+    },
+    {
+      "path": "layout/cells/ro_nand2_ring2/ro_nand2_ring2.gds",
+      "sha256": "sha256:317d6c9c2fa713c360cd85e8470726a1ff7bd16e23ef0767320fd63ba7c7c9ff"
+    },
+    {
+      "path": "layout/cells/ro_nand2_ring2/ro_nand2_ring2.spice",
+      "sha256": "sha256:8b4d9245e24834cd8fa47304a29426b7908ed2cce2d98ee7ebd1fdb5d070d969"
+    },
+    {
+      "path": "layout/cells/ro_stage/build.py",
+      "sha256": "sha256:8f68da3496556f45e3d24d3d64734a60d7f1aff8dc8646eaa6d1f2016e117820"
+    },
+    {
+      "path": "layout/cells/ro_stage/ro_stage.gds",
+      "sha256": "sha256:af3b89821987c609f2f66c1f6fae4d787a9e74eeb3219943789df7290eb75375"
+    },
+    {
+      "path": "layout/cells/ro_stage/ro_stage.spice",
+      "sha256": "sha256:cb5b25e26d18e01a22f4fe8d1644f1b26ca555a0061c5fbbd0df9215c682f033"
+    },
+    {
+      "path": "layout/cells/ro_stage_ring2/build.py",
+      "sha256": "sha256:65b253172792260a1f363c46d80ff7c869949cd526e292864ceb585bac4b3c6e"
+    },
+    {
+      "path": "layout/cells/ro_stage_ring2/ro_stage_ring2.gds",
+      "sha256": "sha256:1d6aef665d99ef2c3bec882570a394ec7965f602ad37e388bc5642bac2e0b54e"
+    },
+    {
+      "path": "layout/cells/ro_stage_ring2/ro_stage_ring2.spice",
+      "sha256": "sha256:5a5403b209333f160210319c3ef6fb15f40916e85f53e3f436cdc7d1703b993b"
+    },
+    {
+      "path": "layout/cells/sampler_dff/build.py",
+      "sha256": "sha256:c3621d1c83edb75d2557cd0b0906d2db307e9cfa9eeb51dff634bea61b262b26"
+    },
+    {
+      "path": "layout/cells/sampler_dff/sampler_dff.gds",
+      "sha256": "sha256:eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42"
+    },
+    {
+      "path": "layout/cells/sampler_dff/sampler_dff.spice",
+      "sha256": "sha256:e88b507bfb98cc27b27fb9bec11228b0a1058ad06d66ee0623db7e90c5baad8c"
+    },
+    {
+      "path": "layout/cells/xor2/build.py",
+      "sha256": "sha256:f7d1f23873f762956c5bee7a9074d53ff045004e065d615771c7039bf67b2632"
+    },
+    {
+      "path": "layout/cells/xor2/xor2.gds",
+      "sha256": "sha256:0e1cb48ddc47f15fc5ceb1dd440d75bce1466f4ca5616d0a1e2243601d27c428"
+    },
+    {
+      "path": "layout/cells/xor2/xor2.spice",
+      "sha256": "sha256:4bc70ca0f10799031fb6e530b3b53f42169927f43f664f66213475ddbc69c4bd"
+    }
+  ],
+  "rings": [
+    {
+      "path": "layout/rings/ro_ring11/build.py",
+      "sha256": "sha256:3882a817aaac31cfb880a9fb9d93473d344101250cd0ae480b78523a543394c5"
+    },
+    {
+      "path": "layout/rings/ro_ring11/ro_ring11.gds",
+      "sha256": "sha256:f204887a0a8bd41ee571acde05be227e6588940176ab41e303ca28b8c5daccbb"
+    },
+    {
+      "path": "layout/rings/ro_ring11/ro_ring11.spice",
+      "sha256": "sha256:623aee287b5bbc21e3f51167b26313263f59b06d09e9b2fa2f0140018098d235"
+    },
+    {
+      "path": "layout/rings/ro_ring11_ring2/build.py",
+      "sha256": "sha256:74294f68728cd45243e448f8c74d335832bed42666f1c39741d006e3b297e98a"
+    },
+    {
+      "path": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+      "sha256": "sha256:bdfc897e6d75e801d055dbb0f9153ad73863ba349227b657f063a3559ea71d27"
+    },
+    {
+      "path": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.spice",
+      "sha256": "sha256:a7edd42f8fe61dcfe72164b50bbd4e39feb8cdaa23b4382f3f9234584aec57b0"
+    }
+  ],
+  "blocks": [
+    {
+      "path": "layout/blocks/combiner_sampler/build.py",
+      "sha256": "sha256:e27a1c6b50b523c050b6d7bcb66675cc677132543daeeea6c78259874fabc725"
+    },
+    {
+      "path": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+      "sha256": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+    },
+    {
+      "path": "layout/blocks/combiner_sampler/combiner_sampler.spice",
+      "sha256": "sha256:a3f2f52fc0fb5883306868d707fb6848864d5cf9d6357fbd541befc913ed0d49"
+    }
+  ],
+  "floorplan": [
+    {
+      "path": "layout/floorplan/trng_floorplan.gds",
+      "sha256": "sha256:5d20e8808b5b7f59f27bc750128d5008899391b742a2f2bf902754b11428cc21"
+    },
+    {
+      "path": "layout/floorplan/trng_floorplan.lvs_reference.spice",
+      "sha256": "sha256:5fa60a1ff00a946e7810f8c9c9ae3cda0e595268929cd863b69b45ec4602c7e6"
+    }
+  ],
+  "pinned_by_citations": {
+    "stream": {
+      "path": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+      "sha256": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+    },
+    "manifest_keys": [
+      "3.analog",
+      "4.analog"
+    ]
+  }
+}
