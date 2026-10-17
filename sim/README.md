@@ -613,6 +613,35 @@ wording and semantics.
 
 ---
 
+## Import convention
+
+Repository Python modules are imported by their qualified, repo-rooted
+names (`from sim.harness import ...`, `from layout.floorplan import ...`),
+not by per-script `sys.path.insert` preambles. An entry-point script that
+may be run directly cannot import a root-level helper before the root is
+importable, so it loads the one shared bootstrap by path, relative to its
+own `__file__`:
+
+```python
+REPO_ROOT = Path(__file__).resolve().parents[2]
+runpy.run_path(str(REPO_ROOT / "sim" / "harness" / "__init__.py"),
+               run_name="__repo_bootstrap__")
+```
+
+`sim/harness/__init__.py` is the only place allowed to mutate `sys.path`.
+Executed under that `run_name` it calls `bootstrap_repo_root()`, which
+inserts the repository root (derived from the file's own location, not the
+working directory) once; an ordinary `import sim.harness` has no side
+effect. Both `python3 /path/to/repo/sim/tools/<tool>.py` and
+`PYTHONPATH=/path/to/repo python3 -m sim.tools.<tool>` work from any
+directory. `sim/tools/vss_trunk_ir_drop.py` is the first migrated script.
+
+`npm run lint` (`sim/tools/unused_names.py`) fails on a `sys.path.insert`
+call in any tracked Python file that is not in the `SYS_PATH_INSERT_ALLOWLIST`
+baseline, and on an allowlist entry that no longer contains one. Migrating
+a file means removing the call and deleting its allowlist entry in the same
+change; the list can only shrink.
+
 ## Pre-commit checklist
 
 Mechanical; run through it before committing any record.
