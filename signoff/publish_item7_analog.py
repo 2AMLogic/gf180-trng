@@ -58,15 +58,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shlex
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check  # noqa: E402
+import publish_common as common  # noqa: E402
 
+TAG = "publish_item7_analog"
 REPO_ROOT = check.REPO_ROOT
 SCRATCH = REPO_ROOT / "sim" / ".work" / "ro-ring11-pex"
 
@@ -104,101 +104,51 @@ def _build_dut():
 
 def run_pex(ring: str = "ring1", backend: str | None = None) -> Path:
     scratch, pex_args = (SCRATCH, KLT_PEX_ARGS) if ring == "ring1" else (RING2_SCRATCH, RING2_KLT_PEX_ARGS)
-    scratch.mkdir(parents=True, exist_ok=True)
-    out = scratch / "klt_pex_response.json"
-    klt = shlex.split(os.environ.get("KLT", "klt"))
-    argv = [*klt, *pex_args, *(["--backend", backend] if backend else [])]
-    print(f"publish_item7_analog: {shlex.join(argv)}", file=sys.stderr)
-    with out.open("w") as fh:
-        subprocess.run(argv, cwd=REPO_ROOT, stdout=fh, check=True)
-    return out
+    return common.run_pex(REPO_ROOT, scratch, pex_args, backend, TAG)
 
 
 def build_ring2_publication(envelope: dict, raw_sha: str, backend: str | None) -> dict:
     bd = _build_dut()
     ring = bd.RING2
     netlist_text = (REPO_ROOT / check.RING2_NETLIST).read_text()
-    request = json.loads((REPO_ROOT / check.RING2_INPUTS[0]).read_text())
-    prov = envelope.get("provenance") or {}
-    bias = envelope.get("body_bias") or {}
-    return {
-        "schema": check.RING2_PUBLICATION_SCHEMA,
-        "scope": "separate native schematic-vs-extracted comparison of ring2; not a manifest citation",
-        "producer": "klt " + shlex.join(RING2_KLT_PEX_ARGS),
-        "producer_build": prov.get("klt_version"),
-        "klayout_build": prov.get("klayout_version"),
-        "pdk": prov.get("pdk"),
-        "deck": prov.get("deck"),
-        "backend_requested": backend,
-        "layout_content_hash": check.pinned_input_hash(envelope),
-        "source_sha256": bd.source_identity(ring=ring),
-        "inputs_sha256": {rel: check.sha256_file(REPO_ROOT / rel) for rel in check.RING2_INPUTS},
-        "port_map": bd.extraction_port_map(netlist_text, ring),
-        "body_bias_status": bias.get("status"),
-        "body_bias_unbiased_device_count": bias.get("unbiased_device_count"),
-        "coverage_exclusions": RING2_COVERAGE_EXCLUSIONS,
-        "verdict": check.combiner_sampler_verdict(envelope, request),
-        "envelope": {"file": check.RING2_ENVELOPE, "sha256": raw_sha},
-    }
+    return common.build_publication(
+        REPO_ROOT, envelope, raw_sha, backend,
+        schema=check.RING2_PUBLICATION_SCHEMA,
+        scope="separate native schematic-vs-extracted comparison of ring2; not a manifest citation",
+        pex_args=RING2_KLT_PEX_ARGS,
+        source_sha256=bd.source_identity(ring=ring),
+        inputs=check.RING2_INPUTS,
+        port_map=bd.extraction_port_map(netlist_text, ring),
+        exclusions=RING2_COVERAGE_EXCLUSIONS,
+        envelope_file=check.RING2_ENVELOPE,
+        request_rel=check.RING2_INPUTS[0],
+    )
 
 
 def publish_ring2(args) -> int:
     stale = check.item7_analog_dut_source_problems(None, "ring2") + check.ring2_request_problems()
     if stale:
-        print("publish_item7_analog: ring2 fixture is stale -- nothing run", file=sys.stderr)
-        for f in stale:
-            print(f"  - {f}", file=sys.stderr)
+        return common.fail(f"{TAG}: ring2 fixture is stale -- nothing run", stale)
+    loaded = common.load_envelope(args.envelope, lambda: run_pex("ring2", args.backend), TAG)
+    if loaded is None:
         return 1
-    try:
-        src = args.envelope.resolve() if args.envelope else run_pex("ring2", args.backend)
-    except subprocess.CalledProcessError as exc:
-        print(f"publish_item7_analog: klt pex failed (exit {exc.returncode}); nothing published",
-              file=sys.stderr)
-        return 1
-    raw = src.read_bytes()
-    envelope = json.loads(raw)
-    refusals = []
-    build = (envelope.get("provenance") or {}).get("klt_version")
-    if build != check.KLT_PIN:
-        refusals.append(f"response is from klt {build!r}, not the producer pin {check.KLT_PIN}")
-    for key in ("pin_count_mismatch", "flat_dut_mismatch"):
-        if envelope.get(key) is not None:
-            refusals.append(f"klt pex reports {key}: {envelope[key]!r}")
-    if not (REPO_ROOT / check.RING2_NETLIST).is_file():
-        refusals.append(f"{check.RING2_NETLIST} is missing (the run's -o netlist)")
+    raw, envelope = loaded
+    refusals = common.envelope_refusals(REPO_ROOT, envelope, check.RING2_NETLIST)
     if refusals:
-        print("publish_item7_analog: refusing to publish ring2", file=sys.stderr)
-        for f in refusals:
-            print(f"  - {f}", file=sys.stderr)
+        return common.fail(f"{TAG}: refusing to publish ring2", refusals)
+    backend = None if args.envelope else args.backend
+    pub = common.publish_envelope(
+        f"{TAG}: refusing to publish ring2",
+        REPO_ROOT / check.RING2_ENVELOPE, raw,
+        lambda sha: build_ring2_publication(envelope, sha, backend),
+        lambda pub: check.item7_analog_problems(pub, envelope, "ring2"),
+        args.allow_incomplete,
+        REPO_ROOT / check.RING2_PUBLICATION,
+    )
+    if pub is None:
         return 1
-    dest = REPO_ROOT / check.RING2_ENVELOPE
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    previous = dest.read_bytes() if dest.is_file() else None
-    dest.write_bytes(raw)
-    try:
-        pub = build_ring2_publication(envelope, check.sha256_file(dest),
-                                      None if args.envelope else args.backend)
-    except Exception as exc:  # noqa: BLE001 -- restore, then report
-        pub, failures = None, [f"{type(exc).__name__}: {exc}"]
-    else:
-        failures = check.item7_analog_problems(pub, envelope, "ring2")
-        if pub["verdict"]["verdict"] == "incomplete" and not args.allow_incomplete:
-            failures.append(
-                f"verdict is incomplete ({pub['verdict']['counts']['unmeasured']} declared "
-                f"row(s) unmeasured); re-run, or pass --allow-incomplete to publish it as such"
-            )
-    if failures:
-        if previous is None:
-            dest.unlink()
-        else:
-            dest.write_bytes(previous)
-        print("publish_item7_analog: refusing to publish ring2 -- envelope not written", file=sys.stderr)
-        for f in failures:
-            print(f"  - {f}", file=sys.stderr)
-        return 1
-    (REPO_ROOT / check.RING2_PUBLICATION).write_text(json.dumps(pub, indent=2) + "\n")
     v = pub["verdict"]
-    print(f"publish_item7_analog: published ring2 (not a manifest citation); verdict "
+    print(f"{TAG}: published ring2 (not a manifest citation); verdict "
           f"{v['verdict']!r} {v['counts']} (body_bias.status: {pub['body_bias_status']!r})")
     return 0
 
@@ -220,41 +170,31 @@ def main() -> int:
     # represents the design source.
     stale = check.item7_analog_dut_source_problems()
     if stale:
-        print("publish_item7_analog: schematic DUT is stale -- nothing run", file=sys.stderr)
-        for f in stale:
-            print(f"  - {f}", file=sys.stderr)
+        return common.fail(f"{TAG}: schematic DUT is stale -- nothing run", stale)
+    loaded = common.load_envelope(args.envelope, lambda: run_pex("ring1", args.backend), TAG)
+    if loaded is None:
         return 1
-    src = args.envelope.resolve() if args.envelope else run_pex("ring1", args.backend)
-    raw = src.read_bytes()
-    envelope = json.loads(raw)
+    raw, envelope = loaded
 
-    pub = {
-        "schema": "gf180-trng/item7-analog-publication/1",
-        "producer": "klt " + shlex.join(KLT_PEX_ARGS),
-        "producer_build": (envelope.get("provenance") or {}).get("klt_version"),
-        "layout_content_hash": check.pinned_input_hash(envelope),
-        "source_sha256": _build_dut().source_identity(),
-        "inputs_sha256": {rel: check.sha256_file(REPO_ROOT / rel) for rel in check.ITEM7A_INPUTS},
-        "body_bias_status": (envelope.get("body_bias") or {}).get("status"),
-        "envelope": {"file": check.ITEM7A_ENVELOPE},
-    }
-    dest = REPO_ROOT / check.ITEM7A_ENVELOPE
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    previous = dest.read_bytes() if dest.is_file() else None
-    dest.write_bytes(raw)
-    pub["envelope"]["sha256"] = check.sha256_file(dest)
-    failures = check.item7_analog_problems(pub, envelope)
-    if failures:
-        if previous is None:
-            dest.unlink()
-        else:
-            dest.write_bytes(previous)
-        print("publish_item7_analog: refusing to publish -- envelope not written", file=sys.stderr)
-        for f in failures:
-            print(f"  - {f}", file=sys.stderr)
+    pub = common.publish_envelope(
+        f"{TAG}: refusing to publish",
+        REPO_ROOT / check.ITEM7A_ENVELOPE, raw,
+        lambda sha: {
+            "schema": "gf180-trng/item7-analog-publication/1",
+            "producer": "klt " + shlex.join(KLT_PEX_ARGS),
+            "producer_build": (envelope.get("provenance") or {}).get("klt_version"),
+            "layout_content_hash": check.pinned_input_hash(envelope),
+            "source_sha256": _build_dut().source_identity(),
+            "inputs_sha256": {rel: check.sha256_file(REPO_ROOT / rel) for rel in check.ITEM7A_INPUTS},
+            "body_bias_status": (envelope.get("body_bias") or {}).get("status"),
+            "envelope": {"file": check.ITEM7A_ENVELOPE, "sha256": sha},
+        },
+        lambda pub: check.item7_analog_problems(pub, envelope),
+        False,
+        REPO_ROOT / check.ITEM7A_PUBLICATION,
+    )
+    if pub is None:
         return 1
-
-    (REPO_ROOT / check.ITEM7A_PUBLICATION).write_text(json.dumps(pub, indent=2) + "\n")
     manifest = json.loads(check.MANIFEST.read_text())
     manifest["evidence"]["7.analog"] = {
         "file": check.ITEM7A_ENVELOPE,

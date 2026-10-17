@@ -49,16 +49,15 @@ What it does, and refuses to do:
 from __future__ import annotations
 
 import argparse
-import json
 import os
-import shlex
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check  # noqa: E402
+import publish_common as common  # noqa: E402
 
+TAG = "publish_combiner_sampler_pex"
 REPO_ROOT = check.REPO_ROOT
 SCRATCH = REPO_ROOT / "sim" / ".work" / "combiner-sampler-pex"
 
@@ -88,14 +87,7 @@ COVERAGE_EXCLUSIONS = [
 
 
 def run_pex(backend: str) -> Path:
-    SCRATCH.mkdir(parents=True, exist_ok=True)
-    out = SCRATCH / "klt_pex_response.json"
-    klt = shlex.split(os.environ.get("KLT", "klt"))
-    argv = [*klt, *KLT_PEX_ARGS, "--backend", backend]
-    print(f"publish_combiner_sampler_pex: {shlex.join(argv)}", file=sys.stderr)
-    with out.open("w") as fh:
-        subprocess.run(argv, cwd=REPO_ROOT, stdout=fh, check=True)
-    return out
+    return common.run_pex(REPO_ROOT, SCRATCH, KLT_PEX_ARGS, backend, TAG)
 
 
 def build_publication(envelope: dict, raw_envelope_sha: str, backend: str | None) -> dict:
@@ -103,28 +95,18 @@ def build_publication(envelope: dict, raw_envelope_sha: str, backend: str | None
     netlist_text = (REPO_ROOT / check.CS_NETLIST).read_text()
     header = bd.extracted_graph(netlist_text)[1]
     ports = bd.extraction_port_map(netlist_text, bd.DUT.read_text())
-    request = json.loads((REPO_ROOT / check.CS_REQUEST).read_text())
-    prov = envelope.get("provenance") or {}
-    bias = envelope.get("body_bias") or {}
-    return {
-        "schema": check.CS_PUBLICATION_SCHEMA,
-        "scope": "additional post-layout coverage of combiner_sampler; not a manifest citation",
-        "producer": "klt " + shlex.join(KLT_PEX_ARGS),
-        "producer_build": prov.get("klt_version"),
-        "klayout_build": prov.get("klayout_version"),
-        "pdk": prov.get("pdk"),
-        "deck": prov.get("deck"),
-        "backend_requested": backend,
-        "layout_content_hash": check.pinned_input_hash(envelope),
-        "source_sha256": bd.source_identity(),
-        "inputs_sha256": {rel: check.sha256_file(REPO_ROOT / rel) for rel in check.CS_INPUTS},
-        "port_map": dict(zip(header, ports)),
-        "body_bias_status": bias.get("status"),
-        "body_bias_unbiased_device_count": bias.get("unbiased_device_count"),
-        "coverage_exclusions": COVERAGE_EXCLUSIONS,
-        "verdict": check.combiner_sampler_verdict(envelope, request),
-        "envelope": {"file": check.CS_ENVELOPE, "sha256": raw_envelope_sha},
-    }
+    return common.build_publication(
+        REPO_ROOT, envelope, raw_envelope_sha, backend,
+        schema=check.CS_PUBLICATION_SCHEMA,
+        scope="additional post-layout coverage of combiner_sampler; not a manifest citation",
+        pex_args=KLT_PEX_ARGS,
+        source_sha256=bd.source_identity(),
+        inputs=check.CS_INPUTS,
+        port_map=dict(zip(header, ports)),
+        exclusions=COVERAGE_EXCLUSIONS,
+        envelope_file=check.CS_ENVELOPE,
+        request_rel=check.CS_REQUEST,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -138,60 +120,26 @@ def main(argv: list[str] | None = None) -> int:
 
     stale = check.combiner_sampler_dut_source_problems()
     if stale:
-        print("publish_combiner_sampler_pex: fixture is stale -- nothing run", file=sys.stderr)
-        for f in stale:
-            print(f"  - {f}", file=sys.stderr)
+        return common.fail(f"{TAG}: fixture is stale -- nothing run", stale)
+    loaded = common.load_envelope(args.envelope, lambda: run_pex(args.backend), TAG)
+    if loaded is None:
         return 1
-    try:
-        src = args.envelope.resolve() if args.envelope else run_pex(args.backend)
-    except subprocess.CalledProcessError as exc:
-        # klt pex prints its error envelope on stdout/stderr; nothing is published.
-        print(f"publish_combiner_sampler_pex: klt pex failed (exit {exc.returncode}); "
-              f"nothing published", file=sys.stderr)
-        return 1
-    raw = src.read_bytes()
-    envelope = json.loads(raw)
-
-    refusals: list[str] = []
-    build = (envelope.get("provenance") or {}).get("klt_version")
-    if build != check.KLT_PIN:
-        refusals.append(f"response is from klt {build!r}, not the producer pin {check.KLT_PIN}")
-    for key in ("pin_count_mismatch", "flat_dut_mismatch"):
-        if envelope.get(key) is not None:
-            refusals.append(f"klt pex reports {key}: {envelope[key]!r}")
-    if not (REPO_ROOT / check.CS_NETLIST).is_file():
-        refusals.append(f"{check.CS_NETLIST} is missing (the run's -o netlist)")
+    raw, envelope = loaded
+    refusals = common.envelope_refusals(REPO_ROOT, envelope, check.CS_NETLIST)
     if refusals:
-        print("publish_combiner_sampler_pex: refusing to publish", file=sys.stderr)
-        for f in refusals:
-            print(f"  - {f}", file=sys.stderr)
-        return 1
+        return common.fail(f"{TAG}: refusing to publish", refusals)
 
-    dest = REPO_ROOT / check.CS_ENVELOPE
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    previous = dest.read_bytes() if dest.is_file() else None
-    dest.write_bytes(raw)
-    try:
-        pub = build_publication(envelope, check.sha256_file(dest), args.backend if not args.envelope else None)
-    except Exception as exc:  # noqa: BLE001 -- restore, then report
-        pub, failures = None, [f"{type(exc).__name__}: {exc}"]
-    else:
-        failures = check.combiner_sampler_problems(pub, envelope)
-        if pub["verdict"]["verdict"] == "incomplete" and not args.allow_incomplete:
-            failures.append(
-                f"verdict is incomplete ({pub['verdict']['counts']['unmeasured']} declared "
-                f"row(s) unmeasured); re-run, or pass --allow-incomplete to publish it as such"
-            )
-    if failures:
-        if previous is None:
-            dest.unlink()
-        else:
-            dest.write_bytes(previous)
-        print("publish_combiner_sampler_pex: refusing to publish -- envelope not written", file=sys.stderr)
-        for f in failures:
-            print(f"  - {f}", file=sys.stderr)
+    backend = args.backend if not args.envelope else None
+    pub = common.publish_envelope(
+        f"{TAG}: refusing to publish",
+        REPO_ROOT / check.CS_ENVELOPE, raw,
+        lambda sha: build_publication(envelope, sha, backend),
+        lambda pub: check.combiner_sampler_problems(pub, envelope),
+        args.allow_incomplete,
+        REPO_ROOT / check.CS_PUBLICATION,
+    )
+    if pub is None:
         return 1
-    (REPO_ROOT / check.CS_PUBLICATION).write_text(json.dumps(pub, indent=2) + "\n")
     v = pub["verdict"]
     print(
         f"publish_combiner_sampler_pex: published; verdict {v['verdict']!r} {v['counts']} "
