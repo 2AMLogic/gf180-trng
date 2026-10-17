@@ -1532,7 +1532,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:a4513f6df5b0801fb7a6aa4a203ccf9f9ce3357e03eb153d7ef1028e79f1dcd8"
+      "sha256": "sha256:4c957987623d5339bd849a9fe16965a5465ba71bb917f647afa68fa54e02f186"
     },
     {
       "path": "sim/README.md",
