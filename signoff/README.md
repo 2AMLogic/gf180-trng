@@ -426,7 +426,7 @@ requires of the claimant rather than of the tool.
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | `unmet` / `no_evidence` | `unmet` / `no_evidence` | 64+ testbenches under `sim/tb/`, each with a documented cold-start invocation, and the PDK revision pinned in README and `pdk-nightly.yml`. Uncited on purpose. |
 | 10 Repo hygiene | `unmet` / `no_evidence` | `unmet` / `no_evidence` | README, spec table, reproduction instructions, Apache-2.0 licence and green CI all exist. Uncited on purpose. |
-| 11 Power delivery | `unmet` / `wrong_kind` | `unmet` / `wrong_kind` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. `signoff/block-manifest.json` cites `11.digital` (the `erc-supply.json` report alone, pinned to the GDS it ran on) as of [#321](https://github.com/2AMLogic/gf180-trng/issues/321); no `11.analog` is cited. The digital column therefore reads `unmet` / `wrong_kind`, not `no_evidence`: item 11 is a compound claim, and the grader wants an `erc` envelope *and* an `lvs` one (and, for an RTL-flow block, a `place-and-route` one) in the same list, so a lone ERC citation is the wrong set rather than a missing one. As of [#327](https://github.com/2AMLogic/gf180-trng/issues/327) the analog column cites `11.analog` the same way (three `klt erc` reports under `layout/analog/reports/`, one per region cell, each pinned to its GDS) and reads `unmet` / `wrong_kind` for the same reason; that is the grader's real verdict, not progress toward `met`. The analog supply specs declare no `ties[]` and carry a `ties_disclosure` of kind `unexpressible` — see "Item 11's `ties[]`" below. Independent of the citation shape, the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above) — see "Item 11's `ties[]`" below. The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
+| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | `unmet` / `lvs_supply_unproven` | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. What remains is the LVS `power_connectivity.status`, `"unchecked"` because the reference form is `plain-element`; item 11 needs `"match"`. See "Item 11's `ties[]`" below. |
 
 ### Item 3 is `met` on both partitions — and here are each one's coverage gaps
 
@@ -632,9 +632,9 @@ change verdict: DRC clean, LVS match, ERC clean.
     **`"unchecked"` is not a power-delivery verdict, and this re-run does not
     advance T1 item 11.** Item 11's Analog column does not ask for
     `power_connectivity` at all: it asks for `klt erc` supply evidence plus
-    exactly that `net_correspondence` pairing. `11.analog` is cited as of #327
-    (supply-ERC only, see "Item 11's `ties[]`" below), and the row still
-    reads `unmet` / `wrong_kind`.
+    exactly that `net_correspondence` pairing. `11.analog` is cited as of #655
+    (supply-ERC plus this LVS envelope, see "Item 11's `ties[]`" below), and
+    the row reads `unmet` / `supply_spec_disclosed_unexpressible`.
     The Digital column does ask for `power_connectivity.status: "match"`,
     and there `"unchecked"` explicitly does not satisfy it.
   - `body_verification`, verbatim: `{"status": "unverified", "reason": null,
@@ -783,7 +783,8 @@ zero `erc.unconnected_net`/`erc.supply_short` on `VDD`/`VSS` the spec
 already required. `ties_disclosure` is now `null`: the tie is declared, not
 disclosed as omitted.
 
-**This does not move item 11 to `met`.** As of
+**This does not move item 11 to `met`.** *History, superseded by
+[#655](https://github.com/2AMLogic/gf180-trng/issues/655) below:* as of
 [#321](https://github.com/2AMLogic/gf180-trng/issues/321),
 `signoff/block-manifest.json` cites `11.digital` as a single evidence
 object: `layout/digital/reports/erc-supply.json`, pinned to the
@@ -798,22 +799,19 @@ reports `wrong_kind` without grading the ERC report's contents at all. So
 the zero `erc.missing_tie` and clean supply nets above are not yet a graded
 result.
 
-Three things remain, none touched by this change:
+As of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) item 11 is
+cited as the compound list the grader asks for in both partitions, and it now
+renders a graded verdict, not `wrong_kind`. Both are `unmet`, for specific
+reasons:
 
-- The compound list itself. A trial list of the ERC, LVS and
-  place-and-route reports graded `unmet` / `lvs_supply_unproven`, i.e. it
-  reaches the same `power_connectivity` gap below. It was not committed:
-  `layout/digital/reports/place_and_route.json` names no input artifact, so
-  `signoff/check.py`'s freshness step rejects it, and that report embeds an
-  absolute worktree path. Citing it needs a check.py decision first.
-- `11.analog` is cited as of [#327](https://github.com/2AMLogic/gf180-trng/issues/327)
-  and reads `unmet` / `wrong_kind`, exactly like the digital column, for the
-  same compound-claim reason (an `erc` part without an `lvs` part in the
-  same list). The runs: `layout/analog/erc-supply-spec-rings.json` on
-  `ro_ring11` (ring1) and `ro_ring11_ring2` (ring2), and
-  `layout/analog/erc-supply-spec-combiner_sampler.json` on
-  `combiner_sampler`; reports in `layout/analog/reports/`, each pinned to
-  the `provenance.input.content_hash` of its GDS. All three read
+- **Analog** cites the three region ERC reports plus the `4.analog` LVS
+  envelope (`layout/reports/combiner_sampler.lvs.json`) and reads
+  `unmet` / `supply_spec_disclosed_unexpressible`. The runs:
+  `layout/analog/erc-supply-spec-rings.json` on `ro_ring11` (ring1) and
+  `ro_ring11_ring2` (ring2), and
+  `layout/analog/erc-supply-spec-combiner_sampler.json` on `combiner_sampler`;
+  reports in `layout/analog/reports/`, each pinned to the
+  `provenance.input.content_hash` of its GDS. All three read
   `erc_status: clean`, zero findings, one island per declared supply
   (`vddr`/`vss` on the rings, `vdd`/`vss` on combiner_sampler). What that
   does **not** cover: the specs declare no `ties[]` (these streams draw no
@@ -823,16 +821,33 @@ Three things remain, none touched by this change:
   exists in any of the three streams (the guard ring lives only in the
   floorplan abstract, which also contains the digital region); the supply
   names are the cell-level `vddr`, not the region-level `vddr1`/`vddr2`; and
-  the LVS `power_connectivity` (`"unchecked"`) and `body_verification`
-  (`"unverified"`) fields remain exactly as disclosed above. These three
-  reports cover only the rings' and combiner's own GDS. The composed floorplan
-  stream has its own whole-block run, `layout/floorplan/reports/erc-supply.json`
-  (issue #447; five region-level supplies, Metal1-Metal5, clean), which is
-  not cited by any manifest item here and changes no tier.
-- The digital column's additional requirement, `power_connectivity.status:
-  "match"` on item 4's LVS citation, stays `"unchecked"`, for the reason
-  "Item 4 is `met` twice" above already documents. A `met` supply-spec run
-  is necessary for item 11's digital column; it was never sufficient.
+  the LVS `body_verification` (`"unverified"`) field remains as disclosed
+  above. These three reports cover only the rings' and combiner's own GDS. The
+  composed floorplan stream has its own whole-block run,
+  `layout/floorplan/reports/erc-supply.json` (issue #447; five region-level
+  supplies, Metal1-Metal5, clean), which is not cited by any manifest item
+  here and changes no tier.
+- **Digital** cites the ERC report, the `4.digital` LVS envelope
+  (`layout/digital/reports/lvs.json`) and the `klt place-and-route` response
+  (`layout/digital/reports/place_and_route.json`) and reads
+  `unmet` / `lvs_supply_unproven`: the additional requirement,
+  `power_connectivity.status: "match"` on item 4's LVS citation, stays
+  `"unchecked"` (reference form `plain-element`), for the reason "Item 4 is
+  `met` twice" above already documents. A gate-level-Verilog LVS reference
+  would compute it, as another canary's digital partition does; that
+  regenerates the LVS report and moves the `4.digital` pin, so it is a
+  separate follow-up and not done here.
+- **The place-and-route citation is unpinned.** The response records
+  `provenance.input.content_hash` (role `netlist`) but no `file`, `layout` or
+  `source` field naming that input, and the digest matches no committed file,
+  so `signoff/check.py`'s envelope-vs-input step has nothing to compare it
+  against. `check.py` exempts it from that step (`PNR_ENVELOPE`), as it does
+  `7.digital`'s envelope, and the manifest carries no `content_hash` for it.
+  The cost is that drift in this file is not detected by `check.py`; the
+  recorded verdict still changes if its `power` block changes, because the
+  grader re-reads it. The tool gap, that the response gives no resolvable
+  input path for consumer-side freshness checks, is filed generically as
+  `2AMLogic/klayout-tools#3751`.
 
 ### Items 1, 2, 9 and 10 are uncited on purpose
 
@@ -982,8 +997,9 @@ In dependency order, not effort order:
    and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
    the spec's `ties[]` once klayout-tools#2186 shipped, so `erc.missing_tie`
    is now computed and zero. Item 11 still does not read `met`: `11.digital` is cited
-   (#321) as a lone ERC report and `11.analog` (#327) as three, and both
-   read `unmet` / `wrong_kind`, and the digital column's `power_connectivity.status: "match"`
+   (#321) and `11.analog` (#327) with ERC reports, and as of #655 both cite the
+   full compound set and read a graded `unmet` (`supply_spec_disclosed_unexpressible`
+   / `lvs_supply_unproven`); the digital column's `power_connectivity.status: "match"`
    requirement stays `"unchecked"` — see "Item 11's `ties[]`" above.
 
 Items 1, 2, 9 and 10 need nothing built — only an honest artifact to cite, if
