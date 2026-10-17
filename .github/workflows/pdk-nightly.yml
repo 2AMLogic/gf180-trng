@@ -369,10 +369,12 @@ jobs:
           klt version --format json
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
-      # way this flow already shells out to `xschem`/`klt` -- floating
-      # rather than a version pin, and for the same reason given above for
-      # xschem: it is a netlister, and a version bump is meant to turn
-      # `design/synth.py --check` red (loud) rather than drift unnoticed.
+      # way this flow already shells out to `xschem`/`klt`. It is pinned
+      # (see the bump policy at the end of this comment block): this step
+      # used to float so that an upstream Yosys release would turn
+      # `design/synth.py --check` red (loud), but that made the nightly
+      # red on every upstream release (0.70 moved the netlist) until
+      # someone re-baselined.
       #
       # This used to float on Ubuntu's own distro `yosys` package (0.33 on
       # 24.04), on the premise -- `klayout_tools.synthesize`'s own module
@@ -402,12 +404,18 @@ jobs:
       # request -- matching the `engine_version: "0.68+post"` this repo's
       # own committed `design/trng_top/trng_top.synth.json` already
       # recorded (that netlist was never built against the distro package
-      # to begin with). So the floor moves to `yowasp-yosys`: still no
-      # version pin (`--upgrade`, same loud-drift intent as before), just a
-      # different, actually-working channel. `yowasp-yosys` installs its
+      # to begin with). So the channel moves to `yowasp-yosys`.
+      # `yowasp-yosys` installs its
       # console script as `yowasp-yosys`, not `yosys` -- `klt synthesize`
       # (and every caller in this repo) invokes the latter by name, so the
       # step below symlinks one to the other.
+      #
+      # Bump policy: the pin is `0.69.0.0.post1233`, the version the
+      # committed netlist, P&R, LVS and STA records were generated with.
+      # Upgrading Yosys is an explicit re-baseline PR that bumps this pin
+      # together with the full synth / P&R / LVS / STA regeneration
+      # cascade -- never an unattended `--upgrade`. Upstream Yosys changes
+      # are therefore no longer detected automatically by the nightly.
       #
       # `yowasp-yosys` is a WASI-sandboxed build (real Yosys compiled to
       # WebAssembly, run under `wasmtime`): it only has filesystem access
@@ -419,7 +427,7 @@ jobs:
       - name: Install yosys (the digital synthesis engine)
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check --upgrade yowasp-yosys
+          python3 -m pip install --disable-pip-version-check "yowasp-yosys==0.69.0.0.post1233"
           yosys_bin="$(command -v yowasp-yosys)"
           ln -sf "${yosys_bin}" "$(dirname "${yosys_bin}")/yosys"
           yosys -V
