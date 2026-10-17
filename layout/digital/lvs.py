@@ -7,13 +7,15 @@
 The reference netlist a digital-section LVS has to compare against is
 `trng_top.pnr.v` -- the *as-built* gate-level netlist `build.py` already
 commits (CTS buffers and resizer swaps included), not `design/trng_top/
-trng_top.synth.v`'s pre-place mapping (issue #170). `klt lvs`'s own reference
-side, though, is a SPICE netlist read via `NetlistSpiceReader` -- there is no
-verb that takes a Verilog reference directly (`docs/cli/lvs.md`'s "Machine-
-generated macro-scale fixture" section states this outright: "a true golden-
-reference check (translating `klt synthesize`'s gate-level Verilog netlist to
-SPICE) is out of scope -- no Verilog->SPICE bridge exists in this repo
-today"). This script is that bridge, built once, for this one netlist shape.
+trng_top.synth.v`'s pre-place mapping (issue #170). `klt lvs` compares it as
+`reference.form: "gate-level-verilog"` since issue #662, so it reads
+`trng_top.pnr.v` directly and computes `power_connectivity` from the
+standard-cell library's own pin data instead of reporting it `"unchecked"`.
+Before that, `klt lvs`'s reference side was a SPICE netlist read via
+`NetlistSpiceReader`, and this script was a Verilog->SPICE bridge (below),
+built once for this one netlist shape. The bridge is still written -- the
+floorplan composition (`design/floorplan_netlist.py`) reads
+`trng_top.lvs_reference.spice` -- but `klt lvs` no longer compares against it.
 
 Why a **cell-instance-granularity** bridge, not a transistor-level one
 -----------------------------------------------------------------------
@@ -180,6 +182,10 @@ HDL_TOPLEVEL = "trng_top"
 CELL_PREFIX = "gf180mcu_fd_sc_mcu9t5v0__"
 CELL_GLOB = f"{CELL_PREFIX}*"
 DECK = "gf180mcu"
+#: Standard-cell library `klt lvs` reads the gate-level reference's pin
+#: order from (and derives the power-pin universe of `power_connectivity`
+#: from) -- the same library `CELL_PREFIX` names the cells of.
+REFERENCE_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
 
 #: See the module docstring's "Power/ground" section -- every abstracted cell
 #: type resolves these two pins from its own drawn GDS labels regardless of
@@ -669,8 +675,10 @@ def _lvs_request() -> dict:
         ),
         "layout": {"netlist": "trng_top.extracted.spice", "top": HDL_TOPLEVEL},
         "reference": {
-            "netlist": "trng_top.lvs_reference.spice",
+            "form": "gate-level-verilog",
+            "netlist": PNR_NETLIST_PATH.name,
             "top": HDL_TOPLEVEL,
+            "library": REFERENCE_LIBRARY,
         },
     }
 
@@ -722,20 +730,25 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
 
     **`reference_generation` is additive, and is not `klt`'s.** The
     envelope's own top-level `reference` field is the reference netlist's
-    path, so this script's record of *how that netlist was generated* (which
-    Verilog it transcribes, how many instances, which supply nets) cannot
-    share the key -- before #273 it did, and shadowed the envelope field.
-    It moves to its own key rather than being dropped: it is the only record
-    of the fact that this reference is a mechanical transcription of
-    `trng_top.pnr.v` rather than a hand-written schematic netlist, which is
-    the single most important caveat on this item's `match` verdict.
+    path, so this script's record of *what that reference is* cannot share
+    the key. It is the only record of the fact that the reference is the
+    as-built `trng_top.pnr.v` itself (read as `form: "gate-level-verilog"`,
+    so `klt lvs` computes `power_connectivity` from the library's own pin
+    data, issue #662) rather than an independently captured schematic
+    netlist, which is the single most important caveat on this item's
+    `match` verdict. The counts are those of the SPICE transcription
+    `_write_reference` still writes for the floorplan composition
+    (`design/floorplan_netlist.py`); that file is no longer what `klt lvs`
+    compares against.
     """
     restated = dict(payload)
     restated["layout"] = str(EXTRACTED_PATH.relative_to(REPO_ROOT))
-    restated["reference"] = str(REFERENCE_PATH.relative_to(REPO_ROOT))
+    restated["reference"] = str(PNR_NETLIST_PATH.relative_to(REPO_ROOT))
     restated["reference_generation"] = {
-        "path": str(REFERENCE_PATH.relative_to(REPO_ROOT)),
+        "path": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),
         "source": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),
+        "form": "gate-level-verilog",
+        "library": REFERENCE_LIBRARY,
         "generator": "layout/digital/lvs.py",
         **reference_summary,
     }

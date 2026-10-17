@@ -707,7 +707,12 @@ transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json) — the
 where it used to be a five-field digest; this script's own record of how the
 reference netlist was generated keeps its place in the report under
 `reference_generation`, beside rather than shadowing the envelope's own
-`reference` field):
+`reference` field). Since [#662][gf662] the compare reads `trng_top.pnr.v`
+directly as `reference.form: "gate-level-verilog"` (library
+`gf180mcu_fd_sc_mcu9t5v0`), so `power_connectivity` is a computed `"match"`
+instead of `"unchecked"`; the SPICE bridge file is still written because
+`design/floorplan_netlist.py` composes from it, but `klt lvs` no longer
+compares against it:
 
 | | | #170 |
 |---|---|---|
@@ -1066,6 +1071,7 @@ boundary.
 [gf292]: https://github.com/2AMLogic/gf180-trng/pull/292
 [gf293]: https://github.com/2AMLogic/gf180-trng/issues/293
 [gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
+[gf662]: https://github.com/2AMLogic/gf180-trng/issues/662
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
