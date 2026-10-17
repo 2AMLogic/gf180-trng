@@ -34,12 +34,25 @@
       {
         "file": "layout/analog/reports/erc-supply-combiner_sampler.json",
         "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+      },
+      {
+        "file": "layout/reports/combiner_sampler.lvs.json",
+        "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
       }
     ],
-    "11.digital": {
-      "file": "layout/digital/reports/erc-supply.json",
-      "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
-    },
+    "11.digital": [
+      {
+        "file": "layout/digital/reports/erc-supply.json",
+        "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
+      },
+      {
+        "file": "layout/digital/reports/lvs.json",
+        "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80"
+      },
+      {
+        "file": "layout/digital/reports/place_and_route.json"
+      }
+    ],
     "2.analog": {
       "file": "signoff/evidence/t1-item-2-analog.json",
       "content_hash": "sha256:d1798ac082d6942e2259a4e29b23539046c4f98e1c0c916ff79732a38e03b8fd"

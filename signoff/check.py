@@ -151,6 +151,13 @@ CLEAN_EXITS = (0, 3)
 #: That envelope has no `provenance` block, so the manifest cannot pin it; the
 #: sidecar below carries the freshness pins and verify_item7_publication()
 #: re-checks them (see its docstring).
+#: T1 item 11 (digital) cites the committed `klt place-and-route` response
+#: unpinned. It records `provenance.input.content_hash` (role: netlist) but no
+#: `file`/`layout`/`source` naming that input, and the digest matches no
+#: committed file, so the generic envelope-vs-input step cannot check it. Like
+#: ITEM7_ENVELOPE it is exempt from that step and carries no manifest pin.
+PNR_ENVELOPE = "layout/digital/reports/place_and_route.json"
+
 ITEM7_DIR = "signoff/evidence/post-route"
 ITEM7_ENVELOPE = f"{ITEM7_DIR}/gate_klt_response.json"
 ITEM7_PUBLICATION = f"{ITEM7_DIR}/publication.json"
@@ -942,7 +949,7 @@ def freshness_gate(manifest: dict) -> int:
     cited: list[Path] = []
     for _key, part in manifest_entries(manifest):
         named = part.get("file")
-        if named and named != ITEM7_ENVELOPE:
+        if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE):
             cited.append(REPO_ROOT / named)
     # The item 1/2/9/10 inventories are not envelopes (they name no input);
     # their freshness is the member-by-member re-derivation in step 1e.

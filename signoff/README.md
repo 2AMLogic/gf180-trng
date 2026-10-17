@@ -429,13 +429,13 @@ requires of the claimant rather than of the tool.
 | 2 Layout | **`met`** | **`met`** | Cites `evidence/t1-item-2-{analog,digital}.json`, bound to `evidence/inventory-2-{analog,digital}.json`: the hand-drawn cell, ring and block streams with their reference netlists and the composed `layout/floorplan/trng_floorplan.gds` (analog), and `layout/digital/trng_top.gds` with its DEF, as-built netlist, SDF and LVS reference (digital). The stream the item 3/4 citations pin (`layout/blocks/combiner_sampler/combiner_sampler.gds`, `layout/digital/trng_top.gds`) is a member of its inventory and `check.py` holds its hash to those manifest pins. DRC/LVS are not re-run: `layout/verify.py --require-tools` and the other tool-gated checks run only in `pdk-nightly.yml`. The `met` does not assert the layout meets the area budget. |
 | 3 DRC clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.drc.json`, digital cites `layout/digital/reports/drc.json` — both `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 0`). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies power connectivity or body ties: `power_connectivity.status` is `"unchecked"` on both, and `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
-| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is different in kind — `klt sim` emits `measurements[].spice` outside its own `.control` block and supports no caller-supplied one (klayout-tools#2533, filed from this repo's own friction protocol), so a spec whose rows need caller-side post-processing, as this block's ~950 corner records under `sim/records/` do, cannot cite a `klt sim` envelope at any released or unreleased build. Nothing here is gradeable yet, but only the digital half is a backlog item; the analog half is a closed door until #2533 resolves. |
+| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists — nor is one reachable from any published klayout-tools release: `klt yield` requires the `klt_yield_native` Rust extension, which neither `pip install klayout-tools`/`uv tool install klayout-tools` nor the git-pinned form ships as a prebuilt wheel for (klayout-tools#2474's own item-6 text), so producing one needs a repo checkout with a Rust toolchain rather than the one-`pip install` reproduction the checklist is designed around. Still open upstream as klayout-tools#2531, after #2466 and #1061 closed without a wheel. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | **`met`** | **`met`** | Cites `evidence/t1-item-9-{analog,digital}.json`, bound to `evidence/inventory-9-{analog,digital}.json`: every file of the `sim/tb/` testbench directories, split by partition (a directory with an ngspice `.sp` deck is analog; the nine behavioural/RTL/gate-level ones listed in `signoff/inventories.py`'s `DIGITAL_TESTBENCHES` are digital), each with its documented cold-start invocation, and the PDK revision `pdk-nightly.yml` pins (open_pdks `f6eeac7d…`, variant `gf180mcuD`), which `check.py` requires `README.md` to state too. A new `sim/tb/` directory that is neither fails the audit. No testbench is run here. |
 | 10 Repo hygiene | **`met`** | **`met`** | Cites `evidence/t1-item-10-{analog,digital}.json`, bound to `evidence/inventory-10-{analog,digital}.json`: `README.md`, `LICENSE` (Apache-2.0), the ratified spec table, `sim/README.md` and `.github/workflows/ci.yml`, with assertions about each (the README's sections, that it documents how that partition is reproduced, that the workflow runs the named commands). **CI status is not captured**: the workflow file is hashed and its commands named, but whether its last run was green is a property of a run, not of a file, and is not part of what this `met` asserts. |
-| 11 Power delivery | `unmet` / `wrong_kind` | `unmet` / `wrong_kind` | `layout/digital/erc-supply-spec.json` and `layout/digital/reports/erc-supply.json` exist ([#268](https://github.com/2AMLogic/gf180-trng/issues/268)) and, as of [#276](https://github.com/2AMLogic/gf180-trng/issues/276), the spec's `ties[]` is declared and `erc.missing_tie` is computed and zero — see "Item 11's `ties[]`" below. `signoff/block-manifest.json` cites `11.digital` (the `erc-supply.json` report alone, pinned to the GDS it ran on) as of [#321](https://github.com/2AMLogic/gf180-trng/issues/321); no `11.analog` is cited. The digital column therefore reads `unmet` / `wrong_kind`, not `no_evidence`: item 11 is a compound claim, and the grader wants an `erc` envelope *and* an `lvs` one (and, for an RTL-flow block, a `place-and-route` one) in the same list, so a lone ERC citation is the wrong set rather than a missing one. As of [#327](https://github.com/2AMLogic/gf180-trng/issues/327) the analog column cites `11.analog` the same way (three `klt erc` reports under `layout/analog/reports/`, one per region cell, each pinned to its GDS) and reads `unmet` / `wrong_kind` for the same reason; that is the grader's real verdict, not progress toward `met`. The analog supply specs declare no `ties[]` and carry a `ties_disclosure` of kind `unexpressible` — see "Item 11's `ties[]`" below. Independent of the citation shape, the digital column's own extra requirement, `power_connectivity.status: "match"`, remains `"unchecked"` (see "Item 4 is `met` twice" above) — see "Item 11's `ties[]`" below. The item has a row here rather than being silently absent because it was added to the checklist on 2026-09-17 (klayout-tools#2025) and invalidated every hand-read that predates it. |
+| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | `unmet` / `lvs_supply_unproven` | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. What remains is the LVS `power_connectivity.status`, `"unchecked"` because the reference form is `plain-element`; item 11 needs `"match"`. See "Item 11's `ties[]`" below. |
 
 ### Item 3 is `met` on both partitions — and here are each one's coverage gaps
 
@@ -643,9 +643,9 @@ change verdict: DRC clean, LVS match, ERC clean.
     **`"unchecked"` is not a power-delivery verdict, and this re-run does not
     advance T1 item 11.** Item 11's Analog column does not ask for
     `power_connectivity` at all: it asks for `klt erc` supply evidence plus
-    exactly that `net_correspondence` pairing. `11.analog` is cited as of #327
-    (supply-ERC only, see "Item 11's `ties[]`" below), and the row still
-    reads `unmet` / `wrong_kind`.
+    exactly that `net_correspondence` pairing. `11.analog` is cited as of #655
+    (supply-ERC plus this LVS envelope, see "Item 11's `ties[]`" below), and
+    the row reads `unmet` / `supply_spec_disclosed_unexpressible`.
     The Digital column does ask for `power_connectivity.status: "match"`,
     and there `"unchecked"` explicitly does not satisfy it.
   - `body_verification`, verbatim: `{"status": "unverified", "reason": null,
@@ -794,7 +794,8 @@ zero `erc.unconnected_net`/`erc.supply_short` on `VDD`/`VSS` the spec
 already required. `ties_disclosure` is now `null`: the tie is declared, not
 disclosed as omitted.
 
-**This does not move item 11 to `met`.** As of
+**This does not move item 11 to `met`.** *History, superseded by
+[#655](https://github.com/2AMLogic/gf180-trng/issues/655) below:* as of
 [#321](https://github.com/2AMLogic/gf180-trng/issues/321),
 `signoff/block-manifest.json` cites `11.digital` as a single evidence
 object: `layout/digital/reports/erc-supply.json`, pinned to the
@@ -809,22 +810,19 @@ reports `wrong_kind` without grading the ERC report's contents at all. So
 the zero `erc.missing_tie` and clean supply nets above are not yet a graded
 result.
 
-Three things remain, none touched by this change:
+As of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) item 11 is
+cited as the compound list the grader asks for in both partitions, and it now
+renders a graded verdict, not `wrong_kind`. Both are `unmet`, for specific
+reasons:
 
-- The compound list itself. A trial list of the ERC, LVS and
-  place-and-route reports graded `unmet` / `lvs_supply_unproven`, i.e. it
-  reaches the same `power_connectivity` gap below. It was not committed:
-  `layout/digital/reports/place_and_route.json` names no input artifact, so
-  `signoff/check.py`'s freshness step rejects it, and that report embeds an
-  absolute worktree path. Citing it needs a check.py decision first.
-- `11.analog` is cited as of [#327](https://github.com/2AMLogic/gf180-trng/issues/327)
-  and reads `unmet` / `wrong_kind`, exactly like the digital column, for the
-  same compound-claim reason (an `erc` part without an `lvs` part in the
-  same list). The runs: `layout/analog/erc-supply-spec-rings.json` on
-  `ro_ring11` (ring1) and `ro_ring11_ring2` (ring2), and
-  `layout/analog/erc-supply-spec-combiner_sampler.json` on
-  `combiner_sampler`; reports in `layout/analog/reports/`, each pinned to
-  the `provenance.input.content_hash` of its GDS. All three read
+- **Analog** cites the three region ERC reports plus the `4.analog` LVS
+  envelope (`layout/reports/combiner_sampler.lvs.json`) and reads
+  `unmet` / `supply_spec_disclosed_unexpressible`. The runs:
+  `layout/analog/erc-supply-spec-rings.json` on `ro_ring11` (ring1) and
+  `ro_ring11_ring2` (ring2), and
+  `layout/analog/erc-supply-spec-combiner_sampler.json` on `combiner_sampler`;
+  reports in `layout/analog/reports/`, each pinned to the
+  `provenance.input.content_hash` of its GDS. All three read
   `erc_status: clean`, zero findings, one island per declared supply
   (`vddr`/`vss` on the rings, `vdd`/`vss` on combiner_sampler). What that
   does **not** cover: the specs declare no `ties[]` (these streams draw no
@@ -834,16 +832,33 @@ Three things remain, none touched by this change:
   exists in any of the three streams (the guard ring lives only in the
   floorplan abstract, which also contains the digital region); the supply
   names are the cell-level `vddr`, not the region-level `vddr1`/`vddr2`; and
-  the LVS `power_connectivity` (`"unchecked"`) and `body_verification`
-  (`"unverified"`) fields remain exactly as disclosed above. These three
-  reports cover only the rings' and combiner's own GDS. The composed floorplan
-  stream has its own whole-block run, `layout/floorplan/reports/erc-supply.json`
-  (issue #447; five region-level supplies, Metal1-Metal5, clean), which is
-  not cited by any manifest item here and changes no tier.
-- The digital column's additional requirement, `power_connectivity.status:
-  "match"` on item 4's LVS citation, stays `"unchecked"`, for the reason
-  "Item 4 is `met` twice" above already documents. A `met` supply-spec run
-  is necessary for item 11's digital column; it was never sufficient.
+  the LVS `body_verification` (`"unverified"`) field remains as disclosed
+  above. These three reports cover only the rings' and combiner's own GDS. The
+  composed floorplan stream has its own whole-block run,
+  `layout/floorplan/reports/erc-supply.json` (issue #447; five region-level
+  supplies, Metal1-Metal5, clean), which is not cited by any manifest item
+  here and changes no tier.
+- **Digital** cites the ERC report, the `4.digital` LVS envelope
+  (`layout/digital/reports/lvs.json`) and the `klt place-and-route` response
+  (`layout/digital/reports/place_and_route.json`) and reads
+  `unmet` / `lvs_supply_unproven`: the additional requirement,
+  `power_connectivity.status: "match"` on item 4's LVS citation, stays
+  `"unchecked"` (reference form `plain-element`), for the reason "Item 4 is
+  `met` twice" above already documents. A gate-level-Verilog LVS reference
+  would compute it, as another canary's digital partition does; that
+  regenerates the LVS report and moves the `4.digital` pin, so it is a
+  separate follow-up and not done here.
+- **The place-and-route citation is unpinned.** The response records
+  `provenance.input.content_hash` (role `netlist`) but no `file`, `layout` or
+  `source` field naming that input, and the digest matches no committed file,
+  so `signoff/check.py`'s envelope-vs-input step has nothing to compare it
+  against. `check.py` exempts it from that step (`PNR_ENVELOPE`), as it does
+  `7.digital`'s envelope, and the manifest carries no `content_hash` for it.
+  The cost is that drift in this file is not detected by `check.py`; the
+  recorded verdict still changes if its `power` block changes, because the
+  grader re-reads it. The tool gap, that the response gives no resolvable
+  input path for consumer-side freshness checks, is filed generically as
+  `2AMLogic/klayout-tools#3751`.
 
 ### Items 1, 2, 9 and 10 are cited from hashed inventories
 
@@ -1008,6 +1023,58 @@ be emitted as a graded `klt` envelope. Findings against the pinned klt 0.6.0
   is unchanged. When the upstream gaps close, the sweep's producer is the
   caller that should switch to `klt sta`.
 
+## Item 5 analog: which spec rows a `klt sim` envelope could cover
+
+[#654](https://github.com/2AMLogic/gf180-trng/issues/654) asked whether
+klayout-tools 0.7.0 (#2533: a `klt sim` `measurements[]` entry may carry a
+single-line `expr`, evaluated inside `klt sim`'s own `.control` block) opens
+`5.analog`. The tool no longer stands in the way. This section is the
+enumeration the issue asked for, row by row, against the README's target
+specification and the status tags defined in
+[`docs/spec-row-status.md`](../docs/spec-row-status.md#status-tags). The
+question for each row is whether a *measured quantity with a ratified bound*
+exists for a `klt sim` envelope to report pass/fail on.
+
+**Result: none does, so no envelope is written and `5.analog` stays uncited.**
+Writing one anyway would have meant choosing a bound the spec does not state,
+which is the thing this repository's spec process exists to prevent.
+
+| Spec row | Status tag | Analog quantity | Expressed? | Why |
+|---|---|---|---|---|
+| Entropy source | `specified` | the jitter-budget inequality `Q_array ≥ 1.5 × 4.0×10⁻³` (DR-0007 §2) | declared gap | A design decision with no measured quantity to meet or miss. The inequality is evaluated by `sim/tools/array_sizing.py` from committed period and supply-current records plus a constant `a = 7.32` taken from a long-transient jitter measurement (`sim/tb/ro-ring5-starved-jitter-long-batch/request-ring5-hot.json`); the statistic over that long transient is not a scalar `expr`, and no transistor-level run of the array's own `σ_acc` is affordable. |
+| Raw rate | unratified (`unmeasured`) | — | excluded | One of the four rows `README.md` says are still unratified. |
+| Raw min-entropy per bit | unratified (`unmeasured placeholder`) | — | excluded | Same; no `H` figure is supportable by transistor-level simulation. |
+| Quality | `specified` | none | declared gap | A conformance statement; 90B validation is deferred to measured silicon (DR-0004). |
+| Conditioning | `specified` | none (digital, behavioral per DR-0009) | declared gap | Not an analog quantity; and ratified unmeasured. |
+| Delivered rate | `derived from target` | none | declared gap | Arithmetic on the unmeasured raw-rate target. |
+| Health tests | `specified` | none (closed-form, digital) | declared gap | No PVT dependence and no analog quantity. |
+| Time-to-first-valid | `derived from target` | oscillator start-up, 27 points (`sim/tb/ro-array-core-startup/`) | declared gap | The row's bound (`≥ ~0.640 s`) is an arithmetic floor made of sample counts at the unmeasured 2 kbps; the oscillator term is 4–13 ns against it and has **no bound of its own**. The bench reports edge times and swings, and `sim/tools/time_to_first_valid.py` applies a 1 % first-and-thereafter convergence walk to them, a tolerance the records deliberately leave out. An envelope would need a start-up limit the spec does not state. |
+| Power | unratified (`missed`) | — | excluded | The four-row exclusion. |
+| Area | unratified (`missed`) | — | excluded | The four-row exclusion; not a simulation quantity. |
+| Operating envelope | `specified` | the corner set itself | declared gap | Defines the corners every other row is evaluated over; it is not a quantity with a pass/fail. |
+| Interface | `specified` | none | declared gap | A digital interface decision. |
+
+No row has a `met` or `missed` tag outside the four-row exclusion, which is
+the repository's own definition of "has a measured quantity". Counting rows
+with a measured analog quantity *and* a ratified bound gives zero, so there
+are no per-corner values to compare against `sim/records/`: the agreement
+check in the issue has nothing to compare, and no existing record or spec
+bound is touched.
+
+Two facts about the grader bear on any later attempt:
+
+- The grader pin stays at 0.6.0. Citing an `expr` measurement needs the 0.7.0
+  bump, but with nothing to cite the bump would only re-render the record.
+- The 0.7.0 wheel grades item 5 from **one** `sim` envelope per partition. The
+  declared-row-set support for several envelopes (klayout-tools#2959, closed
+  2026-10-15) is not in the 0.7.0 `signoff.py`. A block whose analog spec
+  needs several testbenches therefore cannot cite them as a set at a released
+  build yet; this is already tracked upstream, so no new issue is filed.
+
+What would change this: a ratified bound on a quantity a bench measures (a
+start-up limit, a jitter figure, a rate), by a superseding decision record,
+not by an edit here.
+
 ## What would move the needle
 
 In dependency order, not effort order:
@@ -1036,9 +1103,11 @@ In dependency order, not effort order:
    parasitics at a chosen interconnect corner, interconnect-corner matrix,
    per-port input transition). Item 5's *design* gap (four ratified
    rows still missed) is real and separate. The analog half is not on this
-   list as work this block can do today: `klt sim` is uncitable for a spec
-   needing caller-side post-processing until klayout-tools#2533 resolves --
-   see item 5's row above.
+   list as work this block can do today, for a different reason than it was:
+   `klt sim` can express a caller-side post-processed measurement since
+   klayout-tools 0.7.0 (#2533), but no ratified analog row has a measured
+   quantity and a bound to put in one -- see "Item 5 analog: which spec rows a
+   `klt sim` envelope could cover".
 4. ~~**A `klt pex` report** over the post-layout extraction that already
    exists (item 7).~~ **Done for ring1 only** —
    [#326](https://github.com/2AMLogic/gf180-trng/issues/326) cites a native
@@ -1057,8 +1126,9 @@ In dependency order, not effort order:
    and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
    the spec's `ties[]` once klayout-tools#2186 shipped, so `erc.missing_tie`
    is now computed and zero. Item 11 still does not read `met`: `11.digital` is cited
-   (#321) as a lone ERC report and `11.analog` (#327) as three, and both
-   read `unmet` / `wrong_kind`, and the digital column's `power_connectivity.status: "match"`
+   (#321) and `11.analog` (#327) with ERC reports, and as of #655 both cite the
+   full compound set and read a graded `unmet` (`supply_spec_disclosed_unexpressible`
+   / `lvs_supply_unproven`); the digital column's `power_connectivity.status: "match"`
    requirement stays `"unchecked"` — see "Item 11's `ties[]`" above.
 
 Items 1, 2, 9 and 10 were the ones that needed nothing built — only an honest
@@ -1070,7 +1140,7 @@ Item 11's remaining gaps are tracked under
 general gap-to-T1 tracker. Tool-side friction this surfaces is filed at
 `2AMLogic/klayout-tools`, per this repo's friction protocol (`CLAUDE.md`) —
 so far klayout-tools#2342, #2531 (item 6's `klt yield` unreachable from any
-published release), #2533 (item 5's analog half uncitable at any release)
+published release), #2533 (item 5's analog half uncitable before 0.7.0; resolved there)
 and #2526 (a pinned klayout-tools version does not pin the grading
 ruleset).
 
