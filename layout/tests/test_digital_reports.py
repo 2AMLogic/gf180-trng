@@ -175,9 +175,7 @@ class CommittedViewTests(unittest.TestCase):
         }
         view = lvs._committed_view(payload, {})
         self.assertEqual(view["layout"], "layout/digital/trng_top.extracted.spice")
-        self.assertEqual(
-            view["reference"], "layout/digital/trng_top.lvs_reference.spice"
-        )
+        self.assertEqual(view["reference"], "layout/digital/trng_top.pnr.v")
         for field in ("layout", "reference"):
             self.assertTrue(
                 (REPO_ROOT / view[field]).is_file(),
@@ -248,14 +246,15 @@ class CommittedEnvelopeTests(unittest.TestCase):
                 )
 
     def test_lvs_keeps_the_reference_generation_disclosure(self):
-        """The digital reference is a mechanical transcription of
-        `trng_top.pnr.v`, not an independently captured schematic netlist.
-        That caveat is not in `klt`'s envelope, so it must stay in ours."""
+        """The digital reference is the as-built `trng_top.pnr.v` itself,
+        not an independently captured schematic netlist. That caveat is not
+        in `klt`'s envelope, so it must stay in ours."""
         generation = self.lvs.get("reference_generation") or {}
         self.assertEqual(generation.get("generator"), "layout/digital/lvs.py")
         self.assertEqual(
             generation.get("source"), "layout/digital/trng_top.pnr.v"
         )
+        self.assertEqual(generation.get("form"), "gate-level-verilog")
 
     def test_lvs_records_both_coverage_verdicts_it_is_asked_to_disclose(self):
         """`power_connectivity` and `body_verification` are what
@@ -265,6 +264,12 @@ class CommittedEnvelopeTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertIsInstance(self.lvs.get(field), dict)
                 self.assertIn("status", self.lvs[field])
+
+    def test_lvs_power_connectivity_is_computed_not_unchecked(self):
+        """T1 item 11's digital column needs a computed power verdict (#662).
+        `"unchecked"` is what the SPICE-reference form reports by
+        construction; a regression to it re-opens `lvs_supply_unproven`."""
+        self.assertIn(self.lvs["power_connectivity"]["status"], ("match", "mismatch"))
 
 
 class ManifestCitationTests(unittest.TestCase):
