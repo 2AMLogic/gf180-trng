@@ -24,7 +24,6 @@ import argparse
 import hashlib
 import json
 import math
-import platform
 import sys
 import time
 from datetime import datetime, timezone
@@ -241,80 +240,43 @@ def run_scenario(name: str) -> dict:
 
 
 def _frontmatter(stem: str, result: dict, git: dict, raw_files) -> str:
-    tb_path = TB_DIR / "run_demo.py"
-    model_path = REPO_ROOT / "design" / "conditioner" / "crc32_conditioner.py"
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    lines = [
-        "---",
-        f"record: {stem}",
-        f"date: {now}",
-        "status: valid",
-        "",
-        "level: behavioral (see spec/decision-records/"
-        "DR-0009-behavioral-vs-transistor-verification-split.md)",
-        "",
-        "testbench:",
-        f"  path: sim/tb/{SLUG}/run_demo.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, tb_path)}",
-        "netlist:",
-        "  path: design/conditioner/crc32_conditioner.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, model_path)}",
-        "  note: >-",
-        "    Behavioral-level record: the DUT is the normative behavioural model,",
-        "    not a schematic-derived netlist. The synthesisable RTL",
-        "    design/conditioner/crc32_conditioner.v is checked bit-for-bit against",
-        "    this model by sim/tests/test_conditioner.py.",
-        f"repo_commit: {report.repo_commit_field(git)}",
-        "",
-        "pdk: n/a (behavioral-level record -- no device models are instantiated, "
-        "per DR-0009)",
-        "pdk.models:",
-        "  - n/a (behavioral-level record)",
-        "",
-        "tool:",
-        f'  ngspice: "n/a (behavioral-level record -- ngspice is not invoked)"',
-        f'  python: "{platform.python_version()} ({platform.python_implementation()})"',
-        f"  platform: {platform.platform()}",
-        "",
-        "corner:",
-        "  process: n/a (behavioral-level record -- no device models, so no process "
-        "corner exists; DR-0009 forbids citing this record for any P/V/T-dependent "
-        "claim)",
-        "  voltage: n/a (behavioral-level record)",
-        "  temperature: n/a (behavioral-level record)",
-        "",
-        "analysis:",
-        "  type: behavioral-bitstream",
-        f"  tstop: n/a (cycle-count driven: {result['raw_bits']} sampler clocks)",
-        "  tstep: n/a",
-        "  tmax: n/a",
-        "  noise_params: n/a (no device noise -- the source is the declared synthetic "
+    return report.behavioral_frontmatter(
+        stem=stem,
+        git=git,
+        raw_files=raw_files,
+        repo_root=REPO_ROOT,
+        testbench=f"sim/tb/{SLUG}/run_demo.py",
+        netlist="design/conditioner/crc32_conditioner.py",
+        netlist_note=[
+            "Behavioral-level record: the DUT is the normative behavioural model,",
+            "not a schematic-derived netlist. The synthesisable RTL",
+            "design/conditioner/crc32_conditioner.v is checked bit-for-bit against",
+            "this model by sim/tests/test_conditioner.py.",
+        ],
+        analysis_type="behavioral-bitstream",
+        tstop=f"n/a (cycle-count driven: {result['raw_bits']} sampler clocks)",
+        noise_params="n/a (no device noise -- the source is the declared synthetic "
         "model in sim/tb/conditioner-crc32/source_model.py)",
-        "  runs: 1",
-        f"seeds: [{result['seed']}]   # SHA-256 counter-mode source, "
+        seeds=f"[{result['seed']}]   # SHA-256 counter-mode source, "
         "bit-identical on any platform",
-        "",
-        "source_model:",
-        f"  kind: {'stuck-at-0 (min-entropy 0)' if result['declared_h_per_bit'] == '0' else 'IID biased binary'}",
-        f"  declared_min_entropy_per_sample: {result['declared_h_per_bit']}",
-        f"  target_p_one: {result['source_p_one_target']}",
-        f"  u32_threshold: {result['source_threshold_u32']}",
-        "",
-        "conditioner:",
-        "  function: 32-bit Galois LFSR, CRC-32 (IEEE 802.3) reflected poly 0xEDB88320",
-        "  vetted: false (SP 800-90B non-vetted conditioning component)",
-        f"  K: {cond.K}",
-        f"  block_bits: {cond.BLOCK_BITS}",
-        "",
-        "raw:",
-        f"  path: sim/records/raw/{stem}/",
-        "  files:",
-    ]
-    for name, digest in raw_files:
-        lines.append(f"    - {name}  sha256:{digest}")
-    lines.append(f"wall_time: {result['wall_time_s']:.1f}s")
-    lines.append("---")
-    return "\n".join(lines)
+        sections=[
+            [
+                "source_model:",
+                f"  kind: {'stuck-at-0 (min-entropy 0)' if result['declared_h_per_bit'] == '0' else 'IID biased binary'}",
+                f"  declared_min_entropy_per_sample: {result['declared_h_per_bit']}",
+                f"  target_p_one: {result['source_p_one_target']}",
+                f"  u32_threshold: {result['source_threshold_u32']}",
+            ],
+            [
+                "conditioner:",
+                "  function: 32-bit Galois LFSR, CRC-32 (IEEE 802.3) reflected poly 0xEDB88320",
+                "  vetted: false (SP 800-90B non-vetted conditioning component)",
+                f"  K: {cond.K}",
+                f"  block_bits: {cond.BLOCK_BITS}",
+            ],
+        ],
+        wall_time=f"{result['wall_time_s']:.1f}s",
+    )
 
 
 def _body(result: dict) -> str:

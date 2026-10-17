@@ -39,7 +39,7 @@
         },
         {
           "path": "sim/tb/conditioned-stream-battery/run_battery.py",
-          "sha256": "sha256:91eb2154f040da87f2c60f86a702f60c3982e4d8537d1f3b2f507b71eff577a5"
+          "sha256": "sha256:dccf247f788b4aa81536aa15538ec58fdcb5a96d730c5ca730454d249eb946d1"
         }
       ]
     },
@@ -55,7 +55,7 @@
         },
         {
           "path": "sim/tb/conditioner-crc32/run_demo.py",
-          "sha256": "sha256:4d90947a656df29c4d23217c1816e9c761d6771c62fd31e0350b15c724ceab25"
+          "sha256": "sha256:0b46d87e9378f5fd0eaa1dce7b3e8a9158eefdfd93deee5bbfb63f395b31f7d0"
         },
         {
           "path": "sim/tb/conditioner-crc32/source_model.py",
@@ -123,7 +123,7 @@
         },
         {
           "path": "sim/tb/health-test-fault-injection/run_demo.py",
-          "sha256": "sha256:949b6e47d59f8d257be3ac6bc96a08b6ded294a58f1d95dfe03868071329fe2e"
+          "sha256": "sha256:bfe627c54b6dd670e6bf95521903a53741b9fd3a1b6d36598d0755bd6cf79a56"
         },
         {
           "path": "sim/tb/health-test-fault-injection/tb_rtl_equivalence.v",
@@ -143,7 +143,7 @@
         },
         {
           "path": "sim/tb/interface-regfile/run_demo.py",
-          "sha256": "sha256:263faa0eb282caba7c54e73bd1f376656f6ce871945737bcb96c1a53b00724a0"
+          "sha256": "sha256:c982382a84b2416dfa45c0402f2c53e486b1f84e78ec4f2b2bd88d7ce651c23c"
         },
         {
           "path": "sim/tb/interface-regfile/tb_rtl_equivalence.v",
@@ -167,7 +167,7 @@
         },
         {
           "path": "sim/tb/ring-liveness-fault-injection/run_demo.py",
-          "sha256": "sha256:4aac30825391e14398f2d93fd4207beae6bca5c365c689fc1e0dbf420284daf7"
+          "sha256": "sha256:481baa9f5350a16ddf0a017f111eb5a37b5b83e11a91e56dece11343bfeaf081"
         },
         {
           "path": "sim/tb/ring-liveness-fault-injection/tb_rtl_equivalence.v",
@@ -191,7 +191,7 @@
         },
         {
           "path": "sim/tb/smoke-trng-top/run_demo.py",
-          "sha256": "sha256:142e81a0676a79ba127f87c1f4450f5d2181e59cadc5c939f937be7c9131f088"
+          "sha256": "sha256:3a5a577e61f9dd0fe564d95e34a530e14383915dd43ce81e886e339907a32f1d"
         }
       ]
     },

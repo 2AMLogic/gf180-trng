@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import platform
 import sys
 import time
 from datetime import datetime, timezone
@@ -339,79 +338,42 @@ def run_scenario(name: str) -> dict:
 
 
 def _frontmatter(stem: str, result: dict, git: dict, raw_files) -> str:
-    tb_path = TB_DIR / "run_demo.py"
-    model_path = REPO_ROOT / "design" / "health_test" / "rct_apt.py"
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    lines = [
-        "---",
-        f"record: {stem}",
-        f"date: {now}",
-        "status: valid",
-        "",
-        "level: behavioral (see spec/decision-records/"
-        "DR-0009-behavioral-vs-transistor-verification-split.md)",
-        "",
-        "testbench:",
-        f"  path: sim/tb/{SLUG}/run_demo.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, tb_path)}",
-        "netlist:",
-        "  path: design/health_test/rct_apt.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, model_path)}",
-        "  note: >-",
-        "    Behavioral-level record: the DUT is the normative behavioural model,",
-        "    not a schematic-derived netlist. The synthesisable RTL",
-        "    design/health_test/rct_apt.v is checked cycle-for-cycle against this",
-        "    model by sim/tests/test_health_test.py.",
-        f"repo_commit: {report.repo_commit_field(git)}",
-        "",
-        "pdk: n/a (behavioral-level record -- no device models are instantiated, "
-        "per DR-0009)",
-        "pdk.models:",
-        "  - n/a (behavioral-level record)",
-        "",
-        "tool:",
-        '  ngspice: "n/a (behavioral-level record -- ngspice is not invoked)"',
-        f'  python: "{platform.python_version()} ({platform.python_implementation()})"',
-        f"  platform: {platform.platform()}",
-        "",
-        "corner:",
-        "  process: n/a (behavioral-level record -- no device models, so no process "
-        "corner exists; DR-0009 forbids citing this record for any P/V/T-dependent "
-        "claim)",
-        "  voltage: n/a (behavioral-level record)",
-        "  temperature: n/a (behavioral-level record)",
-        "",
-        "analysis:",
-        "  type: behavioral-bitstream",
-        f"  tstop: n/a (cycle-count driven: {result.get('n_bits', 'n/a')} sampler clocks)",
-        "  tstep: n/a",
-        "  tmax: n/a",
-        "  noise_params: n/a (no device noise -- the source is one of the declared "
+    return report.behavioral_frontmatter(
+        stem=stem,
+        git=git,
+        raw_files=raw_files,
+        repo_root=REPO_ROOT,
+        testbench=f"sim/tb/{SLUG}/run_demo.py",
+        netlist="design/health_test/rct_apt.py",
+        netlist_note=[
+            "Behavioral-level record: the DUT is the normative behavioural model,",
+            "not a schematic-derived netlist. The synthesisable RTL",
+            "design/health_test/rct_apt.v is checked cycle-for-cycle against this",
+            "model by sim/tests/test_health_test.py.",
+        ],
+        analysis_type="behavioral-bitstream",
+        tstop=f"n/a (cycle-count driven: {result.get('n_bits', 'n/a')} sampler clocks)",
+        noise_params="n/a (no device noise -- the source is one of the declared "
         f"synthetic models in sim/tb/{SLUG}/fault_injection.py)",
-        "  runs: 1",
-        f"seeds: [{result.get('seed', 'n/a')}]   # SHA-256 counter-mode source, "
+        seeds=f"[{result.get('seed', 'n/a')}]   # SHA-256 counter-mode source, "
         "bit-identical on any platform",
-        "",
-        "health_test:",
-        f"  c_rct: {result.get('c_rct', 'n/a')}",
-        f"  c_apt: {result.get('c_apt', 'n/a')}",
-        f"  w: {result.get('w', 'n/a')}",
-        "  cutoff_source: DR-0002 formulas at H0 = 0.5 (design/health_test/rct_apt.py)",
-        "",
-        "input_source:",
-        "  kind: declared synthetic (DR-0009 rule 4 -- no transistor-derived raw "
-        "bitstream is committed yet)",
-        f"  declared_min_entropy_per_sample: {result.get('declared_h', 'n/a')}",
-        "",
-        "raw:",
-        f"  path: sim/records/raw/{stem}/",
-        "  files:",
-    ]
-    for name, digest in raw_files:
-        lines.append(f"    - {name}  sha256:{digest}")
-    lines.append(f"wall_time: {result['wall_time_s']:.1f}s")
-    lines.append("---")
-    return "\n".join(lines)
+        sections=[
+            [
+                "health_test:",
+                f"  c_rct: {result.get('c_rct', 'n/a')}",
+                f"  c_apt: {result.get('c_apt', 'n/a')}",
+                f"  w: {result.get('w', 'n/a')}",
+                "  cutoff_source: DR-0002 formulas at H0 = 0.5 (design/health_test/rct_apt.py)",
+            ],
+            [
+                "input_source:",
+                "  kind: declared synthetic (DR-0009 rule 4 -- no transistor-derived raw "
+                "bitstream is committed yet)",
+                f"  declared_min_entropy_per_sample: {result.get('declared_h', 'n/a')}",
+            ],
+        ],
+        wall_time=f"{result['wall_time_s']:.1f}s",
+    )
 
 
 def _body(result: dict) -> str:

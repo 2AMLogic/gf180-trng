@@ -283,6 +283,119 @@ def finalize_record(
     return publish_record_text(records_dir / f"{stem}.md", text)
 
 
+BEHAVIORAL_PDK = (
+    "n/a (behavioral-level record -- no device models are instantiated, per DR-0009)"
+)
+BEHAVIORAL_NGSPICE = "n/a (behavioral-level record -- ngspice is not invoked)"
+BEHAVIORAL_PROCESS = (
+    "n/a (behavioral-level record -- no device models, so no process corner "
+    "exists; DR-0009 forbids citing this record for any P/V/T-dependent claim)"
+)
+
+
+def behavioral_frontmatter(
+    *,
+    stem: str,
+    git: dict,
+    raw_files,
+    repo_root: Path,
+    testbench: str,
+    netlist: str,
+    netlist_note: list[str],
+    analysis_type: str,
+    tstop: str,
+    noise_params: str,
+    seeds: str,
+    wall_time: str,
+    sections: list[list[str]] = (),
+    level_suffix: str = "",
+    pre_commit_sections: list[list[str]] = (),
+    tool_extra: list[str] = (),
+    pdk: str = BEHAVIORAL_PDK,
+    ngspice: str = BEHAVIORAL_NGSPICE,
+    process: str = BEHAVIORAL_PROCESS,
+) -> str:
+    """Render the frontmatter of a behavioral-level (DR-0009) record.
+
+    The record skeleton shared by the ``sim/tb/*`` behavioral runners: the
+    ``record``/``date``/``status`` header, the DR-0009 ``level`` line, the
+    ``testbench``/``netlist`` blob SHAs, ``repo_commit``, the ``n/a``
+    device-model fields (``pdk``, ``tool.ngspice``, ``corner.*``,
+    ``analysis.tstep``/``tmax``), the python/platform lines, and the
+    trailing ``raw`` checksum list. Each runner passes only what differs.
+
+    ``testbench`` and ``netlist`` are repo-relative paths whose blob SHAs are
+    hashed here. ``netlist_note`` is the folded ``note: >-`` body, one entry
+    per line (already unindented). ``tstop``, ``noise_params`` and ``seeds``
+    are the text following their keys. ``sections`` are the runner-specific
+    blocks (``source_model:``, ``interface:`` ...), each a list of lines,
+    emitted after ``analysis`` and separated by blank lines;
+    ``pre_commit_sections`` are blocks emitted between ``netlist`` and
+    ``repo_commit``. ``tool_extra`` lines go between ``python`` and
+    ``platform``. ``pdk``, ``ngspice`` and ``process`` override the default
+    ``n/a`` wording for a runner whose text legitimately differs.
+    ``wall_time`` is the pre-formatted ``wall_time`` value.
+    """
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    lines = [
+        "---",
+        f"record: {stem}",
+        f"date: {now}",
+        "status: valid",
+        "",
+        "level: behavioral (see spec/decision-records/"
+        "DR-0009-behavioral-vs-transistor-verification-split.md)" + level_suffix,
+        "",
+        "testbench:",
+        f"  path: {testbench}",
+        f"  sha: {blob_sha(repo_root, repo_root / testbench)}",
+        "netlist:",
+        f"  path: {netlist}",
+        f"  sha: {blob_sha(repo_root, repo_root / netlist)}",
+        "  note: >-",
+        *[f"    {n}" for n in netlist_note],
+    ]
+    for block in pre_commit_sections:
+        lines += ["", *block]
+    if pre_commit_sections:
+        lines.append("")
+    lines += [
+        f"repo_commit: {repo_commit_field(git)}",
+        "",
+        f"pdk: {pdk}",
+        "pdk.models:",
+        "  - n/a (behavioral-level record)",
+        "",
+        "tool:",
+        f'  ngspice: "{ngspice}"',
+        f'  python: "{platform.python_version()} ({platform.python_implementation()})"',
+        *tool_extra,
+        f"  platform: {platform.platform()}",
+        "",
+        "corner:",
+        f"  process: {process}",
+        "  voltage: n/a (behavioral-level record)",
+        "  temperature: n/a (behavioral-level record)",
+        "",
+        "analysis:",
+        f"  type: {analysis_type}",
+        f"  tstop: {tstop}",
+        "  tstep: n/a",
+        "  tmax: n/a",
+        f"  noise_params: {noise_params}",
+        "  runs: 1",
+        f"seeds: {seeds}",
+    ]
+    for block in sections:
+        lines += ["", *block]
+    lines += ["", "raw:", f"  path: sim/records/raw/{stem}/", "  files:"]
+    for name, digest in raw_files:
+        lines.append(f"    - {name}  sha256:{digest}")
+    lines.append(f"wall_time: {wall_time}")
+    lines.append("---")
+    return "\n".join(lines)
+
+
 def publish_record_text(path: Path, text: str) -> Path:
     """Create ``path`` holding ``text``; never replace an existing file.
 
