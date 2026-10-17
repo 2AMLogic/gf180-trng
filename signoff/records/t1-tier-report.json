@@ -520,7 +520,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:5dc40bf149d3ee7b6559eb1bdd823805af885dc7fdaa1f71496ea184d8cc92d4",
+        "content_hash": "sha256:b51da1a70c4974bbffe37cdd7546e115f4ec65e5cec9186b88e7cf831f24f17c",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -529,7 +529,7 @@
             "path": "signoff/evidence/inventory-9-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:5dc40bf149d3ee7b6559eb1bdd823805af885dc7fdaa1f71496ea184d8cc92d4",
+          "content_hash": "sha256:b51da1a70c4974bbffe37cdd7546e115f4ec65e5cec9186b88e7cf831f24f17c",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), digital partition: 9 digital testbench directories under sim/tb/ (40 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-digital.json"
