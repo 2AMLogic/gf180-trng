@@ -6,6 +6,12 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-17
 
+- **PR #667**: refactor(signoff): share the klt pex publish pipeline across publishers
+- **PR #666**: refactor(sim): share behavioral record frontmatter across six runners
+- **PR #646**: ci(nightly): pin yowasp-yosys to 0.69.0.0.post1233
+- **Issue #665** (closed): Deduplicate signoff publish scripts: combiner_sampler and ring2 share one pipeline
+- **Issue #660** (closed): Consolidate duplicated behavioral-record frontmatter across six sim/tb runners
+- **Issue #630** (closed): PDK nightly red: Yosys 0.70 (yowasp-yosys, unpinned) makes trng_top.synth.{v,json} STALE
 - **PR #664**: lvs: compare digital layout to trng_top.pnr.v as gate-level Verilog
 - **PR #661**: signoff: cite hashed inventories for T1 items 1, 2, 9 and 10 on both partitions
 - **PR #659**: docs(signoff): enumerate analog spec rows against klt 0.7.0 expr, declare no citable row
