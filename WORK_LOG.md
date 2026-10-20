@@ -1,8 +1,12 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-17.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-20.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-20
+
+- **PR #672**: docs(sim): assess retiring the array tap-phase launcher; keep it pending replacement
 
 ### 2026-10-17
 
