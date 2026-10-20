@@ -6,6 +6,7 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-20
 
+- **Issue #663** (closed): Remove run_array_liveness_tap_phase.py: finished one-experiment launcher (~600 LOC)
 - **PR #672**: docs(sim): assess retiring the array tap-phase launcher; keep it pending replacement
 
 ### 2026-10-17
