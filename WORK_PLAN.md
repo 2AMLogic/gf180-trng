@@ -9,7 +9,6 @@ dependency block or an operator-only decision.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
-- **#675**: Bump Repo Skills 0.24.3 -> 0.24.7
 
 ## Very Important
 
@@ -27,16 +26,16 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
-- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
-- **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+- **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
+- **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 
 ## PRs Awaiting Review
 
@@ -49,7 +48,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
-- **#675**: Bump Repo Skills 0.24.3 -> 0.24.7
 
 ## Proposed
 
@@ -69,7 +67,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#677**: Trim 10 MB of per-gate tables from the committed digital ERC report *(hermit)*
 
 ## Epics
 
@@ -79,14 +77,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
+| Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 4 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 11 |
-| Architect / Hermit proposals | 0 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
