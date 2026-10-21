@@ -209,6 +209,17 @@ class FreshnessTests(unittest.TestCase):
         self.assertEqual(out["erc_coverage"]["floating_gate_checked_count"], 1)
         self.assertEqual(native["erc_coverage"]["checked"][0], 'erc.floating_gate:["gate0"]')
 
+    def test_project_report_gates_stub_keeps_an_empty_gates_key(self):
+        native = {
+            "gates": [{"gate_id": "gate0"}], "coverage": {"scope": "antenna"},
+            "gate_count": 1, "erc_coverage": {"checked": [], "skipped": []},
+        }
+        out = erc_supply.project_report(native, gates_stub=True)
+        self.assertEqual(out["gates"], [])
+        self.assertEqual(out["gate_count"], 1)
+        self.assertNotIn("coverage", out)
+        self.assertIn("empty list", out["trimmed"]["gates"])
+
 
 @unittest.skipUnless(_pinned_klt_available(),
                      "needs the pinned klt (0.6.0) first on PATH")

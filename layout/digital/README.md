@@ -103,6 +103,18 @@ it is solved — [#111][gf111].
 > `reports/place_and_route.json` recorded as its input. It does not claim
 > the placement is reproducible. It checks only that the committed
 > implementation was built from the committed netlist.
+>
+> `reports/erc-supply.json` is committed in nearly the same trimmed form as
+> `layout/floorplan/reports/erc-supply.json`: the per-gate antenna entries
+> (`gates` stays as an empty list, because `klt signoff` 0.7.0 renders a
+> report with no `gates` key `unrecognized_envelope`; `gate_count` kept), the all-skipped antenna `coverage` block and
+> the per-gate `erc.floating_gate` ids in `erc_coverage.checked` are dropped
+> (a `trimmed` object records each omission). The projection is
+> `project_report(..., gates_stub=True)` in `layout/floorplan/erc_supply.py`. The report's
+> `provenance`, `erc_status`, findings and per-supply and tie coverage are
+> unchanged, and the manifest pin is the GDS hash in
+> `provenance.input.content_hash`, so no pin moves. The file shrank from
+> about 10.5 MB to 1.5 KB.
 
 ## The one command
 
