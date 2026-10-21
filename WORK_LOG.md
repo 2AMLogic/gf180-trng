@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-21
 
+- **PR #679**: chore(digital): trim per-gate antenna tables from the committed ERC report
+- **Issue #677** (closed): Trim 10 MB of per-gate tables from the committed digital ERC report
 - **PR #675**: Bump Repo Skills 0.24.3 -> 0.24.7
 
 ### 2026-10-20
