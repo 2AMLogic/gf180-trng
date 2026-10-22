@@ -1,11 +1,14 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-21.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-22.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-22
 
+- **PR #684**: fix(signoff): re-pin item 9/10 inventories after README and ci.yml edits
+- **Issue #683** (closed): main CI red after #433: signoff freshness and citation inventories 9/10 stale
+- **PR #433**: Give the strict record-checksum CI step an npm check entry and parity coverage
 - **Issue #432** (closed): Give the strict record-checksum CI step an npm check entry and parity coverage
 
 ### 2026-10-21

@@ -8,7 +8,7 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+_None._
 
 ## Very Important
 
@@ -33,7 +33,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
-- **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 
@@ -47,7 +46,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+_None._
 
 ## Proposed
 
@@ -56,7 +55,6 @@ Issues carrying `loom:curated`.
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
 - **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array *(curated)*
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
-- **#432**: Give the strict record-checksum CI step an npm check entry and parity coverage *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
@@ -77,14 +75,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 4 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 11 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 10 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
