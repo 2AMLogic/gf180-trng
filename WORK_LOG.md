@@ -4,6 +4,10 @@ Merged PRs and closed issues recorded from recent 30-day query windows, through 
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
+### 2026-10-22
+
+- **Issue #432** (closed): Give the strict record-checksum CI step an npm check entry and parity coverage
+
 ### 2026-10-21
 
 - **PR #679**: chore(digital): trim per-gate antenna tables from the committed ERC report
