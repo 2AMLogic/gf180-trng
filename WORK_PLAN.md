@@ -8,7 +8,7 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#688**: feat(sim): store raw output of new recorded runs in the artifact store
 
 ## Very Important
 
@@ -47,7 +47,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#688**: feat(sim): store raw output of new recorded runs in the artifact store
 
 ## Proposed
 
@@ -77,13 +77,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 11 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
