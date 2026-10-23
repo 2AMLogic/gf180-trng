@@ -163,7 +163,9 @@ def snapshot_manifest(tb: Testbench, raw_dir: Path) -> tuple[str, str] | None:
     return MANIFEST_SNAPSHOT_NAME, sha256_file(path)
 
 
-def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
+def allocate_record_stems(
+    records_dir: Path, date: str, slug: str, count: int, lock_root: Path | None = None
+) -> list[str]:
     """Mint ``count`` consecutive unused ``<date>-<slug>-<nn>`` stems.
 
     Append-only: never reuses a sequence number, even across superseded
@@ -191,6 +193,8 @@ def allocate_record_stems(records_dir: Path, date: str, slug: str, count: int) -
     max_n = 0
     candidates = list(records_dir.glob(f"{prefix}*.md"))
     candidates += [p for p in (records_dir / RAW_DIRNAME).glob(f"{prefix}*") if p.is_dir()]
+    if lock_root is not None and lock_root.is_dir():
+        candidates += [p for p in lock_root.glob(f"{prefix}*") if p.is_dir()]
     for path in candidates:
         suffix = path.stem[len(prefix):]
         if suffix.isdigit():
@@ -203,7 +207,9 @@ def allocate_record_stem(records_dir: Path, date: str, slug: str) -> str:
     return allocate_record_stems(records_dir, date, slug, 1)[0]
 
 
-def reserve_record_stems(records_dir: Path, date: str, slug: str, count: int) -> list[str]:
+def reserve_record_stems(
+    records_dir: Path, date: str, slug: str, count: int, lock_root: Path | None = None
+) -> list[str]:
     """Claim ``count`` stems, using ``mkdir`` of ``raw/<stem>/`` as the lock.
 
     Scanning for the next free number and then using it (what
@@ -219,17 +225,21 @@ def reserve_record_stems(records_dir: Path, date: str, slug: str, count: int) ->
     other moves on to the next sequence number. The scan above is still
     used to pick a sensible starting point so this does not walk from 01
     on every run.
+
+    ``lock_root`` moves the lock out of ``records/raw/`` for stored evidence
+    (``evidence_store``): ``<lock_root>/<stem>/`` is then the claim *and* the
+    staging directory, and no ``records/raw/<stem>/`` is ever created.
     """
     prefix = f"{date}-{slug}-"
-    raw_root = records_dir / RAW_DIRNAME
+    raw_root = lock_root if lock_root is not None else records_dir / RAW_DIRNAME
     raw_root.mkdir(parents=True, exist_ok=True)
-    start = allocate_record_stems(records_dir, date, slug, 1)[0]
+    start = allocate_record_stems(records_dir, date, slug, 1, lock_root)[0]
     n = int(start[len(prefix):])
     stems: list[str] = []
     while len(stems) < count:
         stem = f"{prefix}{n:02d}"
         n += 1
-        if (records_dir / f"{stem}.md").exists():
+        if (records_dir / f"{stem}.md").exists() or (records_dir / RAW_DIRNAME / stem).exists():
             # Raw directory removed but the record kept: the number is spent.
             continue
         try:
@@ -501,6 +511,7 @@ def build_record(
     timeout_s: int | None = None,
     model_manifest: ModelManifest | None = None,
     startup_snapshot: startup.Snapshot | None = None,
+    stored_manifest: str = "",
 ) -> dict:
     """Assemble every field sim/README.md's frontmatter requires for one
     (testbench, PVT point) record.
@@ -514,6 +525,12 @@ def build_record(
     bytes, never from re-reading the checkout, and the copy the runs
     consumed is listed in ``raw.files``. When omitted the legacy metadata
     (live-file digest, no snapshot claim) is emitted.
+
+    ``stored_manifest`` (repo-relative path) marks a stored-evidence record:
+    ``raw_dir`` is then the git-ignored staging directory, the frontmatter
+    carries a ``stored_evidence`` table instead of a ``raw:`` block, and the
+    caller sets ``record["stored_files"]`` from the published manifest before
+    the record is written.
     """
     # "status" here is the record's append-only lifecycle state (valid vs.
     # superseded, per sim/README.md), not a pass/fail verdict on the
@@ -618,7 +635,9 @@ def build_record(
         # Additive (#574): absent (None) for analysis types with no measured
         # replay limit, so their records render exactly as before.
         "reproduction": reproduction_scope(tb.analysis_type),
-        "raw_path":_relpath(repo_root, raw_dir) + "/",
+        "raw_path": "" if stored_manifest else _relpath(repo_root, raw_dir) + "/",
+        "stored_manifest": stored_manifest,
+        "stored_files": [],
         "raw_files": raw_files,
         # Not rendered: kept so the record can be re-verified against the
         # directory it was actually hashed from (see verify_record).
@@ -753,14 +772,14 @@ def render_frontmatter(record: dict) -> str:
             f"  basis: {reproduction['basis']}",
             f"  decision: {reproduction['decision']}",
         ]
-    lines += [
-        "",
-        "raw:",
-        f"  path: {record['raw_path']}",
-        "  files:",
-    ]
-    for fname, digest in record["raw_files"]:
-        lines.append(f"    - {fname}  sha256:{digest}")
+    if record.get("stored_manifest"):
+        lines += ["", "stored_evidence:", f"  manifest: {record['stored_manifest']}", "  files:"]
+        for fname, size, digest in record["stored_files"]:
+            lines.append(f"    - {fname}  size:{size}  sha256:{digest}")
+    else:
+        lines += ["", "raw:", f"  path: {record['raw_path']}", "  files:"]
+        for fname, digest in record["raw_files"]:
+            lines.append(f"    - {fname}  sha256:{digest}")
     lines += [
         f"wall_time: {record['wall_time']}",
         "---",
@@ -836,6 +855,13 @@ def render_result_section(record: dict) -> str:
     return "\n".join(lines)
 
 
+def _where(record: dict, name: str) -> str:
+    """Markdown naming where a raw artifact of ``record`` lives."""
+    if record.get("stored_manifest"):
+        return f"`{name}` in the stored evidence (`{record['stored_manifest']}`)"
+    return f"`{record['raw_path']}{name}`"
+
+
 def render_reproduce_section(record: dict, tb: Testbench) -> str:
     lines = ["## How to reproduce", "", "```sh"]
     # --supply/--supply-tol pin the EXACT recorded voltage (tolerance 0 ->
@@ -885,8 +911,8 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
         ]
     if record.get("manifest_sha256"):
         lines += [
-            f"The manifest used is snapshotted as `{record['raw_path']}"
-            f"{record['manifest_snapshot']}` (sha256 `{record['manifest_sha256']}`). "
+            f"The manifest used is snapshotted as {_where(record, record['manifest_snapshot'])}"
+            f" (sha256 `{record['manifest_sha256']}`). "
             f"The commands above read the CURRENT `{record['manifest_rel']}`; check "
             "out `repo_commit` and, if the snapshot differs from the tree "
             "(`diff`), restore the snapshot over it before re-running. See "
@@ -896,8 +922,8 @@ def render_reproduce_section(record: dict, tb: Testbench) -> str:
     if record.get("testbench_sha256"):
         lines += [
             f"The SPICE inputs ngspice consumed are snapshotted next to the decks as "
-            f"`{record['raw_path']}{record['testbench_snapshot']}` and "
-            f"`{record['raw_path']}{record['netlist_snapshot']}` (the decks include "
+            f"{_where(record, record['testbench_snapshot'])} and "
+            f"{_where(record, record['netlist_snapshot'])} (the decks include "
             "these copies, not the working-tree files). `testbench.sha`/`netlist.sha` "
             "hash those same bytes; if they differ from the tree at `repo_commit`, "
             "the run used dirty-tree input -- restore the snapshots over the "
@@ -1037,6 +1063,125 @@ def parse_raw_section(text: str) -> tuple[str, list[tuple[str, str]]]:
     return raw_path, files
 
 
+STORED_FILE_LINE = re.compile(
+    r"^\s*-\s+(?P<name>\S+)\s+size:(?P<size>\d+)\s+sha256:(?P<digest>[0-9a-f]{64})\s*$"
+)
+
+
+def parse_stored_section(text: str) -> tuple[str, list[tuple[str, int, str]]] | None:
+    """Read ``stored_evidence`` (manifest path and table) out of a record.
+
+    ``None`` means the record has no such block (a legacy ``raw:`` record).
+    Same strictness as ``parse_raw_section``: only the initial frontmatter is
+    read and anything malformed raises ``RawSectionError``.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return None
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
+        raise RawSectionError("frontmatter is not terminated by a closing '---' line") from None
+    front = lines[1:end]
+    manifest = ""
+    files: list[tuple[str, int, str]] = []
+    found = False
+    i = 0
+    while i < len(front):
+        line = front[i]
+        i += 1
+        if line.rstrip() != "stored_evidence:":
+            if line.startswith("stored_evidence:"):
+                raise RawSectionError(f"unsupported stored_evidence declaration: {line!r}")
+            continue
+        if found:
+            raise RawSectionError("duplicate 'stored_evidence:' declaration in frontmatter")
+        found = True
+        seen_manifest = seen_files = False
+        while i < len(front) and front[i][:1] in (" ", "\t"):
+            line = front[i]
+            i += 1
+            if not line.strip():
+                continue
+            if line.startswith("  manifest:") and not line.startswith("   "):
+                if seen_manifest:
+                    raise RawSectionError("duplicate 'stored_evidence.manifest' declaration")
+                seen_manifest = True
+                manifest = line.split(":", 1)[1].strip()
+            elif line.rstrip() == "  files:":
+                if seen_files:
+                    raise RawSectionError("duplicate 'stored_evidence.files' declaration")
+                seen_files = True
+                while i < len(front) and front[i][:1] in (" ", "\t"):
+                    entry = front[i]
+                    i += 1
+                    match = STORED_FILE_LINE.match(entry)
+                    if not match:
+                        raise RawSectionError(
+                            "malformed stored_evidence.files entry (want '- <name>  "
+                            f"size:<bytes>  sha256:<64 hex>'): {entry.strip()!r}"
+                        )
+                    files.append(
+                        (match.group("name"), int(match.group("size")), match.group("digest"))
+                    )
+            else:
+                raise RawSectionError(
+                    f"unexpected line inside stored_evidence: {line.strip()!r}"
+                )
+    return (manifest, files) if found else None
+
+
+def verify_stored_record(path: Path, repo_root: Path, stored: tuple[str, list[tuple[str, int, str]]],
+                         text: str) -> list[str]:
+    """Check a stored-evidence record against its committed manifest.
+
+    The table must equal the manifest's entries (name, size, sha256); the
+    manifest must be ``manifests/artifacts/<stem>.manifest.json`` and well
+    formed; the record must carry no ``raw:`` block and have no
+    ``sim/records/raw/<stem>/`` directory beside it. The stored bytes are not
+    re-hashed here; ``klt artifact verify <manifest>`` does that on a fleet
+    worker, against the store.
+    """
+    from . import evidence_store  # local: keeps report importable on its own
+
+    manifest_rel, table = stored
+    stem = path.stem
+    expected_rel = f"{evidence_store.MANIFEST_SUBDIR}/{stem}{evidence_store.MANIFEST_SUFFIX}"
+    problems: list[str] = []
+    if manifest_rel != expected_rel:
+        problems.append(f"stored_evidence.manifest {manifest_rel!r} != {expected_rel!r}")
+    if not table:
+        problems.append("stored_evidence.files lists no files")
+    names = [n for n, _s, _d in table]
+    if len(set(names)) != len(names):
+        problems.append("stored_evidence.files names a file twice")
+    try:
+        raw_path, _raw_files = parse_raw_section(text)
+    except RawSectionError:
+        raw_path = "x"
+    if raw_path:
+        problems.append("stored record also has a raw: block")
+    raw_dir = path.resolve().parent / RAW_DIRNAME / stem
+    if raw_dir.exists():
+        problems.append(f"stored record has a raw directory beside it: {raw_dir}")
+    data, schema = evidence_store.load_manifest(repo_root / expected_rel)
+    problems += [f"manifest: {p}" for p in schema]
+    if data is not None:
+        manifest_table = evidence_store.manifest_table(data)
+        if manifest_table != sorted(table):
+            mine, theirs = set(table), set(manifest_table)
+            for row in sorted(mine - theirs):
+                problems.append(f"table row {row!r} is not in the manifest")
+            for row in sorted(theirs - mine):
+                problems.append(f"manifest entry {row!r} is not in the table")
+    listed = [(n, d) for n, _s, d in table]
+    problems += verify_manifest_reference(text, listed)
+    problems += verify_inputs_reference(text, listed)
+    problems += verify_pdk_content_reference(text, listed, None)
+    problems += verify_startup_reference(text, listed)
+    return problems
+
+
 def verify_raw_files(
     raw_dir: Path, raw_files: list[tuple[str, str]], *, check_unlisted: bool = True
 ) -> list[str]:
@@ -1132,9 +1277,12 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
     """``verify_raw_files`` for a record already written to disk."""
     try:
         text = path.read_text()
+        stored = parse_stored_section(text)
         raw_path, raw_files = parse_raw_section(text)
     except RawSectionError as exc:
         return [f"{path.name}: malformed raw provenance: {exc}"]
+    if stored is not None:
+        return [f"{path.name}: {p}" for p in verify_stored_record(path, repo_root, stored, text)]
     if not raw_path:
         return [f"{path.name}: no raw.path in frontmatter"]
     if not raw_files:

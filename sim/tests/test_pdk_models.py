@@ -24,6 +24,9 @@ sys.path.insert(0, str(SIM_DIR))
 from harness import cli, corners, pdk_models, report, runner, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _fake_store
+import _fake_store  # noqa: E402
+
 TT_SECTIONS = corners.CORNERS["tt"].sections
 SS_SECTIONS = corners.CORNERS["ss"].sections
 
@@ -363,6 +366,7 @@ class MidRunModelChangeTests(unittest.TestCase):
         for patcher in patches:
             patcher.start()
             self.addCleanup(patcher.stop)
+        _fake_store.install(self, self.root, cli)
 
     def _install_runner(self, on_run=None):
         def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
@@ -422,8 +426,8 @@ class MidRunModelChangeTests(unittest.TestCase):
         records = sorted(self.records_dir.glob("*.md"))
         self.assertEqual(len(records), 1)
         self.assertEqual(report.verify_record_file(records[0], self.root), [])
-        # ss is withheld; its raw output and both manifests are retained.
-        raw_dirs = sorted(p for p in (self.records_dir / "raw").iterdir() if p.is_dir())
+        # ss is withheld; its staged raw output and both manifests are retained.
+        raw_dirs = sorted(p for p in (self.root / ".work" / ".stage").iterdir() if p.is_dir())
         withheld = [d for d in raw_dirs if not (self.records_dir / f"{d.name}.md").exists()]
         self.assertEqual(len(withheld), 1)
         kept = {p.name for p in withheld[0].iterdir()}

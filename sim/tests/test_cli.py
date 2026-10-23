@@ -21,6 +21,8 @@ sys.path.insert(0, str(SIM_DIR))
 
 from harness import cli, report, runner  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _fake_store
+import _fake_store  # noqa: E402
 
 
 def _make_variant(root: Path, name: str = "gf180mcuD") -> Path:
@@ -148,6 +150,7 @@ class RunIntegrityTests(unittest.TestCase):
         patcher = mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46")
         patcher.start()
         self.addCleanup(patcher.stop)
+        _fake_store.install(self, self.root, cli)
 
     def _install_runner(self, on_run=None):
         """Stub run_one: write the deck + log a real run would leave behind."""
@@ -704,6 +707,7 @@ class TimeoutSummaryTests(unittest.TestCase):
         patcher = mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46")
         patcher.start()
         self.addCleanup(patcher.stop)
+        _fake_store.install(self, self.root, cli)
 
     def _install_runner(self, timed_out_corner: str):
         def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
