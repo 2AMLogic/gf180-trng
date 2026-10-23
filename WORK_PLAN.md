@@ -26,15 +26,16 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
+- **#686**: Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
 
 ## PRs Awaiting Review
 
@@ -62,6 +63,7 @@ Issues carrying `loom:curated`.
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
+- **#686**: Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -78,11 +80,11 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 10 |
+| Curated | 11 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
