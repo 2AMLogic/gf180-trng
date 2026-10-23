@@ -7,13 +7,11 @@ network, no broker. The real broker is exercised out of band (see the PR).
 from __future__ import annotations
 
 import hashlib
-import io
 import json
 import os
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
