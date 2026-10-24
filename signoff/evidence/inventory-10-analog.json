@@ -21,7 +21,7 @@
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "sha256:e199049d19c002265133ce458dee2c59234ba51df76de4c4bbf9862d3399b94e"
+      "sha256": "sha256:37beb306a90852b0ca05a4030c8a0ca11d4f0b72b6886db21f7eff1e6770a2d6"
     },
     {
       "path": "LICENSE",
@@ -29,11 +29,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "sha256:c1385ac5f8b79789b588f4c5a20822e182e14b6dd929622cef9a35a30b7abcd3"
+      "sha256": "sha256:d702395ff87e43363bc5eb74b75adfae174bb7d55856148b14a1a7cd01a8ed1f"
     },
     {
       "path": "sim/README.md",
-      "sha256": "sha256:521b6fdc6f144a81533a9c765a0036f35bfac034d625dd1272d02ff0e3841121"
+      "sha256": "sha256:edb71543c9cf79f21e0513f142891a4206b4575056af45bd75eb1c6b99d02bfe"
     },
     {
       "path": "spec/ratification-2026-07-31-target-spec.md",

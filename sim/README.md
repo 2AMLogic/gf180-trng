@@ -136,7 +136,8 @@ sim/
   records/                      APPEND-ONLY evidence records
     <YYYY-MM-DD>-<testbench-slug>-<nn>.md
     raw/
-      <YYYY-MM-DD>-<testbench-slug>-<nn>/   raw output for that record
+      <YYYY-MM-DD>-<testbench-slug>-<nn>/   raw output for records written
+                                            before stored evidence (see below)
   tool-experiments/             APPEND-ONLY simulator-behaviour probes
     <YYYY-MM-DD>-<topic>/       decks, logs, SHA256SUMS and a README
 ```
@@ -630,8 +631,12 @@ Mechanical; run through it before committing any record.
       `level: gate-simulation` record does the same and adds a
       `timing_annotation` block naming what the annotation models and omits
       (DR-0022).
-- [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed —
-      `python3 sim/tools/verify_record_checksums.py --changed` exits 0 (see below).
+- [ ] Raw output committed under `sim/records/raw/<stem>/` with checksums listed
+      (legacy records), **or** stored in the artifact store with its manifest committed
+      under `manifests/artifacts/` and a `stored_evidence` table in the record (records
+      from `run_corners.py` after #686) —
+      `python3 sim/tools/verify_record_checksums.py --changed` and
+      `npm run check:artifact-manifests` exit 0 (see below).
 - [ ] "How to reproduce" is copy-pasteable from the repo root.
 - [ ] No claim in the record goes beyond what this run measured.
 - [ ] No existing record was modified, except a permitted `status`/`superseded_by` edit —
@@ -799,6 +804,39 @@ it is visible in the files).
 recomputation from the manifest. Legacy records have no `pdk_content:` block
 and are not affected.
 
+### Stored evidence for new `run_corners.py` runs (#686, DR-0032)
+
+*Additive; records from `run_corners.py` after #686.* A recorded run no longer
+commits its raw output. It stages each point's decks, logs and input snapshots
+in the git-ignored `sim/.work/.stage/<stem>/`, stores them with
+`klt artifact put`, and commits only:
+
+- `manifests/artifacts/<stem>.manifest.json`, one entry per object (name, size,
+  sha256, `uri` starting `artifact:`). It names no bucket, account or broker URL;
+- the record `sim/records/<stem>.md`, whose frontmatter has a `stored_evidence`
+  block (`manifest:` and a `files:` table of `- <name>  size:<bytes>
+  sha256:<hex>`) in place of the `raw:` block. No `sim/records/raw/<stem>/` is
+  created. The `manifest:`, `inputs:` and `pdk_content:` digests are
+  cross-checked against that table exactly as they are against `raw.files`.
+
+The writer fails closed. With `$KLT_ARTIFACT_BROKER` unset, a `klt` that lacks
+`artifact put`, or an unreachable broker, the run exits nonzero (3 before any
+simulation for the first two; 6 if a put fails after the grid) and writes
+nothing under `manifests/` or `sim/records/`; the staged bytes are kept. There
+is no flag that commits bytes instead; `--no-write` is the only run that
+records nothing. Other record writers (the behavioral and gate-level
+`sim/tb/*/run_*.py` callbacks, `signoff/`) are unchanged and keep committing
+their raw output. The store takes 1 byte to 5 GiB per object, so a point with
+an empty staged file is refused before any put rather than half-stored.
+
+Checks: `verify_record_checksums.py` compares the table with the manifest and
+fails on a mismatch, a raw directory beside a stored record, or (corpus run) a
+manifest whose record is missing. `npm run check:artifact-manifests` validates
+schema, `artifact:` URIs and the absence of storage names, and fails if a stored
+object's bytes are committed. Both run in CI. The stored bytes themselves are
+re-hashed by `klt artifact verify manifests/artifacts/<stem>.manifest.json`,
+which needs the broker and so runs on a fleet worker, not in CI.
+
 ### Checking that evidence stays append-only
 
 The checksum command only proves the *current tree* is self-consistent. A record
@@ -828,6 +866,9 @@ shared history exits 2 rather than checking an empty diff. Fetch the base first
 full history and uses the pull request's base SHA for `pull_request` events and
 the pre-push SHA for `push` events; the all-zero "before" SHA of a first push
 therefore fails loudly instead of passing.
+
+`manifests/artifacts/*.manifest.json` are held to the same rule: a new manifest
+passes, any change to or removal of a committed one fails.
 
 ---
 

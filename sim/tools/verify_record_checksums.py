@@ -27,6 +27,14 @@ staged without a record cannot enter the corpus unverified. Untracked local
 work is ignored. Record-scoped runs (explicit records, `--changed`) and
 `--no-git` do not claim corpus-wide inventory coverage and skip (5).
 
+Stored-evidence records (#686, DR-0032) carry a `stored_evidence` table instead
+of a `raw:` block: their raw output lives in the artifact store and git keeps
+`manifests/artifacts/<stem>.manifest.json`. For those, this checks that the
+table equals the manifest (name, size, sha256), that the manifest is well
+formed, and that no raw directory sits beside the record. The stored bytes are
+re-hashed by `klt artifact verify`, on a fleet worker, not here. The corpus-wide
+run also fails on a manifest whose record `sim/records/<stem>.md` is missing.
+
 Usage:
   python3 sim/tools/verify_record_checksums.py                 # every record
                                                                # + raw inventory
@@ -53,7 +61,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import report  # noqa: E402
+from harness import evidence_store, report  # noqa: E402
 
 RECORDS_DIR = SIM_DIR / report.RECORDS_DIRNAME
 
@@ -184,6 +192,18 @@ def orphan_raw_files(tracked: set[str], records: list[Path]) -> list[str]:
     return sorted(t for t in tracked if PurePosixPath(t).as_posix() not in declared)
 
 
+def manifests_without_record(records_dir: Path, manifests_dir: Path) -> list[str]:
+    """Stored-evidence manifests that no record ``<stem>.md`` claims."""
+    if not manifests_dir.is_dir():
+        return []
+    suffix = evidence_store.MANIFEST_SUFFIX
+    return sorted(
+        path.name
+        for path in manifests_dir.glob(f"*{suffix}")
+        if not (records_dir / f"{path.name[:-len(suffix)]}.md").is_file()
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="verify_record_checksums.py",
@@ -232,7 +252,11 @@ def main(argv: list[str] | None = None) -> int:
     if full_inventory and tracked is not None:
         orphans = orphan_raw_files(tracked, records)
 
-    if not records and not orphans:
+    unclaimed: list[str] = []
+    if full_inventory:
+        unclaimed = manifests_without_record(RECORDS_DIR, REPO_ROOT / evidence_store.MANIFEST_SUBDIR)
+
+    if not records and not orphans and not unclaimed:
         print("no records to check")
         return 0
 
@@ -269,6 +293,14 @@ def main(argv: list[str] | None = None) -> int:
             "--cached`); this check never deletes or invents evidence.",
             file=sys.stderr,
         )
+    if unclaimed:
+        print(
+            f"FAIL: {len(unclaimed)} manifest(s) under {evidence_store.MANIFEST_SUBDIR}/ "
+            "name no record under sim/records/:",
+            file=sys.stderr,
+        )
+        for name in unclaimed:
+            print(f"  - {name}", file=sys.stderr)
     if failures:
         print(
             f"FAIL: {failures} of {len(records)} record(s) did not verify. A record "
@@ -277,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    if orphans:
+    if orphans or unclaimed:
         return 1
     scope = "raw output" if args.no_git else "committed raw output"
     print(f"PASS: {len(records)} record(s) match their {scope}.")
