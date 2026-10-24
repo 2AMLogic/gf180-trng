@@ -30,8 +30,17 @@ A syntax error, or an AST / symbol-table block that cannot be matched
 unambiguously, is a checker failure (exit 2) with file and line context --
 never a silent skip. Findings exit 1; a clean tree exits 0.
 
-Inputs are the git-tracked `*.py` files under design/, layout/, signoff/
-and sim/. Usage:
+A second, independent guard (#520) scans every git-tracked `*.py` file
+(outside the tooling trees in EXCLUDED_PARTS) for `sys.path.insert` calls:
+
+  SYSPATH  a `sys.path.insert(...)` call in a file that is neither the
+           shared bootstrap (`sim/harness/__init__.py`) nor in
+           SYS_PATH_INSERT_ALLOWLIST, or an allowlisted file that no longer
+           contains one (stale entry). Remove the entry when you migrate
+           the file; the allowlist can only shrink.
+
+Unused-name inputs are the git-tracked `*.py` files under design/, layout/,
+signoff/ and sim/. Usage:
 
   python3 -m sim.tools.unused_names --check
 """
@@ -58,6 +67,152 @@ EXCLUDED_PARTS = frozenset(
     {".loom", ".claude", ".agents", ".venv", "venv", "node_modules",
      "site-packages", "__pycache__"}
 )
+
+#: The one file allowed to mutate `sys.path` (see "Import convention" in
+#: sim/README.md).
+BOOTSTRAP_HELPER = "sim/harness/__init__.py"
+
+#: Files that still carry an ad-hoc `sys.path.insert` call (baseline at
+#: #520). Migrate a file, then delete its line here; stale entries fail.
+SYS_PATH_INSERT_ALLOWLIST = frozenset({
+    "design/conditioner/area_estimate.py",
+    "design/digital_power_estimate.py",
+    "design/health_test/ring_liveness.py",
+    "design/interface/trng_interface.py",
+    "design/netlist.py",
+    "design/synth.py",
+    "design/trng_top/trng_top.py",
+    "layout/blocks/combiner_sampler/build.py",
+    "layout/cells/_mos_row.py",
+    "layout/cells/ro_buf/build.py",
+    "layout/cells/ro_nand2/build.py",
+    "layout/cells/ro_nand2_ring2/build.py",
+    "layout/cells/ro_stage/build.py",
+    "layout/cells/ro_stage_ring2/build.py",
+    "layout/cells/sampler_dff/build.py",
+    "layout/cells/xor2/build.py",
+    "layout/digital/build.py",
+    "layout/digital/gen_sdf.py",
+    "layout/digital/lvs.py",
+    "layout/floorplan/floorplan.py",
+    "layout/floorplan/interregion.py",
+    "layout/pex/build.py",
+    "layout/rings/ro_ring11/build.py",
+    "layout/rings/ro_ring11_ring2/build.py",
+    "layout/testcells/build.py",
+    "layout/tests/test_block_geometry.py",
+    "layout/tests/test_digital_build_checks.py",
+    "layout/tests/test_digital_lvs_reference.py",
+    "layout/tests/test_digital_reports.py",
+    "layout/tests/test_floorplan_erc.py",
+    "layout/tests/test_floorplan_expansion.py",
+    "layout/tests/test_floorplan_netlist.py",
+    "layout/tests/test_gen_sdf.py",
+    "layout/tests/test_interregion.py",
+    "layout/tests/test_klt.py",
+    "layout/tests/test_pex_fullchip.py",
+    "layout/tests/test_pex_port_resolution.py",
+    "layout/tests/test_synth.py",
+    "layout/tests/test_verify.py",
+    "layout/verify.py",
+    "signoff/publish_combiner_sampler_pex.py",
+    "signoff/publish_item7.py",
+    "signoff/publish_item7_analog.py",
+    "sim/run_corners.py",
+    "sim/tb/conditioned-stream-battery/run_battery.py",
+    "sim/tb/conditioner-crc32/run_demo.py",
+    "sim/tb/digital-sta-power/activity.py",
+    "sim/tb/digital-sta-power/activity_power.py",
+    "sim/tb/digital-sta-power/max_transition_probe.py",
+    "sim/tb/digital-sta-power/run_sta.py",
+    "sim/tb/digital-sta-power/sdc_treatment_probe.py",
+    "sim/tb/health-test-fault-injection/run_demo.py",
+    "sim/tb/interface-regfile/run_demo.py",
+    "sim/tb/ring-liveness-fault-injection/run_demo.py",
+    "sim/tb/smoke-trng-top/run_demo.py",
+    "sim/tb/trng-top-post-route/activity_workloads.py",
+    "sim/tb/trng-top-post-route/model_probe.py",
+    "sim/tb/trng-top-post-route/post_route_tb.py",
+    "sim/tb/trng-top-post-route/run_demo.py",
+    "sim/tb/trng-top-post-route/scenarios.py",
+    "sim/tests/test_activity.py",
+    "sim/tests/test_activity_power_characterization.py",
+    "sim/tests/test_analog_characterization_summary.py",
+    "sim/tests/test_array_coupling_variants.py",
+    "sim/tests/test_array_liveness_tap_phase_variants.py",
+    "sim/tests/test_array_sizing.py",
+    "sim/tests/test_characterize.py",
+    "sim/tests/test_chipalooza_table_consistency.py",
+    "sim/tests/test_cli.py",
+    "sim/tests/test_combiner_sampler_pex.py",
+    "sim/tests/test_conditioner.py",
+    "sim/tests/test_corner_sanity_check.py",
+    "sim/tests/test_corners.py",
+    "sim/tests/test_corpus_counts.py",
+    "sim/tests/test_digital_corner_characterization.py",
+    "sim/tests/test_digital_supply_ir_drop.py",
+    "sim/tests/test_fs_sf_capture.py",
+    "sim/tests/test_health_test.py",
+    "sim/tests/test_interface.py",
+    "sim/tests/test_jitter_energy_law.py",
+    "sim/tests/test_jitter_estimator_calibration_check.py",
+    "sim/tests/test_klt_pin_sites.py",
+    "sim/tests/test_liveness_sampler_power.py",
+    "sim/tests/test_liveness_tap_phase_variants.py",
+    "sim/tests/test_max_transition_probe.py",
+    "sim/tests/test_netlist_export.py",
+    "sim/tests/test_pdk.py",
+    "sim/tests/test_pdk_models.py",
+    "sim/tests/test_post_route_scenarios.py",
+    "sim/tests/test_power_rollups.py",
+    "sim/tests/test_raw_min_entropy_estimate.py",
+    "sim/tests/test_record_parsing.py",
+    "sim/tests/test_report.py",
+    "sim/tests/test_report_host_paths.py",
+    "sim/tests/test_resistor_network.py",
+    "sim/tests/test_ring_liveness.py",
+    "sim/tests/test_run_array_liveness_tap_phase.py",
+    "sim/tests/test_run_sta_deck_paths.py",
+    "sim/tests/test_run_sta_interface_load.py",
+    "sim/tests/test_runner.py",
+    "sim/tests/test_sampler_bit_bias_variants.py",
+    "sim/tests/test_seed_ownership.py",
+    "sim/tests/test_starved_cell_jitter_energy.py",
+    "sim/tests/test_statistical_battery.py",
+    "sim/tests/test_superseded_exclusion.py",
+    "sim/tests/test_supply_ripple.py",
+    "sim/tests/test_testbench.py",
+    "sim/tests/test_time_to_first_valid.py",
+    "sim/tests/test_trng_top.py",
+    "sim/tests/test_unused_names.py",
+    "sim/tests/test_verify_evidence_history.py",
+    "sim/tests/test_verify_markdown_links.py",
+    "sim/tests/test_verify_record_checksums.py",
+    "sim/tests/test_vss_trunk_ir_drop.py",
+    "sim/tests/test_worst_corner_entropy.py",
+    "sim/tools/activity_power_characterization.py",
+    "sim/tools/array_coupling_buffer_variant.py",
+    "sim/tools/array_coupling_variants.py",
+    "sim/tools/array_liveness_tap_phase_variants.py",
+    "sim/tools/array_sizing.py",
+    "sim/tools/corner_sanity_check.py",
+    "sim/tools/digital_corner_characterization.py",
+    "sim/tools/digital_supply_ir_drop.py",
+    "sim/tools/jitter_energy_law.py",
+    "sim/tools/jitter_estimator_calibration_check.py",
+    "sim/tools/liveness_sampler_power.py",
+    "sim/tools/liveness_tap_phase_variants.py",
+    "sim/tools/power_rollup.py",
+    "sim/tools/raw_min_entropy_estimate.py",
+    "sim/tools/run_array_liveness_tap_phase.py",
+    "sim/tools/sampler_bit_bias_variants.py",
+    "sim/tools/starved_cell_jitter_energy.py",
+    "sim/tools/supply_ripple.py",
+    "sim/tools/time_to_first_valid.py",
+    "sim/tools/verify_record_checksums.py",
+    "sim/tools/worst_corner_entropy.py",
+})
+
 DYNAMIC_CALLS = frozenset({"exec", "eval", "globals", "locals", "vars"})
 _COMP_NAMES = frozenset({"listcomp", "setcomp", "dictcomp", "genexpr", "lambda"})
 
@@ -474,6 +629,61 @@ def check_files(root: Path, files: Iterable[str]) -> list[Finding]:
     return sorted(findings)
 
 
+# --------------------------------------------------------------------------
+# sys.path.insert guard (#520)
+
+
+def has_sys_path_insert(source: str, path: str = "<string>") -> bool:
+    """Does the module call `sys.path.insert(...)` (AST, not text)?"""
+    try:
+        tree = ast.parse(source, filename=path)
+    except (SyntaxError, ValueError, RecursionError) as exc:
+        raise CheckerError(path, getattr(exc, "lineno", None) or 1,
+                           f"cannot parse: {exc}") from exc
+    for n in ast.walk(tree):
+        f = n.func if isinstance(n, ast.Call) else None
+        if (isinstance(f, ast.Attribute) and f.attr == "insert"
+                and isinstance(f.value, ast.Attribute) and f.value.attr == "path"
+                and isinstance(f.value.value, ast.Name) and f.value.value.id == "sys"):
+            return True
+    return False
+
+
+def all_tracked_python(root: Path) -> list[str]:
+    proc = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--", "*.py"],
+                          capture_output=True, check=False)
+    if proc.returncode != 0:
+        raise SystemExit(
+            f"error: git ls-files failed in {root}: "
+            f"{proc.stderr.decode(errors='replace').strip()}")
+    return sorted(p for p in proc.stdout.decode().split("\0")
+                  if p and not EXCLUDED_PARTS.intersection(Path(p).parts))
+
+
+def check_sys_path_inserts(root: Path, files: Iterable[str],
+                           allowlist: frozenset[str] = SYS_PATH_INSERT_ALLOWLIST,
+                           helper: str = BOOTSTRAP_HELPER) -> list[str]:
+    """Return one message per violation (new call or stale allowlist entry)."""
+    files = list(files)
+    having: set[str] = set()
+    for rel in files:
+        try:
+            source = (root / rel).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise CheckerError(rel, 1, f"cannot read: {exc}") from exc
+        if has_sys_path_insert(source, rel):
+            having.add(rel)
+    problems = [
+        f"{rel}: SYSPATH sys.path.insert outside the bootstrap helper "
+        f"({helper}); use the shared bootstrap (sim/README.md, 'Import convention')"
+        for rel in sorted(having - allowlist - {helper})]
+    problems += [
+        f"{rel}: SYSPATH stale allowlist entry (no sys.path.insert call "
+        f"remains; delete it from SYS_PATH_INSERT_ALLOWLIST)"
+        for rel in sorted(allowlist - having)]
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="Report unused imports (F401) and simple unused function "
@@ -490,11 +700,28 @@ def main(argv: list[str] | None = None) -> int:
     except CheckerError as exc:
         print(exc, file=sys.stderr)
         return 2
+    try:
+        # The baseline allowlist describes this checkout; another --root
+        # (a fixture repository) is held to an empty one.
+        baseline = (SYS_PATH_INSERT_ALLOWLIST if args.root.resolve() == ROOT
+                    else frozenset())
+        syspath = check_sys_path_inserts(args.root, all_tracked_python(args.root),
+                                         baseline)
+    except CheckerError as exc:
+        print(exc, file=sys.stderr)
+        return 2
     for f in findings:
         print(f.format())
+    for msg in syspath:
+        print(msg)
+    if syspath:
+        print(f"unused_names: {len(syspath)} sys.path.insert guard violation(s)",
+              file=sys.stderr)
     if findings:
         print(f"unused_names: {len(findings)} finding(s) in {len(files)} file(s)",
               file=sys.stderr)
+        return 1
+    if syspath:
         return 1
     print(f"unused_names: OK ({len(files)} file(s) scanned)")
     return 0

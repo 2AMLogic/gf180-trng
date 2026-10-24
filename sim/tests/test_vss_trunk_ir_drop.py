@@ -18,7 +18,11 @@ Two groups:
 
 from __future__ import annotations
 
+import os
+import runpy
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -142,6 +146,49 @@ class ReportAndCheckRunCleanly(unittest.TestCase):
         self.assertAlmostEqual(bound["ring1"], 6e-6, places=12)
         self.assertEqual(bound["ring2"], 0.0)
         self.assertEqual(bound["combiner_sampler"], 0.0)
+
+
+class Bootstrap(unittest.TestCase):
+    """The shared `sim/harness/__init__.py` bootstrap (#520)."""
+
+    HELPER = str(REPO_ROOT / "sim" / "harness" / "__init__.py")
+
+    def test_runpy_twice_leaves_one_root_entry(self):
+        saved = list(sys.path)
+        try:
+            sys.path[:] = [p for p in sys.path if p != str(REPO_ROOT)]
+            for _ in range(2):
+                runpy.run_path(self.HELPER, run_name="__repo_bootstrap__")
+            self.assertEqual(sys.path.count(str(REPO_ROOT)), 1)
+        finally:
+            sys.path[:] = saved
+
+    def test_ordinary_load_has_no_path_side_effect(self):
+        saved = list(sys.path)
+        try:
+            sys.path[:] = [p for p in sys.path if p != str(REPO_ROOT)]
+            before = list(sys.path)
+            runpy.run_path(self.HELPER)  # default run_name: not the bootstrap
+            self.assertEqual(sys.path, before)
+        finally:
+            sys.path[:] = saved
+
+    def _run_outside(self, argv, env_extra=None):
+        env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+        env.update(env_extra or {})
+        with tempfile.TemporaryDirectory() as tmp:
+            return subprocess.run([sys.executable, *argv], cwd=tmp, env=env,
+                                  capture_output=True, text=True)
+
+    def test_direct_script_check_from_outside_checkout(self):
+        res = self._run_outside(
+            [str(REPO_ROOT / "sim" / "tools" / "vss_trunk_ir_drop.py"), "--check"])
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
+    def test_module_check_from_outside_checkout(self):
+        res = self._run_outside(["-m", "sim.tools.vss_trunk_ir_drop", "--check"],
+                                {"PYTHONPATH": str(REPO_ROOT)})
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
 
 
 if __name__ == "__main__":
