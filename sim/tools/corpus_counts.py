@@ -64,7 +64,9 @@ slug suffix (`DR-0012-noise`, `DR-0012-clock`, `DR-0011-rate`,
 A reference label that is itself a bare colliding id (`[DR-0012]: ...`) is
 ambiguous and fails too. Out of scope, by design: the decision records' own
 bodies (immutable once accepted) and sim/records/ (append-only, checksummed
-evidence); the residual bare citations there are not rewritten.
+evidence); the residual bare citations there are not rewritten. The root
+WORK_LOG.md and WORK_PLAN.md are also exempt: they are generated from issue and
+PR titles as filed, by a generator this repo does not own.
 
 Usage:
   python3 sim/tools/corpus_counts.py           # print derived totals
@@ -383,7 +385,13 @@ def find_bare_citations(text: str, ids: set[str]) -> list[tuple[int, str]]:
 # citation there invalidates that evidence (it can only be re-published on a
 # host that can re-run the post-route gate). The generator source is Python,
 # not Markdown, so the check never sees it either.
-_GENERATED_MD = {"design/interface/REGMAP.md"}
+# WORK_LOG.md and WORK_PLAN.md are exempt for a different reason: Loom's Guide
+# docs phase regenerates them from issue and PR titles as filed, and this repo
+# does not own that generator, so a title citing a bare colliding id must not
+# turn the gate red on an unrelated PR. Entries are root-relative posix paths,
+# so the exemption applies to the root files only.
+_GENERATED_MD = {"design/interface/REGMAP.md", "WORK_LOG.md",
+                 "WORK_PLAN.md"}
 
 
 def citation_files(root: Path):
