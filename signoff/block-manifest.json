@@ -16,11 +16,11 @@
     },
     "10.analog": {
       "file": "signoff/evidence/t1-item-10-analog.json",
-      "content_hash": "sha256:5047f1bc4a5fc124841679700d201eb18ffc4e56fd78a2fa49ffd54402e9f813"
+      "content_hash": "sha256:0c4ae7f2b58dd479b412ec0558c8fe6217bc0cfeae473e626940d4d57a2366af"
     },
     "10.digital": {
       "file": "signoff/evidence/t1-item-10-digital.json",
-      "content_hash": "sha256:0d0609622bc5aba510be7f4b09b214c7aaf3ebd62629077f4ecc9fb6786f7250"
+      "content_hash": "sha256:d9f404872f3f761c8a11e9d39a2a2aab8706db7348566598abbba09a374a67ed"
     },
     "11.analog": [
       {
@@ -86,7 +86,7 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-analog.generic.json",
-      "content_hash": "sha256:f037b0476765253d5dc3e8612a08c78ac636875adddaa83ef93f14cc263c2935"
+      "content_hash": "sha256:8915c58f4279cd4159c87a930b93c287a97cedf24aa541325ee73e31cdd990b4"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-digital.generic.json",
@@ -94,11 +94,11 @@
     },
     "9.analog": {
       "file": "signoff/evidence/t1-item-9-analog.json",
-      "content_hash": "sha256:424464396599c467253b2e00c7d2119674b0304fa39b3a9c69e189e1848a54e9"
+      "content_hash": "sha256:08db0032b613ebc6b4ff73aaecc8b9a6f60c9a6f1430908333b93f57bce6a097"
     },
     "9.digital": {
       "file": "signoff/evidence/t1-item-9-digital.json",
-      "content_hash": "sha256:bacbf1d1d111894d30e3f56c98a7cc0de032c375e58676a9d45d958e9f476f2e"
+      "content_hash": "sha256:c8b7df97228d8353606af4f9712556e6fd35c0bb6b10401354876ee0b32287b4"
     }
   }
 }

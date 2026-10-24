@@ -1172,7 +1172,7 @@
       "files": [
         {
           "path": "sim/tb/sampler-array-fs-sf/README.md",
-          "sha256": "sha256:9ad42842b36768c5e3dc6b15dd38a0094086b9970aae373dba53a9ef570945aa"
+          "sha256": "sha256:7aab1093da9533c812f89d93f3ff9003fe2419146ab778d7c2fb0c0e62cdd871"
         },
         {
           "path": "sim/tb/sampler-array-fs-sf/request-control-tt.json",
@@ -1532,7 +1532,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:4a46b593ac66e16ef2ee78ce3a8f849d82b5b79b9c5128dc2df751d8246488be"
+      "sha256": "sha256:d702395ff87e43363bc5eb74b75adfae174bb7d55856148b14a1a7cd01a8ed1f"
     },
     {
       "path": "sim/README.md",

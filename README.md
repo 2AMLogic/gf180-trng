@@ -141,7 +141,7 @@ Raw rate row's ceiling voids the entropy bound.
 [DR-0009]: spec/decision-records/DR-0009-behavioral-vs-transistor-verification-split.md
 [DR-0010]: spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
 [DR-0011-rate]: spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
-[DR-0012]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0012-clock]: spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0013]: spec/decision-records/DR-0013-interface-register-map-and-streaming-semantics.md
 [DR-0015]: spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md
 [DR-0017]: spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md

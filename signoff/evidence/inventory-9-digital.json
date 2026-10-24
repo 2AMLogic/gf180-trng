@@ -139,7 +139,7 @@
       "files": [
         {
           "path": "sim/tb/interface-regfile/README.md",
-          "sha256": "sha256:d7f90f47772994baa0f7078228a0375631e4b12f6593d9de51e05a89ae4f786e"
+          "sha256": "sha256:ec866e0fb42bc4b2436ef3ed2f2d3bee73dff34a9e38caedf63db2d93f7722e7"
         },
         {
           "path": "sim/tb/interface-regfile/run_demo.py",
@@ -250,7 +250,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:4a46b593ac66e16ef2ee78ce3a8f849d82b5b79b9c5128dc2df751d8246488be"
+      "sha256": "sha256:d702395ff87e43363bc5eb74b75adfae174bb7d55856148b14a1a7cd01a8ed1f"
     },
     {
       "path": "sim/README.md",

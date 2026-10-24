@@ -40,7 +40,7 @@ summary table — is `sim/tools/fs_sf_capture.py`.
 |---|---|
 | Corners | `fs`, `sf` (MOS skewed, passives typical, as `sim/harness/corners.py`); `tt` control |
 | Temperature / supply | -40, 27, 125 C / 2.97, 3.30, 3.63 V (the ratified envelope) |
-| Clock | 1 us period (1 Mbps, DR-0003), 1 ns edges, 50 % duty; DR-0012 fixed external clock |
+| Clock | 1 us period (1 Mbps, DR-0003), 1 ns edges, 50 % duty; DR-0012-clock fixed external clock |
 | Phase sweep | clock offset 0, 1.5, 3.0, 4.5 ns (`vph`); in addition, each of the 3 post-release edges lands at a different ring phase because 1 us is not a multiple of either ring period. 12 sampling instants per PVT point |
 | Timeline | edge 0 at 0.3 us under reset; reset releases at 0.5 us; edges 1-3 at 1.3, 2.3, 3.3 us; readouts at +8, +50, +300 ns after each nominal edge; `tstop` 3.62 us |
 | Solver | `tmax` = print step = 10 ps, ngspice default tolerances, `measureprec=12` |

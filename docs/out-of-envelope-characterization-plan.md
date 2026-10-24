@@ -47,7 +47,7 @@ would normally come from such a source it is marked *not established*.
 | `sim/characterization-raw-min-entropy-and-battery.md`, section "Why the entropy-supporting rate cannot be simulated directly either" | same repo revision | prior cost reasoning |
 | `sim/tb/ro-array-supply-ripple/README.md` | same repo revision | existing outside-envelope caveat (#414) |
 
-Full DR filenames are used because two records share the number DR-0012
+Full DR filenames are used because two records share the number 0012
 (tracked separately in #468); refresh the citations if that is resolved.
 
 Circuit device models: the netlist `design/sampler_core.spice` instantiates
@@ -126,7 +126,7 @@ reviewer cannot widen them silently:
 
 - Seeds: the four integers `1, 2, 3, 4` (the harness default,
   `sim/harness/cli.py`: `range(1, default_runs + 1)` with `default_runs = 4`,
-  emitted as `.option seed=<n>` by `sim/harness/runner.py`). DR-0012 requires
+  emitted as `.option seed=<n>` by `sim/harness/runner.py`). DR-0012-noise requires
   four seeds per reported stochastic point unless a justified departure is
   recorded.
 - Model sections: the repository bundle names in `sim/harness/corners.py`

@@ -8,7 +8,7 @@ consequence:
    three points — and it is **not** the corner
    [DR-0012-sampler-fixed-external-clock] predicted. That is recorded, not
    reconciled away: [DR-0015] is the superseding decision record, filed under
-   DR-0012's own "Revisit if" trigger.
+   DR-0012-clock's own "Revisit if" trigger.
 2. What intra-die device **mismatch** does to the array's ring-frequency
    ratio and to the sampler's decision threshold, from two new Monte Carlo
    testbenches, and whether the conditioner and health-test margins in the
@@ -75,7 +75,7 @@ grid sits at the **hot** end of the `ss`/3.63 V edge, not the cold end:
 |---|---|---|---|---|---|
 | **`ss`/+125 °C/3.63 V** — measured minimum | 10.214 ns | 111.9 µW | **7.185×10⁻³** | **1.20×** | **598.8 bps** |
 | `ss`/+27 °C/3.63 V | 7.759 ns | — | 7.630×10⁻³ | 1.27× | 635.9 bps |
-| `ss`/−40 °C/3.63 V — [DR-0012]'s prediction | 6.154 ns | 165.5 µW | 7.816×10⁻³ | 1.30× | 651.3 bps |
+| `ss`/−40 °C/3.63 V — [DR-0012-clock]'s prediction | 6.154 ns | 165.5 µW | 7.816×10⁻³ | 1.30× | 651.3 bps |
 | `tt`/+125 °C/3.63 V | 8.567 ns | — | 7.960×10⁻³ | 1.33× | 663.3 bps |
 | … 22 further rows … | | | | | |
 | `ff`/−40 °C/2.97 V — grid maximum | 5.171 ns | — | 1.313×10⁻² | 2.19× | 1094 bps |
@@ -85,7 +85,7 @@ grid sits at the **hot** end of the `ss`/3.63 V edge, not the cold end:
 **Why the prediction missed.** `Q ∝ T/(P·T₀²)`. Warming `ss`/3.63 V from
 −40 °C to +125 °C lengthens `T₀` by 66 % (6.154 → 10.214 ns); that `1/T₀²`
 factor of 0.36 outweighs the 1.71× more `kT` and the 0.68× ring power, for a
-net 8 % *reduction* in `Q`. The three-point set DR-0012 was written against
+net 8 % *reduction* in `Q`. The three-point set DR-0012-clock was written against
 contained no hot, high-supply point, so the temperature axis was never
 exercised at the corner that turned out to matter. Nothing about the metric
 changed and nothing was re-fitted.
@@ -102,7 +102,7 @@ moves:
 
 So **[DR-0007] §2's inequality still holds at the newly-identified worst
 corner**, at every constant, and both proposed raw-rate rows survive there
-([DR-0010]'s 500 bps needs 598.8 bps of headroom at `a = 1.79`; [DR-0011]'s
+([DR-0010]'s 500 bps needs 598.8 bps of headroom at `a = 1.79`; [DR-0011-rate]'s
 2 kbps needs 3937 bps at `a = 11.77`). This is a moved corner, not a failed
 spec — but the margin at the plain-cell constant is 1.20×, not the 1.30× the
 previously-named corner implied.
@@ -473,7 +473,7 @@ and these are ceilings.
 [DR-0007]: ../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: ../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
-[DR-0011]: ../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
-[DR-0012]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0011-rate]: ../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
+[DR-0012-clock]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0012-sampler-fixed-external-clock]: ../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0015]: ../spec/decision-records/DR-0015-entropy-binding-corner-moves-to-the-hot-slow-corner.md

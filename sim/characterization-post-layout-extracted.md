@@ -135,7 +135,7 @@ Method unchanged from
 rails and measurement expressions as `sim/tb/sampler-array-digitize/`,
 against `layout/pex/sampler_core.extracted.spice` instead of
 `design/sampler_core.spice`, at the same two corners #12 originally used
-(`tt`/27 °C/3.30 V and `ss`/−40 °C/3.63 V — DR-0012's predicted, not
+(`tt`/27 °C/3.30 V and `ss`/−40 °C/3.63 V — DR-0012-clock's predicted, not
 DR-0015's later-measured, entropy-binding corner; kept for direct
 comparability against #12's own pre-layout pair), 3 seeds each.
 
@@ -522,7 +522,7 @@ already protected this way.
   issue re-runs each pre-layout methodology's own previously-identified
   worst/binding corner(s), not the full 27- or 45-point grids #13/#14
   originally swept. A binding corner could in principle move under
-  extraction the way [DR-0015] found it moved between DR-0012's prediction
+  extraction the way [DR-0015] found it moved between DR-0012-clock's prediction
   and #13's measured grid; this issue does not re-sweep the full grid to
   check that, and states this rather than assuming the pre-layout binding
   corners still bind.

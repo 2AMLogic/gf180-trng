@@ -324,11 +324,11 @@ checkable:
    words: a self-timed metastability hybrid "layered onto the RO core, never a
    free-standing source, and never gating the core's own output", carried with
    "no entropy, histogram, or calibration-viability claim", and explicitly
-   *not* a rate-row contributor. DR-0011 further records that promoting the
+   *not* a rate-row contributor. DR-0011-meta further records that promoting the
    tap out of stretch status "requires reconciling +187 µW" against the
    `Power` row. A layout claim is a claim about what the block ships; making
    one for a stretch hook would overstate the tap's status in exactly the
-   direction DR-0011 exists to prevent.
+   direction DR-0011-meta exists to prevent.
 
 If the tap is ever promoted out of stretch status — which is a decision-record
 change, not a layout decision — drawing these four cells to the same bar as

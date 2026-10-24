@@ -60,7 +60,7 @@ The shipped block, per [`design/README.md`](../../design/README.md):
 | | |
 |---|---|
 | Entropy source | `ro_array_core` — two eleven-stage current-starved rings (`ro_ring11`, `wstv` = 0.220 / 0.240 µm) on their own supply pins `vddr1` / `vddr2`, combined by one `xor2` |
-| Sampler | `sampler_core` — four `sampler_dff`: `xsb` (raw bit), `xsv` (`raw_valid`), `xsr1`/`xsr2` (the DR-0016 per-ring liveness digitizers), all on the DR-0012 **fixed external** sample clock |
+| Sampler | `sampler_core` — four `sampler_dff`: `xsb` (raw bit), `xsv` (`raw_valid`), `xsr1`/`xsr2` (the DR-0016 per-ring liveness digitizers), all on the DR-0012-clock **fixed external** sample clock |
 | Digital | conditioner (#8), health tests (#11), interface (#26) — 1655 standard cells, 658 flip-flops, all synchronous to that same external clock |
 
 Two facts about that list drive the whole floorplan.
@@ -71,7 +71,7 @@ the health-test counters, the FIFO pointers — is deterministic by design and
 switches in patterns an observer can predict or, in the clock's case,
 *choose*.
 
-**The sample clock is an external pin** ([DR-0012]). It is not derived from a
+**The sample clock is an external pin** ([DR-0012-clock]). It is not derived from a
 ring and it is not generated on die, which is the right decision for
 independence — and it also means the block's largest, most regular switching
 aggressor is under the control of whoever drives that pin. A disturbance
@@ -79,7 +79,7 @@ injected into a ring at the sample clock's own rate is the worst possible
 disturbance, because it is *coherent with the sampling instant*: it does not
 average away over many samples the way an incommensurate ring-to-ring beat
 does. Keeping `clk` away from the ring nodes is therefore not general good
-practice here; it is the specific consequence of DR-0012's choice.
+practice here; it is the specific consequence of DR-0012-clock's choice.
 
 ---
 
@@ -347,7 +347,7 @@ capacitance to its input.
 > coupling it is **not mitigated by floorplan separation, guard rings, per-ring
 > supply routing, or frequency-ratio skew** — the digitizer's input stage is a
 > shared electrical node by construction. Unlike combiner coupling, its
-> aggressor is an **external pin** ([DR-0012]), so its rate is not a design
+> aggressor is an **external pin** ([DR-0012-clock]), so its rate is not a design
 > constant, and its disturbance is phase-locked to the sampling instant rather
 > than incommensurate with it. The per-ring buffer attenuates it by ~30×; no
 > floorplan measure attenuates it at all.
@@ -1079,7 +1079,7 @@ gotten wrong):
 | `en1` / `en2` | chip pin → `ring1.en` / `ring2.en` | Metal1 | ring enable, no fan-out |
 | `ro1` | `ring1.ro` → `combiner_sampler.rn1`, **spans `ring2`'s own region** | Metal2 | entropy tap; the one long-haul route in this table — see below |
 | `ro2` | `ring2.ro` → `combiner_sampler.rn2` | Metal1 | entropy tap, single adjacent channel |
-| `clk` | chip pin → `digital.clk` → `combiner_sampler.clk` | Metal4 transition | Mechanism 1's worst-disturbance case (DR-0012); routed via `digital` so it never crosses a ring's own channel |
+| `clk` | chip pin → `digital.clk` → `combiner_sampler.clk` | Metal4 transition | Mechanism 1's worst-disturbance case (DR-0012-clock); routed via `digital` so it never crosses a ring's own channel |
 | `rst_n` | chip pin → `digital.rst_n` → `combiner_sampler.rst_n` | Metal4 transition | same topology as `clk` |
 | `raw_bit` / `raw_valid` | `combiner_sampler` → `digital` | Metal4 transition | raw sampler tap |
 | `ring_bit1` / `ring_bit2` | `combiner_sampler` → `digital` (`ring_bit[0]` / `ring_bit[1]` on the digital side — the two committed references spell this pin differently, resolved here rather than by renaming either) | Metal4 transition | DR-0016 per-ring liveness taps |
@@ -1209,7 +1209,7 @@ share, or that broke a guard ring. Neither happens here:
   named").
 - **`clk`/`rst_n` still reach the samplers from the `digital` side.** Both
   trunks are pinned east of `combiner_sampler`'s own west edge and never
-  enter a ring's isolation channel — DR-0012's own constraint, which
+  enter a ring's isolation channel — DR-0012-clock's own constraint, which
   [`layout/tests/test_interregion.py`](../tests/test_interregion.py)
   asserts mechanically on every push.
 - **No two drawn nets come within `metal3.space.1` (0.28 µm) of each other
@@ -1407,7 +1407,7 @@ on neither edge is rejected with a `WiringError` rather than routed blind.
 Re-placing the pins back on the bottom edge needs no change here. Because the
 stubs now reach the east flank, `clk` and `rst_n` trunks (and therefore their
 chip pins) sit east of `digital`'s east edge instead of at its pin; they still
-never run west of `combiner_sampler` (DR-0012).
+never run west of `combiner_sampler` (DR-0012-clock).
 
 Measured with the normative producer, klt `0.6.0` (PyPI wheel in a throwaway
 venv, `klayout==0.30.10`), gf180mcuD at open_pdks `c6d73a35...` (local volare
@@ -1931,7 +1931,7 @@ would not block that separate question.
 [DR-0007]: ../../spec/decision-records/DR-0007-multi-ro-xor-combined-entropy-source.md
 [DR-0008]: ../../spec/decision-records/DR-0008-crc32-lfsr-non-vetted-conditioner.md
 [DR-0010]: ../../spec/decision-records/DR-0010-raw-rate-moves-to-the-measured-jitter-energy-limit.md
-[DR-0012]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
+[DR-0012-clock]: ../../spec/decision-records/DR-0012-sampler-fixed-external-clock.md
 [DR-0017]: ../../spec/decision-records/DR-0017-idle-current-row-versus-ungated-standard-cell-leakage.md
 [DR-0020]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0026]: ../../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md

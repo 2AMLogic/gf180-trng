@@ -68,7 +68,7 @@ conditioned word — DR-0002's 1024-sample start-up window plus DR-0008's
 256-sample conditioner fill, non-overlapping, which is exactly what the
 README's `≥ ~1.28 ms at 1 Mbps` row claims. Note the unit: this record counts
 **samples**, not seconds. Converting is a corner-dependent system question
-(DR-0003, DR-0012) that a behavioral record may not answer.
+(DR-0003, DR-0012-clock) that a behavioral record may not answer.
 
 They show **nothing about the entropy source**, and nothing about the health
 tests:

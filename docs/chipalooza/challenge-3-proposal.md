@@ -279,7 +279,7 @@ The packaged part (QFN) is measured on a daughterboard mated to the
 Chipalooza/Wafer.Space test board. Minimum bench instrumentation: a
 programmable supply for `VDDA`/`VDDD` (independently, per the rail-routing
 note above), a function generator or FPGA-sourced `clk` (the sample clock is
-external by design, [DR-0012]), a logic analyzer or FPGA capture fabric wide
+external by design, [DR-0012-clock]), a logic analyzer or FPGA capture fabric wide
 enough for the 12 digital test outputs plus the 12 digital control inputs
 (§2.2–2.3), and an oscilloscope on `ro_mon` (§2.4) — through a probe/pad path
 rated for the frequencies in Row A, per the low-resistance-pad note in §2.4.

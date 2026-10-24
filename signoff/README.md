@@ -803,7 +803,7 @@ aggregate exists and is current, not that its rows pass.** Exactly one
 analog-facing row is met (time-to-first-valid, 1.281 ms). The disclosed
 exceptions travel with the claim. The DR-0007 sizing law holds at the
 entropy-binding corner only up to 678–8810 bps, against DR-0003's original
-1 Mbps raw rate (superseded; the ratified rate is now 2 kbps, DR-0011). At 2 kbps
+1 Mbps raw rate (superseded; the ratified rate is now 2 kbps, DR-0011-rate). At 2 kbps
 the law holds for the starved-cell constants (4141 and 8810 bps) and not for the
 plain-cell 678 bps. Raw min-entropy is unmeasured and cannot be measured by
 transistor-level simulation at the rates under consideration, so the Tier 2

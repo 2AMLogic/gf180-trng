@@ -56,7 +56,7 @@ not independent verification of the claims in issue or PR titles.
 - **PR #637**: sim: supply-ripple susceptibility results, beat + convergence (part of #414)
 - **Issue #585** (closed): Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps
 - **PR #586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
-- **Issue #491** (closed): Apply the mechanical edit set directed by ratified DR-0010 and DR-0011 (Raw rate row, sizing constant, derived figures)
+- **Issue #491** (closed): Apply the mechanical edit set directed by ratified DR-0010 and DR-0011-rate (Raw rate row, sizing constant, derived figures)
 - **PR #634**: Bump Repo Skills 0.19.5 -> 0.24.1
 
 ### 2026-10-13
@@ -188,7 +188,7 @@ not independent verification of the claims in issue or PR titles.
 - **PR #497**: docs: move the spec-row change history out of the README table
 - **PR #496**: docs(signoff): combiner/sampler PEX grid attempt 4, all rows errored (partial #418)
 - **PR #493**: docs: refresh Chipalooza Row I area from regenerated floorplan report
-- **PR #492**: spec: ratify DR-0010, DR-0011, DR-0015, DR-0016 and DR-0018 via the two-key mechanism
+- **PR #492**: spec: ratify DR-0010, DR-0011-rate, DR-0015, DR-0016 and DR-0018 via the two-key mechanism
 - **PR #490**: sim: quantify DC drop through the digital supply docking path and PDN (#464)
 - **PR #489**: sim: reconcile shipped liveness samplers with the whole-block active-power ledger (#463)
 - **PR #488**: docs: DR-0029 disposition of the LU.3/LU.4 tie-distance column (#449)
@@ -295,7 +295,7 @@ not independent verification of the claims in issue or PR titles.
 - **PR #389**: test: unit-test the digital LVS reference-netlist helpers
 - **PR #386**: test: unit-test digital place-and-route DEF/GDS checks
 - **Issue #391** (closed): Unit-test signoff/check.py's verdict-of-record comparison (compare_record, resolve_artifact)
-- **Issue #400** (closed): Wire the DR-0012 estimator-calibration and statistical-battery self-checks into check:spec / CI
+- **Issue #400** (closed): Wire the DR-0012-noise estimator-calibration and statistical-battery self-checks into check:spec / CI
 - **Issue #388** (closed): lvs.py: _bit_names documents a net<id> fallback it does not implement
 - **Issue #377** (closed): Unit-test the corner-sanity guardrail's pass/fail logic without ngspice
 - **Issue #374** (closed): Run the committed SDF regeneration guard in PDK nightly CI

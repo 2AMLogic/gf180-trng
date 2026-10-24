@@ -33,7 +33,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
+- **#468**: Disambiguate the colliding decision-record citations (numbers 0011 and 0012) (README links the wrong record for number 0012) and guard them
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#686**: Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
 
@@ -57,7 +57,7 @@ Issues carrying `loom:curated`.
 - **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array *(curated)*
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
-- **#468**: Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them *(curated)*
+- **#468**: Disambiguate the colliding decision-record citations (numbers 0011 and 0012) (README links the wrong record for number 0012) and guard them *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
