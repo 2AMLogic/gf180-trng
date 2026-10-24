@@ -437,6 +437,20 @@ class DrCitations(TreeCase):
         gen.write_text("DR-0007 emitted by a generator\n")
         self.assertEqual(cc.check_dr_citations(self.root), [])
 
+    def test_generated_work_logs_are_exempt_at_root_only(self) -> None:
+        line = "- **Issue #1** (closed): Fix DR-0007 citations\n"
+        self.make("clean\n")
+        for name in ("WORK_LOG.md", "WORK_PLAN.md"):
+            (self.root / name).write_text(line)
+        self.assertEqual(cc.check_dr_citations(self.root), [])
+        (self.root / "notes.md").write_text(line)
+        self.assertEqual(len(cc.check_dr_citations(self.root)), 1)
+        (self.root / "notes.md").unlink()
+        sub = self.root / "sub"
+        sub.mkdir()
+        (sub / "WORK_LOG.md").write_text(line)
+        self.assertEqual(len(cc.check_dr_citations(self.root)), 1)
+
     def test_no_collision_means_nothing_to_flag(self) -> None:
         self.make("DR-0007\n")
         (self.root / self.B).unlink()
