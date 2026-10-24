@@ -430,6 +430,13 @@ class DrCitations(TreeCase):
         ev.write_text("DR-0007 quoted in append-only evidence\n")
         self.assertEqual(cc.check_dr_citations(self.root), [])
 
+    def test_generated_markdown_is_exempt(self) -> None:
+        self.make("clean\n")
+        gen = self.root / "design" / "interface" / "REGMAP.md"
+        gen.parent.mkdir(parents=True, exist_ok=True)
+        gen.write_text("DR-0007 emitted by a generator\n")
+        self.assertEqual(cc.check_dr_citations(self.root), [])
+
     def test_no_collision_means_nothing_to_flag(self) -> None:
         self.make("DR-0007\n")
         (self.root / self.B).unlink()

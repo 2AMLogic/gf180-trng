@@ -285,9 +285,8 @@ REGISTERS: tuple[Register, ...] = (CTRL, STATUS, DATA, RAW_DATA)
 
 PORTS: tuple[Port, ...] = (
     Port("clk", "in", 1, "clock / reset", True,
-         "Sampler clock (DR-0012-sampler-fixed-external-clock: fixed "
-         "external). The whole block, including the register bus, is "
-         "synchronous to it."),
+         "Sampler clock (DR-0012: fixed external). The whole block, including "
+         "the register bus, is synchronous to it."),
     Port("rst_n", "in", 1, "clock / reset", True,
          "Asynchronous power-on reset, active low."),
 

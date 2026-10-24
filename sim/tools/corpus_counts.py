@@ -378,6 +378,14 @@ def find_bare_citations(text: str, ids: set[str]) -> list[tuple[int, str]]:
     return out
 
 
+# Generated files are exempt: their text comes from a generator whose source
+# and output are both hashed into the signoff evidence, so rewording a
+# citation there invalidates that evidence (it can only be re-published on a
+# host that can re-run the post-route gate). The generator source is Python,
+# not Markdown, so the check never sees it either.
+_GENERATED_MD = {"design/interface/REGMAP.md"}
+
+
 def citation_files(root: Path):
     """Markdown files subject to the citation check."""
     records = root / "sim" / "records"
@@ -385,7 +393,7 @@ def citation_files(root: Path):
         rel = p.relative_to(root)
         if any(part in _SKIP_DIRS for part in rel.parts[:-1]):
             continue
-        if records in p.parents:
+        if records in p.parents or rel.as_posix() in _GENERATED_MD:
             continue
         if rel.parts[:2] == ("spec", "decision-records") \
                 and _DR_NAME.match(p.name):
