@@ -225,3 +225,41 @@ class HistoryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ManifestHistoryTests(unittest.TestCase):
+    """manifests/artifacts/*.manifest.json are append-only like sim/records/ (#686)."""
+
+    PATH = "manifests/artifacts/2026-01-01-demo-01.manifest.json"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.r = Repo(Path(self._tmp.name))
+        self.r.write(self.PATH, '{"entries": []}\n')
+        self.r.write("manifests/artifacts/README.md", "notes\n")
+        self.base = self.r.commit("base")
+
+    def check(self):
+        return veh.check_history(self.r.root, self.base, "HEAD")
+
+    def test_added_manifest_passes(self):
+        self.r.write("manifests/artifacts/2026-01-02-demo-02.manifest.json", "{}\n")
+        self.r.commit()
+        self.assertEqual(self.check(), [])
+
+    def test_modified_manifest_fails(self):
+        self.r.write(self.PATH, '{"entries": [1]}\n')
+        self.r.commit()
+        self.assertEqual(len(self.check()), 1)
+        self.assertIn("manifest modified", self.check()[0])
+
+    def test_deleted_manifest_fails(self):
+        (self.r.root / self.PATH).unlink()
+        self.r.commit()
+        self.assertIn("deleted or renamed", self.check()[0])
+
+    def test_readme_edit_is_not_held_to_append_only(self):
+        self.r.write("manifests/artifacts/README.md", "better notes\n")
+        self.r.commit()
+        self.assertEqual(self.check(), [])

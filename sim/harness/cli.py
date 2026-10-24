@@ -15,7 +15,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, pdk_models, report, runner, startup as startup_mod, testbench as tb_mod
+from . import HARNESS_VERSION, corners as corners_mod, evidence_store, pdk_models, report, runner, startup as startup_mod, testbench as tb_mod
 from .pdk import PdkNotFound, find_all_variant_dirs, find_pdk
 from .runner import NgspiceMissing
 
@@ -34,6 +34,9 @@ EXIT_RECORD_CORRUPT = 4
 # A PDK model file the decks consume changed between the pre-run capture and
 # the pre-publication re-check (#562): the affected records are withheld.
 EXIT_PDK_MODELS_CHANGED = 5
+# A point's raw output could not be stored in the artifact store (#686): its
+# record and manifest are withheld and the staged bytes are kept.
+EXIT_STORE_FAILED = 6
 
 
 def _resolve_tb_path(argument: str) -> Path:
@@ -257,6 +260,19 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
 
+    # Recorded runs store their raw output in the artifact store (#686). Refuse
+    # now, before PDK discovery, stem reservation or any simulator launch, if
+    # that cannot work; there is no fallback that commits the bytes.
+    stage_root = WORK_DIR / evidence_store.STAGE_DIRNAME
+    manifests_dir = REPO_ROOT / evidence_store.MANIFEST_SUBDIR
+    if not args.no_write:
+        try:
+            evidence_store.preflight()
+            evidence_store.ensure_stage_ignored(stage_root, REPO_ROOT)
+        except evidence_store.EvidenceStoreError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
 
@@ -347,6 +363,7 @@ def run(args: argparse.Namespace) -> int:
 
     overall_ok = True
     models_changed: list[tuple[str, Path, list[str]]] = []
+    store_failures: list[str] = []
     written_paths: list[Path] = []
     written_records: list[dict] = []
 
@@ -375,9 +392,13 @@ def run(args: argparse.Namespace) -> int:
         # for a free number, so a second run_corners.py invocation for the
         # same date+slug cannot be handed a stem this one is using -- an
         # hours-long run must claim its numbers before it starts, not when
-        # it finishes.
-        stems = report.reserve_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
-        workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
+        # it finishes. The claim is the staging directory
+        # sim/.work/.stage/<stem>/ (git-ignored): raw output is stored, not
+        # committed, so no sim/records/raw/<stem>/ is created.
+        stems = report.reserve_record_stems(
+            RECORDS_DIR, date_str, tb.slug, len(points), lock_root=stage_root
+        )
+        workdirs = [stage_root / stem for stem in stems]
 
     jobs = max(1, int(args.jobs))
     tasks = [(pi, seed, index) for pi in range(len(points)) for seed, index in plan]
@@ -474,10 +495,32 @@ def run(args: argparse.Namespace) -> int:
                 wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
                 supersedes=args.supersedes, timeout_s=args.timeout,
                 model_manifest=pre, startup_snapshot=startup_snapshot,
+                stored_manifest=f"{evidence_store.MANIFEST_SUBDIR}/"
+                f"{stems[point_index]}{evidence_store.MANIFEST_SUFFIX}",
             )
-            path = report.write_record(
-                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs, pre)
-            )
+            manifest_dest = evidence_store.manifest_path(manifests_dir, stems[point_index])
+            try:
+                record["stored_files"] = evidence_store.store_files(
+                    workdirs[point_index],
+                    [name for name, _ in dict.fromkeys(record["raw_files"])],
+                    manifest_dest, repo_root=REPO_ROOT,
+                )
+            except evidence_store.EvidenceStoreError as exc:
+                store_failures.append(stems[point_index])
+                overall_ok = False
+                print(
+                    f"error: {point.corner_id}: raw output not stored, record withheld: "
+                    f"{exc}\n  staged bytes kept in {workdirs[point_index]}",
+                    file=sys.stderr,
+                )
+                return
+            try:
+                path = report.write_record(
+                    record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs, pre)
+                )
+            except Exception:
+                evidence_store.unpublish(manifest_dest)
+                raise
             written_paths.append(path)
             written_records.append(record)
 
@@ -520,6 +563,12 @@ def run(args: argparse.Namespace) -> int:
     if models_changed:
         print("status    : FAIL (PDK model files changed during the run)")
         return EXIT_PDK_MODELS_CHANGED
+    if store_failures:
+        print(
+            f"status    : FAIL (raw output of {len(store_failures)} point(s) could not be "
+            f"stored; no record or manifest written for: {', '.join(store_failures)})"
+        )
+        return EXIT_STORE_FAILED
     print(f"status    : {'OK' if overall_ok else 'FAIL'}")
 
     return EXIT_OK if overall_ok else EXIT_CHECK_FAILED

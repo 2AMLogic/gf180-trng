@@ -426,3 +426,96 @@ class OrphanInventoryTests(_TempRepoCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+STORED_STEM = "2026-01-02-stored-01"
+STORED_FILES = {"deck.cir": b"* deck\n", "out.log": b"result 1.0\n"}
+
+
+def _manifest_json(files: dict[str, bytes]) -> str:
+    import json
+
+    entries = []
+    for name, data in files.items():
+        sha = hashlib.sha256(data).hexdigest()
+        entries.append({
+            "sha256": sha, "size": len(data), "kind": "evidence", "name": name,
+            "uri": f"artifact:evidence/example__repo/{sha[:2]}/{sha}",
+        })
+    return json.dumps({"schema_version": 1, "entries": entries}, indent=2)
+
+
+def _stored_record_text(files: dict[str, bytes], stem: str = STORED_STEM) -> str:
+    lines = [
+        "---", "status: valid", "", "stored_evidence:",
+        f"  manifest: manifests/artifacts/{stem}.manifest.json", "  files:",
+    ]
+    for name, data in files.items():
+        lines.append(f"    - {name}  size:{len(data)}  sha256:{hashlib.sha256(data).hexdigest()}")
+    lines += ["---", "", "# Stored record", ""]
+    return "\n".join(lines)
+
+
+class StoredRecordTests(_TempRepoCase):
+    """Records whose raw output lives in the artifact store (#686)."""
+
+    def write_stored(self, record_files=None, manifest_files=None) -> Path:
+        manifest = self.repo / "manifests" / "artifacts" / f"{STORED_STEM}.manifest.json"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text(_manifest_json(manifest_files or STORED_FILES))
+        record = self.records / f"{STORED_STEM}.md"
+        record.write_text(_stored_record_text(record_files or STORED_FILES))
+        return record
+
+    def test_matching_table_and_manifest_verifies(self):
+        self.init_repo()
+        record = self.write_stored()
+        self.assertEqual(vrc.verify_one(record, set()), [])
+
+    def test_table_manifest_mismatch_fails(self):
+        self.init_repo()
+        record = self.write_stored(record_files={**STORED_FILES, "out.log": b"result 2.0\n"})
+        problems = vrc.verify_one(record, set())
+        self.assertTrue(any("not in the manifest" in p for p in problems), problems)
+        self.assertTrue(any("not in the table" in p for p in problems), problems)
+
+    def test_stored_record_with_raw_directory_fails(self):
+        self.init_repo()
+        record = self.write_stored()
+        (self.records / "raw" / STORED_STEM).mkdir()
+        problems = vrc.verify_one(record, set())
+        self.assertTrue(any("raw directory beside it" in p for p in problems), problems)
+
+    def test_missing_manifest_fails(self):
+        self.init_repo()
+        record = self.write_stored()
+        (self.repo / "manifests" / "artifacts" / f"{STORED_STEM}.manifest.json").unlink()
+        problems = vrc.verify_one(record, set())
+        self.assertTrue(any("cannot read manifest" in p for p in problems), problems)
+
+    def test_manifest_with_non_artifact_uri_fails(self):
+        self.init_repo()
+        record = self.write_stored()
+        path = self.repo / "manifests" / "artifacts" / f"{STORED_STEM}.manifest.json"
+        path.write_text(path.read_text().replace("artifact:evidence", "https://x.invalid/evidence"))
+        problems = vrc.verify_one(record, set())
+        self.assertTrue(any("uri must start with 'artifact:'" in p for p in problems), problems)
+
+    def test_manifest_naming_a_missing_record_fails_the_corpus_run(self):
+        self.init_repo()
+        record = self.write_stored()
+        self.assertEqual(vrc.manifests_without_record(self.records, self.repo / "manifests" / "artifacts"), [])
+        record.unlink()
+        rc, _out, err = self.run_cli(["--quiet"])
+        self.assertEqual(rc, 1)
+        self.assertIn(f"{STORED_STEM}.manifest.json", err)
+
+    def test_corpus_run_passes_with_a_stored_record_beside_a_legacy_one(self):
+        self.init_repo()
+        self.write_record({"deck.cir": b"* d\n"})
+        self.write_stored()
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "records")
+        rc, out, err = self.run_cli(["--quiet"])
+        self.assertEqual(rc, 0, err)
+        self.assertIn("PASS: 2 record(s)", out)

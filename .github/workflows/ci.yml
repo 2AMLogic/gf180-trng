@@ -382,6 +382,16 @@ jobs:
       - name: Record checksum verification (sim/records/ raw.files)
         run: npm run check:record-checksums
 
+      # New evidence keeps its raw bytes in the artifact store; git holds a
+      # manifest per run (manifests/artifacts/, DR-0032). Offline and
+      # stdlib-only: validates the manifest schema, accepts only artifact:
+      # URIs, rejects storage names, and fails if a stored object's bytes (or
+      # anything under the git-ignored sim/.work/) are committed. Re-hashing
+      # against the store is `klt artifact verify`, which needs the broker and
+      # so runs on a fleet worker, not here.
+      - name: Artifact manifests (manifests/artifacts/, no stored bytes committed)
+        run: npm run check:artifact-manifests
+
       # Append-only enforcement (the checksum step above only proves the
       # CURRENT tree is self-consistent; a rewritten record with matching
       # hashes, or a deleted record + raw directory, would still pass it).

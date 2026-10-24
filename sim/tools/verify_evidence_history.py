@@ -11,6 +11,9 @@ fails on anything but an append.
 Rules (sim/README.md, "Superseding a record"):
 
   * a file added under sim/records/ (a new record or new raw output) passes;
+  * stored-evidence manifests `manifests/artifacts/*.manifest.json` (#686) are
+    held to the same rule: added passes; modified, deleted, renamed or
+    type-changed fails;
   * a modified, deleted, renamed (seen as delete + add) or type-changed file
     under sim/records/raw/ -- or any other non-record file -- fails;
   * a modified, deleted or renamed record `sim/records/<stem>.md` fails, with
@@ -49,6 +52,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS_PREFIX = "sim/records/"
+MANIFESTS_PATHSPEC = "manifests/artifacts/*.manifest.json"
 STEM_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
@@ -95,7 +99,7 @@ def changed_entries(repo: Path, base: str, head: str) -> list[tuple[str, str, st
     """
     proc = _git(
         repo, "diff-tree", "-r", "--raw", "--no-renames", "-z", "--no-abbrev",
-        base, head, "--", RECORDS_PREFIX.rstrip("/"), text=False,
+        base, head, "--", RECORDS_PREFIX.rstrip("/"), MANIFESTS_PATHSPEC, text=False,
     )
     parts = proc.stdout.split(b"\0")
     entries = []
@@ -213,6 +217,9 @@ def check_history(repo: Path, base: str, head: str = "HEAD") -> list[str]:
             continue
         if status != "M":
             problems.append(f"{path}: unexpected change status {status!r}")
+            continue
+        if not path.startswith(RECORDS_PREFIX):
+            problems.append(f"{path}: stored-evidence manifest modified")
             continue
         if not _is_record_path(path):
             problems.append(f"{path}: historical raw/non-record evidence modified")
