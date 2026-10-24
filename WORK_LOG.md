@@ -1,11 +1,227 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-10.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-22.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
+### 2026-10-22
+
+- **PR #684**: fix(signoff): re-pin item 9/10 inventories after README and ci.yml edits
+- **Issue #683** (closed): main CI red after #433: signoff freshness and citation inventories 9/10 stale
+- **PR #433**: Give the strict record-checksum CI step an npm check entry and parity coverage
+- **Issue #432** (closed): Give the strict record-checksum CI step an npm check entry and parity coverage
+
+### 2026-10-21
+
+- **PR #679**: chore(digital): trim per-gate antenna tables from the committed ERC report
+- **Issue #677** (closed): Trim 10 MB of per-gate tables from the committed digital ERC report
+- **PR #675**: Bump Repo Skills 0.24.3 -> 0.24.7
+
+### 2026-10-20
+
+- **Issue #663** (closed): Remove run_array_liveness_tap_phase.py: finished one-experiment launcher (~600 LOC)
+- **PR #672**: docs(sim): assess retiring the array tap-phase launcher; keep it pending replacement
+
+### 2026-10-17
+
+- **PR #667**: refactor(signoff): share the klt pex publish pipeline across publishers
+- **PR #666**: refactor(sim): share behavioral record frontmatter across six runners
+- **PR #646**: ci(nightly): pin yowasp-yosys to 0.69.0.0.post1233
+- **Issue #665** (closed): Deduplicate signoff publish scripts: combiner_sampler and ring2 share one pipeline
+- **Issue #660** (closed): Consolidate duplicated behavioral-record frontmatter across six sim/tb runners
+- **Issue #630** (closed): PDK nightly red: Yosys 0.70 (yowasp-yosys, unpinned) makes trng_top.synth.{v,json} STALE
+- **PR #664**: lvs: compare digital layout to trng_top.pnr.v as gate-level Verilog
+- **PR #661**: signoff: cite hashed inventories for T1 items 1, 2, 9 and 10 on both partitions
+- **PR #659**: docs(signoff): enumerate analog spec rows against klt 0.7.0 expr, declare no citable row
+- **PR #658**: signoff: cite item 11 as a compound evidence set so both partitions grade
+- **PR #657**: docs(signoff): record that no reproducible klt yield install route exists for item 6
+- **Issue #662** (closed): T1 item 11 digital: compute LVS power_connectivity from a gate-level Verilog reference
+- **Issue #655** (closed): T1 item 11: cite the ERC, LVS and P&R evidence as one compound set so the row grades for real instead of wrong_kind
+- **Issue #653** (closed): T1 items 1, 2, 9 and 10: cite artifact-anchored evidence in both partitions
+
+### 2026-10-16
+
+- **PR #651**: Bump Repo Skills 0.24.1 -> 0.24.3
+
+### 2026-10-15
+
+- **PR #648**: refactor(layout): share ring NAND2 and ring assembly generators across ring1/ring2
+- **Issue #346** (closed): Collapse duplicated ring1/ring2 layout generators (ro_nand2, ro_ring11) onto shared code
+- **PR #647**: sim: report binding-corner jitter constant beside the stated sizing constant
+- **Issue #628** (closed): Measure starved-cell jitter energy at the entropy-binding corner ss/+125C/3.63V (sizing currently applies the -40C value)
+- **PR #641**: sim: run 2 MHz supply-ripple points as split fleet requests and record results
+- **PR #640**: design: default digital_power_estimate to the ratified 2000 bps raw rate
+- **Issue #639** (closed): Follow-on from PR #638: digital_power_estimate.py still cites DR-0010 as proposed and defaults to 1 Mbps
+- **PR #638**: sim: carry ratified 2 kbps rate through rollup tools and docs; mark older rates historical
+- **PR #637**: sim: supply-ripple susceptibility results, beat + convergence (part of #414)
+- **Issue #585** (closed): Carry the 2 kbps Raw rate into the tools and documents #491 left at 1 Mbps / 500 bps
+- **PR #586**: feat(spec): move the Raw rate row to 2 kbps and size the array at a = 7.32
+- **Issue #491** (closed): Apply the mechanical edit set directed by ratified DR-0010 and DR-0011-rate (Raw rate row, sizing constant, derived figures)
+- **PR #634**: Bump Repo Skills 0.19.5 -> 0.24.1
+
+### 2026-10-13
+
+- **PR #633**: sim: starved-cell jitter-energy at ss/+125C/3.63V on the batch fleet (Part A of #628)
+- **PR #631**: Design study: price higher raw-rate entropy-source options from existing evidence (#629)
+- **Issue #629** (closed): Design study: a higher-rate entropy source (multi-RO / metastability hybrid tap) if Mbps-class rates are needed
+
+### 2026-10-11
+
+- **PR #625**: test: skip changed-record end-to-end case when origin/main is not fetched
+- **PR #624**: test: pin RCT/APT cutoff boundaries in RTL equivalence tests
+- **PR #622**: test: require simulator-gated unit tests in the nightly
+- **Issue #621** (closed): test_report end-to-end case errors when origin/main is not fetched (nightly dispatched on a branch)
+- **Issue #620** (closed): RTL equivalence tests for rct_apt.v do not pin the APT cutoff boundary (>= vs > survives)
+- **Issue #618** (closed): Make tool-gated RTL/ngspice tests runnable-and-required in at least one CI environment (iverilog tests skip everywhere in CI today)
+- **Issue #614** (closed): Add unit tests for the shared layout generator check/main factories in layout/cells/_build_cli.py
+- **PR #619**: test: cover signoff publishers (refusals, --backend argv, publication fields)
+- **Issue #611** (closed): Add unit tests for the signoff publication scripts (publish_item7_analog, publish_combiner_sampler_pex) and dedupe their shared run_pex
+- **PR #616**: Reserve klt output destinations before submission (#610)
+- **PR #615**: chore: remove dead clk_at, contract_rows, convergence_text, unused ctrl
+- **PR #613**: test: pin the _build_cli.py message contract with direct unit tests
+- **PR #612**: Guard tran-noise records against duplicated noise realizations (#605)
+- **PR #609**: fix: isolate each hostile-init sanity launch to the startup source it names
+- **PR #608**: Share one klt-request emit/run scaffold across the sim evidence tools
+- **PR #606**: Record that trnoise waveforms are not seed-reproducible on ngspice-46 (#574)
+- **PR #604**: Add shellcheck lint:shell step (#591)
+- **PR #600**: Replace hand-copied path-based module loaders with one helper (#553)
+- **Issue #610** (closed): Reserve klt simulation output destinations before submission to preserve prior responses
+- **Issue #605** (closed): Guard tran-noise records against duplicated noise realizations when runs share a process id
+- **Issue #603** (closed): Remove dead functions clk_at, contract_rows, convergence_text (and dead local ctrl)
+- **Issue #601** (closed): Add direct unit tests for layout/cells/_build_cli.py message contract
+- **Issue #591** (closed): Run shellcheck over tracked shell scripts in lint and CI (bash -n is the only check today)
+- **Issue #590** (closed): Share one klt-request emit/run scaffold across the sim tools and enforce the no-full-grid-local rule once
+- **Issue #584** (closed): test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy fails on hosts with ngspice-46
+- **Issue #574** (closed): ngspice-46 transient-noise (trnoise) draws are not reproduced by the recorded seed
+- **Issue #553** (closed): Replace 24 hand-copied path-based module loaders with one helper
+
+- **PR #599**: refactor: dedupe the layout generators' gds_path/check/main tail into _build_cli
+- **PR #598**: docs: record the second-pass LU.3/LU.4 source re-check in DR-0030
+- **PR #597**: spec: DR-0020 status note, FIFO_DEPTH = 2 holds at the 2 kbps raw rate
+- **PR #596**: Reject tracked raw simulation artifacts with no evidence record
+- **PR #595**: Migrate sim/tests loaders to load_module_from_path (#553, batch 2)
+- **Issue #593** (closed): Reject tracked raw simulation artifacts with no evidence record
+- **Issue #589** (closed): Dedup the gds_path/check/main boilerplate repeated in every layout generator
+- **Issue #583** (closed): DR-0020 revisit trigger fired: re-examine output FIFO_DEPTH at the 2 kbps raw rate
+- **PR #592**: Redact absolute parameterized PDK paths from model manifest diagnostics
+- **PR #588**: Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **PR #587**: Add load_module_from_path helper and migrate production loaders (batch 1 of #553)
+- **PR #580**: docs: correct what the Area row's 351.6 % figure is (#495)
+- **PR #579**: Control ambient ngspice start-up configuration in harness runs
+- **PR #578**: Reject DUT includes that collide with generated simulation artifacts
+- **PR #577**: Record the outcome of the LU.3/LU.4 controlled-DRM source search (#486)
+- **PR #576**: Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **PR #573**: Enforce harness ownership of stochastic simulation seed controls
+- **PR #572**: Reject nonpositive simulation timeout bounds before launching ngspice
+- **PR #567**: Deduplicate git blob SHA-1 helper onto sim/harness/report.py (#557)
+- **Issue #582** (closed): Freeze ngspice startup-script bytes before sweeps and preserve them in raw evidence
+- **Issue #575** (closed): Control ambient ngspice startup configuration in evidence-producing harness runs
+- **Issue #570** (closed): Add a relative markdown link guard to npm run lint (and fix existing broken links)
+- **Issue #569** (closed): Redact absolute parameterized PDK paths from model manifest diagnostics
+- **Issue #566** (closed): Enforce harness ownership of stochastic simulation seed controls
+- **Issue #565** (closed): Reject DUT include filenames that collide with generated simulation artifacts
+- **Issue #563** (closed): Reject nonpositive simulation timeout bounds before launching ngspice
+- **Issue #557** (closed): Deduplicate git blob SHA-1 helper: 4 copies across sim/harness and sim/tools
+- **Issue #495** (closed): Area row status text predates the composed layout
+- **PR #568**: Record PDK model-content identity in new simulation evidence
+- **PR #564**: Bound the default concurrency of sim/characterize.py
+- **PR #560**: ci: pin GitHub Actions to verified commit SHAs and guard against mutable refs
+- **PR #559**: Publish SPICE evidence records with exclusive creation
+- **PR #555**: Centralise the superseded-record filter and latest-record selection (#554)
+- **Issue #562** (closed): Record PDK model-content fingerprints in new simulation evidence
+- **Issue #561** (closed): Auditor Capability Request: Python interpreter unavailable for repository checks
+- **Issue #558** (closed): Bound the default concurrency of sim/characterize.py instead of using every core
+- **Issue #554** (closed): Centralise the superseded-record filter and latest-record selection in one shared reader
+- **Issue #544** (closed): Pin GitHub Actions to commit SHAs and guard against mutable refs
+- **Issue #539** (closed): Use exclusive publication for SPICE evidence Markdown
+- **PR #552**: Scope whole-record measurement readers to the primary Result section
+- **PR #551**: Validate multi-seed summary bullets in the shared record parser
+- **PR #550**: Freeze SPICE inputs per invocation and hash the captured bytes
+- **PR #549**: Pin the OpenROAD image that produced the committed artefacts (#507)
+- **PR #545**: Validate raw-artifact path containment before verifying evidence
+- **PR #543**: Require final-tree CI-gate validation in verification guidance
+- **PR #535**: Validate numeric exponent tokens and finiteness in evidence bullets (#529)
+- **Issue #548** (closed): Scope whole-record measurement readers to primary Result sections
+- **Issue #547** (closed): Validate finite means, spreads, and seed counts in multi-seed evidence summaries
+- **Issue #515** (closed): Freeze SPICE source inputs for consistent multi-corner evidence
+- **Issue #507** (closed): Build/runtime failure on main: nightly SDF freshness fails on engine_version
+- **Issue #541** (closed): Validate raw-artifact path containment before verifying evidence
+- **Issue #508** (closed): Builder validation omits repository CI gates before review
+- **Issue #529** (closed): Validate numeric exponent tokens and finiteness when reading evidence Markdown
+
 ### 2026-10-10
 
+- **PR #540**: Consolidate duplicated result-bullet regexes onto the shared record parser
+- **PR #538**: Reject empty and non-finite PVT execution plans before simulation
+- **PR #536**: Reject unknown testbench analysis types at manifest load
+- **PR #533**: Include liveness and digital evidence in the Row D reproduction mapping
+- **PR #531**: Guard against unused imports and locals in npm run lint (#494)
+- **PR #530**: sim: reject non-finite ngspice measurements before declaring a run ok
+- **PR #525**: Remove tracked stale .loom/manifest.json.tmp
+- **PR #523**: ci: run nightly no-evidence-write assertion after earlier failures
+- **PR #521**: ci: bound ci.yml jobs with timeout-minutes (#519)
+- **PR #518**: Replace README status changelog with a short summary (#502)
+- **PR #517**: sim: reserve behavioral record stems before rendering raw artifacts
+- **Issue #537** (closed): Consolidate duplicated result-bullet regexes onto the shared record parser
+- **Issue #532** (closed): Reject empty and non-finite PVT execution plans before simulation
+- **Issue #534** (closed): Reject unknown testbench analysis types before stochastic seed planning
+- **Issue #528** (closed): Include required liveness power evidence in the Row D reproduction mapping
+- **Issue #494** (closed): Guard against unused imports and locals in npm run lint (recurring ruff F401/F841 cleanups)
+- **Issue #527** (closed): Reject overflowed non-finite ngspice measurements before declaring success
+- **Issue #524** (closed): Remove tracked .loom/manifest.json.tmp: stale install artifact matched by .gitignore
+- **Issue #526** (closed): Auditor Capability Request: Python 3 unavailable for local harness validation
+- **Issue #522** (closed): Run the nightly no-evidence-write assertion after verification failures
+- **Issue #519** (closed): Bound CI job runtime with timeout-minutes in ci.yml
+- **Issue #502** (closed): Replace the README status changelog paragraph with a short summary and relocate the history
+- **Issue #514** (closed): Reserve behavioral evidence stems before rendering raw artifacts
+
+### 2026-10-10
+
+- **PR #513**: sim: reject duplicate seeds and colliding PVT plans before allocation
+- **PR #512**: sim: snapshot the loaded testbench manifest with each run record
+- **PR #509**: sim: separate failed-run diagnostics from report summaries
+- **PR #505**: sim: record blocked ring2 paired PEX batch attempt (Part of #476)
+- **PR #504**: docs(signoff): combiner/sampler PVT grid attempt 5, still unrun (part of #418)
+- **PR #503**: test(sim): guard that every --check sim tool is wired or allowlisted
+- **PR #501**: Isolate per-invocation scratch directories for --no-write sweeps
+- **PR #500**: Fail unsuccessful ngspice executions even when all measurements are printed
+- **PR #497**: docs: move the spec-row change history out of the README table
+- **PR #496**: docs(signoff): combiner/sampler PEX grid attempt 4, all rows errored (partial #418)
+- **PR #493**: docs: refresh Chipalooza Row I area from regenerated floorplan report
+- **PR #492**: spec: ratify DR-0010, DR-0011-rate, DR-0015, DR-0016 and DR-0018 via the two-key mechanism
+- **PR #490**: sim: quantify DC drop through the digital supply docking path and PDN (#464)
+- **PR #489**: sim: reconcile shipped liveness samplers with the whole-block active-power ledger (#463)
+- **PR #488**: docs: DR-0029 disposition of the LU.3/LU.4 tie-distance column (#449)
+- **PR #483**: sim: stop git gc/maintenance racing tempdir cleanup in evidence-history tests (#479)
+- **Issue #511** (closed): Reject duplicate seeds and colliding PVT execution plans before allocation
+- **Issue #510** (closed): Snapshot simulation manifests alongside checksum-protected run evidence
+- **Issue #506** (closed): Separate failed-run diagnostic measurements from simulation evidence statistics
+- **Issue #499** (closed): Isolate scratch directories for concurrent no-write simulation sweeps
+- **Issue #498** (closed): Fail unsuccessful ngspice executions even when all measurements are printed
+- **Issue #484** (closed): Refresh Chipalooza area evidence after floorplan regeneration and derive its guard from the report
+- **Issue #481** (closed): Move the README spec-row change history out of the Target specification table
+- **Issue #480** (closed): Carry the remaining Proposed decision records (DR-0010/0011/0015/0016/0017/0018) through ratification
+- **Issue #479** (closed): Build/runtime failure on main: flaky tempdir cleanup in test_verify_evidence_history (Errno 39)
+- **Issue #474** (closed): Guard that every sim tool with a --check mode is wired into check:spec or explicitly allowlisted
+- **Issue #464** (closed): Quantify DC voltage loss through the digital supply docking path and parallel PDN
+- **Issue #463** (closed): Reconcile shipped liveness samplers with the whole-block active-power ledger
+
+### 2026-10-10
+
+- **PR #482**: sim: remove unused imports and an unused local (#478)
+- **PR #477**: docs: out-of-envelope health-test characterization model-bound audit and plan (#467)
+- **PR #475**: sim: fs/sf campaign second batch retry, refused again (#472)
+- **PR #473**: sim: integrated fs/sf capture campaign on the ring-array + XOR + sampler path (#472)
+- **PR #470**: docs(signoff): combiner/sampler PEX grid attempt 3, batch capacity refused (#418)
+- **Issue #478** (closed): Remove dead code: 3 unused imports, 1 unused local (ruff F401/F841)
+- **Issue #467** (closed): Establish model bounds and a feasible plan for out-of-envelope health-test characterization
+
+### 2026-10-10
+
+- **PR #466**: Price the top-edge digital pin legs in the STA interface load and re-run the sweep (#456)
+- **PR #465**: Skip superseded records in the remaining direct-glob record readers
+- **Issue #456** (closed): Price the top-edge digital pin legs in the STA interface load and re-run the sweep against the regenerated trunks
+- **Issue #427** (closed): Apply the superseded-record lifecycle filter to the remaining direct-glob record readers in sim/tools
 - **PR #461**: Enforce activity capture-source freshness and full campaign coverage (#457)
 - **PR #460**: Run tap-distance report regeneration in the mandatory nightly verification job
 - **Issue #457** (closed): Enforce activity capture-source freshness and full campaign coverage

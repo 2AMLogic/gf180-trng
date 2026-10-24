@@ -1,0 +1,329 @@
+{
+ "environment": {
+  "engine": "ngspice",
+  "engine_version": "42",
+  "ngspice_binary": "/usr/bin/ngspice",
+  "models_lib": {
+   "path": null,
+   "scope": "external"
+  },
+  "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+  "netlist_sha256": "e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8",
+  "netlist_closure": [
+   {
+    "path": "sim/tb/sampler-core-liveness-active/tb_sampler_core_liveness_active.sp",
+    "scope": "repo",
+    "sha256": "e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8"
+   },
+   {
+    "path": "design/sampler_core.spice",
+    "scope": "repo",
+    "sha256": "1e0dcf608ac2e45a7552f33af5958eab14b8f34a5bbceb7052eec580038c4c1f"
+   }
+  ]
+ },
+ "provenance": {
+  "klt_version": "0.7.0+gca3089cd4b9f",
+  "klayout_version": "0.30.12",
+  "pdk": {
+   "name": "gf180mcuD",
+   "source": "search root: ~/.volare",
+   "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+  },
+  "deck": {
+   "name": "sm141064.ngspice",
+   "content_hash": "sha256:6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+   "released": false
+  },
+  "input": {
+   "content_hash": "sha256:e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8",
+   "role": "netlist"
+  }
+ },
+ "corner": {
+  "corner_id": "tt/3.300V/27C",
+  "process": "tt",
+  "supply_v": {
+   "vsupply": 3.3
+  },
+  "temperature_c": 27,
+  "status": "pass",
+  "runtime_s": 14.045,
+  "measurements": [
+   {
+    "name": "t1a",
+    "value": 1.35562e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t1b",
+    "value": 4.01623e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t2a",
+    "value": 1.26896e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t2b",
+    "value": 3.75724e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc1a",
+    "value": 1.3497e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc1b",
+    "value": 4.02074e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc2a",
+    "value": 1.26336e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc2b",
+    "value": 3.75964e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q1_1a",
+    "value": -0.0002505256,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q1_1b",
+    "value": -0.0007554092,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qt_1a",
+    "value": -0.0002657441,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qt_1b",
+    "value": -0.0008141652,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsb_1a",
+    "value": -4.393556e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsb_1b",
+    "value": -0.0001596642,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_1a",
+    "value": -2.675816e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_1b",
+    "value": -4.995432e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs1_1a",
+    "value": -3.480689e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs1_1b",
+    "value": -0.0001357129,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q2_2a",
+    "value": -0.0002498518,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q2_2b",
+    "value": -0.0007537638,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_2a",
+    "value": -2.675808e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_2b",
+    "value": -4.44882e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs2_2a",
+    "value": -2.875617e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs2_2b",
+    "value": -0.0001185099,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq1i_c1a",
+    "value": -0.0002494443,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq1i_c1b",
+    "value": -0.0007558936,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqt_c1a",
+    "value": -0.000237393,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqt_c1b",
+    "value": -0.0007397975,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsb_c1a",
+    "value": -4.378261e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsb_c1b",
+    "value": -0.0001635517,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsv_c1a",
+    "value": -2.675816e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsv_c1b",
+    "value": -5.200119e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq2i_c2a",
+    "value": -0.0002487206,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq2i_c2b",
+    "value": -0.0007536867,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring1_max",
+    "value": 3.410593,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring1_min",
+    "value": -0.03660921,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring2_max",
+    "value": 3.396789,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring2_min",
+    "value": -0.03597332,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   }
+  ],
+  "diagnostics": [],
+  "artifacts": {
+   "log": "/tmp/p463/probe/probe-tt_27_3.30/tt_3p300V_27C/ngspice.log",
+   "raw": null,
+   "waveform": null,
+   "deck": "/tmp/p463/probe/probe-tt_27_3.30/tt_3p300V_27C/corner.cir"
+  },
+  "monte_carlo": null
+ }
+}

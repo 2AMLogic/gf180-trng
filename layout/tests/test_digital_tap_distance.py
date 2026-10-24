@@ -14,7 +14,6 @@ Two groups:
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import sys
 import tempfile
@@ -23,14 +22,14 @@ from pathlib import Path
 
 LAYOUT_DIR = Path(__file__).resolve().parents[1]
 DIGITAL = LAYOUT_DIR / "digital"
+REPO_ROOT = LAYOUT_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("tap_distance", DIGITAL / "tap_distance.py")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["tap_distance"] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path("tap_distance", DIGITAL / "tap_distance.py")
 
 
 td = _load()

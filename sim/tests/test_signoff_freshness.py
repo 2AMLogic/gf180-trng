@@ -8,18 +8,19 @@ envelopes live under a temp dir that stands in for the repo root.
 
 import contextlib
 import hashlib
-import importlib.util
 import io
 import json
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("signoff_check", ROOT / "signoff" / "check.py")
-check = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check)
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+check = load_module_from_path("signoff_check", ROOT / "signoff" / "check.py")
 
 PAYLOAD = b"synthetic layout bytes\n"
 DIGEST = "sha256:" + hashlib.sha256(PAYLOAD).hexdigest()
@@ -127,6 +128,23 @@ class CommittedManifest(unittest.TestCase):
         manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(check.freshness_gate(manifest), 0)
+
+    def test_place_and_route_envelope_is_cited_unpinned(self):
+        manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
+        parts = manifest["evidence"]["11.digital"]
+        pnr = [p for p in parts if p["file"] == check.PNR_ENVELOPE]
+        self.assertEqual(len(pnr), 1)
+        self.assertNotIn("content_hash", pnr[0])
+
+    def test_stale_pin_on_item_11_lvs_entry_fails(self):
+        manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
+        for part in manifest["evidence"]["11.analog"]:
+            if part["file"].endswith(".lvs.json"):
+                part["content_hash"] = WRONG
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            self.assertEqual(check.freshness_gate(manifest), 1)
+        self.assertIn("11.analog", err.getvalue())
 
 
 if __name__ == "__main__":

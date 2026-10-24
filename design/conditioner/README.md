@@ -49,6 +49,47 @@ fixes the values.
 cycle as the gate is not absorbed, because it belongs to the failing
 window (DR-0002).
 
+## K at the 2 kbps raw rate
+
+*2026-10-11, #491.* The `Raw rate` row moved from `> 1 Mbps` to `> 2 kbps`
+([`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](../../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+§1; its §4 item 5 asks for K to be re-derived at the new rate). Re-derived
+against DR-0008's own basis, **K stays 8**, and nothing in the RTL changes:
+
+- **What sets K.** DR-0008 §5 picks K so that the non-vetted cap
+  `0.85 × min(n_out, nw)` is the binding term for any input at or above the
+  break-even min-entropy, with margin under the `H₀ = 0.5` design target.
+  With `n_out = nw = 32` and `n_in = 32 K`, the break-even `H` per raw sample
+  (`sim/tb/conditioner-crc32/sp800_90b.py`, `break_even_h_per_bit`) is
+  0.4258 / 0.2129 / **0.1065** / 0.0532 for K = 2 / 4 / **8** / 16, i.e.
+  margins of 1.17× / 2.35× / **4.70×** / 9.39× under `H₀ = 0.5`.
+- **None of those inputs depends on the raw rate.** `n_in`, `n_out`, `nw`,
+  the 0.85 cap and `H₀` are all per-sample or per-block quantities, and the
+  rate decision explicitly leaves `H₀`, DR-0002 and DR-0007 §§1–2 unchanged.
+  The governing inequality is therefore the same one DR-0008 solved, and it
+  has the same answer. DR-0008's own "Revisit if" names a moved `R_raw` only
+  insofar as it changes the margin argument against K = 2 / K = 4 — that
+  argument is about `H`, which is still unmeasured (#12), so it does not move.
+- **A slower raw rate is not, by itself, evidence for a different K.** It
+  makes the delivered rate smaller, which makes a smaller K *tempting*, but
+  trading the 4.70× entropy margin for rate is exactly the trade DR-0008 §3
+  declined until `H` is measured. A different K would need its own decision
+  record.
+
+What does move is the arithmetic that is linear in the rate. At the ratified
+2 kbps (`sim/tools/time_to_first_valid.py`):
+
+| Quantity | At 2 kbps | Historical, at the original 1 Mbps |
+|---|---|---|
+| Delivered rate `R_cond = R_raw / K` | > 250 bps (one 32-bit word per 128 ms) | > 125 kbps (one word per 256 µs) |
+| Conditioner latency, 256 samples | 0.128 s | 0.256 ms |
+| Start-up health test, 1024 samples | 0.512 s | 1.024 ms |
+| Arithmetic floor on time-to-first-valid (1280 samples) | 0.640 s | 1.28 ms |
+| Tool total: + one sampler clock + measured oscillator start-up | 640.5 ms | 1.281 ms (#14) |
+
+The 2 kbps column is arithmetic at a target rate, not a measurement made at
+it. These are design-stage figures; none of them is an entropy claim.
+
 ## What is *not* here
 
 The output FIFO, the `OUT_MODE` mux and bypass path, the `DATA` /

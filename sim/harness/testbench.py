@@ -16,14 +16,25 @@ harness hands the fragment these parameters:
 
 plus anything in the manifest's ``params`` map, and (for stochastic
 testbenches) the seed injected via ``.option seed=<value>``.
+
+Seed control is harness-owned for stochastic testbenches: manifest ``options``,
+``analyses``, the fragment, the DUT netlist and its captured includes must not
+set a seed (``.option seed=``, ``setseed``, ``set rndseed=``); see
+``validate_seed_ownership``. Seeds come from the CLI ``--seeds`` list.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
+import re
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Iterable
 
+from . import pdk_models, startup
 from .corners import (
     DEFAULT_CORNER_SET,
     DEFAULT_NOMINAL_SUPPLY_V,
@@ -36,11 +47,37 @@ MANIFEST_NAME = "tb.json"
 #: Every testbench lives directly under sim/tb/<slug>/, per sim/README.md.
 TB_ROOT_DIRNAME = "tb"
 
-FORBIDDEN_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp", ".include")
+#: ``.inc`` is ngspice's abbreviation of ``.include``. Includes are rejected
+#: in the testbench fragment. The DUT netlist may ``.include`` sibling files
+#: (the extracted-parasitics netlists do); those are captured and frozen with
+#: it -- see ``DUT_INCLUDE_DIRECTIVES`` and ``_capture_dut_dependencies``.
+FORBIDDEN_DIRECTIVES = (
+    ".control", ".endc", ".end", ".lib", ".temp", ".include", ".inc",
+)
+
+#: Directives the DUT netlist may use to pull in sibling files. Only a bare
+#: file name resolving next to the DUT is supported (it is snapshotted next to
+#: the DUT snapshot under the same name, so ngspice resolves it identically);
+#: anything else is rejected before launch.
+DUT_INCLUDE_DIRECTIVES = (".include", ".inc")
+
+#: Fixed file names of the per-invocation input snapshots (raw dir / deck dir).
+FRAGMENT_SNAPSHOT_NAME = "tb.fragment.spice"
+DUT_SNAPSHOT_NAME = "dut.netlist.spice"
+#: Per-record copy of the loaded ``tb.json`` kept in the raw directory.
+MANIFEST_SNAPSHOT_NAME = "tb.manifest.json"
 
 #: analysis.type values sim/README.md's frontmatter recognizes as stochastic
 #: (i.e. subject to the "no seed, no evidence" rule).
 STOCHASTIC_ANALYSIS_TYPES = ("tran-noise", "mc")
+
+#: Every analysis type a manifest may declare. ``op`` is the default when
+#: ``analysis_type`` is absent. The type is metadata that drives seed
+#: enforcement, so an unrecognised token (e.g. a misspelt ``tran-noise``)
+#: is rejected at load rather than silently planned as deterministic.
+SUPPORTED_ANALYSIS_TYPES = ("op", "tran", "tran-noise", "noise", "ac", "dc", "mc")
+
+assert set(STOCHASTIC_ANALYSIS_TYPES) <= set(SUPPORTED_ANALYSIS_TYPES)
 
 
 @dataclass
@@ -74,6 +111,55 @@ class Testbench:
     #: the PVT point -- so they belong in the manifest, next to the settings
     #: that cause them, rather than being re-typed per record.
     caveats: tuple[str, ...] = ()
+    #: The exact ``tb.json`` bytes this object was built from (read once, in
+    #: ``load``). Records snapshot these rather than re-reading the file, so
+    #: the recorded manifest is the configuration the decks were composed
+    #: from even if the working tree changes mid-run. ``None`` for a
+    #: Testbench constructed by hand rather than via ``load``.
+    manifest_bytes: bytes | None = None
+    #: The exact testbench-fragment and DUT-netlist bytes read once in
+    #: ``load`` (``design_netlist_bytes`` is ``None`` when the fragment is
+    #: itself the DUT). Decks include snapshots of these, and records hash
+    #: them, so the circuit ngspice consumed is the one recorded even if the
+    #: working-tree files change mid-sweep. ``None`` for hand-built objects,
+    #: which fall back to the live files.
+    netlist_bytes: bytes | None = None
+    design_netlist_bytes: bytes | None = None
+    #: ``(bare file name, bytes)`` of every sibling file the DUT netlist
+    #: transitively ``.include``s, captured at load next to the DUT.
+    design_dependencies: tuple[tuple[str, bytes], ...] = ()
+
+    @property
+    def dut_netlist_bytes(self) -> bytes | None:
+        if self.design_netlist is not None:
+            return self.design_netlist_bytes
+        return self.netlist_bytes
+
+    def input_snapshots(self) -> list[tuple[str, bytes]]:
+        """``(snapshot name, captured bytes)`` for each distinct SPICE input."""
+        out: list[tuple[str, bytes]] = []
+        if self.netlist_bytes is not None:
+            out.append((FRAGMENT_SNAPSHOT_NAME, self.netlist_bytes))
+        if self.design_netlist is not None and self.design_netlist_bytes is not None:
+            out.append((DUT_SNAPSHOT_NAME, self.design_netlist_bytes))
+            out.extend(self.design_dependencies)
+        return out
+
+    @property
+    def fragment_snapshot_name(self) -> str | None:
+        return FRAGMENT_SNAPSHOT_NAME if self.netlist_bytes is not None else None
+
+    @property
+    def dut_snapshot_name(self) -> str | None:
+        if self.design_netlist is None:
+            return self.fragment_snapshot_name
+        return DUT_SNAPSHOT_NAME if self.design_netlist_bytes is not None else None
+
+    @property
+    def manifest_sha256(self) -> str | None:
+        if self.manifest_bytes is None:
+            return None
+        return hashlib.sha256(self.manifest_bytes).hexdigest()
 
     @property
     def stochastic(self) -> bool:
@@ -114,11 +200,13 @@ def load(directory: str | Path) -> Testbench:
     if not manifest_path.is_file():
         raise FileNotFoundError(f"no {MANIFEST_NAME} in {directory}")
 
-    manifest = json.loads(manifest_path.read_text())
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes.decode("utf-8"))
 
     netlist = directory / _require(manifest, "netlist", manifest_path)
     if not netlist.is_file():
         raise FileNotFoundError(f"{manifest_path}: netlist {netlist} does not exist")
+    netlist_bytes = netlist.read_bytes()
 
     measure = dict(_require(manifest, "measure", manifest_path))
     if not measure:
@@ -134,7 +222,16 @@ def load(directory: str | Path) -> Testbench:
     if not analyses:
         raise ValueError(f"{manifest_path}: 'analyses' must not be empty")
 
+    analysis_type = manifest.get("analysis_type", "op")
+    if not isinstance(analysis_type, str) or analysis_type not in SUPPORTED_ANALYSIS_TYPES:
+        raise ValueError(
+            f"{manifest_path}: unsupported analysis_type {analysis_type!r}; "
+            f"supported types: {', '.join(SUPPORTED_ANALYSIS_TYPES)}"
+        )
+
     design_netlist = None
+    design_netlist_bytes = None
+    design_dependencies: tuple[tuple[str, bytes], ...] = ()
     if "design_netlist" in manifest:
         # Repo-relative (e.g. "design/ro_array_core.spice"): the DUT is a
         # schematic-derived netlist shared by several testbenches, not a
@@ -146,6 +243,8 @@ def load(directory: str | Path) -> Testbench:
                 f"{manifest_path}: design_netlist {design_netlist} does not exist "
                 "-- run `python3 design/netlist.py` to export it"
             )
+        design_netlist_bytes = design_netlist.read_bytes()
+        design_dependencies = _capture_dut_dependencies(design_netlist, design_netlist_bytes)
 
     tb = Testbench(
         directory=directory,
@@ -158,7 +257,7 @@ def load(directory: str | Path) -> Testbench:
             float(t) for t in manifest.get("temperatures_c", DEFAULT_TEMPERATURES_C)
         ),
         corners=tuple(manifest.get("corners", (DEFAULT_CORNER_SET,))),
-        analysis_type=manifest.get("analysis_type", "op"),
+        analysis_type=analysis_type,
         analyses=analyses,
         measure=measure,
         params={k: v for k, v in manifest.get("params", {}).items()},
@@ -172,35 +271,298 @@ def load(directory: str | Path) -> Testbench:
         extra_lib_sections=tuple(manifest.get("extra_lib_sections", ())),
         design_netlist=design_netlist,
         caveats=tuple(manifest.get("caveats", ())),
+        manifest_bytes=manifest_bytes,
+        netlist_bytes=netlist_bytes,
+        design_netlist_bytes=design_netlist_bytes,
+        design_dependencies=design_dependencies,
     )
     validate_netlist(tb)
+    validate_seed_ownership(tb)
+    # The manifest drives deck composition and measurement interpretation, so
+    # refuse to proceed if it was edited while we were loading it: the
+    # snapshot would otherwise not be the configuration actually used.
+    if manifest_path.read_bytes() != manifest_bytes:
+        raise ValueError(
+            f"{manifest_path}: changed while it was being loaded; re-run once "
+            "the file is stable"
+        )
     if tb.stochastic and tb.default_runs < 1:
         raise ValueError(f"{manifest_path}: stochastic testbench must set default_runs >= 1")
     return tb
 
 
+def _scan_forbidden(data: bytes, forbidden: tuple[str, ...] = FORBIDDEN_DIRECTIVES) -> list[str]:
+    problems: list[str] = []
+    for lineno, raw in enumerate(data.decode("utf-8", errors="replace").splitlines(), start=1):
+        line = raw.strip().lower()
+        if not line.startswith("."):
+            continue
+        if line.split()[0] in forbidden:
+            problems.append(f"  line {lineno}: {raw.strip()}")
+    return problems
+
+
+#: Directives a DUT netlist must not contain (it is ``.include``d into the
+#: harness's own deck, so it cannot own the models, temperature or control).
+DUT_FORBIDDEN_DIRECTIVES = tuple(
+    d for d in FORBIDDEN_DIRECTIVES if d not in DUT_INCLUDE_DIRECTIVES
+)
+
+_RESERVED_SNAPSHOT_NAMES = (FRAGMENT_SNAPSHOT_NAME, DUT_SNAPSHOT_NAME)
+
+
+def _include_target(line: str) -> str | None:
+    """The file named by a ``.include``/``.inc`` line (``None`` if not one)."""
+    parts = line.strip().split(None, 1)
+    if len(parts) != 2 or parts[0].lower() not in DUT_INCLUDE_DIRECTIVES:
+        return None
+    target = parts[1].strip()
+    if len(target) >= 2 and target[0] == target[-1] and target[0] in "\"'":
+        target = target[1:-1]
+    return target
+
+
+def _capture_dut_dependencies(
+    dut: Path, data: bytes
+) -> tuple[tuple[str, bytes], ...]:
+    """Read, once, every sibling file the DUT netlist transitively includes.
+
+    Supported form: ``.include "name.spice"`` where ``name.spice`` is a bare
+    file name next to the including file. Absolute paths, sub-directories and
+    ``..`` are rejected: they would resolve to a mutable original (or to a
+    layout the flat snapshot directory cannot reproduce). Returns
+    ``(name, bytes)`` in first-encounter order; every file is also scanned for
+    the directives the harness owns.
+    """
+    found: dict[str, bytes] = {}
+    stack: list[str] = []
+
+    def visit(owner: Path, owner_name: str, content: bytes) -> None:
+        problems = _scan_forbidden(content, DUT_FORBIDDEN_DIRECTIVES)
+        if problems:
+            raise ValueError(
+                f"{owner}: DUT netlists must not contain "
+                f"{', '.join(DUT_FORBIDDEN_DIRECTIVES)} -- the harness supplies the "
+                "models, corner libs, temperature and control block:\n" + "\n".join(problems)
+            )
+        text = content.decode("utf-8", errors="replace")
+        for lineno, raw in enumerate(text.splitlines(), start=1):
+            target = _include_target(raw)
+            if target is None:
+                continue
+            where = f"{owner}:{lineno}: {raw.strip()}"
+            if (
+                not target
+                or "/" in target
+                or "\\" in target
+                or target in (".", "..")
+                or target in _RESERVED_SNAPSHOT_NAMES
+                or target.startswith(".")
+            ):
+                raise ValueError(
+                    f"{where}\n  unsupported include form: only a bare file name "
+                    "next to the including file is frozen with the DUT snapshot "
+                    "(absolute paths, sub-directories and '..' would read a mutable "
+                    "original); move the dependency next to the netlist or inline it"
+                )
+            if target == dut.name or target in stack:
+                raise ValueError(f"{where}\n  include cycle through {target}")
+            dep = dut.parent / target
+            if not dep.is_file():
+                raise FileNotFoundError(f"{where}\n  included file {dep} does not exist")
+            if target in found:
+                continue
+            dep_bytes = dep.read_bytes()
+            found[target] = dep_bytes
+            stack.append(target)
+            visit(dep, target, dep_bytes)
+            stack.pop()
+
+    visit(dut, dut.name, data)
+    return tuple(found.items())
+
+
+_TOKEN_RE = re.compile(r"[^\s=,()]+")
+
+
+def _logical_lines(text: str) -> list[tuple[int, str]]:
+    """``(first line number, text)`` per logical SPICE/control line.
+
+    ``+`` continuation lines are joined to their predecessor; ``*`` comment
+    lines are dropped and trailing ``;`` / ``$`` comments are stripped.
+    """
+    out: list[tuple[int, str]] = []
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        line = raw.strip()
+        if not line or line.startswith("*"):
+            continue
+        for marker in (";", " $"):
+            cut = line.find(marker)
+            if cut >= 0:
+                line = line[:cut].strip()
+        if line.startswith("+") and out:
+            out[-1] = (out[-1][0], out[-1][1] + " " + line[1:].strip())
+        elif line:
+            out.append((lineno, line))
+    return out
+
+
+# ngspice-46 reads the seed from any netlist line whose first token starts
+# with ".opt" (src/frontend/options.c inp_getopts: ciprefix(".opt", line)) by
+# a plain substring search for "seed=" (src/frontend/inp.c eval_opt), so
+# ".opt seed=3" and ".option xseed=3" set the seed too. The pattern below is a
+# deliberate superset of that search (it also tolerates blanks around "=").
+_OPTION_SEED_RE = re.compile(r"seed\s*=")
+
+
+def _seed_control_reason(line: str, *, bare_options: bool = False) -> str | None:
+    """Why ``line`` competes with the harness-owned seed (``None`` if it doesn't).
+
+    Recognized ngspice seed-setting forms (case-insensitive), each backed by
+    the ngspice-46 manual and source and exercised by the experiment in
+    ``sim/tool-experiments/2026-10-11-ngspice-seed-control/``:
+
+    * a netlist option line (first token ``.opt...``, i.e. ``.opt``,
+      ``.option``, ``.options``) containing ``seed=`` -- manual 11.1.1 option
+      ``SEED``. With several, ngspice warns and the *first* one in the deck
+      wins, so a later one is silently ignored;
+    * the ``option`` / ``options`` control command with a seed option --
+      manual 13.5.54 / 13.7. Measured to have no effect on the generator in
+      ngspice-46, but it declares a seed the run would not use;
+    * the ``setseed [n]`` control command -- manual 13.5.76; reseeds every
+      later draw;
+    * ``set rndseed=<n>`` / ``unset rndseed`` -- manual 13.7; reseeds the
+      control-language random functions and a later bare ``setseed``.
+
+    With ``bare_options`` the line is a bare option list (the manifest
+    ``options`` field, emitted as ``.options <entry>``). Other solver options
+    (``reltol``, ``method``, ``seedinfo`` ...) are not touched.
+    """
+    tokens = [t.lower() for t in _TOKEN_RE.findall(line)]
+    if not tokens:
+        return None
+    head, rest = tokens[0], tokens[1:]
+    lowered = line.lower()
+    if bare_options:
+        if "seed" in tokens or _OPTION_SEED_RE.search(lowered):
+            return "option 'seed'"
+    elif head.startswith(".opt") or head in ("option", "options"):
+        if "seed" in rest or _OPTION_SEED_RE.search(lowered):
+            return "option 'seed'"
+    if head == "setseed":
+        return "'setseed' command"
+    if head in ("set", "unset") and "rndseed" in rest:
+        return "'rndseed' variable"
+    return None
+
+
+def scan_seed_controls(text: str, *, bare_options: bool = False) -> list[str]:
+    """Lines of ``text`` that set the random seed, as ``line N: ... (why)``."""
+    problems: list[str] = []
+    for lineno, line in _logical_lines(text):
+        reason = _seed_control_reason(line, bare_options=bare_options)
+        if reason:
+            problems.append(f"  line {lineno}: {line} ({reason})")
+    return problems
+
+
+def validate_seed_ownership(tb: Testbench) -> None:
+    """Reject manifest, SPICE-input and analysis content that sets a seed.
+
+    For a stochastic testbench the harness alone owns the RNG seed: it emits
+    one ``.option seed=<n>`` per run from the CLI seed list, and a second
+    declaration (manifest ``options``, fragment, DUT or any captured include,
+    or an ``analyses`` command) would leave the random sequence ambiguous
+    while the record reports only the planned seed. Raises ``ValueError``
+    naming each offending source; deterministic testbenches are not checked.
+    """
+    if not tb.stochastic:
+        return
+    sources: list[tuple[str, list[str]]] = []
+    for i, option in enumerate(tb.options):
+        sources.append((
+            f"{tb.manifest_path} options[{i}]",
+            scan_seed_controls(f"x {option}", bare_options=True),
+        ))
+    for i, analysis in enumerate(tb.analyses):
+        sources.append((f"{tb.manifest_path} analyses[{i}]", scan_seed_controls(analysis)))
+    fragment = tb.netlist_bytes if tb.netlist_bytes is not None else tb.netlist.read_bytes()
+    sources.append((str(tb.netlist), scan_seed_controls(fragment.decode("utf-8", errors="replace"))))
+    if tb.design_netlist is not None:
+        if tb.design_netlist_bytes is not None:
+            captured = [(tb.design_netlist.name, tb.design_netlist_bytes), *tb.design_dependencies]
+        else:
+            dut_bytes = tb.design_netlist.read_bytes()
+            captured = [
+                (tb.design_netlist.name, dut_bytes),
+                *_capture_dut_dependencies(tb.design_netlist, dut_bytes),
+            ]
+        for name, data in captured:
+            sources.append((
+                str(tb.design_netlist.parent / name),
+                scan_seed_controls(data.decode("utf-8", errors="replace")),
+            ))
+    messages = [f"{src}:\n" + "\n".join(p) for src, p in sources if p]
+    if messages:
+        raise ValueError(
+            f"{tb.slug}: stochastic testbench declares its own random seed -- seeds are "
+            "owned by the harness; remove these and pass seeds with --seeds:\n"
+            + "\n".join(messages)
+        )
+
+
 def validate_netlist(tb: Testbench) -> None:
-    """Reject fragments that try to own what the harness owns.
+    """Reject fragments and DUT netlists that try to own what the harness owns.
 
     Catching this here is much friendlier than debugging a duplicated
     ``.end`` or a hardcoded ``.temp 27`` that silently pins every corner to
     room temperature -- exactly the failure mode sim/README.md and this
-    issue's acceptance criteria call out.
+    issue's acceptance criteria call out. It scans the bytes captured at load
+    (the bytes that will be snapshotted), not a second read of the file.
+
+    The fragment may not include anything. The DUT netlist is validated (and
+    its sibling includes captured) by ``_capture_dut_dependencies`` during
+    ``load``; a hand-built ``Testbench`` with a ``design_netlist`` is
+    re-checked here from the live file.
     """
-    problems: list[str] = []
-    for lineno, raw in enumerate(tb.netlist.read_text().splitlines(), start=1):
-        line = raw.strip().lower()
-        if not line.startswith("."):
-            continue
-        directive = line.split()[0]
-        if directive in FORBIDDEN_DIRECTIVES:
-            problems.append(f"  line {lineno}: {raw.strip()}")
+    fragment = tb.netlist_bytes if tb.netlist_bytes is not None else tb.netlist.read_bytes()
+    problems = _scan_forbidden(fragment)
     if problems:
         raise ValueError(
             f"{tb.netlist}: netlist fragments must not contain "
             f"{', '.join(FORBIDDEN_DIRECTIVES)} -- the harness supplies the models, "
             "corner libs, temperature and control block:\n" + "\n".join(problems)
         )
+    if tb.design_netlist is not None and tb.design_netlist_bytes is None:
+        _capture_dut_dependencies(tb.design_netlist, tb.design_netlist.read_bytes())
+
+
+def write_input_snapshots(tb: Testbench, directory: Path) -> list[tuple[str, str]]:
+    """Materialize the captured SPICE inputs into ``directory``.
+
+    Returns ``(name, sha256)`` per snapshot (empty for a hand-built ``tb``
+    with no captured bytes). Idempotent and safe for concurrent callers
+    writing the same bytes (temp file + rename). An existing file whose
+    content differs from the captured bytes means a snapshot was mutated
+    mid-run and raises rather than being overwritten, so the record can never
+    hash bytes ngspice did not consume.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    out: list[tuple[str, str]] = []
+    for name, data in tb.input_snapshots():
+        path = directory / name
+        if path.exists():
+            if path.read_bytes() != data:
+                raise RuntimeError(
+                    f"{path}: input snapshot differs from the bytes captured at load; "
+                    "it was modified during the run"
+                )
+        else:
+            tmp = directory / f".{name}.{os.getpid()}.{threading.get_ident()}.tmp"
+            tmp.write_bytes(data)
+            os.replace(tmp, path)
+        out.append((name, hashlib.sha256(data).hexdigest()))
+    return out
 
 
 def discover(root: str | Path) -> list[Path]:
@@ -211,3 +573,53 @@ def discover(root: str | Path) -> list[Path]:
     """
     root = Path(root)
     return sorted(p.parent for p in root.glob(f"*/{MANIFEST_NAME}"))
+
+
+def run_artifact_names(corner_id: str, seed: int | None, run_index: int) -> tuple[str, str]:
+    """The ``(deck, log)`` file names one (PVT point, seed) run writes.
+
+    The single definition shared by execution (``runner.run_one``) and the
+    pre-launch namespace check, so the two cannot drift.
+    """
+    stem = f"{corner_id}-run{run_index}" if seed is not None else corner_id
+    return f"{stem}.spice", f"{stem}.log"
+
+
+def fixed_artifact_names() -> dict[str, str]:
+    """Generated files that share the raw directory with frozen inputs.
+
+    Maps file name to a description. Includes names written only on some paths
+    (e.g. the changed-model diagnostic) so a dependency can never occupy them.
+    """
+    return {
+        FRAGMENT_SNAPSHOT_NAME: "the testbench fragment snapshot",
+        DUT_SNAPSHOT_NAME: "the DUT netlist snapshot",
+        MANIFEST_SNAPSHOT_NAME: "the testbench manifest snapshot",
+        startup.SNAPSHOT_NAME: "the ngspice start-up script snapshot",
+        pdk_models.MANIFEST_NAME: "the PDK model manifest",
+        pdk_models.CHANGED_MANIFEST_NAME: "the post-run PDK model manifest",
+    }
+
+
+def validate_artifact_namespace(
+    tb: Testbench, planned: Iterable[tuple[str, int | None, int]]
+) -> None:
+    """Refuse a DUT include whose name a run would later write over.
+
+    ``planned`` is every ``(corner_id, seed, run_index)`` the invocation will
+    execute. Raises ``ValueError`` naming the include, the colliding artifact
+    and a suggested rename; call it before any directory or record is
+    allocated.
+    """
+    generated = dict(fixed_artifact_names())
+    for corner_id, seed, run_index in planned:
+        deck, log = run_artifact_names(corner_id, seed, run_index)
+        generated.setdefault(deck, f"the generated deck for {corner_id}")
+        generated.setdefault(log, f"the simulator log for {corner_id}")
+    for name, _ in tb.design_dependencies:
+        if name in generated:
+            raise ValueError(
+                f"{tb.slug}: DUT include '{name}' collides with {generated[name]} "
+                f"('{name}'), which the harness writes into the same directory as the "
+                f"frozen inputs; rename the included file (e.g. 'dep_{name}')"
+            )

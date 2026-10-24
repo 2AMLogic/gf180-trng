@@ -139,6 +139,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import Record, RecordError  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -475,21 +476,12 @@ def _load(slug: str, *, include_superseded: bool = False) -> Variant:
     evidence (``RecordError``). Every matched record must carry a readable
     ``status:``. ``include_superseded=True`` is the explicit historical read.
     """
-    matches = []
-    for path in sorted(RECORDS.glob(f"*-{slug}-*.md")):
-        rec = Record(path)
-        if not include_superseded and rec.status != "valid":
-            continue
-        if rec.corner != CORNER or "ones_frac" not in rec.values:
-            continue
-        matches.append(rec)
-    if not matches:
-        raise RecordError(
-            f"no valid sim/records/*-{slug}-*.md record at {CORNER} carries an "
-            "ones_frac, so this variant cannot be compared"
-        )
-    # Latest record wins; earlier ones stay on file as append-only evidence.
-    return Variant(slug, matches[-1])
+    rec = latest_current_record(
+        RECORDS, f"*-{slug}-*.md", make=Record, corner=CORNER, requires=("ones_frac",),
+        include_superseded=include_superseded, error_cls=RecordError,
+        hint=", so this variant cannot be compared",
+    )
+    return Variant(slug, rec)
 
 
 def load_pairs(*, include_superseded: bool = False) -> list[Pair]:

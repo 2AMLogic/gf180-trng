@@ -39,13 +39,19 @@ rows (13 significant digits via ``measureprec``); everything else is offline.
 from __future__ import annotations
 
 import argparse
-import hashlib
+import datetime as _dt
 import json
 import math
-import shlex
+import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from harness import klt_request as _kreq  # noqa: E402
+from harness.report import git_blob_sha1  # noqa: E402
+from harness import report as _rep  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-array-supply-ripple"
@@ -114,12 +120,23 @@ TSTEP_MAIN_S = 10e-12
 #: Edge-count safety margin: a ring may slow by this factor under ripple.
 SLOWDOWN_MARGIN = 1.10
 
+#: The 2 MHz grid is submitted as LOWF_PARTS requests of identical units: the
+#: first batch jobs carrying all 7 units at once were killed at the fleet's
+#: 3600 s whole-job ceiling. Each part leads with its own zero-amplitude control
+#: (repeated, identical deck) and takes an equal share of the perturbed units, in
+#: grid order. Only the batching changes; the declared grid does not.
+LOWF_PARTS = 3
+
 #: (request name, corner, freq key, tstep). The convergence requests re-run the
 #: control and the "both"/50 mV unit of binding-beat at finer solver steps.
 REQUESTS = (
-    ("nominal-lowf", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p1", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p2", "nominal", "lowf", TSTEP_MAIN_S),
+    ("nominal-lowf-p3", "nominal", "lowf", TSTEP_MAIN_S),
     ("nominal-beat", "nominal", "beat", TSTEP_MAIN_S),
-    ("binding-lowf", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p1", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p2", "binding", "lowf", TSTEP_MAIN_S),
+    ("binding-lowf-p3", "binding", "lowf", TSTEP_MAIN_S),
     ("binding-beat", "binding", "beat", TSTEP_MAIN_S),
     ("conv-binding-beat-5p", "binding", "beat", 5e-12),
     ("conv-binding-beat-2p5", "binding", "beat", 2.5e-12),
@@ -162,15 +179,27 @@ def edge_counts(corner: str, tstop_s: float) -> tuple[int, int]:
     return out[0], out[1]
 
 
-def units(name: str) -> list[tuple[float, int, int]]:
-    """(amplitude_V, m1, m2) per grid point; the control (0, 0, 0) is first."""
-    if name.startswith("conv-"):
-        return list(CONVERGENCE_UNITS)
+def full_grid() -> list[tuple[float, int, int]]:
+    """(amplitude_V, m1, m2) for the whole declared grid; the control is first."""
     grid = [(0.0, 0, 0)]
     for _, m1, m2 in MODES:
         for amp in AMPS_V:
             grid.append((amp, m1, m2))
     return grid
+
+
+def units(name: str) -> list[tuple[float, int, int]]:
+    """(amplitude_V, m1, m2) per grid point; the control (0, 0, 0) is first."""
+    if name.startswith("conv-"):
+        return list(CONVERGENCE_UNITS)
+    grid = full_grid()
+    m = re.search(r"-lowf-p(\d+)$", name)
+    if m is None:
+        return grid
+    perturbed = grid[1:]
+    share = len(perturbed) // LOWF_PARTS
+    part = int(m.group(1)) - 1
+    return [grid[0], *perturbed[part * share:(part + 1) * share]]
 
 
 def build_request(name: str, corner: str, freq_key: str, tstep_s: float) -> dict:
@@ -284,8 +313,7 @@ def plan_text() -> str:
 
 
 def dut_blob_sha() -> str:
-    data = (REPO_ROOT / DUT_PATH).read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes())
 
 
 # --------------------------------------------------------------------------
@@ -564,7 +592,6 @@ def _fmt(x: float | None, spec: str = ".3g") -> str:
 def sensitivity_rows(an: dict) -> list[str]:
     """Markdown rows: per unit, tone response and the control it is read against."""
     rows = []
-    ctrl = next((u for u in an["units"] if u["amp_v"] == 0.0), None)
     for u in an["units"]:
         if "error" in u:
             rows.append(f"| {u['corner_id']} | error: {u['error']} |")
@@ -586,7 +613,6 @@ def sensitivity_rows(an: dict) -> list[str]:
             _fmt(u["ring1"]["frac_explained"], ".4f"),
         ]
         rows.append("| " + " | ".join(cells) + " |")
-    _ = ctrl
     return rows
 
 
@@ -595,30 +621,6 @@ TABLE_HEAD = (
     "ring1 ffm (ppm/mV) | ring1 resid rms (ps) | ring1 tone/sigma | tone explains |\n"
     "|---|---|---|---|---|---|---|---|---|---|"
 )
-
-
-def convergence_text(main: dict, finer: dict[str, dict]) -> str:
-    """Compare the both/50 mV and control units of binding-beat across solver steps."""
-    def pick(an: dict, ctrl: bool) -> dict | None:
-        for u in an["units"]:
-            if "error" in u:
-                continue
-            if ctrl and u["amp_v"] == 0.0:
-                return u
-            if not ctrl and abs(u["amp_v"] - 0.05) < 1e-12 and (u["m1"], u["m2"]) == (1, 1):
-                return u
-        return None
-
-    lines = ["| solver step | control ring1 x (ps) | 50 mV both ring1 x (ps) | rel. change vs 10 ps |", "|---|---|---|---|"]
-    ref = pick(main, False)
-    for label, an in [("10 ps", main)] + sorted(finer.items()):
-        c, s = pick(an, True), pick(an, False)
-        if c is None or s is None or ref is None:
-            lines.append(f"| {label} | n/a | n/a | n/a |")
-            continue
-        rel = (s["ring1"]["amp"] - ref["ring1"]["amp"]) / ref["ring1"]["amp"]
-        lines.append(f"| {label} | {c['ring1']['amp'] * 1e12:.3g} | {s['ring1']['amp'] * 1e12:.3g} | {rel:+.2%} |")
-    return "\n".join(lines)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
@@ -645,41 +647,140 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 # --------------------------------------------------------------------------
+# Record ingestion (append-only evidence; one record per request)
+# --------------------------------------------------------------------------
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def render_record(stem: str, name: str, report: dict, an: dict, raw_files: list[tuple[str, str]],
+                  wall_s: float, date: str, commit: str, tb_sha: str, dut_sha: str) -> str:
+    cname, freq_key, tstep = next((c, f, t) for n, c, f, t in REQUESTS if n == name)
+    cfg = CORNERS[cname]
+    env = report.get("environment", {})
+    remote = env.get("remote") or {}
+    fleet = remote.get("fleet") or ([remote] if remote.get("job_id") else [])
+    jobs = [f.get("job_id") for f in fleet if f.get("job_id")]
+    stamps = sorted({(f.get("worker_environment") or {}).get("pdk", {}).get("stamp_text", "")
+                     for f in fleet} - {""})
+    pdk_ver = stamps[0].replace("open_pdks ", "") if len(stamps) == 1 else (
+        "; ".join(stamps) or (report.get("provenance", {}).get("pdk") or {}).get("version") or "unknown")
+    banners = sorted({((f.get("worker_environment") or {}).get("simulator") or {})
+                      .get("version_banner", "").split("\n")[1].strip("* ").strip()
+                      for f in fleet if ((f.get("worker_environment") or {}).get("simulator") or {})
+                      .get("version_banner")})
+    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
+    klt_ver = report.get("provenance", {}).get("klt_version") or "unknown"
+    tstop = TSTOP_S[freq_key]
+    f_hz = an["f_hz"]
+    n = len(report["corners"])
+    fm = [
+        "---", f"record: {stem}", f"date: {date}", "status: valid", "",
+        "testbench:", f"  path: sim/tb/ro-array-supply-ripple/{DECK}", f"  sha: {tb_sha}",
+        "netlist:", f"  path: {DUT_PATH}", f"  sha: {dut_sha}",
+        f"repo_commit: {commit}", "",
+        f"pdk: gf180mcuD @ {pdk_ver}", "pdk.models:",
+        f"  - libs.tech/ngspice/sm141064.ngspice (sections: {' '.join(PROCESS_SECTIONS[cfg['process']])})", "",
+        "tool:", f"  klt: {klt_ver} (client; batch backend)", f"  ngspice: \"{ngspice} (batch fleet)\"",
+        f"  platform: \"{platform.platform()} (submitting host)\"", "",
+        "corner:", f"  process: {cfg['process']}",
+        f"  voltage: {cfg['vdd']:.3f} V (nominal 3.3 V)", f"  temperature: {cfg['temp_c']}", "",
+        "analysis:", "  type: tran", f"  tstop: {tstop * 1e9:g}n", f"  tstep: {tstep * 1e12:g}p",
+        "  tmax: n/a", "  noise_params: n/a (deterministic: no noise, no mismatch)", f"  runs: {n}",
+        "seeds: n/a (deterministic analysis)", "",
+        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
+    ]
+    fm += [f"    - {fn}  sha256:{d}" for fn, d in raw_files]
+    fm += [f"wall_time: {_rep._fmt_wall(wall_s)}", "---", ""]
+    body = ["## Result", "",
+            f"Request `{name}` ({n} units, one per control or perturbed case), executed on the batch fleet "
+            f"through `klt sim` (fleet jobs: {', '.join(jobs) or 'not reported'}). Ripple frequency "
+            f"{f_hz / 1e6:g} MHz; solver step {tstep * 1e12:g} ps. Schematic-level deterministic "
+            "susceptibility of `design/ro_array_core.spice` to an ideal series sinusoid on the ring "
+            "supply pin(s). The zero-amplitude row is the control. Produced by "
+            "`python3 sim/tools/supply_ripple.py analyze`.", "",
+            TABLE_HEAD, *sensitivity_rows(an), "",
+            "x = displacement amplitude at the injected frequency; ffm = fractional-frequency modulation; "
+            "`OUT` in `rails` would mark a perturbed rail outside the "
+            f"{ENVELOPE_V[0]}-{ENVELOPE_V[1]} V envelope.", "",
+            "Limits of interpretation:", ""]
+    body += [f"- {line}" for line in LIMITS]
+    body += ["", "## How to reproduce", "", "```sh", "python3 sim/tools/supply_ripple.py emit --check",
+             f"python3 sim/tools/supply_ripple.py run {name} --outdir DIR",
+             f"python3 sim/tools/supply_ripple.py analyze DIR/{name}.report.json", "```", "",
+             "The simulation is deterministic (no noise, no mismatch), so a re-run reproduces the "
+             "edge times up to solver and PDK-version differences.", "",
+             "## Caveats", "",
+             "- Not a supply network, substrate, aggressor or noise model; no min-entropy, "
+             "filter-sizing or signoff claim is made.",
+             "- The PDK model content on the fleet is the one named in `pdk:` above; compare `pdk:` "
+             "lines before pooling across records.",
+             "", "---", "",
+             "Written by `sim/tools/supply_ripple.py ingest`. Append-only: never edit or delete this "
+             "file -- a re-run or correction mints a new record and points back here via "
+             "`supersedes` (see `sim/README.md`).", ""]
+    return "\n".join(fm + body)
+
+
+def cmd_ingest(name: str, report_path: Path, stderr_path: Path | None, records_dir: Path) -> int:
+    if name not in {r[0] for r in REQUESTS}:
+        print(f"unknown request {name!r}; choices: {', '.join(r[0] for r in REQUESTS)}", file=sys.stderr)
+        return 2
+    report = json.loads(report_path.read_text())
+    req = json.loads(request_path(name).read_text())
+    n_expected = len(req["corners"]["supply_v"]["vamp"]) if isinstance(
+        req["corners"]["supply_v"], dict) and isinstance(req["corners"]["supply_v"].get("vamp"), list) else None
+    corners = report.get("corners", [])
+    bad = [c.get("corner_id") for c in corners if c.get("status") != "pass"]
+    if not corners or bad or (n_expected is not None and len(corners) != n_expected):
+        print(f"refused: {len(corners)} units, non-passing: {bad}", file=sys.stderr)
+        return 2
+    an = analyse_report(report)
+    if any("error" in u for u in an["units"]):
+        print("refused: analysis error in a unit", file=sys.stderr)
+        return 2
+    now = _dt.datetime.now(_dt.timezone.utc)
+    stem = _rep.allocate_record_stems(records_dir, now.strftime("%Y-%m-%d"),
+                                      f"ro-array-supply-ripple-{name}", 1)[0]
+    raw_dir = records_dir / "raw" / stem
+    raw_dir.mkdir(parents=True, exist_ok=False)
+    (raw_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
+    (raw_dir / "request.json").write_text(request_path(name).read_text())
+    if stderr_path and stderr_path.exists():
+        (raw_dir / "stderr.txt").write_text(stderr_path.read_text())
+    raw_files = [(p.name, _rep.sha256_file(p)) for p in sorted(raw_dir.iterdir())]
+    # units of one batch job run concurrently and each reports a job-scale runtime: take the
+    # longest unit as the request wall time, never the sum
+    wall = max(float(c.get("runtime_s") or 0.0) for c in corners)
+    commit = _git("rev-parse", "HEAD") + ("-dirty" if _git("status", "--porcelain") else "")
+    tb_sha = git_blob_sha1((TB_DIR / DECK).read_bytes())
+    text = render_record(stem, name, report, an, raw_files, wall, now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         commit, tb_sha, dut_blob_sha())
+    _rep.publish_record_text(records_dir / f"{stem}.md", text)
+    print(f"wrote sim/records/{stem}.md")
+    return 0
+
+
+# --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
 
 
 def cmd_emit(check: bool) -> int:
-    bad = 0
-    for name, req in all_requests().items():
-        path = request_path(name)
-        text = render(req)
-        if check:
-            if not path.exists() or path.read_text() != text:
-                print(f"DRIFT: {path.relative_to(REPO_ROOT)} does not match the declared grid")
-                bad += 1
-        else:
-            path.write_text(text)
-            print(f"wrote {path.relative_to(REPO_ROOT)}")
-    if check and not bad:
-        print(f"ok: {len(REQUESTS)} requests match the declared grid")
-    return 1 if bad else 0
+    return _kreq.emit_requests(
+        ((request_path(name), render(req)) for name, req in all_requests().items()),
+        check, repo_root=REPO_ROOT,
+        ok=lambda: print(f"ok: {len(REQUESTS)} requests match the declared grid"))
 
 
 def cmd_run(name: str, outdir: str, backend: str, klt_cmd: str = "klt") -> int:
     if name not in {r[0] for r in REQUESTS}:
         print(f"unknown request {name!r}; choices: {', '.join(r[0] for r in REQUESTS)}", file=sys.stderr)
         return 2
-    out = Path(outdir)
-    out.mkdir(parents=True, exist_ok=True)
-    report = out / f"{name}.report.json"
-    cmd = [*shlex.split(klt_cmd), "sim", str(request_path(name)), "--backend", backend, "-o", str(out / name),
-           "--format", "json"]
-    print("running:", " ".join(cmd))
-    with open(report, "w") as fh, open(out / f"{name}.stderr.txt", "w") as err:
-        rc = subprocess.call(cmd, stdout=fh, stderr=err)
-    print(f"klt exit {rc}; report: {report}; stderr: {out / (name + '.stderr.txt')}")
-    return rc
+    return _kreq.run_klt_request(outdir, name, request_path(name), backend, klt_cmd)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -695,6 +796,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--klt", default="klt", dest="klt_cmd",
                    help="klt command; e.g. 'uvx --from klayout-tools==X.Y.Z klt' when the "
                    "fleet runner pins a different klt than the installed client")
+    i = sub.add_parser("ingest")
+    i.add_argument("name")
+    i.add_argument("--report", required=True)
+    i.add_argument("--stderr")
+    i.add_argument("--records-dir", default=str(REPO_ROOT / "sim" / "records"))
     a = sub.add_parser("analyze")
     a.add_argument("reports", nargs="+")
     a.add_argument("--json", action="store_true")
@@ -706,6 +812,9 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_emit(args.check)
     if args.cmd == "run":
         return cmd_run(args.name, args.outdir, args.backend, args.klt_cmd)
+    if args.cmd == "ingest":
+        return cmd_ingest(args.name, Path(args.report), Path(args.stderr) if args.stderr else None,
+                          Path(args.records_dir))
     return cmd_analyze(args.reports, args.json)
 
 

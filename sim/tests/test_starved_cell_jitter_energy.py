@@ -15,7 +15,10 @@ records in a temporary directory and patch the module's ``RECORDS``,
 3. ``load_variants_by_glob`` (the loader the ring-coupling and
    liveness-tap-phase variant scripts share) skips ``status: superseded``
    records before picking the latest one (issue #427), and its three callers
-   still pass their own ``VARIANTS``, ``CORNER`` and ``Variant`` factory.
+   still pass their own ``VARIANTS``, ``CORNER`` and ``Variant`` factory;
+4. ``sizing_constant`` (the array-sizing input, issue #491) selects the
+   binding corner's asymptotic ``a`` by corner identity, distinguishes it from
+   the mean and lag-1 estimators, and fails closed on missing evidence.
 
 Stdlib only: no ngspice, no PDK.
 """
@@ -46,7 +49,7 @@ REF_SPREAD = 0.05
 def _corner(temp_c: float = 27.0, vdd: float = 3.3) -> str:
     return (
         "---\nstatus: valid\ncorner:\n  process: tt\n"
-        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n"
+        f"  voltage: {vdd}\n  temperature: {temp_c}\n---\n\n## Result\n\n"
     )
 
 
@@ -301,6 +304,149 @@ class SharedLoaderCallerTests(StarvedCellTestCase):
         buffered = by_label["6 xor-driven-buffered"]
         self.assertTrue(buffered.rec.stem.startswith("2026-01-01-"))
         self.assertAlmostEqual(buffered.sigma[1], 1.0e-12)
+
+
+def _fake_point(corner: str, a_asym: float, a_lag1: float, stem: str = ""):
+    """The slice of ``Point`` that ``sizing_constant`` reads; ``a`` is the
+    identity, so ``kappa2_*`` ARE the constants."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        rec=SimpleNamespace(corner=corner, stem=stem or f"rec-{corner}"),
+        kappa2_asym=a_asym, kappa2_lag1=a_lag1, a=lambda k: k,
+    )
+
+
+#: The committed three-corner shape (DR-0011-raw-rate-at-the-measured-
+#: starved-cell-jitter-energy §2): asymptotic a 7.32 / 10.87 / 17.11, lag-1
+#: 21.39 / 24.91 / 28.22.
+COMMITTED_SHAPE = [
+    ("ss/-40/3.63", 7.322, 21.392),
+    ("tt/27/3.30", 10.874, 24.914),
+    ("ff/-40/3.63", 17.109, 28.223),
+]
+
+
+class SizingConstantSelectionTests(StarvedCellTestCase):
+    """``sizing_constant`` selects the binding corner's asymptotic ``a`` by
+    corner identity -- not the mean, not lag 1, not merely the minimum
+    (issue #491)."""
+
+    def points(self, shape=COMMITTED_SHAPE):
+        return [_fake_point(c, asym, lag1) for c, asym, lag1 in shape]
+
+    def test_selects_the_binding_corner_asymptotic_value(self) -> None:
+        sel = sc.sizing_constant(self.points())
+        self.assertEqual(sel.corner, sc.SIZING_CONSTANT_CORNER)
+        self.assertEqual(sel.corner, "ss/-40/3.63")
+        self.assertAlmostEqual(sel.value, 7.322)
+        self.assertEqual(sel.stem, "rec-ss/-40/3.63")
+
+    def test_is_distinguished_from_the_mean_and_lag1_estimators(self) -> None:
+        sel = sc.sizing_constant(self.points())
+        mean_asym = sum(a for _c, a, _l in COMMITTED_SHAPE) / 3
+        mean_lag1 = sum(lag for _c, _a, lag in COMMITTED_SHAPE) / 3
+        lag1_at_corner = COMMITTED_SHAPE[0][2]
+        for wrong in (mean_asym, mean_lag1, lag1_at_corner):
+            with self.subTest(wrong=wrong):
+                self.assertGreater(abs(wrong - sel.value) / sel.value, 0.4)
+
+    def test_selection_is_by_corner_not_by_minimum(self) -> None:
+        # Make another corner smaller: the selected value must not follow it,
+        # and the result must say the selected corner is no longer smallest.
+        shape = [("ss/-40/3.63", 12.0, 30.0), ("tt/27/3.30", 9.0, 25.0)]
+        sel = sc.sizing_constant(self.points(shape))
+        self.assertAlmostEqual(sel.value, 12.0)
+        self.assertFalse(sel.is_smallest)
+        self.assertEqual(sel.smallest_corner, "tt/27/3.30")
+
+    def test_committed_shape_is_smallest_at_the_selected_corner(self) -> None:
+        sel = sc.sizing_constant(self.points())
+        self.assertTrue(sel.is_smallest)
+        self.assertEqual(set(sel.by_corner), {c for c, _a, _l in COMMITTED_SHAPE})
+
+    def test_is_smallest_fails_closed_on_nan_at_another_corner(self) -> None:
+        # A NaN corner's true asymptotic a is unknown; the "selected is
+        # smallest" claim must not survive it. min() is order-dependent in
+        # the presence of a NaN, so both dict orders are pinned.
+        nan = float("nan")
+        for by_corner in (
+            {"ss/-40/3.63": 7.322, "tt/27/3.30": nan},
+            {"tt/27/3.30": nan, "ss/-40/3.63": 7.322},
+        ):
+            with self.subTest(order=list(by_corner)):
+                sel = sc.SizingConstant(7.322, "ss/-40/3.63", "stem", by_corner)
+                self.assertFalse(sel.is_smallest)
+
+    def test_is_smallest_fails_closed_on_nan_at_the_selected_corner(self) -> None:
+        sel = sc.SizingConstant(
+            float("nan"), "ss/-40/3.63", "stem",
+            {"ss/-40/3.63": float("nan"), "tt/27/3.30": 9.0},
+        )
+        self.assertFalse(sel.is_smallest)
+
+    def test_is_smallest_unaffected_by_dict_order_without_nan(self) -> None:
+        by_corner = {"ss/-40/3.63": 7.322, "tt/27/3.30": 9.0}
+        for order in (dict(by_corner), dict(reversed(list(by_corner.items())))):
+            with self.subTest(order=list(order)):
+                sel = sc.SizingConstant(7.322, "ss/-40/3.63", "stem", order)
+                self.assertTrue(sel.is_smallest)
+
+    def test_newest_record_at_the_corner_wins(self) -> None:
+        pts = self.points() + [_fake_point("ss/-40/3.63", 7.5, 22.0, stem="newer")]
+        sel = sc.sizing_constant(pts)
+        self.assertAlmostEqual(sel.value, 7.5)
+        self.assertEqual(sel.stem, "newer")
+
+    def test_reports_the_hot_binding_corner_beside_the_stated_constant(self) -> None:
+        shape = COMMITTED_SHAPE + [("ss/125/3.63", 8.421, 18.492)]
+        sel = sc.sizing_constant(self.points(shape))
+        self.assertEqual(sc.BINDING_CORNER, "ss/125/3.63")
+        # The stated constant must stay the ss/-40 value even though the
+        # binding corner is measured: reporting is not selecting (issue #628).
+        self.assertEqual(sel.corner, "ss/-40/3.63")
+        self.assertAlmostEqual(sel.value, 7.322)
+        self.assertEqual(sel.binding_corner, "ss/125/3.63")
+        self.assertAlmostEqual(sel.binding_value, 8.421)
+        self.assertEqual(sel.binding_stem, "rec-ss/125/3.63")
+        self.assertTrue(sel.is_smallest)
+
+    def test_binding_corner_is_none_when_unmeasured(self) -> None:
+        sel = sc.sizing_constant(self.points())
+        self.assertIsNone(sel.binding_value)
+        self.assertIsNone(sel.binding_corner)
+
+    def test_missing_binding_corner_fails_closed(self) -> None:
+        with self.assertRaises(sc.RecordError) as ctx:
+            sc.sizing_constant(self.points(COMMITTED_SHAPE[1:]))
+        self.assertIn("ss/-40/3.63", str(ctx.exception))
+
+    def test_non_finite_or_non_positive_value_fails_closed(self) -> None:
+        for bad in (float("nan"), float("inf"), 0.0, -1.0):
+            with self.subTest(bad=bad), self.assertRaises(sc.RecordError):
+                sc.sizing_constant([_fake_point("ss/-40/3.63", bad, 1.0)])
+
+    def test_missing_family_fails_closed(self) -> None:
+        # Empty RECORDS: load_points raises, and sizing_constant must not
+        # swallow it.
+        with self.assertRaises(sc.RecordError):
+            sc.sizing_constant()
+
+    def test_reads_committed_style_records_end_to_end(self) -> None:
+        corner = ("---\nstatus: valid\ncorner:\n  process: ss\n"
+                  "  voltage: 3.63\n  temperature: -40\n---\n\n## Result\n\n")
+        text = corner
+        for lag in (1, 2, 4, 8):
+            s = 1.0e-12 * math.sqrt(lag)
+            text += _mean_bullet(f"sigma_{lag}", s, s * REF_SPREAD)
+        text += "- `period`: 2.8e-09\n- `p_active_w`: 1e-04\n"
+        self.write("2026-08-01-ro-ring5-starved-jitter-long-01.md", text)
+        self.write("2026-08-01-rostage-noise-01.md", corner + "- `inoise_dens_1g`: 1e-08\n")
+        sel = sc.sizing_constant()
+        # sigma_L^2 = 1e-24 L is linear in L*T0, so kappa2_asym = 1e-24 / T0.
+        expected = (1.0e-24 / 2.8e-9) * 1.0e-4 / (sc.KB * 233.15)
+        self.assertAlmostEqual(sel.value / expected, 1.0)
+        self.assertEqual(sel.stem, "2026-08-01-ro-ring5-starved-jitter-long-01")
 
 
 if __name__ == "__main__":

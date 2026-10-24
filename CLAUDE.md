@@ -11,7 +11,16 @@ Canary block: a true random number generator on gf180mcu. Apache-2.0.
   someone who has read this repo's spec is a bad tool issue.
 - **Verification is the product**: no claim without a testbench. PVT
   corners on every recorded result. `sim/` results are append-only
-  evidence.
+  evidence. Find the checks in [`package.json`](package.json) (commands)
+  and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (what CI
+  runs). Before review, run the applicable complete cheap suites on the
+  final tree, not single tests. New evidence or decision records need
+  `check:spec` (corpus counts); geometry changes need the downstream
+  consumer suite. `check:ci` ends in `sim/selftest.sh`, which simulates
+  when ngspice and the PDK exist; keep simulations opt-in and do not run
+  host-mutating suites unasked. Report each command run, its exit status,
+  and any unavailable check with its reason; never call an unrun check
+  passing.
 - **Publication**: this repo is public (the pre-publication audit, #22,
   closed 2026-07-31) — the visibility flip was an operator action, not an
   agent one. Write every commit message, issue, and document here as if a
@@ -27,7 +36,7 @@ Canary block: a true random number generator on gf180mcu. Apache-2.0.
 This repository uses [Loom](https://github.com/rjwalters/loom) for AI-powered development orchestration — see the Loom repository for the full guide (roles, labels, worktrees, configuration). When installed, Loom also writes a locally-substituted copy of that guide to `.loom/CLAUDE.md`.
 <!-- END LOOM ORCHESTRATION -->
 <!-- BEGIN REPO-SKILLS -->
-This repository has [Repo Skills](https://github.com/rjwalters/repo) v0.19.5 installed —
+This repository has [Repo Skills](https://github.com/rjwalters/repo) v0.24.7 installed —
 general repository hygiene and environment commands invoked as `/repo:<command>`. Run
 `/repo:help` for the command list, or see `.claude/skills/repo/SKILL.md` for the full
 guide. Hygiene commands apply safe, reversible fixes by default and report each

@@ -1,0 +1,14 @@
+ngspice on PATH: /tmp/issue-584-ngspice/prefix/bin/ngspice
+******
+** ngspice-46 : Circuit level simulation program
+** Compiled with KLU Direct Linear Solver
+** The U. C. Berkeley CAD Group
+** Copyright 1985-1994, Regents of the University of California.
+** Copyright 2001-2025, The ngspice team.
+** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html
+** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html
+** Creation Date: Sun Oct 11 15:38:06 UTC 2026
+******
+cc3ad3951c86155806229a8a2257be60d2db01d090f5a160c401632791fd82b7  /tmp/issue-584-ngspice/prefix/bin/ngspice
+SPINIT_SRC: /tmp/issue-584-ngspice/prefix/bin/../share/ngspice/scripts/spinit
+  27c8b2bf527f6607b5b3ff30873892fffb75808e3c5b407dd80a9b88f477d321  /tmp/issue-584-ngspice/prefix/bin/../share/ngspice/scripts/spinit

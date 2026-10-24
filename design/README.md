@@ -179,6 +179,14 @@ Re-derive it from the committed records at any time:
 python3 sim/tools/jitter_energy_law.py --check
 ```
 
+That 1.79 is the plain, unstarved inverter ring's constant. The shipped
+series-starved cell obeys the same law with a larger constant (#46,
+`python3 sim/tools/starved_cell_jitter_energy.py`), and the array is sized
+against the starved cell's **asymptotic-slope constant at its own
+entropy-binding corner, `a = 7.32`**
+([`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+§2) — not the three-corner mean (11.77) and not a lag-1 figure.
+
 Substituting `P_ring = E_cycle / T0` with `E_cycle = n * C_eff * V^2` collapses
 the array figure of merit to
 
@@ -330,8 +338,10 @@ kick across would have forced `n1 = 0` against an `en = 0` state that wants
 `n1 = 1`, leaving the ring relaxing out of a testbench artefact at the exact
 moment being measured.
 
-That 4–13 ns is one part in 10⁵ of the block's 1.281 ms time-to-first-valid,
-which is dominated by the 1024-sample health-test window; the rollup is
+That 4–13 ns is about two parts in 10⁸ of the block's 640.5 ms
+time-to-first-valid at the ratified 2 kbps raw rate (one part in 10⁵ of the
+1.281 ms #14 reported at the original 1 Mbps), which is dominated by the
+1024-sample health-test window; the rollup is
 [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md).
 
 ### Does the array meet DR-0007 §2?
@@ -342,12 +352,31 @@ Yes, with margin, and it is checkable rather than asserted:
 python3 sim/tools/array_sizing.py --check
 ```
 
-At the entropy-binding corner (`ss`/−40 °C/3.63 V), `Q_array = 7.82 × 10⁻³`
-against the required `M · Q_H₀ = 6.0 × 10⁻³` — a 1.30× margin on top of
-DR-0007's own `M = 1.5` — at the 500 bps raw rate `DR-0010` proposes. The tool
-evaluates the inequality from the committed per-ring period and supply-current
-records via the jitter-energy law, refuses to use records of a different array
-size than the one in `design/`, and exits non-zero if the inequality fails.
+At the ratified 2 kbps raw rate and the stated `a = 7.32`, the inequality
+holds at all 27 points of the covered grid. Its minimum is at the
+entropy-binding corner (`ss`/+125 °C/3.63 V, DR-0015): `Q_array = 8.32 × 10⁻³`
+against the required `M · Q_H₀ = 6.0 × 10⁻³` — a 1.39× margin on top of
+DR-0007's own `M = 1.5` — and the highest rate satisfying it there is
+2773 bps. The tool evaluates the inequality from the committed per-ring period
+and supply-current records via the jitter-energy law, refuses to use records of
+a different array size than the one in `design/`, re-derives the stated
+constant from the committed starved-cell records (and fails if it drifts by
+more than 1 %, or if the selected corner stops being the smallest measured
+constant), and exits non-zero if the inequality fails.
+
+The constant comes from `ss`/−40 °C/3.63 V, the entropy-binding corner when
+DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy selected it; the
+starved-cell family has no record at the corner DR-0015 has since named. 7.32
+is the smallest asymptotic constant measured at any corner, so applying it
+there is the conservative reading — and still an estimate: `H` is unmeasured
+(#12), and the constant carries the fixed-injection scaling uncertainty that
+decision record states.
+
+*History:* before the 2026-10-11 rate-row move (#491) this section quoted
+`Q_array = 7.82 × 10⁻³`, a 1.30× margin, at `ss`/−40 °C/3.63 V, at DR-0010's
+500 bps and the plain-cell `a = 1.79`, against the pre-#78 array records.
+`python3 sim/tools/array_sizing.py --a 1.79 --rate 500` re-prices that
+historical case against today's records.
 
 ### The raw tap is not in this directory
 
@@ -703,6 +732,14 @@ schematic contains no clock-generation circuitry, which is the decision, not
 an omission.
 
 ### Rate target: DR-0003's ratified `> 1 Mbps`, not DR-0010's proposed `> 500 bps`
+
+> *2026-10-11 (#491):* this subsection is the sampler issue's (#9) record of
+> the rate it targeted, and stays as written. The rate row has since moved: DR-0010 and
+> [`DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`](../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md)
+> were accepted on 2026-10-10, and the README `Raw rate` row now reads
+> `> 2 kbps`. As the text below anticipates, that is a choice of external clock
+> frequency, not a redesign. Whether any sampler evidence taken at the 1 Mbps
+> clock period needs re-running at the 500× longer one is not assessed here.
 
 Two rate figures are live in this repository at once. [`DR-0003`](../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md)
 (`> 1 Mbps` raw, binding at `ss`/−10 %/+125 °C) is the **ratified** README

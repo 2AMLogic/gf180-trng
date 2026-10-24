@@ -23,7 +23,7 @@ changes.
 | File | Role |
 |---|---|
 | `tb_ro_array_supply_ripple.sp` | the circuit body: ideal supply, DC-source parameters `vamp`/`vfrq`/`vm1`/`vm2`, series B-source ripple on `vddr1`/`vddr2`, the DUT, one `.ic` kick |
-| `request-<corner>-<freq>.json` | the `klt sim` requests (generated; do not edit) |
+| `request-<corner>-beat.json`, `request-<corner>-lowf-p<k>.json` | the `klt sim` requests (generated; do not edit); each 2 MHz grid is split into three parts, each a control plus two perturbed units |
 | `request-conv-*.json` | solver-step convergence re-runs (5 ps, 2.5 ps) of the control and one perturbed unit |
 
 Everything else — the declared grid, the request generator, the edge-time tone
@@ -62,9 +62,9 @@ python3 sim/tools/supply_ripple.py run binding-beat --outdir DIR
 python3 sim/tools/supply_ripple.py analyze DIR/*.report.json
 ```
 
-Runtime estimate: about 1.1 CPU-hours across the 32 units, from a single local
+Runtime estimate: about 1.3 CPU-hours across the 36 units, from a single local
 probe (30k solver steps in ~21 s). The fleet runs a request's units in parallel,
-so elapsed time is set by the longest unit (the 2 MHz requests, ~270k steps each)
+so elapsed time is set by the longest unit (the 2 MHz parts, ~270k steps each)
 plus capacity acquisition. If a batch submit fails, report the error; do not run
 the grid as a local loop.
 

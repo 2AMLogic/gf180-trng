@@ -23,7 +23,13 @@ name: CI
 #
 #   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test`.
+#       `npm run test`. The tests that need an external simulator (the RTL
+#       equivalence classes need Icarus Verilog; two runner probes need
+#       ngspice) SKIP here, since this job installs nothing. They run
+#       strictly in pdk-nightly.yml, which installs both and sets
+#       REQUIRE_RTL_TOOLS=1 so a missing tool fails instead of skipping
+#       (#618). Every such gate goes through sim/tests/_tool_gate.py;
+#       sim/tests/test_tool_gate_discipline.py fails on one that does not.
 #
 #   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
@@ -79,12 +85,14 @@ name: CI
 #   sim/tools/digital_corner_characterization.py --check
 #   sim/tools/activity_power_characterization.py --check
 #   sim/tools/vss_trunk_ir_drop.py --check
+#   sim/tools/digital_supply_ir_drop.py --check
 #   sim/tools/corpus_counts.py --check
 #   sim/tools/klt_pin_sites.py --check
 #   sim/tools/jitter_estimator_calibration_check.py --check
 #   sim/tools/statistical_battery.py --check
+#   sim/tools/higher_rate_options.py --check
 #       RUN on every push/PR via `npm run check:spec` (package.json is the
-#       single list of all eighteen). Every one is a pure derivation over
+#       single list of all twenty). Every one is a pure derivation over
 #       records already committed under sim/records/ -- stdlib-only, no
 #       ngspice, no PDK, sub-second -- so a newly appended record cannot
 #       silently move a conclusion a summary document still asserts. See the
@@ -160,6 +168,19 @@ name: CI
 #       catches it at the point a schematic comment is authored rather than
 #       the next scheduled pdk-nightly.yml run.
 #
+#   sim/tools/unused_names.py --check (unused import / local guard, #494)
+#   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
+#   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
+#       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
+#       and so into this job's first step; all are stdlib-only and need no
+#       PDK. verify_markdown_links walks the git-tracked *.md files (outside
+#       the append-only sim/records/ tree and the installed .loom/, .claude/
+#       and .agents/ surfaces) and fails on any relative inline link or
+#       reference-style definition whose target is not a tracked file or
+#       directory -- decision-record citations in evidence summaries are the
+#       audit trail for spec claims, and nothing else checks they resolve.
+#       File existence only; anchors are out of scope.
+#
 #   layout/testcells/build.py --check (layout test-cell staleness guard)
 #   layout/verify.py (DRC/LVS flow, self-skips without klt/the PDK)
 #   layout/floorplan/floorplan.py (floorplan abstract + area rollup, same
@@ -226,6 +247,12 @@ jobs:
   harness:
     name: harness (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs of this job take 47-83 s across
+    # both Python versions (last 20 successful runs); 5 min is ~3.5x the
+    # slowest, so suite growth and a cold runner do not trip it, but a stuck
+    # step fails in minutes instead of holding the runner and the
+    # `ci-<ref>` concurrency group for GitHub's 360-minute default.
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -234,13 +261,13 @@ jobs:
         # oldest interpreter it is known to run on.
         python-version: ["3.10", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Full history: the evidence-history step below needs the PR base
           # (or pushed-from) commit and a merge-base with HEAD.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -250,8 +277,16 @@ jobs:
       # xschem's own parser silently mis-handles and turns into a corrupted
       # netlist (#61). No xschem, no PDK, so it belongs here rather than on
       # .github/workflows/pdk-nightly.yml with design/netlist.py --check.
+      # The chain ends with the unused-name and relative markdown link guards
+      # (see the inventory above).
       - name: Lint (syntax check, shell check, schematic brace guard)
         run: npm run lint
+
+      # shellcheck (warning severity) over the tracked first-party *.sh (#591).
+      # ubuntu-latest ships shellcheck; --require-tools makes a missing
+      # binary a failure here instead of the local skip.
+      - name: Shell lint (shellcheck)
+        run: python3 -m sim.tools.lint_shell --require-tools
 
       - name: Harness unit tests
         run: npm run test
@@ -264,7 +299,7 @@ jobs:
 
       # Derivations over committed sim/records/ only: no ngspice, no PDK, no
       # network, nothing written. Run via `npm run check:spec` -- the full
-      # list of eighteen lives in package.json, not here (issue #97).
+      # list of twenty lives in package.json, not here (issue #97).
       # jitter_energy_law.py --check fails if the three record families it
       # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
       # --check fails if the shipped array stops satisfying DR-0007 §2 at any
@@ -326,6 +361,11 @@ jobs:
       # IS missed, by 4.5x, and that is routed through DR-0017 rather than
       # through a red build. It degrades to the measured-silicon-only view on
       # this runner, which has no PDK and therefore no Liberty library.
+      # higher_rate_options.py --check (issue #629) fails if the starved-cell
+      # constant it sizes with drifts from starved_cell_jitter_energy.py, if
+      # its law stops reproducing the shipped ring count, or if any figure
+      # docs/higher-rate-source-options-study.md quotes stops reproducing
+      # from the committed records it reads.
       - name: "Spec arithmetic self-checks (jitter-energy law, array sizing, entropy corner, ring coupling, issue 14 rollups)"
         run: npm run check:spec
 
@@ -334,14 +374,13 @@ jobs:
       # mismatch, a missing file, an unlisted file in a raw directory, or raw
       # output that was never committed fails the run. sim/records/ is
       # append-only, so a record with broken provenance that reaches main can
-      # only be superseded -- this is the gate that keeps one out (#60). Not
-      # an `npm run <script>` call: `npm run check:ci` only reaches this
-      # script indirectly (via the sim/selftest.sh call at the end of its
-      # chain, in the --no-git form), so this step keeps the stricter,
-      # git-commit-state-checking invocation as a distinct, deliberately
-      # redundant belt-and-suspenders early check.
+      # only be superseded -- this is the gate that keeps one out (#60). This
+      # is the strict, git-commit-state-checking form, run as the named entry
+      # point `npm run check:record-checksums` (also in check:ci and
+      # check:all). sim/selftest.sh re-runs the check in its --no-git form, so
+      # this is a deliberately redundant early check.
       - name: Record checksum verification (sim/records/ raw.files)
-        run: python3 sim/tools/verify_record_checksums.py --quiet
+        run: npm run check:record-checksums
 
       # Append-only enforcement (the checksum step above only proves the
       # CURRENT tree is self-consistent; a rewritten record with matching
@@ -449,10 +488,14 @@ jobs:
   signoff:
     name: T1 tier report (klt signoff --manifest, no PDK required)
     runs-on: ubuntu-latest
+    # Hang guard, not a budget. Healthy runs take 9-14 s (last 20 successful
+    # runs, dominated by the klayout-tools install); 2 min leaves room for a
+    # slow package-index fetch while still failing a stuck step quickly.
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
 
@@ -462,22 +505,25 @@ jobs:
       # docs/design-evidence-tiers.md, bundled inside the wheel, so the tool
       # version IS the yardstick. 0.5.0 renders a ten-item checklist with no
       # item-11 row at all (T1 item 11, "Power delivery (structural)",
-      # klayout-tools#2025, landed after that release); 0.6.0 renders eleven.
-      # Keep this version in step with signoff/check.py's KLT_PIN -- the
+      # klayout-tools#2025, landed after that release); 0.6.0 renders eleven;
+      # 0.7.0 is the first release that grades the artifact-anchored generic
+      # envelopes behind T1 items 1, 2, 9 and 10 (#653).
+      # Keep this version in step with signoff/check.py's KLT_GRADER_PIN -- the
       # committed record carries build.version, so a mismatch fails loudly at
       # the record diff rather than grading against the wrong checklist in
       # silence.
       #
       # This is deliberately a SEPARATE pin from pdk-nightly.yml's
       # klayout-tools pin, which pins the build that PRODUCES layout
-      # evidence (DRC/LVS/extraction). Since #281 (DR-0026, as amended) both
-      # happen to name the 0.6.0 release, but they still have different jobs
-      # and move on different clocks: bumping the producer means re-running
+      # evidence (DRC/LVS/extraction), signoff/check.py's KLT_PIN (DR-0026, as
+      # amended: 0.6.0). From #281 to #653 both named the same release; they no
+      # longer do, because they have different jobs and move on different
+      # clocks: bumping the producer means re-running
       # DRC/LVS and re-committing evidence, bumping the grader re-reads
       # existing evidence and produces none. Do not move one because the
       # other moved.
       - name: Install the pinned signoff grader (klt; no PDK, no KLayout GUI)
-        run: pip install "klayout-tools==0.6.0"
+        run: pip install "klayout-tools==0.7.0"  # klt-pin: grader
 
       # Runs with --require-tools so the tool-absent self-skip path can never
       # stand in for a pass here. Fails on evidence rot (a cited envelope's

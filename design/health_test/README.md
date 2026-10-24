@@ -132,7 +132,9 @@ parameters have no exception mechanism.
   bit. A future ratified `H` (#13) updates both cutoffs from one edit.
 - **Detection latency**: exactly `C_LIVE` sampler-clock cycles (default 81)
   after a ring's digitized bit starts holding a constant value — 81 us at
-  DR-0003's ratified `> 1 Mbps`, 162 ms at DR-0010's proposed `> 500 bps`.
+  the current ratified `> 2 kbps` (DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy),
+  which is 40.5 ms. Historical: 81 us at DR-0003's original `> 1 Mbps`, 162 ms
+  at DR-0010's superseded `> 500 bps`.
 - **Digitizer**: `ring_bit[i]` is assumed already produced by a per-ring
   digitizer structurally identical to the raw tap's own `sampler_dff`
   (DR-0014's cell, unmodified) — this module performs no synchronization of

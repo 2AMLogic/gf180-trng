@@ -17,6 +17,11 @@ name: PDK nightly
 # to xschem and resolves the gf180mcu xschem symbol library through the PDK, so
 # it cannot run on the PR path.
 #
+# The unit-test suite (`npm run test`) runs here too, with Icarus Verilog
+# installed and REQUIRE_RTL_TOOLS=1 set, so its RTL equivalence and ngspice
+# probe tests -- which skip on the PR path for want of those tools -- must run
+# rather than skip (#618; see the step's own comment).
+#
 # It has no `push` / `pull_request` trigger by construction: a pull request
 # must never block on a source build plus a PDK download.
 #
@@ -90,9 +95,18 @@ jobs:
       # --help`).
       PDK_LIBRARIES: "gf180mcu_fd_pr gf180mcu_fd_sc_mcu9t5v0 gf180mcu_fd_sc_mcu7t5v0"
     steps:
-      - uses: actions/checkout@v4
+      - id: checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Full history, as in ci.yml. test_report's changed-record discovery
+          # test diffs `origin/main...HEAD`, so it needs `origin/main` and a
+          # merge-base with HEAD. The default shallow checkout of a
+          # workflow_dispatch run on a non-default branch fetches only that
+          # branch, and the test then errors before anything is exercised
+          # (#621).
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
 
@@ -101,7 +115,7 @@ jobs:
 
       - name: Cache ngspice build
         id: cache-ngspice
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.NGSPICE_PREFIX }}
           key: ngspice-${{ env.NGSPICE_VERSION }}-${{ runner.os }}-${{ runner.arch }}
@@ -143,7 +157,7 @@ jobs:
 
       - name: Cache gf180mcu PDK
         id: cache-pdk
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.ciel
           key: pdk-gf180mcu-${{ env.PDK_VERSION }}-${{ env.PDK_LIBRARIES }}-ciel${{ env.CIEL_VERSION }}
@@ -355,10 +369,12 @@ jobs:
           klt version --format json
 
       # `klt synthesize` (design/synth.py) shells out to `yosys`, the same
-      # way this flow already shells out to `xschem`/`klt` -- floating
-      # rather than a version pin, and for the same reason given above for
-      # xschem: it is a netlister, and a version bump is meant to turn
-      # `design/synth.py --check` red (loud) rather than drift unnoticed.
+      # way this flow already shells out to `xschem`/`klt`. It is pinned
+      # (see the bump policy at the end of this comment block): this step
+      # used to float so that an upstream Yosys release would turn
+      # `design/synth.py --check` red (loud), but that made the nightly
+      # red on every upstream release (0.70 moved the netlist) until
+      # someone re-baselined.
       #
       # This used to float on Ubuntu's own distro `yosys` package (0.33 on
       # 24.04), on the premise -- `klayout_tools.synthesize`'s own module
@@ -388,12 +404,18 @@ jobs:
       # request -- matching the `engine_version: "0.68+post"` this repo's
       # own committed `design/trng_top/trng_top.synth.json` already
       # recorded (that netlist was never built against the distro package
-      # to begin with). So the floor moves to `yowasp-yosys`: still no
-      # version pin (`--upgrade`, same loud-drift intent as before), just a
-      # different, actually-working channel. `yowasp-yosys` installs its
+      # to begin with). So the channel moves to `yowasp-yosys`.
+      # `yowasp-yosys` installs its
       # console script as `yowasp-yosys`, not `yosys` -- `klt synthesize`
       # (and every caller in this repo) invokes the latter by name, so the
       # step below symlinks one to the other.
+      #
+      # Bump policy: the pin is `0.69.0.0.post1233`, the version the
+      # committed netlist, P&R, LVS and STA records were generated with.
+      # Upgrading Yosys is an explicit re-baseline PR that bumps this pin
+      # together with the full synth / P&R / LVS / STA regeneration
+      # cascade -- never an unattended `--upgrade`. Upstream Yosys changes
+      # are therefore no longer detected automatically by the nightly.
       #
       # `yowasp-yosys` is a WASI-sandboxed build (real Yosys compiled to
       # WebAssembly, run under `wasmtime`): it only has filesystem access
@@ -405,7 +427,7 @@ jobs:
       - name: Install yosys (the digital synthesis engine)
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check --upgrade yowasp-yosys
+          python3 -m pip install --disable-pip-version-check "yowasp-yosys==0.69.0.0.post1233"
           yosys_bin="$(command -v yowasp-yosys)"
           ln -sf "${yosys_bin}" "$(dirname "${yosys_bin}")/yosys"
           yosys -V
@@ -503,7 +525,46 @@ jobs:
         if: always()
         run: python3 layout/digital/tap_distance.py --check --require-tools
 
+      # The unit-test suite with its simulator-gated tests made mandatory
+      # (#618). The RTL/model equivalence and fault-injection classes in
+      # sim/tests/ need Icarus Verilog, and two runner probes need ngspice; on
+      # the PR path (ci.yml, stdlib-only, no installs) neither tool exists, so
+      # those tests skip there. This is the one environment where they must
+      # run: REQUIRE_RTL_TOOLS=1 makes sim/tests/_tool_gate.py fail, naming
+      # the missing tool, instead of skipping. ngspice is the pinned build put
+      # on PATH above.
+      #
+      # Icarus Verilog comes from the runner's distro, like xschem and for the
+      # same reason: the tests compare the RTL against the Python models
+      # cycle by cycle, not against recorded numerics, and use only plain
+      # `iverilog -g2012` compiles (the 13.0+ floor in
+      # sim/tb/digital-sta-power/README.md is for the SDF flows, which no unit
+      # test runs). The step prints the version it used.
+      #
+      # `if: always()` so an unrelated earlier failure (a PDK or klt step)
+      # does not hide an RTL regression.
+      - name: Install Icarus Verilog (RTL simulator for the unit tests)
+        id: iverilog
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog
+          iverilog -V 2>&1 | head -n 1
+
+      - name: Unit tests with simulator-gated tests required
+        if: always() && steps.iverilog.outcome == 'success'
+        env:
+          REQUIRE_RTL_TOOLS: "1"
+        run: npm run test
+
+      # `if: always()` so the no-write contract is still enforced when an
+      # earlier verification step failed (an unrelated failure must not hide
+      # a record write). Gated on a successful checkout: without a working
+      # tree, `git status` would fail with a misleading error, so skip then.
+      # Cancellation or runner loss cannot be covered by this.
       - name: Assert no evidence records were written
+        if: always() && steps.checkout.outcome == 'success'
         run: |
           set -euo pipefail
           if [ -n "$(git status --porcelain -- sim/records)" ]; then

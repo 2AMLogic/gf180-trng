@@ -50,11 +50,13 @@ from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
+sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "trng-top-post-route"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 
-from _record_parsing import parse_values  # noqa: E402
+from _record_parsing import current_records, parse_result_values  # noqa: E402
+from harness.report import git_blob_sha1  # noqa: E402
 
 import hashlib  # noqa: E402
 
@@ -76,8 +78,7 @@ class CheckError(RuntimeError):
 
 
 def blob_sha(path: Path) -> str:
-    data = path.read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+    return git_blob_sha1(path.read_bytes())
 
 
 class Rec:
@@ -102,7 +103,7 @@ class Rec:
         self.manifest_sha = self._one(r"^\s+- activity-manifest\.json\s+sha256:([0-9a-f]{64})")
         self._manifest = None
         self.seeds = self._one(r"^seeds:\s*(.*)$")
-        self.values = parse_values(text)
+        self.values = parse_result_values(text, label=self.stem, error_cls=CheckError)
         self.corner = f"{self.liberty}/rc-{self.rc}"
 
     def _one(self, pat: str) -> str:
@@ -129,8 +130,8 @@ class Rec:
 
 
 def load_family() -> dict[str, Rec]:
-    recs = [Rec(p) for p in sorted(RECORDS.glob("*-digital-sta-activity-[0-9]*.md"))]
-    recs = [r for r in recs if r.status == "valid"]
+    recs = current_records(
+        RECORDS, "*-digital-sta-activity-[0-9]*.md", make=Rec, error_cls=CheckError)
     cur_def = blob_sha(REPO_ROOT / "layout/digital/trng_top.def")
     cur_pnr = blob_sha(REPO_ROOT / "layout/digital/trng_top.pnr.v")
     fam: dict[str, Rec] = {}
@@ -232,15 +233,15 @@ def check(fam: dict[str, Rec], expected: tuple[str, ...] | None = None) -> list[
             problems.append(f"workload {name}: records are stale (stimulus changed)")
     # Like-for-like re-verification against the default flow's records.
     default = {}
-    for p in sorted(RECORDS.glob("*-digital-sta-power-[0-9]*.md")):
+    for p in current_records(
+        RECORDS, "*-digital-sta-power-[0-9]*.md", error_cls=CheckError
+    ):
         t = p.read_text()
-        if "status: valid" not in t.split("\n---")[0]:
-            continue
         m = re.search(r"^netlist:\s*\n\s+path:.*\n\s+sha:\s*([0-9a-f]+)", t, re.M)
         lib = re.search(r"^\s+liberty:\s*\S+__(\S+)", t, re.M)
         rc = re.search(r"^\s+interconnect:\s*(\S+)", t, re.M)
         if m and lib and rc and m.group(1) == first.def_sha:
-            default[f"{lib.group(1)}/rc-{rc.group(1)}"] = parse_values(t)
+            default[f"{lib.group(1)}/rc-{rc.group(1)}"] = parse_result_values(t, label=p.stem, error_cls=CheckError)
     for c, r in fam.items():
         base = default.get(c)
         if base is None:

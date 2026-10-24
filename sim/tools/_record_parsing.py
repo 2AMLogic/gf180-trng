@@ -30,15 +30,50 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path
+from typing import Any, NamedTuple
+
+#: The numeric token of a result bullet: the one definition of "what a number
+#: may look like" among the sim tools. Embed it (unparenthesised) in a larger
+#: pattern; do not re-type it.
+NUMBER_PATTERN = r"-?[\d.]+(?:e[-+]?\d+)?"
 
 #: A bullet line of the form "- `key`: [mean ]value", exactly as every
 #: sim/records/*.md result section writes one. ``(?:mean\s+)?`` skips past
 #: the "mean" of a multi-seed bullet so its point estimate is still
-#: captured; a caller that also needs the seed count / standard deviation
-#: (``starved_cell_jitter_energy.py``, ``raw_min_entropy_estimate.py``)
-#: parses those itself -- that shape is not common enough across all seven
-#: callers to belong here.
-VALUE_RE = re.compile(r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?(-?[\d.]+(?:e[-+]?\d+)?)", re.M)
+#: captured; the seed count / standard deviation of that form are read by
+#: :data:`SEED_SUMMARY_RE` / :func:`iter_seed_summaries`.
+#:
+#: Group 2 is the numeric *candidate*: a signed run of digits and dots,
+#: followed by any number of ``e``/``E`` groups, each with an optional sign
+#: and a run of digits and dots. It is deliberately looser than a valid
+#: number so a malformed token (``1e+``, ``1.2.3``, ``1e2.3``, ``1e2e3``) is
+#: captured whole and rejected by :func:`parse_values` rather than silently
+#: matching its valid prefix. The token ends at the first character that
+#: cannot continue a number; anything after it (a unit suffix such as ``ns``)
+#: is ignored and never scaled.
+VALUE_RE = re.compile(
+    r"^- `([a-z0-9_]+)`:\s*(?:mean\s+)?([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*)", re.M
+)
+
+#: A multi-seed bullet "- `key`: mean X over N seeds (sd Y": groups are
+#: key, mean, seed count, standard deviation (``None`` when the bullet has no
+#: ``(sd`` clause). Mean and sd are loose candidates like :data:`VALUE_RE`
+#: group 2, and the count is any non-blank run, so a malformed token is
+#: captured whole and rejected by :func:`iter_seed_summaries` instead of
+#: making the bullet silently vanish.
+SEED_SUMMARY_RE = re.compile(
+    r"^- `([a-z0-9_]+)`:\s*mean\s+([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*)"
+    r"\s+over\s+([^\s]+)\s+seeds"
+    r"(?:\s*\(sd\s+([-+]?[\d.]+(?:[eE][-+]?[\d.]*)*))?",
+    re.M,
+)
+
+#: A complete numeric token: digits with an optional fraction (``1``, ``1.``,
+#: ``1.5``, ``.5``), then an optional ``e``/``E`` exponent with at least one
+#: digit.
+_NUMBER_TOKEN_RE = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
 
 _FRONTMATTER_RE = re.compile(r"---[ \t]*\n(.*?)^---[ \t]*$", re.S | re.M)
 _NUMBER = r"[-+]?\d+(?:\.\d+)?"
@@ -49,9 +84,234 @@ _TEMPERATURE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*(?:°C|C))?" + _REMARK)
 _VOLTAGE_RE = re.compile(rf"({_NUMBER})(?:[ \t]*V)?" + _REMARK)
 
 
-def parse_values(text: str) -> dict[str, float]:
-    """Every ``- `key`: value`` bullet in ``text``, keyed by ``key``."""
-    return {m.group(1): float(m.group(2)) for m in VALUE_RE.finditer(text)}
+def parse_values(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> dict[str, float]:
+    """Every ``- `key`: value`` bullet in ``text``, keyed by ``key``.
+
+    The numeric token of each value must be complete (digits, optional
+    fraction, optional ``e``/``E`` exponent with digits) and finite. A
+    malformed token (``1.2.3``, ``1e+``) or an overflow (``1e999``) raises
+    ``error_cls`` naming ``label`` (typically the record's stem) and the
+    bullet's key; it never falls back to a valid-looking prefix. A unit
+    suffix after the number is ignored, not scaled.
+    """
+    prefix = f"{label}: " if label else ""
+    values: dict[str, float] = {}
+    for m in VALUE_RE.finditer(text):
+        key, token = m.group(1), m.group(2)
+        if _NUMBER_TOKEN_RE.fullmatch(token) is None:
+            raise error_cls(f"{prefix}malformed number `{token}` in `{key}`")
+        number = float(token)
+        if not math.isfinite(number):
+            raise error_cls(f"{prefix}non-finite number `{token}` in `{key}`")
+        values[key] = number
+    return values
+
+
+class SeedSummary(NamedTuple):
+    """The ``mean X over N seeds (sd Y`` shape of one multi-seed bullet."""
+
+    mean: float
+    n_seeds: int
+    sd: float
+
+
+def _finite_token(token: str, what: str, key: str, prefix: str, error_cls: type[Exception]) -> float:
+    if _NUMBER_TOKEN_RE.fullmatch(token) is None:
+        raise error_cls(f"{prefix}malformed {what} `{token}` in `{key}`")
+    number = float(token)
+    if not math.isfinite(number):
+        raise error_cls(f"{prefix}non-finite {what} `{token}` in `{key}`")
+    return number
+
+
+def iter_seed_summaries(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> Iterator[tuple[str, SeedSummary]]:
+    """Every multi-seed bullet in ``text`` as ``(key, SeedSummary)``, in order.
+
+    Mean and sd must be complete, finite numbers (``e``/``E`` exponent
+    allowed), the seed count a positive integer, and sd nonnegative (zero is
+    valid). A violation raises ``error_cls`` naming ``label`` and the
+    bullet's key. A ``mean X over N seeds`` bullet with no ``(sd`` clause is
+    a legacy shape (e.g. ``2026-07-31-nfet-mismatch-seed-01.md``) and is
+    skipped, as before, once its mean and count have been checked.
+    """
+    prefix = f"{label}: " if label else ""
+    for m in SEED_SUMMARY_RE.finditer(text):
+        key, mean_t, count_t, sd_t = m.groups()
+        mean = _finite_token(mean_t, "mean", key, prefix, error_cls)
+        if re.fullmatch(r"\d+", count_t) is None:
+            raise error_cls(f"{prefix}malformed seed count `{count_t}` in `{key}`")
+        n_seeds = int(count_t)
+        if n_seeds < 1:
+            raise error_cls(f"{prefix}seed count `{count_t}` must be >= 1 in `{key}`")
+        if sd_t is None:
+            continue
+        sd = _finite_token(sd_t, "sd", key, prefix, error_cls)
+        if sd < 0:
+            raise error_cls(f"{prefix}negative sd `{sd_t}` in `{key}`")
+        yield key, SeedSummary(mean, n_seeds, sd)
+
+
+# ---------------------------------------------------------------------------
+# Record-aware result extraction (issue #548)
+# ---------------------------------------------------------------------------
+#
+# ``parse_values`` / ``iter_seed_summaries`` are snippet-level primitives: they
+# take whatever text they are handed and (for ``parse_values``) keep the LAST
+# value of a repeated key. Handing them a whole record lets a ``- `key`: N``
+# bullet in a Caveats example, a fenced reproduce command, or a failed-run
+# diagnostic replace the measurement. The functions below are the boundary for
+# whole-record readers: they select the one declared ``## Result`` section
+# first, then apply the primitives to that region only.
+
+_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+_H2_RE = re.compile(r"^##[ \t]+(.*?)[ \t]*$")
+_RESULT_HEADING = "Result"
+#: The prose line ``sim/harness/report.py`` emits before the nested bullets of
+#: runs that did not succeed. The block runs to the next blank line.
+_DIAGNOSTICS_PREFIX = "Failed-run diagnostics ("
+
+
+def _scan_result_lines(
+    text: str, *, label: str, error_cls: type[Exception]
+) -> list[tuple[int, str]]:
+    """``(line_number, line)`` of the primary measurement region of a record.
+
+    One pass over the lines (a small state machine, no Markdown library):
+    the leading ``---`` frontmatter block is skipped; fenced code blocks are
+    tracked so a ``## `` line inside one is not a heading; the single
+    ``## Result`` section runs to the next ``## `` heading (``###`` and deeper
+    stay inside it). Fenced lines and the failed-run diagnostics block are
+    withheld from the returned region. Zero or several ``## Result`` headings
+    raise ``error_cls`` naming ``label``; there is no whole-file fallback.
+    """
+    prefix = f"{label}: " if label else ""
+    lines = text.split("\n")
+    start = 0
+    if lines and re.fullmatch(r"---[ \t]*", lines[0]):
+        for i in range(1, len(lines)):
+            if re.fullmatch(r"---[ \t]*", lines[i]):
+                start = i + 1
+                break
+    fence: str | None = None  # the opening fence run while inside a fenced block
+    in_result = False
+    in_diagnostics = False
+    headings: list[int] = []
+    region: list[tuple[int, str]] = []
+    for idx in range(start, len(lines)):
+        line, number = lines[idx], idx + 1
+        m = _FENCE_RE.match(line)
+        if fence is not None:
+            if (
+                m
+                and m.group(1)[0] == fence[0]
+                and len(m.group(1)) >= len(fence)
+                and not line.strip()[len(m.group(1)):].strip()
+            ):
+                fence = None
+            continue
+        if m:
+            fence = m.group(1)
+            continue
+        h = _H2_RE.match(line)
+        if h:
+            in_result = h.group(1) == _RESULT_HEADING
+            in_diagnostics = False
+            if in_result:
+                headings.append(number)
+            continue
+        if not in_result:
+            continue
+        if in_diagnostics:
+            if not line.strip():
+                in_diagnostics = False
+            continue
+        if line.startswith(_DIAGNOSTICS_PREFIX):
+            in_diagnostics = True
+            continue
+        region.append((number, line))
+    if fence is not None:
+        raise error_cls(f"{prefix}unterminated fenced code block")
+    if not headings:
+        raise error_cls(f"{prefix}no `## {_RESULT_HEADING}` section")
+    if len(headings) > 1:
+        where = ", ".join(str(n) for n in headings)
+        raise error_cls(
+            f"{prefix}ambiguous record: {len(headings)} `## {_RESULT_HEADING}` "
+            f"sections (lines {where}; exactly one is required)"
+        )
+    return region
+
+
+def result_section(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> str:
+    """The primary-measurement text of a complete record's ``## Result`` section.
+
+    Fenced code blocks, other ``##`` sections (Caveats, How to reproduce) and
+    the failed-run diagnostics block are not part of it. Missing or repeated
+    ``## Result`` headings raise ``error_cls`` naming ``label``.
+    """
+    return "\n".join(l for _, l in _scan_result_lines(text, label=label, error_cls=error_cls))
+
+
+def _checked_region(
+    text: str, *, label: str, error_cls: type[Exception]
+) -> str:
+    region = _scan_result_lines(text, label=label, error_cls=error_cls)
+    prefix = f"{label}: " if label else ""
+    seen: dict[str, int] = {}
+    for number, line in region:
+        m = VALUE_RE.match(line)
+        if m is None:
+            continue
+        key = m.group(1)
+        if key in seen:
+            raise error_cls(
+                f"{prefix}duplicate measurement `{key}` in the `## {_RESULT_HEADING}` "
+                f"section (lines {seen[key]} and {number})"
+            )
+        seen[key] = number
+    return "\n".join(l for _, l in region)
+
+
+def parse_result_values(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> dict[str, float]:
+    """Measurement bullets of a complete record's ``## Result`` section only.
+
+    Number validation is :func:`parse_values`'. Unlike it, a key repeated
+    within the Result section raises ``error_cls`` (with the record label,
+    key and line numbers) instead of keeping the last value.
+    """
+    region = _checked_region(text, label=label, error_cls=error_cls)
+    return parse_values(region, label=label, error_cls=error_cls)
+
+
+def iter_result_seed_summaries(
+    text: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = ValueError,
+) -> list[tuple[str, SeedSummary]]:
+    """:func:`iter_seed_summaries` over the ``## Result`` section only."""
+    region = _checked_region(text, label=label, error_cls=error_cls)
+    return list(iter_seed_summaries(region, label=label, error_cls=error_cls))
 
 
 def field(
@@ -205,6 +465,125 @@ def parse_status(
             f"{', '.join(STATUS_VALUES)})"
         )
     return value
+
+
+def _records_label(records_dir: Path) -> str:
+    return "sim/records" if records_dir.name == "records" else str(records_dir)
+
+
+def _scan_records(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None,
+    corner: str | None,
+    requires: Sequence[str],
+    include_superseded: bool,
+    error_cls: type[Exception],
+) -> tuple[int, int, list[Any]]:
+    """``(matched, current, selected)`` for one glob, in sorted-stem order."""
+    matched = current = 0
+    selected: list[Any] = []
+    for path in sorted(records_dir.glob(glob)):
+        matched += 1
+        text = path.read_text()
+        status = parse_status(text, label=path.stem, error_cls=error_cls)
+        if not include_superseded and status != "valid":
+            continue
+        current += 1
+        if make is not None:
+            # The caller's own record object already parsed the corner and
+            # the measurements (its way: e.g. multi-seed bullets), so filter
+            # on its ``corner`` / ``values`` rather than parsing a second time.
+            item = make(path)
+            got, values = item.corner, item.values
+        else:
+            item = path
+            got = values = None
+            if corner is not None:
+                got = format_corner(*parse_corner(text, label=path.stem, error_cls=error_cls))
+            if requires:
+                values = parse_result_values(text, label=path.stem, error_cls=error_cls)
+        if corner is not None and got != corner:
+            continue
+        if any(key not in values for key in requires):
+            continue
+        selected.append(item)
+    return matched, current, selected
+
+
+def current_records(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None = None,
+    corner: str | None = None,
+    requires: Sequence[str] = (),
+    include_superseded: bool = False,
+    error_cls: type[Exception] = RuntimeError,
+) -> list[Any]:
+    """The current-evidence records matching ``glob``, oldest first.
+
+    This is the one place that applies the record lifecycle to a directory
+    read: ``status: superseded`` records are dropped unless
+    ``include_superseded`` asks for an explicit historical read, and every
+    matched record must carry a readable ``status:`` (``error_cls`` names the
+    record otherwise). Stems begin with the run date and sequence number, so
+    sorted order is chronological. ``corner`` (a :func:`format_corner` label)
+    and ``requires`` (Result-section keys that must be present) narrow the
+    selection further. ``make`` turns each surviving path into the caller's
+    own record object (which must then expose ``.corner`` and ``.values`` if
+    those filters are used); without it the paths are returned.
+    """
+    return _scan_records(
+        records_dir, glob, make=make, corner=corner, requires=requires,
+        include_superseded=include_superseded, error_cls=error_cls,
+    )[2]
+
+
+def latest_current_record(
+    records_dir: Path,
+    glob: str,
+    *,
+    make: Callable[[Path], Any] | None = None,
+    corner: str | None = None,
+    requires: Sequence[str] = (),
+    include_superseded: bool = False,
+    error_cls: type[Exception] = RuntimeError,
+    required: bool = True,
+    context: str = "",
+    hint: str = "",
+) -> Any | None:
+    """The newest record :func:`current_records` selects ("latest wins";
+    earlier records stay on file as append-only evidence).
+
+    When nothing is left, ``error_cls`` is raised with one of three
+    wordings: no record matches the glob, every match is superseded, or no
+    current match meets the ``corner``/``requires`` filters. With
+    ``required=False`` all three return ``None`` instead. ``context``
+    prefixes and ``hint`` suffixes the message, e.g. to name the variant.
+    """
+    matched, current, selected = _scan_records(
+        records_dir, glob, make=make, corner=corner, requires=requires,
+        include_superseded=include_superseded, error_cls=error_cls,
+    )
+    where = f"{_records_label(records_dir)}/{glob}"
+    if selected:
+        return selected[-1]
+    if not required:
+        return None
+    if not matched:
+        raise error_cls(f"{context}no committed record matches {where}{hint}")
+    if not current:
+        raise error_cls(
+            f"{context}no valid record matches {where} (every match is superseded){hint}"
+        )
+    parts = []
+    if corner is not None:
+        parts.append(f"at {corner}")
+    if requires:
+        parts.append("carries " + ", ".join(requires))
+    raise error_cls(f"{context}no valid {where} record {' '.join(parts)}{hint}")
 
 
 def format_corner(process: str, temp_c: float, vdd: float) -> str:

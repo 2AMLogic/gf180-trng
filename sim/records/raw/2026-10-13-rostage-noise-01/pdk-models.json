@@ -1,0 +1,42 @@
+{
+  "complete": true,
+  "entries": [
+    {
+      "file": "libs.tech/ngspice/design.ngspice",
+      "mode": "include"
+    },
+    {
+      "file": "libs.tech/ngspice/sm141064.ngspice",
+      "mode": "lib",
+      "sections": [
+        "ss",
+        "bjt_ss",
+        "diode_ss",
+        "res_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "libs.tech/ngspice/design.ngspice",
+      "sha256": "7e222f050318388f37543a64fbd0be55cc15e4b93f57501a09f7c159c4c9e561"
+    },
+    {
+      "path": "libs.tech/ngspice/sm141064.ngspice",
+      "sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24"
+    },
+    {
+      "path": "libs.tech/ngspice/sm141064.spice",
+      "sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24"
+    },
+    {
+      "path": "libs.tech/ngspice/sm141064_mim.spice",
+      "sha256": "9b85cd009968d9aeb6b61046b24a63f39d6a463c4e4aee3949c8fd183c06666f"
+    }
+  ],
+  "identity": "sha256:530873e7e8d8679de1db4277f07ea4cd627eae74c53428eed4bc1dd71813a193",
+  "problems": [],
+  "schema": "gf180-trng/pdk-model-manifest/v1"
+}

@@ -52,13 +52,13 @@ risers per terminal) generalise cleanly to this scale.
 
 from __future__ import annotations
 
-import argparse
 import os
 import sys
 
 _CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
+from _build_cli import gds_file, make_check, make_main  # noqa: E402
 from _mos_row import Device, build_cell  # noqa: E402
 
 CELL_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -103,51 +103,25 @@ PMOS = [
 
 
 def gds_path() -> str:
-    return os.path.join(CELL_DIR, f"{TOP_CELL}.gds")
+    return gds_file(CELL_DIR, TOP_CELL)
 
 
 def build(path: str | None = None) -> bytes:
     return build_cell(TOP_CELL, PINS, NMOS, PMOS, path or gds_path())
 
 
-def check() -> int:
-    path = gds_path()
-    shown = os.path.relpath(path, os.getcwd())
-    if not os.path.exists(path):
-        print(f"MISSING: {shown} -- run `python3 layout/cells/sampler_dff/build.py`")
-        return 1
-    scratch = path + ".check"
-    try:
-        rebuilt = build(scratch)
-    finally:
-        if os.path.exists(scratch):
-            os.remove(scratch)
-    with open(path, "rb") as handle:
-        committed = handle.read()
-    if rebuilt != committed:
-        print(
-            f"STALE: {shown} does not match build.py "
-            f"({len(committed)} bytes committed, {len(rebuilt)} rebuilt) -- "
-            f"run `python3 layout/cells/sampler_dff/build.py`"
-        )
-        return 1
-    print(f"ok: {shown}")
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="verify the committed .gds matches this script, and exit",
-    )
-    args = parser.parse_args(argv)
-    if args.check:
-        return check()
-    build()
-    print(f"wrote {gds_path()}")
-    return 0
+# The check/CLI tail is the shared one (`_build_cli.py`, #589);
+# `layout/verify.py`'s `_STALENESS_CHECKS` calls this module's `check()`
+# with no arguments.
+check = make_check(
+    gds_path=gds_path, build=build, script="layout/cells/sampler_dff/build.py"
+)
+main = make_main(
+    check=check,
+    gds_path=gds_path,
+    build=build,
+    description=__doc__.splitlines()[0],
+)
 
 
 if __name__ == "__main__":

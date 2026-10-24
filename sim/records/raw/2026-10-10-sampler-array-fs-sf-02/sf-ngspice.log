@@ -1,0 +1,319 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = -40.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vsup                                      2.97
+ph                                           0
+rel                                      5e-07
+thw                                      5e-07
+en                                        2.97
+vdd                                       2.97
+vddr1                                     2.97
+vddr2                                     2.97
+xs.xdut.xr1.xg.py                      1.45869
+xs.xdut.xr1.n1                               0
+xs.xdut.rn1                        9.75945e-08
+xs.xdut.xr1.xg.nm                            0
+xs.xdut.xr1.xg.ny                            0
+xs.xdut.xr1.x1.py                         2.97
+xs.xdut.xr1.n2                            2.97
+xs.xdut.xr1.x1.ny                  2.10945e-12
+xs.xdut.xr1.x2.py                         2.97
+xs.xdut.xr1.n3                     9.75945e-08
+xs.xdut.xr1.x2.ny                  8.21472e-08
+xs.xdut.xr1.x3.py                         2.97
+xs.xdut.xr1.n4                            2.97
+xs.xdut.xr1.x3.ny                  2.10945e-12
+xs.xdut.xr1.x4.py                         2.97
+xs.xdut.xr1.n5                     9.75945e-08
+xs.xdut.xr1.x4.ny                  8.21472e-08
+xs.xdut.xr1.x5.py                         2.97
+xs.xdut.xr1.n6                            2.97
+xs.xdut.xr1.x5.ny                  2.10945e-12
+xs.xdut.xr1.x6.py                         2.97
+xs.xdut.xr1.n7                     9.75945e-08
+xs.xdut.xr1.x6.ny                  8.21472e-08
+xs.xdut.xr1.x7.py                         2.97
+xs.xdut.xr1.n8                            2.97
+xs.xdut.xr1.x7.ny                  2.10945e-12
+xs.xdut.xr1.x8.py                         2.97
+xs.xdut.xr1.n9                     9.75945e-08
+xs.xdut.xr1.x8.ny                  8.21472e-08
+xs.xdut.xr1.x9.py                         2.97
+xs.xdut.xr1.n10                           2.97
+xs.xdut.xr1.x9.ny                  2.10945e-12
+xs.xdut.xr1.x10.py                        2.97
+xs.xdut.xr1.x10.ny                 8.21472e-08
+xs.xdut.xr2.xg.py                      1.47278
+xs.xdut.xr2.n1                               0
+xs.xdut.rn2                        9.15607e-08
+xs.xdut.xr2.xg.nm                            0
+xs.xdut.xr2.xg.ny                            0
+xs.xdut.xr2.x1.py                         2.97
+xs.xdut.xr2.n2                            2.97
+xs.xdut.xr2.x1.ny                  1.95423e-12
+xs.xdut.xr2.x2.py                         2.97
+xs.xdut.xr2.n3                     9.15607e-08
+xs.xdut.xr2.x2.ny                  7.61134e-08
+xs.xdut.xr2.x3.py                         2.97
+xs.xdut.xr2.n4                            2.97
+xs.xdut.xr2.x3.ny                  1.95424e-12
+xs.xdut.xr2.x4.py                         2.97
+xs.xdut.xr2.n5                     9.15607e-08
+xs.xdut.xr2.x4.ny                  7.61134e-08
+xs.xdut.xr2.x5.py                         2.97
+xs.xdut.xr2.n6                            2.97
+xs.xdut.xr2.x5.ny                  1.95424e-12
+xs.xdut.xr2.x6.py                         2.97
+xs.xdut.xr2.n7                     9.15607e-08
+xs.xdut.xr2.x6.ny                  7.61134e-08
+xs.xdut.xr2.x7.py                         2.97
+xs.xdut.xr2.n8                            2.97
+xs.xdut.xr2.x7.ny                  1.95424e-12
+xs.xdut.xr2.x8.py                         2.97
+xs.xdut.xr2.n9                     9.15607e-08
+xs.xdut.xr2.x8.ny                  7.61134e-08
+xs.xdut.xr2.x9.py                         2.97
+xs.xdut.xr2.n10                           2.97
+xs.xdut.xr2.x9.ny                  1.95424e-12
+xs.xdut.xr2.x10.py                        2.97
+xs.xdut.xr2.x10.ny                 7.61134e-08
+xs.ro1                                    2.97
+xs.ro2                                    2.97
+xs.xdut.xa1.an                     1.54473e-08
+xs.xdut.xa1.bn                     1.54473e-08
+xs.xdut.xa1.mid                       0.790177
+xs.xo                              1.48158e-07
+xs.xdut.xa1.s1                     7.40789e-08
+xs.xdut.xa1.s2                     4.15906e-12
+xs.xsb.clkb                               2.97
+clk                                          0
+xs.xsb.m                           1.79003e-07
+xs.xsb.mb                                 2.97
+rst_n                                        0
+xs.xsb.mmid                        1.74218e-05
+xs.xsb.mc                          3.08944e-08
+xs.xsb.s                                  2.97
+raw_bit                            1.54473e-08
+xs.xsb.qb                                 2.97
+xs.xsb.s2mid                       1.74217e-05
+xs.xsv.clkb                               2.97
+xs.xsv.m                                  2.97
+xs.xsv.mb                                 2.97
+xs.xsv.mmid                            2.26456
+xs.xsv.mc                           3.0895e-08
+xs.xsv.s                                  2.97
+raw_valid                          1.54473e-08
+xs.xsv.qb                                 2.97
+xs.xsv.s2mid                       1.74217e-05
+xs.xsr1.clkb                              2.97
+xs.xsr1.m                                 2.97
+xs.xsr1.mb                                2.97
+xs.xsr1.mmid                           2.26456
+xs.xsr1.mc                          3.0895e-08
+xs.xsr1.s                                 2.97
+ring_bit1                          1.54473e-08
+xs.xsr1.qb                                2.97
+xs.xsr1.s2mid                      1.74217e-05
+xs.xsr2.clkb                              2.97
+xs.xsr2.m                                 2.97
+xs.xsr2.mb                                2.97
+xs.xsr2.mmid                           2.26456
+xs.xsr2.mc                          3.0895e-08
+xs.xsr2.s                                 2.97
+ring_bit2                          1.54473e-08
+xs.xsr2.qb                                2.97
+xs.xsr2.s2mid                      1.74217e-05
+vth                                      1.485
+vlo                                     0.7425
+vhi                                      2.376
+bvhi#branch                                  0
+bvlo#branch                                  0
+bvth#branch                                  0
+brst#branch                                  0
+bclk#branch                                  0
+een#branch                                   0
+vr2#branch                        -1.05627e-05
+vr1#branch                        -9.98891e-06
+vtr#branch                        -1.94743e-10
+vthw#branch                                  0
+vrel#branch                                  0
+vph#branch                                   0
+vsupply#branch                    -2.05518e-05
+
+
+No. of Data Rows : 362008
+
+  Measurements for Transient Analysis
+
+r1_rise_8           =   4.79242e-08
+r1_fall_8           =   4.51063e-08
+r1_rise_9           =   5.38944e-08
+r1_fall_9           =   5.10901e-08
+r1_rise_10          =   5.98589e-08
+r1_fall_10          =   5.70599e-08
+r1_rise_11          =   6.58251e-08
+r1_fall_11          =   6.30262e-08
+r1_rise_12          =   7.17913e-08
+r1_fall_12          =   6.89924e-08
+r1_rise_13          =   7.77574e-08
+r1_fall_13          =   7.49586e-08
+r1_rise_14          =   8.37237e-08
+r1_fall_14          =   8.09248e-08
+r1_rise_15          =   8.96914e-08
+r1_fall_15          =   8.68909e-08
+r1_rise_16          =   9.56515e-08
+r1_fall_16          =   9.28694e-08
+r1_rise_17          =   1.01620e-07
+r1_fall_17          =   9.88155e-08
+r1_rise_18          =   1.07588e-07
+r1_fall_18          =   1.04780e-07
+r1_rise_19          =   1.13554e-07
+r1_fall_19          =   1.10747e-07
+r1_rise_20          =   1.19521e-07
+r1_fall_20          =   1.16714e-07
+r1_rise_21          =   1.25487e-07
+r1_fall_21          =   1.22680e-07
+r1_rise_22          =   1.31454e-07
+r1_fall_22          =   1.28647e-07
+r1_rise_23          =   1.37418e-07
+r1_fall_23          =   1.34603e-07
+r1_max              =  3.050750e+00 at=  1.877628e-07
+r1_min              =  -2.094894e-02 at=  1.847328e-07
+r2_rise_8           =   4.49070e-08
+r2_fall_8           =   4.22814e-08
+r2_rise_9           =   5.04953e-08
+r2_fall_9           =   4.78771e-08
+r2_rise_10          =   5.60840e-08
+r2_fall_10          =   5.34652e-08
+r2_rise_11          =   6.16727e-08
+r2_fall_11          =   5.90539e-08
+r2_rise_12          =   6.72614e-08
+r2_fall_12          =   6.46425e-08
+r2_rise_13          =   7.28501e-08
+r2_fall_13          =   7.02313e-08
+r2_rise_14          =   7.84387e-08
+r2_fall_14          =   7.58201e-08
+r2_rise_15          =   8.40258e-08
+r2_fall_15          =   8.14100e-08
+r2_rise_16          =   8.96162e-08
+r2_fall_16          =   8.69975e-08
+r2_rise_17          =   9.52062e-08
+r2_fall_17          =   9.25835e-08
+r2_rise_18          =   1.00795e-07
+r2_fall_18          =   9.81723e-08
+r2_rise_19          =   1.06383e-07
+r2_fall_19          =   1.03761e-07
+r2_rise_20          =   1.11972e-07
+r2_fall_20          =   1.09350e-07
+r2_rise_21          =   1.17561e-07
+r2_fall_21          =   1.14938e-07
+r2_rise_22          =   1.23150e-07
+r2_fall_22          =   1.20527e-07
+r2_rise_23          =   1.28738e-07
+r2_fall_23          =   1.26115e-07
+r2_max              =  2.989614e+00 at=  2.541428e-07
+r2_min              =  -2.214997e-02 at=  2.568528e-07
+xo_rise_8           =   2.27257e-08
+xo_fall_8           =   2.42125e-08
+xo_rise_9           =   2.56788e-08
+xo_fall_9           =   2.74066e-08
+xo_rise_10          =   2.83144e-08
+xo_fall_10          =   3.01789e-08
+xo_rise_11          =   3.12671e-08
+xo_fall_11          =   3.33730e-08
+xo_rise_12          =   3.39028e-08
+xo_fall_12          =   3.61453e-08
+xo_rise_13          =   3.68547e-08
+xo_fall_13          =   3.93406e-08
+xo_rise_14          =   3.94333e-08
+xo_fall_14          =   4.21165e-08
+xo_rise_15          =   4.24237e-08
+xo_fall_15          =   5.06403e-08
+xo_rise_16          =   5.12377e-08
+xo_fall_16          =   5.36594e-08
+xo_rise_17          =   5.40626e-08
+xo_fall_17          =   5.62289e-08
+xo_rise_18          =   5.72083e-08
+xo_fall_18          =   5.92481e-08
+xo_rise_19          =   6.00279e-08
+xo_fall_19          =   6.18176e-08
+xo_rise_20          =   6.31748e-08
+xo_fall_20          =   6.48367e-08
+xo_rise_21          =   6.59940e-08
+xo_fall_21          =   6.74062e-08
+xo_rise_22          =   6.91413e-08
+xo_fall_22          =   7.04254e-08
+xo_rise_23          =   7.19602e-08
+xo_fall_23          =   7.29949e-08
+xo_rise_24          =   7.51077e-08
+xo_fall_24          =   7.60142e-08
+xo_rise_25          =   7.79264e-08
+xo_fall_25          =   7.85830e-08
+xo_rise_26          =   8.10740e-08
+xo_fall_26          =   8.16031e-08
+xo_rise_27          =   8.38930e-08
+xo_fall_27          =   8.41338e-08
+xo_rise_28          =   8.70351e-08
+xo_fall_28          =   8.71175e-08
+xo_rise_29          =   9.27435e-08
+xo_fall_29          =   9.30464e-08
+xo_rise_30          =   9.53784e-08
+xo_fall_30          =   9.57986e-08
+xo_rise_31          =   9.83325e-08
+xo_fall_31          =   9.90033e-08
+xo_max              =  3.054568e+00 at=  2.268128e-07
+xo_min              =  -3.480623e-02 at=  1.763428e-07
+te_0                =   3.00500e-07
+xl_0                =  2.985349e+00
+xm_0                =  2.878596e+00
+xh_0                =  2.968674e+00
+rb_0_8              =  6.008645e-08
+rv_0_8              =  3.612970e-08
+rb_0_50             =  -1.308821e-06
+rv_0_50             =  1.771599e-08
+rb_0_300            =  1.574953e-08
+rv_0_300            =  1.487937e-08
+te_1                =   1.30050e-06
+xl_1                =  2.982662e+00
+xm_1                =  6.408318e-01
+xh_1                =  1.464118e-03
+rb_1_8              =  2.970000e+00
+rv_1_8              =  2.970000e+00
+rb_1_50             =  2.970000e+00
+rv_1_50             =  2.970000e+00
+rb_1_300            =  2.969998e+00
+rv_1_300            =  2.970000e+00
+te_2                =   2.30050e-06
+xl_2                =  3.569659e-03
+xm_2                =  -4.929044e-03
+xh_2                =  4.668629e-05
+rb_2_8              =  -7.948157e-07
+rv_2_8              =  2.970000e+00
+rb_2_50             =  -2.618711e-07
+rv_2_50             =  2.970000e+00
+rb_2_300            =  8.950335e-08
+rv_2_300            =  2.970000e+00
+te_3                =   3.30050e-06
+xl_3                =  2.986900e+00
+xm_3                =  2.984685e+00
+xh_3                =  2.975099e+00
+rb_3_8              =  2.970000e+00
+rv_3_8              =  2.970000e+00
+rb_3_50             =  2.970000e+00
+rv_3_50             =  2.970000e+00
+rb_3_300            =  2.969996e+00
+rv_3_300            =  2.970000e+00
+
+ngspice-42 done

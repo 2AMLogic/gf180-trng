@@ -24,10 +24,13 @@ here: everything in this file runs with no ngspice and no PDK.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
@@ -107,13 +110,23 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(ttfv.SAMPLER_SAMPLES, 1)
 
     def test_budget_at_the_ratified_rate_matches_the_readme_floor(self):
+        # DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §1: 2 kbps.
+        self.assertEqual(ttfv.RATIFIED_RAW_RATE_BPS, 2000.0)
         b = ttfv.budget(ttfv.RATIFIED_RAW_RATE_BPS)
-        self.assertAlmostEqual(b["health_test_s"], 1.024e-3)
-        self.assertAlmostEqual(b["conditioner_s"], 256e-6)
+        self.assertAlmostEqual(b["health_test_s"], 0.512)
+        self.assertAlmostEqual(b["conditioner_s"], 0.128)
         # 1281 samples, i.e. the README's 1280 plus the one sampler clock the
         # floor does not count.
-        self.assertAlmostEqual(b["digital_total_s"], 1.281e-3)
+        self.assertAlmostEqual(b["digital_total_s"], 0.6405)
+        self.assertAlmostEqual(ttfv.README_FLOOR_S, 1280 / ttfv.RATIFIED_RAW_RATE_BPS)
         self.assertGreater(b["digital_total_s"], ttfv.README_FLOOR_S)
+
+    def test_historical_one_mbps_figures_stay_reproducible(self):
+        # #14's 1.281 ms total and the 1.28 ms floor were stated at DR-0003's
+        # original 1 Mbps; they are historical and reachable only explicitly.
+        b = ttfv.budget(ttfv.DR0003_RAW_RATE_BPS)
+        self.assertAlmostEqual(b["digital_total_s"], 1.281e-3)
+        self.assertAlmostEqual(ttfv.DR0003_FLOOR_S, 1280 / ttfv.DR0003_RAW_RATE_BPS)
 
     def test_the_row_scales_exactly_with_the_rate(self):
         fast = ttfv.budget(1e6)["digital_total_s"]
@@ -385,6 +398,37 @@ class BufferVariantBaselineTests(unittest.TestCase):
         self.assertIn("append-only", str(ctx.exception))
 
 
+class RecordResultBoundaryTests(unittest.TestCase):
+    """Issue #548: a Caveats/reproduce example never reaches the rollup."""
+
+    def test_caveat_example_does_not_replace_the_measurement(self):
+        text = (
+            "---\nrecord: fixture\nstatus: valid\ncorner:\n  process: tt\n"
+            "  temperature: 27\n  voltage: 3.30 V\n---\n\n"
+            "## Result\n\n- `p_total_w`: 1e-6\n\n"
+            "## How to reproduce\n\n```sh\n- `p_total_w`: 98\n```\n\n"
+            "## Caveats\n\n- Example form:\n- `p_total_w`: 99\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-ro-array-core-power-01.md"
+            path.write_text(text)
+            rec = pr.Record(path)
+        self.assertEqual(rec.values["p_total_w"], 1e-6)
+        self.assertEqual(rec.corner, "tt/27/3.30")
+
+    def test_duplicate_primary_key_is_rejected_with_record_name(self):
+        text = (
+            "---\nstatus: valid\ncorner:\n  process: tt\n  temperature: 27\n"
+            "  voltage: 3.30 V\n---\n\n## Result\n\n"
+            "- `p_total_w`: 1e-6\n- `p_total_w`: 2e-6\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-ro-array-core-power-01.md"
+            path.write_text(text)
+            with self.assertRaisesRegex(RuntimeError, "2026-01-01-ro-array-core-power-01: duplicate"):
+                pr.Record(path)
+
+
 # ---------------------------------------------------------------------------
 # 3. Liberty parser (no PDK needed)
 # ---------------------------------------------------------------------------
@@ -528,6 +572,77 @@ def _param(path: Path, name: str) -> int:
 def _flops(inventory) -> int:
     return sum(n for counts, _ov in dpe._sections(inventory)
                for s, n in counts.items() if s.startswith("dff"))
+
+
+class DigitalRateNormalizationTests(unittest.TestCase):
+    """``digital_measured`` scales from the fixed 1 MHz measurement, not from
+    the current ratified rate, so moving the default must not move the
+    normalization (#585)."""
+
+    RATES = (2000.0, 500.0, 1e6, 20e6)
+
+    def test_current_default_is_2000_bps_and_measurement_rate_is_fixed(self):
+        self.assertEqual(pr.RATIFIED_RAW_RATE_BPS, 2000.0)
+        self.assertEqual(pr.DIGITAL_MEASUREMENT_RATE_HZ, 1e6)
+
+    def test_leakage_is_rate_independent_and_dynamic_scales_linearly(self):
+        ref = pr.digital_measured(pr.DIGITAL_MEASUREMENT_RATE_HZ)
+        leak = ref["leakage_w"]
+        dyn_1mhz = ref["active_w"] - leak
+        self.assertGreater(dyn_1mhz, 0.0)
+        # At the measurement rate the scaled figure is the measured figure.
+        self.assertAlmostEqual(ref["active_w"], ref["active_w_at_1mhz"], places=12)
+        for rate in self.RATES:
+            with self.subTest(rate=rate):
+                d = pr.digital_measured(rate)
+                self.assertEqual(d["leakage_w"], leak)
+                self.assertEqual(d["active_w_at_1mhz"], ref["active_w_at_1mhz"])
+                self.assertAlmostEqual(
+                    d["active_w"], leak + dyn_1mhz * rate / 1e6,
+                    delta=1e-12 * max(1.0, d["active_w"]))
+
+    def test_2000_bps_does_not_keep_the_full_1mhz_dynamic_term(self):
+        d = pr.digital_measured(2000.0)
+        dyn_1mhz = d["active_w_at_1mhz"] - d["leakage_w"]
+        self.assertAlmostEqual(d["active_w"] - d["leakage_w"], dyn_1mhz * 2e-3,
+                               delta=1e-12 * dyn_1mhz)
+
+    def test_20mhz_agrees_with_the_committed_record_pair(self):
+        # The family's own 20 MHz records agree with the linear model to
+        # better than 2e-6 relative (digital_measured's docstring).
+        import digital_corner_characterization as dcc  # noqa: PLC0415
+        p20 = dcc.power(dcc.load())
+        self.assertAlmostEqual(
+            pr.digital_measured(20e6)["active_w"] / p20["max_20mhz_w"], 1.0, delta=1e-4)
+
+
+class EstimateDefaultRateTests(unittest.TestCase):
+    """``design/digital_power_estimate.py`` defaults to the ratified 2000 bps
+    (DR-0011); older rates are reachable only via an explicit ``--raw-rate``."""
+
+    def test_default_constant_is_2000_bps(self):
+        self.assertEqual(dpe.RAW_RATE_HZ, 2000.0)
+        self.assertEqual(dpe.RAW_RATE_HZ, pr.RATIFIED_RAW_RATE_BPS)
+
+    def _rate_passed_to_run(self, argv):
+        seen = []
+
+        def fake_run(root, corner, raw_rate_hz, *a, **k):
+            seen.append(raw_rate_hz)
+            return {"raw_rate_hz": raw_rate_hz}
+
+        with mock.patch.object(dpe, "run", fake_run), \
+                contextlib.redirect_stdout(io.StringIO()):
+            rc = dpe.main(["--pdk-root", "/nonexistent", "--json", *argv])
+        self.assertEqual(rc, 0)
+        return seen
+
+    def test_default_reaches_run(self):
+        self.assertEqual(self._rate_passed_to_run([]), [2000.0])
+
+    def test_explicit_rate_passes_through(self):
+        self.assertEqual(self._rate_passed_to_run(["--raw-rate", "1e6"]), [1e6])
+        self.assertEqual(self._rate_passed_to_run(["--raw-rate", "500"]), [500.0])
 
 
 class InventoryStalenessTests(unittest.TestCase):

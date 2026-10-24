@@ -38,7 +38,6 @@ party can re-grade.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import sys
 import unittest
@@ -48,6 +47,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 DIGITAL_DIR = LAYOUT_DIR / "digital"
 REPORTS_DIR = DIGITAL_DIR / "reports"
@@ -59,16 +59,11 @@ MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 def _load(name: str, path: Path):
     """Load a flat `layout/digital/*.py` driver as a module.
 
-    The same `importlib.util.spec_from_file_location` pattern
-    `layout/tests/test_verify.py` and `layout/verify.py`'s own
-    `_load_build_module` use: these are scripts run by path, not package
-    members, so there is no import path to reach them by.
+    These are scripts run by path, not package members, so there is no
+    import path to reach them by; `load_module_from_path` loads each from its
+    own file under a unique module name.
     """
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 build = _load("layout_digital_build", DIGITAL_DIR / "build.py")
@@ -180,9 +175,7 @@ class CommittedViewTests(unittest.TestCase):
         }
         view = lvs._committed_view(payload, {})
         self.assertEqual(view["layout"], "layout/digital/trng_top.extracted.spice")
-        self.assertEqual(
-            view["reference"], "layout/digital/trng_top.lvs_reference.spice"
-        )
+        self.assertEqual(view["reference"], "layout/digital/trng_top.pnr.v")
         for field in ("layout", "reference"):
             self.assertTrue(
                 (REPO_ROOT / view[field]).is_file(),
@@ -253,14 +246,15 @@ class CommittedEnvelopeTests(unittest.TestCase):
                 )
 
     def test_lvs_keeps_the_reference_generation_disclosure(self):
-        """The digital reference is a mechanical transcription of
-        `trng_top.pnr.v`, not an independently captured schematic netlist.
-        That caveat is not in `klt`'s envelope, so it must stay in ours."""
+        """The digital reference is the as-built `trng_top.pnr.v` itself,
+        not an independently captured schematic netlist. That caveat is not
+        in `klt`'s envelope, so it must stay in ours."""
         generation = self.lvs.get("reference_generation") or {}
         self.assertEqual(generation.get("generator"), "layout/digital/lvs.py")
         self.assertEqual(
             generation.get("source"), "layout/digital/trng_top.pnr.v"
         )
+        self.assertEqual(generation.get("form"), "gate-level-verilog")
 
     def test_lvs_records_both_coverage_verdicts_it_is_asked_to_disclose(self):
         """`power_connectivity` and `body_verification` are what
@@ -270,6 +264,12 @@ class CommittedEnvelopeTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertIsInstance(self.lvs.get(field), dict)
                 self.assertIn("status", self.lvs[field])
+
+    def test_lvs_power_connectivity_is_computed_not_unchecked(self):
+        """T1 item 11's digital column needs a computed power verdict (#662).
+        `"unchecked"` is what the SPICE-reference form reports by
+        construction; a regression to it re-opens `lvs_supply_unproven`."""
+        self.assertIn(self.lvs["power_connectivity"]["status"], ("match", "mismatch"))
 
 
 class ManifestCitationTests(unittest.TestCase):

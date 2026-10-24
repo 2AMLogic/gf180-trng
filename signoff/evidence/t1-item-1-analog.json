@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "t1_item": 1,
+  "status": "pass",
+  "summary": "Audited inventory for T1 item 1 (Design sources), analog partition: 37 design-source files (xschem schematics and symbols, their derived SPICE netlists) with their regeneration gates. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 design/netlist.py --lint`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 design/netlist.py --check` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
+  "source": "signoff/evidence/inventory-1-analog.json",
+  "provenance": {
+    "klt_version": null,
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/evidence/inventory-1-analog.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:2f3dd697ec2406ae6dad1f4173f5382116cab3d1c7dc3beee85ebd9ee3104711"
+    }
+  }
+}

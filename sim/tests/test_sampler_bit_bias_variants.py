@@ -64,7 +64,7 @@ def record_text(raw_rel: str, deck: dict, status: str | None = "valid") -> str:
     return (
         "---\n" + ("" if status is None else f"status: {status}\n")
         + f"raw:\n  path: {raw_rel}\n"
-        "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n"
+        "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n## Result\n\n"
         f"{body}\n"
     )
 

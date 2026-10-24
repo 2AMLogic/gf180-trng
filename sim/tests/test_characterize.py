@@ -14,7 +14,10 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
+sys.path.insert(0, str(SIM_DIR / "tools"))
+
 import characterize  # noqa: E402
+import power_rollup  # noqa: E402
 
 
 class CampaignTableTests(unittest.TestCase):
@@ -36,6 +39,29 @@ class CampaignTableTests(unittest.TestCase):
         self.assertIn(c.testbench, cmd)
         self.assertIn("--jobs", cmd)
         self.assertIn("4", cmd)
+
+    def test_default_jobs_is_bounded_and_not_core_count(self):
+        self.assertEqual(characterize.DEFAULT_JOBS, 2)
+        self.assertIsNone(characterize.build_parser().parse_args([]).jobs)
+
+    def _dry_run(self, *extra):
+        out = subprocess.run(
+            [sys.executable, str(SIM_DIR / "characterize.py"), "--dry-run", *extra],
+            capture_output=True, text=True, check=True,
+        ).stdout
+        return [l for l in out.splitlines() if "--jobs" in l and l.startswith("  ")]
+
+    def test_dry_run_forwards_bounded_default_to_every_command(self):
+        lines = self._dry_run()
+        self.assertTrue(lines)
+        for l in lines:
+            self.assertEqual(l.split("--jobs")[1].split()[0], "2", l)
+
+    def test_dry_run_forwards_explicit_jobs_unchanged(self):
+        lines = self._dry_run("--jobs", "7")
+        self.assertTrue(lines)
+        for l in lines:
+            self.assertEqual(l.split("--jobs")[1].split()[0], "7", l)
 
     def test_fully_uncovered_rows_absent_from_campaign_rows(self):
         # ROWS_NOT_COVERED documents rows (or row *terms*, e.g. "D (digital
@@ -84,6 +110,67 @@ class RowCCornerTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertRegex(result.stdout, r"--temps\s+125\b[^\n]*--supply\s+3\.63")
+
+
+class RowDReproductionTests(unittest.TestCase):
+    """Every required power-ledger term must declare how Row D reproduces it (#528)."""
+
+    @staticmethod
+    def _by_term():
+        return {e.term: e for e in characterize.ROW_D_EVIDENCE}
+
+    def test_every_required_ledger_term_has_a_reproduction(self):
+        declared = self._by_term()
+        for term in power_rollup.LEDGER_TERMS:
+            if not term["required"]:
+                continue
+            self.assertIn(
+                term["name"], declared,
+                f"required power_rollup ledger term {term['name']!r} has no Row D "
+                "reproduction in characterize.ROW_D_EVIDENCE",
+            )
+
+    def test_digital_term_is_declared(self):
+        self.assertIn("digital", self._by_term())
+
+    def test_declared_terms_are_not_stale(self):
+        ledger = {t["name"] for t in power_rollup.LEDGER_TERMS}
+        for term in self._by_term():
+            self.assertTrue(term == "digital" or term in ledger, f"{term!r} not in the ledger")
+
+    def test_testbenches_exist_and_flow_matches_campaigns(self):
+        in_campaigns = {c.testbench for c in characterize.CAMPAIGNS if "D" in c.rows}
+        for e in characterize.ROW_D_EVIDENCE:
+            for tb in e.testbenches:
+                self.assertTrue((SIM_DIR / "tb" / tb).is_dir(), f"{e.term}: no sim/tb/{tb}")
+                if e.flow == "campaign":
+                    self.assertIn(tb, in_campaigns, f"{e.term}: {tb} not a Row D campaign")
+                else:
+                    self.assertNotIn(tb, in_campaigns, f"{e.term}: {tb} is run locally")
+
+    def test_liveness_stays_opt_in(self):
+        tb = SIM_DIR / "tb" / characterize.LIVENESS_TB
+        self.assertFalse((tb / "tb.json").exists(), "liveness must have no tb.json")
+        self.assertNotIn(characterize.LIVENESS_TB, {c.testbench for c in characterize.CAMPAIGNS})
+        self.assertEqual(self._by_term()["liveness"].flow, "separate")
+
+    def test_liveness_commands_are_real_subcommands(self):
+        text = (SIM_DIR / "tools" / "liveness_sampler_power.py").read_text()
+        for cmd, _ in characterize.LIVENESS_COMMANDS:
+            sub = cmd.split("liveness_sampler_power.py ")[1].split()[0]
+            self.assertIn(f'add_parser("{sub}"', text)
+
+    def test_dry_run_enumerates_all_row_d_evidence(self):
+        for rows in ([], ["--rows", "D"]):
+            r = subprocess.run(
+                [sys.executable, str(SIM_DIR / "characterize.py"), "--dry-run", *rows],
+                cwd=REPO_ROOT, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(r.returncode, 0, r.stderr)
+            for e in characterize.ROW_D_EVIDENCE:
+                for tb in e.testbenches:
+                    self.assertIn(tb, r.stdout)
+            self.assertIn("--backend batch", r.stdout)
 
 
 class SelectTests(unittest.TestCase):

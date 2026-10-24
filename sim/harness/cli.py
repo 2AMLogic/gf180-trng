@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import shutil
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
+from . import HARNESS_VERSION, corners as corners_mod, pdk_models, report, runner, startup as startup_mod, testbench as tb_mod
 from .pdk import PdkNotFound, find_all_variant_dirs, find_pdk
 from .runner import NgspiceMissing
 
@@ -31,6 +31,9 @@ EXIT_ENVIRONMENT = 3
 # Records were written but their raw.files checksums no longer match the
 # files on disk -- the evidence is not trustworthy and must not be committed.
 EXIT_RECORD_CORRUPT = 4
+# A PDK model file the decks consume changed between the pre-run capture and
+# the pre-publication re-check (#562): the affected records are withheld.
+EXIT_PDK_MODELS_CHANGED = 5
 
 
 def _resolve_tb_path(argument: str) -> Path:
@@ -43,6 +46,20 @@ def _resolve_tb_path(argument: str) -> Path:
         f"no testbench {argument!r}; tried: " + ", ".join(str(c) for c in candidates)
         + ".\nAvailable: " + ", ".join(p.name for p in tb_mod.discover(TB_DIR))
     )
+
+
+def _positive_int(text: str) -> int:
+    """argparse ``type=`` for a strictly positive integer (e.g. ``--timeout``)."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid integer value: {text!r}") from None
+    if value <= 0:
+        raise argparse.ArgumentTypeError(
+            f"must be a positive integer number of seconds, got {value} "
+            "(0 would disable the per-run watchdog)"
+        )
+    return value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,7 +94,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--supply-tol", type=float, metavar="FRAC", help="supply tolerance as a fraction, e.g. 0.10")
     parser.add_argument(
         "--seeds", nargs="+", type=int, metavar="N",
-        help="explicit seed list for a stochastic testbench (one run per seed, per PVT point)",
+        help="explicit seed list for a stochastic testbench (one run per seed, per PVT point); "
+             "seeds must be distinct",
     )
     parser.add_argument(
         "-j", "--jobs", type=int, default=1,
@@ -85,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
              "(default 1 = sequential). Records are still written in grid order.",
     )
     parser.add_argument(
-        "--timeout", type=int, default=runner.DEFAULT_TIMEOUT_S,
+        "--timeout", type=_positive_int, default=runner.DEFAULT_TIMEOUT_S,
         help="per-run ngspice wall-clock bound in seconds, enforced by an OS-level "
              "watchdog (timeout(1)/gtimeout, see --check-env) so it survives even if "
              "run_corners.py itself is killed; a killed run reports as FAILED-TIMEOUT",
@@ -169,11 +187,34 @@ def _fmt(value) -> str:
     return str(value)
 
 
-def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
+def _deck_sections(tb, point) -> tuple[str, ...]:
+    """The model-library sections ``runner.compose_deck`` ``.lib``-includes."""
+    return tuple(tb.extra_lib_sections or point.corner.sections)
+
+
+def _model_caveats(manifest) -> list[str]:
+    caveats = [
+        f"PDK model identity (pdk_content) covers only the {len(manifest.files)} "
+        f"file(s) listed in {pdk_models.MANIFEST_NAME}, reached from the deck's "
+        ".include/.lib entry points; it was captured before the run and re-checked "
+        "before this record was written, so an edit made and reverted between "
+        "those two checks is not detected (see sim/README.md).",
+    ]
+    if not manifest.complete:
+        caveats.append(
+            "PDK model identity is INCOMPLETE -- references the scanner could not "
+            "follow: " + "; ".join(manifest.problems)
+        )
+    return caveats
+
+
+def _default_caveats(tb, point, jobs: int = 1, manifest=None) -> list[str]:
     caveats = [
         f"Single corner ({point.corner.name} / {point.vdd:.2f} V / {point.temp_c:g} C). "
         "Says nothing about any other corner.",
     ]
+    if manifest is not None:
+        caveats.extend(_model_caveats(manifest))
     if jobs > 1:
         caveats.append(
             f"Run concurrently (-j {jobs}); wall_time is the SUMMED per-run ngspice "
@@ -207,6 +248,15 @@ def _default_caveats(tb, point, jobs: int = 1) -> list[str]:
 
 
 def run(args: argparse.Namespace) -> int:
+    # Reject an invalid watchdog bound before PDK discovery, record-stem
+    # reservation, or any simulator launch (argparse already checks the
+    # CLI path; this covers callers that build the Namespace directly).
+    try:
+        runner.validate_timeout_s(args.timeout)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
 
@@ -222,7 +272,11 @@ def run(args: argparse.Namespace) -> int:
     temperatures = args.temps if args.temps is not None else list(tb.temperatures_c)
     nominal = args.supply if args.supply is not None else tb.nominal_supply_v
     tolerance = args.supply_tol if args.supply_tol is not None else tb.supply_tolerance
-    supplies = corners_mod.supply_points(nominal, tolerance)
+    try:
+        supplies = corners_mod.supply_points(nominal, tolerance)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
     points = corners_mod.build_grid(corner_list, temperatures, supplies)
 
     if tb.stochastic:
@@ -237,7 +291,38 @@ def run(args: argparse.Namespace) -> int:
             return EXIT_ENVIRONMENT
         seeds = None
 
+    # Validate the complete execution plan -- distinct seeds, distinct PVT
+    # points, non-colliding output ids -- before anything is allocated: no
+    # record stem is reserved, no scratch directory is created and no
+    # simulator is launched for a plan that would double-count a seed or
+    # schedule two points into the same deck/log paths. The serial (-j 1)
+    # and parallel paths below share this one plan.
+    try:
+        corners_mod.validate_grid(points)
+        plan = runner.plan_runs(tb, seeds)
+        tb_mod.validate_artifact_namespace(
+            tb, [(p.corner_id, seed, idx) for p in points for seed, idx in plan]
+        )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+
     git = report.git_provenance(REPO_ROOT)
+
+    # ngspice start-up script (#582): captured once, here, BEFORE any
+    # simulator starts. Every point and seed -- serial, parallel, watchdog or
+    # fallback -- is served these bytes from its own raw directory, and the
+    # published digest is of these bytes.
+    startup_snapshot = startup_mod.capture()
+
+    # PDK model-content identity (#562), captured once per distinct set of
+    # library sections BEFORE any simulator starts; each point is re-checked
+    # against it before its record is published (see _emit).
+    pre_manifests: dict[tuple[str, ...], pdk_models.ModelManifest] = {}
+    for point in points:
+        sections = _deck_sections(tb, point)
+        if sections not in pre_manifests:
+            pre_manifests[sections] = pdk_models.manifest_for_deck(pdk, sections)
 
     if not args.quiet:
         print(f"testbench : {tb.slug}" + (f"  ({tb.description})" if tb.description else ""))
@@ -249,9 +334,19 @@ def run(args: argparse.Namespace) -> int:
         print(f"points    : {len(points)}")
         if seeds:
             print(f"seeds     : {seeds}")
+        for sections, manifest in pre_manifests.items():
+            state = (
+                "complete" if manifest.complete
+                else f"INCOMPLETE, {len(manifest.problems)} unfollowed reference(s)"
+            )
+            print(
+                f"models    : {manifest.identity}  ({len(manifest.files)} files, {state}; "
+                f"sections {' '.join(sections)})"
+            )
         print()
 
     overall_ok = True
+    models_changed: list[tuple[str, Path, list[str]]] = []
     written_paths: list[Path] = []
     written_records: list[dict] = []
 
@@ -260,10 +355,19 @@ def run(args: argparse.Namespace) -> int:
 
     if args.no_write:
         stems: list[str] = ["" for _ in points]
-        workdirs = [WORK_DIR / tb.slug / p.corner_id for p in points]
-        for workdir in workdirs:
-            if workdir.exists():
-                shutil.rmtree(workdir)
+        # Every invocation gets its own scratch directory, created atomically
+        # by mkdtemp, so two overlapping --no-write runs of the same testbench
+        # and point (even from separate processes) never share, delete or
+        # overwrite each other's deck/log. Nothing is ever removed here: a
+        # run's scratch output is retained for diagnostics and is only ever
+        # this invocation's own. See sim/README.md ("Scratch directories").
+        scratch_parent = WORK_DIR / tb.slug
+        scratch_parent.mkdir(parents=True, exist_ok=True)
+        scratch_root = Path(tempfile.mkdtemp(prefix="run-", dir=scratch_parent))
+        workdirs = [scratch_root / p.corner_id for p in points]
+        if not args.quiet:
+            print(f"scratch   : {scratch_root}  (retained; not evidence)")
+            print()
     else:
         # Reserved for the whole grid up front so concurrent points cannot
         # race for the same append-only sequence number, and reserved by
@@ -275,12 +379,6 @@ def run(args: argparse.Namespace) -> int:
         stems = report.reserve_record_stems(RECORDS_DIR, date_str, tb.slug, len(points))
         workdirs = [RECORDS_DIR / report.RAW_DIRNAME / stem for stem in stems]
 
-    try:
-        plan = runner.plan_runs(tb, seeds)
-    except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
-
     jobs = max(1, int(args.jobs))
     tasks = [(pi, seed, index) for pi in range(len(points)) for seed, index in plan]
     results_by_point: dict[int, list] = {pi: [None] * len(plan) for pi in range(len(points))}
@@ -291,6 +389,7 @@ def run(args: argparse.Namespace) -> int:
         result = runner.run_one(
             tb, pdk, points[point_index], workdirs[point_index],
             seed=seed, run_index=run_index, timeout_s=args.timeout,
+            startup_snapshot=startup_snapshot,
         )
         return point_index, run_index, result
 
@@ -314,10 +413,37 @@ def run(args: argparse.Namespace) -> int:
         # useless for the coverage/cost trade-offs sim/README.md wants it for.
         wall = sum(r.seconds for r in results)
         point_ok = all(r.status == "ok" for r in results)
+
+        # Re-check the model files before anything is published: a record
+        # citing a model identity ngspice may not have read is not evidence.
+        sections = _deck_sections(tb, point)
+        pre = pre_manifests[sections]
+        post = pdk_models.manifest_for_deck(pdk, sections)
+        changed = post.identity != pre.identity
+        if changed:
+            # Diagnostics stay beside the raw output; no record is written.
+            report.write_model_manifest(pre, workdirs[point_index])
+            report.write_model_manifest(
+                post, workdirs[point_index], pdk_models.CHANGED_MANIFEST_NAME
+            )
+            models_changed.append(
+                (point.corner_id, workdirs[point_index], pre.describe_differences(post))
+            )
+            point_ok = False
+        # Duplicated trnoise realizations (#605): withhold the record.
+        duplicated = "" if changed else runner.duplicate_realization_problem(tb, results)
+        if duplicated:
+            point_ok = False
         overall_ok = overall_ok and point_ok
 
         if not args.quiet:
-            if point_ok:
+            if duplicated:
+                flag = "FAILED-DUPLICATE-NOISE"
+                detail = f"{duplicated}; record withheld"
+            elif changed:
+                flag = "FAILED-PDK-CHANGED"
+                detail = "PDK model files changed during the run; record withheld"
+            elif point_ok:
                 flag = "ok  "
                 parts = []
                 for name in tb.measure:
@@ -336,15 +462,21 @@ def run(args: argparse.Namespace) -> int:
                 detail = first_failure.message if first_failure else "no runs"
             print(f"[{i:>3}/{len(points)}] {flag} {point.corner_id:<22} {detail}")
 
+        if changed:
+            return
+        if duplicated:
+            print(f"error: {point.corner_id}: {duplicated}", file=sys.stderr)
+            return
         if not args.no_write:
             record = report.build_record(
                 tb=tb, pdk=pdk, point=point, results=results, ngspice=ngspice,
                 repo_root=REPO_ROOT, stem=stems[point_index], completed_utc=completed_utc,
                 wall_seconds=wall, raw_dir=workdirs[point_index], git=git,
                 supersedes=args.supersedes, timeout_s=args.timeout,
+                model_manifest=pre, startup_snapshot=startup_snapshot,
             )
             path = report.write_record(
-                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs)
+                record, tb, RECORDS_DIR, _default_caveats(tb, point, jobs, pre)
             )
             written_paths.append(path)
             written_records.append(record)
@@ -371,8 +503,11 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_ENVIRONMENT
 
     print()
+    if models_changed:
+        _report_models_changed(models_changed)
     if args.no_write:
         print("evidence  : not recorded (--no-write)")
+        print(f"scratch   : {scratch_root}  (retained; delete when no longer needed)")
     else:
         print(f"records   : {len(written_paths)} written under {RECORDS_DIR}/")
         for path in written_paths:
@@ -382,6 +517,9 @@ def run(args: argparse.Namespace) -> int:
             _report_corrupt_records(corrupt)
             print("status    : FAIL (raw output does not match the recorded checksums)")
             return EXIT_RECORD_CORRUPT
+    if models_changed:
+        print("status    : FAIL (PDK model files changed during the run)")
+        return EXIT_PDK_MODELS_CHANGED
     print(f"status    : {'OK' if overall_ok else 'FAIL'}")
 
     return EXIT_OK if overall_ok else EXIT_CHECK_FAILED
@@ -409,6 +547,31 @@ def _verify_written_records(records: list[dict]) -> list[tuple[str, list[str]]]:
         if problems:
             corrupt.append((record["record"], problems))
     return corrupt
+
+
+def _report_models_changed(changed: list[tuple[str, Path, list[str]]]) -> None:
+    print(file=sys.stderr)
+    print(
+        f"error: PDK model files changed while {len(changed)} point(s) were "
+        "simulating; their records were NOT written. The model content captured "
+        "before the run no longer matches the installation, so the numbers cannot "
+        "be tied to one model identity.",
+        file=sys.stderr,
+    )
+    for corner_id, workdir, differences in changed:
+        print(f"  {corner_id}: raw output retained in {_display_path(workdir)}", file=sys.stderr)
+        print(
+            f"    ({pdk_models.MANIFEST_NAME} = before the run, "
+            f"{pdk_models.CHANGED_MANIFEST_NAME} = at the re-check)",
+            file=sys.stderr,
+        )
+        for line in differences:
+            print(f"    - {line}", file=sys.stderr)
+    print(
+        "\nThe retained raw directories are diagnostics, not evidence: do not "
+        "commit them. Re-run once the PDK installation is stable.",
+        file=sys.stderr,
+    )
 
 
 def _report_corrupt_records(corrupt: list[tuple[str, list[str]]]) -> None:

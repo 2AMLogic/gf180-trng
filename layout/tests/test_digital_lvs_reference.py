@@ -31,7 +31,6 @@ Helpers covered: `_join_spice_continuations`, `_bit_names`,
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -42,6 +41,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 DIGITAL_DIR = LAYOUT_DIR / "digital"
 
@@ -49,15 +49,11 @@ DIGITAL_DIR = LAYOUT_DIR / "digital"
 def _load(name: str, path: Path):
     """Load a flat `layout/digital/*.py` driver as a module.
 
-    Same `importlib.util.spec_from_file_location` pattern as
-    `test_digital_reports.py`: these are scripts run by path, not package
-    members, so there is no import path to reach them by.
+    These are scripts run by path, not package members, so there is no
+    import path to reach them by; `load_module_from_path` loads each from its
+    own file under a unique module name.
     """
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module_from_path(name, path)
 
 
 lvs = _load("layout_digital_lvs", DIGITAL_DIR / "lvs.py")

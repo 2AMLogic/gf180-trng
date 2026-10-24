@@ -94,15 +94,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from array_sizing import (  # noqa: E402
     ArrayPoint,
     KB,
-    A_JITTER_ENERGY,
+    A_PLAIN_CELL,
     MARGIN_M,
     Q_H0,
     DR0010_RATE_BPS,
+    RAW_RATE_BPS,
     load,
     shipped_ring_count,
 )
 from starved_cell_jitter_energy import load_points as load_starved_points  # noqa: E402
-from _record_parsing import parse_status  # noqa: E402
+from _record_parsing import current_records, iter_result_seed_summaries  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -259,7 +260,7 @@ def report_family_agreement() -> float:
 
 def grid_coverage() -> tuple[int, list[str]]:
     """``(measured, missing)`` over the covered PVT grid."""
-    have = {p.rec.corner for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)}
+    have = {p.rec.corner for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)}
     want = [
         f"{proc}/{t:.0f}/{v:.2f}"
         for proc in GRID_PROCESSES
@@ -290,7 +291,7 @@ def report_corner(a_value: float, a_label: str, rate_bps: float,
         )
     need = MARGIN_M * Q_H0
     print(f"\n-- a = {a_value:.3f} ({a_label}) -- "
-          f"{a_value / A_JITTER_ENERGY:.2f}x the plain-cell constant ({A_JITTER_ENERGY:g}) --")
+          f"{a_value / A_PLAIN_CELL:.2f}x the plain-cell constant ({A_PLAIN_CELL:g}) --")
     ordered = sorted(points, key=lambda p: p.g)
     if full_table:
         header = (f"{'corner':<15} {'T0_r1 (s)':>11} {'P_tot (W)':>11} "
@@ -355,10 +356,10 @@ def report_mc_ro_freq(*, include_superseded: bool = False) -> None:
     # extends this one's as a substring -- are never swept in here as if they
     # were mismatch-enabled MC data.
     records = []
-    for rec_path in sorted(RECORDS.glob("*-ro-array-core-mc-freq-[0-9]*.md")):
-        text = rec_path.read_text()
-        if include_superseded or parse_status(text, label=rec_path.stem) == "valid":
-            records.append((rec_path, text))
+    for rec_path in current_records(
+        RECORDS, "*-ro-array-core-mc-freq-[0-9]*.md", include_superseded=include_superseded
+    ):
+        records.append((rec_path, rec_path.read_text()))
     if not records:
         print("  (no valid sim/records/*-ro-array-core-mc-freq-[0-9]*.md record committed yet)")
         return
@@ -407,12 +408,6 @@ def report_mc_ro_freq(*, include_superseded: bool = False) -> None:
               f"margin over M*Q_H0 ({need:g}) shown in section 2 above")
 
 
-_DTRIP_PATTERN = re.compile(
-    r"^- `(dtrip_v)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)", re.M,
-)
-
-
 def _sampler_offset(
     corner: str = "tt/27/3.30", *, include_superseded: bool = False,
 ) -> tuple[float, float, float, int, str]:
@@ -438,16 +433,12 @@ def _sampler_offset(
     # (sim/tb/sampler-dff-mc-offset-control/, issue #146) -- whose slug
     # extends this one's as a substring -- are never picked up here as if
     # they were mismatch-enabled MC data.
-    records = sorted(RECORDS.glob("*-sampler-dff-mc-offset-[0-9]*.md"))
-    if not records:
-        raise RuntimeError(
-            "no sim/records/*-sampler-dff-mc-offset-[0-9]*.md record committed yet"
-        )
+    glob = "*-sampler-dff-mc-offset-[0-9]*.md"
+    if not current_records(RECORDS, glob, include_superseded=True):
+        raise RuntimeError(f"no sim/records/{glob} record committed yet")
     candidates = []
-    for rec_path in records:
+    for rec_path in current_records(RECORDS, glob, include_superseded=include_superseded):
         text = rec_path.read_text()
-        if not include_superseded and parse_status(text, label=rec_path.stem) != "valid":
-            continue
         process_m = re.search(r"process:\s*(\w+)", text)
         temp_m = re.search(r"temperature:\s*(-?[\d.]+)", text)
         vdd_m = re.search(r"voltage:\s*([\d.]+)", text)
@@ -461,10 +452,16 @@ def _sampler_offset(
             f"no valid sim/records/*-sampler-dff-mc-offset-[0-9]*.md record at corner {corner!r}"
         )
     rec_path, text, vdd = candidates[-1]
-    m = _DTRIP_PATTERN.search(text)
-    if m is None:
+    dtrip = [
+        s
+        for key, s in iter_result_seed_summaries(
+            text, label=rec_path.stem, error_cls=RuntimeError
+        )
+        if key == "dtrip_v"
+    ]
+    if not dtrip:
         raise RuntimeError(f"{rec_path.stem}: no dtrip_v seed-aggregate found")
-    mean_v, n, sd_v = float(m.group(2)), int(m.group(3)), float(m.group(4))
+    mean_v, n, sd_v = dtrip[0].mean, dtrip[0].n_seeds, dtrip[0].sd
     return mean_v - 0.5 * vdd, sd_v, vdd, n, rec_path.stem
 
 
@@ -699,8 +696,11 @@ def main(argv: list[str] | None = None) -> int:
                     "and the device-mismatch bias measured at the nominal corner.",
     )
     parser.add_argument(
-        "--rate", type=float, default=DR0010_RATE_BPS, metavar="BPS",
-        help=f"raw rate to evaluate Q at (default {DR0010_RATE_BPS:g} bps, DR-0010 §1)",
+        "--rate", type=float, default=RAW_RATE_BPS, metavar="BPS",
+        help=f"raw rate to evaluate Q at (default {RAW_RATE_BPS:g} bps, the ratified rate "
+             "per DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy; "
+             f"pass --rate {DR0010_RATE_BPS:g} to reproduce the historical "
+             "DR-0010 §1 tables)",
     )
     parser.add_argument(
         "--full", action="store_true",
@@ -717,7 +717,7 @@ def main(argv: list[str] | None = None) -> int:
     a_lag1, a_asym = starved_cell_constants()
     print("issue #13: entropy-binding corner over the covered PVT grid, and "
           "Monte Carlo mismatch bias")
-    print(f"plain-cell constant (jitter_energy_law.py):  a = {A_JITTER_ENERGY:g}")
+    print(f"plain-cell constant (jitter_energy_law.py):  a = {A_PLAIN_CELL:g}")
     print(f"starved-cell constants (starved_cell_jitter_energy.py): "
           f"a_lag1 = {a_lag1:.3f}, a_asym = {a_asym:.3f}")
 
@@ -735,7 +735,7 @@ def main(argv: list[str] | None = None) -> int:
     worsts = []
     try:
         for a_value, label in (
-            (A_JITTER_ENERGY, "plain cell, DR-0010's stated constant"),
+            (A_PLAIN_CELL, "plain cell, DR-0010's stated constant"),
             (a_asym, "starved cell, asymptotic slope"),
             (a_lag1, "starved cell, lag-1"),
         ):
@@ -759,9 +759,9 @@ def main(argv: list[str] | None = None) -> int:
           "construction; they are all printed because the MARGIN, not the ranking, "
           "is what the constant moves.")
     if MEASURED_MIN_Q_CORNER != PREDICTED_MIN_Q_CORNER:
-        pred = next((p for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)
+        pred = next((p for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)
                      if p.rec.corner == PREDICTED_MIN_Q_CORNER), None)
-        meas = next((p for p in shipped_points(PVT_Q_GLOB, A_JITTER_ENERGY)
+        meas = next((p for p in shipped_points(PVT_Q_GLOB, A_PLAIN_CELL)
                      if p.rec.corner == MEASURED_MIN_Q_CORNER), None)
         if pred is not None and meas is not None:
             print(f"\n  The measured minimum is NOT the predicted one. At "

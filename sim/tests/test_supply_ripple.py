@@ -23,6 +23,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
@@ -226,11 +227,31 @@ class CampaignDefinitionTests(unittest.TestCase):
         main = {n: r for n, r in reqs.items() if not n.startswith("conv-")}
         for n, r in main.items():
             sv = r["corners"]["supply_v"]
+            if "-lowf-p" in n:  # a part carries a share of the grid; see the union test
+                continue
             self.assertEqual(sorted(set(sv["vamp"])), [0.0, *sr.AMPS_V], n)
             self.assertEqual({(a, b) for a, b in zip(sv["vm1"], sv["vm2"])} - {(0, 0)}, {(1, 0), (1, 1)})
         freqs = {n: r["corners"]["supply_v"]["vfrq"][0] for n, r in main.items()}
-        self.assertEqual(freqs["nominal-lowf"], sr.LOW_F_HZ)
+        self.assertEqual(freqs["nominal-lowf-p1"], sr.LOW_F_HZ)
         self.assertAlmostEqual(freqs["binding-beat"], 7.65e6)
+
+    def test_lowf_parts_together_carry_exactly_the_declared_grid(self):
+        grid = sr.full_grid()
+        for corner in ("nominal", "binding"):
+            parts = [n for n, c, fk, _ in sr.REQUESTS if c == corner and fk == "lowf"]
+            self.assertEqual(len(parts), sr.LOWF_PARTS)
+            union = []
+            for n in parts:
+                u = sr.units(n)
+                self.assertEqual(u[0], (0.0, 0, 0), f"{n}: own control leads")
+                union += u[1:]
+                req = sr.all_requests()[n]
+                sv = req["corners"]["supply_v"]
+                self.assertEqual(list(zip(sv["vamp"], sv["vm1"], sv["vm2"])), u)
+                self.assertEqual(sv["vfrq"], [sr.LOW_F_HZ] * len(u))
+                self.assertEqual(sv["vsupply"], [sr.CORNERS[corner]["vdd"]] * len(u))
+                self.assertEqual(req["analysis"]["args"], "10p 2700n 0 10p")
+            self.assertEqual(union, grid[1:], corner)
 
     def test_window_holds_at_least_four_cycles_of_every_ripple_frequency(self):
         for name, corner, fk, _ in sr.REQUESTS:
@@ -278,6 +299,88 @@ class CampaignDefinitionTests(unittest.TestCase):
     def test_limits_are_printed_with_every_analysis(self):
         self.assertTrue(any("synthetic" in l.lower() or "ideal series" in l.lower() for l in sr.LIMITS))
         self.assertTrue(any("min-entropy" in l for l in sr.LIMITS))
+
+
+class RunScaffoldTests(unittest.TestCase):
+    """``cmd_run`` goes through ``sim/harness/klt_request.py`` (issue #590):
+    the no-whole-grid-local rule is the helper's, and the command line it
+    builds is the one the tool always built. No klt is ever invoked."""
+
+    def test_a_local_run_of_the_whole_grid_is_refused(self):
+        def no_klt(*_a, **_k):
+            raise AssertionError("subprocess must not be reached on a refused run")
+
+        with mock.patch("subprocess.call", no_klt):
+            self.assertEqual(sr.cmd_run("nominal-lowf-p1", "/never-created-outdir", "local"), 2)
+
+    def test_a_batch_run_builds_the_identical_klt_command(self):
+        import tempfile
+
+        seen = {}
+
+        def fake_call(cmd, stdout=None, stderr=None):
+            seen["cmd"] = cmd
+            return 5
+
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            with mock.patch("subprocess.call", fake_call):
+                rc = sr.cmd_run("nominal-lowf-p1", str(out), "batch", "uvx --from klayout-tools==0.6.0 klt")
+        self.assertEqual(rc, 5)
+        self.assertEqual(seen["cmd"], [
+            "uvx", "--from", "klayout-tools==0.6.0", "klt", "sim",
+            str(sr.request_path("nominal-lowf-p1")), "--backend", "batch",
+            "-o", str(out / "nominal-lowf-p1"), "--format", "json"])
+
+
+class IngestTests(unittest.TestCase):
+    AMPS7 = ((0.0, 0, 0), (0.01, 1, 0), (0.05, 1, 0), (0.15, 1, 0),
+             (0.01, 1, 1), (0.05, 1, 1), (0.15, 1, 1))
+
+    def _ingest(self, rep, name="nominal-beat"):
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "r.json"
+            rp.write_text(json.dumps(rep))
+            rec = Path(d) / "records"
+            rec.mkdir()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc = sr.cmd_ingest(name, rp, None, rec)
+            mds = [p.read_text() for p in rec.iterdir() if p.suffix == ".md"]
+            return rc, sorted(p.name for p in rec.iterdir()), mds
+
+    def test_refuses_a_report_with_a_failed_unit(self):
+        rep = fake_report(f=10.5e6, amps=self.AMPS7)
+        rep["corners"][3]["status"] = "error"
+        rc, files, _ = self._ingest(rep)
+        self.assertEqual((rc, files), (2, []))
+
+    def test_refuses_a_report_with_the_wrong_unit_count(self):
+        rc, files, _ = self._ingest(fake_report(f=10.5e6))
+        self.assertEqual((rc, files), (2, []))
+
+    def test_refuses_an_unknown_request_name(self):
+        rc, files, _ = self._ingest(fake_report(), name="nope")
+        self.assertEqual((rc, files), (2, []))
+
+    def test_complete_report_mints_one_record_with_raw_evidence(self):
+        rc, files, mds = self._ingest(fake_report(f=10.5e6, amps=self.AMPS7))
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(files), 2)  # record + raw dir
+        md = mds[0]
+        self.assertIn("deterministic", md)
+        self.assertIn("report.json  sha256:", md)
+        self.assertIn("| control | 0 |", md)
+
+    def test_wall_time_is_the_longest_unit_not_the_sum(self):
+        rep = fake_report(f=10.5e6, amps=self.AMPS7)
+        for c in rep["corners"]:
+            c["runtime_s"] = 600.0
+        _, _, mds = self._ingest(rep)
+        self.assertIn("wall_time: 10.0m", mds[0])
 
 
 class CliTests(unittest.TestCase):

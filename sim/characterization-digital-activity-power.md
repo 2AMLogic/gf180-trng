@@ -227,7 +227,11 @@ illustration at the end of section 3 shows what a substitution would do: the
 digital term would fall by 96.9 uW, taking that worst-corner total to about
 661 uW, still above the row (about 132 %). The verdict (the active-power row is
 not met) is therefore the same under either digital term, which is why this is
-recorded as characterization. Adopting an activity-derived term in the rollup
+recorded as characterization. The 758.2 uW (and the 661 uW illustration) are a lower bound on the
+analog side: the ledger now carries the shipped liveness samplers as a required
+term (#463), measured at 1 of 27 corners so far and a gap at this one, so the
+analog term here excludes them. That is independent of the digital choice and
+does not change the comparison, which is digital-only. Adopting an activity-derived term in the rollup
 would change the published number, and under [DR-0023] that goes through a
 decision record, not through this document. The idle-current row is untouched:
 it is a leakage-only quantity and this campaign adds no stopped-clock state.

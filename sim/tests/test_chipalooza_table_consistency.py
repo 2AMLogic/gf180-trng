@@ -10,6 +10,7 @@ Row C corner missing from the reproduction campaign, fails here.
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -34,8 +35,11 @@ def _row(letter: str) -> str:
 
 
 def _rollup() -> str:
+    # The proposal table quotes Row D at DR-0003's original 1 MHz sample clock
+    # (historical; the tool's default is now the ratified 2 kbps), so pin it.
     proc = subprocess.run(
-        [sys.executable, "-I", str(SIM_DIR / "tools" / "power_rollup.py")],
+        [sys.executable, "-I", str(SIM_DIR / "tools" / "power_rollup.py"),
+         "--rate", "1e6"],
         capture_output=True, text=True, cwd=REPO_ROOT, check=True,
     )
     return proc.stdout
@@ -93,12 +97,21 @@ class ProposalTableAgreesWithEvidence(unittest.TestCase):
             self.assertIn(want, row)
         self.assertRegex(row, r"35\.63 MHz[^|]*historical")
 
-    def test_row_i_separates_current_estimate_from_stale_composed_figure(self):
+    def test_row_i_area_matches_committed_report(self):
+        rollup = json.loads((REPO_ROOT / "layout" / "floorplan" / "reports" / "area.json").read_text())["rollup"]
         row = _row("I")
-        self.assertIn("0.06885 mm²", row)
-        self.assertIn("#256", row)
-        self.assertIn("stale", row)
-        self.assertRegex(row, r"Historical, not current: the earlier 0\.1350 mm²")
+        floorplan = rollup["floorplan_area_um2"]
+        pct = rollup["share_of_budget_pct"]
+        self.assertAlmostEqual(pct, floorplan / rollup["budget_um2"] * 100, delta=0.05)
+        # Quoted area in um^2 with thin-space-free thousands grouping, and in mm^2.
+        um2 = f"{floorplan:,.1f}".replace(",", " ")
+        self.assertIn(f"{floorplan / 1e6:.4f} mm² ({um2} µm²", row)
+        self.assertIn(f"({pct:.1f} % of the 0.05 mm² budget = {um2} / 50 000)", row)
+        bbox = rollup["row_bbox_um"]
+        self.assertIn(f"{bbox['w']:.1f} × {bbox['h']:.1f} µm", row)
+        self.assertRegex(row, r"Historical, not current: the 0\.06885 mm²")
+        self.assertRegex(row, r"0\.1350 mm²")
+        self.assertNotIn("pending floorplan regeneration", row)
         self.assertNotIn("no full whole-block layout exists", row)
 
     def test_row_c_caveats_and_all_three_corners_cited(self):

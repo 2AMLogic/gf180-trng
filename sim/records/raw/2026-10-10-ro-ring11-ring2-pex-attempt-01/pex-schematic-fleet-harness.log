@@ -1,0 +1,10 @@
+[harness 2026-10-10T13:43:22Z] watchdog armed: unconditional poweroff in 90m
+[harness 2026-10-10T13:43:22Z] instance=i-021d4e56dd3668cdf type=c7i.4xlarge az=us-east-1a ami=ami-0e40e3245f1923ac8 lifecycle=spot
+[harness 2026-10-10T13:43:22Z] job=klt-sim-dc936de81e20 bucket=2am-batch-jobs-221082181346 prefix=jobs
+[harness 2026-10-10T13:43:22Z] watchdog armed: unconditional poweroff in 66m
+[harness 2026-10-10T13:43:22Z] aws CLI already on the image
+[harness 2026-10-10T13:43:22Z] cpu: vcpus=16 physical_cores=8
+[harness 2026-10-10T13:43:23Z] concurrency: 1 (cores_per_job=8, physical_cores=8, vcpus=16)
+[harness 2026-10-10T13:43:24Z] status=running (fetching inputs)
+[harness 2026-10-10T13:43:25Z] status=running (executing)
+[harness 2026-10-10T13:43:25Z] running (timeout 3600s): klt sim "$EDA_INPUT_DIR/request.json" --backend local-parallel --format json > "$EDA_OUTPUT_DIR/report.json"

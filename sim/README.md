@@ -26,10 +26,13 @@ of the ratified target specification. `python3 sim/tools/corpus_counts.py
 from this list or a listed file does not exist.
 
 - [`characterization-analog-summary.md`](characterization-analog-summary.md) -- Every analog-partition row of the ratified target specification, one result per row with its claim limit. Status: aggregation for #313; an ordinary summary that runs no new simulation.
+- [`characterization-array-fs-sf-capture.md`](characterization-array-fs-sf-capture.md) -- Asymmetric fs/sf corners on the integrated ring-array, XOR and sampler path at the 1 Mbps clock: ring duty, XOR pulses, reset, `raw_valid` and capture, distinct from the isolated-sampler setup/hold coverage. Status: campaign defined and unit-tested; batch submits refused or rejected (retried in -04, refused again), two-unit local pilot only (2 of 18 PVT points, one phase); no coverage-complete verdict (#472).
 - [`characterization-array-ring-coupling.md`](characterization-array-ring-coupling.md) -- Why one ring shows ~40x more jitter inside the array deck: ring-to-ring coupling through the XOR combiner input stage. Status: complete (#51).
 - [`characterization-array-supply-ripple.md`](characterization-array-supply-ripple.md) -- Susceptibility of the buffered RO array to deterministic supply ripple. Status: campaign defined and unit-tested; simulations not yet run, so no sensitivity numbers (#414).
+- [`characterization-digital-supply-ir-drop.md`](characterization-digital-supply-ir-drop.md) -- DC voltage loss from the chip pins through the digital docking path and power grid, `vddd` and `vss`. Status: complete (#464); verdict: not material at the ratified 1 MHz rate, material at the 20 MHz implementation clock (informational).
 - [`characterization-digital-sta-area-power.md`](characterization-digital-sta-area-power.md) -- Digital section Fmax, area and power across the corner set (Area and Power rows, digital share). Status: complete (#145), with later amendments in-document.
 - [`characterization-digital-activity-power.md`](characterization-digital-activity-power.md) -- Digital power from post-route per-net switching activity, five declared workloads against the uniform-activity baseline (Power row, digital share). Status: complete (#453); characterization only, the rollup baseline is unchanged.
+- [`characterization-liveness-sampler-active-power.md`](characterization-liveness-sampler-active-power.md) -- The shipped per-ring liveness samplers (`xsr1`/`xsr2`) in the whole-block active-power ledger: instance inventory, new rate- and topology-matched measurement, like-for-like effect on the total. Status: ledger and tooling complete and unit-tested; 1 of 27 PVT points measured (local probe), the batch submit failed on a runner/client version mismatch, remaining corners are explicit gaps (#463).
 - [`characterization-liveness-tap-phase-cost.md`](characterization-liveness-tap-phase-cost.md) -- Phase cost the liveness digitizer imposes on its ring. Status: complete (#76).
 - [`characterization-post-layout-extracted.md`](characterization-post-layout-extracted.md) -- Entropy-source verification suite re-run on extracted post-layout netlists, device-level through full-chip inter-region. Status: complete (#17, extended by #217 and #232).
 - [`characterization-raw-min-entropy-and-battery.md`](characterization-raw-min-entropy-and-battery.md) -- Raw min-entropy estimation and statistical test battery (Raw min-entropy row). Status: analysis complete (#12); reports no design min-entropy figure.
@@ -38,10 +41,18 @@ from this list or a listed file does not exist.
 - [`characterization-sampler-bit-bias.md`](characterization-sampler-bit-bias.md) -- Whether the clock-locked liveness modulation reaches the sampled bit. Status: complete (#86).
 - [`characterization-shipped-array-tap-phase.md`](characterization-shipped-array-tap-phase.md) -- Clock-locked digitizer disturbance in the array as shipped. Status: complete (#87).
 - [`characterization-startup-and-power-budget.md`](characterization-startup-and-power-budget.md) -- Time-to-first-valid and whole-block Power rows. Status: complete (#14); depth-2 figures supersede depth-8 ones in-document.
-- [`characterization-starved-cell-jitter-energy.md`](characterization-starved-cell-jitter-energy.md) -- Jitter-energy law on the shipped starved delay cell. Status: complete (#46).
+- [`characterization-starved-cell-jitter-energy.md`](characterization-starved-cell-jitter-energy.md) -- Jitter-energy law on the shipped starved delay cell. Status: complete (#46); hot-corner (ss/+125 C/3.63 V) addendum (#628).
 - [`characterization-supply-current-and-leakage.md`](characterization-supply-current-and-leakage.md) -- Per-ring active supply current and stopped-ring leakage (Power row inputs). Status: complete (#32).
 - [`characterization-vss-trunk-ir-drop.md`](characterization-vss-trunk-ir-drop.md) -- IR drop on the shared vss return trunk, per region. Status: complete (#234); verdict: not material.
 - [`characterization-worst-corner-and-mc-mismatch.md`](characterization-worst-corner-and-mc-mismatch.md) -- Entropy-binding PVT corner over the full 27-point grid, and Monte Carlo mismatch bias. Status: complete (#13).
+
+### Plans and feasibility assessments (not measured reports)
+
+These are forward-looking documents. They run no simulation, are not evidence
+records, and are not part of the report index above.
+
+- [`../docs/out-of-envelope-characterization-plan.md`](../docs/out-of-envelope-characterization-plan.md) -- Model-bound audit and execution plan for health-test behaviour just outside the operating envelope. Status: plan (#467); no supported simulation grid and over the CPU budget as of its writing, so the envelope row's out-of-envelope clause remains unverified.
+- [`../docs/higher-rate-source-options-study.md`](../docs/higher-rate-source-options-study.md) -- Design study: what a raw rate of 100 kbps, 1 Mbps or 4 Mbps would cost on gf180, as more XOR-combined starved-cell rings (DR-0007 sizing law at the starved-cell `a`) or as the metastability-hybrid tap, priced from existing records by `sim/tools/higher_rate_options.py`. Status: study (#629); runs no simulation, proposes no row change, makes no entropy claim.
 
 ---
 
@@ -54,6 +65,62 @@ from this list or a listed file does not exist.
    noise, Monte Carlo) must record every seed it used. A transient-noise
    record without its seed(s) is unreproducible and therefore is not
    evidence, regardless of how good the numbers look.
+
+`run_corners.py` checks the whole execution plan before it reserves a
+record, creates a scratch directory or launches ngspice, and refuses
+(exit 3, naming the repeated value) a plan that repeats a seed, repeats a
+PVT point (e.g. `--temps 27 27`), or contains two distinct points whose
+output id `<corner>_<temp>c_<supply>v` collides (supply is formatted to
+10 mV, so e.g. 3.301 V and 3.304 V alias). A repeated seed would count one
+realization twice in a record's mean and spread; a repeated id would put
+two points' decks and logs in the same place. Run a repeated diagnostic as
+a separate invocation instead.
+
+For a stochastic testbench the harness alone sets the seed. It writes one
+`.option seed=<n>` per run from `--seeds`. Before planning, the harness
+refuses any input that sets its own seed: a seed entry in the manifest
+`options`, an option line containing `seed=` in the fragment, the DUT or a
+captured include, or `setseed`, `option seed=`, `set rndseed` or
+`unset rndseed` in `analyses`. The error names the source and line. The forms
+covered and the reasons are in
+[`tool-experiments/2026-10-11-ngspice-seed-control/`](tool-experiments/2026-10-11-ngspice-seed-control/README.md).
+In ngspice-46 a later competing option line is ignored, and a control-block
+`setseed` overrides the seed. That experiment also found that `trnoise`
+waveforms do not repeat under the same seed (#574).
+
+### What a transient-noise seed reproduces (#574, DR-0031)
+
+On the ngspice-46 build measured in
+[`tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/`](tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/README.md),
+the seed does **not** reproduce `trnoise` waveforms. Two processes with the
+same seed shared none of 16 noise samples under the harness start-up policy.
+The same held with `setseed` or `set rndseed` in an explicitly supplied
+`spinit`, with `setseed` in a user `.spiceinit` (the manual's suggestion)
+and with a control-block `setseed`. The noise followed the simulator's
+process id instead. The same seed did reproduce the `agauss` parameter and
+control-language draws. Other ngspice builds have not been measured.
+[DR-0031](../spec/decision-records/DR-0031-transient-noise-reproducibility.md)
+sets the contract that follows:
+
+- **Seeds are still required** and still owned by the harness; rule 2 and
+  the checks above are unchanged. For a transient-noise run the seeds fix
+  the non-`trnoise` random draws and identify the runs.
+- **Replay means deck and configuration, not waveform.** Re-running a
+  `tran-noise` record's commands at its `repo_commit` with its snapshots
+  rebuilds the same decks, PVT point and start-up configuration, but draws
+  fresh `trnoise` noise. Its numbers are a new sample and will differ from
+  the record's. New `tran-noise` records carry a `reproduction` block and
+  say this in "How to reproduce". Deterministic and `mc` records do not:
+  no limit was measured for them.
+- **Distinct seeds do not make the noise distinct.** Runs get different
+  noise because each is a separate ngspice process. Neither the seeds nor
+  the experiment establish that runs are statistically independent.
+- **Statistical repeatability is a separate claim.** Saying a re-run agrees
+  with a record within its spread needs its own tolerance and evidence. It
+  is not demonstrated here.
+
+Records written before DR-0031 have no `reproduction` block and are not
+edited. Read their "How to reproduce" sections under this contract.
 
 Everything below is mechanics in service of those two rules.
 
@@ -70,6 +137,8 @@ sim/
     <YYYY-MM-DD>-<testbench-slug>-<nn>.md
     raw/
       <YYYY-MM-DD>-<testbench-slug>-<nn>/   raw output for that record
+  tool-experiments/             APPEND-ONLY simulator-behaviour probes
+    <YYYY-MM-DD>-<topic>/       decks, logs, SHA256SUMS and a README
 ```
 
 - `sim/tb/` is ordinary source. Edit it, review it, refactor it.
@@ -77,6 +146,10 @@ sim/
   anything already committed under `sim/records/` are a review-blocking
   defect, with one exception: adding a `superseded_by` field to an existing
   record (see [Superseding](#superseding-a-record)).
+- `sim/tool-experiments/` holds small, PDK-free experiments on the
+  simulator itself (for example how ngspice applies seed controls). The
+  harness code relies on these results. They are not testbench records and
+  have no PVT grid. Like records, they are append-only.
 
 ### Record naming
 
@@ -144,18 +217,24 @@ non-finite value or `n/a` is rejected. Failures raise the calling tool's
 | `pdk` | PDK name and version/tag (e.g. `gf180mcuC @ <version>`). |
 | `pdk.models` | The corner model file(s) actually included. |
 | `tool.ngspice` | Full `ngspice -v` version string. |
+| `tool.ngspice_startup` / `tool.ngspice_startup_flags` / `tool.ngspice_startup_spinit` / `tool.ngspice_startup_spinit_sha256` | *Additive; records from `run_corners.py` after #575.* The ngspice start-up-configuration policy in force (`no-user-init+pinned-spinit/1`), its command-line flag (`-n`), and the repo path and SHA-256 of the pinned `spinit` used as the system script. See [ngspice start-up configuration](#ngspice-start-up-configuration-575). Records without these lines predate the field and stay valid unchanged. |
+| `tool.ngspice_startup_spinit_snapshot` | *Additive; records from `run_corners.py` after #582.* Name (`spinit`) of the byte-for-byte copy of the start-up script that ngspice actually read, kept in the record's raw directory and listed in `raw.files`. When present, `tool.ngspice_startup_spinit_sha256` is the digest of that copy and `sim/tools/verify_record_checksums.py` cross-checks the two. Records without it (including #575-format records, whose digest was read from the checkout) stay valid unchanged. |
 | `tool.platform` | OS/arch the run executed on. |
 | `corner.process` | `tt` / `ss` / `ff` / `sf` / `fs` (as named by the PDK). |
 | `corner.voltage` | Supply(s) in volts, with the nominal noted. |
 | `corner.temperature` | Degrees C. |
-| `analysis.type` | `tran`, `tran-noise`, `noise`, `ac`, `dc`, `mc`. |
+| `analysis.type` | `op` (default when a manifest omits `analysis_type`), `tran`, `tran-noise`, `noise`, `ac`, `dc`, `mc`. Any other value is rejected when the testbench manifest is loaded; `tran-noise` and `mc` are stochastic and require a seed. |
 | `analysis.tstop` | Run length (simulated time), or the sweep range for `ac`/`dc`/`noise`. |
 | `analysis.tstep` / `analysis.tmax` | Timestep controls that materially affect the result. |
 | `analysis.noise_params` | For `tran-noise`: `NOISETSTEP` / `NOISEFMAX` / equivalent, verbatim. |
 | `analysis.runs` | Number of independent runs aggregated into this record. |
 | `seeds` | **Every** seed used, in run order. Required whenever the analysis is stochastic; write `seeds: n/a (deterministic analysis)` otherwise. |
+| `reproduction.scope` / `reproduction.trnoise_waveform_replay` / `reproduction.basis` / `reproduction.decision` | *Additive; `tran-noise` records from `run_corners.py` after #574.* What the "How to reproduce" commands replay: `deck-and-configuration`, with `trnoise_waveform_replay: false`, the tool experiment that measured it and the decision record that adopts it. See [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031). Records of other analysis types, and records written before #574, have no such block and stay valid unchanged. |
 | `raw.path` | Repo-relative path to the raw-output directory for this record. |
 | `raw.files` | Raw output filenames with SHA-256 checksums. |
+| `manifest.path` / `manifest.sha` / `manifest.snapshot` / `manifest.sha256` | *Additive; records from `run_corners.py` after #510.* The testbench manifest (`tb.json`) the decks were composed from: its repo path, git blob SHA, the snapshot file kept in the raw directory (`tb.manifest.json`), and that snapshot's SHA-256. The snapshot is also listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
+| `inputs.testbench_snapshot` / `inputs.testbench_sha256` / `inputs.netlist_snapshot` / `inputs.netlist_sha256` / `inputs.netlist_dependencies` | *Additive; records from `run_corners.py` after #515.* The SPICE fragment and DUT netlist bytes ngspice actually consumed, as snapshot files in the raw directory (`tb.fragment.spice`, `dut.netlist.spice`; when there is no separate `design_netlist` both names refer to the fragment) with their SHA-256, plus any sibling files the DUT netlist `.include`s. All are listed in `raw.files`. Records without this block predate the field and stay valid unchanged. |
+| `pdk_content.manifest_file` / `pdk_content.sha256` / `pdk_content.identity` / `pdk_content.file_count` / `pdk_content.complete` / `pdk_content.problems` | *Additive; records from `run_corners.py` after #562.* Content identity of the PDK model files the decks consumed: the manifest file kept in the raw directory (`pdk-models.json`, also listed in `raw.files`) and its SHA-256, the manifest's own `sha256:<hex>` identity, how many model files it covers, and whether every model reference could be followed (`problems` counts the ones that could not; the manifest lists them). See [PDK model-content identity](#pdk-model-content-identity-562). Records without this block predate the field and stay valid unchanged. |
 | `wall_time` | Wall-clock cost of the run. Makes future coverage/cost trade-offs honest. |
 
 If a required field genuinely does not apply, write the field with an
@@ -169,7 +248,9 @@ indistinguishable from a forgotten one.
   claims.
 - **How to reproduce** — the exact command(s), runnable from the repo root,
   including the seed(s). Someone with the repo and ngspice must be able to
-  copy-paste this.
+  copy-paste this. For a `tran-noise` record the commands replay the deck
+  and configuration, not the `trnoise` waveforms, and the section says so
+  (see [What a transient-noise seed reproduces](#what-a-transient-noise-seed-reproduces-574-dr-0031)).
 - **Caveats** — what this run does *not* show (method limits, truncated
   accumulation time, known weak spots such as flicker-noise handling in
   transient noise). Stating a limit is not a weakness in the record; an
@@ -405,6 +486,81 @@ The commit that supersedes a record should say so in its message, so
 
 ---
 
+## Scratch directories (`--no-write`)
+
+`--no-write` runs produce no evidence record, but ngspice still needs
+somewhere to put its deck and log. Each invocation creates its own
+directory `sim/.work/<testbench>/run-XXXXXXXX/` (atomically, via
+`tempfile.mkdtemp`) and puts one subdirectory per PVT point inside it, so
+overlapping invocations of the same testbench, point and seed never share
+or delete each other's files. The path is printed at the start of the run
+and again in the summary.
+
+Cleanup policy: the harness never deletes scratch output. The directory is
+kept so the deck and log of a failing point can be inspected; it is
+git-ignored and is not evidence. Remove a run's directory yourself when you
+are done with it (`rm -rf sim/.work/<testbench>/run-XXXXXXXX`).
+
+## ngspice start-up configuration (#575)
+
+ngspice runs initialization scripts before the netlist, and they can change
+simulator behaviour. Evidence-producing harness runs therefore launch
+ngspice through one command/environment builder
+(`runner.ngspice_command` and `harness/startup.py`), shared by the
+watchdog and the no-`timeout(1)` fallback paths, with an explicit policy
+measured in
+[`tool-experiments/2026-10-11-ngspice-startup-config/`](tool-experiments/2026-10-11-ngspice-startup-config/README.md)
+(ngspice-42) and
+[`tool-experiments/2026-10-11-ngspice46-startup-lookup/`](tool-experiments/2026-10-11-ngspice46-startup-lookup/README.md)
+(ngspice-46, the minimum this README requires; see each README for what was
+and was not measured):
+
+| Start-up input (batch mode) | Control |
+|---|---|
+| Deck-directory `.spiceinit` — searched first on ngspice-46; on ngspice-42 this slot was the working-directory file, and the deck's directory was not searched | `-n` |
+| Working-directory `.spiceinit` — ngspice-46 falls back to it only when the deck's directory has none; `$HOME/.spiceinit` is the last fallback on both measured builds | `-n` |
+| System `spinit` | `-n` does **not** suppress it; `SPICE_SCRIPTS` is set to `sim/harness/ngspice_scripts/`, whose `spinit` is checked in and content-pinned |
+| `SPICE_LIB_DIR` | removed from the child environment (and overridden by `SPICE_SCRIPTS`) |
+
+Only one of the three `.spiceinit` locations is read per launch (first match
+wins) on both measured builds, and the suppression behaviour (`-n` scope,
+`SPICE_SCRIPTS`, `SPICE_LIB_DIR`) is the same on both; the lookup-order
+difference is the only measured change between the builds, and neither
+measurement is generalized to other versions.
+
+The pinned `spinit` contains no commands: no aliases and no code-model or
+OSDI loading, so a testbench that needs an XSPICE code model or an OSDI
+device would fail loudly rather than inherit whatever the host loads. Its
+SHA-256 is recorded in every new evidence record (`tool.ngspice_startup_*`),
+so changing it is visible. Timeout, process-group and `cwd` handling are
+unchanged.
+
+**Frozen once per invocation (#582).** The checked-in script is only the
+source. `run_corners.py` reads it once, before the first simulator starts,
+writes those bytes as `spinit` into every point's raw directory (scratch
+directory under `--no-write`) and points `SPICE_SCRIPTS` at that directory.
+All points and seeds, serial or `-j`, with or without the `timeout(1)`
+watchdog, therefore read the same captured bytes, and the recorded digest is
+computed from them rather than from the working tree at publication time. An
+edit to `sim/harness/ngspice_scripts/spinit` while a sweep runs does not
+affect that sweep. The copy appears in `raw.files`, so
+`sim/tools/verify_record_checksums.py` detects a missing or altered snapshot and a
+`ngspice_startup_spinit_sha256` that disagrees with it.
+
+To reproduce a run, including one made from a dirty tree, in a scratch
+worktree: check out the record's `repo_commit`, then copy the record's
+`<raw.path>spinit` over `sim/harness/ngspice_scripts/spinit` before running
+(a plain `diff` shows whether the checkout differed), or run ngspice with
+`SPICE_SCRIPTS` set to a directory containing that file and `-n -b`.
+
+Remaining ambient inputs, not controlled: other environment variables the
+simulator reads, the ngspice build itself (recorded as `tool.ngspice`), and
+behaviour on builds other than the one measured. `sim/tools/` scripts that
+launch ngspice on their own (for example `run_array_liveness_tap_phase.py`)
+do not go through this launcher and are outside this policy. Records minted
+before #575 did not state a policy; they are unchanged and make no claim
+either way.
+
 ## Hung and timed-out runs
 
 Every corner `run_corners.py` simulates is bounded by `--timeout` (default
@@ -433,6 +589,27 @@ the elapsed/bound time, so a reviewing Judge sees the hang instead of an
 absent result. A record built this way is evidence that the run hung, not
 evidence about the device; `sim/README.md`'s "no claim beyond what this
 run measured" rule applies as usual.
+
+### Failed runs in the "Result" section
+
+Records minted after issue #506 summarize only status-`ok` runs in the
+per-measurement lines. A failed run (nonzero exit, simulator or analysis
+error, fatal diagnostic, missing measurements, or timeout) still retains any
+measurements it parsed, but they appear only under a separate "Failed-run
+diagnostics" heading with the failure reason, never in a mean or spread.
+Since issue #527 a requested measurement must also be a finite number: a
+value that overflows to infinity (e.g. `1e999`) or a literal `inf`/`nan`
+fails the run with `non-finite measurements: <name> (<name> = <raw>)`,
+reported separately from absent ones. The non-finite value is never kept as
+a diagnostic number; the raw log retains it exactly as ngspice printed it. A
+`Runs: N of M successful` line reports attempted vs. successful counts; a
+measurement with no successful run reads `no successful-run data (N of M
+runs succeeded)` (this replaces the older "no data (all runs failed to
+converge)" wording, which was too narrow). The `- `name`: ...` and
+`mean X over N seeds` line formats are unchanged, so readers that parse them
+keep working; the only new lines are the `Runs:` line and the failure and
+diagnostic blocks. Existing records are append-only and keep their original
+wording and semantics.
 
 ---
 
@@ -479,6 +656,148 @@ If git itself cannot answer (not run from a checkout, git not installed), it
 exits 2 naming git as the cause rather than reporting every file uncommitted.
 CI runs it over every record on every pull request, and `sim/selftest.sh`
 runs it as stage 2.
+
+Only the default invocation (no record arguments, no `--changed`, no
+`--no-git`) validates the whole evidence inventory. It also runs the reverse
+check: every file `git` tracks (or has staged) under `sim/records/raw/` must be
+named in some record's validated `raw.files`, otherwise the run fails and lists
+the orphan paths, including when no records exist at all. This catches an
+abandoned run staged without a record. Untracked local directories are ignored,
+so unfinished work does not break the check. The fix is to add the record that
+cites the output or unstage it (`git rm --cached`); the tool never deletes or
+invents evidence. Record-scoped runs (named records, `--changed`) and `--no-git`
+check only what they select and make no claim about the rest of the inventory.
+
+### Manifest snapshot and reproducing a historical run
+
+`testbench.sha` pins the SPICE fragment only. The manifest (`tb.json`) also
+defines measurement expressions, options, params, analyses and caveats, so
+`run_corners.py` copies the exact bytes it loaded (read once, before decks are
+composed; loading fails if the file changes during the load) to
+`raw/<stem>/tb.manifest.json` and records its digest in the `manifest:` block
+and in `raw.files`. `verify_record_checksums.py` flags a changed snapshot, and
+a `manifest.sha256` that disagrees with the `raw.files` entry.
+
+The "How to reproduce" commands read the *current* `tb.json`, not the
+snapshot. To reproduce a historical run, check out its `repo_commit`, and if
+the tree was `-dirty` or `tb.json` has since changed, compare
+`diff sim/records/raw/<stem>/tb.manifest.json sim/tb/<slug>/tb.json` and put
+the snapshot's content in place (in a scratch worktree, never in committed
+evidence) before running. Legacy records have no snapshot: use `repo_commit`
+alone, and treat a `-dirty` one as not exactly reproducible.
+
+### SPICE input snapshots (#515)
+
+`run_corners.py` reads the testbench fragment, the DUT netlist
+(`design_netlist`) and any sibling files that netlist `.include`s exactly once,
+when the manifest is loaded. Each corner's directory (`raw/<stem>/`, or the
+scratch directory for `--no-write`) receives byte-for-byte copies, and the
+composed deck `.include`s *those copies* rather than the working-tree files.
+Editing the originals while a sweep is running therefore cannot change what
+later corners simulate, and `testbench.sha`/`netlist.sha` are the git blob
+hashes of the captured bytes (identical to `git rev-parse HEAD:<path>` when the
+tree was clean, and still correct for dirty-tree bring-up). The copies are
+listed in `raw.files` and covered by `verify_record_checksums.py`; an `inputs:`
+digest that disagrees with its `raw.files` entry is also flagged. A snapshot
+found modified while the record is being built aborts the record rather than
+hashing bytes ngspice did not read.
+
+Include policy:
+
+- The testbench fragment may not contain `.include`/`.inc`/`.lib` (unchanged;
+  `.inc` is now rejected too).
+- The DUT netlist may `.include`/`.inc` only a **bare file name** next to the
+  including file (as the extracted-parasitics netlists do). Those files are
+  captured transitively and copied beside the DUT snapshot under the same
+  name, so ngspice resolves them exactly as before but from frozen copies.
+  Absolute paths, sub-directories, `..`, missing files and include cycles fail
+  before any simulation, naming the file and line. `.lib` and the other
+  harness-owned directives stay forbidden.
+- An included file may not share a name with a file the harness writes into
+  the same raw directory: `tb.manifest.json`, `pdk-models.json`,
+  `pdk-models.after-run.json`, the fragment/DUT snapshots, or any planned
+  `<corner_id>.spice`/`.log` (`<corner_id>-run<N>.spice`/`.log` for seeded
+  runs). Such a plan is refused before any record or scratch directory is
+  allocated; the diagnostic names the include and suggests a rename.
+- External PDK models are not snapshotted; they keep the live-PDK policy,
+  with their content identity recorded as described next.
+
+To reproduce a historical run from snapshots, restore `tb.fragment.spice`,
+`dut.netlist.spice` and any listed dependencies over the originals named by
+`testbench.path`/`netlist.path` (in a scratch worktree, never in committed
+evidence), together with the manifest snapshot above. A hand-built `Testbench`
+(not produced by `testbench.load`) has no captured bytes and keeps using the
+live files. Legacy records have no snapshots.
+
+### PDK model-content identity (#562)
+
+`pdk:` records the variant and the version label read from the installation's
+`SOURCES` file. That label cannot tell apart two installations whose model
+bytes differ (a locally patched model card, a partial update). Each record from
+`run_corners.py` therefore also carries a `pdk_content:` block and a
+`pdk-models.json` manifest in its raw directory.
+
+**What the identity covers, exactly.** The manifest starts from the two model
+entry points every composed deck names:
+
+- `libs.tech/ngspice/design.ngspice`, loaded whole by `.include`;
+- `libs.tech/ngspice/sm141064.ngspice`, loaded by `.lib <file> <section>` once
+  per selected section -- the corner's sections, or the testbench's
+  `extra_lib_sections` when it sets them. The sections are recorded in order.
+
+From the loaded content it follows every `.include`/`.inc <file>` and
+`.lib <file> <section>` reference, transitively. For a `.lib` reference only the
+named section (`.lib <name>` ... `.endl`) of the target file is followed. For an
+`.include` the whole file is followed except section definitions, which it
+defines but does not load. Each file reached is hashed in full (SHA-256) and
+listed by its path relative to the PDK variant directory. No host path is
+stored, so an identical set of files gives the same identity wherever the PDK is
+installed. The identity is the SHA-256 of the canonical JSON of the entry
+points, sections, file list and problem list. Files that only unselected
+sections reach are not covered. Nothing else in the installation is covered:
+other model files, `SOURCES` itself, the xschem and klayout trees, ngspice's
+own `spinit`/code models.
+
+**Incomplete identities.** These references make the manifest list a
+*problem*. The record then says `complete: false` with the problem count, and
+its Caveats list the problems:
+
+- a missing file, or a missing or unterminated section;
+- a parameterized or environment-dependent path (`{...}`, `$`, `~`);
+- an `.include` or `.lib` with an unexpected number of arguments;
+- a path that leaves the PDK variant directory (absolute paths are not echoed);
+- a nested section definition;
+- another file-loading directive (`.osdi`, `.hdl`, `.incl`, `.includex`,
+  `.libx`, `.load`), or a `.control`-block `source`/`osdi`/`pre_osdi`/
+  `codemodel`/`load` command.
+
+The scanner assumes a relative path resolves against the including file's
+directory, where ngspice looks first. ngspice's fallbacks (working directory,
+`sourcepath`) are not modelled.
+
+**Capture and re-check.** The manifest is computed for each distinct section
+set *before* any simulator starts, and printed as `models :` in the run header (unless `--quiet`).
+It is recomputed for each PVT point before that point's record is written. If
+the identity differs, that point's record is **not** written. Its raw
+directory keeps the decks, logs, the pre-run `pdk-models.json` and the
+re-check's `pdk-models.after-run.json`. The differing files are printed, and the
+run ends `status : FAIL (PDK model files changed during the run)` with exit 5.
+That raw directory is diagnostics, not evidence: do not commit it. Points
+re-checked before the change keep their records. `--no-write` runs perform the
+same check.
+
+**Limit.** This is provenance, not a frozen installation. The models are still
+read live by ngspice. An edit made and reverted entirely between the pre-run
+capture and the re-check is not detected, and neither is a change that ngspice
+picks up through a path the scanner does not follow (listed as a problem when
+it is visible in the files).
+
+**Verification.** `pdk-models.json` is in `raw.files`, so
+`verify_record_checksums.py` flags any change to it. It also flags a
+`pdk_content.sha256` that disagrees with the `raw.files` entry, and an
+`identity`, `file_count` or `complete` value that disagrees with the
+recomputation from the manifest. Legacy records have no `pdk_content:` block
+and are not affected.
 
 ### Checking that evidence stays append-only
 

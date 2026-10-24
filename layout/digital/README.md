@@ -103,6 +103,18 @@ it is solved — [#111][gf111].
 > `reports/place_and_route.json` recorded as its input. It does not claim
 > the placement is reproducible. It checks only that the committed
 > implementation was built from the committed netlist.
+>
+> `reports/erc-supply.json` is committed in nearly the same trimmed form as
+> `layout/floorplan/reports/erc-supply.json`: the per-gate antenna entries
+> (`gates` stays as an empty list, because `klt signoff` 0.7.0 renders a
+> report with no `gates` key `unrecognized_envelope`; `gate_count` kept), the all-skipped antenna `coverage` block and
+> the per-gate `erc.floating_gate` ids in `erc_coverage.checked` are dropped
+> (a `trimmed` object records each omission). The projection is
+> `project_report(..., gates_stub=True)` in `layout/floorplan/erc_supply.py`. The report's
+> `provenance`, `erc_status`, findings and per-supply and tie coverage are
+> unchanged, and the manifest pin is the GDS hash in
+> `provenance.input.content_hash`, so no pin moves. The file shrank from
+> about 10.5 MB to 1.5 KB.
 
 ## The one command
 
@@ -205,11 +217,13 @@ multi-corner result.
 **What may be cited from this, and what may not.** The 50 ns constraint is
 this run's own input, not a spec row: no issue in this repository has set a
 digital-section Fmax requirement. The ratified requirement the clock rate
-has to satisfy is the raw-rate row (`README.md`, [DR-0003][dr3]): > 1 Mbps
-sustained at the sampler output, one raw bit per `clk` edge, so > 1 MHz, with
-the stretch row at > 4 MHz. This run closes at 20 MHz with 28.4 ns of slack
-at a slow-process/hot/−10 %-supply corner, which is 5–20× the rate the spec
-asks for — that is a *margin statement about this implementation*, not an
+has to satisfy is the raw-rate row (`README.md`), now > 2 kbps
+([DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy][dr11rate]).
+The 20 MHz target was chosen against [DR-0003][dr3]'s original (historical)
+> 1 Mbps: one raw bit per `clk` edge, so > 1 MHz, with the stretch row at
+> 4 MHz. This run closes at 20 MHz with 28.4 ns of slack
+at a slow-process/hot/−10 %-supply corner, which is 5–20× that original
+rate and far above the current one — that is a *margin statement about this implementation*, not an
 Fmax claim, and not signoff. Corner-swept Fmax, area and power are #145's
 deliverable, and it is #145 that gets to state them.
 
@@ -425,7 +439,7 @@ it is **not** a power result, it does not supersede
 [`sim/characterization-digital-sta-area-power.md`](../../sim/characterization-digital-sta-area-power.md),
 from this directory's own committed, powered DEF re-timed at fifteen corners
 with extracted parasitics: 8.56 mW at this corner at 20 MHz and 432 µW at
-DR-0003's ratified 1 MHz raw rate, under a declared 0.25 transitions/net/cycle
+the 1 MHz measurement rate (DR-0003's original raw rate, now historical), under a declared 0.25 transitions/net/cycle
 activity, against the library-based estimate's 16.7 µW. Leakage at this
 corner is 3.95 µW, up from 1.39 µW pre-[#171][gf171] — [#171]'s
 tapcell/endcap/filler population now contributes its own leakage, on top of
@@ -677,8 +691,19 @@ column's 50 µm sub-case, which is consistent with the platform's
 `-distance 100` having been chosen for 3.3 V cells. This is a measurement
 result of the as-built geometry, recorded here without a design change; whether to re-place ties is
 tracked separately in [#449][gf449]. The §14.3.1 column assignment is read from the published
-table and should be confirmed against the controlled DRM before a design
-decision rests on it.
+table and has **not** been confirmed against the controlled DRM (none was
+available; 2026-10-11 follow-up searches of public sources, recorded in
+[DR-0030](../../spec/decision-records/DR-0030-digital-latch-up-source-confirmation-outcome.md),
+found only the unversioned rendered page and a commit-pinned open-PDK
+transcription — a same-day re-check after the open-PDK repositories moved to
+the FOSSi Foundation found the design-manual content byte-identical and still
+unversioned — and the table's `MV` header is not defined in either, so the
+MV reading remains an unconfirmed working interpretation, #486):
+[DR-0029](../../spec/decision-records/DR-0029-digital-latch-up-tie-distance-column-disposition.md)
+records the source reconciliation, the reproduction of this measurement
+(`--check --require-tools` exits 0 because the report is current; the physical
+verdict is still `fail`), the recommended placement remedy and the artifact
+refresh it would require. #449 stays open.
 
 ### LVS
 
@@ -694,7 +719,12 @@ transistor-level one. Result ([`reports/lvs.json`](reports/lvs.json) — the
 where it used to be a five-field digest; this script's own record of how the
 reference netlist was generated keeps its place in the report under
 `reference_generation`, beside rather than shadowing the envelope's own
-`reference` field):
+`reference` field). Since [#662][gf662] the compare reads `trng_top.pnr.v`
+directly as `reference.form: "gate-level-verilog"` (library
+`gf180mcu_fd_sc_mcu9t5v0`), so `power_connectivity` is a computed `"match"`
+instead of `"unchecked"`; the SPICE bridge file is still written because
+`design/floorplan_netlist.py` composes from it, but `klt lvs` no longer
+compares against it:
 
 | | | #170 |
 |---|---|---|
@@ -1020,9 +1050,15 @@ always wins). The pin:
 
 | | |
 |---|---|
-| Image | `openroad/orfs:26Q3-296-gda37dce1c` |
-| Digest | `sha256:ebc8142da6d65d1a1e9a528aa2cedcde356243465dd859af8d3ade51075f8cb2` |
+| Image | `openroad/orfs:26Q3-383-g205191eb2` |
+| Digest | `sha256:bb7f31697fb8466ab61852fc796376cc16d9df38f762ccb733218b8a5e55824b` |
 | `openroad -version` inside it | `26Q3-1510-g6cb3f2b704` |
+
+The committed `reports/place_and_route.json` and `reports/sdf_export.json`
+record this same build. An earlier revision of this pin pointed at
+`openroad/orfs:26Q3-296-gda37dce1c` (`sha256:ebc8142d…`), which reports
+`26Q3-1260-g06a5a02279`, not 1510; that mismatch made the nightly
+`gen_sdf.py --check` fail on `engine_version` ([#507][gf507]).
 
 The wrapper bind-mounts the working directory **and** the resolved PDK root
 at their own absolute host paths, because the generated Tcl carries absolute
@@ -1030,6 +1066,7 @@ paths for the netlist, the LEF/liberty deck and every output — source ==
 target is what makes those resolve identically on both sides of the container
 boundary.
 
+[gf507]: https://github.com/2AMLogic/gf180-trng/issues/507
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf145]: https://github.com/2AMLogic/gf180-trng/issues/145
 [gf147]: https://github.com/2AMLogic/gf180-trng/issues/147
@@ -1046,6 +1083,7 @@ boundary.
 [gf292]: https://github.com/2AMLogic/gf180-trng/pull/292
 [gf293]: https://github.com/2AMLogic/gf180-trng/issues/293
 [gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
+[gf662]: https://github.com/2AMLogic/gf180-trng/issues/662
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092
@@ -1061,6 +1099,7 @@ boundary.
 [klt1310]: https://github.com/2AMLogic/klayout-tools/pull/1310
 [klt1488]: https://github.com/2AMLogic/klayout-tools/issues/1488
 [dr3]: ../../spec/decision-records/DR-0003-throughput-defined-at-the-raw-tap.md
+[dr11rate]: ../../spec/decision-records/DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy.md
 [dr20]: ../../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
 [gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html

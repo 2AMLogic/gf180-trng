@@ -89,7 +89,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import format_corner, parse_corner, parse_status  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    current_records,
+    latest_current_record,
+    format_corner,
+    iter_result_seed_summaries,
+    parse_corner,
+    parse_status,
+    parse_result_values,
+)  # noqa: E402
 from jitter_energy_law import KB, INJECTED_DENSITY, derive_a  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -118,12 +126,24 @@ PLAIN_TB_MANIFEST = REPO_ROOT / "sim" / "tb" / "ro-inv-05stage-jitter" / "tb.jso
 #: and still rejects the ~30x-too-tight signature of the array-sanity run.
 SPREAD_TOLERANCE = 3.0
 
-_MEAN = re.compile(
-    r"^- `([a-z0-9_]+)`:\s*mean\s+(-?[\d.]+(?:e[-+]?\d+)?)\s+over\s+(\d+)\s+seeds"
-    r"\s*\(sd\s+(-?[\d.]+(?:e[-+]?\d+)?)",
-    re.M,
-)
-_SINGLE = re.compile(r"^- `([a-z0-9_]+)`:\s*(-?[\d.]+(?:e[-+]?\d+)?)\s*$", re.M)
+#: The corner whose OWN asymptotic constant sizes the shipped array.
+#: ``DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`` §2 selects
+#: ``a_asym`` at this corner (7.32), not the three-corner asymptotic mean
+#: (11.77) and not any lag-1 figure, because "the corner that binds should
+#: supply its own constant". It was the entropy-binding corner when that
+#: record was written. ``DR-0015`` has since moved the entropy-binding corner
+#: to ``ss``/+125 C/3.63 V, where this family has no record; the value here
+#: remains the SELECTED constant because it is also the smallest asymptotic
+#: ``a`` measured at any corner, which :func:`sizing_constant` reports and
+#: ``sim/tools/array_sizing.py --check`` enforces.
+SIZING_CONSTANT_CORNER = "ss/-40/3.63"
+
+#: The entropy-binding corner per ``DR-0015``. Its measured asymptotic ``a``
+#: (8.42, issue #628) is REPORTED beside the stated constant and never
+#: substituted for it: the operator ruled (issue #628, 2026-10-15) to keep
+#: :data:`SIZING_CONSTANT_CORNER` as the sizing constant and not to raise any
+#: published margin or rate ceiling from one eight-seed record.
+BINDING_CORNER = "ss/125/3.63"
 
 
 class RecordError(RuntimeError):
@@ -141,12 +161,15 @@ class Record:
         self.values: dict[str, float] = {}
         self.sd: dict[str, float] = {}
         self.seeds = 1
-        for m in _SINGLE.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-        for m in _MEAN.finditer(text):
-            self.values[m.group(1)] = float(m.group(2))
-            self.seeds = int(m.group(3))
-            self.sd[m.group(1)] = float(m.group(4))
+        self.values.update(
+            parse_result_values(text, label=self.stem, error_cls=RecordError)
+        )
+        for key, summary in iter_result_seed_summaries(
+            text, label=self.stem, error_cls=RecordError
+        ):
+            self.values[key] = summary.mean
+            self.seeds = summary.n_seeds
+            self.sd[key] = summary.sd
         self.process, self.temp_c, self.vdd = parse_corner(
             text, label=self.stem, error_cls=RecordError
         )
@@ -175,8 +198,9 @@ def load_family(glob: str, *, include_superseded: bool = False) -> list[Record]:
     ones are excluded unless ``include_superseded`` requests an explicit
     historical read (issue #425). Older records that remain ``status: valid``
     are always returned."""
-    recs = [Record(p) for p in sorted(RECORDS.glob(glob))]
-    return recs if include_superseded else [r for r in recs if r.status == "valid"]
+    return current_records(
+        RECORDS, glob, make=Record, include_superseded=include_superseded,
+        error_cls=RecordError)
 
 
 def window_geometry(manifest_path: Path = TB_MANIFEST) -> tuple[int, int]:
@@ -454,20 +478,12 @@ def load_variants_by_glob(variants, corner: str, factory, *, include_superseded:
     """
     out = []
     for label, glob, *rest in variants:
-        matches = []
-        for path in sorted(RECORDS.glob(glob)):
-            rec = Record(path)
-            if not include_superseded and rec.status != "valid":
-                continue
-            if rec.corner != corner or "sigma_1" not in rec.values:
-                continue
-            matches.append(rec)
-        if not matches:
-            raise RecordError(
-                f"variant {label!r}: no valid sim/records/{glob} record at {corner} "
-                "carries a sigma_1, so this variant cannot be compared"
-            )
-        out.append(factory(label, matches[-1], *rest))
+        rec = latest_current_record(
+            RECORDS, glob, make=Record, corner=corner, requires=("sigma_1",),
+            include_superseded=include_superseded, error_cls=RecordError,
+            context=f"variant {label!r}: ", hint=", so this variant cannot be compared",
+        )
+        out.append(factory(label, rec, *rest))
     return out
 
 
@@ -510,6 +526,94 @@ def load_points(*, include_superseded: bool = False) -> tuple[list[Point], list[
             f"({', '.join(skipped)}); nothing to derive"
         )
     return points, skipped
+
+
+class SizingConstant:
+    """The array-sizing jitter-energy constant, with its provenance.
+
+    ``value`` is ``a`` from the asymptotic slope (``kappa2_asym``) at
+    :data:`SIZING_CONSTANT_CORNER`; ``stem`` names the record it came from;
+    ``by_corner`` holds every measured corner's asymptotic ``a``, so a caller
+    can show that the selected value is the smallest of them rather than
+    assert it. ``binding_corner`` / ``binding_value`` / ``binding_stem``
+    report the asymptotic ``a`` at :data:`BINDING_CORNER` (``None`` when no
+    record measures it); they are informational and do not change ``value``.
+    """
+
+    def __init__(self, value: float, corner: str, stem: str,
+                 by_corner: dict[str, float],
+                 binding_corner: str | None = None,
+                 binding_value: float | None = None,
+                 binding_stem: str | None = None) -> None:
+        self.value = value
+        self.corner = corner
+        self.stem = stem
+        self.by_corner = by_corner
+        self.binding_corner = binding_corner
+        self.binding_value = binding_value
+        self.binding_stem = binding_stem
+
+    @property
+    def smallest_corner(self) -> str:
+        return min(self.by_corner, key=self.by_corner.__getitem__)
+
+    @property
+    def is_smallest(self) -> bool:
+        # Fail closed on a NaN anywhere: ``min`` is order-dependent when a
+        # NaN is present (``nan < x`` and ``x < nan`` are both False), so a
+        # NaN at another corner could otherwise hide behind dict order and
+        # leave an unfounded "smallest" claim standing.
+        values = list(self.by_corner.values())
+        if any(math.isnan(v) for v in values):
+            return False
+        return self.by_corner[self.corner] <= min(values)
+
+
+def sizing_constant(points: list[Point] | None = None,
+                    corner: str = SIZING_CONSTANT_CORNER) -> SizingConstant:
+    """Derive the array-sizing constant from committed starved-cell records.
+
+    Selects the asymptotic ``a`` at ``corner`` -- by corner identity, never by
+    taking a mean, a minimum or a lag-1 figure -- per
+    ``DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy`` §2. Where
+    the family holds more than one record at that corner, the newest wins
+    (records load chronologically), which is the convention every other
+    reader of ``sim/records/`` follows.
+
+    Fails closed: raises :class:`RecordError` when the family is missing, when
+    no usable record measures ``corner``, or when the derived value is not a
+    positive finite number. A sizing constant that cannot be derived is a
+    ``--check`` failure for the caller, not a default to fall back on.
+
+    The binding corner's own ``a`` is reported alongside (see
+    :data:`BINDING_CORNER`); a missing binding record leaves it ``None``
+    rather than failing, since it does not feed the sizing.
+    """
+    if points is None:
+        points, _skipped = load_points()
+    by_corner: dict[str, float] = {}
+    chosen: Point | None = None
+    binding: Point | None = None
+    for p in points:
+        by_corner[p.rec.corner] = p.a(p.kappa2_asym)
+        if p.rec.corner == corner:
+            chosen = p
+        if p.rec.corner == BINDING_CORNER:
+            binding = p
+    if chosen is None:
+        raise RecordError(
+            f"no usable sim/records/{JITTER_GLOB} record at {corner}, the corner "
+            "DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2 takes "
+            "the sizing constant from"
+        )
+    value = by_corner[corner]
+    if not (math.isfinite(value) and value > 0):
+        raise RecordError(f"{chosen.rec.stem}: asymptotic a = {value!r} is not a positive finite number")
+    if binding is None:
+        return SizingConstant(value, corner, chosen.rec.stem, by_corner)
+    return SizingConstant(value, corner, chosen.rec.stem, by_corner,
+                          BINDING_CORNER, by_corner[BINDING_CORNER],
+                          binding.rec.stem)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -608,6 +712,26 @@ def main(argv: list[str] | None = None) -> int:
         f"a (asymptotic slope over lags {points[0].tail_lags}): mean {mean_asym:.3f}  ->  "
         f"{mean_asym / a_plain:.2f}x the plain cell's {a_plain:.2f}"
     )
+    try:
+        sel = sizing_constant(points)
+    except RecordError as exc:
+        print(f"array-sizing constant: NOT DERIVABLE -- {exc}")
+    else:
+        print(
+            f"array-sizing constant (DR-0011-raw-rate-at-the-measured-starved-cell-"
+            f"jitter-energy §2: asymptotic a at {sel.corner}, not a mean): "
+            f"{sel.value:.3f} from {sel.stem}; smallest measured asymptotic a is at "
+            f"{sel.smallest_corner}. sim/tools/array_sizing.py --check holds its stated "
+            f"constant to this value."
+        )
+        if sel.binding_value is not None:
+            print(
+                f"binding corner (DR-0015) {sel.binding_corner}: asymptotic a = "
+                f"{sel.binding_value:.3f} from {sel.binding_stem}, "
+                f"{sel.binding_value / sel.value:.2f}x the stated constant; reported "
+                f"only -- the stated constant and the published margin and rate "
+                f"ceiling are not raised from it (issue #628)."
+            )
 
     if args.check:
         if not ok:

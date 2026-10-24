@@ -1,0 +1,56 @@
+{
+  "inventory": "layout",
+  "t1_item": 2,
+  "partition": "digital",
+  "gates": [
+    {
+      "command": "python3 layout/digital/build.py --check-input",
+      "runs_in": ".github/workflows/ci.yml",
+      "runs_without_pdk_or_external_tools": true,
+      "note": "stdlib only; runs in the PR-blocking job"
+    },
+    {
+      "command": "python3 layout/digital/tap_distance.py --check --require-tools",
+      "runs_in": ".github/workflows/pdk-nightly.yml",
+      "runs_without_pdk_or_external_tools": false,
+      "note": "needs klt and the PDK; the PR-blocking job runs `npm run check:digital-tap-distance`, which self-skips without them"
+    }
+  ],
+  "stream": [
+    {
+      "path": "layout/digital/trng_top.gds",
+      "sha256": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
+    }
+  ],
+  "implementation": [
+    {
+      "path": "layout/digital/build.py",
+      "sha256": "sha256:f6f1e0f6d27b7ad89e9e1dcd771475b70ee73c8dcc0c68c5065924c3a7a5de2a"
+    },
+    {
+      "path": "layout/digital/trng_top.def",
+      "sha256": "sha256:4685d4e248b54a898a5d2c6fa55c7fd22cf0b67659a1dc1b1e65306ad97fec7a"
+    },
+    {
+      "path": "layout/digital/trng_top.lvs_reference.spice",
+      "sha256": "sha256:9278db8a8545a2a00b4094c17afc4d3a5d381814bea3dab8143b8df655396c0b"
+    },
+    {
+      "path": "layout/digital/trng_top.pnr.v",
+      "sha256": "sha256:1342adf83949a6beb5e078ba82b9bafe69fe11166d61971187856ca7cba7a8e0"
+    },
+    {
+      "path": "layout/digital/trng_top.sdf",
+      "sha256": "sha256:137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af"
+    }
+  ],
+  "pinned_by_citations": {
+    "stream": {
+      "path": "layout/digital/trng_top.gds",
+      "sha256": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
+    },
+    "manifest_keys": [
+      "3.digital"
+    ]
+  }
+}

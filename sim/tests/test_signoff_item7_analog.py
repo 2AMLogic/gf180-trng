@@ -1,15 +1,16 @@
 """Item 7 (analog) publication gate: stale, partial or failing evidence is rejected."""
 
 import copy
-import importlib.util
 import json
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("signoff_check", ROOT / "signoff" / "check.py")
-check = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check)
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+check = load_module_from_path("signoff_check", ROOT / "signoff" / "check.py")
 
 
 class Item7AnalogPublication(unittest.TestCase):

@@ -5,7 +5,9 @@
     "top": "trng_top"
   },
   "reference": {
-    "netlist": "trng_top.lvs_reference.spice",
-    "top": "trng_top"
+    "form": "gate-level-verilog",
+    "netlist": "trng_top.pnr.v",
+    "top": "trng_top",
+    "library": "gf180mcu_fd_sc_mcu9t5v0"
   }
 }

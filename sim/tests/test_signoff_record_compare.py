@@ -8,18 +8,19 @@ REPO_ROOT are pointed at a temp dir so the committed record is never touched.
 """
 
 import contextlib
-import importlib.util
 import io
 import json
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("signoff_check", ROOT / "signoff" / "check.py")
-check = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check)
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+check = load_module_from_path("signoff_check", ROOT / "signoff" / "check.py")
 
 
 def item(id_, status="met", reason="ok", tier="T1", partition="all"):
@@ -81,7 +82,7 @@ class CompareRecord(TempRepo):
         self.assertIn("stale", err)
         self.assertIn("klt 0.5.0", err)
         self.assertIn("klt 0.6.1", err)
-        self.assertIn(f"klt {check.KLT_PIN}", err)
+        self.assertIn(f"klt {check.KLT_GRADER_PIN}", err)
 
     def test_differing_report_prints_item_diff(self):
         self.write_record(make_report([item(1)]))

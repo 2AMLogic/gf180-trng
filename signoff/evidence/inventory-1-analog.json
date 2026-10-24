@@ -1,0 +1,175 @@
+{
+  "inventory": "design-sources",
+  "t1_item": 1,
+  "partition": "analog",
+  "gates": [
+    {
+      "command": "python3 design/netlist.py --lint",
+      "runs_in": ".github/workflows/ci.yml",
+      "runs_without_pdk_or_external_tools": true,
+      "note": "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job"
+    },
+    {
+      "command": "python3 design/netlist.py --check",
+      "runs_in": ".github/workflows/pdk-nightly.yml",
+      "runs_without_pdk_or_external_tools": false,
+      "note": "needs xschem and the gf180mcu PDK; runs in pdk-nightly.yml, never in the PR-blocking job"
+    }
+  ],
+  "schematics": [
+    {
+      "path": "design/xschem/meta_arb.sch",
+      "sha256": "sha256:eaea28cb5b902710f3697e42a440d86e005dc1a42795d726c0627bf6fa1ad1c5"
+    },
+    {
+      "path": "design/xschem/meta_inv.sch",
+      "sha256": "sha256:a8b3de3c0a7517fbacad9a4433d8eb42a771d730c1e49bc4dbc70fbd58541696"
+    },
+    {
+      "path": "design/xschem/meta_nand2.sch",
+      "sha256": "sha256:5b0307f8d0ffaa8e32c5465820cf72bffcbc2d8d5bc3ec7605ea5c1b7e4c0111"
+    },
+    {
+      "path": "design/xschem/ro_array_core.sch",
+      "sha256": "sha256:ebfeed50e5ddd2994e13093d99b6ce6dbdfe8ee1da9224632c78bf4ca99cbba7"
+    },
+    {
+      "path": "design/xschem/ro_array_core_meta.sch",
+      "sha256": "sha256:ae3f6cb700558e10d9ec8bc9ab6b66b4dec6056897340796bd3971cf4ac2450e"
+    },
+    {
+      "path": "design/xschem/ro_array_sanity.sch",
+      "sha256": "sha256:17b97a68fb6adf6f078bee665e7b4f41941105056821099b70f1fa38a05875a5"
+    },
+    {
+      "path": "design/xschem/ro_buf.sch",
+      "sha256": "sha256:2cb948bde5aa0d8e6e134f15936527792fb8db9d304ba2e57e82a91892e9075b"
+    },
+    {
+      "path": "design/xschem/ro_meta_tap.sch",
+      "sha256": "sha256:b13cd004068eb1a694ff9f695f34ff3247b03778f76fa2e0d18ae6f0a59b9356"
+    },
+    {
+      "path": "design/xschem/ro_nand2.sch",
+      "sha256": "sha256:b3c04855d284c15122dad332d7de99a9e27e9c4ecbedf4ab9a1df412df58f535"
+    },
+    {
+      "path": "design/xschem/ro_ring11.sch",
+      "sha256": "sha256:34e9c1894a879aa59952653c0a490188b30e584ef77cd678ccf580b5eb0928f7"
+    },
+    {
+      "path": "design/xschem/ro_ring5.sch",
+      "sha256": "sha256:f2f6638d10d8eb0c0a37003851613645e7993e4bef1cb7c3cc3eaa096535dfb4"
+    },
+    {
+      "path": "design/xschem/ro_stage.sch",
+      "sha256": "sha256:d8ddd56cf121d162c0141488cd9173ad1b06a0727130875ae78f98b7db8cbdb8"
+    },
+    {
+      "path": "design/xschem/sampler_core.sch",
+      "sha256": "sha256:3ad0fdad0f1b7dd054219c53bf512cae7b14c99ec2f00e1133efc6d8639ae0c6"
+    },
+    {
+      "path": "design/xschem/sampler_dff.sch",
+      "sha256": "sha256:46568a7c5cbc3ccf2a6c9f83986296496f5abea2a51001bfb64250d31ea3279e"
+    },
+    {
+      "path": "design/xschem/trng_top.sch",
+      "sha256": "sha256:b1da88d88ccbc0cc4ab58c6a05c5e95dbd8b2fcf2260abd2aa79a99332f00790"
+    },
+    {
+      "path": "design/xschem/xor2.sch",
+      "sha256": "sha256:9935156dd3c0f28d5a7282fe55f6f33b5f1cfdc868cdd45568d8ac9d6366d657"
+    }
+  ],
+  "symbols": [
+    {
+      "path": "design/xschem/meta_arb.sym",
+      "sha256": "sha256:6fc48a943ae9f17675615ba32d79aedfbb7ad53e7b920323a048a8a9596b45ca"
+    },
+    {
+      "path": "design/xschem/meta_inv.sym",
+      "sha256": "sha256:9da86d5ffbedb625931d6ab8ef0890f300fe5d539242f2b98cca9a84ea1416c1"
+    },
+    {
+      "path": "design/xschem/meta_nand2.sym",
+      "sha256": "sha256:6527a47204c9841ca80d0a639fee722c8f0086a26502e8e57e8907bf5e6bbf72"
+    },
+    {
+      "path": "design/xschem/ro_array_core.sym",
+      "sha256": "sha256:644d2411a9883261289ebf31d0c8af158d14fbf3a18b8100f98f62ba8840a08e"
+    },
+    {
+      "path": "design/xschem/ro_buf.sym",
+      "sha256": "sha256:f15f6c8ebba747c1eb5bf1bfb2476f391e76df217f5342b63cfed966d0ae4af4"
+    },
+    {
+      "path": "design/xschem/ro_meta_tap.sym",
+      "sha256": "sha256:6711c7da04dd49a4c2e4f7dbe0ac61d2d32936ccccfa9d9c4eddf922b4f376df"
+    },
+    {
+      "path": "design/xschem/ro_nand2.sym",
+      "sha256": "sha256:dcd14de7c8d4ee65cfe01589ed51734f201bdc27291d2b56044fa3f18d04640b"
+    },
+    {
+      "path": "design/xschem/ro_ring11.sym",
+      "sha256": "sha256:f35e540e656ddcfd2d942b2be88dc20a97b29e912eb5e27f752679966bc69642"
+    },
+    {
+      "path": "design/xschem/ro_ring5.sym",
+      "sha256": "sha256:767efff393ed72566ff664ad172598b4d7f7196f9eb2733fce3209aa0aa25168"
+    },
+    {
+      "path": "design/xschem/ro_stage.sym",
+      "sha256": "sha256:7eb095a59d6f97a023c43c4600f043c1b7d8b80e8d35d2f395e643e58acf2dd0"
+    },
+    {
+      "path": "design/xschem/sampler_core.sym",
+      "sha256": "sha256:e40941667e7ee498e688bcec899fabe3abe6f5c96eb68597f12b1a744af06a26"
+    },
+    {
+      "path": "design/xschem/sampler_dff.sym",
+      "sha256": "sha256:7105cfef74453aa3ca24c1d7f72f79476531beeb70ea053bfcb54531e9b167ff"
+    },
+    {
+      "path": "design/xschem/xor2.sym",
+      "sha256": "sha256:0f95d31ac7963430e561af2215e99646c2f98d0a9f8e40a1a7b8b54dd2c021fd"
+    }
+  ],
+  "derived_netlists": [
+    {
+      "path": "design/meta_arb.spice",
+      "sha256": "sha256:045a96c170f61e0f3b5ad81486a1c08323d93067fa422323b17a5aeee0569407"
+    },
+    {
+      "path": "design/ro_array_core.spice",
+      "sha256": "sha256:754c20ae6474a82b1b1c7eddd566df21f70fedaafaa80350233ecc76755f931d"
+    },
+    {
+      "path": "design/ro_array_core_meta.spice",
+      "sha256": "sha256:2897c61a07f991493c24defb480106285b01b81e55984a6ca030cdfa4a76fc2c"
+    },
+    {
+      "path": "design/ro_array_sanity.spice",
+      "sha256": "sha256:9bfd22dff3105271f477442f47ba902916d545ec9a2e6162bfedbf6cf48a588b"
+    },
+    {
+      "path": "design/ro_meta_tap.spice",
+      "sha256": "sha256:be40184faab6a0fc47c1ddd181635c9ce255767ef8fa78e2571d85da7c9be9e5"
+    },
+    {
+      "path": "design/sampler_core.spice",
+      "sha256": "sha256:1e0dcf608ac2e45a7552f33af5958eab14b8f34a5bbceb7052eec580038c4c1f"
+    },
+    {
+      "path": "design/trng_top.spice",
+      "sha256": "sha256:56a40f41b309b8b44634b8c3d6fb4934b09906574a1d994fea16359fe2216d72"
+    }
+  ],
+  "gate_scripts": [
+    {
+      "path": "design/netlist.py",
+      "sha256": "sha256:e4e523526a0473c4b15014013a746fc95effc6ad704fd8321ebae57c68be8a1b"
+    }
+  ]
+}

@@ -7,6 +7,9 @@ defined once, as two constants in signoff/check.py:
 
   KLT_PIN       the klayout-tools release  (``klayout-tools==<KLT_PIN>``)
   KLAYOUT_PIN   the KLayout engine release (``klayout==<KLAYOUT_PIN>``)
+  KLT_GRADER_PIN  optional; the klayout-tools release that GRADES the block
+                (``klt signoff``), when it differs from the normative
+                producer build KLT_PIN. Absent means the grader is KLT_PIN.
 
 It is also restated by hand wherever a reader or a workflow needs the
 install command: CI workflow steps, READMEs, docstrings, DR-0026 itself. A
@@ -27,6 +30,19 @@ signoff/records/ and layout/reports/.
 A pin mention is the literal string ``klayout-tools==X.Y.Z`` or
 ``klayout==X.Y.Z``. Other spellings (a git URL, ``klt 0.6.0`` in prose, a
 version alone) are not pins and are not matched.
+
+Grader mentions
+---------------
+The producer build (KLT_PIN, DR-0026) and the grader (KLT_GRADER_PIN) are
+separate pins: reports are produced by one release and graded by another
+whose checklist is newer. A ``klayout-tools==`` mention that restates the
+grader (CI's signoff install step, the README's "Running it" line) carries
+the literal token
+
+  klt-pin: grader
+
+on the same line and is held to KLT_GRADER_PIN instead of KLT_PIN. The token
+must sit on a line that has a ``klayout-tools==`` mention.
 
 Historical mentions
 -------------------
@@ -80,6 +96,10 @@ EXCLUDED_PREFIXES = (
 WORKFLOW_DIR = ".github/workflows/"
 
 MARKER = "klt-pin: historical"
+GRADER_MARKER = "klt-pin: grader"
+#: Key under which the optional grader pin is carried in the pins mapping.
+GRADER_KEY = "grader"
+GRADER_CONSTANT = "KLT_GRADER_PIN"
 
 #: This module documents the marker in prose, so the unused-marker rule
 #: skips it (it carries no pin mentions to exempt).
@@ -104,6 +124,7 @@ class Mention:
     package: str
     version: str
     marked: bool
+    grader: bool = False
 
 
 def read_pins(root: Path) -> dict[str, str]:
@@ -115,7 +136,7 @@ def read_pins(root: Path) -> dict[str, str]:
     source = root / PIN_SOURCE
     tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
     found: dict[str, str] = {}
-    wanted = set(PIN_CONSTANTS.values())
+    wanted = set(PIN_CONSTANTS.values()) | {GRADER_CONSTANT}
     for node in tree.body:
         if not isinstance(node, (ast.Assign, ast.AnnAssign)):
             continue
@@ -128,10 +149,13 @@ def read_pins(root: Path) -> dict[str, str]:
                     raise ValueError(
                         f"{PIN_SOURCE}: {target.id} must be a string literal")
                 found[target.id] = value.value
-    missing = sorted(wanted - found.keys())
+    missing = sorted(wanted - {GRADER_CONSTANT} - found.keys())
     if missing:
         raise ValueError(f"{PIN_SOURCE}: missing {', '.join(missing)}")
-    return {pkg: found[const] for pkg, const in PIN_CONSTANTS.items()}
+    pins = {pkg: found[const] for pkg, const in PIN_CONSTANTS.items()}
+    if GRADER_CONSTANT in found:
+        pins[GRADER_KEY] = found[GRADER_CONSTANT]
+    return pins
 
 
 def is_scanned(rel: str) -> bool:
@@ -154,15 +178,16 @@ def find_mentions(rel: str, text: str) -> list[Mention]:
     mentions = []
     for lineno, line in enumerate(text.splitlines(), start=1):
         marked = MARKER in line
+        grader = GRADER_MARKER in line
         for m in _PIN.finditer(line):
             mentions.append(Mention(rel, lineno, m.group(1), m.group(2),
-                                    marked))
+                                    marked, grader))
     return mentions
 
 
-def marker_lines(text: str) -> list[int]:
+def marker_lines(text: str, marker: str = MARKER) -> list[int]:
     return [n for n, line in enumerate(text.splitlines(), start=1)
-            if MARKER in line]
+            if marker in line]
 
 
 def check_text(rel: str, text: str, pins: dict[str, str]
@@ -171,16 +196,23 @@ def check_text(rel: str, text: str, pins: dict[str, str]
     mentions = find_mentions(rel, text)
     problems = []
     exempted_lines = set()
+    grader_lines = set()
     for m in mentions:
-        if m.version == pins[m.package]:
+        want = pins[m.package]
+        if m.grader and m.package == "klayout-tools":
+            grader_lines.add(m.line)
+            want = pins.get(GRADER_KEY, want)
+        if m.version == want:
             continue
         if m.marked:
             exempted_lines.add(m.line)
             continue
         problems.append(
             f"{rel}:{m.line}: {m.package}=={m.version}, but {PIN_SOURCE} "
-            f"pins {m.package}=={pins[m.package]} (update it, or mark a "
-            f"deliberately historical line with '{MARKER}')")
+            f"pins {m.package}=={want} (update it, or mark a "
+            f"deliberately historical line with '{MARKER}'"
+            + ("" if m.grader else f"; a line restating the grader carries '{GRADER_MARKER}'")
+            + ")")
     # A marker must be earning its keep.
     if rel != _SELF_REL:
         for line in marker_lines(text):
@@ -188,6 +220,11 @@ def check_text(rel: str, text: str, pins: dict[str, str]
                 problems.append(
                     f"{rel}:{line}: '{MARKER}' marker exempts no "
                     f"mismatching pin on its line; remove it")
+        for line in marker_lines(text, GRADER_MARKER):
+            if line not in grader_lines:
+                problems.append(
+                    f"{rel}:{line}: '{GRADER_MARKER}' marker is on a line "
+                    f"with no klayout-tools== mention; remove it")
     return mentions, problems
 
 
@@ -221,10 +258,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     for pkg, version in pins.items():
-        print(f"pinned: {pkg}=={version}  ({PIN_SOURCE} "
-              f"{PIN_CONSTANTS[pkg]})")
+        const = GRADER_CONSTANT if pkg == GRADER_KEY else PIN_CONSTANTS[pkg]
+        name = "klayout-tools (grader)" if pkg == GRADER_KEY else pkg
+        print(f"pinned: {name}=={version}  ({PIN_SOURCE} {const})")
     for m in mentions:
-        tag = " [historical]" if m.marked else ""
+        tag = " [historical]" if m.marked else (" [grader]" if m.grader else "")
         print(f"  {m.path}:{m.line}: {m.package}=={m.version}{tag}")
     if not args.check:
         return 0

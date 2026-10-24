@@ -6,6 +6,22 @@
     "digital": "Region digital, top cell trng_top: Verilog RTL under design/trng_top/, synthesized by design/synth.py (yosys) and placed-and-routed by layout/digital/build.py (klt place-and-route) to layout/digital/trng_top.def/.gds. Supply vddd is digital-only. Pins this side exposes at the boundary: clk, rst_n, raw_bit, raw_valid, ring_bit[0], ring_bit[1], plus the shared vss return. Every crossing net is declared endpoint-by-endpoint in design/floorplan_netlist.py's INTER_REGION_NETS and machine-checked against both sides' committed reference netlists by `npm run check:floorplan-netlist`: clk and rst_n run chip pin -> digital -> combiner_sampler, raw_bit/raw_valid run combiner_sampler -> digital, ring_bit1/ring_bit2 map to this side's ring_bit[0]/ring_bit[1], and vss is the one deliberately shared net all four regions return to."
   },
   "evidence": {
+    "1.analog": {
+      "file": "signoff/evidence/t1-item-1-analog.json",
+      "content_hash": "sha256:2f3dd697ec2406ae6dad1f4173f5382116cab3d1c7dc3beee85ebd9ee3104711"
+    },
+    "1.digital": {
+      "file": "signoff/evidence/t1-item-1-digital.json",
+      "content_hash": "sha256:7283b64e3e75d092e9f905549bb4e912130a521ed5978790fa7e9f31d6a118b1"
+    },
+    "10.analog": {
+      "file": "signoff/evidence/t1-item-10-analog.json",
+      "content_hash": "sha256:caaacf053622dda605cd3c9c03460ad51f89f929235cde631fe15f5baae0a597"
+    },
+    "10.digital": {
+      "file": "signoff/evidence/t1-item-10-digital.json",
+      "content_hash": "sha256:b5d2e3b485c874dd451049bed3ec7cd1d90632f1e54a57d984335101abb1bde6"
+    },
     "11.analog": [
       {
         "file": "layout/analog/reports/erc-supply-ring1.json",
@@ -18,11 +34,32 @@
       {
         "file": "layout/analog/reports/erc-supply-combiner_sampler.json",
         "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
+      },
+      {
+        "file": "layout/reports/combiner_sampler.lvs.json",
+        "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd"
       }
     ],
-    "11.digital": {
-      "file": "layout/digital/reports/erc-supply.json",
-      "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
+    "11.digital": [
+      {
+        "file": "layout/digital/reports/erc-supply.json",
+        "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7"
+      },
+      {
+        "file": "layout/digital/reports/lvs.json",
+        "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80"
+      },
+      {
+        "file": "layout/digital/reports/place_and_route.json"
+      }
+    ],
+    "2.analog": {
+      "file": "signoff/evidence/t1-item-2-analog.json",
+      "content_hash": "sha256:d1798ac082d6942e2259a4e29b23539046c4f98e1c0c916ff79732a38e03b8fd"
+    },
+    "2.digital": {
+      "file": "signoff/evidence/t1-item-2-digital.json",
+      "content_hash": "sha256:9eb8a2fd7a319b50f9c49821dbb36853356959dd0aea7c769b09d45b5784c24f"
     },
     "3.analog": {
       "file": "layout/reports/combiner_sampler.drc.json",
@@ -49,11 +86,19 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-analog.generic.json",
-      "content_hash": "sha256:e4edafb259a59755ea68b0790b3e34ecd0325a4d2f30dded96f81fefe69ec8e0"
+      "content_hash": "sha256:8915c58f4279cd4159c87a930b93c287a97cedf24aa541325ee73e31cdd990b4"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-digital.generic.json",
       "content_hash": "sha256:8816f4abd3ebc6be304324c3841b6df93f8f1019fb0530b7f3cd713fb54f22c1"
+    },
+    "9.analog": {
+      "file": "signoff/evidence/t1-item-9-analog.json",
+      "content_hash": "sha256:5f91b80d2df3621c823be7b3f589dd0318ff664d6033ecba11d96cebe973a2a0"
+    },
+    "9.digital": {
+      "file": "signoff/evidence/t1-item-9-digital.json",
+      "content_hash": "sha256:6d221ddcf984767f7267faaab830d0edb0c9e343bb7f7fcd80deee5a35abe0fd"
     }
   }
 }

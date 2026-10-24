@@ -42,7 +42,6 @@ visible rather than assumed.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import shutil
@@ -138,7 +137,6 @@ def summarize_vcd(path: Path, windows_ticks: dict[str, tuple[int, int]]) -> VcdS
     s = VcdSummary(windows={n: {"clk_toggles": 0, "changes": 0, "toggling_vars": set()}
                             for n in windows_ticks})
     scope: list[str] = []
-    id_scope_depth: dict[str, int] = {}
     id_is_clk: set[str] = set()
     var_ids: set[str] = set()
     xz_ids: set[str] = set()

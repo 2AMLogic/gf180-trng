@@ -1,0 +1,43 @@
+{
+  "inventory": "repo-hygiene",
+  "t1_item": 10,
+  "partition": "digital",
+  "gates": [
+    {
+      "command": "python3 signoff/check.py --require-tools",
+      "runs_in": ".github/workflows/ci.yml",
+      "runs_without_pdk_or_external_tools": true,
+      "note": "stdlib freshness gate plus the pinned klt grader; runs in the PR-blocking job"
+    }
+  ],
+  "assertions": [
+    "LICENSE contains the Apache License, Version 2.0 text",
+    "README.md has Target specification, Layout, sim/ harness, Checks and License sections and links spec/",
+    "spec/ratification-2026-07-31-target-spec.md carries the ratified specification table",
+    "README.md documents how this partition is reproduced: `design/interface/regmap.py --check`, `layout/digital/build.py --check-input`",
+    ".github/workflows/ci.yml runs `npm run check:regmap`, `npm run check:digital-input` and `python3 signoff/check.py --require-tools`"
+  ],
+  "ci_status": "not captured: green CI is a property of a run, not of a file. This inventory hashes the workflow and names the command; whether the last run was green is not recorded here and is not part of what a `met` row asserts.",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "sha256:e199049d19c002265133ce458dee2c59234ba51df76de4c4bbf9862d3399b94e"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "sha256:d4856e2ce49252a8802a1037fd348bd3a1dd1a389042c3f2730c2b620d382b5a"
+    },
+    {
+      "path": "README.md",
+      "sha256": "sha256:c1385ac5f8b79789b588f4c5a20822e182e14b6dd929622cef9a35a30b7abcd3"
+    },
+    {
+      "path": "sim/README.md",
+      "sha256": "sha256:521b6fdc6f144a81533a9c765a0036f35bfac034d625dd1272d02ff0e3841121"
+    },
+    {
+      "path": "spec/ratification-2026-07-31-target-spec.md",
+      "sha256": "sha256:9621bfcd55f7a80797f33aad67dbb6cde84b0c17787cdcfff3f8cf95470c21d0"
+    }
+  ]
+}

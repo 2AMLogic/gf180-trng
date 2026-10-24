@@ -7,7 +7,9 @@ PDK layout; actual ngspice execution is exercised by sim/selftest.sh instead.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import subprocess
 import os
 import sys
 import tempfile
@@ -18,9 +20,11 @@ from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
 
-from harness import corners, runner, testbench  # noqa: E402
+from harness import corners, runner, startup, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
+from _tool_gate import requires_tools  # noqa: E402
 
 
 def fake_pdk(root: Path) -> Pdk:
@@ -87,6 +91,46 @@ class DeckTests(unittest.TestCase):
         self.assertNotIn(".option seed=", deck_no_seed)
         deck_seeded = runner.compose_deck(self.tb, self.pdk, self.point, seed=7)
         self.assertIn(".option seed=7", deck_seeded)
+
+
+class TransientNoiseSeedControlTests(unittest.TestCase):
+    """#574 / DR-0031: no tested control made trnoise replay, so none was
+    integrated. A seeded tran-noise deck carries exactly the harness's one
+    ``.option seed=<n>`` and no start-up or control-block seed command, and
+    decks for different seeds differ only in that line."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("vn out 0 dc 0 trnoise(1m 1n 0 0)\nr1 out 0 1k\n")
+        (root / "tb" / "tb.json").write_text(json.dumps({
+            "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+            "analysis_type": "tran-noise", "analyses": ["tran 1n 16n"],
+        }))
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+
+    def test_one_harness_seed_line_and_nothing_else(self):
+        for seed in (11, 12):
+            deck = runner.compose_deck(self.tb, self.pdk, self.point, seed=seed)
+            found = testbench.scan_seed_controls(deck)
+            self.assertEqual(len(found), 1, found)
+            self.assertIn(f".option seed={seed}", found[0])
+
+    def test_decks_for_two_seeds_differ_only_in_the_seed_line(self):
+        a = runner.compose_deck(self.tb, self.pdk, self.point, seed=11).splitlines()
+        b = runner.compose_deck(self.tb, self.pdk, self.point, seed=12).splitlines()
+        diff = [(x, y) for x, y in zip(a, b) if x != y]
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(diff, [(".option seed=11", ".option seed=12")])
+
+    def test_pinned_startup_script_sets_no_seed(self):
+        self.assertEqual(
+            testbench.scan_seed_controls(startup.SPINIT_PATH.read_text()), []
+        )
 
 
 class AnalysisContextSubstitutionTests(unittest.TestCase):
@@ -185,6 +229,31 @@ class ParseTests(unittest.TestCase):
             runner.parse_measurements(text), {"vout": 1.2003456789, "iq": -4.5e-05}
         )
 
+    def test_non_finite_values_are_never_parsed_as_measurements(self):
+        # `1e999` matches the numeric syntax but float() overflows it to
+        # +/-inf without raising; literal inf/nan are not numbers either.
+        text = "\n".join(
+            [
+                "m_big = 1e999",
+                "m_small = -1e999",
+                "m_pinf = inf",
+                "m_ninf = -Infinity",
+                "m_nan = nan",
+                "m_ok = 2.5e-3",
+            ]
+        )
+        self.assertEqual(runner.parse_measurements(text), {"ok": 2.5e-3})
+        self.assertEqual(
+            runner.parse_non_finite_measurements(text),
+            {
+                "big": "1e999",
+                "small": "-1e999",
+                "pinf": "inf",
+                "ninf": "-Infinity",
+                "nan": "nan",
+            },
+        )
+
 
 class RunPointContractTests(unittest.TestCase):
     """run_point enforces the 'no seed, no evidence' rule at the API level
@@ -214,6 +283,41 @@ class RunPointContractTests(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             runner.run_point(self.tb, None, self.point, Path("/nonexistent"), seeds=None)
         self.assertIn("no seed, no evidence", str(ctx.exception))
+
+    def test_duplicate_seed_is_rejected_naming_the_value(self):
+        with self.assertRaises(ValueError) as ctx:
+            runner.plan_runs(self.tb, [1, 2, 1])
+        self.assertIn("duplicate seed(s) 1 ", str(ctx.exception))
+
+    def test_every_repeated_seed_is_named_once(self):
+        with self.assertRaises(ValueError) as ctx:
+            runner.plan_runs(self.tb, [1001, 7, 1001, 7, 1001, 3])
+        self.assertIn("duplicate seed(s) 1001, 7 ", str(ctx.exception))
+
+    def test_run_point_rejects_duplicate_seeds_before_running(self):
+        with mock.patch.object(runner, "run_one") as run_one:
+            with self.assertRaises(ValueError):
+                runner.run_point(self.tb, None, self.point, Path("/nonexistent"), seeds=[5, 5])
+        run_one.assert_not_called()
+
+    def test_distinct_seeds_keep_their_order(self):
+        self.assertEqual(
+            runner.plan_runs(self.tb, [1003, 1001, 1002]),
+            [(1003, 0), (1001, 1), (1002, 2)],
+        )
+
+    def test_deterministic_testbench_is_unaffected(self):
+        tb = testbench.load(self._deterministic_tb())
+        self.assertEqual(runner.plan_runs(tb, None), [(None, 0)])
+
+    def _deterministic_tb(self) -> Path:
+        root = Path(self.tmp.name) / "det"
+        root.mkdir()
+        (root / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb.json").write_text(
+            json.dumps({"name": "det", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        return root
 
 
 def _install_fake_ngspice(bin_dir: Path, script: str) -> None:
@@ -382,9 +486,456 @@ class TimeoutTests(unittest.TestCase):
         # one's own (much longer) bound.
         self.assertLess(fast_elapsed, 5.0)
 
+    def _run_fake(self, body: str):
+        _install_fake_ngspice(self.bin_dir, "#!/usr/bin/env python3\n" + body)
+        return runner.run_one(self.tb, self.pdk, self.tt_point, self.workdir, timeout_s=5)
+
+    def test_nonzero_exit_with_all_measurements_fails_and_keeps_evidence(self):
+        result = self._run_fake("import sys\nprint('m_vout = 3.3')\nsys.exit(1)\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {"vout": 3.3})
+        self.assertIn("exit 1", result.message)
+        self.assertIn("m_vout = 3.3", (self.workdir / result.log_name).read_text())
+
+    def test_zero_exit_with_fatal_diagnostic_fails(self):
+        result = self._run_fake("print('m_vout = 3.3')\nprint('Error: failed analysis')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {"vout": 3.3})
+        self.assertIn("Error: failed analysis", result.message)
+
+    def test_nonfatal_meas_errors_with_clean_exit_remain_ok(self):
+        result = self._run_fake(
+            "print('Error: measure  t1b  when(WHEN) : out of interval')\n"
+            "print('Error: RHS \"(t1b-t1a)/nper\" invalid')\n"
+            "print('m_vout = 3.3')\n"
+        )
+        self.assertEqual(result.status, "ok", result.message)
+        self.assertEqual(result.measurements, {"vout": 3.3})
+
+    def test_nonzero_exit_message_includes_code_and_diagnostic(self):
+        result = self._run_fake(
+            "import sys\nprint('m_vout = 3.3')\nprint('doAnalyses: bad')\nsys.exit(3)\n"
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("exit 3", result.message)
+        self.assertIn("doAnalyses: bad", result.message)
+
+    def test_benign_warnings_remain_ok(self):
+        result = self._run_fake(
+            "print('Warning: something minor')\n"
+            "print('note: no error found, 0 errors')\n"
+            "print('m_vout = 3.3')\n"
+        )
+        self.assertEqual(result.status, "ok")
+
+    def test_missing_measurement_still_fails(self):
+        result = self._run_fake("print('nothing useful')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.missing, ["vout"])
+        self.assertNotIn("non-finite", result.message)
+
+    def test_overflowed_sole_measurement_fails_naming_it(self):
+        # Issue #527: zero exit, no fatal diagnostic, the requested name is
+        # present -- but the value overflows float() to +/-inf.
+        for raw in ("1e999", "-1e999"):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "failed")
+                self.assertIn("non-finite measurements: vout", result.message)
+                self.assertIn(raw, result.message)
+                # Absent and invalid stay distinguishable.
+                self.assertNotIn("missing measurements", result.message)
+                self.assertNotIn("no measurements parsed", result.message)
+                self.assertEqual(result.missing, [])
+                self.assertEqual(result.non_finite, ["vout"])
+                # No inf leaks into the retained diagnostic values ...
+                self.assertEqual(result.measurements, {})
+                # ... and the raw log keeps the invalid output for diagnosis.
+                log = (self.workdir / result.log_name).read_text()
+                self.assertIn(f"m_vout = {raw}", log)
+
+    def test_literal_inf_and_nan_cannot_succeed(self):
+        for raw in ("inf", "-inf", "Infinity", "nan", "NaN"):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "failed")
+                self.assertIn("vout", result.message)
+                self.assertEqual(result.measurements, {})
+
+    def test_last_printed_value_decides_finiteness(self):
+        result = self._run_fake("print('m_vout = 1e999')\nprint('m_vout = 1.5')\n")
+        self.assertEqual(result.status, "ok", result.message)
+        self.assertEqual(result.measurements, {"vout": 1.5})
+        result = self._run_fake("print('m_vout = 1.5')\nprint('m_vout = 1e999')\n")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {})
+
+    def test_non_finite_combines_with_other_failure_reasons(self):
+        result = self._run_fake(
+            "import sys\nprint('m_vout = 1e999')\nprint('Error: failed analysis')\n"
+            "sys.exit(2)\n"
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("exit 2", result.message)
+        self.assertIn("Error: failed analysis", result.message)
+        self.assertIn("non-finite measurements: vout", result.message)
+
+    def test_finite_scientific_negative_and_zero_remain_ok(self):
+        for raw, value in (
+            ("1.5e+300", 1.5e300),
+            ("-4.5e-05", -4.5e-05),
+            ("0", 0.0),
+            ("-0.0", 0.0),
+            ("2.2250738585072014e-308", 2.2250738585072014e-308),
+        ):
+            with self.subTest(raw=raw):
+                result = self._run_fake(f"print('m_vout = {raw}')\n")
+                self.assertEqual(result.status, "ok", result.message)
+                self.assertEqual(result.measurements, {"vout": value})
+
     def tmp_path_for(self, name: str) -> Path:
         return Path(self.tmp.name) / name
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TimeoutBoundValidationTests(unittest.TestCase):
+    """A zero timeout makes coreutils ``timeout(1)`` disable its bound, so
+    nonpositive (and non-integer) bounds are refused by the runner itself
+    before any file is created or any child is spawned (#563)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.tb = testbench.load(root / "tb")
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.workdir = root / "work"
+
+    def test_run_one_rejects_invalid_bounds_before_creating_or_spawning(self):
+        for bad in (0, -1, -3600, True, 1.5, "10", None):
+            with self.subTest(timeout_s=bad):
+                with mock.patch.object(runner.subprocess, "Popen") as popen:
+                    with self.assertRaises(ValueError) as ctx:
+                        runner.run_one(self.tb, self.pdk, self.point, self.workdir, timeout_s=bad)
+                self.assertIn("positive integer", str(ctx.exception))
+                popen.assert_not_called()
+                self.assertFalse(self.workdir.exists())
+
+    def test_run_point_rejects_invalid_bounds_before_running(self):
+        with mock.patch.object(runner, "run_one") as run_one:
+            with self.assertRaises(ValueError):
+                runner.run_point(self.tb, self.pdk, self.point, self.workdir, None, timeout_s=0)
+        run_one.assert_not_called()
+        self.assertFalse(self.workdir.exists())
+
+    def test_positive_bound_reaches_the_watchdog_command_unchanged(self):
+        proc = mock.Mock(returncode=0)
+        proc.communicate.return_value = ("m_vout = 1.65\n", "")
+        proc.pid = 1
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog):
+                with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                        mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen:
+                    result = runner.run_one(self.tb, self.pdk, self.point, self.workdir, timeout_s=17)
+                self.assertEqual(result.status, "ok")
+                cmd = popen.call_args.args[0]
+                if watchdog:
+                    self.assertIn("17s", cmd)
+                    guard = 17 + runner.KILL_GRACE_S + runner._GUARD_PAD_S
+                else:
+                    guard = 17
+                proc.communicate.assert_called_with(timeout=guard)
+
+    def test_default_bound_is_positive(self):
+        self.assertEqual(runner.validate_timeout_s(runner.DEFAULT_TIMEOUT_S), runner.DEFAULT_TIMEOUT_S)
+
+
+class InputCaptureDeckTests(unittest.TestCase):
+    """Decks consume the SPICE bytes captured at load, not the live files
+    (#515). A stub ngspice keeps this PDK- and simulator-free."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tbd = self.root / "tb"
+        tbd.mkdir()
+        self.frag = tbd / "x.spice"
+        self.dut = self.root / "dut.spice"
+        self.frag.write_text("v1 out 0 dc {vdd_val}\n")
+        self.dut.write_text("* dut original\n")
+        (tbd / "tb.json").write_text(json.dumps({
+            "name": "x", "netlist": "x.spice", "design_netlist": str(self.dut),
+            "measure": {"vout": "v(out)"},
+        }))
+        self.tb = testbench.load(tbd)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), (27,), [3.3])
+
+    def _included(self, deck: str, name: str) -> Path:
+        for line in deck.splitlines():
+            if line.startswith(".include") and name in line:
+                return Path(line.split('"')[1])
+        self.fail(f"no include of {name} in deck")
+
+    def test_edits_between_corner_launches_do_not_reach_later_decks(self):
+        decks = []
+        with mock.patch.object(runner, "NGSPICE", "true"), \
+                mock.patch.object(runner, "timeout_bin", return_value=None):
+            for i, point in enumerate(self.points):
+                if i == 1:  # mutate the originals between corner launches
+                    self.frag.write_text("v1 out 0 dc 99\n")
+                    self.dut.write_text("* dut MUTATED\n")
+                wd = self.root / "work" / point.corner_id
+                runner.run_one(self.tb, self.pdk, point, wd, timeout_s=5)
+                decks.append((wd, (wd / f"{point.corner_id}.spice").read_text()))
+        for wd, deck in decks:
+            frag = self._included(deck, "tb.fragment.spice")
+            dut = self._included(deck, "dut.netlist.spice")
+            self.assertEqual(frag.parent, wd)
+            self.assertEqual(frag.read_text(), "v1 out 0 dc {vdd_val}\n")
+            self.assertEqual(dut.read_text(), "* dut original\n")
+            self.assertNotIn(str(self.frag), deck)
+            self.assertNotIn(str(self.dut), deck)
+
+    def test_without_snapshot_dir_live_paths_are_used(self):
+        deck = runner.compose_deck(self.tb, self.pdk, self.points[0])
+        self.assertIn(str(self.frag.resolve()), deck)
+        self.assertIn(str(self.dut), deck)
+
+    def test_hand_built_testbench_keeps_live_paths(self):
+        tb = testbench.Testbench(directory=self.root, slug="h", netlist=self.frag)
+        deck = runner.compose_deck(tb, self.pdk, self.points[0], snapshot_dir=self.root / "w")
+        self.assertIn(str(self.frag), deck)
+        self.assertNotIn("tb.fragment.spice", deck)
+
+
+class ArtifactCollisionTests(unittest.TestCase):
+    """run_one refuses a colliding DUT include before writing or launching."""
+
+    def test_run_one_refuses_before_any_write_or_launch(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            dutdir = root / "dutdir"
+            dutdir.mkdir()
+            (dutdir / "dut.spice").write_text('.include "tt_27c_3.30v.spice"\n')
+            (dutdir / "tt_27c_3.30v.spice").write_text("* dep\n")
+            tbd = root / "tb" / "x"
+            tbd.mkdir(parents=True)
+            (tbd / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+            (tbd / "tb.json").write_text(json.dumps({
+                "name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"},
+                "design_netlist": str(dutdir / "dut.spice"),
+            }))
+            tb = testbench.load(tbd)
+            point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+            workdir = root / "work"
+            with mock.patch.object(runner.subprocess, "Popen") as popen:
+                with self.assertRaises(ValueError) as ctx:
+                    runner.run_one(tb, fake_pdk(root / "pdk"), point, workdir)
+            self.assertIn("tt_27c_3.30v.spice", str(ctx.exception))
+            popen.assert_not_called()
+            self.assertFalse(workdir.exists())
+
+
+class StartupPolicyTests(unittest.TestCase):
+    """Issue #575: both launch paths enforce one explicit ngspice start-up
+    policy (``-n`` + pinned ``SPICE_SCRIPTS``), proven against hostile
+    initialization fixtures that live only in temporary directories."""
+
+    def _launch(self, watchdog):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        tb = testbench.load(root / "tb")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        proc = mock.Mock(returncode=0)
+        proc.communicate.return_value = ("m_vout = 1.65\n", "")
+        proc.pid = 1
+        with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen, \
+                mock.patch.dict(os.environ, {"SPICE_SCRIPTS": "/hostile", "SPICE_LIB_DIR": "/hostile"}):
+            runner.run_one(tb, fake_pdk(root / "gf180mcuD"), point, root / "work", timeout_s=9)
+        return popen.call_args
+
+    def test_both_launch_paths_carry_the_same_policy(self):
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog):
+                call = self._launch(watchdog)
+                cmd = call.args[0]
+                at = cmd.index(runner.NGSPICE)
+                self.assertEqual(cmd[at:at + 3], [runner.NGSPICE, "-n", "-b"])
+                self.assertEqual(cmd[0] == "/usr/bin/timeout", watchdog is not None)
+                env = call.kwargs["env"]
+                # The child reads the run's own captured copy (#582), not the
+                # live checkout directory.
+                self.assertEqual(env["SPICE_SCRIPTS"], str(call.kwargs["cwd"].resolve()))
+                self.assertNotEqual(env["SPICE_SCRIPTS"], str(startup.SCRIPTS_DIR))
+                self.assertEqual(
+                    (call.kwargs["cwd"] / "spinit").read_bytes(), startup.SPINIT_PATH.read_bytes()
+                )
+                self.assertNotIn("SPICE_LIB_DIR", env)
+                self.assertTrue(call.kwargs["start_new_session"])
+
+    def test_pinned_spinit_is_inert_and_its_hash_is_reported(self):
+        lines = [
+            ln for ln in startup.SPINIT_PATH.read_text().splitlines()
+            if ln.strip() and not ln.lstrip().startswith("*")
+        ]
+        self.assertEqual(lines, [])
+        meta = startup.metadata()
+        self.assertEqual(meta["spinit_sha256"], startup.spinit_sha256())
+        self.assertEqual(len(meta["spinit_sha256"]), 64)
+        self.assertTrue((SIM_DIR.parent / meta["spinit"]).is_file())
+
+    def _tb_and_point(self, root):
+        (root / "tb").mkdir()
+        (root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (root / "tb" / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        return testbench.load(root / "tb"), point
+
+    def test_edit_after_capture_changes_neither_consumed_bytes_nor_digest(self):
+        """#582: every launch (both watchdog paths, several points) consumes
+        the bytes captured before the first one, and the recorded digest
+        identifies those bytes, whatever the live file does afterwards."""
+        for watchdog in ("/usr/bin/timeout", None):
+            with self.subTest(watchdog=watchdog), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                live = root / "live-spinit"
+                live.write_bytes(b"* original\n")
+                tb, point = self._tb_and_point(root)
+                proc = mock.Mock(returncode=0)
+                proc.communicate.return_value = ("m_vout = 1.65\n", "")
+                proc.pid = 1
+                with mock.patch.object(startup, "SPINIT_PATH", live):
+                    snap = startup.capture()
+                live.write_bytes(b"echo EDITED_AFTER_CAPTURE\n")  # mid-sweep edit
+                calls = []
+                with mock.patch.object(runner, "timeout_bin", return_value=watchdog), \
+                        mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen, \
+                        mock.patch.object(startup, "SPINIT_PATH", live):
+                    for name in ("pt-a", "pt-b"):
+                        runner.run_one(
+                            tb, fake_pdk(root / "gf180mcuD"), point, root / name,
+                            timeout_s=9, startup_snapshot=snap,
+                        )
+                        calls.append(popen.call_args)
+                    meta = startup.metadata(snap)
+                for call, name in zip(calls, ("pt-a", "pt-b")):
+                    scripts = Path(call.kwargs["env"]["SPICE_SCRIPTS"])
+                    self.assertEqual(scripts, (root / name).resolve())
+                    self.assertEqual((scripts / "spinit").read_bytes(), b"* original\n")
+                self.assertEqual(meta["spinit_sha256"], hashlib.sha256(b"* original\n").hexdigest())
+                self.assertEqual(meta["spinit_snapshot"], "spinit")
+
+    def test_write_snapshot_refuses_a_changed_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = startup.Snapshot(b"* a\n")
+            startup.write_snapshot(snap, Path(tmp))
+            startup.write_snapshot(snap, Path(tmp))  # identical: no-op
+            (Path(tmp) / "spinit").write_bytes(b"* b\n")
+            with self.assertRaisesRegex(RuntimeError, "modified during the run"):
+                startup.write_snapshot(snap, Path(tmp))
+
+    def test_dut_include_may_not_take_the_snapshot_name(self):
+        self.assertIn(startup.SNAPSHOT_NAME, testbench.fixed_artifact_names())
+
+    @requires_tools("ngspice", reason="ngspice not on PATH; snapshot probe skipped")
+    def test_ngspice_reads_the_snapshot_not_the_live_script(self):
+        """PDK-free: a sentinel in the captured copy is echoed by ngspice;
+        a different sentinel in the live file (edited after capture) is not."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            live = root / "live-spinit"
+            live.write_text("echo SENTINEL_CAPTURED\n")
+            with mock.patch.object(startup, "SPINIT_PATH", live):
+                snap = startup.capture()
+            live.write_text("echo SENTINEL_LIVE_EDIT\n")
+            work = root / "work"
+            startup.write_snapshot(snap, work)
+            deck = work / "d.cir"
+            deck.write_text("* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n")
+            env = startup.environment(
+                {k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
+                scripts_dir=work.resolve(),
+            )
+            out = subprocess.run(
+                runner.ngspice_command(deck, None, 60), env=env, cwd=work,
+                capture_output=True, text=True, timeout=60,
+            ).stdout
+            self.assertIn("SENTINEL_CAPTURED", out)
+            self.assertNotIn("SENTINEL_LIVE_EDIT", out)
+
+    @requires_tools("ngspice", reason="ngspice not on PATH; hostile-fixture probe skipped")
+    def test_hostile_init_fixtures_affect_plain_batch_but_not_the_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for d in ("home", "work", "scripts", "userdeck"):
+                (root / d).mkdir()
+            (root / "home" / ".spiceinit").write_text("echo SENTINEL_USER\n")
+            (root / "work" / ".spiceinit").write_text("echo SENTINEL_WORK\n")
+            (root / "scripts" / "spinit").write_text("echo SENTINEL_SYSTEM\n")
+            deck_text = "* probe\nV1 a 0 1\nR1 a 0 1k\n.op\n.end\n"
+            deck = root / "work" / "d.cir"
+            deck.write_text(deck_text)
+            # Deck copy outside every hostile .spiceinit directory. The
+            # user-init sanity case must not reuse the work-directory deck:
+            # ngspice-46 searches the deck's directory first (measured in
+            # sim/tool-experiments/2026-10-11-ngspice46-startup-lookup/),
+            # so a deck inside work/ keeps SENTINEL_WORK reachable however
+            # the cwd moves.
+            userdeck = root / "userdeck" / "d.cir"
+            userdeck.write_text(deck_text)
+            hostile = {
+                **{k: v for k, v in os.environ.items() if not k.startswith("SPICE_")},
+                "HOME": str(root / "home"),
+                "SPICE_SCRIPTS": str(root / "scripts"),
+            }
+
+            def run(cmd, env, cwd):
+                return subprocess.run(
+                    cmd, env=env, cwd=cwd, capture_output=True, text=True, timeout=60
+                ).stdout
+
+            # Sanity: the fixtures are effective under ordinary batch mode.
+            # Each plain launch leaves exactly one .spiceinit reachable for
+            # the source it names -- whichever of the working directory
+            # (ngspice-42) or the deck's directory (ngspice-46) is searched,
+            # the work launch runs where the two coincide, and the user
+            # launch uses a deck copy with no .spiceinit around it -- plus
+            # spinit from SPICE_SCRIPTS. Only one of the two .spiceinit
+            # fixtures runs per launch on both measured builds.
+            plain = run(["ngspice", "-b", str(deck)], hostile, root / "work")
+            self.assertIn("SENTINEL_WORK", plain)
+            self.assertIn("SENTINEL_SYSTEM", plain)
+            self.assertNotIn("SENTINEL_USER", plain)
+            nowork = root / "nowork"
+            nowork.mkdir()
+            plain_user = run(["ngspice", "-b", str(userdeck)], hostile, root / "userdeck")
+            self.assertIn("SENTINEL_USER", plain_user)
+            self.assertNotIn("SENTINEL_WORK", plain_user)
+
+            # Controlled launch (command builder + environment builder).
+            cmd = runner.ngspice_command(deck, None, 60)
+            env = startup.environment(hostile)
+            for cwd in (root / "work", nowork):
+                out = run(cmd, env, cwd)
+                self.assertNotIn("SENTINEL", out)
+                self.assertIn("Circuit:", out)

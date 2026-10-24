@@ -362,7 +362,7 @@ class LoadLifecycleTests(unittest.TestCase):
         stem = self.STEM.format(day=day)
         head = "---\n" + ("" if status is None else f"status: {status}\n")
         (self.root / f"{stem}.md").write_text(
-            head + "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n"
+            head + "corner:\n  process: tt\n  voltage: 3.3\n  temperature: 27\n---\n\n## Result\n\n"
             + body + "- `sigma_1`: 1e-12\n- `period`: 2.8e-09\n"
         )
         return stem

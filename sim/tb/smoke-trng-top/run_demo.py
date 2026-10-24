@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import platform
 import sys
 import time
 from datetime import datetime, timezone
@@ -94,104 +93,75 @@ def run() -> dict:
 
 
 def _frontmatter(stem: str, result: dict, git: dict, raw_files) -> str:
-    tb_path = TB_DIR / "run_demo.py"
-    model_path = REPO_ROOT / "design" / "trng_top" / "trng_top.py"
     xschem_path = REPO_ROOT / "design" / "xschem" / "trng_top.sch"
     netlist_path = REPO_ROOT / "design" / "trng_top.spice"
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    lines = [
-        "---",
-        f"record: {stem}",
-        f"date: {now}",
-        "status: valid",
-        "",
-        "level: behavioral (see spec/decision-records/"
-        "DR-0009-behavioral-vs-transistor-verification-split.md) -- the "
-        "raw-bit INPUT to this run is transistor-derived (see raw_input "
-        "below); this run itself instantiates no device model",
-        "",
-        "testbench:",
-        f"  path: sim/tb/{SLUG}/run_demo.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, tb_path)}",
-        "netlist:",
-        "  path: design/trng_top/trng_top.py",
-        f"  sha: {report.blob_sha(REPO_ROOT, model_path)}",
-        "  note: >-",
-        "    Behavioral-level record: the DUT is the normative behavioural",
-        "    top-level model (the three real digital block models, wired as",
-        "    design/xschem/trng_top.sch's raw tap feeds them). The",
-        "    synthesisable RTL design/trng_top/trng_top.v wires the same",
-        "    three modules; sim/tests/test_trng_top.py checks both against",
-        "    each other and against the analog side's pin names.",
-        "",
-        "analog_boundary:",
-        "  schematic: design/xschem/trng_top.sch",
-        f"  schematic_sha: {report.blob_sha(REPO_ROOT, xschem_path)}",
-        "  netlist: design/trng_top.spice",
-        f"  netlist_sha: {report.blob_sha(REPO_ROOT, netlist_path)}",
-        "  note: >-",
-        "    trng_top.sch instantiates sampler_core.sym (#7 entropy source +",
-        "    #9 sampler) unmodified; design/netlist.py --check ties this",
-        "    netlist to that schematic. Not re-simulated by this run -- see",
-        "    raw_input below for the transistor-level evidence this run's",
-        "    raw-bit stimulus comes from.",
-        "",
-        f"repo_commit: {report.repo_commit_field(git)}",
-        "",
-        "pdk: n/a (behavioral-level record -- no device models are instantiated "
+    return report.behavioral_frontmatter(
+        stem=stem,
+        git=git,
+        raw_files=raw_files,
+        repo_root=REPO_ROOT,
+        testbench=f"sim/tb/{SLUG}/run_demo.py",
+        netlist="design/trng_top/trng_top.py",
+        level_suffix=" -- the raw-bit INPUT to this run is transistor-derived "
+        "(see raw_input below); this run itself instantiates no device model",
+        netlist_note=[
+            "Behavioral-level record: the DUT is the normative behavioural",
+            "top-level model (the three real digital block models, wired as",
+            "design/xschem/trng_top.sch's raw tap feeds them). The",
+            "synthesisable RTL design/trng_top/trng_top.v wires the same",
+            "three modules; sim/tests/test_trng_top.py checks both against",
+            "each other and against the analog side's pin names.",
+        ],
+        pre_commit_sections=[
+            [
+                "analog_boundary:",
+                "  schematic: design/xschem/trng_top.sch",
+                f"  schematic_sha: {report.blob_sha(REPO_ROOT, xschem_path)}",
+                "  netlist: design/trng_top.spice",
+                f"  netlist_sha: {report.blob_sha(REPO_ROOT, netlist_path)}",
+                "  note: >-",
+                "    trng_top.sch instantiates sampler_core.sym (#7 entropy source +",
+                "    #9 sampler) unmodified; design/netlist.py --check ties this",
+                "    netlist to that schematic. Not re-simulated by this run -- see",
+                "    raw_input below for the transistor-level evidence this run's",
+                "    raw-bit stimulus comes from.",
+            ],
+        ],
+        pdk="n/a (behavioral-level record -- no device models are instantiated "
         "by this run, per DR-0009)",
-        "pdk.models:",
-        "  - n/a (behavioral-level record)",
-        "",
-        "tool:",
-        '  ngspice: "n/a (behavioral-level record -- ngspice is not invoked by '
-        'this run; see raw_input for where it WAS invoked)"',
-        f'  python: "{platform.python_version()} ({platform.python_implementation()})"',
-        f"  platform: {platform.platform()}",
-        "",
-        "corner:",
-        "  process: n/a (behavioral-level record -- no device models, so no "
+        ngspice="n/a (behavioral-level record -- ngspice is not invoked by "
+        "this run; see raw_input for where it WAS invoked)",
+        process="n/a (behavioral-level record -- no device models, so no "
         "process corner exists for THIS run; DR-0009 forbids citing this "
         "record for any P/V/T-dependent claim; see raw_input for the corner "
         "the cited transistor-level bits were captured at)",
-        "  voltage: n/a (behavioral-level record)",
-        "  temperature: n/a (behavioral-level record)",
-        "",
-        "analysis:",
-        "  type: behavioral-top-level-smoke",
-        f"  tstop: n/a (cycle-count driven: {result['cycles']} sampler clocks)",
-        "  tstep: n/a",
-        "  tmax: n/a",
-        "  noise_params: n/a (no device noise in this run; the raw-bit input "
+        analysis_type="behavioral-top-level-smoke",
+        tstop=f"n/a (cycle-count driven: {result['cycles']} sampler clocks)",
+        noise_params="n/a (no device noise in this run; the raw-bit input "
         "already carries whatever noise the cited transistor-level run injected)",
-        "  runs: 1",
-        "seeds: n/a (raw-bit input is a fixed, already-recorded capture, not "
+        seeds="n/a (raw-bit input is a fixed, already-recorded capture, not "
         "re-seeded by this run; see raw_input.record for its own seeds)",
-        "",
-        "raw_input:",
-        "  kind: transistor-derived (DR-0009 rule 4)",
-        f"  record: sim/records/{raw_source.SOURCE_RECORD.name}",
-        f"  record_sha: {report.blob_sha(REPO_ROOT, raw_source.SOURCE_RECORD)}",
-        f"  corner.process: {raw_source.SOURCE_CORNER['process']}",
-        f"  corner.temperature_c: {raw_source.SOURCE_CORNER['temperature_c']}",
-        f"  corner.voltage_v: {raw_source.SOURCE_CORNER['voltage_v']}",
-        f"  n_bits: {len(result['raw_bits_driven'])}",
-        f"  bits: {result['raw_bits_str']}",
-        "",
-        "interface:",
-        f"  registers: {', '.join(r.name for r in regmap.REGISTERS)}",
-        f"  fifo_depth_words: {regmap.FIFO_DEPTH}",
-        f"  raw_pack_bits: {regmap.RAW_PACK_BITS}",
-        "",
-        "raw:",
-        f"  path: sim/records/raw/{stem}/",
-        "  files:",
-    ]
-    for name, digest in raw_files:
-        lines.append(f"    - {name}  sha256:{digest}")
-    lines.append(f"wall_time: {result['wall_time_s']:.3f}s")
-    lines.append("---")
-    return "\n".join(lines)
+        sections=[
+            [
+                "raw_input:",
+                "  kind: transistor-derived (DR-0009 rule 4)",
+                f"  record: sim/records/{raw_source.SOURCE_RECORD.name}",
+                f"  record_sha: {report.blob_sha(REPO_ROOT, raw_source.SOURCE_RECORD)}",
+                f"  corner.process: {raw_source.SOURCE_CORNER['process']}",
+                f"  corner.temperature_c: {raw_source.SOURCE_CORNER['temperature_c']}",
+                f"  corner.voltage_v: {raw_source.SOURCE_CORNER['voltage_v']}",
+                f"  n_bits: {len(result['raw_bits_driven'])}",
+                f"  bits: {result['raw_bits_str']}",
+            ],
+            [
+                "interface:",
+                f"  registers: {', '.join(r.name for r in regmap.REGISTERS)}",
+                f"  fifo_depth_words: {regmap.FIFO_DEPTH}",
+                f"  raw_pack_bits: {regmap.RAW_PACK_BITS}",
+            ],
+        ],
+        wall_time=f"{result['wall_time_s']:.3f}s",
+    )
 
 
 def _body(result: dict) -> str:
