@@ -14,7 +14,10 @@ that cites it. This is the cheap, offline half of keeping that honest:
   4. no committed file holds the bytes of a stored object: the sha256 of every
      git-tracked file whose size equals a stored object's is compared with the
      manifest digests (empty files are skipped: nothing to leak, and every
-     `__init__.py` would match);
+     `__init__.py` would match; entries named for a harness input snapshot --
+     `spinit`, `tb.fragment.spice`, `dut.netlist.spice`, `tb.manifest.json` --
+     are skipped too, because those are byte copies of tracked inputs by
+     construction, DR-0032 amendment of 2026-10-24);
   5. nothing under the git-ignored staging area `sim/.work/` is tracked.
 
 Re-hashing the objects against the store is `klt artifact verify <manifest>`,
@@ -39,10 +42,21 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import evidence_store  # noqa: E402
+from harness import evidence_store, startup, testbench  # noqa: E402
 
 MANIFESTS_ROOT = "manifests"
 STAGE_PREFIX = "sim/.work/"
+
+#: Names of the per-run input snapshots the harness stores beside the output.
+#: Each is a byte copy of a tracked file, so matching bytes in git is expected.
+INPUT_SNAPSHOT_NAMES = frozenset(
+    {
+        startup.SNAPSHOT_NAME,
+        testbench.FRAGMENT_SNAPSHOT_NAME,
+        testbench.DUT_SNAPSHOT_NAME,
+        testbench.MANIFEST_SNAPSHOT_NAME,
+    }
+)
 
 
 class GitError(RuntimeError):
@@ -96,7 +110,7 @@ def check(repo: Path, tracked: list[str]) -> list[str]:
             if data is None:
                 continue
             for entry in data["entries"]:
-                if entry["size"] > 0:
+                if entry["size"] > 0 and entry["name"] not in INPUT_SNAPSHOT_NAMES:
                     stored.setdefault(entry["size"], {})[entry["sha256"]] = f"{rel}:{entry['name']}"
 
     for name in tracked:

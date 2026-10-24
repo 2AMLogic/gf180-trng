@@ -833,7 +833,10 @@ Checks: `verify_record_checksums.py` compares the table with the manifest and
 fails on a mismatch, a raw directory beside a stored record, or (corpus run) a
 manifest whose record is missing. `npm run check:artifact-manifests` validates
 schema, `artifact:` URIs and the absence of storage names, and fails if a stored
-object's bytes are committed. Both run in CI. The stored bytes themselves are
+object's bytes are committed. Entries named for a harness input snapshot
+(`spinit`, `tb.fragment.spice`, `dut.netlist.spice`, `tb.manifest.json`) are
+exempt from that last check: they are byte copies of tracked inputs by
+construction. Run output (`.log`, `.raw`, decks) stays guarded. Both run in CI. The stored bytes themselves are
 re-hashed by `klt artifact verify manifests/artifacts/<stem>.manifest.json`,
 which needs the broker and so runs on a fleet worker, not in CI.
 

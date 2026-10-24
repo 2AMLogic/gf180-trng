@@ -18,6 +18,16 @@ related: "#686 (origin); sim/README.md ('Record format', 'Stored evidence for ne
   changes is where the bytes live and which file in git carries the hash.
   Nothing in `spec/` is changed, no check is weakened, and no existing record
   is touched.
+- 2026-10-24: **Amended** by the Builder of #693. The "no committed file holds
+  the bytes of a stored object" check now skips manifest entries named for a
+  harness input snapshot (`spinit`, `tb.fragment.spice`, `dut.netlist.spice`,
+  `tb.manifest.json`). Those objects are byte copies of tracked files by
+  construction, so every recorded run tripped the check on files the harness
+  owns. The snapshots are still stored and hashed (reproducibility is
+  unchanged), and the exemption is by entry name only: run output (`.log`,
+  `.raw`, decks) and any identical bytes under another name still fail. The
+  names of per-DUT dependency snapshots (`design_dependencies`) are the
+  included files' own names, so they are not covered by this rule.
 
 ## Context
 
