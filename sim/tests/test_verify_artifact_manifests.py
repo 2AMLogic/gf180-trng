@@ -98,6 +98,31 @@ class ManifestCheckTests(unittest.TestCase):
         self.assertEqual(len(problems), 1, problems)
         self.assertIn("sim/records/raw/x/out.log", problems[0])
 
+    def test_input_snapshot_names_may_equal_tracked_bytes(self):
+        for name in sorted(vam.INPUT_SNAPSHOT_NAMES):
+            with self.subTest(name=name):
+                self.path.write_text(manifest(name=name))
+                self.put("sim/harness/input.copy", RAW)
+                self.assertEqual(self.check(), [])
+
+    def test_snapshot_name_set_is_the_harness_constants(self):
+        self.assertEqual(
+            vam.INPUT_SNAPSHOT_NAMES,
+            {"spinit", "tb.fragment.spice", "dut.netlist.spice", "tb.manifest.json"},
+        )
+
+    def test_exempt_entry_does_not_exempt_other_names_with_same_bytes(self):
+        entries = [
+            {"sha256": SHA, "size": len(RAW), "kind": "evidence", "name": n,
+             "uri": f"artifact:evidence/example__repo/{SHA[:2]}/{SHA}"}
+            for n in ("spinit", "out.log")
+        ]
+        self.path.write_text(json.dumps({"schema_version": 1, "entries": entries}))
+        self.put("leak.log", RAW)
+        problems = self.check()
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("out.log", problems[0])
+
     def test_same_size_different_bytes_passes(self):
         self.path.write_text(manifest())
         self.put("other.txt", b"x" * len(RAW))
