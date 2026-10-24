@@ -1,8 +1,19 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-22.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-24.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-24
+
+- **PR #694**: fix: exempt harness input snapshots from the committed-bytes manifest check
+- **PR #692**: test: exempt generated WORK_LOG/WORK_PLAN from the DR citation gate
+- **PR #688**: feat(sim): store raw output of new recorded runs in the artifact store
+- **PR #471**: Disambiguate colliding DR-0011/DR-0012 citations and guard them
+- **Issue #693** (closed): check:artifact-manifests fails on any recorded run: stored spinit equals committed harness files
+- **Issue #691** (closed): Generated WORK_LOG/WORK_PLAN can reintroduce bare colliding DR citations from issue titles
+- **Issue #686** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
+- **Issue #468** (closed): Disambiguate the colliding DR-0011/DR-0012 citations (README links the wrong DR-0012) and guard them
 
 ### 2026-10-22
 
