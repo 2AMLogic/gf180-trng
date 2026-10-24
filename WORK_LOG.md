@@ -6,10 +6,12 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-24
 
+- **PR #696**: sim: record stored-evidence smoke-op run with verified artifact manifests
 - **PR #694**: fix: exempt harness input snapshots from the committed-bytes manifest check
 - **PR #692**: test: exempt generated WORK_LOG/WORK_PLAN from the DR citation gate
 - **PR #688**: feat(sim): store raw output of new recorded runs in the artifact store
 - **PR #471**: Disambiguate colliding DR-0011/DR-0012 citations and guard them
+- **Issue #689** (closed): Confirm first full stored run_corners.py run: klt artifact verify exits 0 on a fleet worker
 - **Issue #693** (closed): check:artifact-manifests fails on any recorded run: stored spinit equals committed harness files
 - **Issue #691** (closed): Generated WORK_LOG/WORK_PLAN can reintroduce bare colliding DR citations from issue titles
 - **Issue #686** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
