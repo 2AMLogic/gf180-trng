@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-24.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-27.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-27
+
+- **PR #703**: signoff: cite klt sta and functional envelopes for T1 item 5 digital
+- **Issue #699** (closed): T1 item 5 (corner verification, digital): klt functional-verification envelope now, and the 15-point STA sweep as klt sta once klayout-tools#2858/#2739 close
 
 ### 2026-10-24
 
