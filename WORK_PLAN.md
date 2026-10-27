@@ -60,6 +60,7 @@ Issues carrying `loom:curated`.
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
+- **#699**: T1 item 5 (corner verification, digital): klt functional-verification envelope now, and the 15-point STA sweep as klt sta once klayout-tools#2858/#2739 close *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -80,7 +81,7 @@ _None._
 | In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 9 |
+| Curated | 10 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
