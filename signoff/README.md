@@ -15,15 +15,21 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-<!-- current-t1-status:begin -->**Today: `tier: null`, T1 17 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 18 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The seventeen met are item 1 (design sources), item 2 (layout), item 3
+22 rows. The eighteen met are item 1 (design sources), item 2 (layout), item 3
 (DRC), item 4 (LVS), item 7 (post-layout verification), item 8
 (characterization report), item 9 (testbenches shipped) and item 10 (repo
-hygiene) on **both** partitions, plus item 11 (power delivery) on the
-**digital** partition only
+hygiene) on **both** partitions, plus item 11 (power delivery)
 ([#662](https://github.com/2AMLogic/gf180-trng/issues/662): see "Item 11's
-`ties[]`" below). Items 1, 2, 9 and 10 are `met` on an
+`ties[]`" below) and item 5 (corner verification,
+[#699](https://github.com/2AMLogic/gf180-trng/issues/699)) on the
+**digital** partition only. Item 5 digital's `met` is evidence-kind coverage
+(a `klt sta` envelope over fifteen corners plus a `klt
+functional-verification` envelope), **not** a statement that the block meets
+its ratified spec: the grader does not read the spec rows, and the area and
+power rows stay missed ([#700](https://github.com/2AMLogic/gf180-trng/issues/700)).
+See "Item 5 digital" below. Items 1, 2, 9 and 10 are `met` on an
 artifact-anchored inventory, which means something much narrower than their
 names suggest: see "Items 1, 2, 9 and 10 are cited from hashed inventories"
 below before reading anything into them.
@@ -38,7 +44,7 @@ reading anything into it. Item 8 analog is
 `met` on both partitions" below. An item-8 `met` means a current aggregate
 exists, not that the rows in it pass.
 That is the honest state of the block; the rest of this file is why each of
-the other five reads the way it does.
+the other four reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -70,6 +76,9 @@ signoff/
   evidence/characterization-digital.generic.json   item 8 (digital)'s generic evidence envelope
   evidence/characterization-analog.generic.json    item 8 (analog)'s generic evidence envelope
   records/t1-tier-report.json                      the verdict of record (generated)
+  evidence/digital-sta/klt_sta_response.json       item 5 (digital)'s native klt sta response, 15 corners
+  evidence/digital-sta/request.json                its request (SPEF paths are regenerated, not committed)
+  evidence/digital-sta/comparison.json             its worst setup/hold against the Markdown sweep records
   evidence/post-route/gate_klt_response.json       item 7 (digital)'s native klt functional-verification response
   evidence/post-route/publication.json            its freshness pins (netlist, SDF, raw evidence) and coverage limits
   publish_item7.py                                 publishes a successful post-route run as the 7.digital citation
@@ -123,7 +132,7 @@ label.
 ## Running it
 
 ```bash
-pip install "klayout-tools==0.7.0"   # the grader; no PDK, no KLayout GUI needed (klt-pin: grader)
+pip install "klayout-tools==0.8.0"   # the grader; no PDK, no KLayout GUI needed (klt-pin: grader)
 python3 signoff/check.py             # verify (what CI runs)
 python3 signoff/check.py --write     # regenerate the verdict of record
 npm run check:signoff                # same as `python3 signoff/check.py`
@@ -433,7 +442,7 @@ requires of the claimant rather than of the tool.
 | 2 Layout | **`met`** | **`met`** | Cites `evidence/t1-item-2-{analog,digital}.json`, bound to `evidence/inventory-2-{analog,digital}.json`: the hand-drawn cell, ring and block streams with their reference netlists and the composed `layout/floorplan/trng_floorplan.gds` (analog), and `layout/digital/trng_top.gds` with its DEF, as-built netlist, SDF and LVS reference (digital). The stream the item 3/4 citations pin (`layout/blocks/combiner_sampler/combiner_sampler.gds`, `layout/digital/trng_top.gds`) is a member of its inventory and `check.py` holds its hash to those manifest pins. DRC/LVS are not re-run: `layout/verify.py --require-tools` and the other tool-gated checks run only in `pdk-nightly.yml`. The `met` does not assert the layout meets the area budget. |
 | 3 DRC clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.drc.json`, digital cites `layout/digital/reports/drc.json` — both `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 1`, the `topology.power_only_pruned` warning only). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies body ties: `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). Power connectivity is `"unchecked"` on analog and a computed `"match"` on digital since [#662](https://github.com/2AMLogic/gf180-trng/issues/662). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
-| 5 Corner verification | `unmet` / `no_evidence` | `unmet` / `no_evidence` | This block's largest *real* gap, and an evidence-format gap on top of it — but the two partitions' format gaps are not the same kind. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power). The digital half accepts a `klt sta`/`klt functional-verification`/`klt sim` envelope and remains genuinely producible: the fifteen-corner digital STA sweep is recorded as Markdown rather than emitted in that form, and [#322](https://github.com/2AMLogic/gf180-trng/issues/322) found why that is not simply unperformed work: `klt sta` can time the committed DEF at the five liberty corners, but not as the same analysis the sweep records (see "Item 5 digital: what a `klt sta` envelope is, and is not" below), so no `5.digital` citation is made. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
+| 5 Corner verification | `unmet` / `no_evidence` | **`met`** | This block's largest *real* gap on the analog side, and a narrower one on the digital side. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power), and the grader does not read them. **Digital** (#699) cites two native envelopes, both graded `met`: `evidence/digital-sta/klt_sta_response.json`, one `klt sta` request over the committed routed DEF at all fifteen (liberty × interconnect) points with a propagated CTS clock, per-corner OpenRCX SPEF and the trunk input transitions, pinned and `input_verified: true`; and `evidence/post-route/gate_klt_response.json`, the item-7 functional suite, at **one** corner. See "Item 5 digital" below for what that does and does not say; the area and power rows ([#700](https://github.com/2AMLogic/gf180-trng/issues/700)) are unchanged. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
 | 6 Monte Carlo | `unmet` / `no_evidence` | `unmet` / `no_evidence` | `sim/characterization-worst-corner-and-mc-mismatch.md` is a real Monte Carlo campaign with recorded seeds, sample counts, two PVT points and a deterministic negative control. Item 6 accepts only a `klt yield` report, and none exists. As of 2026-10-17 no reproducible install route for `klt yield` exists at any released `klayout-tools`: the verb needs the `klt_yield_native` extension, and `uvx --from "klayout-tools[yield]==0.7.0" klt yield --help` fails to resolve (`klt-yield-native` is not on PyPI, HTTP 404 on its simple index), while the `klayout-tools` GitHub releases carry no wheel assets. The wheel publication is tracked upstream as klayout-tools#2900 (open); klayout-tools#2531 and #2714 are closed but did not make a wheel reachable. The only remaining route is an unpinned Rust source build, which is rejected as non-reproducible. See "Item 6: install route and statistical rows" below. Separately, klayout-tools#2480 makes the campaign's own `sample_size.verdict` and negative-control result (`undersized_sample` / `negative_control_not_detected`) grading inputs, so a `klt yield` report over this campaign is not automatically a `met` verdict even once one can be produced. |
 | 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
@@ -590,7 +599,7 @@ purpose:
 
 | Role | Build | Where it is pinned |
 |---|---|---|
-| **Grader** — parses the T1 checklist and renders the verdict | `0.7.0` (released) | `signoff/check.py`'s `KLT_GRADER_PIN`; CI's `signoff` job |
+| **Grader** — parses the T1 checklist and renders the verdict | `0.8.0` (released) | `signoff/check.py`'s `KLT_GRADER_PIN`; CI's `signoff` job |
 | **Producer, analog** — `layout/reports/*` | `0.6.0` (released; tag `v0.6.0`, commit `c622e8addb36`), with `klayout==0.30.10` | `.github/workflows/pdk-nightly.yml`, per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md) as amended; `layout/reports/environment.json`'s `klt_origin` |
 | **Producer, digital** — `layout/digital/reports/*` | `0.6.0` for DRC/LVS; `0.5.0+g32f69f811682` for the place-and-route that built the stream | recorded in each envelope's own `provenance.klt_version` |
 
@@ -993,7 +1002,7 @@ limits that travel with these citations:
   (`design/xschem/` + `design/*.spice` analog; the `.v` trees digital).
   `design/xschem/trng_top.sch` is analog-side capture of the top-level wiring.
 
-**Grader pin move.** These rows need klayout-tools 0.7.0, so
+**Grader pin move (0.7.0, #653).** These rows need klayout-tools 0.7.0, so
 `signoff/check.py`'s new `KLT_GRADER_PIN` is `0.7.0`. `KLT_PIN` stays `0.6.0`:
 it is the **producer** pin DR-0026 ratifies for the layout reports, and the
 publishers and `layout/floorplan/erc_supply.py` refuse any other build. The
@@ -1004,6 +1013,15 @@ reason**, 8 of 22 stayed 8 of 22, and only the report's `build.*`,
 `grading_ruleset_id` and `source_doc_content_hash` (and the checklist prose
 copied into each row) moved. The eight new `met` rows are therefore entirely
 the new citations, not the pin.
+
+**Grader pin move (0.8.0, #699).** Item 5 digital needs klayout-tools 0.8.0:
+per-port `input_transitions`, a `spef` map keyed by interconnect corner and
+`propagated_clock` (klayout-tools#3227, #3228, #2739) are what let one `klt
+sta` request state the sweep's analysis. `KLT_GRADER_PIN` is `0.8.0`; `KLT_PIN`
+(the producer pin) stays `0.6.0`. Measured by re-grading the manifest as it
+stood before #699 under 0.8.0: **no row changed status or reason**; only
+`build.*` and `grading_ruleset_id` moved. The one row change, item 5 digital
+`unmet` to `met`, is the new citation.
 
 ### Disclosures the claimant owes, not the grader
 
@@ -1053,42 +1071,71 @@ problem with a different fix:
   upstream as a tool gap, per this repo's friction protocol:
   [klayout-tools#2342](https://github.com/2AMLogic/klayout-tools/issues/2342).
 
-## Item 5 digital: what a `klt sta` envelope is, and is not
+## Item 5 digital
 
-[#322](https://github.com/2AMLogic/gf180-trng/issues/322) asked whether the
-fifteen-corner digital STA sweep (`sim/tb/digital-sta-power/run_sta.py`) can
-be emitted as a graded `klt` envelope. Findings against the pinned klt 0.6.0
-(DR-0026):
+The grader wants two kinds for the digital column: a `klt sta` envelope and a
+`klt functional-verification` envelope (citing one grades `partial_coverage`).
+[#322](https://github.com/2AMLogic/gf180-trng/issues/322) declined to cite a
+`klt sta` run because klt 0.6.0 could not state the analysis the fifteen-corner
+sweep (`sim/tb/digital-sta-power/run_sta.py`) records.
+[#699](https://github.com/2AMLogic/gf180-trng/issues/699) cites both, after
+klayout-tools#2858 and #2739 shipped in 0.8.0 and the grader pin moved to it.
 
-- **What the grader accepts.** Item 5's digital column accepts a `klt sta`
-  envelope (also `klt functional-verification`, and `klt sim`). A `sta`
-  citation passes when every corner in the envelope's own `corners[]` has
-  `timing_status: "constrained"` and non-negative setup and hold slack. The
-  graded corner set is whatever the cited request declared in `pdk.corners`.
-  The grader does **not** read this block's spec rows: a `met` would say
-  nothing about the area and power rows the digital section misses.
-- **What `klt sta` can produce here.** One request over the committed
-  `layout/digital/trng_top.def` (with `--pdk gf180mcuD`; without it klt
-  resolves a different PDK variant and fails to parse the DEF) with the five
-  liberty corners the library ships in the 3.3 V family returns
-  `constrained` at all five, worst setup +33.5 ns (`ss_125C_3v00`) and worst
-  hold +0.647 ns (`ff_n40C_3v60`). Run as a probe against a scratch manifest,
-  that envelope graded item 5 digital `met`.
-- **Why it is not cited.** That envelope is a different, weaker analysis than
-  the sweep it would stand beside: an ideal clock (the sweep propagates the
-  CTS-built clock; klayout-tools#2739), no routing parasitics (the sweep
-  annotates OpenRCX SPEF at min/nom/max interconnect; klt has no verb that
-  extracts a routed DEF's parasitics at a chosen corner, and `spef` is one
-  path per request), no per-port `set_input_transition` for the six trunk
-  ports, and 5 liberty corners rather than the 15 (liberty x interconnect)
-  points. Citing it would flip item 5 digital to `met` on an analysis the
-  Markdown records do not describe, while the ratified area and power rows
-  remain missed. This repo does not do that. The gaps are filed generically at
-  klayout-tools#2858 (and #2739).
-- **Result.** No `5.digital` entry is added to `block-manifest.json`; item 5
-  stays `unmet` / `no_evidence` on both partitions and the verdict of record
-  is unchanged. When the upstream gaps close, the sweep's producer is the
-  caller that should switch to `klt sta`.
+**The `klt sta` envelope** (`evidence/digital-sta/klt_sta_response.json`) is
+one request, `python3 sim/tb/digital-sta-power/run_sta.py --klt-sta`, over the
+committed `layout/digital/trng_top.def`: `constraints.propagated_clock` (the
+CTS-built tree, as the sweep does), the `spef` map keyed `min`/`nom`/`max`,
+`input_transitions` for the trunk ports and a `pdk.corners` list of the five
+liberty corners, so the response carries 5 × 3 = 15 `corners[]` entries. Every
+one is `constrained`, setup and hold violation counts are 0, worst setup
++31.22 ns to +44.61 ns (50 ns constraint) and worst hold +0.695 ns
+(`ff_n40C_3v60`, `min`) up to +2.38 ns.
+
+**It is the same analysis as the Markdown records, and that is checked, not
+asserted.** `run_sta.py --klt-sta` compares each point's worst setup and worst
+hold against the newest committed `digital-sta-power` record of that point and
+exits non-zero beyond 1 ps; `evidence/digital-sta/comparison.json` is the
+committed result: the largest difference over all 30 numbers is 0.05 ps (a
+rounding difference, klt reports five significant figures). Two stated
+differences remain, neither of which moved a number:
+
+- **No transition on `clk`.** `klt sta` rejects an `input_transitions` entry
+  on the clock port, whereas the sweep also states the `clk` trunk's. The five
+  other trunk ports are stated. Comparing against the records, the omission is
+  below the 0.05 ps above.
+- **The SPEFs are caller-side inputs.** klt has no verb that extracts a routed
+  DEF's parasitics at a chosen corner (klayout-tools#2858's close note), so
+  the three SPEFs are written by OpenRCX inside `run_sta.py` (one extraction
+  per interconnect corner) and not committed, as with the sweep's own. The
+  envelope records each one's `spef_path` (not a hash) and pins the DEF
+  (`provenance.input.content_hash`, `input_verified: true`). `check.py`
+  re-hashes the DEF through `def_path`; the SPEFs are regenerated by the command
+  above, so their freshness is carried by the comparison against the records,
+  not by a pin.
+- **Annotation coverage.** Each corner's `spef_annotation` reports 1479 of 1513
+  design nets annotated, the same 1479 nets the records' `spef_nets` counts;
+  the unannotated drivers are the 28 floating CTS `clkload` cells and nets
+  with no routed wire. It is reported, not graded.
+
+**The functional envelope** is the item-7 digital citation
+(`evidence/post-route/gate_klt_response.json`, 8 of 8 scenarios, SDF
+annotated), cited again here, with its own limits (see "Item 7 digital"):
+**one corner** (SDF `typ` generated from `ss_125C_3v00`), cell `IOPATH` delay
+only. Item 5 asks for per-corner per-test results; this is not that, and the
+README states why instead of presenting it as such. `layout/digital/gen_sdf.py`
+writes one SDF at one liberty corner (its `min_typ_max` is "identical -- one
+liberty corner only"), no multi-corner SDF exists, and Icarus enforces no
+setup/hold check, so a run at another corner would exercise only cell delay
+scaling against a 50 ns clock. Timing at the other fourteen points is the `klt
+sta` envelope's job and is covered by it. A multi-corner SDF export plus
+per-corner regressions would be new producers, not a re-publication, and are
+not attempted.
+
+**What `met` here does not say.** The grader does not read this block's spec
+rows. Item 5 digital reads `met` while the ratified area and power rows are
+still missed ([#700](https://github.com/2AMLogic/gf180-trng/issues/700),
+`sim/characterization-digital-sta-area-power.md`), and the T1 tier is still
+`null`. Do not read it as "the digital block meets its spec at every corner".
 
 ## Item 5 analog: which spec rows a `klt sim` envelope could cover
 
@@ -1161,17 +1208,13 @@ In dependency order, not effort order:
    `power_connectivity`/`body_verification` are real verdicts
    (`"unchecked"`/`"unverified"`) instead of `null`. Neither is a pass, and
    neither advances item 11.
-3. **Emit corner evidence as a `klt sta`/`klt functional-verification`
-   envelope** for the digital half, alongside this repo's Markdown records.
-   [#322](https://github.com/2AMLogic/gf180-trng/issues/322) investigated and
-   stopped at a finding rather than citing a weaker analysis: see "Item 5
-   digital: what a `klt sta` envelope is, and is not". Blocked on
-   klayout-tools#2739 (propagated clock) and klayout-tools#2858 (routed-DEF
-   parasitics at a chosen interconnect corner, interconnect-corner matrix,
-   per-port input transition). Item 5's *design* gap (four ratified
-   rows still missed) is real and separate. The analog half is not on this
-   list as work this block can do today, for a different reason than it was:
-   `klt sim` can express a caller-side post-processed measurement since
+3. ~~**Emit corner evidence as a `klt sta`/`klt functional-verification`
+   envelope** for the digital half~~ — done in
+   [#699](https://github.com/2AMLogic/gf180-trng/issues/699): see "Item 5
+   digital". What remains: the functional envelope covers one corner, and item
+   5's *design* gap (four ratified rows still missed, #700) is real and
+   separate. The analog half is not on this list as work this block can do
+   today: `klt sim` can express a caller-side post-processed measurement since
    klayout-tools 0.7.0 (#2533), but no ratified analog row has a measured
    quantity and a bound to put in one -- see "Item 5 analog: which spec rows a
    `klt sim` envelope could cover".

@@ -533,7 +533,7 @@ jobs:
       # existing evidence and produces none. Do not move one because the
       # other moved.
       - name: Install the pinned signoff grader (klt; no PDK, no KLayout GUI)
-        run: pip install "klayout-tools==0.7.0"  # klt-pin: grader
+        run: pip install "klayout-tools==0.8.0"  # klt-pin: grader
 
       # Runs with --require-tools so the tool-absent self-skip path can never
       # stand in for a pass here. Fails on evidence rot (a cited envelope's
