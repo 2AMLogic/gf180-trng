@@ -130,7 +130,7 @@ KLT_PIN = "0.6.0"
 #: (klayout-tools#2718/#2843), and moving it re-renders the verdict but does
 #: not re-produce any report. sim/tools/klt_pin_sites.py holds every
 #: restatement of the grader pin (see that tool's "Grader mentions") to this constant.
-KLT_GRADER_PIN = "0.7.0"
+KLT_GRADER_PIN = "0.8.0"
 #: The KLayout engine release KLT_PIN is installed with (DR-0026): the engine
 #: the release records it was tested against. Not checked by this script --
 #: `klt signoff` does not depend on it -- but it is half of the normative
@@ -811,13 +811,16 @@ def check_envelope_against_its_input(
         ("file", "provenance.input.content_hash"),
         ("layout", "environment.layout_sha256"),
         ("source", "provenance.input.content_hash"),
+        # `klt sta` (schema 2) names its DEF as a `{path, scope}` object.
+        ("def_path", "provenance.input.content_hash"),
     ]
 
     for name_field, digest_field in kind_hints:
         named = envelope.get(name_field)
-        if name_field == "layout" and isinstance(named, dict):
-            # `klt pex` (schema 2) writes `layout` as a `{path, scope}` object
-            # and pins the stream it extracted in provenance.input.content_hash.
+        if isinstance(named, dict):
+            # `klt pex` (schema 2) writes `layout` (and `klt sta` its
+            # `def_path`) as a `{path, scope}` object and pins the file it read
+            # in provenance.input.content_hash.
             named = named.get("path") if named.get("scope") == "repo" else None
             digest_field = "provenance.input.content_hash"
         if not isinstance(named, str) or not named:

@@ -141,6 +141,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import platform
 import re
 import shutil
@@ -1582,6 +1583,163 @@ def write_record(point: Point, values: dict, pdk, git: dict, openroad: str,
 # --------------------------------------------------------------------------- #
 
 
+# --------------------------------------------------------------------------- #
+# `klt sta` envelope (#699): the same 15-point analysis as a graded response
+# --------------------------------------------------------------------------- #
+
+#: Where the `klt sta` request, its native response and the comparison against
+#: the Markdown records are committed (T1 item 5, digital column).
+KLT_STA_EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence" / "digital-sta"
+
+#: The producer: `klayout-tools` 0.8.0 is the first release whose `klt sta`
+#: takes per-port `input_transitions` (klayout-tools#3227) and a `spef` map
+#: keyed by interconnect corner (#3228); `constraints.propagated_clock` is
+#: #2739. Override with `TRNG_STA_KLT` (e.g. a `uvx` venv's binary).
+KLT_STA_MIN_VERSION = "0.8.0"
+
+#: A klt-vs-record disagreement larger than this, on any of the 15 points'
+#: worst setup or worst hold slack, means the two are not the same analysis.
+KLT_STA_SLACK_TOLERANCE_NS = 1e-3
+
+
+def _spef_tcl(pdk, rc: str, spef_path: Path) -> str:
+    """One OpenRCX extraction at interconnect corner ``rc``, written as SPEF.
+
+    The same `define_process_corner` / `extract_parasitics` / `write_spef`
+    lines `_tcl()` runs per point. A SPEF is a property of the DEF and the
+    interconnect deck alone, so one extraction per ``rc`` serves all five
+    liberty corners (the liberty read here only lets `read_def` resolve cells).
+    """
+    paths = deck_paths(pdk)
+    return "\n".join([
+        f"read_liberty {liberty_path(pdk, 'tt_025C_3v30')}",
+        f"read_lef {paths['tech_lef']}",
+        f"read_lef {paths['cell_lef']}",
+        f"read_def {DEF_PATH}",
+        "define_process_corner -ext_model_index 0 X",
+        f"extract_parasitics -ext_model_file {rcx_rules_path(pdk, rc)}",
+        f"write_spef {spef_path}",
+    ]) + "\n"
+
+
+def klt_sta_request(pdk, spef_files: dict[str, str]) -> dict:
+    """The `klt sta` request for the whole sweep: propagated CTS clock, the six
+    trunk transitions (in the table domain, identical for every deck here --
+    asserted), and a 5 liberty x 3 interconnect grid in one response."""
+    slews = {liberty_slew_convention(liberty_path(pdk, lib)) for lib in LIBERTY_CORNERS}
+    if len(slews) != 1:
+        raise StaError(
+            "the five liberty decks declare different slew conventions; one "
+            "`input_transitions` map cannot state the trunks for all of them"
+        )
+    (slew,) = slews
+    return {
+        "def": str(DEF_PATH.relative_to(REPO_ROOT)),
+        "pdk": {
+            "cell_library": CELL_LIBRARY,
+            "corners": list(LIBERTY_CORNERS),
+        },
+        "spef": dict(spef_files),
+        "constraints": {
+            "clock_port": CLOCK_PORT,
+            "clock_period_ns": CONSTRAINT_PERIOD_NS,
+            "propagated_clock": True,
+            "input_transitions": {
+                t.def_pin: round(t.transition_ns(slew), 6)
+                for t in digital_facing_trunks()
+                if t.def_pin != CLOCK_PORT  # klt sta refuses a transition on the clock port
+            },
+        },
+    }
+
+
+def record_slacks(records_dir: Path) -> dict[tuple[str, str], tuple[float, float]]:
+    """(liberty, interconnect) -> (worst setup, worst hold) in ns, from the
+    newest committed `digital-sta-power` record of each of the fifteen points."""
+    found: dict[tuple[str, str], tuple[str, float, float]] = {}
+    for path in sorted(records_dir.glob("*-digital-sta-power-[0-9][0-9].md")):
+        text = path.read_text()
+        lib = re.search(r"^\s+liberty: \S+__(\S+)$", text, re.M)
+        rc = re.search(r"^\s+interconnect: (\w+) ", text, re.M)
+        setup = re.search(r"^- `worst_setup_slack_ns`: (\S+)$", text, re.M)
+        hold = re.search(r"^- `worst_hold_slack_ns`: (\S+)$", text, re.M)
+        if not (lib and rc and setup and hold):
+            continue
+        key = (lib.group(1), rc.group(1))
+        if key not in found or path.name > found[key][0]:
+            found[key] = (path.name, float(setup.group(1)), float(hold.group(1)))
+    return {k: (v[1], v[2]) for k, v in found.items()}
+
+
+def compare_envelope(response: dict, records: dict) -> list[dict]:
+    """One row per envelope corner: klt's worst setup/hold against the record's."""
+    rows = []
+    for entry in response["corners"]:
+        key = (entry["corner"].removeprefix(f"{CELL_LIBRARY}__"), entry["interconnect_corner"])
+        setup, hold = records[key]
+        rows.append({
+            "liberty": key[0], "interconnect": key[1],
+            "timing_status": entry["timing_status"],
+            "klt_setup_ns": entry["worst_slack_ns"], "record_setup_ns": setup,
+            "klt_hold_ns": entry["worst_hold_slack_ns"], "record_hold_ns": hold,
+        })
+    return rows
+
+
+def run_klt_sta(write: bool) -> int:
+    pdk = resolve_pdk()
+    missing = check_environment(pdk)
+    if missing:
+        for reason in missing:
+            print(f"ERROR  {reason}", file=sys.stderr)
+        return 3
+    klt = os.environ.get("TRNG_STA_KLT") or "klt"
+    work = WORK_DIR / "klt-sta"
+    work.mkdir(parents=True, exist_ok=True)
+    spefs = {}
+    for rc in RC_CORNERS:
+        spef = work / f"{HDL_TOPLEVEL}.{rc}.spef"
+        script = work / f"spef-{rc}.tcl"
+        script.write_text(_spef_tcl(pdk, rc, spef))
+        _run_openroad(script, work / f"spef-{rc}.log")
+        spefs[rc] = spef.name
+    request = klt_sta_request(pdk, spefs)
+    request["def"] = os.path.relpath(DEF_PATH, work)  # portable: resolved against the request's directory
+    request_path = work / "request.json"
+    request_path.write_text(json.dumps(request, indent=2) + "\n")
+    out = work / "response.json"
+    done = subprocess.run(
+        [klt, "sta", "--pdk", pdk.variant, "--format", "json", str(request_path)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT), check=False,
+    )
+    out.write_text(done.stdout)
+    if done.returncode != 0:
+        print(done.stderr, file=sys.stderr)
+        raise StaError(f"klt sta exited {done.returncode}; see {out}")
+    response = json.loads(done.stdout)
+    rows = compare_envelope(response, record_slacks(SIM_DIR / "records"))
+    worst = max(
+        max(abs(r["klt_setup_ns"] - r["record_setup_ns"]), abs(r["klt_hold_ns"] - r["record_hold_ns"]))
+        for r in rows
+    )
+    for r in rows:
+        print(f"{r['liberty']:14s} {r['interconnect']:4s} {r['timing_status']:12s} "
+              f"setup {r['klt_setup_ns']:9.4f} vs {r['record_setup_ns']:9.4f}  "
+              f"hold {r['klt_hold_ns']:8.4f} vs {r['record_hold_ns']:8.4f}")
+    print(f"max |klt - record| = {worst:.6f} ns (tolerance {KLT_STA_SLACK_TOLERANCE_NS})")
+    if write:
+        KLT_STA_EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(request_path, KLT_STA_EVIDENCE_DIR / "request.json")
+        shutil.copyfile(out, KLT_STA_EVIDENCE_DIR / "klt_sta_response.json")
+        (KLT_STA_EVIDENCE_DIR / "comparison.json").write_text(json.dumps({
+            "tolerance_ns": KLT_STA_SLACK_TOLERANCE_NS,
+            "max_abs_difference_ns": worst,
+            "rows": rows,
+        }, indent=2) + "\n")
+        print(f"wrote {KLT_STA_EVIDENCE_DIR.relative_to(REPO_ROOT)}/")
+    return 0 if worst <= KLT_STA_SLACK_TOLERANCE_NS else 1
+
+
 def grid(liberty: list[str] | None, rc: list[str] | None) -> list[Corner]:
     libs = liberty or list(LIBERTY_CORNERS)
     rcs = rc or list(RC_CORNERS)
@@ -1605,6 +1763,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--list", action="store_true", help="print the corner grid and exit")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument(
+        "--klt-sta", action="store_true",
+        help="(#699) run the 15-point sweep as ONE `klt sta` request (propagated "
+             "clock, per-corner SPEF, trunk input transitions) and compare its "
+             "worst setup/hold against the committed records; no records minted")
+    ap.add_argument(
         "--activity", nargs="?", const="", default=None, metavar="MANIFEST",
         help="opt-in (#453): instead of the uniform-activity sweep, run the "
              "observed-activity flow over the traces in MANIFEST (default: "
@@ -1618,6 +1781,13 @@ def main(argv: list[str] | None = None) -> int:
     except StaError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+
+    if args.klt_sta:
+        try:
+            return run_klt_sta(write=not args.no_write)
+        except StaError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
 
     if args.list:
         for c in corners:

@@ -1,0 +1,30 @@
+{
+  "def": "../../../digital/trng_top.def",
+  "pdk": {
+    "cell_library": "gf180mcu_fd_sc_mcu9t5v0",
+    "corners": [
+      "ss_125C_3v00",
+      "ss_n40C_3v00",
+      "tt_025C_3v30",
+      "ff_125C_3v60",
+      "ff_n40C_3v60"
+    ]
+  },
+  "spef": {
+    "min": "trng_top.min.spef",
+    "nom": "trng_top.nom.spef",
+    "max": "trng_top.max.spef"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 50.0,
+    "propagated_clock": true,
+    "input_transitions": {
+      "rst_n": 0.029774,
+      "raw_bit": 0.043798,
+      "raw_valid": 0.03992,
+      "ring_bit[0]": 0.033881,
+      "ring_bit[1]": 0.03304
+    }
+  }
+}
