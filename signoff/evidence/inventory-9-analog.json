@@ -257,6 +257,26 @@
         }
       ]
     },
+    "power-switch": {
+      "invocation": {
+        "command": "python3 sim/tools/power_switch.py emit --check",
+        "documented_in": "sim/tb/power-switch/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/power-switch/README.md",
+          "sha256": "sha256:b4a9b4c77955129db0c55080ebdf233f20539c2da9d6b465a03537c021bbf705"
+        },
+        {
+          "path": "sim/tb/power-switch/request-grid.json",
+          "sha256": "sha256:aad1877fb73232fda933fa4532156e6704e2dcd30749db0af0897a817a7ddf04"
+        },
+        {
+          "path": "sim/tb/power-switch/tb_power_switch.sp",
+          "sha256": "sha256:a69d975a4fe296272a3cdd7a702d59a87cc7932128746c535379cee8050aba81"
+        }
+      ]
+    },
     "ring-liveness-tap-phase-buffered": {
       "invocation": {
         "command": "python3 sim/run_corners.py ring-liveness-tap-phase-buffered",
@@ -1532,11 +1552,11 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:fd221b2f52b98fa39adff1b0119d8d0c43c1ee5419ddfc6fd45307970dc1e0e9"
+      "sha256": "sha256:a24d68f6e4b9cc7d30de167990ac4a5db3e94656acf87c6881e47db6cece14ca"
     },
     {
       "path": "sim/README.md",
-      "sha256": "sha256:12f6901d38a39f745e2f9c025f85381933cd001a503f7f922378b1382a5e692c"
+      "sha256": "sha256:39da1c2f6675e5ff17422a2126d7e2b4cf82730a840952a415e8588fbeb60547"
     }
   ]
 }
