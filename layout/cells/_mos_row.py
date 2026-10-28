@@ -114,7 +114,7 @@ _TESTCELL_DIR = os.path.join(
 )
 sys.path.insert(0, os.path.abspath(_TESTCELL_DIR))
 
-from gdsii import Label, Rect, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers, matching klt's curated decks (same set
@@ -410,4 +410,4 @@ def build_cell(
     channel_y0 = max(nmos_landing_top, pmos_landing_top) + CHANNEL_MARGIN
     _route_nets(canvas, terminals, pins, channel_y0)
 
-    return write_gds(path, library_name=top_cell, structures=[(top_cell, canvas.rects, canvas.labels)])
+    return write_gds(path, library_name=top_cell, structures=[(top_cell, add_implants(canvas.rects), canvas.labels)])

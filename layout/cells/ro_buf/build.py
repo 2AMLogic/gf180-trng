@@ -86,7 +86,7 @@ _CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from _build_cli import gds_file, make_check, make_main  # noqa: E402
-from gdsii import Label, Rect, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
 from _geometry import PAD_H, _narrow, _pad  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -262,7 +262,7 @@ def build(path: str | None = None) -> bytes:
     return write_gds(
         path or gds_path(),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, rects, labels)],
+        structures=[(TOP_CELL, add_implants(rects), labels)],
     )
 
 

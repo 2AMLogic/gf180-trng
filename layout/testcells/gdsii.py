@@ -85,6 +85,56 @@ class Rect:
             raise ValueError(f"degenerate rectangle: {self}")
 
 
+#: gf180mcu drawn layers the implant helper reads and writes.
+_NWELL = (21, 0)
+_COMP = (22, 0)
+_PPLUS = (31, 0)
+_NPLUS = (32, 0)
+
+#: Implant extension beyond every Comp edge, um. Clears the curated deck's
+#: Nplus/Pplus enclosure-of-Comp minimums with room to spare while keeping
+#: the two implants far apart (the NMOS and PMOS rows sit >= 1.2 um apart).
+IMPLANT_MARGIN_UM = 0.30
+
+
+def add_implants(rects: list[Rect], margin: float = IMPLANT_MARGIN_UM) -> list[Rect]:
+    """Return `rects` plus the implant coverage every Comp polygon needs.
+
+    Each Comp rectangle whose centre lies inside a drawn Nwell rectangle gets
+    a Pplus rectangle (PMOS diffusion); every other Comp gets Nplus (NMOS
+    diffusion). Abutting Comp rectangles grow into overlapping implants of
+    one polarity, which the deck merges. klt >= 0.8.0's `comp.coverage.1`
+    forbids Comp with neither implant, so the hand-drawn fixtures call this
+    on their final rectangle list. The input list is not modified.
+    """
+    wells = [(r.x0, r.y0, r.x1, r.y1) for r in rects if (r.layer, r.datatype) == _NWELL]
+
+    def in_well(r: Rect) -> bool:
+        cx, cy = (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2
+        return any(
+            min(w[0], w[2]) <= cx <= max(w[0], w[2])
+            and min(w[1], w[3]) <= cy <= max(w[1], w[3])
+            for w in wells
+        )
+
+    out = list(rects)
+    for r in rects:
+        if (r.layer, r.datatype) != _COMP:
+            continue
+        layer = _PPLUS if in_well(r) else _NPLUS
+        out.append(
+            Rect(
+                layer[0],
+                layer[1],
+                min(r.x0, r.x1) - margin,
+                min(r.y0, r.y1) - margin,
+                max(r.x0, r.x1) + margin,
+                max(r.y0, r.y1) + margin,
+            )
+        )
+    return out
+
+
 @dataclass(frozen=True)
 class Label:
     """One TEXT element, in micrometres, on one (layer, texttype).

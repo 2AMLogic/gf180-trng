@@ -39,7 +39,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gdsii import Label, Rect, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layer numbers -- gf180mcu drawn layers, matching klt's curated decks.
@@ -200,7 +200,7 @@ def build(stem: str, path: str | None = None) -> bytes:
     return write_gds(
         path or gds_path(stem),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, builder(), _labels())],
+        structures=[(TOP_CELL, add_implants(builder()), _labels())],
     )
 
 
