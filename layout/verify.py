@@ -102,6 +102,9 @@ ro_nand2_ring2_cell = _load_build_module(
 ro_buf_cell = _load_build_module(
     "layout_cells_ro_buf_build", CELLS_DIR / "ro_buf" / "build.py"
 )
+power_switch_cell = _load_build_module(
+    "layout_cells_power_switch_build", CELLS_DIR / "power_switch" / "build.py"
+)
 xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
 sampler_dff_cell = _load_build_module(
     "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
@@ -128,6 +131,7 @@ _STALENESS_CHECKS = (
     ("layout/cells/ro_nand2", ro_nand2_cell.check),
     ("layout/cells/ro_nand2_ring2", ro_nand2_ring2_cell.check),
     ("layout/cells/ro_buf", ro_buf_cell.check),
+    ("layout/cells/power_switch", power_switch_cell.check),
     ("layout/cells/xor2", xor2_cell.check),
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
     ("layout/rings/ro_ring11", ro_ring11_cell.check),
@@ -423,6 +427,30 @@ EXPECTATIONS: dict[str, dict] = {
             # One inverter stage: 1 NMOS + 1 PMOS, both untapped.
             "category_counts": {"device.body_unverified": 2, "topology": 1},
             "body_unverified": {"nfet": 1, "pfet": 1},
+            "power_connectivity": "unchecked",
+            "error_count": 0,
+        },
+    },
+    "power_switch": {
+        # A real design cell (issue #707): the PMOS header for the gated digital
+        # supply -- see layout/cells/power_switch/build.py for the geometry and
+        # what it deliberately does not draw (no well tap, no implants).
+        "why": (
+            "design/power_switch.spice's power_switch (the PMOS header that "
+            "gates the digital section's supply, 40 x 10um fingers) must be "
+            "DRC-clean and LVS-match its hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/power_switch",
+        "top": "power_switch",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "power_switch.spice",
+            "status": "match",
+            # 40 PMOS fingers, none with a drawn well tap. klt reports ONE
+            # body_unverified disclosure for the whole parallel group (the 40
+            # fingers share every terminal) and two topology warnings.
+            "category_counts": {"device.body_unverified": 1, "topology": 2},
+            "body_unverified": {"pfet": 40},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },

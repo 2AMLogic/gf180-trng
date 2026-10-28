@@ -24,6 +24,18 @@
   ],
   "cells": [
     {
+      "path": "layout/cells/power_switch/build.py",
+      "sha256": "sha256:ba7d4fe87e70cb00dde8aeb780a27cc12d1e0bc2f79e1051237459e9dbeda80b"
+    },
+    {
+      "path": "layout/cells/power_switch/power_switch.gds",
+      "sha256": "sha256:616850f8ced68a0ba8b59f6964a74c52b0a934183aabf6b2389b4200979b42e2"
+    },
+    {
+      "path": "layout/cells/power_switch/power_switch.spice",
+      "sha256": "sha256:b135f02e38ebe90e6690248b0d3fdfe4c7161d3d7d7e6c930caaafc62842cf80"
+    },
+    {
       "path": "layout/cells/ro_buf/build.py",
       "sha256": "sha256:96d3e0d81f2972926cf17fe47a403df63576d7b9b26f57b8c8eccad0c91bb9b4"
     },

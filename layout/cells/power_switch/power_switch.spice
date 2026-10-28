@@ -1,0 +1,66 @@
+* power_switch -- LVS reference (schematic-side) netlist.
+*
+* Hand-written, NOT a copy of `klt extract` output -- see
+* layout/testcells/trng_tc_inv.spice for why that distinction matters (an
+* LVS run whose reference is the extractor's own output proves nothing).
+* Transcribed from design/power_switch.spice (exported from
+* design/xschem/power_switch.sch) at its default parameters wf=10u nfing=40
+* lsw=0.28u: one PFET with m=40, written here as the 40 single-finger devices the
+* drawn layout is, so the comparison does not depend on how the tool merges
+* parallel devices. It is independent of the geometry in this directory.
+*
+* Device topology:
+*
+*   vdd --[MP1..MP40: g=sleep, W=10, L=0.28]-- vvdd
+*
+* Device sizes must agree with layout/cells/power_switch/build.py's W_FINGER/
+* L_GATE/NFING -- `klt lvs` compares W and L as device properties.
+*
+* Bulk follows the gf180mcu curated extraction deck's documented behaviour (see
+* layout/README.md, "What the curated decks do and do not check"): the PMOS bulk is
+* a floating net, the unnamed well net, NOT the `vdd` that
+* design/xschem/power_switch.sch wires the bulk to. `NWELL_FLOAT` below is that net;
+* this cell draws no well tap, so the well bias to vdd is not verified here.
+
+.SUBCKT power_switch sleep vdd vvdd
+MP1 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP2 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP3 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP4 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP5 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP6 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP7 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP8 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP9 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP10 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP11 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP12 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP13 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP14 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP15 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP16 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP17 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP18 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP19 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP20 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP21 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP22 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP23 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP24 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP25 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP26 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP27 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP28 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP29 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP30 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP31 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP32 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP33 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP34 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP35 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP36 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP37 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP38 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP39 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+MP40 vvdd sleep vdd NWELL_FLOAT pfet L=0.28U W=10U
+.ENDS power_switch

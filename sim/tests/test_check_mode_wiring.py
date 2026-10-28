@@ -58,6 +58,10 @@ UNWIRED_ALLOWLIST = {
         "only the `run` subcommand needs the batch fleet; `emit --check` is offline and its drift "
         "comparison is exercised by test_committed_request_matches_grid in test_starved_hot_corner.py"
     ),
+    "power_switch.py": (
+        "only the `run` subcommand needs the batch fleet; `emit --check` is offline and is run via "
+        "cmd_emit(check=True) by test_power_switch.py"
+    ),
     "liveness_sampler_power.py": (
         "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_liveness_sampler_power.py"
