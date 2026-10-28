@@ -34,6 +34,10 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
+- **#707**: Power gating: design a custom power-switch cell for the digital section
+- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain
+- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
+- **#710**: Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2
 
 ## PRs Awaiting Review
 
@@ -61,6 +65,10 @@ Issues carrying `loom:curated`.
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
 - **#705**: Bump klayout-tools pin 0.6.0 → 0.8.0 *(curated)*
+- **#707**: Power gating: design a custom power-switch cell for the digital section *(curated)*
+- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain *(curated)*
+- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
+- **#710**: Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -78,10 +86,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 10 |
+| Curated | 14 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
