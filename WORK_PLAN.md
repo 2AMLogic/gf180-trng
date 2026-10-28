@@ -14,7 +14,7 @@ _None._
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
 
 ## Important
 
@@ -28,16 +28,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
+- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
-- **#707**: Power gating: design a custom power-switch cell for the digital section
-- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain
-- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
-- **#710**: Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2
 
 ## PRs Awaiting Review
 
@@ -49,7 +46,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#712**: sim: add power-intent spec and gate-level isolation/sequencing check for a gated digital section
 
 ## Proposed
 
@@ -65,10 +62,8 @@ Issues carrying `loom:curated`.
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
 - **#705**: Bump klayout-tools pin 0.6.0 → 0.8.0 *(curated)*
-- **#707**: Power gating: design a custom power-switch cell for the digital section *(curated)*
 - **#708**: Power gating: define and verify the power-intent flow for a gated digital domain *(curated)*
 - **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
-- **#710**: Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -83,13 +78,13 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 0 |
-| Very important | 0 |
+| Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 5 |
+| Ready (`loom:issue`) | 3 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 14 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 12 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
