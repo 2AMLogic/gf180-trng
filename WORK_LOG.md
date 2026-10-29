@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-28.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-29.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-29
+
+- **PR #722**: refactor: share one git ls-files wrapper across sim/tools scripts
+- **Issue #721** (closed): Consolidate duplicated git ls-files and file-SHA-256 helpers in sim/tools
 
 ### 2026-10-28
 
