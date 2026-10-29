@@ -364,9 +364,17 @@ INTERFACE_INVENTORY = [
         {"nor2_1": 8, "nand2_1": 8, "inv_1": 6, "and2_1": 6},
         "cond_avail / raw_avail / overflow conditions from the two counters",
     ),
-    ("raw packing shift register", {"dffrnq_1": 32}, "raw_shift, 32 bits"),
+    (
+        "raw packing shift register",
+        {"dffq_1": 32},
+        "raw_shift, 32 bits; no reset (fully overwritten before it is read, #709)",
+    ),
     ("raw packing clock gate", {"icgtp_1": 1}, "shift enabled on raw_valid"),
-    ("raw bit counter", {"dffrnq_1": 6}, "raw_bit_count, TRNG_LEVEL_BITS+2 bits"),
+    (
+        "raw bit counter",
+        {"dffrnq_1": 5},
+        "raw_bit_count, $clog2(TRNG_RAW_PACK_BITS) = 5 bits",
+    ),
     (
         "raw bit counter arithmetic",
         {"xor2_1": 5, "and2_1": 5, "nor2_1": 3, "nand2_1": 2, "inv_1": 1, "mux2_1": 6},

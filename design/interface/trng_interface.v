@@ -103,15 +103,19 @@ module trng_interface #(
     reg [PTR_W-1:0] cond_head, raw_head;
     reg [CNT_W-1:0] cond_count, raw_count_w;
 
+    // Shift register for packing raw samples. It has NO reset and is not
+    // cleared on a flush or after a word completes: a word is only ever pushed
+    // from raw_shift_nx on the 32nd absorbed sample since the last flush, by
+    // which time all 32 bits have been overwritten, so stale contents are
+    // unobservable. Dropping the clear lets each bit map to a plain dffq
+    // instead of a resettable dffrnq (design/digital_power_estimate.py).
     reg [31:0] raw_shift;
-    // 0..RAW_PACK_BITS-1. NOTE the width below is spelled in TRNG_LEVEL_BITS
-    // but what this counter counts is raw samples per packed word
-    // (TRNG_RAW_PACK_BITS = 32, so it needs 6 bits), NOT FIFO occupancy. The
-    // two coincide only because TRNG_LEVEL_BITS is 4. DR-0020 flags this:
-    // narrowing TRNG_LEVEL_BITS to fit FIFO_DEPTH = 2 would silently truncate
-    // this counter, so regmap.py deliberately leaves LEVEL_BITS at 4. Anyone
-    // narrowing it must re-derive this width from TRNG_RAW_PACK_BITS first.
-    reg [TRNG_LEVEL_BITS+1:0] raw_bit_count;
+    // 0..TRNG_RAW_PACK_BITS-1: the number of raw samples packed into the
+    // current word, sized from TRNG_RAW_PACK_BITS and nothing else (DR-0020
+    // flagged the old TRNG_LEVEL_BITS+2 spelling as a silent-truncation
+    // hazard for exactly this counter).
+    localparam integer RAW_CNT_W = $clog2(TRNG_RAW_PACK_BITS);
+    reg [RAW_CNT_W-1:0] raw_bit_count;
 
     // ---------------------------------------------------------------- decode
     wire reg_read_c  = reg_sel && !reg_write;
@@ -251,8 +255,7 @@ module trng_interface #(
             raw_head          <= {PTR_W{1'b0}};
             cond_count        <= {CNT_W{1'b0}};
             raw_count_w       <= {CNT_W{1'b0}};
-            raw_shift         <= 32'd0;
-            raw_bit_count     <= {(TRNG_LEVEL_BITS+2){1'b0}};
+            raw_bit_count     <= {RAW_CNT_W{1'b0}};
         end else begin
             ovf_data <= ovf_data_nx;
             ovf_raw  <= ovf_raw_nx;
@@ -277,19 +280,13 @@ module trng_interface #(
             if (flush_raw) begin
                 raw_head      <= {PTR_W{1'b0}};
                 raw_count_w   <= {CNT_W{1'b0}};
-                raw_shift     <= 32'd0;
-                raw_bit_count <= {(TRNG_LEVEL_BITS+2){1'b0}};
+                raw_bit_count <= {RAW_CNT_W{1'b0}};
             end else begin
-                if (raw_absorb) begin
-                    raw_shift     <= raw_shift_nx;
-                    raw_bit_count <= raw_word_done ? {(TRNG_LEVEL_BITS+2){1'b0}}
+                if (raw_absorb)
+                    raw_bit_count <= raw_word_done ? {RAW_CNT_W{1'b0}}
                                                    : raw_bit_count + 1'b1;
-                end
-                if (raw_word_done) begin
-                    raw_shift <= 32'd0;
-                    if (raw_room)
-                        raw_mem[raw_tail] <= raw_shift_nx;
-                end
+                if (raw_word_done && raw_room)
+                    raw_mem[raw_tail] <= raw_shift_nx;
                 if (pop_raw)
                     raw_head <= raw_head + 1'b1;
                 case ({raw_word_done && raw_room, pop_raw})
@@ -316,6 +313,12 @@ module trng_interface #(
             else if ((state == ST_STARTUP) && ht_startup_pass)
                 state <= ST_RUN;
         end
+    end
+
+    // Packing shift register: no reset, shifts only on an absorbed sample.
+    always @(posedge clk) begin
+        if (raw_absorb)
+            raw_shift <= raw_shift_nx;
     end
 
 endmodule
