@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "engine": "klayout",
   "layout": "layout/digital/trng_top.extracted.spice",
   "reference": "layout/digital/trng_top.pnr.v",
@@ -9,12 +9,16 @@
   "options": {
     "combine_devices": false,
     "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
     "flatten_layout": false,
     "flatten_reference": false,
     "netgen_setup": null,
     "parameter_tolerance": null,
     "compare_parameters": null,
     "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "compare_mos_flavour": false,
     "supply_nets": [
       "GND",
       "VCC",
@@ -22,9 +26,11 @@
       "VGND",
       "VPWR",
       "VSS"
-    ]
+    ],
+    "finfet_bulk": null
   },
   "hints_applied": null,
+  "constant_nets_applied": null,
   "status": "match",
   "power_connectivity": {
     "status": "match",
@@ -64,7 +70,6 @@
         "GF180MCU_FD_SC_MCU9T5V0__CLKBUF_8",
         "GF180MCU_FD_SC_MCU9T5V0__CLKINV_1",
         "GF180MCU_FD_SC_MCU9T5V0__CLKINV_2",
-        "GF180MCU_FD_SC_MCU9T5V0__CLKINV_3",
         "GF180MCU_FD_SC_MCU9T5V0__DFFQ_1",
         "GF180MCU_FD_SC_MCU9T5V0__DFFRNQ_1",
         "GF180MCU_FD_SC_MCU9T5V0__DFFSNQ_1",
@@ -120,11 +125,11 @@
         "GF180MCU_FD_SC_MCU9T5V0__XOR2_1",
         "GF180MCU_FD_SC_MCU9T5V0__XOR2_2"
       ],
-      "master_count": 83,
+      "master_count": 82,
       "corroborated": true,
       "reason": null
     },
-    "instance_count": 4960,
+    "instance_count": 5673,
     "expected_nets": null,
     "unchecked_expected_pins": [],
     "findings": [],
@@ -138,17 +143,19 @@
     "findings": [],
     "finding_count": 0
   },
-  "mismatch_count": 1,
+  "device_parameter_coverage": [],
+  "mismatch_count": 2,
   "error_count": 0,
   "category_counts": {
-    "topology.power_only_pruned": 1
+    "topology.power_only_pruned": 1,
+    "topology.top_level_pins_anchored": 1
   },
   "category_error_counts": {},
   "counts": {
     "nets": {
       "layout": 1535,
-      "reference": 1523,
-      "matched": 2019
+      "reference": 1526,
+      "matched": 2018
     },
     "devices": {
       "layout": 0,
@@ -158,31 +165,41 @@
     "pins": {
       "layout": 111,
       "reference": 109,
-      "matched": 605
+      "matched": 601
     }
   },
   "device_classes": null,
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.12",
-    "layout_sha256": "d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
-    "reference_sha256": "1342adf83949a6beb5e078ba82b9bafe69fe11166d61971187856ca7cba7a8e0",
+    "netgen_binary": null,
+    "layout_sha256": "ef2caafa94afce4faead27becf48b6e720cc8b21bb0ed107af63723d01f698f6",
+    "reference_sha256": "3bd78c4d16d84ff59cc69100efbe88dc00d91cbd6b250bc65fbfa9d4cfae94e2",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.12",
     "pdk": {
       "name": "gf180mcuA",
       "source": "search root: ~/.ciel",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
     },
     "deck": null,
     "input": {
-      "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
+      "content_hash": "sha256:ef2caafa94afce4faead27becf48b6e720cc8b21bb0ed107af63723d01f698f6",
       "role": "netlist"
     },
-    "klayout_version_mismatch": true
+    "klayout_version_mismatch": false,
+    "pin_order_sources": [
+      {
+        "library": "gf180mcu_fd_sc_mcu9t5v0",
+        "cells": 229
+      }
+    ]
   },
   "mismatches": [
     {
@@ -197,15 +214,47 @@
       "circuit": null,
       "instance": null,
       "subcircuit": null
+    },
+    {
+      "category": "topology.top_level_pins_anchored",
+      "severity": "warning",
+      "description": "109 top-level pin name(s) declared on both sides were anchored by name before comparing (options.anchor_top_level_pins): each one's layout net is asserted to match the reference net of the same-named pin, which the comparer's own topology-only net pairing does not otherwise require. Without it, two boundary nets with identical topology (e.g. two bits of a black-box macro's bus) are interchangeable and a swap between them compares clean -- see docs/cli/lvs.md, \"Top-level pin anchoring\"",
+      "side": "both",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "pins": [
+          "CLK",
+          "HT_ALARM",
+          "RAW_BIT",
+          "RAW_VALID",
+          "REG_ADDR[0]",
+          "REG_ADDR[1]",
+          "REG_RDATA[0]",
+          "REG_RDATA[10]",
+          "REG_RDATA[11]",
+          "REG_RDATA[12]",
+          "REG_RDATA[13]",
+          "REG_RDATA[14]",
+          "REG_RDATA[15]",
+          "REG_RDATA[16]",
+          "REG_RDATA[17]",
+          "REG_RDATA[18]",
+          "REG_RDATA[19]",
+          "REG_RDATA[1]",
+          "REG_RDATA[20]",
+          "REG_RDATA[21]"
+        ],
+        "pin_count": 109,
+        "pins_truncated": true
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     }
   ],
   "net_correspondence": [
-    {
-      "layout": "VDD",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
     {
       "layout": "VDD",
       "reference": null,
@@ -1201,18 +1250,6 @@
       "reference": null,
       "pin": true,
       "heuristic": true
-    },
-    {
-      "layout": "VSS",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
-    {
-      "layout": "ZN",
-      "reference": null,
-      "pin": true,
-      "heuristic": false
     },
     {
       "layout": "ZN",
@@ -3039,12 +3076,6 @@
       "heuristic": false
     },
     {
-      "layout": "I",
-      "reference": "I",
-      "pin": true,
-      "heuristic": false
-    },
-    {
       "layout": "I0",
       "reference": "I0",
       "pin": true,
@@ -3083,12 +3114,6 @@
     {
       "layout": "NET41",
       "reference": "NET41",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "NET42",
-      "reference": "NET42",
       "pin": false,
       "heuristic": false
     },
@@ -3873,8 +3898,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET46",
-      "reference": "U_CONDITIONER/NET46",
+      "layout": "U_CONDITIONER/NET42",
+      "reference": "U_CONDITIONER/NET42",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_CONDITIONER/NET47",
+      "reference": "U_CONDITIONER/NET47",
       "pin": false,
       "heuristic": false
     },
@@ -3885,14 +3916,20 @@
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET49",
-      "reference": "U_CONDITIONER/NET49",
+      "layout": "U_CONDITIONER/NET50",
+      "reference": "U_CONDITIONER/NET50",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET50",
-      "reference": "U_CONDITIONER/NET50",
+      "layout": "U_CONDITIONER/NET51",
+      "reference": "U_CONDITIONER/NET51",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_CONDITIONER/NET52",
+      "reference": "U_CONDITIONER/NET52",
       "pin": false,
       "heuristic": false
     },
@@ -3903,8 +3940,8 @@
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET74",
-      "reference": "U_CONDITIONER/NET74",
+      "layout": "U_CONDITIONER/NET73",
+      "reference": "U_CONDITIONER/NET73",
       "pin": false,
       "heuristic": false
     },
@@ -5265,20 +5302,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET52",
-      "reference": "U_HEALTH_TEST/NET52",
+      "layout": "U_HEALTH_TEST/NET54",
+      "reference": "U_HEALTH_TEST/NET54",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET56",
-      "reference": "U_HEALTH_TEST/NET56",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_HEALTH_TEST/NET57",
-      "reference": "U_HEALTH_TEST/NET57",
+      "layout": "U_HEALTH_TEST/NET58",
+      "reference": "U_HEALTH_TEST/NET58",
       "pin": false,
       "heuristic": false
     },
@@ -7083,14 +7114,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET47",
-      "reference": "U_INTERFACE/NET47",
+      "layout": "U_INTERFACE/NET46",
+      "reference": "U_INTERFACE/NET46",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET51",
-      "reference": "U_INTERFACE/NET51",
+      "layout": "U_INTERFACE/NET49",
+      "reference": "U_INTERFACE/NET49",
       "pin": false,
       "heuristic": false
     },
@@ -7101,20 +7132,20 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET54",
-      "reference": "U_INTERFACE/NET54",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_INTERFACE/NET55",
       "reference": "U_INTERFACE/NET55",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET58",
-      "reference": "U_INTERFACE/NET58",
+      "layout": "U_INTERFACE/NET56",
+      "reference": "U_INTERFACE/NET56",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_INTERFACE/NET57",
+      "reference": "U_INTERFACE/NET57",
       "pin": false,
       "heuristic": false
     },
@@ -7185,8 +7216,8 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET73",
-      "reference": "U_INTERFACE/NET73",
+      "layout": "U_INTERFACE/NET74",
+      "reference": "U_INTERFACE/NET74",
       "pin": false,
       "heuristic": false
     },
@@ -12243,74 +12274,92 @@
       "heuristic": false
     },
     {
-      "layout": "\\$2474",
+      "layout": "\\$1909",
       "reference": "__NC_CLKLOAD0_Z__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$1158",
-      "reference": "__NC_CLKLOAD11_ZN__",
+      "layout": "\\$4480",
+      "reference": "__NC_CLKLOAD12_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$4800",
+      "layout": "\\$3653",
       "reference": "__NC_CLKLOAD13_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$2985",
+      "layout": "\\$2613",
       "reference": "__NC_CLKLOAD14_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$2968",
+      "layout": "\\$3076",
       "reference": "__NC_CLKLOAD15_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$1623",
+      "layout": "\\$2299",
+      "reference": "__NC_CLKLOAD16_ZN__",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "\\$1495",
+      "reference": "__NC_CLKLOAD17_ZN__",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "\\$589",
+      "reference": "__NC_CLKLOAD19_ZN__",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "\\$2949",
       "reference": "__NC_CLKLOAD1_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$875",
+      "layout": "\\$744",
       "reference": "__NC_CLKLOAD20_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$1439",
+      "layout": "\\$1390",
       "reference": "__NC_CLKLOAD21_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$3247",
+      "layout": "\\$3233",
+      "reference": "__NC_CLKLOAD3_Z__",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "\\$4028",
       "reference": "__NC_CLKLOAD4_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$3929",
+      "layout": "\\$4360",
       "reference": "__NC_CLKLOAD5_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$4939",
-      "reference": "__NC_CLKLOAD6_ZN__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$3590",
-      "reference": "__NC_CLKLOAD8_ZN__",
+      "layout": "\\$3243",
+      "reference": "__NC_CLKLOAD7_ZN__",
       "pin": false,
       "heuristic": false
     }
@@ -12436,8 +12485,8 @@
     ],
     "top_pin_count": 111,
     "instance_count": 1490,
-    "distinct_cell_types": 83,
-    "physical_only_instance_count": 3470,
+    "distinct_cell_types": 82,
+    "physical_only_instance_count": 4183,
     "physical_only_cell_types": [
       "gf180mcu_fd_sc_mcu9t5v0__endcap",
       "gf180mcu_fd_sc_mcu9t5v0__fill_1",

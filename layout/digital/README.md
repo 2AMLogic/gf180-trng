@@ -116,6 +116,39 @@ it is solved — [#111][gf111].
 > `provenance.input.content_hash`, so no pin moves. The file shrank from
 > about 10.5 MB to 1.5 KB.
 
+> **Update — re-placed with a tapcell pitch chosen by measurement (issue
+> [gf717]).** `build.py` now passes `TAPCELL_DISTANCE_UM = 30.0` as
+> `request.power.tapcell.distance_um` (klayout-tools#3051, `klt` 0.8.0); the
+> tool echoes the applied pitch as `power.tapcell_distance_um` in
+> `reports/place_and_route.json`. Setting the constant to `None` omits the
+> field and reproduces the previous request (the tool default, 100 µm). 30 µm
+> follows from the previous run's worst distance being about half the pitch
+> (49.7 µm at 100 µm) against the 15 µm retained MV limit; it was measured,
+> not assumed (below). Produced with `klt` 0.8.0 from a throwaway venv, as the
+> repo-wide pin move belongs to [#705][gf705]; `erc-supply.json` was
+> re-run under the repo pin (0.6.0), which is what
+> `layout/floorplan/erc_supply.py` requires. The placement is stochastic, so
+> every placed-and-routed figure moved, not only the tap counts.
+>
+> | | [gf293] (`-distance 100`, superseded) | [gf717] (`-distance 30`, current) |
+> |---|---:|---:|
+> | Tapcells (`filltie`) / endcaps / fillers | 265 / 208 / 5663 | 462 / 150 / 3571 |
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4960 | 5673 |
+> | Placed logical instances | 1490 | 1490 |
+> | Die | 398.93 × 398.93 µm = 159 145 µm² | unchanged |
+> | Core utilization | 43.4 % | 44.8 % |
+> | Worst slack, `ss_125C_3v00`, 50 ns period | +32.7 ns | +32.8 ns |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −7.0 / +0.50 ns | −6.3 / +0.50 ns |
+> | Max boundary-to-tap distance `LU.4` / `LU.3` (limit 15 µm) | 49.73 / 49.69 µm | 14.857 / 14.739 µm |
+> | `klt drc` | clean, 0 violations | clean, 0 violations |
+> | `klt lvs` against `trng_top.pnr.v` | match | match |
+> | `klt erc` supply spec | `erc_status: clean` | `erc_status: clean`, 0 findings |
+> | `_power_isolation_check` | ok | ok |
+>
+> Downstream records that quote the previous geometry (`sim/` records, the
+> interface-load geometry, the signoff manifest hashes) are not refreshed
+> here; that is the separate downstream child of [#487][gf487].
+
 ## The one command
 
 ```sh
@@ -365,9 +398,9 @@ place-and-route`'s `request.power` block ([klayout-tools#1120][klt1120],
 | Supply / ground net | `vddd` / `vss` — **not** the tool's `VDD`/`VSS` default; see below |
 | Rails | `Metal1`, 0.90 µm wide, 5.04 µm pitch, `followpins` (the standard-cell rows' own rails) |
 | Straps | `Metal4` 4.48 µm / 44.8 µm pitch / 22.4 µm offset; `Metal5` 4.48 µm / 89.6 µm pitch / 44.8 µm offset |
-| Well/substrate ties | 265 × `gf180mcu_fd_sc_mcu9t5v0__filltie` at OpenROAD's `tapcell -distance 100` |
-| Row ends | 208 × `gf180mcu_fd_sc_mcu9t5v0__endcap` |
-| Fillers | 5588 instances across the library's seven `fill_*` widths |
+| Well/substrate ties | 462 × `gf180mcu_fd_sc_mcu9t5v0__filltie` at `tapcell -distance 30` (`build.py`'s `TAPCELL_DISTANCE_UM`, [#717][gf717]); 265 at the tool default `-distance 100` before that |
+| Row ends | 150 × `gf180mcu_fd_sc_mcu9t5v0__endcap` |
+| Fillers | 3571 instances across the library's seven `fill_*` widths |
 | `SPECIALNETS` in the DEF | 2 nets (`checks.def.special_nets: true`, was `false`) |
 | Top-level supply pins | `vddd`, `vss` — the DEF's `PINS` count goes 109 → 111 |
 
@@ -600,8 +633,9 @@ statement: the gf180mcu deck this repository pins does not model every rule
 in the DRM (its own `coverage` block names what it checks and what it
 skips), and this run's clean result is bounded by that, exactly as
 `layout/README.md` says for every other cell here. In particular the
-tapcell spacing is OpenROAD's `tapcell -distance 100` — ORFS's own gf180
-platform value, not a latch-up rule this deck independently enforces. The
+tapcell spacing is the `-distance` that `build.py`'s `TAPCELL_DISTANCE_UM` passes
+to OpenROAD (30 µm since [#717][gf717]; the tool's per-library default is 100 µm),
+not a latch-up rule this deck independently enforces. The
 tie *distance* is measured separately, on the committed stream, by
 [Tap distance](#tap-distance) below. It also remains true that a
 clean DRC over a standalone core with no IO ring is not a signoff DRC over
@@ -614,7 +648,7 @@ substrate tie *distance* on the committed `trng_top.gds` ([#448][gf448]).
 This is a different question from the ERC section's `erc.missing_tie`
 (a well has a tie at all, `reports/erc-supply.json`, unchanged); a well with
 a connected tap can still have a diffusion too far from it. The
-configured `tapcell -distance 100` is a placement input and is not treated
+configured `tapcell -distance` is a placement input and is not treated
 as evidence of compliance.
 
 **Rule source.** GF180MCU Design Rule Manual §14.3.1 *Core Latch-up Rules and
@@ -684,13 +718,18 @@ failed. Both are read-only and test report freshness (the report follows from
 the current measuring program), not physical compliance.
 
 **Result on the committed stream.** Measured against the MV column, the
-placement does **not** meet `LU.3`/`LU.4`: the worst boundary-to-tap
-distance is 49.73 µm (`LU.4`) and 49.69 µm (`LU.3`) against a 15 µm limit,
-with 35 of 36 Nwell islands over the limit. The same distances sit just inside the LV
-column's 50 µm sub-case, which is consistent with the platform's
-`-distance 100` having been chosen for 3.3 V cells. This is a measurement
-result of the as-built geometry, recorded here without a design change; whether to re-place ties is
-tracked separately in [#449][gf449]. The §14.3.1 column assignment is read from the published
+placement as re-built by [#717][gf717] with `tapcell -distance 30` meets
+`LU.3`/`LU.4`: the worst boundary-to-tap distance is 14.857 µm (`LU.4`) and
+14.739 µm (`LU.3`) against a 15 µm limit, with all 38 Nwell groups within
+it. The margin is 0.14 µm, so a larger pitch is not expected to measure
+within the limit. The report's overall verdict stays `incomplete`, because
+the rules the DRM lists beyond `LU.3`/`LU.4` are unsupported or not
+applicable (unchanged by this re-build). The prior committed stream, built at
+the tool default `-distance 100`, measured 49.73 µm (`LU.4`) and 49.69 µm
+(`LU.3`) with 35 of 36 Nwell islands over the limit; that report remains in
+git history (`b65a4909`, [#448][gf448], [#449][gf449]). The
+§14.3.1 column assignment is unchanged by this: it is not confirmed against the controlled DRM
+([#486][gf486]). The §14.3.1 column assignment is read from the published
 table and has **not** been confirmed against the controlled DRM (none was
 available; 2026-10-11 follow-up searches of public sources, recorded in
 [DR-0030](../../spec/decision-records/DR-0030-digital-latch-up-source-confirmation-outcome.md),
@@ -1023,7 +1062,7 @@ repository pins, which does not model every DRM rule, and this repository
 checks the tapcell spacing against the DRM's own latch-up tie-spacing
 rule only through [Tap distance](#tap-distance), which finds the as-built
 spacing over the 5 V (MV) limit — `tapcell -distance 100` is ORFS's gf180
-platform value, adopted, not derived here. Not an area or power result. Not
+platform default, which [#717][gf717] replaced with a pitch chosen by the measurement. Not an area or power result. Not
 a corner characterization: one implementation corner, and the multi-corner
 sweep the tool does offer cannot yet be scoped to this block's supply; the
 extracted-parasitics characterizations (#145,
@@ -1104,3 +1143,7 @@ boundary.
 [gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
 [gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html
 [gf449]: https://github.com/2AMLogic/gf180-trng/issues/449
+[gf486]: https://github.com/2AMLogic/gf180-trng/issues/486
+[gf487]: https://github.com/2AMLogic/gf180-trng/issues/487
+[gf705]: https://github.com/2AMLogic/gf180-trng/issues/705
+[gf717]: https://github.com/2AMLogic/gf180-trng/issues/717

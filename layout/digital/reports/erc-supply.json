@@ -3,9 +3,9 @@
   "file": "layout/digital/trng_top.gds",
   "spec": "layout/digital/erc-supply-spec.json",
   "pdk": null,
-  "findings_only": false,
+  "findings_only": true,
   "gate_role": "poly2",
-  "gate_count": 3988,
+  "gate_count": 3989,
   "erc_findings": [],
   "erc_finding_count": 0,
   "erc_status": "clean",
@@ -27,7 +27,7 @@
     "nothing_checked_reasons": [],
     "checked_by_assertion": [],
     "checked_by_well_assertion": [],
-    "floating_gate_checked_count": 3988
+    "floating_gate_checked_count": 3989
   },
   "ties_disclosure": null,
   "provenance": {
@@ -36,7 +36,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7",
+      "content_hash": "sha256:8c441fe83fc9d7c4e489df5ed06a212597c27a704681e45f8a430d4e8df13d04",
       "role": "layout"
     },
     "spec": {
