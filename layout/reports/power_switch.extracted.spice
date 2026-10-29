@@ -1,0 +1,118 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell power_switch
+* pin sleep
+* pin vdd
+* pin vvdd
+.SUBCKT power_switch sleep vdd vvdd
+* device instance $1 r0 *1 0.84,5 pfet
+X$1 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=7P AD=3.5P PS=21.4U PD=10.7U
+* device instance $2 r0 *1 1.82,5 pfet
+X$2 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $3 r0 *1 2.8,5 pfet
+X$3 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $4 r0 *1 3.78,5 pfet
+X$4 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $5 r0 *1 4.76,5 pfet
+X$5 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $6 r0 *1 5.74,5 pfet
+X$6 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $7 r0 *1 6.72,5 pfet
+X$7 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $8 r0 *1 7.7,5 pfet
+X$8 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $9 r0 *1 8.68,5 pfet
+X$9 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U PD=10.7U
+* device instance $10 r0 *1 9.66,5 pfet
+X$10 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $11 r0 *1 10.64,5 pfet
+X$11 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $12 r0 *1 11.62,5 pfet
+X$12 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $13 r0 *1 12.6,5 pfet
+X$13 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $14 r0 *1 13.58,5 pfet
+X$14 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $15 r0 *1 14.56,5 pfet
+X$15 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $16 r0 *1 15.54,5 pfet
+X$16 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $17 r0 *1 16.52,5 pfet
+X$17 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $18 r0 *1 17.5,5 pfet
+X$18 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $19 r0 *1 18.48,5 pfet
+X$19 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $20 r0 *1 19.46,5 pfet
+X$20 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $21 r0 *1 20.44,5 pfet
+X$21 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $22 r0 *1 21.42,5 pfet
+X$22 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $23 r0 *1 22.4,5 pfet
+X$23 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $24 r0 *1 23.38,5 pfet
+X$24 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $25 r0 *1 24.36,5 pfet
+X$25 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $26 r0 *1 25.34,5 pfet
+X$26 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $27 r0 *1 26.32,5 pfet
+X$27 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $28 r0 *1 27.3,5 pfet
+X$28 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $29 r0 *1 28.28,5 pfet
+X$29 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $30 r0 *1 29.26,5 pfet
+X$30 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $31 r0 *1 30.24,5 pfet
+X$31 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $32 r0 *1 31.22,5 pfet
+X$32 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $33 r0 *1 32.2,5 pfet
+X$33 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $34 r0 *1 33.18,5 pfet
+X$34 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $35 r0 *1 34.16,5 pfet
+X$35 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $36 r0 *1 35.14,5 pfet
+X$36 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $37 r0 *1 36.12,5 pfet
+X$37 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $38 r0 *1 37.1,5 pfet
+X$38 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $39 r0 *1 38.08,5 pfet
+X$39 vvdd sleep vdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=3.5P PS=10.7U
++ PD=10.7U
+* device instance $40 r0 *1 39.06,5 pfet
+X$40 vdd sleep vvdd \$4 pfet_03v3 L=0.28U W=10U AS=3.5P AD=7P PS=10.7U PD=21.4U
+.ENDS power_switch

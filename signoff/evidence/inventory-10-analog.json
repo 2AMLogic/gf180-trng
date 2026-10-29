@@ -29,11 +29,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "sha256:a4257c39b81d4af7420a492ffc38f5417da3580accfc3c88ff87d7cc19c6923d"
+      "sha256": "sha256:2f5bdbe24ac9d16bc55ede746864cfd037bbee83058a1ccc0afe0c896a2a13f7"
     },
     {
       "path": "sim/README.md",
-      "sha256": "sha256:12f6901d38a39f745e2f9c025f85381933cd001a503f7f922378b1382a5e692c"
+      "sha256": "sha256:39da1c2f6675e5ff17422a2126d7e2b4cf82730a840952a415e8588fbeb60547"
     },
     {
       "path": "spec/ratification-2026-07-31-target-spec.md",

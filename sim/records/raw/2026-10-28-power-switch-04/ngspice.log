@@ -1,0 +1,137 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = -40.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vdd                                        3.3
+soff                                       3.3
+son                                          0
+dr1a                                       3.3
+vr1a                                    3.2964
+dr1b                                       3.3
+vr1b                                   3.22792
+dr2a                                       3.3
+vr2a                                    3.2982
+dr2b                                       3.3
+vr2b                                   3.26437
+dr4a                                       3.3
+vr4a                                    3.2991
+dr4b                                       3.3
+vr4b                                   3.28229
+dr8a                                       3.3
+vr8a                                   3.29955
+dr8b                                       3.3
+vr8b                                   3.29117
+vl1                                          0
+vl2                                          0
+vl4                                          0
+vl8                                          0
+dst                                        3.3
+vst                                    1.18382
+dun                                        3.3
+rma                                          1
+rmb                                          1
+sla                                        3.3
+slb                                        3.3
+dw1                                        3.3
+vw1                                    1.18381
+dw2                                        3.3
+vw2                                    1.18381
+dw3                                        3.3
+vw3                                    1.18381
+dw4                                        3.3
+vw4                                    1.18381
+c1                                    -1.95119
+c2                                    -1.95119
+c3                                    -1.95119
+c4                                    -1.95119
+pa_00                               0.00360301
+pa_01                                0.0720844
+pa_02                               0.00180048
+pa_03                                0.0356263
+pa_04                              0.000899981
+pa_05                                0.0177121
+pa_06                              0.000449926
+pa_07                               0.00883117
+bpa_07#branch                                0
+bpa_06#branch                                0
+bpa_05#branch                                0
+bpa_04#branch                                0
+bpa_03#branch                                0
+bpa_02#branch                                0
+bpa_01#branch                                0
+bpa_00#branch                                0
+bc4#branch                                   0
+bc3#branch                                   0
+bc2#branch                                   0
+bc1#branch                                   0
+bsb#branch                                   0
+bsa#branch                                   0
+eoff#branch                                  0
+vww4#branch                         8.4644e-11
+vww3#branch                         8.4644e-11
+vww2#branch                         8.4583e-11
+vww1#branch                         8.4644e-11
+vrmb#branch                                  0
+vrma#branch                                  0
+vwun#branch                        2.36042e-10
+vwst#branch                        8.46427e-11
+vl8#branch                         3.13433e-10
+vl4#branch                         1.56716e-10
+vl2#branch                         7.83582e-11
+vl1#branch                         3.91791e-11
+vwr8b#branch                          0.001893
+vwr8a#branch                          9.67e-05
+vwr4b#branch                          0.001893
+vwr4a#branch                          9.67e-05
+vwr2b#branch                          0.001893
+vwr2a#branch                          9.67e-05
+vwr1b#branch                          0.001893
+vwr1a#branch                          9.67e-05
+von#branch                                   0
+vsup#branch                         -0.0079588
+
+
+No. of Data Rows : 35017
+
+  Measurements for Transient Analysis
+
+droop_1a            =  3.603005779085e-03
+droop_1b            =  7.208438312243e-02
+ileak_1             =  3.917911815725e-11
+droop_2a            =  1.800475004955e-03
+droop_2b            =  3.562628107119e-02
+ileak_2             =  7.835823631450e-11
+droop_4a            =  8.999808981991e-04
+droop_4b            =  1.771213356930e-02
+ileak_4             =  1.567164726290e-10
+droop_8a            =  4.499263440914e-04
+droop_8b            =  8.831171170820e-03
+ileak_8             =  3.134329452580e-10
+i_stack             =  8.494273643815e-11
+v_stack             =  1.183817066772e+00
+i_ungated           =  2.360418041580e-10
+ipk_w1              =  3.673912299964e-02 at=  1.063500000000e-07
+t95_w1              =   1.076825431915e-07
+vfin_w1             =  3.299999997803e+00
+ipk_w2              =  6.884240047839e-02 at=  1.087500000000e-07
+t95_w2              =   1.130001691182e-07
+vfin_w2             =  3.299999997804e+00
+ipk_w3              =  2.427084846941e-03 at=  4.221500000000e-07
+t95_w3              =   4.254514901569e-07
+vfin_w3             =  3.299999997803e+00
+ipk_w4              =  5.959665802090e-03 at=  4.729500000000e-07
+t95_w4              =   4.825559055162e-07
+vfin_w4             =  3.299999997803e+00
+
+ngspice-46 done

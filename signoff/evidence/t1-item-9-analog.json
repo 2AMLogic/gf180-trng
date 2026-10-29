@@ -3,7 +3,7 @@
   "kind": "generic",
   "t1_item": 9,
   "status": "pass",
-  "summary": "Audited inventory for T1 item 9 (Testbenches shipped), analog partition: 88 analog testbench directories under sim/tb/ (201 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 sim/run_corners.py --check-env` (pdk-nightly.yml), `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
+  "summary": "Audited inventory for T1 item 9 (Testbenches shipped), analog partition: 89 analog testbench directories under sim/tb/ (204 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 sim/run_corners.py --check-env` (pdk-nightly.yml), `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
   "source": "signoff/evidence/inventory-9-analog.json",
   "provenance": {
     "klt_version": null,
@@ -15,7 +15,7 @@
         "path": "signoff/evidence/inventory-9-analog.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:72f9049a3e1f3cd66e96e48d58e06a194f7236222bf37103c7b67242ee77cd86"
+      "content_hash": "sha256:ce6ac74fa45122e4b8a0ff75a0cb4b66db59c6b19ae948eb279b4e95ecb0ffce"
     }
   }
 }

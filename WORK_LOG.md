@@ -1,8 +1,18 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-27.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-29.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-29
+
+- **PR #722**: refactor: share one git ls-files wrapper across sim/tools scripts
+- **Issue #721** (closed): Consolidate duplicated git ls-files and file-SHA-256 helpers in sim/tools
+
+### 2026-10-28
+
+- **PR #714**: docs: record floorplan utilisation sweep toward the Area row
+- **PR #713**: feat: add a 400 um PMOS header cell for the digital supply, with 45-point sizing evidence
 
 ### 2026-10-27
 
