@@ -1,8 +1,15 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-29.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-30.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-10-30
+
+- **PR #728**: refactor: share cmd_run/cmd_record scaffold between power tools
+- **PR #712**: sim: add power-intent spec and gate-level isolation/sequencing check for a gated digital section
+- **Issue #727** (closed): ci: all jobs fail within 2s with no steps on a docs-only PR (runner startup failure?)
+- **Issue #726** (closed): Dedupe cmd_run/cmd_record/_sanitize between power_switch.py and liveness_sampler_power.py
 
 ### 2026-10-29
 
