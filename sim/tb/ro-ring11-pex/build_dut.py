@@ -86,6 +86,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
+sys.path.insert(0, str(REPO_ROOT / "sim" / "tools"))
+
+import pex_dut  # noqa: E402
+from pex_dut import BuildError, logical_lines as _logical_lines  # noqa: E402,F401
+
 DESIGN = REPO_ROOT / "design" / "ro_array_core.spice"
 
 
@@ -133,30 +138,8 @@ _DEVICE_COMMENT = re.compile(
 )
 
 
-class BuildError(Exception):
-    pass
-
-
-def _logical_lines(text: str) -> list[str]:
-    out: list[str] = []
-    for raw in text.splitlines():
-        if raw.startswith("+") and out:
-            out[-1] += " " + raw[1:].strip()
-        else:
-            out.append(raw.rstrip())
-    return out
-
-
 def _subckt_block(text: str, name: str) -> list[str]:
-    lines = text.splitlines()
-    start = next(
-        (i for i, l in enumerate(lines) if re.match(rf"^\.subckt\s+{name}\b", l, re.I)),
-        None,
-    )
-    if start is None:
-        raise BuildError(f"{DESIGN.relative_to(REPO_ROOT)}: no .subckt {name}")
-    end = next(i for i in range(start, len(lines)) if re.match(r"^\.ends\b", lines[i], re.I))
-    return lines[start : end + 1]
+    return pex_dut.subckt_block(text, name, str(DESIGN.relative_to(REPO_ROOT)))
 
 
 def extraction_port_map(netlist_text: str, ring: Ring = RING1) -> list[str]:
@@ -351,32 +334,15 @@ def render_dut(port_names: list[str], design: str | None = None, ring: Ring = RI
 
 
 def check_testbench(port_names: list[str], ring: Ring = RING1) -> None:
-    xdut = next(
-        (l for l in _logical_lines(ring.testbench.read_text()) if l.lower().startswith("xdut ")),
-        None,
-    )
-    want = ["xdut", *port_names, ring.top]
-    if xdut is None or xdut.split() != want:
-        raise BuildError(
-            f"{ring.testbench.relative_to(REPO_ROOT)}: xdut line must read {' '.join(want)!r}"
-        )
+    pex_dut.check_testbench(port_names, ring.top, ring.testbench)
 
 
 def extract(outdir: Path, ring: Ring = RING1) -> str:
-    out = outdir / f"{ring.top}.extracted.spice"
-    subprocess.run(
-        ["klt", "extract", ring.gds, "--deck", "gf180mcu", "--pdk", "gf180mcuD",
-         "--top", ring.top, "--parasitics", "-o", str(out), "--format", "json"],
-        cwd=REPO_ROOT, check=True, stdout=subprocess.DEVNULL,
-    )
-    return out.read_text()
+    return pex_dut.extract(outdir, ring.gds, ring.top)
 
 
 def dut_header(text: str, ring: Ring = RING1) -> list[str]:
-    for line in _logical_lines(text):
-        if re.match(rf"^\.subckt\s+{ring.top}\b", line, re.I):
-            return [t for t in line.split()[2:] if "=" not in t]
-    raise BuildError(f"{ring.dut.relative_to(REPO_ROOT)}: no .subckt {ring.top}")
+    return pex_dut.dut_header(text, ring.top, ring.dut)
 
 
 def main(argv: list[str] | None = None) -> int:
