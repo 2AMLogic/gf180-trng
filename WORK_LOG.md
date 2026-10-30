@@ -6,6 +6,7 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-29
 
+- **PR #716**: evidence: price digital inventory levers against idle and area rows
 - **PR #722**: refactor: share one git ls-files wrapper across sim/tools scripts
 - **Issue #721** (closed): Consolidate duplicated git ls-files and file-SHA-256 helpers in sim/tools
 
