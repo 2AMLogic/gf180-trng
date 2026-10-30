@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-30
 
+- **PR #749**: fix(harness): stream sha256_file in 1 MiB chunks
+- **Issue #748** (closed): sim.harness.report.sha256_file reads whole file into memory; callers hash large artifacts
 - **PR #747**: refactor: use the shared sha256_file in place of local digest helpers
 - **Issue #744** (closed): Consolidate ~11 duplicated file-sha256 helpers onto the existing shared one
 - **PR #746**: refactor(layout): share the ro_stage generator between ring1 and ring2

@@ -29,6 +29,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign
+- **#751**: Consolidate helpers duplicated between the two pex build_dut.py generators
 
 ## In Progress
 
@@ -39,7 +40,6 @@ Issues currently being built (`loom:building`).
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 - **#718**: Refresh sim/signoff evidence after digital tapcell re-placement (DR-0029 inventory, evidence unit of #487)
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
-- **#739**: Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values
 
 ## PRs Awaiting Review
 
@@ -73,7 +73,6 @@ Issues carrying `loom:curated`.
 - **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry *(curated)*
-- **#739**: Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -90,11 +89,11 @@ _None._
 | Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 6 |
+| Ready (`loom:issue`) | 4 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 3 |
-| Curated | 15 |
+| Curated | 14 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
