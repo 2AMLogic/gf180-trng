@@ -1,15 +1,19 @@
 {
-  "schema_version": 3,
-  "file": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+  "schema_version": 4,
+  "file": {
+    "path": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",
+    "scope": "repo"
+  },
   "deck": "gf180mcu",
   "top": "ro_ring11_ring2",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/ro_ring11_ring2.extracted.spice",
-  "netlist_sha256": "4f6782a9c2e6b2f61db9b4d63cb2fea99c12fb9d7ae896cb4531991d38838057",
+  "netlist_sha256": "fbd4a660d9146cc0f1d10228fe9d40900d59b9cbf527ea030c3bbc85d7409815",
+  "netlist_normalized_sha256": "e07d2fe35ab40cdb67bb8f831d574f6595e2dd65f0756b22542bccc4673729a1",
   "status": "extracted",
   "device_count": 46,
-  "net_count": 49,
-  "pin_count": 15,
+  "net_count": 37,
+  "pin_count": 14,
   "device_counts": {
     "nfet": 23,
     "pfet": 23
@@ -22,6 +26,18 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
+    "cap_nmos_03v3",
+    "cap_nmos_03v3_dn",
+    "cap_pmos_03v3",
+    "cap_pmos_03v3_dn",
+    "cap_nmos_06v0",
+    "cap_nmos_06v0_dn",
+    "cap_pmos_06v0",
+    "cap_pmos_06v0_dn",
+    "cap_nmos_03v3_b",
+    "cap_pmos_03v3_b",
+    "cap_nmos_06v0_b",
+    "cap_pmos_06v0_b",
     "resistor",
     "diode_nd2ps_06v0",
     "diode_pd2nw_06v0"
@@ -34,7 +50,7 @@
         "s": "\\$15",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -57,8 +73,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$21",
-        "b": "vsubs"
+        "d": "\\$22",
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -79,10 +95,10 @@
       "name": "$11",
       "class": "nfet",
       "nets": {
-        "s": "\\$21",
+        "s": "\\$22",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -106,7 +122,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$23",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -130,7 +146,7 @@
         "s": "\\$23",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -153,8 +169,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$24",
-        "b": "vsubs"
+        "d": "\\$25",
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -175,10 +191,10 @@
       "name": "$15",
       "class": "nfet",
       "nets": {
-        "s": "\\$24",
+        "s": "\\$25",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -201,8 +217,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$25",
-        "b": "vsubs"
+        "d": "\\$24",
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -223,10 +239,10 @@
       "name": "$17",
       "class": "nfet",
       "nets": {
-        "s": "\\$25",
+        "s": "\\$24",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -249,8 +265,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$22",
-        "b": "vsubs"
+        "d": "\\$21",
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -271,10 +287,10 @@
       "name": "$19",
       "class": "nfet",
       "nets": {
-        "s": "\\$22",
+        "s": "\\$21",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -298,7 +314,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$14",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -322,7 +338,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$19",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -346,7 +362,7 @@
         "s": "\\$19",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -370,7 +386,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$16",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -394,7 +410,7 @@
         "s": "\\$16",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -418,7 +434,7 @@
         "s": "vddr",
         "g": "vss",
         "d": "\\$27",
-        "b": "\\$28"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -442,7 +458,7 @@
         "s": "\\$27",
         "g": "a|y",
         "d": "a|y",
-        "b": "\\$28"
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -466,7 +482,7 @@
         "s": "a|y",
         "g": "en",
         "d": "\\$27",
-        "b": "\\$28"
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -487,10 +503,10 @@
       "name": "$27",
       "class": "pfet",
       "nets": {
-        "s": "\\$29",
+        "s": "\\$28",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$30"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -513,8 +529,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$29",
-        "b": "\\$30"
+        "d": "\\$28",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -535,10 +551,10 @@
       "name": "$29",
       "class": "pfet",
       "nets": {
-        "s": "\\$31",
+        "s": "\\$29",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$32"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -562,7 +578,7 @@
         "s": "\\$14",
         "g": "en",
         "d": "\\$15",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -585,8 +601,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$31",
-        "b": "\\$32"
+        "d": "\\$29",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -607,10 +623,10 @@
       "name": "$31",
       "class": "pfet",
       "nets": {
-        "s": "\\$33",
+        "s": "\\$30",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$34"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -633,8 +649,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$33",
-        "b": "\\$34"
+        "d": "\\$30",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -655,10 +671,10 @@
       "name": "$33",
       "class": "pfet",
       "nets": {
-        "s": "\\$35",
+        "s": "\\$31",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$36"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -681,8 +697,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$35",
-        "b": "\\$36"
+        "d": "\\$31",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -703,10 +719,10 @@
       "name": "$35",
       "class": "pfet",
       "nets": {
-        "s": "\\$37",
+        "s": "\\$32",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$38"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -729,8 +745,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$37",
-        "b": "\\$38"
+        "d": "\\$32",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -751,10 +767,10 @@
       "name": "$37",
       "class": "pfet",
       "nets": {
-        "s": "\\$39",
+        "s": "\\$33",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$40"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -777,8 +793,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$39",
-        "b": "\\$40"
+        "d": "\\$33",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -799,10 +815,10 @@
       "name": "$39",
       "class": "pfet",
       "nets": {
-        "s": "\\$41",
+        "s": "\\$34",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$42"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -826,7 +842,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$17",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -849,8 +865,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$41",
-        "b": "\\$42"
+        "d": "\\$34",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -871,10 +887,10 @@
       "name": "$41",
       "class": "pfet",
       "nets": {
-        "s": "\\$43",
+        "s": "\\$35",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$44"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -897,8 +913,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$43",
-        "b": "\\$44"
+        "d": "\\$35",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -919,10 +935,10 @@
       "name": "$43",
       "class": "pfet",
       "nets": {
-        "s": "\\$45",
+        "s": "\\$36",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$46"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -945,8 +961,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$45",
-        "b": "\\$46"
+        "d": "\\$36",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -967,10 +983,10 @@
       "name": "$45",
       "class": "pfet",
       "nets": {
-        "s": "\\$47",
+        "s": "\\$37",
         "g": "vss",
         "d": "vddr",
-        "b": "\\$48"
+        "b": "vddr"
       },
       "params": {
         "l_um": 2.0,
@@ -993,8 +1009,8 @@
       "nets": {
         "s": "a|y",
         "g": "a|y",
-        "d": "\\$47",
-        "b": "\\$48"
+        "d": "\\$37",
+        "b": "vddr"
       },
       "params": {
         "l_um": 0.28,
@@ -1018,7 +1034,7 @@
         "s": "\\$17",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -1042,7 +1058,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$18",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -1066,7 +1082,7 @@
         "s": "\\$18",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -1090,7 +1106,7 @@
         "s": "a|y",
         "g": "a|y",
         "d": "\\$20",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -1114,7 +1130,7 @@
         "s": "\\$20",
         "g": "vddr",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 2.0,
@@ -1240,7 +1256,7 @@
     {
       "name": "\\$28",
       "pin": false,
-      "device_count": 3,
+      "device_count": 2,
       "net_id": 28,
       "pin_index": null,
       "label_positions_um": []
@@ -1318,122 +1334,15 @@
       "label_positions_um": []
     },
     {
-      "name": "\\$38",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 38,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$39",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 39,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$40",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 40,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$41",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 41,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$42",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 42,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$43",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 43,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$44",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 44,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$45",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 45,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$46",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 46,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$47",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 47,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
-      "name": "\\$48",
-      "pin": false,
-      "device_count": 2,
-      "net_id": 48,
-      "pin_index": null,
-      "label_positions_um": []
-    },
-    {
       "name": "a|y",
       "pin": true,
-      "device_count": 4,
-      "net_id": 3,
+      "device_count": 5,
+      "net_id": 2,
       "pin_index": 0,
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 0.59,
-          "y_um": 1.25
-        },
-        {
-          "text": "y",
-          "x_um": 69.88,
-          "y_um": 0.22
-        }
-      ]
-    },
-    {
-      "name": "a|y",
-      "pin": true,
-      "device_count": 5,
-      "net_id": 4,
-      "pin_index": 1,
-      "label_positions_um": [
-        {
-          "text": "a",
-          "x_um": 7.77,
+          "x_um": 9.01,
           "y_um": 1.0
         },
         {
@@ -1447,17 +1356,36 @@
       "name": "a|y",
       "pin": true,
       "device_count": 4,
+      "net_id": 4,
+      "pin_index": 1,
+      "label_positions_um": [
+        {
+          "text": "a",
+          "x_um": 17.08,
+          "y_um": 1.0
+        },
+        {
+          "text": "y",
+          "x_um": 9.65,
+          "y_um": 0.22
+        }
+      ]
+    },
+    {
+      "name": "a|y",
+      "pin": true,
+      "device_count": 4,
       "net_id": 5,
       "pin_index": 2,
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 14.6,
+          "x_um": 25.15,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 8.41,
+          "x_um": 17.72,
           "y_um": 0.22
         }
       ]
@@ -1471,12 +1399,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 21.43,
+          "x_um": 33.22,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 15.24,
+          "x_um": 25.79,
           "y_um": 0.22
         }
       ]
@@ -1490,12 +1418,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 28.26,
+          "x_um": 41.29,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 22.07,
+          "x_um": 33.86,
           "y_um": 0.22
         }
       ]
@@ -1509,12 +1437,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 35.09,
+          "x_um": 49.36,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 28.9,
+          "x_um": 41.93,
           "y_um": 0.22
         }
       ]
@@ -1528,12 +1456,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 41.92,
+          "x_um": 57.43,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 35.73,
+          "x_um": 50.0,
           "y_um": 0.22
         }
       ]
@@ -1547,12 +1475,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 48.75,
+          "x_um": 65.5,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 42.56,
+          "x_um": 58.07,
           "y_um": 0.22
         }
       ]
@@ -1566,12 +1494,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 55.58,
+          "x_um": 73.57,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 49.39,
+          "x_um": 66.14,
           "y_um": 0.22
         }
       ]
@@ -1585,12 +1513,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 62.41,
+          "x_um": 81.64,
           "y_um": 1.0
         },
         {
           "text": "y",
-          "x_um": 56.22,
+          "x_um": 74.21,
           "y_um": 0.22
         }
       ]
@@ -1604,12 +1532,12 @@
       "label_positions_um": [
         {
           "text": "a",
-          "x_um": 69.24,
-          "y_um": 1.0
+          "x_um": 0.59,
+          "y_um": 1.25
         },
         {
           "text": "y",
-          "x_um": 63.05,
+          "x_um": 82.28,
           "y_um": 0.22
         }
       ]
@@ -1631,7 +1559,7 @@
     {
       "name": "vddr",
       "pin": true,
-      "device_count": 22,
+      "device_count": 45,
       "net_id": 26,
       "pin_index": 12,
       "label_positions_um": [
@@ -1642,52 +1570,52 @@
         },
         {
           "text": "vddr",
-          "x_um": 11.69,
+          "x_um": 12.93,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 18.52,
+          "x_um": 21.0,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 25.35,
+          "x_um": 29.07,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 32.18,
+          "x_um": 37.14,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 39.01,
+          "x_um": 45.21,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 45.84,
+          "x_um": 53.28,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 52.67,
+          "x_um": 61.35,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 59.5,
+          "x_um": 69.42,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 66.33,
+          "x_um": 77.49,
           "y_um": 1.86
         },
         {
           "text": "vddr",
-          "x_um": 73.16,
+          "x_um": 85.56,
           "y_um": 1.86
         }
       ]
@@ -1695,8 +1623,8 @@
     {
       "name": "vss",
       "pin": true,
-      "device_count": 22,
-      "net_id": 2,
+      "device_count": 45,
+      "net_id": 38,
       "pin_index": 13,
       "label_positions_um": [
         {
@@ -1706,67 +1634,60 @@
         },
         {
           "text": "vss",
-          "x_um": 11.69,
+          "x_um": 12.93,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 18.52,
+          "x_um": 21.0,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 25.35,
+          "x_um": 29.07,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 32.18,
+          "x_um": 37.14,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 39.01,
+          "x_um": 45.21,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 45.84,
+          "x_um": 53.28,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 52.67,
+          "x_um": 61.35,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 59.5,
+          "x_um": 69.42,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 66.33,
+          "x_um": 77.49,
           "y_um": 0.22
         },
         {
           "text": "vss",
-          "x_um": 73.16,
+          "x_um": 85.56,
           "y_um": 0.22
         }
       ]
-    },
-    {
-      "name": "vsubs",
-      "pin": true,
-      "device_count": 23,
-      "net_id": 49,
-      "pin_index": 14,
-      "label_positions_um": []
     }
   ],
   "warnings": [
     "promoted 3 net(s) to top-level pins from label(s) found only below the top cell (inside instanced sub-cells): en, vddr, vss -- these are internal nodes once instanced; pass top_cell_pins_only (--top-cell-pins) to keep them internal (issue #291)",
+    "deck 'gf180mcu' declares MOS flavour '06v0' scoped by marker layer 55/0, but that layer has no shapes in the layout; every MOS device binds to the deck's default flavour",
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
@@ -1778,7 +1699,8 @@
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
     "net 'a|y' merges 2 distinct labels (a, y) onto one net -- KLayout joins multiple labels found on the same electrical net (as '|' here and in the written netlist, matching NetlistSpiceWriter's own node-name escaping); this usually means two differently-named nets were shorted together in the layout -- see docs/cli/extract.md's 'Merged net labels' section.",
-    "23 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or derivable) well tie connects this PMOS body to a real supply rail on this layout, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section."
+    "label 'a' is drawn on 11 separate nets (net_id 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13) -- the same-named nets are not connected in the layout (e.g. unstrapped supply rails), so the written netlist names them 'a', 'a$1', ... -- see docs/cli/extract.md's 'Split net labels' section.",
+    "label 'y' is drawn on 11 separate nets (net_id 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13) -- the same-named nets are not connected in the layout (e.g. unstrapped supply rails), so the written netlist names them 'y', 'y$1', ... -- see docs/cli/extract.md's 'Split net labels' section."
   ],
   "black_box_regions": [],
   "abstracted_cells": [],
@@ -1862,104 +1784,62 @@
       ]
     }
   ],
-  "voltage_domain_warnings": [],
-  "unbiased_pmos_body_nets": [
+  "split_net_labels": [
     {
-      "device": "$24",
-      "net": "\\$28"
+      "label": "a",
+      "nets": [
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "count": 11
     },
     {
-      "device": "$25",
-      "net": "\\$28"
-    },
-    {
-      "device": "$26",
-      "net": "\\$28"
-    },
-    {
-      "device": "$27",
-      "net": "\\$30"
-    },
-    {
-      "device": "$28",
-      "net": "\\$30"
-    },
-    {
-      "device": "$29",
-      "net": "\\$32"
-    },
-    {
-      "device": "$30",
-      "net": "\\$32"
-    },
-    {
-      "device": "$31",
-      "net": "\\$34"
-    },
-    {
-      "device": "$32",
-      "net": "\\$34"
-    },
-    {
-      "device": "$33",
-      "net": "\\$36"
-    },
-    {
-      "device": "$34",
-      "net": "\\$36"
-    },
-    {
-      "device": "$35",
-      "net": "\\$38"
-    },
-    {
-      "device": "$36",
-      "net": "\\$38"
-    },
-    {
-      "device": "$37",
-      "net": "\\$40"
-    },
-    {
-      "device": "$38",
-      "net": "\\$40"
-    },
-    {
-      "device": "$39",
-      "net": "\\$42"
-    },
-    {
-      "device": "$40",
-      "net": "\\$42"
-    },
-    {
-      "device": "$41",
-      "net": "\\$44"
-    },
-    {
-      "device": "$42",
-      "net": "\\$44"
-    },
-    {
-      "device": "$43",
-      "net": "\\$46"
-    },
-    {
-      "device": "$44",
-      "net": "\\$46"
-    },
-    {
-      "device": "$45",
-      "net": "\\$48"
-    },
-    {
-      "device": "$46",
-      "net": "\\$48"
+      "label": "y",
+      "nets": [
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "count": 11
     }
   ],
+  "voltage_domain_warnings": [],
+  "missing_flavour_markers": [
+    {
+      "deck": "gf180mcu",
+      "flavour": "06v0",
+      "marker": "55/0"
+    }
+  ],
+  "unsupported_devices": [],
+  "unbiased_pmos_body_nets": [],
   "single_terminal_nets": [],
   "dead_metal": [],
   "matched_device_groups": [],
+  "def_pin_promotion": null,
+  "pin_renames": null,
+  "rename_declared_pins": false,
+  "declared_pins": null,
+  "def_pins": null,
+  "label_layers": null,
+  "probes": [],
   "pdk": {
     "variant": "gf180mcuD",
     "root": {
@@ -1969,20 +1849,34 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "PDK_ROOT environment variable",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
-      "released": false
+      "content_hash": "sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
     },
     "input": {
-      "content_hash": "sha256:bdfc897e6d75e801d055dbb0f9153ad73863ba349227b657f063a3559ea71d27",
+      "content_hash": "sha256:f4042fc42444c28eb13b803d48b35f17dbf39eb57c03413c4e44354568ad2d09",
       "role": "layout"
     }
   },
@@ -1991,7 +1885,19 @@
   "subcircuit": null,
   "metrics": {
     "extract__device__count": 46,
-    "extract__net__count": 49,
-    "extract__pin__count": 15
+    "extract__net__count": 37,
+    "extract__pin__count": 14
+  },
+  "timing": {
+    "stages": {
+      "read_layout": 0.0,
+      "device_extraction": 0.024,
+      "diagnostics": 0.0,
+      "netlist_write": 0.002,
+      "netlist_hash": 0.0,
+      "netlist_normalized_hash": 0.001
+    },
+    "total_seconds": 0.127,
+    "unattributed_seconds": 0.1
   }
 }

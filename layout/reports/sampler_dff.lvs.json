@@ -1,7 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "engine": "klayout",
-  "layout": "../cells/sampler_dff/sampler_dff.gds",
+  "layout": {
+    "path": "layout/cells/sampler_dff/sampler_dff.gds",
+    "scope": "repo"
+  },
   "reference": "../cells/sampler_dff/sampler_dff.spice",
   "top": "sampler_dff",
   "reference_top": "SAMPLER_DFF",
@@ -9,12 +12,16 @@
   "options": {
     "combine_devices": false,
     "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
     "flatten_layout": false,
     "flatten_reference": false,
     "netgen_setup": null,
     "parameter_tolerance": null,
     "compare_parameters": null,
     "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "compare_mos_flavour": false,
     "supply_nets": [
       "GND",
       "VCC",
@@ -22,9 +29,11 @@
       "VGND",
       "VPWR",
       "VSS"
-    ]
+    ],
+    "finfet_bulk": null
   },
   "hints_applied": null,
+  "constant_nets_applied": null,
   "status": "match",
   "power_connectivity": {
     "status": "unchecked",
@@ -38,37 +47,25 @@
     "finding_count": 0
   },
   "body_verification": {
-    "status": "unverified",
+    "status": "verified",
     "reason": null,
-    "device_classes": [
-      "nfet",
-      "pfet"
-    ],
-    "device_count": 22,
-    "findings": [
-      {
-        "class": "nfet",
-        "device_count": 11
-      },
-      {
-        "class": "pfet",
-        "device_count": 11
-      }
-    ],
-    "finding_count": 2
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
   },
-  "mismatch_count": 3,
+  "device_parameter_coverage": [],
+  "mismatch_count": 1,
   "error_count": 0,
   "category_counts": {
-    "device.body_unverified": 2,
     "topology": 1
   },
   "category_error_counts": {},
   "counts": {
     "nets": {
-      "layout": 16,
-      "reference": 16,
-      "matched": 16
+      "layout": 14,
+      "reference": 14,
+      "matched": 14
     },
     "devices": {
       "layout": 22,
@@ -76,9 +73,9 @@
       "matched": 22
     },
     "pins": {
-      "layout": 7,
-      "reference": 7,
-      "matched": 7
+      "layout": 6,
+      "reference": 6,
+      "matched": 6
     }
   },
   "device_classes": [
@@ -86,6 +83,18 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
+    "cap_nmos_03v3",
+    "cap_nmos_03v3_dn",
+    "cap_pmos_03v3",
+    "cap_pmos_03v3_dn",
+    "cap_nmos_06v0",
+    "cap_nmos_06v0_dn",
+    "cap_pmos_06v0",
+    "cap_pmos_06v0_dn",
+    "cap_nmos_03v3_b",
+    "cap_pmos_03v3_b",
+    "cap_nmos_06v0_b",
+    "cap_pmos_06v0_b",
     "resistor",
     "diode_nd2ps_06v0",
     "diode_pd2nw_06v0"
@@ -93,67 +102,49 @@
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.10",
-    "layout_sha256": "eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42",
-    "reference_sha256": "e88b507bfb98cc27b27fb9bec11228b0a1058ad06d66ee0623db7e90c5baad8c",
+    "netgen_binary": null,
+    "layout_sha256": "7f7e3fc487b068bca6202e2feb09fe35d169a9d177c587b826355228c5ef8c30",
+    "reference_sha256": "124caebfb7e7becc8ab32b960e5e68cdb8275bf5496b3780838042e7271f38a3",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
-      "released": false
+      "content_hash": "sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
     },
     "input": {
-      "content_hash": "sha256:eadbb7e240c7a9d3a8962728e7f6e73719ba25f04e834cf4c2aac32a3eb97c42",
+      "content_hash": "sha256:7f7e3fc487b068bca6202e2feb09fe35d169a9d177c587b826355228c5ef8c30",
       "role": "layout"
     },
-    "klayout_version_mismatch": false
+    "klayout_version_mismatch": true
   },
   "mismatches": [
     {
-      "category": "device.body_unverified",
-      "severity": "warning",
-      "description": "11 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
-      "side": "layout",
-      "net": null,
-      "device": {
-        "layout": null,
-        "reference": null,
-        "class": "nfet"
-      },
-      "property": null,
-      "details": null,
-      "circuit": null,
-      "instance": null,
-      "subcircuit": null
-    },
-    {
-      "category": "device.body_unverified",
-      "severity": "warning",
-      "description": "11 PMOS device body terminal(s) were compared against an anonymous, KLayout-synthesized well net, not a real schematic net -- no drawn or derived well-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
-      "side": "layout",
-      "net": null,
-      "device": {
-        "layout": null,
-        "reference": null,
-        "class": "pfet"
-      },
-      "property": null,
-      "details": null,
-      "circuit": null,
-      "instance": null,
-      "subcircuit": null
-    },
-    {
       "category": "topology",
       "severity": "warning",
-      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch",
+      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch: 'bjt'",
       "side": "layout",
       "net": null,
-      "device": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "bjt"
+      },
       "property": null,
       "details": null,
       "circuit": null,
@@ -168,7 +159,7 @@
       "pin": true
     },
     {
-      "layout": "\\$2",
+      "layout": "\\$3",
       "reference": "CLKB",
       "pin": false
     },
@@ -178,7 +169,7 @@
       "pin": true
     },
     {
-      "layout": "\\$3",
+      "layout": "\\$4",
       "reference": "M",
       "pin": false
     },
@@ -188,18 +179,13 @@
       "pin": false
     },
     {
-      "layout": "\\$5",
+      "layout": "\\$6",
       "reference": "MC",
       "pin": false
     },
     {
-      "layout": "\\$9",
+      "layout": "\\$10",
       "reference": "MMID",
-      "pin": false
-    },
-    {
-      "layout": "\\$15",
-      "reference": "NWELL_FLOAT",
       "pin": false
     },
     {
@@ -208,7 +194,7 @@
       "pin": true
     },
     {
-      "layout": "\\$8",
+      "layout": "\\$9",
       "reference": "QB",
       "pin": false
     },
@@ -218,12 +204,12 @@
       "pin": true
     },
     {
-      "layout": "\\$6",
+      "layout": "\\$7",
       "reference": "S",
       "pin": false
     },
     {
-      "layout": "\\$10",
+      "layout": "\\$11",
       "reference": "S2MID",
       "pin": false
     },
@@ -235,11 +221,6 @@
     {
       "layout": "vss",
       "reference": "VSS",
-      "pin": true
-    },
-    {
-      "layout": "vsubs",
-      "reference": "VSUBS",
       "pin": true
     }
   ]

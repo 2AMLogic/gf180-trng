@@ -1,15 +1,19 @@
 {
-  "schema_version": 3,
-  "file": "layout/cells/ro_buf/ro_buf.gds",
+  "schema_version": 4,
+  "file": {
+    "path": "layout/cells/ro_buf/ro_buf.gds",
+    "scope": "repo"
+  },
   "deck": "gf180mcu",
   "top": "ro_buf",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/ro_buf.extracted.spice",
-  "netlist_sha256": "c2e1c3e2cf147df5cee4ea590241078623031cef134c61516cd4b344877ca6e0",
+  "netlist_sha256": "bf270fd609e9e14edcdebe6238e4f9927e0e5f73ec5d8fc27eaa582061fe4b33",
+  "netlist_normalized_sha256": "19bec049495d009e3c458959917da135b5655fc690fca104c5f09ea65b80d74e",
   "status": "extracted",
   "device_count": 2,
-  "net_count": 6,
-  "pin_count": 5,
+  "net_count": 4,
+  "pin_count": 4,
   "device_counts": {
     "nfet": 1,
     "pfet": 1
@@ -22,6 +26,18 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
+    "cap_nmos_03v3",
+    "cap_nmos_03v3_dn",
+    "cap_pmos_03v3",
+    "cap_pmos_03v3_dn",
+    "cap_nmos_06v0",
+    "cap_nmos_06v0_dn",
+    "cap_pmos_06v0",
+    "cap_pmos_06v0_dn",
+    "cap_nmos_03v3_b",
+    "cap_pmos_03v3_b",
+    "cap_nmos_06v0_b",
+    "cap_pmos_06v0_b",
     "resistor",
     "diode_nd2ps_06v0",
     "diode_pd2nw_06v0"
@@ -34,7 +50,7 @@
         "s": "y",
         "g": "a",
         "d": "vss",
-        "b": "vsubs"
+        "b": "vss"
       },
       "params": {
         "l_um": 0.28,
@@ -53,7 +69,7 @@
         "s": "y",
         "g": "a",
         "d": "vdd",
-        "b": "\\$5"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -67,14 +83,6 @@
     }
   ],
   "nets": [
-    {
-      "name": "\\$5",
-      "pin": false,
-      "device_count": 1,
-      "net_id": 5,
-      "pin_index": null,
-      "label_positions_um": []
-    },
     {
       "name": "a",
       "pin": true,
@@ -92,7 +100,7 @@
     {
       "name": "vdd",
       "pin": true,
-      "device_count": 1,
+      "device_count": 2,
       "net_id": 4,
       "pin_index": 1,
       "label_positions_um": [
@@ -106,8 +114,8 @@
     {
       "name": "vss",
       "pin": true,
-      "device_count": 1,
-      "net_id": 2,
+      "device_count": 2,
+      "net_id": 5,
       "pin_index": 2,
       "label_positions_um": [
         {
@@ -118,19 +126,11 @@
       ]
     },
     {
-      "name": "vsubs",
-      "pin": true,
-      "device_count": 1,
-      "net_id": 6,
-      "pin_index": 3,
-      "label_positions_um": []
-    },
-    {
       "name": "y",
       "pin": true,
       "device_count": 2,
       "net_id": 1,
-      "pin_index": 4,
+      "pin_index": 3,
       "label_positions_um": [
         {
           "text": "y",
@@ -141,30 +141,33 @@
     }
   ],
   "warnings": [
-    "1 PMOS device tie their body to an anonymous net with no DC bias path -- no drawn (or derivable) well tie connects this PMOS body to a real supply rail on this layout, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section.",
-    "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent, not a gate -- and are not a declared pin; this can be a legitimate single-terminal tie (e.g. an intentionally unterminated dummy's diffusion tie), but confirm these nets have no other intended connectivity -- see single_terminal_nets[] for the full list."
+    "deck 'gf180mcu' declares MOS flavour '06v0' scoped by marker layer 55/0, but that layer has no shapes in the layout; every MOS device binds to the deck's default flavour"
   ],
   "black_box_regions": [],
   "abstracted_cells": [],
   "unmodelled_poly": [],
   "merged_net_labels": [],
+  "split_net_labels": [],
   "voltage_domain_warnings": [],
-  "unbiased_pmos_body_nets": [
+  "missing_flavour_markers": [
     {
-      "device": "$2",
-      "net": "\\$5"
+      "deck": "gf180mcu",
+      "flavour": "06v0",
+      "marker": "55/0"
     }
   ],
-  "single_terminal_nets": [
-    {
-      "net": "\\$5",
-      "device": "$2",
-      "terminal": "b",
-      "terminal_kind": "body"
-    }
-  ],
+  "unsupported_devices": [],
+  "unbiased_pmos_body_nets": [],
+  "single_terminal_nets": [],
   "dead_metal": [],
   "matched_device_groups": [],
+  "def_pin_promotion": null,
+  "pin_renames": null,
+  "rename_declared_pins": false,
+  "declared_pins": null,
+  "def_pins": null,
+  "label_layers": null,
+  "probes": [],
   "pdk": {
     "variant": "gf180mcuD",
     "root": {
@@ -174,20 +177,34 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "PDK_ROOT environment variable",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
-      "released": false
+      "content_hash": "sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
     },
     "input": {
-      "content_hash": "sha256:d505cac28dd185e7c8fa4ce7a6055af01e017ddf9c4caaaa4bab80eb2429dfab",
+      "content_hash": "sha256:35ebe5c401e3f9bfb9509a0533e207fa846dbfff0ebdb80de8860250cfd99bac",
       "role": "layout"
     }
   },
@@ -196,7 +213,19 @@
   "subcircuit": null,
   "metrics": {
     "extract__device__count": 2,
-    "extract__net__count": 6,
-    "extract__pin__count": 5
+    "extract__net__count": 4,
+    "extract__pin__count": 4
+  },
+  "timing": {
+    "stages": {
+      "read_layout": 0.0,
+      "device_extraction": 0.004,
+      "diagnostics": 0.0,
+      "netlist_write": 0.0,
+      "netlist_hash": 0.0,
+      "netlist_normalized_hash": 0.0
+    },
+    "total_seconds": 0.106,
+    "unattributed_seconds": 0.102
   }
 }

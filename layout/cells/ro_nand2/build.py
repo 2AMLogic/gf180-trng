@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from _build_cli import gds_file, make_check, make_main  # noqa: E402
 from gdsii import add_implants, write_gds  # noqa: E402
-from _ro_nand2_shapes import build_shapes  # noqa: E402
+from _ro_nand2_shapes import build_shapes, with_taps  # noqa: E402
 
 CELL_DIR = os.path.dirname(os.path.abspath(__file__))
 TOP_CELL = "ro_nand2"
@@ -43,7 +43,7 @@ def build(path: str | None = None) -> bytes:
     return write_gds(
         path or gds_path(),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, add_implants(rects), labels)],
+        structures=[(TOP_CELL, with_taps(add_implants(rects)), labels)],
     )
 
 

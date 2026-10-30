@@ -1,17 +1,17 @@
 {
-  "klt": "klt 0.6.0",
+  "klt": "klt 0.8.0",
   "klt_origin": {
     "url": null,
-    "commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
-    "tag": "v0.6.0",
+    "commit": "c572046be644e0407f693f2410f3abb799d68a3a",
+    "tag": "v0.8.0",
     "is_release": true
   },
   "deck": "gf180mcu",
   "pdk": {
-    "path": "/tmp/pdk-gf180-f6eeac7d/gf180mcuD",
+    "path": "/home/ubuntu/.ciel/gf180mcuD",
     "variant": "gf180mcuD",
     "open_pdks_version": "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
-    "discovered_via": "PDK_ROOT"
+    "discovered_via": "search_root:~/.ciel"
   },
-  "platform": "Linux 7.0.0-1013-aws x86_64"
+  "platform": "Linux 7.0.0-1014-aws x86_64"
 }

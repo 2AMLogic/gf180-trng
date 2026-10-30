@@ -114,7 +114,15 @@ _TESTCELL_DIR = os.path.join(
 )
 sys.path.insert(0, os.path.abspath(_TESTCELL_DIR))
 
-from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
+from gdsii import (  # noqa: E402
+    TAP_GAP_UM,
+    TAP_SIZE_UM,
+    Label,
+    Rect,
+    add_implants,
+    tap_rects,
+    write_gds,
+)
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers, matching klt's curated decks (same set
@@ -160,6 +168,9 @@ TRUNK_PITCH = 0.65  # Y spacing between adjacent net trunks
 BLOCK_GAP = 3.0  # X gap between the NMOS row and the PMOS row
 ROW_Y = 1.00  # both rows' shared centreline
 NWELL_MARGIN = 0.25
+TAP_PITCH_MAX = 24.0  # widest span between taps on one row; every Comp then
+# sits within 12 um (x) of one, well inside the deck's 20 um tap distance
+TAP_STRAP_W = 0.30  # Metal1 strap from a tap up to its supply terminal's pad
 CHANNEL_MARGIN = 0.45  # clearance from the taller row's landing top to the
 # first net trunk -- must clear metal2.space.1 (0.28) between a gate
 # terminal's own Metal2 stub (centred at the landing pad's Y, so its own
@@ -410,4 +421,51 @@ def build_cell(
     channel_y0 = max(nmos_landing_top, pmos_landing_top) + CHANNEL_MARGIN
     _route_nets(canvas, terminals, pins, channel_y0)
 
-    return write_gds(path, library_name=top_cell, structures=[(top_cell, add_implants(canvas.rects), canvas.labels)])
+    rects = add_implants(canvas.rects)
+    # The taps go on after the implants: `add_implants` would give a Comp
+    # inside an Nwell Pplus, and an Nwell tap needs Nplus.
+    for kind, net, row_x0, row_x1, row_bottom in (
+        ("p", "vss", 0.0, nmos_end, nmos_bottom),
+        ("n", "vdd", pmos_x0, pmos_end, pmos_bottom),
+    ):
+        if kind == "p" and not nmos or kind == "n" and not pmos:
+            continue
+        for x in _tap_columns(terminals.get(net, []), row_x0, row_x1):
+            cy = row_bottom - TAP_GAP_UM - TAP_SIZE_UM / 2
+            rects += tap_rects(kind, x, cy)
+            # Metal1 strap from the tap's contact up into the supply
+            # terminal's own pad (centred on ROW_Y), which already rises to
+            # the net's trunk.
+            rects.append(
+                Rect(*METAL1, x - TAP_STRAP_W / 2, cy - TAP_STRAP_W / 2, x + TAP_STRAP_W / 2, ROW_Y)
+            )
+            if kind == "n":
+                rects.append(
+                    Rect(
+                        *NWELL,
+                        x - TAP_SIZE_UM / 2 - NWELL_MARGIN,
+                        cy - TAP_SIZE_UM / 2 - NWELL_MARGIN,
+                        x + TAP_SIZE_UM / 2 + NWELL_MARGIN,
+                        row_bottom - NWELL_MARGIN + 0.1,
+                    )
+                )
+
+    return write_gds(path, library_name=top_cell, structures=[(top_cell, rects, canvas.labels)])
+
+
+def _tap_columns(
+    points: list[tuple[float, float]], row_x0: float, row_x1: float
+) -> list[float]:
+    """X of each tap on one row: the row's `net` terminals nearest each end,
+    plus enough in between that no two taps are more than `TAP_PITCH_MAX` apart.
+    """
+    xs = sorted({x for x, _y in points if row_x0 - 1e-9 <= x <= row_x1 + 1e-9})
+    if not xs:
+        raise ValueError("a row with devices has no supply terminal to tap")
+    picked = [xs[0]]
+    for prev, nxt in zip(xs, xs[1:]):
+        if nxt - picked[-1] > TAP_PITCH_MAX:
+            picked.append(prev)
+    if xs[-1] != picked[-1]:
+        picked.append(xs[-1])
+    return picked

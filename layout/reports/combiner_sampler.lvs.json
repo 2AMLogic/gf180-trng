@@ -1,7 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "engine": "klayout",
-  "layout": "../blocks/combiner_sampler/combiner_sampler.gds",
+  "layout": {
+    "path": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+    "scope": "repo"
+  },
   "reference": "../blocks/combiner_sampler/combiner_sampler.spice",
   "top": "combiner_sampler",
   "reference_top": "COMBINER_SAMPLER",
@@ -9,12 +12,16 @@
   "options": {
     "combine_devices": false,
     "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
     "flatten_layout": false,
     "flatten_reference": false,
     "netgen_setup": null,
     "parameter_tolerance": null,
     "compare_parameters": null,
     "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "compare_mos_flavour": false,
     "supply_nets": [
       "GND",
       "VCC",
@@ -22,9 +29,11 @@
       "VGND",
       "VPWR",
       "VSS"
-    ]
+    ],
+    "finfet_bulk": null
   },
   "hints_applied": null,
+  "constant_nets_applied": null,
   "status": "match",
   "power_connectivity": {
     "status": "unchecked",
@@ -38,37 +47,25 @@
     "finding_count": 0
   },
   "body_verification": {
-    "status": "unverified",
+    "status": "verified",
     "reason": null,
-    "device_classes": [
-      "nfet",
-      "pfet"
-    ],
-    "device_count": 104,
-    "findings": [
-      {
-        "class": "nfet",
-        "device_count": 52
-      },
-      {
-        "class": "pfet",
-        "device_count": 52
-      }
-    ],
-    "finding_count": 2
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
   },
-  "mismatch_count": 3,
+  "device_parameter_coverage": [],
+  "mismatch_count": 1,
   "error_count": 0,
   "category_counts": {
-    "device.body_unverified": 2,
     "topology": 1
   },
   "category_error_counts": {},
   "counts": {
     "nets": {
-      "layout": 58,
-      "reference": 58,
-      "matched": 58
+      "layout": 50,
+      "reference": 50,
+      "matched": 50
     },
     "devices": {
       "layout": 104,
@@ -76,9 +73,9 @@
       "matched": 104
     },
     "pins": {
-      "layout": 14,
-      "reference": 11,
-      "matched": 14
+      "layout": 13,
+      "reference": 10,
+      "matched": 13
     }
   },
   "device_classes": [
@@ -86,6 +83,18 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
+    "cap_nmos_03v3",
+    "cap_nmos_03v3_dn",
+    "cap_pmos_03v3",
+    "cap_pmos_03v3_dn",
+    "cap_nmos_06v0",
+    "cap_nmos_06v0_dn",
+    "cap_pmos_06v0",
+    "cap_pmos_06v0_dn",
+    "cap_nmos_03v3_b",
+    "cap_pmos_03v3_b",
+    "cap_nmos_06v0_b",
+    "cap_pmos_06v0_b",
     "resistor",
     "diode_nd2ps_06v0",
     "diode_pd2nw_06v0"
@@ -93,67 +102,49 @@
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.10",
-    "layout_sha256": "d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd",
-    "reference_sha256": "a3f2f52fc0fb5883306868d707fb6848864d5cf9d6357fbd541befc913ed0d49",
+    "netgen_binary": null,
+    "layout_sha256": "c00cf8143b8fd4f76cb986d2f0daf014ea51d1ec643999a14ad625e099939d7f",
+    "reference_sha256": "cb4255710d12fb020bd0c8297b460f7f6cf82584e3001a7e9133698e444c8d9e",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
-      "released": false
+      "content_hash": "sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
     },
     "input": {
-      "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd",
+      "content_hash": "sha256:c00cf8143b8fd4f76cb986d2f0daf014ea51d1ec643999a14ad625e099939d7f",
       "role": "layout"
     },
-    "klayout_version_mismatch": false
+    "klayout_version_mismatch": true
   },
   "mismatches": [
     {
-      "category": "device.body_unverified",
-      "severity": "warning",
-      "description": "52 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
-      "side": "layout",
-      "net": null,
-      "device": {
-        "layout": null,
-        "reference": null,
-        "class": "nfet"
-      },
-      "property": null,
-      "details": null,
-      "circuit": null,
-      "instance": null,
-      "subcircuit": null
-    },
-    {
-      "category": "device.body_unverified",
-      "severity": "warning",
-      "description": "52 PMOS device body terminal(s) were compared against an anonymous, KLayout-synthesized well net, not a real schematic net -- no drawn or derived well-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
-      "side": "layout",
-      "net": null,
-      "device": {
-        "layout": null,
-        "reference": null,
-        "class": "pfet"
-      },
-      "property": null,
-      "details": null,
-      "circuit": null,
-      "instance": null,
-      "subcircuit": null
-    },
-    {
       "category": "topology",
       "severity": "warning",
-      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch",
+      "description": "device class has no counterpart on the other side, but no devices of this class were extracted either -- not a real topology mismatch: 'bjt'",
       "side": "layout",
       "net": null,
-      "device": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "bjt"
+      },
       "property": null,
       "details": null,
       "circuit": null,
@@ -163,12 +154,12 @@
   ],
   "net_correspondence": [
     {
-      "layout": "\\$4",
+      "layout": "\\$5",
       "reference": "AN_XA1",
       "pin": false
     },
     {
-      "layout": "\\$5",
+      "layout": "\\$6",
       "reference": "BN_XA1",
       "pin": false
     },
@@ -178,7 +169,7 @@
       "pin": true
     },
     {
-      "layout": "\\$10",
+      "layout": "\\$11",
       "reference": "CLKB_XSB",
       "pin": false
     },
@@ -218,7 +209,7 @@
       "pin": false
     },
     {
-      "layout": "\\$12",
+      "layout": "\\$13",
       "reference": "MC_XSB",
       "pin": false
     },
@@ -238,12 +229,12 @@
       "pin": false
     },
     {
-      "layout": "\\$9",
+      "layout": "\\$10",
       "reference": "MID_XA1",
       "pin": false
     },
     {
-      "layout": "\\$16",
+      "layout": "\\$17",
       "reference": "MMID_XSB",
       "pin": false
     },
@@ -263,7 +254,7 @@
       "pin": false
     },
     {
-      "layout": "\\$11",
+      "layout": "\\$12",
       "reference": "M_XSB",
       "pin": false
     },
@@ -283,42 +274,7 @@
       "pin": false
     },
     {
-      "layout": "\\$53",
-      "reference": "NWELL_FLOAT_XA1",
-      "pin": false
-    },
-    {
-      "layout": "\\$51",
-      "reference": "NWELL_FLOAT_XB1",
-      "pin": false
-    },
-    {
-      "layout": "\\$52",
-      "reference": "NWELL_FLOAT_XB2",
-      "pin": false
-    },
-    {
-      "layout": "\\$54",
-      "reference": "NWELL_FLOAT_XSB",
-      "pin": false
-    },
-    {
-      "layout": "\\$56",
-      "reference": "NWELL_FLOAT_XSR1",
-      "pin": false
-    },
-    {
-      "layout": "\\$57",
-      "reference": "NWELL_FLOAT_XSR2",
-      "pin": false
-    },
-    {
-      "layout": "\\$55",
-      "reference": "NWELL_FLOAT_XSV",
-      "pin": false
-    },
-    {
-      "layout": "\\$15",
+      "layout": "\\$16",
       "reference": "QB_XSB",
       "pin": false
     },
@@ -383,12 +339,12 @@
       "pin": true
     },
     {
-      "layout": "\\$6",
+      "layout": "\\$7",
       "reference": "S1_XA1",
       "pin": false
     },
     {
-      "layout": "\\$17",
+      "layout": "\\$18",
       "reference": "S2MID_XSB",
       "pin": false
     },
@@ -408,12 +364,12 @@
       "pin": false
     },
     {
-      "layout": "\\$8",
+      "layout": "\\$9",
       "reference": "S2_XA1",
       "pin": false
     },
     {
-      "layout": "\\$13",
+      "layout": "\\$14",
       "reference": "S_XSB",
       "pin": false
     },
@@ -440,11 +396,6 @@
     {
       "layout": "vss",
       "reference": "VSS",
-      "pin": true
-    },
-    {
-      "layout": "vsubs",
-      "reference": "VSUBS",
       "pin": true
     },
     {

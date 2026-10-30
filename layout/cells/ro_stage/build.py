@@ -92,7 +92,7 @@ _CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from _build_cli import gds_file, make_check, make_main  # noqa: E402
-from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, add_taps, write_gds  # noqa: E402
 from _geometry import PAD_H, _narrow, _pad  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -294,12 +294,24 @@ def gds_path() -> str:
     return gds_file(CELL_DIR, TOP_CELL)
 
 
+def _with_taps(rects: list[Rect]) -> list[Rect]:
+    """Add the Nwell (vddr) and substrate (vss) taps off the right-hand rail pads."""
+    ny0, ny1 = _pad(Y_NMOS)
+    py0, py1 = _pad(Y_PMOS)
+    x0, x1 = X_GATE_TIE1 + 0.14, X_GATE_TIE1 + 0.56
+    return add_taps(
+        rects,
+        nwell_tap=("right", (x0, py0 + 0.01, x1, py1 - 0.01)),
+        psub_tap=("right", (x0, ny0 + 0.01, x1, ny1 - 0.01)),
+    )
+
+
 def build(path: str | None = None) -> bytes:
     rects, labels = build_shapes()
     return write_gds(
         path or gds_path(),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, add_implants(rects), labels)],
+        structures=[(TOP_CELL, _with_taps(add_implants(rects)), labels)],
     )
 
 

@@ -88,7 +88,7 @@ from layout.rings import _ring_common  # noqa: E402
 # schematic sources; klt drc on this module's own output is the check that
 # catches a missed mirror.
 # --------------------------------------------------------------------------- #
-STAGE_BBOX = {"x0": -0.5, "y0": -0.3, "x1": 4.33, "y1": 2.38}
+STAGE_BBOX = {"x0": -0.5, "y0": -0.3, "x1": 5.57, "y1": 2.38}
 #: `a`/`y` are the switching pair's own drawn metal; `vddr`/`vss` are the
 #: starve devices' own rail pads. Y chosen at 1.9/0.2 -- inside both
 #: `ro_stage_ring2`'s and `ro_nand2_ring2`'s own rail-pad footprints, see
@@ -99,7 +99,7 @@ STAGE_LOCAL = {
     "vddr": (3.73, 1.9),
     "vss": (3.73, 0.2),
 }
-NAND_BBOX = {"x0": -3.05, "y0": -0.55, "x1": 5.56, "y1": 3.10}
+NAND_BBOX = {"x0": -3.05, "y0": -0.55, "x1": 6.80, "y1": 3.10}
 NAND_LOCAL = {
     "a": (0.59, 1.40),
     "y": (1.38, 1.99),

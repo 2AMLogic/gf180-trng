@@ -135,6 +135,119 @@ def add_implants(rects: list[Rect], margin: float = IMPLANT_MARGIN_UM) -> list[R
     return out
 
 
+#: Layers the tap helper draws that `add_implants` does not.
+_CONTACT = (33, 0)
+_METAL1 = (34, 0)
+
+#: Tap geometry, um. The tap Comp is a square just over the 0.36 um a
+#: 0.22 um contact plus its 0.07 um enclosure needs; it sits `TAP_GAP_UM`
+#: beyond the nearest Comp in its row so the tap's own (smaller) implant and
+#: the neighbouring pad's implant clear `nplus.space.pcomp.1` /
+#: `pplus.space.ncomp.1`.
+TAP_SIZE_UM = 0.44
+TAP_GAP_UM = 0.80
+#: Closest an explicitly placed (`x=`) tap may sit to its row's Comp.
+TAP_MIN_GAP_UM = 0.75
+TAP_IMPLANT_MARGIN_UM = 0.20
+TAP_CONTACT_UM = 0.22
+TAP_JOG_UM = 0.30
+TAP_NWELL_MARGIN_UM = 0.25
+
+
+def _row_comp_edge(rects: list[Rect], y_lo: float, y_hi: float, side: str) -> float:
+    comps = [r for r in rects if (r.layer, r.datatype) == _COMP and r.y0 < y_hi and r.y1 > y_lo]
+    if not comps:
+        raise ValueError(f"no Comp in the row y={y_lo}..{y_hi}")
+    return max(r.x1 for r in comps) if side == "right" else min(r.x0 for r in comps)
+
+
+def tap_rects(kind: str, cx: float, cy: float, size: float = TAP_SIZE_UM) -> list[Rect]:
+    """Comp, implant and Contact of one tap centred on `(cx, cy)`.
+
+    `kind` is `"n"` (Nplus tap, for inside an Nwell) or `"p"` (Pplus tap,
+    for the substrate). Metal1 and the Nwell are the caller's: they depend
+    on where the supply it ties to is.
+    """
+    if kind not in ("n", "p"):
+        raise ValueError(f"tap kind must be n or p, got {kind!r}")
+    h = size / 2
+    implant = _NPLUS if kind == "n" else _PPLUS
+    m = TAP_IMPLANT_MARGIN_UM
+    c = TAP_CONTACT_UM / 2
+    return [
+        Rect(_COMP[0], _COMP[1], cx - h, cy - h, cx + h, cy + h),
+        Rect(implant[0], implant[1], cx - h - m, cy - h - m, cx + h + m, cy + h + m),
+        Rect(_CONTACT[0], _CONTACT[1], cx - c, cy - c, cx + c, cy + c),
+    ]
+
+
+def add_taps(
+    rects: list[Rect],
+    *,
+    nwell_tap: tuple,
+    psub_tap: tuple,
+) -> list[Rect]:
+    """Return `rects` plus one Nwell tap and one substrate tap.
+
+    Each argument is `(side, metal)`: `side` is `"left"` or `"right"`, the
+    end of the row the tap is drawn at, and `metal` is the `(x0, y0, x1, y1)`
+    Metal1 pad that already carries the supply on that row (the PMOS row's
+    VDD pad for `nwell_tap`, the NMOS row's VSS pad for `psub_tap`). The tap
+    lands on the pad's own row centreline, `TAP_GAP_UM` past the row's last
+    Comp, so the cell grows along x only: row pitch and every pin stay put.
+
+    * Nwell tap: Nplus Comp inside the Nwell, which is extended from the
+      existing Nwell rectangle on that row to enclose it.
+    * Substrate tap: Pplus Comp outside any Nwell.
+
+    A tap may instead be `(side, metal, x)`: the tap is then centred on `x`
+    and the contact lands directly under supply Metal1 that already covers
+    it, so no jog is drawn (the PMOS row of `ro_nand2` has no free end that
+    reaches its VDDR pad, but its VDDR riser passes right beside the row).
+
+    Both get a Contact and a Metal1 pad, jogged into the supply pad. Call
+    this on the output of `add_implants` (the tap carries its own implant).
+    klt >= 0.8.0's `comp.tap_distance.*` forbids a Pcomp/Ncomp with no tap of
+    its polarity within 20 um. The input list is not modified.
+    """
+    out = list(rects)
+    for kind, spec in (("n", nwell_tap), ("p", psub_tap)):
+        side, metal, *rest = spec
+        at_x = rest[0] if rest else None
+        if side not in ("left", "right"):
+            raise ValueError(f"tap side must be left or right, got {side!r}")
+        mx0, my0, mx1, my1 = metal
+        cy = (my0 + my1) / 2
+        edge = _row_comp_edge(rects, my0, my1, side)
+        sign = 1 if side == "right" else -1
+        if at_x is None:
+            far = edge + sign * (TAP_GAP_UM + TAP_SIZE_UM)
+            tx0, tx1 = sorted((edge + sign * TAP_GAP_UM, far))
+        else:
+            tx0, tx1 = at_x - TAP_SIZE_UM / 2, at_x + TAP_SIZE_UM / 2
+            far = tx1 if side == "right" else tx0
+            if abs(at_x - edge) - TAP_SIZE_UM / 2 < TAP_MIN_GAP_UM:
+                raise ValueError(f"tap at x={at_x} is closer than {TAP_MIN_GAP_UM} um to the row's Comp")
+        ty0, ty1 = cy - TAP_SIZE_UM / 2, cy + TAP_SIZE_UM / 2
+        cx = (tx0 + tx1) / 2
+        out.extend(tap_rects(kind, cx, cy, size=tx1 - tx0))
+        j = TAP_JOG_UM / 2
+        # One Metal1 run from the supply pad's inner edge out over the tap
+        # contact, so pad, jog and tap are a single polygon.
+        if at_x is None:
+            lo, hi = (mx1 - 0.1, tx1) if side == "right" else (tx0, mx0 + 0.1)
+            out.append(Rect(_METAL1[0], _METAL1[1], lo, cy - j, hi, cy + j))
+        if kind == "n":
+            wells = [r for r in rects if (r.layer, r.datatype) == _NWELL and r.y0 <= cy <= r.y1]
+            if not wells:
+                raise ValueError(f"no Nwell on the row y={cy}")
+            w = max(wells, key=lambda r: r.x1) if side == "right" else min(wells, key=lambda r: r.x0)
+            wx = w.x1 if side == "right" else w.x0
+            lo, hi = sorted((wx - sign * 0.1, far + sign * TAP_NWELL_MARGIN_UM))
+            out.append(Rect(_NWELL[0], _NWELL[1], lo, w.y0, hi, w.y1))
+    return out
+
+
 @dataclass(frozen=True)
 class Label:
     """One TEXT element, in micrometres, on one (layer, texttype).

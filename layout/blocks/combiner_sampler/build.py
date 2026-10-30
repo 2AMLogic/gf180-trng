@@ -213,9 +213,9 @@ METAL3 = [42, 0]
 # STAGE_BBOX/NAND_BBOX; klt drc/klt lvs on this module's own output is the
 # check that catches a missed mirror.
 # --------------------------------------------------------------------------- #
-RO_BUF_BBOX = {"x0": -0.50, "y0": -0.30, "x1": 1.93, "y1": 2.38}
-XOR2_BBOX = {"x0": -0.22, "y0": 0.31, "x1": 30.67, "y1": 8.59}
-SAMPLER_BBOX = {"x0": -0.22, "y0": 0.53, "x1": 54.67, "y1": 10.97}
+RO_BUF_BBOX = {"x0": -0.50, "y0": -0.30, "x1": 3.17, "y1": 2.38}
+XOR2_BBOX = {"x0": -0.22, "y0": -0.93, "x1": 30.67, "y1": 8.59}
+SAMPLER_BBOX = {"x0": -0.22, "y0": -0.71, "x1": 54.67, "y1": 10.97}
 
 #: {cell kind -> bbox}, for the placement/wiring helpers below.
 CELL_BBOX = {"ro_buf": RO_BUF_BBOX, "xor2": XOR2_BBOX, "sampler_dff": SAMPLER_BBOX}

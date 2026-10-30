@@ -24,11 +24,12 @@ extract` and `klt lvs` end to end, and nothing here should be read as a
 statement about the TRNG's own layout. See `layout/README.md`.
 
 Geometry is drawn on the curated-deck layer subset only (Nwell, Comp, Poly2,
-Contact, Metal1, and Metal1's 34/10 label purpose) -- the layers `klt`'s
-gf180mcu DRC and extraction decks actually read. Implant (Nplus/Pplus) and
-the other sign-off layers are deliberately absent: adding them would not
-change any result the curated decks produce, and drawing them here would
-imply a fab-readiness these fixtures do not have.
+Contact, Metal1, Metal1's 34/10 label purpose, and the Nplus/Pplus implants
+`klt` >= 0.8.0's `comp.coverage.1` and tap-distance rules read) -- the layers
+`klt`'s gf180mcu DRC and extraction decks actually read. Every Comp is
+implanted, and the cell carries an Nwell tap tied to VDD and a substrate tap
+tied to VSS. The other sign-off layers are deliberately absent: drawing them
+here would imply a fab-readiness these fixtures do not have.
 """
 
 from __future__ import annotations
@@ -39,7 +40,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gdsii import Label, Rect, add_implants, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, add_taps, write_gds  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Layer numbers -- gf180mcu drawn layers, matching klt's curated decks.
@@ -194,13 +195,22 @@ def gds_path(stem: str) -> str:
     return os.path.join(TESTCELL_DIR, f"{stem}.gds")
 
 
+def _with_taps(rects: list[Rect]) -> list[Rect]:
+    """Add the Nwell (VDD) and substrate (VSS) taps, off the left of the rows."""
+    return add_taps(
+        rects,
+        nwell_tap=("left", (0.08, 2.22, 0.44, 2.58)),
+        psub_tap=("left", (0.08, 0.22, 0.44, 0.58)),
+    )
+
+
 def build(stem: str, path: str | None = None) -> bytes:
     """Write one fixture's GDSII stream and return its bytes."""
     builder, _purpose = FIXTURES[stem]
     return write_gds(
         path or gds_path(stem),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, add_implants(builder()), _labels())],
+        structures=[(TOP_CELL, _with_taps(add_implants(builder())), _labels())],
     )
 
 

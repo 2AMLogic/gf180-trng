@@ -103,7 +103,7 @@ sys.path.insert(0, os.path.abspath(_TESTCELL_DIR))
 _CELLS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
-from gdsii import Label, Rect  # noqa: E402
+from gdsii import Label, Rect, add_taps  # noqa: E402
 from _geometry import PAD_H, _narrow, _pad  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -368,3 +368,19 @@ def build_shapes(w_starve: float) -> tuple[list[Rect], list[Label]]:
     rect(METAL1, -1.26, VSS_JOG_Y[0], 5.34, VSS_JOG_Y[1])  # the jog itself
 
     return rects, labels
+
+
+def with_taps(rects: list[Rect]) -> list[Rect]:
+    """Add the Nwell (vddr) and substrate (vss) taps to `add_implants` output.
+
+    The PMOS row's `pad(vddr)` is at the far left, behind `a`'s Metal1 escape
+    route and the ring's `a` waypoint column, so the Nwell tap instead lands
+    under the XMnt-tie riser (vddr Metal1) that runs up the right-hand side
+    of the row. The substrate tap jogs off `pad(vss)` at the NMOS row's
+    right-hand end.
+    """
+    return add_taps(
+        rects,
+        nwell_tap=("right", (3.73, Y_PMOS - 0.15, 3.99, Y_PMOS + 0.15), 3.86),
+        psub_tap=("right", (5.08, Y_NMOS - 0.15, 5.34, Y_NMOS + 0.15)),
+    )
