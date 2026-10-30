@@ -170,77 +170,77 @@ allocation.
    {
     "corner": "ff_125C_3v60/rc-max",
     "record": "2026-10-30-digital-sta-power-12",
-    "sha256": "852957e175b06e7deeadd04219548cb431a04ea7d11d0d7a6f54ae1b4047f1d5"
+    "sha256": "ac2a9b18956d5d0fc9662215655351baa013f1ba9bda5d34e14d474f32a4fdf0"
    },
    {
     "corner": "ff_125C_3v60/rc-min",
     "record": "2026-10-30-digital-sta-power-10",
-    "sha256": "efecfe360bb69d4f2a35223b44e5156f930119c8d2fb9036067433e458441f67"
+    "sha256": "ae0dc2f3ea796e447096df3fc4df4901d62d9927b5b791ad149cff2938a6bc86"
    },
    {
     "corner": "ff_125C_3v60/rc-nom",
     "record": "2026-10-30-digital-sta-power-11",
-    "sha256": "ace1ce4c11db15162130d5dd5b240b2f13c32458c48af69050c414356fb221fe"
+    "sha256": "ba52913baa7abe54cc3c96cd792a32f6067132a6ad0af93b9676be3a549cd008"
    },
    {
     "corner": "ff_n40C_3v60/rc-max",
     "record": "2026-10-30-digital-sta-power-15",
-    "sha256": "59a5d0f9ab950b4a849439aba0f8bafef142800e3d3f7f22569c7a9ca2202137"
+    "sha256": "a1bcd7261a7bb8fa05dd3b61893f179f7218160b9baa2b04e13c480ee167e9ab"
    },
    {
     "corner": "ff_n40C_3v60/rc-min",
     "record": "2026-10-30-digital-sta-power-13",
-    "sha256": "19a33018e09846d6214254ac70a74463fc3a7ca7cf3016e27a457730af9d5e5c"
+    "sha256": "5fff5c5ab8c19973f5884fac0a0a46c6fe9008672d80f04ed4f8aebe0b44be58"
    },
    {
     "corner": "ff_n40C_3v60/rc-nom",
     "record": "2026-10-30-digital-sta-power-14",
-    "sha256": "f3d209fb5cc9cbd582f960f7c85032b3ef84b70185d22a71a9e314db6c4f2aa2"
+    "sha256": "b5ca6814f4ba16c0d7f066296682c0f73cf763064049aa9a0751c4d729b7d33f"
    },
    {
     "corner": "ss_125C_3v00/rc-max",
     "record": "2026-10-30-digital-sta-power-03",
-    "sha256": "f1708a592d4437d0796183215230700a1ee94a0fbb6d14b5b67f12830d2bf4b6"
+    "sha256": "a7d7ae54f1b58d48cc69a53c4c629acb33ce6eab9d6c94364c8592999f0c388f"
    },
    {
     "corner": "ss_125C_3v00/rc-min",
     "record": "2026-10-30-digital-sta-power-01",
-    "sha256": "95afa856e18f1d63e045558449a3cd62d998ac0bd0bce5af69979b6db9c8962e"
+    "sha256": "4710bc62001e988180237c2bde7b842ed68f6d6624c04488edf7817f232d6169"
    },
    {
     "corner": "ss_125C_3v00/rc-nom",
     "record": "2026-10-30-digital-sta-power-02",
-    "sha256": "2338a676871021b16c07c7ad23da6a51c471926fb8067292663ddf57727ebb34"
+    "sha256": "11db507d609c5e0645c016cb67288457484d9878b6be5ef3e2fd375cb30b59bc"
    },
    {
     "corner": "ss_n40C_3v00/rc-max",
     "record": "2026-10-30-digital-sta-power-06",
-    "sha256": "2a3394f43fa2e653b110595d76b8fbb78738bd461c30328f3744f65e7df2f032"
+    "sha256": "89d7f8e01f4ad5a2dd19625530b5883256ffbb06a7be8a7a981370c30d0ec021"
    },
    {
     "corner": "ss_n40C_3v00/rc-min",
     "record": "2026-10-30-digital-sta-power-04",
-    "sha256": "862e1c05556d2afd47726eadd96417fe039e3aac77298046c215b0dfa6c649ca"
+    "sha256": "12a59845ef0151cf34ea7c54f5da843b11da889b502163acb10c389439506b5b"
    },
    {
     "corner": "ss_n40C_3v00/rc-nom",
     "record": "2026-10-30-digital-sta-power-05",
-    "sha256": "beaddf5d366d205ea905a1414e48e3fdb5692d56eb21736aa81fa363e29bb079"
+    "sha256": "008313465ae49df3690a4f2df30cb123af9c2453560e8da79da30cf78ecac448"
    },
    {
     "corner": "tt_025C_3v30/rc-max",
     "record": "2026-10-30-digital-sta-power-09",
-    "sha256": "eefece50cd37085d3970a5f3d85e9e58ea6ed356cb1b3c10e264a35fd7a4e95c"
+    "sha256": "a9535bde15309c996be1f6436dfa87b3baab6b880e847e82e1318d667ee8972e"
    },
    {
     "corner": "tt_025C_3v30/rc-min",
     "record": "2026-10-30-digital-sta-power-07",
-    "sha256": "1cbec18e37b2d2c2b8e277e5b503bbb8a723b45b94a837e5574939a0195276de"
+    "sha256": "b21aea6dc205e494372c480fb04e5b66b8c36013a2a2a780da66d58061583df9"
    },
    {
     "corner": "tt_025C_3v30/rc-nom",
     "record": "2026-10-30-digital-sta-power-08",
-    "sha256": "8fd27ac9bb5d187cbb284ba94032630846104f27ff6c602372c190b2dfff3f55"
+    "sha256": "0ef6af421f7c4e16b8d2bc873ee02dab28f6a40e3f2f70fcbe32f0fc684b1905"
    }
   ]
  },
