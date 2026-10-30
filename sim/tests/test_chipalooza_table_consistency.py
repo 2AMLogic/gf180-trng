@@ -70,9 +70,9 @@ class ProposalTableAgreesWithEvidence(unittest.TestCase):
         for corner in ("ss/125/2.97", "tt/27/3.30", "ff/-40/3.63"):
             with self.subTest(corner=corner):
                 self.assertIn(self._rollup_total(corner), row)
-        self.assertRegex(self.rollup, r"digital \(MEASURED-at-gate-level\): 348\.2 uW")
-        self.assertIn("348.2 µW", row)
-        self.assertIn("151.6 %", row)
+        self.assertRegex(self.rollup, r"digital \(MEASURED-at-gate-level\): 339\.4 uW")
+        self.assertIn("339.4 µW", row)
+        self.assertIn("149.9 %", row)
 
     def test_row_d_historical_figures_carry_revision_context(self):
         row = _row("D")
@@ -80,8 +80,8 @@ class ProposalTableAgreesWithEvidence(unittest.TestCase):
 
     def test_row_e_worst_corner_is_the_rollup(self):
         row = _row("E")
-        self.assertRegex(self.rollup, r"Worst idle corner: ff/125/3\.63\s*-> 2\.211 uA")
-        self.assertIn("2.211 µA", row)
+        self.assertRegex(self.rollup, r"Worst idle corner: ff/125/3\.63\s*-> 2\.148 uA")
+        self.assertIn("2.148 µA", row)
         self.assertRegex(row, r"Historical, not current: 3\.979 µA[^|]*depth-8 build")
 
     def test_row_g_fmax_matches_current_record_family(self):

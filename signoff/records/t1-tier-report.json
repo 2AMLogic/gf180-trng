@@ -70,7 +70,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:7283b64e3e75d092e9f905549bb4e912130a521ed5978790fa7e9f31d6a118b1",
+        "content_hash": "sha256:274338ba8cd6515352ff958ce9c34cb2cb2f1ce5713b6bb4b5e7c14e92c09862",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -79,7 +79,7 @@
             "path": "signoff/evidence/inventory-1-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:7283b64e3e75d092e9f905549bb4e912130a521ed5978790fa7e9f31d6a118b1",
+          "content_hash": "sha256:274338ba8cd6515352ff958ce9c34cb2cb2f1ce5713b6bb4b5e7c14e92c09862",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 1 (Design sources), digital partition: 11 design-source files (the RTL, its synthesized netlist and the generated register map) with their regeneration gates. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 design/interface/regmap.py --check`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 design/synth.py --check` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-1-digital.json"
@@ -102,7 +102,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:0e060eeeec2cd69b0902974f1c7b9a6d0d757d56b33292e4342df3a38f21ec1d",
+        "content_hash": "sha256:bcbe74c305d8a2fdb9d7ed7ccb23f20cf8bf6795242e8a655aed0936591687f8",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -111,7 +111,7 @@
             "path": "signoff/evidence/inventory-2-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:0e060eeeec2cd69b0902974f1c7b9a6d0d757d56b33292e4342df3a38f21ec1d",
+          "content_hash": "sha256:bcbe74c305d8a2fdb9d7ed7ccb23f20cf8bf6795242e8a655aed0936591687f8",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 2 (Layout), analog partition: 36 layout files (hand-drawn cell, ring and block streams with their reference netlists, and the composed floorplan stream); the stream the item 3/4 citations pin (layout/blocks/combiner_sampler/combiner_sampler.gds) is a member and its hash is held to those pins. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 design/floorplan_netlist.py --check`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 layout/verify.py --require-tools` (pdk-nightly.yml), `python3 layout/floorplan/floorplan.py --require-tools` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-2-analog.json"
@@ -134,7 +134,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:9eb8a2fd7a319b50f9c49821dbb36853356959dd0aea7c769b09d45b5784c24f",
+        "content_hash": "sha256:c828967718ab5763283e895bb5d7c9302bb3ff447398bd4102e048991df750a7",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -143,7 +143,7 @@
             "path": "signoff/evidence/inventory-2-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:9eb8a2fd7a319b50f9c49821dbb36853356959dd0aea7c769b09d45b5784c24f",
+          "content_hash": "sha256:c828967718ab5763283e895bb5d7c9302bb3ff447398bd4102e048991df750a7",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 2 (Layout), digital partition: 7 layout files (the placed-and-routed stream, DEF, as-built netlist, SDF and LVS reference); the stream the item 3/4 citations pin (layout/digital/trng_top.gds) is a member and its hash is held to those pins. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 layout/digital/build.py --check-input`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 layout/digital/tap_distance.py --check --require-tools` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-2-digital.json"
@@ -228,7 +228,7 @@
         "command": null,
         "kind": "drc",
         "check_status": "clean",
-        "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7",
+        "content_hash": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3",
         "input_verified": true,
         "exit_status": 0,
         "coverage": {
@@ -306,7 +306,7 @@
         "command": null,
         "kind": "lvs",
         "check_status": "match",
-        "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
+        "content_hash": "sha256:0a17953d23a8eaa824056d0dfeb86a82ce9fa449f590c0e4fd2079333aec416d",
         "input_verified": true,
         "exit_status": 0
       }
@@ -344,7 +344,7 @@
         "command": null,
         "kind": "sta",
         "check_status": "ok",
-        "content_hash": "sha256:4685d4e248b54a898a5d2c6fa55c7fd22cf0b67659a1dc1b1e65306ad97fec7a",
+        "content_hash": "sha256:e3fb53047800ca2076b3bbbe8936fd5a09df39662a43a2007756233be5d970b5",
         "input_verified": true,
         "exit_status": 0
       },
@@ -366,7 +366,7 @@
           "command": null,
           "kind": "sta",
           "check_status": "ok",
-          "content_hash": "sha256:4685d4e248b54a898a5d2c6fa55c7fd22cf0b67659a1dc1b1e65306ad97fec7a",
+          "content_hash": "sha256:e3fb53047800ca2076b3bbbe8936fd5a09df39662a43a2007756233be5d970b5",
           "input_verified": true,
           "exit_status": 0
         },
@@ -486,7 +486,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:8915c58f4279cd4159c87a930b93c287a97cedf24aa541325ee73e31cdd990b4",
+        "content_hash": "sha256:4c27c91683c1df9d74650bbcdee7fbe595397978b9d1515e7cdb087226d01475",
         "input_verified": null,
         "exit_status": 0
       }
@@ -507,7 +507,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:8816f4abd3ebc6be304324c3841b6df93f8f1019fb0530b7f3cd713fb54f22c1",
+        "content_hash": "sha256:416841bfc99a7aca641df1877b20d9ec7611564c7926d728f6b2237558e60819",
         "input_verified": null,
         "exit_status": 0
       }
@@ -528,7 +528,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:ce6ac74fa45122e4b8a0ff75a0cb4b66db59c6b19ae948eb279b4e95ecb0ffce",
+        "content_hash": "sha256:932ff4c247054087bd385798abc321055ba2081a23249023112487c88d0ada7d",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -537,7 +537,7 @@
             "path": "signoff/evidence/inventory-9-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:ce6ac74fa45122e4b8a0ff75a0cb4b66db59c6b19ae948eb279b4e95ecb0ffce",
+          "content_hash": "sha256:932ff4c247054087bd385798abc321055ba2081a23249023112487c88d0ada7d",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), analog partition: 89 analog testbench directories under sim/tb/ (204 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 sim/run_corners.py --check-env` (pdk-nightly.yml), `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-analog.json"
@@ -560,7 +560,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:ad235106362edd35ec143cc021fbecc74bf16d9f8be7fd43a0bcf68cbbe2ecad",
+        "content_hash": "sha256:62244aa9aee20a7c7d0eb28b1f1e230ba80ba1f444685958dd5556a6e15f2adf",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -569,7 +569,7 @@
             "path": "signoff/evidence/inventory-9-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:ad235106362edd35ec143cc021fbecc74bf16d9f8be7fd43a0bcf68cbbe2ecad",
+          "content_hash": "sha256:62244aa9aee20a7c7d0eb28b1f1e230ba80ba1f444685958dd5556a6e15f2adf",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), digital partition: 10 digital testbench directories under sim/tb/ (43 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-digital.json"
@@ -592,7 +592,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:cd5a31c7742ad7a959ace581af0ad5439ded950348b900a33c7289ca36b82a84",
+        "content_hash": "sha256:f0447edc0fc258862033fc5807c620b3176a5799ec8d91577e0fe4606b501448",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -601,7 +601,7 @@
             "path": "signoff/evidence/inventory-10-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:cd5a31c7742ad7a959ace581af0ad5439ded950348b900a33c7289ca36b82a84",
+          "content_hash": "sha256:f0447edc0fc258862033fc5807c620b3176a5799ec8d91577e0fe4606b501448",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 10 (Repo hygiene), analog partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
           "source": "signoff/evidence/inventory-10-analog.json"
@@ -624,7 +624,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:ec6f30f75908ac0f04c38ea02e9943508d1ff4988d7c00c686c8e0e8fb56d145",
+        "content_hash": "sha256:3aa6d5e445bc9cf055caf1ccafe9a85429dc6199f666c6bc61c70481d594a1e8",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -633,7 +633,7 @@
             "path": "signoff/evidence/inventory-10-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:ec6f30f75908ac0f04c38ea02e9943508d1ff4988d7c00c686c8e0e8fb56d145",
+          "content_hash": "sha256:3aa6d5e445bc9cf055caf1ccafe9a85429dc6199f666c6bc61c70481d594a1e8",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 10 (Repo hygiene), digital partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
           "source": "signoff/evidence/inventory-10-digital.json"
@@ -678,7 +678,7 @@
         "command": null,
         "kind": "erc",
         "check_status": "not_checked",
-        "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7",
+        "content_hash": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3",
         "input_verified": true,
         "exit_status": 0,
         "parts": [
@@ -687,7 +687,7 @@
             "command": null,
             "kind": "erc",
             "check_status": "not_checked",
-            "content_hash": "sha256:b164476c4e630f4d9f78777b6a248e8be6917a8107029667295076a5165f35b7",
+            "content_hash": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3",
             "input_verified": true,
             "exit_status": 0
           },
@@ -696,7 +696,7 @@
             "command": null,
             "kind": "lvs",
             "check_status": "match",
-            "content_hash": "sha256:d661d0252fbb2cddd81ef8a7d58663a3989fa3575a33780f477bfeb1386bda80",
+            "content_hash": "sha256:0a17953d23a8eaa824056d0dfeb86a82ce9fa449f590c0e4fd2079333aec416d",
             "input_verified": true,
             "exit_status": 0
           },
@@ -705,7 +705,7 @@
             "command": null,
             "kind": "place-and-route",
             "check_status": "ok",
-            "content_hash": "sha256:a370c452c3a44fb5bed0d43dc785e98f88d322ab0fe4130d171ee5d576024244",
+            "content_hash": "sha256:07363aeba9330226eabf2623722f12c0c4f703890a6076efc1477702dd244789",
             "input_verified": null,
             "exit_status": 0
           }

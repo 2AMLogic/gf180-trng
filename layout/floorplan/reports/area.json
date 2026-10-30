@@ -233,8 +233,8 @@
       "title": "Conditioner + health tests + interface",
       "supply": "vddd",
       "role": "deterministic",
-      "contents": "863 standard cells",
-      "cell_count": 863,
+      "contents": "862 standard cells",
+      "cell_count": 862,
       "breakdown": [
         {
           "cell": "conditioner (#8)",
@@ -250,8 +250,8 @@
         },
         {
           "cell": "interface (#26)",
-          "count": 531,
-          "area_um2": 22268.11,
+          "count": 530,
+          "area_um2": 21842.24,
           "shipped": true
         },
         {
@@ -261,43 +261,43 @@
           "shipped": false
         }
       ],
-      "cell_area_um2": 33654.61,
+      "cell_area_um2": 33228.74,
       "placed_area_um2": {
-        "60pct": 56091.02,
-        "80pct": 42068.26
+        "60pct": 55381.24,
+        "80pct": 41535.93
       },
       "footprint_source": {
         "kind": "assembled_gds",
-        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (236.84 x 236.84 um)",
+        "note": "sized from the committed, DRC/LVS-clean assembled row's own bounding box (issue #119), not from the area/utilisation estimate's sqrt(cell_area_um2 / geometry_utilisation) square -- see this region's own cell_area_um2/placed_area_um2 above for what that estimate alone would have given (235.33 x 235.33 um)",
         "gds": "layout/digital/trng_top.gds",
         "cell_name": "trng_top",
         "bbox_um": {
           "x0": 0.0,
           "y0": 0.0,
-          "x1": 398.93,
-          "y1": 398.93
+          "x1": 395.71500000000003,
+          "y1": 395.71500000000003
         }
       },
-      "inner_w_um": 399.73,
-      "inner_h_um": 399.73,
+      "inner_w_um": 396.515,
+      "inner_h_um": 396.515,
       "ring_placement_clearance_um": 0.4,
       "ring_band_width_um": 0.6,
-      "guarded_w_um": 400.93,
-      "guarded_h_um": 400.93,
-      "guarded_area_um2": 160744.86,
-      "guard_taps": 800,
+      "guarded_w_um": 397.715,
+      "guarded_h_um": 397.715,
+      "guarded_area_um2": 158177.22,
+      "guard_taps": 792,
       "ring_content_report": "fp_ring_content_digital.json",
       "ring_content_bbox_um": {
         "x0": 0.0,
         "y0": 0.0,
-        "x1": 398.93,
-        "y1": 398.93
+        "x1": 395.71500000000003,
+        "y1": 395.71500000000003
       }
     }
   ],
   "rollup": {
     "budget_um2": 50000.0,
-    "cell_area_um2": 34447.18,
+    "cell_area_um2": 34021.31,
     "isolation_channel_um": 20.0,
     "channels": [
       {
@@ -324,20 +324,20 @@
           "digital"
         ],
         "width_um": 20.0,
-        "span_um": 400.93,
-        "area_um2": 8018.6
+        "span_um": 397.715,
+        "area_um2": 7954.3
       }
     ],
-    "guarded_region_area_um2": 167271.26,
-    "isolation_channel_area_um2": 8518.6,
-    "floorplan_area_um2": 175789.86,
+    "guarded_region_area_um2": 164703.62,
+    "isolation_channel_area_um2": 8454.3,
+    "floorplan_area_um2": 173157.92,
     "row_bbox_um": {
-      "w": 934.36,
-      "h": 416.73
+      "w": 931.145,
+      "h": 413.515
     },
     "placed_area_um2": {
-      "60pct": 57411.99,
-      "80pct": 43058.98
+      "60pct": 56702.21,
+      "80pct": 42526.65
     },
     "subtotals": {
       "analog": {
@@ -356,14 +356,14 @@
         "regions": [
           "digital"
         ],
-        "cell_area_um2": 33654.61,
-        "guarded_area_um2": 160744.86,
+        "cell_area_um2": 33228.74,
+        "guarded_area_um2": 158177.22,
         "isolation_channel_area_um2": 0,
-        "area_um2": 160744.86,
-        "share_of_budget_pct": 321.49
+        "area_um2": 158177.22,
+        "share_of_budget_pct": 316.35
       }
     },
-    "share_of_budget_pct": 351.6,
+    "share_of_budget_pct": 346.3,
     "excluded": {
       "ring_liveness_monitor_DR0016": {
         "cells": 85,

@@ -382,7 +382,7 @@ pins against the stated `repair_design` targets, down from 720 and 3.
 These are all still at the 1.62 V/1.80 V decks or on the inserted buffers,
 as §0a describes, and none is a library violation at any of the fifteen
 swept corners. The design's worst-fanout net moved again, to
-`u_interface/net75` at 34 loads.
+`u_interface/net75` at 34 loads (and to `u_interface/net64`, 41 loads, after #709).
 
 **Reproducing the control column:**
 
@@ -395,6 +395,43 @@ cd /tmp/ctrl && python3 layout/digital/build.py && python3 sim/tb/digital-sta-po
 `sim/tools/digital_corner_characterization.py`'s `RECORDED` table and
 `sim/tb/digital-sta-power/max_transition_probe.py`'s `RECORDED` table now
 describe the #293 DEF.
+
+## 0c. Rebuild after the interface `raw_shift` / `raw_bit_count` change (#709)
+
+`design/interface/trng_interface.v` no longer resets or clears `raw_shift` and
+sizes `raw_bit_count` from `TRNG_RAW_PACK_BITS` (5 bits instead of 6; DR-0013's
+regmap and streaming behaviour unchanged). The whole digital chain was re-run on
+the new RTL: `design/synth.py`, `layout/digital/build.py`, `lvs.py`,
+`gen_sdf.py`, `run_sta.py` (new record family `2026-10-29-digital-sta-power-01..15`;
+earlier families stay as append-only evidence) and `layout/floorplan/floorplan.py
+--write`. `klt` was the 0.6.0 release and OpenROAD the same 26Q3-1510 build as
+§0b. The host's Yosys is 0.67+post where the previous netlist recorded 0.69, so
+the synthesized netlist carries that engine version in `trng_top.synth.json`.
+
+| | #293 DEF | **#709 DEF** |
+|---|---:|---:|
+| Synthesized instances / area | 1459 / 57 435.84 µm² | **1395 / 56 464.93 µm²** |
+| Placed logical instances | 1490 | **1423** |
+| DEF `COMPONENTS` | 4960 | **4788** |
+| Die | 398.93 µm square, 159 145 µm² | **395.715 µm square, 156 590 µm²** |
+| Achieved utilization | 43.38 % | **43.41 %** |
+| Routed wirelength | 77 781 µm | **72 506 µm** |
+| Placed cell area | 62 081.5 µm² | **60 743.7 µm²** |
+| vs the pre-synthesis inventory | ×1.845 | **×1.828** |
+| Setup binding slack (`ss_125C_3v00`/`max`) | +31.220 ns | **+30.841 ns** |
+| Hold binding slack (`ff_n40C_3v60`/`min`) | +0.6946 ns | **+0.6958 ns** |
+| Fmax floor (`ss_125C_3v00`/`max`) | 53.249 MHz | **52.195 MHz** |
+| Active power @ 1 MHz, max (`ff_125C_3v60`/`max`) | 348.2 µW | **339.4 µW** |
+| Leakage, max (`ff_125C_3v60`) | 7.842 µW / 2.178 µA | **7.617 µW / 2.116 µA** |
+| Library `max_transition` violations | 0 of 15 corners | **0 of 15 corners** |
+
+Place-and-route is a single stochastic sample, so the Fmax floor and slack
+columns moving the other way from the area is not evidence either build places
+better. Every ratified-row verdict is unchanged: timing closes at all fifteen
+corners, `max_transition` is clean, and the worst-slack corner for it is
+`ff_n40C_3v60`/`max` at +3.107 ns. The Area and idle rows are still missed (see
+`README.md`'s Power and Area rows); `sim/tools/digital_corner_characterization.py`'s
+`RECORDED` table describes this DEF.
 
 ---
 

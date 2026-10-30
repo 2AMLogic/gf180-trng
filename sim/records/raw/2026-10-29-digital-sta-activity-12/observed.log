@@ -1,0 +1,261 @@
+OpenROAD 26Q3-1510-g6cb3f2b704 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/techlef/gf180mcu_fd_sc_mcu9t5v0__nom.tlef, created 15 layers, 56 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef at line 2.
+
+[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef, created 229 library cells
+[INFO ODB-0127] Reading DEF file: /home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-709/layout/digital/trng_top.def
+[INFO ODB-0128] Design: trng_top
+[INFO ODB-0130]     Created 111 pins.
+[INFO ODB-0131]     Created 4788 components and 23662 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 18628 connections.
+[INFO ODB-0133]     Created 1445 nets and 5013 connections.
+[INFO ODB-0134] Finished DEF file: /home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-709/layout/digital/trng_top.def
+ACT_BEGIN alarm-gated reset
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.209558e-04 0.000000e+00 1.645467e-06 1.226012e-04  59.6%
+Combinational        1.813815e-06 2.784115e-06 2.914761e-06 7.512691e-06   3.6%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  36.8%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.534091e-04 4.539105e-05 7.051153e-06 2.058513e-04 100.0%
+                            74.5%        22.1%         3.4%
+ACT_END
+ACT_BEGIN alarm-gated startup
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.285143e-04 4.810368e-06 2.012388e-06 1.353370e-04  57.5%
+Combinational        1.220796e-05 9.029374e-06 3.192949e-06 2.443029e-05  10.4%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  32.2%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.713617e-04 5.644666e-05 7.696259e-06 2.355046e-04 100.0%
+                            72.8%        24.0%         3.3%
+ACT_END
+ACT_BEGIN alarm-gated steady
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.269580e-04 3.922895e-06 2.013838e-06 1.328948e-04  58.6%
+Combinational        8.592074e-06 6.526003e-06 3.163286e-06 1.828136e-05   8.1%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  33.4%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.661896e-04 5.305584e-05 7.668041e-06 2.269135e-04 100.0%
+                            73.2%        23.4%         3.4%
+ACT_END
+ACT_BEGIN backpressure reset
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.209448e-04 0.000000e+00 1.645467e-06 1.225903e-04  59.6%
+Combinational        1.760155e-06 2.648758e-06 2.914761e-06 7.323674e-06   3.6%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  36.8%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.533445e-04 4.525569e-05 7.051153e-06 2.056513e-04 100.0%
+                            74.6%        22.0%         3.4%
+ACT_END
+ACT_BEGIN backpressure startup
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.286374e-04 4.828234e-06 2.017277e-06 1.354830e-04  57.4%
+Combinational        1.245406e-05 9.208413e-06 3.156641e-06 2.481912e-05  10.5%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  32.1%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.717310e-04 5.664354e-05 7.664829e-06 2.360393e-04 100.0%
+                            72.8%        24.0%         3.2%
+ACT_END
+ACT_BEGIN backpressure steady
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.350880e-04 7.396313e-06 2.083451e-06 1.445677e-04  57.1%
+Combinational        1.663641e-05 1.285653e-05 3.402470e-06 3.289541e-05  13.0%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  29.9%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.823638e-04 6.285977e-05 7.976833e-06 2.532004e-04 100.0%
+                            72.0%        24.8%         3.2%
+ACT_END
+ACT_BEGIN conditioned-streaming reset
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.209558e-04 0.000000e+00 1.645467e-06 1.226012e-04  59.6%
+Combinational        1.798637e-06 2.769775e-06 2.914761e-06 7.483173e-06   3.6%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  36.8%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.533939e-04 4.537671e-05 7.051153e-06 2.058218e-04 100.0%
+                            74.5%        22.0%         3.4%
+ACT_END
+ACT_BEGIN conditioned-streaming startup
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.288319e-04 4.971033e-06 2.003019e-06 1.358059e-04  57.4%
+Combinational        1.267775e-05 9.348119e-06 3.182731e-06 2.520860e-05  10.6%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  32.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.721491e-04 5.692609e-05 7.676662e-06 2.367518e-04 100.0%
+                            72.7%        24.0%         3.2%
+ACT_END
+ACT_BEGIN conditioned-streaming steady
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.350936e-04 7.435583e-06 2.067560e-06 1.445968e-04  57.0%
+Combinational        1.684274e-05 1.304253e-05 3.327992e-06 3.321327e-05  13.1%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  29.9%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.825758e-04 6.308504e-05 7.886476e-06 2.535474e-04 100.0%
+                            72.0%        24.9%         3.1%
+ACT_END
+ACT_BEGIN disabled-clock-running reset
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.208956e-04 0.000000e+00 1.645467e-06 1.225411e-04  60.0%
+Combinational        9.545687e-07 1.967991e-06 2.914761e-06 5.837322e-06   2.9%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  37.1%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.524897e-04 4.457493e-05 7.051153e-06 2.041158e-04 100.0%
+                            74.7%        21.8%         3.5%
+ACT_END
+ACT_BEGIN disabled-clock-running startup
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.217845e-04 1.072873e-06 1.953593e-06 1.248109e-04  59.0%
+Combinational        4.528399e-06 3.449637e-06 2.922371e-06 1.090041e-05   5.2%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  35.8%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.569524e-04 4.712943e-05 7.366870e-06 2.114487e-04 100.0%
+                            74.2%        22.3%         3.5%
+ACT_END
+ACT_BEGIN disabled-clock-running steady
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.217876e-04 1.125427e-06 1.953637e-06 1.248667e-04  59.1%
+Combinational        4.351943e-06 3.312413e-06 2.922843e-06 1.058720e-05   5.0%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  35.9%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.567790e-04 4.704477e-05 7.367390e-06 2.111911e-04 100.0%
+                            74.2%        22.3%         3.5%
+ACT_END
+ACT_BEGIN raw-streaming reset
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.209514e-04 0.000000e+00 1.645467e-06 1.225969e-04  59.5%
+Combinational        1.680803e-06 2.966389e-06 2.914761e-06 7.561953e-06   3.7%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  36.8%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.532717e-04 4.557332e-05 7.051153e-06 2.058962e-04 100.0%
+                            74.4%        22.1%         3.4%
+ACT_END
+ACT_BEGIN raw-streaming startup
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.286475e-04 4.881039e-06 2.011631e-06 1.355401e-04  57.1%
+Combinational        1.305202e-05 1.000292e-05 3.119465e-06 2.617440e-05  11.0%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  31.9%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.723390e-04 5.749088e-05 7.622009e-06 2.374519e-04 100.0%
+                            72.6%        24.2%         3.2%
+ACT_END
+ACT_BEGIN raw-streaming steady
+Annotated 5143 pin activities.
+vcd          5143
+unannotated     0
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.350617e-04 7.410747e-06 2.080074e-06 1.445525e-04  56.8%
+Combinational        1.731545e-05 1.377440e-05 3.327513e-06 3.441736e-05  13.5%
+Clock                3.063954e-05 4.260693e-05 2.490909e-06 7.573738e-05  29.7%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.830167e-04 6.379209e-05 7.898497e-06 2.547073e-04 100.0%
+                            71.9%        25.0%         3.1%
+ACT_END

@@ -31,7 +31,7 @@
     },
     {
       "path": "design/interface/trng_interface.v",
-      "sha256": "sha256:41ab916a6309e2edc31c7ab26b67c41da7f817ece86de78a2d6c5a7be4de676e"
+      "sha256": "sha256:bb579bd3d76e20b6d691d07172c5fba136bbb9647b38d92e31fec78feea50336"
     },
     {
       "path": "design/trng_top/trng_top.v",
@@ -49,11 +49,11 @@
     },
     {
       "path": "design/trng_top/trng_top.synth.json",
-      "sha256": "sha256:752a867831c1d49a26e02bfe2968cb47eee0715a38874fd62aaf99651e75165d"
+      "sha256": "sha256:3c4fa66e492e2a6e72da9cafd1d326813791fc19f25a8ecec2e85bcc6f040d5b"
     },
     {
       "path": "design/trng_top/trng_top.synth.v",
-      "sha256": "sha256:a370c452c3a44fb5bed0d43dc785e98f88d322ab0fe4130d171ee5d576024244"
+      "sha256": "sha256:07363aeba9330226eabf2623722f12c0c4f703890a6076efc1477702dd244789"
     }
   ],
   "gate_scripts": [
