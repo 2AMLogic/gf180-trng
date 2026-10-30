@@ -97,7 +97,7 @@ Read on this study's base from `README.md` and
 
 | Row | Target | Current status (README) |
 |---|---|---|
-| Power | < 500 µW active at `ff`/+10 % | **missed**: 758.2 µW active, 1.5× over; of which the analog block is 393.2 + 16.9 µW (entropy source 393.2 µW, measured) |
+| Power | < 500 µW active at `ff`/+10 % | **missed**: 758.7 µW active, 1.5× over; of which the analog block is 393.2 + 16.9 µW (entropy source 393.2 µW, measured) |
 | Area | < 0.05 mm² (50 000 µm²) | **missed**: 175 789.9 µm² regenerated floorplan, 351.6 % of the row; the analog regions (two rings, combiner and samplers, guard rings and channels) are 7 026.4 µm², 14.05 % |
 | Raw rate | the README row still reads > 1 Mbps (DR-0003) | DR-0011-raw-rate (`Accepted`) moved the value to > 2 kbps, but its mechanical edit set has not landed: [#585] and [#491] are open, and `array_sizing.py` still states `a = 1.79` and a 500 bps default. This study reads that 2 kbps-era tooling as it is on `main` and overrides only `a`, through the tool's own `--a` path. |
 

@@ -19,7 +19,7 @@
     "klayout_version": "0.30.12",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "PDK_ROOT environment variable",
+      "source": "search root: ~/.ciel",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
       "ambiguous_sources": [
         "search root: ~/.volare"
@@ -27,7 +27,7 @@
     },
     "deck": null,
     "input": {
-      "content_hash": "sha256:4685d4e248b54a898a5d2c6fa55c7fd22cf0b67659a1dc1b1e65306ad97fec7a",
+      "content_hash": "sha256:08aad9b19eff5081be1c281f75ff8ccaf9513c4fbfb58b752803a3edc422b865",
       "role": "layout"
     }
   },
@@ -40,13 +40,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "36e35e573f2841c3967914efea149d27",
+        "invocation_id": "7e1120c19d0c499cb3c7bf51c3789f77",
         "script_name": "sta_trng_top__ss_125C_3v00__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "dfa0667367926617bd4809a5cdbbcd4b9e199004376567badb61ecd423dbbbb0",
+        "script_sha256": "7525e669292a1978421107a3a23d4be956d4e860240cb8caef89ec6556f54b24",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__min_metrics.json",
           "scope": "repo"
@@ -54,28 +54,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e1120c19d0c499cb3c7bf51c3789f77",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e1120c19d0c499cb3c7bf51c3789f77/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e1120c19d0c499cb3c7bf51c3789f77/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e1120c19d0c499cb3c7bf51c3789f77/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.8047,
+      "worst_slack_ns": 32.044,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.36821,
+      "worst_hold_slack_ns": 2.36062,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 54.9593,
+      "fmax_mhz": 55.6916,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -123,8 +123,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.80471,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 32.04397,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -132,14 +132,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 2.36821,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 2.36062,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.14677,
-      "estimated_power_mw": 3.1611,
+      "clock_skew_ns": 0.12281,
+      "estimated_power_mw": 3.1671,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -194,7 +194,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -352,10 +352,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.976914,
+        "max_network_latency_ns": 2.982339,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -377,13 +377,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "c181049fd8a844d39cd915f528a7b708",
+        "invocation_id": "b2f64cf5b597434ba587fd2e67185181",
         "script_name": "sta_trng_top__ss_125C_3v00__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "f9c675759582bdcf1db9a43967281dc4e19dc006594e2420ec6a1837e3acbe3c",
+        "script_sha256": "781f5fe4624cad54f9b5a4d4821b7489e0407f549c63f4ab02627b49f883b1ee",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__nom_metrics.json",
           "scope": "repo"
@@ -391,28 +391,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b2f64cf5b597434ba587fd2e67185181",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b2f64cf5b597434ba587fd2e67185181/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b2f64cf5b597434ba587fd2e67185181/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b2f64cf5b597434ba587fd2e67185181/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.548,
+      "worst_slack_ns": 31.7994,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.37494,
+      "worst_hold_slack_ns": 2.36647,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 54.1948,
+      "fmax_mhz": 54.9433,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -459,9 +459,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.54803,
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 31.7994,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -469,14 +469,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 2.37494,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 2.36647,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.1644,
-      "estimated_power_mw": 3.1932,
+      "clock_skew_ns": 0.13858,
+      "estimated_power_mw": 3.2003,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -531,7 +531,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -689,10 +689,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 3.067886,
+        "max_network_latency_ns": 3.074077,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -714,13 +714,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "265cc683857942fcbc4bd801b71fb8a6",
+        "invocation_id": "d3759c8b5b22473a86dff91f47210224",
         "script_name": "sta_trng_top__ss_125C_3v00__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "9994cf3a9e253fa89623ee3dfc4fb8e0845fed90dba4cdd0d73b0bf1c0f2b3ca",
+        "script_sha256": "328e74a05b2aa31f13016c72a862e2ddf614f5fa0c3585d16dd55bacce28db2d",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__max_metrics.json",
           "scope": "repo"
@@ -728,28 +728,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/d3759c8b5b22473a86dff91f47210224",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/d3759c8b5b22473a86dff91f47210224/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/d3759c8b5b22473a86dff91f47210224/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/d3759c8b5b22473a86dff91f47210224/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.2203,
+      "worst_slack_ns": 31.5026,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.38314,
+      "worst_hold_slack_ns": 2.37368,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 53.2489,
+      "fmax_mhz": 54.0618,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -796,9 +796,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.22028,
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 31.50264,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -806,14 +806,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1415_/Q",
-        "endpoint": "u_interface/_1415_/D",
-        "slack_ns": 2.38314,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 2.37368,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.18427,
-      "estimated_power_mw": 3.2328,
+      "clock_skew_ns": 0.15591,
+      "estimated_power_mw": 3.2412,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -868,7 +868,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -1026,10 +1026,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 3.179895,
+        "max_network_latency_ns": 3.185978,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -1051,13 +1051,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "3d216e25fa9e4d9bb530bc671b2dcfe7",
+        "invocation_id": "9a0ccd32a623483a93ed73b403bec435",
         "script_name": "sta_trng_top__ss_n40C_3v00__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "87f3b687ec4fe20fc4c370b2788a752b1942cab3157cf73f03817f347fbb0886",
+        "script_sha256": "7fb530e71ca3001f6cbfbfcde77a7e946bee565b448eac3dd4f40b9960565122",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__min_metrics.json",
           "scope": "repo"
@@ -1065,28 +1065,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a0ccd32a623483a93ed73b403bec435",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a0ccd32a623483a93ed73b403bec435/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a0ccd32a623483a93ed73b403bec435/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a0ccd32a623483a93ed73b403bec435/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.5233,
+      "worst_slack_ns": 37.478,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.64742,
+      "worst_hold_slack_ns": 1.64176,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 80.1496,
+      "fmax_mhz": 79.8598,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1133,9 +1133,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.52333,
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 37.47805,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1143,14 +1143,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.64742,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.64176,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.10476,
-      "estimated_power_mw": 2.9914,
+      "clock_skew_ns": 0.08752,
+      "estimated_power_mw": 2.9974,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1205,7 +1205,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -1363,10 +1363,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.133434,
+        "max_network_latency_ns": 2.137158,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -1388,13 +1388,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "dd557d80c71d43ee85cc1265a7e645ca",
+        "invocation_id": "e3dda4d4fab747299725e8b3d7ff8ad4",
         "script_name": "sta_trng_top__ss_n40C_3v00__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "aba234e03caf36982375c9a2f4ca41bade72481fdbfcc9b80de9bc7cbb83e3f1",
+        "script_sha256": "1755e0be1a1b24f88e8b64658058cc448a43243817a94cec6bd0b0541b09045d",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__nom_metrics.json",
           "scope": "repo"
@@ -1402,28 +1402,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e3dda4d4fab747299725e8b3d7ff8ad4",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e3dda4d4fab747299725e8b3d7ff8ad4/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e3dda4d4fab747299725e8b3d7ff8ad4/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e3dda4d4fab747299725e8b3d7ff8ad4/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.3486,
+      "worst_slack_ns": 37.3013,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.65079,
+      "worst_hold_slack_ns": 1.64614,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 79.0425,
+      "fmax_mhz": 78.7485,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1470,9 +1470,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.34858,
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 37.30135,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1480,14 +1480,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.65079,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.64614,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.11739,
-      "estimated_power_mw": 3.0216,
+      "clock_skew_ns": 0.09881,
+      "estimated_power_mw": 3.0287,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1542,7 +1542,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -1700,10 +1700,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.200792,
+        "max_network_latency_ns": 2.205129,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -1725,13 +1725,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "5cdbf6a7b01243c996daf39940d3ff47",
+        "invocation_id": "9abceecf9cf2443e8728c20e142686e9",
         "script_name": "sta_trng_top__ss_n40C_3v00__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "2b6863514ec9abc182727fe67a3758760f86c1edaf9b8ec31756612040bc5cb6",
+        "script_sha256": "5fb7d28221d3f229ae6484b1d1097d5b64f13b7e5c1137118a999c26d0ffc179",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__max_metrics.json",
           "scope": "repo"
@@ -1739,28 +1739,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9abceecf9cf2443e8728c20e142686e9",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9abceecf9cf2443e8728c20e142686e9/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9abceecf9cf2443e8728c20e142686e9/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9abceecf9cf2443e8728c20e142686e9/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.1334,
+      "worst_slack_ns": 37.0868,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.65687,
+      "worst_hold_slack_ns": 1.65154,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 77.7203,
+      "fmax_mhz": 77.4401,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1807,9 +1807,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.13335,
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 37.08679,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1817,14 +1817,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.65687,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.65154,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.13259,
-      "estimated_power_mw": 3.0588,
+      "clock_skew_ns": 0.11225,
+      "estimated_power_mw": 3.0672,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1879,7 +1879,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -2037,11 +2037,11 @@
       },
       "clock_propagation": {
         "clock_sinks": 3,
-        "max_network_latency_ns": 2.285004,
+        "max_network_latency_ns": 2.289959,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK",
-          "u_interface/_1445_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK",
+          "u_conditioner/_395_/CLK"
         ]
       },
       "sdf": null,
@@ -2063,13 +2063,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "8bb2f73d248443708bff9609abc9546e",
+        "invocation_id": "aab2d41ef8d3446c8525f8bd924f6fda",
         "script_name": "sta_trng_top__tt_025C_3v30__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "df6712a41154db1681398c97721f9d16d3ee6b4d7b30c5d368d11406884486de",
+        "script_sha256": "65838fd2f333a516fe498f51ace17305ecec1e04722765ee831f5b652a00863a",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__min_metrics.json",
           "scope": "repo"
@@ -2077,28 +2077,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/aab2d41ef8d3446c8525f8bd924f6fda",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/aab2d41ef8d3446c8525f8bd924f6fda/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/aab2d41ef8d3446c8525f8bd924f6fda/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/aab2d41ef8d3446c8525f8bd924f6fda/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.8619,
+      "worst_slack_ns": 40.8278,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.19689,
+      "worst_hold_slack_ns": 1.19385,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 109.433,
+      "fmax_mhz": 109.025,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2146,8 +2146,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.86195,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 40.82777,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2155,14 +2155,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.19689,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.19385,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.07934,
-      "estimated_power_mw": 3.7833,
+      "clock_skew_ns": 0.06537,
+      "estimated_power_mw": 3.7902,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2217,7 +2217,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -2375,10 +2375,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.577398,
+        "max_network_latency_ns": 1.579454,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -2400,13 +2400,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "dfd811c9f2604c579a3576ce709bf932",
+        "invocation_id": "ee0ffece755949959ce435943020f643",
         "script_name": "sta_trng_top__tt_025C_3v30__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "c84dd196c4a2c86de81d028c826c1d8e9338e11b1597635d8e2c0574013531b1",
+        "script_sha256": "a1dc154e85ec035060bd32f3ba4a2c3a46df81d4b2e6f5c847b265bae3c36f7d",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__nom_metrics.json",
           "scope": "repo"
@@ -2414,28 +2414,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ee0ffece755949959ce435943020f643",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ee0ffece755949959ce435943020f643/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ee0ffece755949959ce435943020f643/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ee0ffece755949959ce435943020f643/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.7397,
+      "worst_slack_ns": 40.6951,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.20045,
+      "worst_hold_slack_ns": 1.19693,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 107.987,
+      "fmax_mhz": 107.47,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2483,8 +2483,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.73965,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 40.69507,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2492,14 +2492,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.20045,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.19693,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.08874,
-      "estimated_power_mw": 3.8245,
+      "clock_skew_ns": 0.07378,
+      "estimated_power_mw": 3.8329,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2554,7 +2554,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -2712,10 +2712,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.625772,
+        "max_network_latency_ns": 1.62828,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -2737,13 +2737,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "8b3658d23f744620b493e8ded4a3d63f",
+        "invocation_id": "34118742f7684230a3a54666459a8f34",
         "script_name": "sta_trng_top__tt_025C_3v30__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "93cf5fd9b7abda09f8f5a11285a8652f63410d0064f5fc2b932bdecbb24464a7",
+        "script_sha256": "af94f26ab943f28edf0b81422742564ea5f674ed2307296afa97414900e8aac5",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__max_metrics.json",
           "scope": "repo"
@@ -2751,28 +2751,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/34118742f7684230a3a54666459a8f34",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/34118742f7684230a3a54666459a8f34/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/34118742f7684230a3a54666459a8f34/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/34118742f7684230a3a54666459a8f34/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.5896,
+      "worst_slack_ns": 40.5338,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.20481,
+      "worst_hold_slack_ns": 1.20078,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 106.265,
+      "fmax_mhz": 105.639,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2820,8 +2820,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.5896,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 40.53378,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2829,14 +2829,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.20481,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.20078,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.10043,
-      "estimated_power_mw": 3.8754,
+      "clock_skew_ns": 0.08391,
+      "estimated_power_mw": 3.8857,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2891,7 +2891,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -3049,10 +3049,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.68665,
+        "max_network_latency_ns": 1.689501,
         "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_conditioner/_395_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -3074,13 +3074,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "4ba0cc7475774686b79722df63639d65",
+        "invocation_id": "9a62f775c42949eebd903c73b76231d0",
         "script_name": "sta_trng_top__ff_125C_3v60__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "c8752c34b603a408b760a225643aa7260e29530ac7121723a02e46438e1da1a3",
+        "script_sha256": "b81f56c25024ec35888351bc2c686cc20fefd6ba100df99e0e9bbf834bad8d27",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__min_metrics.json",
           "scope": "repo"
@@ -3088,28 +3088,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a62f775c42949eebd903c73b76231d0",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a62f775c42949eebd903c73b76231d0/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a62f775c42949eebd903c73b76231d0/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/9a62f775c42949eebd903c73b76231d0/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 42.2954,
+      "worst_slack_ns": 42.2689,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.99982,
+      "worst_hold_slack_ns": 0.99695,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 129.793,
+      "fmax_mhz": 129.347,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -3157,8 +3157,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 42.29542,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 42.26888,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -3166,14 +3166,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.99982,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 0.99695,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.06569,
-      "estimated_power_mw": 4.8954,
+      "clock_skew_ns": 0.05395,
+      "estimated_power_mw": 4.9038,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -3228,7 +3228,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -3386,10 +3386,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.314584,
+        "max_network_latency_ns": 1.316281,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,
@@ -3411,13 +3411,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "c15e877335f745a8b82d7d829d85135f",
+        "invocation_id": "7e5f0be516f24c7192789d393aebf1e1",
         "script_name": "sta_trng_top__ff_125C_3v60__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "e78bfbeaca35f3ec87223bf87a85cb97fd2e5f1d683513dba98d306269d31c3e",
+        "script_sha256": "9a1c65b8f01b16cb179dfa28b8227f3d4bbb0c9671d0b40bd8dfee5916020ef1",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__nom_metrics.json",
           "scope": "repo"
@@ -3425,702 +3425,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e5f0be516f24c7192789d393aebf1e1",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e5f0be516f24c7192789d393aebf1e1/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e5f0be516f24c7192789d393aebf1e1/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/7e5f0be516f24c7192789d393aebf1e1/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 42.1859,
+      "worst_slack_ns": 42.1569,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.0028,
+      "worst_hold_slack_ns": 0.99956,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 127.973,
-      "timing_status": "constrained",
-      "constraint_completeness": {
-        "status": "incomplete",
-        "unconstrained_endpoints": {
-          "status": "ok",
-          "count": 68,
-          "sample": [
-            "ht_alarm",
-            "reg_rdata[0]",
-            "reg_rdata[10]",
-            "reg_rdata[11]",
-            "reg_rdata[12]",
-            "reg_rdata[13]",
-            "reg_rdata[14]",
-            "reg_rdata[15]",
-            "reg_rdata[16]",
-            "reg_rdata[17]",
-            "reg_rdata[18]",
-            "reg_rdata[19]",
-            "reg_rdata[1]",
-            "reg_rdata[20]",
-            "reg_rdata[21]",
-            "reg_rdata[22]",
-            "reg_rdata[23]",
-            "reg_rdata[24]",
-            "reg_rdata[25]",
-            "reg_rdata[26]"
-          ],
-          "truncated": true,
-          "reason": null
-        },
-        "unclocked_registers": {
-          "status": "ok",
-          "count": 0,
-          "sample": [],
-          "truncated": false,
-          "reason": null
-        },
-        "sample_limit": 20
-      },
-      "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "worst_setup_path": {
-        "status": "ok",
-        "check_type": "setup",
-        "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 42.18586,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "worst_hold_path": {
-        "status": "ok",
-        "check_type": "hold",
-        "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.0028,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "clock_skew_ns": 0.07343,
-      "estimated_power_mw": 4.9539,
-      "power_basis": {
-        "activity_source": "engine_default",
-        "activity": null,
-        "duty": null,
-        "parasitics": "spef_annotated"
-      },
-      "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
-        "design_nets_missing_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "reader_warning_count": 0,
-        "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
-        "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
-        "floating_driver_sample": [
-          "clkload0/Z",
-          "clkload1/ZN",
-          "clkload10/ZN",
-          "clkload11/ZN",
-          "clkload12/ZN",
-          "clkload13/ZN",
-          "clkload14/ZN",
-          "clkload15/ZN",
-          "clkload16/ZN",
-          "clkload17/ZN",
-          "clkload18/ZN",
-          "clkload19/ZN",
-          "clkload2/ZN",
-          "clkload20/ZN",
-          "clkload21/ZN",
-          "clkload3/ZN",
-          "clkload4/ZN",
-          "clkload5/ZN",
-          "clkload6/ZN",
-          "clkload7/ZN"
-        ],
-        "unannotated_driver_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "unannotated_driver_detail": [
-          {
-            "pin": "reg_wdata[10]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[11]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[12]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[13]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[14]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[15]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[16]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[17]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[18]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[19]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[20]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[21]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[22]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[23]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[24]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[25]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[26]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[27]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[28]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[29]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          }
-        ],
-        "partially_unannotated_driver_sample": [],
-        "delay_changed": true,
-        "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
-      },
-      "electrical_checks": {
-        "parasitics_source": "spef",
-        "max_transition": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "ns",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        },
-        "max_capacitance": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "pF",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        }
-      },
-      "clock_propagation": {
-        "clock_sinks": 2,
-        "max_network_latency_ns": 1.354281,
-        "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
-        ]
-      },
-      "sdf": null,
-      "deck": {
-        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_125C_3v60",
-        "content_hash": "sha256:b64f32b397097f2046e66ce7f9a4aaffc9a80c4c0bfd3c77385727268e81a016",
-        "released": false,
-        "path": {
-          "path": null,
-          "scope": "external"
-        }
-      }
-    },
-    {
-      "corner": "ff_125C_3v60",
-      "interconnect_corner": "max",
-      "spef_path": {
-        "path": "layout/.work/digital-sta/klt-sta/trng_top.max.spef",
-        "scope": "repo"
-      },
-      "engine_log": {
-        "invocation_id": "66265fc0072240f08808cb36170ec78a",
-        "script_name": "sta_trng_top__ff_125C_3v60__max.tcl",
-        "script_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__max.tcl",
-          "scope": "repo"
-        },
-        "script_sha256": "959b1498bf65767f312bad58ce9909cf812e1f8244ca12a3796b71bb8c4748c9",
-        "metrics_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__max_metrics.json",
-          "scope": "repo"
-        },
-        "outcome": "exited",
-        "returncode": 0,
-        "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a",
-          "scope": "repo"
-        },
-        "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/stdout.log",
-          "scope": "repo"
-        },
-        "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/stderr.log",
-          "scope": "repo"
-        },
-        "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/invocation.json",
-          "scope": "repo"
-        },
-        "retention_errors": []
-      },
-      "worst_slack_ns": 42.0351,
-      "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.00638,
-      "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 125.551,
-      "timing_status": "constrained",
-      "constraint_completeness": {
-        "status": "incomplete",
-        "unconstrained_endpoints": {
-          "status": "ok",
-          "count": 68,
-          "sample": [
-            "ht_alarm",
-            "reg_rdata[0]",
-            "reg_rdata[10]",
-            "reg_rdata[11]",
-            "reg_rdata[12]",
-            "reg_rdata[13]",
-            "reg_rdata[14]",
-            "reg_rdata[15]",
-            "reg_rdata[16]",
-            "reg_rdata[17]",
-            "reg_rdata[18]",
-            "reg_rdata[19]",
-            "reg_rdata[1]",
-            "reg_rdata[20]",
-            "reg_rdata[21]",
-            "reg_rdata[22]",
-            "reg_rdata[23]",
-            "reg_rdata[24]",
-            "reg_rdata[25]",
-            "reg_rdata[26]"
-          ],
-          "truncated": true,
-          "reason": null
-        },
-        "unclocked_registers": {
-          "status": "ok",
-          "count": 0,
-          "sample": [],
-          "truncated": false,
-          "reason": null
-        },
-        "sample_limit": 20
-      },
-      "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "worst_setup_path": {
-        "status": "ok",
-        "check_type": "setup",
-        "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 42.03513,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "worst_hold_path": {
-        "status": "ok",
-        "check_type": "hold",
-        "engine_check_role": "hold",
-        "startpoint": "u_interface/_1415_/Q",
-        "endpoint": "u_interface/_1415_/D",
-        "slack_ns": 1.00638,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "clock_skew_ns": 0.08317,
-      "estimated_power_mw": 5.0263,
-      "power_basis": {
-        "activity_source": "engine_default",
-        "activity": null,
-        "duty": null,
-        "parasitics": "spef_annotated"
-      },
-      "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
-        "design_nets_missing_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "reader_warning_count": 0,
-        "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
-        "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
-        "floating_driver_sample": [
-          "clkload0/Z",
-          "clkload1/ZN",
-          "clkload10/ZN",
-          "clkload11/ZN",
-          "clkload12/ZN",
-          "clkload13/ZN",
-          "clkload14/ZN",
-          "clkload15/ZN",
-          "clkload16/ZN",
-          "clkload17/ZN",
-          "clkload18/ZN",
-          "clkload19/ZN",
-          "clkload2/ZN",
-          "clkload20/ZN",
-          "clkload21/ZN",
-          "clkload3/ZN",
-          "clkload4/ZN",
-          "clkload5/ZN",
-          "clkload6/ZN",
-          "clkload7/ZN"
-        ],
-        "unannotated_driver_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "unannotated_driver_detail": [
-          {
-            "pin": "reg_wdata[10]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[11]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[12]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[13]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[14]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[15]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[16]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[17]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[18]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[19]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[20]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[21]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[22]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[23]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[24]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[25]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[26]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[27]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[28]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[29]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          }
-        ],
-        "partially_unannotated_driver_sample": [],
-        "delay_changed": true,
-        "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
-      },
-      "electrical_checks": {
-        "parasitics_source": "spef",
-        "max_transition": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "ns",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        },
-        "max_capacitance": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "pF",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        }
-      },
-      "clock_propagation": {
-        "clock_sinks": 2,
-        "max_network_latency_ns": 1.403997,
-        "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
-        ]
-      },
-      "sdf": null,
-      "deck": {
-        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_125C_3v60",
-        "content_hash": "sha256:b64f32b397097f2046e66ce7f9a4aaffc9a80c4c0bfd3c77385727268e81a016",
-        "released": false,
-        "path": {
-          "path": null,
-          "scope": "external"
-        }
-      }
-    },
-    {
-      "corner": "ff_n40C_3v60",
-      "interconnect_corner": "min",
-      "spef_path": {
-        "path": "layout/.work/digital-sta/klt-sta/trng_top.min.spef",
-        "scope": "repo"
-      },
-      "engine_log": {
-        "invocation_id": "5d7b08c6a8c94a74ad864adfb034d198",
-        "script_name": "sta_trng_top__ff_n40C_3v60__min.tcl",
-        "script_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__min.tcl",
-          "scope": "repo"
-        },
-        "script_sha256": "1c2f652c8421eaf91e3747167347b5e77bf76cdb414d3ec28451579012f07331",
-        "metrics_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__min_metrics.json",
-          "scope": "repo"
-        },
-        "outcome": "exited",
-        "returncode": 0,
-        "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198",
-          "scope": "repo"
-        },
-        "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/stdout.log",
-          "scope": "repo"
-        },
-        "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/stderr.log",
-          "scope": "repo"
-        },
-        "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/invocation.json",
-          "scope": "repo"
-        },
-        "retention_errors": []
-      },
-      "worst_slack_ns": 44.6125,
-      "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69456,
-      "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 185.615,
+      "fmax_mhz": 127.501,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -4168,8 +3494,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 44.6125,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 42.15695,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -4177,14 +3503,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69456,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 0.99956,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.04949,
-      "estimated_power_mw": 4.5899,
+      "clock_skew_ns": 0.06094,
+      "estimated_power_mw": 4.9639,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -4239,344 +3565,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
-          "clkload4/ZN",
-          "clkload5/ZN",
-          "clkload6/ZN",
-          "clkload7/ZN"
-        ],
-        "unannotated_driver_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "unannotated_driver_detail": [
-          {
-            "pin": "reg_wdata[10]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[11]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[12]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[13]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[14]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[15]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[16]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[17]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[18]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[19]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[20]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[21]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[22]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[23]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[24]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[25]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[26]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[27]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[28]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[29]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          }
-        ],
-        "partially_unannotated_driver_sample": [],
-        "delay_changed": true,
-        "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
-      },
-      "electrical_checks": {
-        "parasitics_source": "spef",
-        "max_transition": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "ns",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        },
-        "max_capacitance": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "pF",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        }
-      },
-      "clock_propagation": {
-        "clock_sinks": 2,
-        "max_network_latency_ns": 0.967111,
-        "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
-        ]
-      },
-      "sdf": null,
-      "deck": {
-        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
-        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
-        "released": false,
-        "path": {
-          "path": null,
-          "scope": "external"
-        }
-      }
-    },
-    {
-      "corner": "ff_n40C_3v60",
-      "interconnect_corner": "nom",
-      "spef_path": {
-        "path": "layout/.work/digital-sta/klt-sta/trng_top.nom.spef",
-        "scope": "repo"
-      },
-      "engine_log": {
-        "invocation_id": "1cccd547dccc47aa8aca27f7758fea73",
-        "script_name": "sta_trng_top__ff_n40C_3v60__nom.tcl",
-        "script_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__nom.tcl",
-          "scope": "repo"
-        },
-        "script_sha256": "fc01056c8cbdfd8e0253765e7abe6e53d0e95034c3a6a616347ad6bddb3ad886",
-        "metrics_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__nom_metrics.json",
-          "scope": "repo"
-        },
-        "outcome": "exited",
-        "returncode": 0,
-        "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73",
-          "scope": "repo"
-        },
-        "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/stdout.log",
-          "scope": "repo"
-        },
-        "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/stderr.log",
-          "scope": "repo"
-        },
-        "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/invocation.json",
-          "scope": "repo"
-        },
-        "retention_errors": []
-      },
-      "worst_slack_ns": 44.5369,
-      "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69662,
-      "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 183.045,
-      "timing_status": "constrained",
-      "constraint_completeness": {
-        "status": "incomplete",
-        "unconstrained_endpoints": {
-          "status": "ok",
-          "count": 68,
-          "sample": [
-            "ht_alarm",
-            "reg_rdata[0]",
-            "reg_rdata[10]",
-            "reg_rdata[11]",
-            "reg_rdata[12]",
-            "reg_rdata[13]",
-            "reg_rdata[14]",
-            "reg_rdata[15]",
-            "reg_rdata[16]",
-            "reg_rdata[17]",
-            "reg_rdata[18]",
-            "reg_rdata[19]",
-            "reg_rdata[1]",
-            "reg_rdata[20]",
-            "reg_rdata[21]",
-            "reg_rdata[22]",
-            "reg_rdata[23]",
-            "reg_rdata[24]",
-            "reg_rdata[25]",
-            "reg_rdata[26]"
-          ],
-          "truncated": true,
-          "reason": null
-        },
-        "unclocked_registers": {
-          "status": "ok",
-          "count": 0,
-          "sample": [],
-          "truncated": false,
-          "reason": null
-        },
-        "sample_limit": 20
-      },
-      "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "worst_setup_path": {
-        "status": "ok",
-        "check_type": "setup",
-        "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_398_/D",
-        "slack_ns": 44.53686,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "worst_hold_path": {
-        "status": "ok",
-        "check_type": "hold",
-        "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69662,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "clock_skew_ns": 0.0552,
-      "estimated_power_mw": 4.6434,
-      "power_basis": {
-        "activity_source": "engine_default",
-        "activity": null,
-        "duty": null,
-        "parasitics": "spef_annotated"
-      },
-      "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
-        "design_nets_missing_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "reader_warning_count": 0,
-        "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
-        "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
-        "floating_driver_sample": [
-          "clkload0/Z",
-          "clkload1/ZN",
-          "clkload10/ZN",
-          "clkload11/ZN",
-          "clkload12/ZN",
-          "clkload13/ZN",
-          "clkload14/ZN",
-          "clkload15/ZN",
-          "clkload16/ZN",
-          "clkload17/ZN",
-          "clkload18/ZN",
-          "clkload19/ZN",
-          "clkload2/ZN",
-          "clkload20/ZN",
-          "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -4734,17 +3723,17 @@
       },
       "clock_propagation": {
         "clock_sinks": 3,
-        "max_network_latency_ns": 0.998264,
+        "max_network_latency_ns": 1.356529,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK",
-          "u_interface/_1445_/CLK"
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK",
+          "u_interface/_1271_/CLK"
         ]
       },
       "sdf": null,
       "deck": {
-        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
-        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
+        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_125C_3v60",
+        "content_hash": "sha256:b64f32b397097f2046e66ce7f9a4aaffc9a80c4c0bfd3c77385727268e81a016",
         "released": false,
         "path": {
           "path": null,
@@ -4753,49 +3742,49 @@
       }
     },
     {
-      "corner": "ff_n40C_3v60",
+      "corner": "ff_125C_3v60",
       "interconnect_corner": "max",
       "spef_path": {
         "path": "layout/.work/digital-sta/klt-sta/trng_top.max.spef",
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "6dcfc9d16d0749cdad1957e256c218d0",
-        "script_name": "sta_trng_top__ff_n40C_3v60__max.tcl",
+        "invocation_id": "ba52062497bb4161813b4af157c57b3a",
+        "script_name": "sta_trng_top__ff_125C_3v60__max.tcl",
         "script_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__max.tcl",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "791397ad612b0ae1c2a6b1d9d254920b4ac95b8f54334c9bbb67e56878db0746",
+        "script_sha256": "268ed151ee1e16a3ac424380838c0dd213f219e64f5aeab99a82825c6541e75b",
         "metrics_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__max_metrics.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__max_metrics.json",
           "scope": "repo"
         },
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ba52062497bb4161813b4af157c57b3a",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ba52062497bb4161813b4af157c57b3a/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ba52062497bb4161813b4af157c57b3a/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/ba52062497bb4161813b4af157c57b3a/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 44.4412,
+      "worst_slack_ns": 42.019,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69915,
+      "worst_hold_slack_ns": 1.00278,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 179.895,
+      "fmax_mhz": 125.297,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -4843,8 +3832,8 @@
         "check_type": "setup",
         "engine_check_role": "setup",
         "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_398_/D",
-        "slack_ns": 44.44119,
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 42.01896,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -4852,14 +3841,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69915,
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 1.00278,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.06281,
-      "estimated_power_mw": 4.7098,
+      "clock_skew_ns": 0.06957,
+      "estimated_power_mw": 5.0389,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -4914,7 +3903,7 @@
           "clkload2/ZN",
           "clkload20/ZN",
           "clkload21/ZN",
-          "clkload3/ZN",
+          "clkload3/Z",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
@@ -5072,10 +4061,1022 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.036934,
+        "max_network_latency_ns": 1.406788,
         "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_conditioner/_395_/CLK",
+          "u_interface/_1333_/CLK"
+        ]
+      },
+      "sdf": null,
+      "deck": {
+        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_125C_3v60",
+        "content_hash": "sha256:b64f32b397097f2046e66ce7f9a4aaffc9a80c4c0bfd3c77385727268e81a016",
+        "released": false,
+        "path": {
+          "path": null,
+          "scope": "external"
+        }
+      }
+    },
+    {
+      "corner": "ff_n40C_3v60",
+      "interconnect_corner": "min",
+      "spef_path": {
+        "path": "layout/.work/digital-sta/klt-sta/trng_top.min.spef",
+        "scope": "repo"
+      },
+      "engine_log": {
+        "invocation_id": "12744b3bd3204420b0db5b8d841ce1bd",
+        "script_name": "sta_trng_top__ff_n40C_3v60__min.tcl",
+        "script_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__min.tcl",
+          "scope": "repo"
+        },
+        "script_sha256": "89146bf1c2fc95ab9e301a080aebd9d72117710a1a6d2181788f4e9885a8b325",
+        "metrics_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__min_metrics.json",
+          "scope": "repo"
+        },
+        "outcome": "exited",
+        "returncode": 0,
+        "directory": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/12744b3bd3204420b0db5b8d841ce1bd",
+          "scope": "repo"
+        },
+        "stdout_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/12744b3bd3204420b0db5b8d841ce1bd/stdout.log",
+          "scope": "repo"
+        },
+        "stderr_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/12744b3bd3204420b0db5b8d841ce1bd/stderr.log",
+          "scope": "repo"
+        },
+        "metadata_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/12744b3bd3204420b0db5b8d841ce1bd/invocation.json",
+          "scope": "repo"
+        },
+        "retention_errors": []
+      },
+      "worst_slack_ns": 44.6055,
+      "total_negative_slack_ns": 0,
+      "worst_hold_slack_ns": 0.69277,
+      "total_negative_hold_slack_ns": 0,
+      "fmax_mhz": 185.375,
+      "timing_status": "constrained",
+      "constraint_completeness": {
+        "status": "incomplete",
+        "unconstrained_endpoints": {
+          "status": "ok",
+          "count": 68,
+          "sample": [
+            "ht_alarm",
+            "reg_rdata[0]",
+            "reg_rdata[10]",
+            "reg_rdata[11]",
+            "reg_rdata[12]",
+            "reg_rdata[13]",
+            "reg_rdata[14]",
+            "reg_rdata[15]",
+            "reg_rdata[16]",
+            "reg_rdata[17]",
+            "reg_rdata[18]",
+            "reg_rdata[19]",
+            "reg_rdata[1]",
+            "reg_rdata[20]",
+            "reg_rdata[21]",
+            "reg_rdata[22]",
+            "reg_rdata[23]",
+            "reg_rdata[24]",
+            "reg_rdata[25]",
+            "reg_rdata[26]"
+          ],
+          "truncated": true,
+          "reason": null
+        },
+        "unclocked_registers": {
+          "status": "ok",
+          "count": 0,
+          "sample": [],
+          "truncated": false,
+          "reason": null
+        },
+        "sample_limit": 20
+      },
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "worst_setup_path": {
+        "status": "ok",
+        "check_type": "setup",
+        "engine_check_role": "setup",
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_399_/D",
+        "slack_ns": 44.60554,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "worst_hold_path": {
+        "status": "ok",
+        "check_type": "hold",
+        "engine_check_role": "hold",
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 0.69277,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "clock_skew_ns": 0.04054,
+      "estimated_power_mw": 4.5978,
+      "power_basis": {
+        "activity_source": "engine_default",
+        "activity": null,
+        "duty": null,
+        "parasitics": "spef_annotated"
+      },
+      "spef_annotation": {
+        "nets_annotated": 1479,
+        "nets_total": 1479,
+        "design_nets_annotated": 1479,
+        "design_nets_total": 1513,
+        "design_nets_missing_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "reader_warning_count": 0,
+        "reader_warning_sample": [],
+        "unannotated_driver_count": 54,
+        "partially_unannotated_driver_count": 0,
+        "floating_driver_count": 28,
+        "floating_driver_sample": [
+          "clkload0/Z",
+          "clkload1/ZN",
+          "clkload10/ZN",
+          "clkload11/ZN",
+          "clkload12/ZN",
+          "clkload13/ZN",
+          "clkload14/ZN",
+          "clkload15/ZN",
+          "clkload16/ZN",
+          "clkload17/ZN",
+          "clkload18/ZN",
+          "clkload19/ZN",
+          "clkload2/ZN",
+          "clkload20/ZN",
+          "clkload21/ZN",
+          "clkload3/Z",
+          "clkload4/ZN",
+          "clkload5/ZN",
+          "clkload6/ZN",
+          "clkload7/ZN"
+        ],
+        "unannotated_driver_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "unannotated_driver_detail": [
+          {
+            "pin": "reg_wdata[10]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[11]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[12]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[13]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[14]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[15]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[16]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[17]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[18]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[19]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[20]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[21]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[22]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[23]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[24]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[25]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[26]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[27]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[28]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[29]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          }
+        ],
+        "partially_unannotated_driver_sample": [],
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "electrical_checks": {
+        "parasitics_source": "spef",
+        "max_transition": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "ns",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        },
+        "max_capacitance": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "pF",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        }
+      },
+      "clock_propagation": {
+        "clock_sinks": 3,
+        "max_network_latency_ns": 0.968607,
+        "clock_sinks_sample": [
+          "u_interface/_1440_/CLK",
+          "u_interface/_1333_/CLK",
+          "u_interface/_1271_/CLK"
+        ]
+      },
+      "sdf": null,
+      "deck": {
+        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
+        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
+        "released": false,
+        "path": {
+          "path": null,
+          "scope": "external"
+        }
+      }
+    },
+    {
+      "corner": "ff_n40C_3v60",
+      "interconnect_corner": "nom",
+      "spef_path": {
+        "path": "layout/.work/digital-sta/klt-sta/trng_top.nom.spef",
+        "scope": "repo"
+      },
+      "engine_log": {
+        "invocation_id": "e224705156d24830849744236de6aa9a",
+        "script_name": "sta_trng_top__ff_n40C_3v60__nom.tcl",
+        "script_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__nom.tcl",
+          "scope": "repo"
+        },
+        "script_sha256": "a1e3ea7c381e28205febcdde60fa199f33b533bd89b62ebea50c7f19c1aa8923",
+        "metrics_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__nom_metrics.json",
+          "scope": "repo"
+        },
+        "outcome": "exited",
+        "returncode": 0,
+        "directory": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e224705156d24830849744236de6aa9a",
+          "scope": "repo"
+        },
+        "stdout_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e224705156d24830849744236de6aa9a/stdout.log",
+          "scope": "repo"
+        },
+        "stderr_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e224705156d24830849744236de6aa9a/stderr.log",
+          "scope": "repo"
+        },
+        "metadata_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/e224705156d24830849744236de6aa9a/invocation.json",
+          "scope": "repo"
+        },
+        "retention_errors": []
+      },
+      "worst_slack_ns": 44.5252,
+      "total_negative_slack_ns": 0,
+      "worst_hold_slack_ns": 0.69458,
+      "total_negative_hold_slack_ns": 0,
+      "fmax_mhz": 182.654,
+      "timing_status": "constrained",
+      "constraint_completeness": {
+        "status": "incomplete",
+        "unconstrained_endpoints": {
+          "status": "ok",
+          "count": 68,
+          "sample": [
+            "ht_alarm",
+            "reg_rdata[0]",
+            "reg_rdata[10]",
+            "reg_rdata[11]",
+            "reg_rdata[12]",
+            "reg_rdata[13]",
+            "reg_rdata[14]",
+            "reg_rdata[15]",
+            "reg_rdata[16]",
+            "reg_rdata[17]",
+            "reg_rdata[18]",
+            "reg_rdata[19]",
+            "reg_rdata[1]",
+            "reg_rdata[20]",
+            "reg_rdata[21]",
+            "reg_rdata[22]",
+            "reg_rdata[23]",
+            "reg_rdata[24]",
+            "reg_rdata[25]",
+            "reg_rdata[26]"
+          ],
+          "truncated": true,
+          "reason": null
+        },
+        "unclocked_registers": {
+          "status": "ok",
+          "count": 0,
+          "sample": [],
+          "truncated": false,
+          "reason": null
+        },
+        "sample_limit": 20
+      },
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "worst_setup_path": {
+        "status": "ok",
+        "check_type": "setup",
+        "engine_check_role": "setup",
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_398_/D",
+        "slack_ns": 44.52519,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "worst_hold_path": {
+        "status": "ok",
+        "check_type": "hold",
+        "engine_check_role": "hold",
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 0.69458,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "clock_skew_ns": 0.04572,
+      "estimated_power_mw": 4.6531,
+      "power_basis": {
+        "activity_source": "engine_default",
+        "activity": null,
+        "duty": null,
+        "parasitics": "spef_annotated"
+      },
+      "spef_annotation": {
+        "nets_annotated": 1479,
+        "nets_total": 1479,
+        "design_nets_annotated": 1479,
+        "design_nets_total": 1513,
+        "design_nets_missing_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "reader_warning_count": 0,
+        "reader_warning_sample": [],
+        "unannotated_driver_count": 54,
+        "partially_unannotated_driver_count": 0,
+        "floating_driver_count": 28,
+        "floating_driver_sample": [
+          "clkload0/Z",
+          "clkload1/ZN",
+          "clkload10/ZN",
+          "clkload11/ZN",
+          "clkload12/ZN",
+          "clkload13/ZN",
+          "clkload14/ZN",
+          "clkload15/ZN",
+          "clkload16/ZN",
+          "clkload17/ZN",
+          "clkload18/ZN",
+          "clkload19/ZN",
+          "clkload2/ZN",
+          "clkload20/ZN",
+          "clkload21/ZN",
+          "clkload3/Z",
+          "clkload4/ZN",
+          "clkload5/ZN",
+          "clkload6/ZN",
+          "clkload7/ZN"
+        ],
+        "unannotated_driver_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "unannotated_driver_detail": [
+          {
+            "pin": "reg_wdata[10]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[11]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[12]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[13]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[14]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[15]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[16]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[17]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[18]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[19]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[20]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[21]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[22]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[23]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[24]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[25]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[26]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[27]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[28]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[29]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          }
+        ],
+        "partially_unannotated_driver_sample": [],
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "electrical_checks": {
+        "parasitics_source": "spef",
+        "max_transition": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "ns",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        },
+        "max_capacitance": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "pF",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        }
+      },
+      "clock_propagation": {
+        "clock_sinks": 2,
+        "max_network_latency_ns": 1.000388,
+        "clock_sinks_sample": [
+          "u_interface/_1271_/CLK",
+          "u_interface/_1333_/CLK"
+        ]
+      },
+      "sdf": null,
+      "deck": {
+        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
+        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
+        "released": false,
+        "path": {
+          "path": null,
+          "scope": "external"
+        }
+      }
+    },
+    {
+      "corner": "ff_n40C_3v60",
+      "interconnect_corner": "max",
+      "spef_path": {
+        "path": "layout/.work/digital-sta/klt-sta/trng_top.max.spef",
+        "scope": "repo"
+      },
+      "engine_log": {
+        "invocation_id": "838cf6bad47046898e0b400ea00e0ab4",
+        "script_name": "sta_trng_top__ff_n40C_3v60__max.tcl",
+        "script_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__max.tcl",
+          "scope": "repo"
+        },
+        "script_sha256": "b226045358e204dea50c05580cc04df4973a137639a780da7b61272e1df3d277",
+        "metrics_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__max_metrics.json",
+          "scope": "repo"
+        },
+        "outcome": "exited",
+        "returncode": 0,
+        "directory": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/838cf6bad47046898e0b400ea00e0ab4",
+          "scope": "repo"
+        },
+        "stdout_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/838cf6bad47046898e0b400ea00e0ab4/stdout.log",
+          "scope": "repo"
+        },
+        "stderr_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/838cf6bad47046898e0b400ea00e0ab4/stderr.log",
+          "scope": "repo"
+        },
+        "metadata_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/838cf6bad47046898e0b400ea00e0ab4/invocation.json",
+          "scope": "repo"
+        },
+        "retention_errors": []
+      },
+      "worst_slack_ns": 44.4261,
+      "total_negative_slack_ns": 0,
+      "worst_hold_slack_ns": 0.69688,
+      "total_negative_hold_slack_ns": 0,
+      "fmax_mhz": 179.408,
+      "timing_status": "constrained",
+      "constraint_completeness": {
+        "status": "incomplete",
+        "unconstrained_endpoints": {
+          "status": "ok",
+          "count": 68,
+          "sample": [
+            "ht_alarm",
+            "reg_rdata[0]",
+            "reg_rdata[10]",
+            "reg_rdata[11]",
+            "reg_rdata[12]",
+            "reg_rdata[13]",
+            "reg_rdata[14]",
+            "reg_rdata[15]",
+            "reg_rdata[16]",
+            "reg_rdata[17]",
+            "reg_rdata[18]",
+            "reg_rdata[19]",
+            "reg_rdata[1]",
+            "reg_rdata[20]",
+            "reg_rdata[21]",
+            "reg_rdata[22]",
+            "reg_rdata[23]",
+            "reg_rdata[24]",
+            "reg_rdata[25]",
+            "reg_rdata[26]"
+          ],
+          "truncated": true,
+          "reason": null
+        },
+        "unclocked_registers": {
+          "status": "ok",
+          "count": 0,
+          "sample": [],
+          "truncated": false,
+          "reason": null
+        },
+        "sample_limit": 20
+      },
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "worst_setup_path": {
+        "status": "ok",
+        "check_type": "setup",
+        "engine_check_role": "setup",
+        "startpoint": "u_interface/_1447_/Q",
+        "endpoint": "u_conditioner/_398_/D",
+        "slack_ns": 44.42609,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "worst_hold_path": {
+        "status": "ok",
+        "check_type": "hold",
+        "engine_check_role": "hold",
+        "startpoint": "u_interface/_1420_/Q",
+        "endpoint": "u_interface/_1420_/D",
+        "slack_ns": 0.69688,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "clock_skew_ns": 0.05243,
+      "estimated_power_mw": 4.7219,
+      "power_basis": {
+        "activity_source": "engine_default",
+        "activity": null,
+        "duty": null,
+        "parasitics": "spef_annotated"
+      },
+      "spef_annotation": {
+        "nets_annotated": 1479,
+        "nets_total": 1479,
+        "design_nets_annotated": 1479,
+        "design_nets_total": 1513,
+        "design_nets_missing_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "reader_warning_count": 0,
+        "reader_warning_sample": [],
+        "unannotated_driver_count": 54,
+        "partially_unannotated_driver_count": 0,
+        "floating_driver_count": 28,
+        "floating_driver_sample": [
+          "clkload0/Z",
+          "clkload1/ZN",
+          "clkload10/ZN",
+          "clkload11/ZN",
+          "clkload12/ZN",
+          "clkload13/ZN",
+          "clkload14/ZN",
+          "clkload15/ZN",
+          "clkload16/ZN",
+          "clkload17/ZN",
+          "clkload18/ZN",
+          "clkload19/ZN",
+          "clkload2/ZN",
+          "clkload20/ZN",
+          "clkload21/ZN",
+          "clkload3/Z",
+          "clkload4/ZN",
+          "clkload5/ZN",
+          "clkload6/ZN",
+          "clkload7/ZN"
+        ],
+        "unannotated_driver_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "unannotated_driver_detail": [
+          {
+            "pin": "reg_wdata[10]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[11]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[12]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[13]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[14]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[15]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[16]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[17]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[18]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[19]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[20]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[21]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[22]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[23]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[24]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[25]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[26]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[27]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[28]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[29]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          }
+        ],
+        "partially_unannotated_driver_sample": [],
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "electrical_checks": {
+        "parasitics_source": "spef",
+        "max_transition": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "ns",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        },
+        "max_capacitance": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "pF",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        }
+      },
+      "clock_propagation": {
+        "clock_sinks": 2,
+        "max_network_latency_ns": 1.039517,
+        "clock_sinks_sample": [
+          "u_conditioner/_395_/CLK",
+          "u_interface/_1333_/CLK"
         ]
       },
       "sdf": null,

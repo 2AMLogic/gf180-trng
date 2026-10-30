@@ -5,7 +5,7 @@
   "pdk": null,
   "findings_only": true,
   "gate_role": "poly2",
-  "gate_count": 4035,
+  "gate_count": 4036,
   "erc_findings": [],
   "erc_finding_count": 0,
   "erc_status": "clean",
@@ -33,7 +33,7 @@
     "nothing_checked_reasons": [],
     "checked_by_assertion": [],
     "checked_by_well_assertion": [],
-    "floating_gate_checked_count": 4035
+    "floating_gate_checked_count": 4036
   },
   "ties_disclosure": {
     "reason": "No ties[] is declared and erc.missing_tie is not computed for the composed stream. The analog regions draw no Nplus/Pplus (31/0, 32/0) or LVPWELL (204/0) layer, so a well tap cannot be told from source/drain diffusion by layer, and their reference netlists give every PMOS a floating well; the digital partition's own spec (layout/digital/erc-supply-spec.json) checks its tap sites. The substrate/guard-ring identity is likewise unverified here: no vsubs label exists in the stream and the guard ring is deliberately not merged into vss. Well-tie coverage and the substrate connection are unverified for the composed floorplan, not passed.",
@@ -45,7 +45,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:5d20e8808b5b7f59f27bc750128d5008899391b742a2f2bf902754b11428cc21",
+      "content_hash": "sha256:2382d2c4d5a0784260d6c50fd57d53bb09c01e7b7bf6503be49afec5ee08717d",
       "role": "layout"
     },
     "spec": {

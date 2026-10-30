@@ -37,7 +37,7 @@ HOST_PATH = re.compile(r"/(?:home|Users)/[^/\s\"']+/")
 
 HISTORICAL_EXEMPTIONS = {
     "signoff/evidence/post-route/gate_klt_response.json": (
-        "af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7"
+        "a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc"
     ),
 }
 
