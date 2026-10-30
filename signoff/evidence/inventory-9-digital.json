@@ -151,6 +151,26 @@
         }
       ]
     },
+    "power-intent": {
+      "invocation": {
+        "command": "python3 sim/tools/power_intent_check.py --check --require-tools",
+        "documented_in": "sim/tb/power-intent/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/power-intent/README.md",
+          "sha256": "sha256:11a00f2e0c9207af5a1a7233a5993ae7cdc7ff6349d866288ce8b8dff9d34110"
+        },
+        {
+          "path": "sim/tb/power-intent/pi_cells.v",
+          "sha256": "sha256:8529b71aa275d71d03c25e04a90cc4d343cc3e99d3b8a87298cb841c0312c1ed"
+        },
+        {
+          "path": "sim/tb/power-intent/tb_power_intent.v",
+          "sha256": "sha256:7135e279f8f1ba05d89f25d08c644b662d27aa6c2ed3de4528c79aa77ee70f8d"
+        }
+      ]
+    },
     "ring-liveness-fault-injection": {
       "invocation": {
         "command": "python3 sim/tb/ring-liveness-fault-injection/run_demo.py --no-write",
@@ -250,7 +270,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:a24d68f6e4b9cc7d30de167990ac4a5db3e94656acf87c6881e47db6cece14ca"
+      "sha256": "sha256:2f5bdbe24ac9d16bc55ede746864cfd037bbee83058a1ccc0afe0c896a2a13f7"
     },
     {
       "path": "sim/README.md",
