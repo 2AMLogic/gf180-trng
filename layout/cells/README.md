@@ -13,7 +13,7 @@ honestly-scoped unit rather than claimed across the whole block at once.
 | cell | source | status |
 |---|---|---|
 | [`ro_stage/`](ro_stage/) | `design/ro_array_core.spice`'s `.subckt ro_stage` (`design/xschem/ro_stage.sch`), at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage.*` |
-| [`ro_stage_ring2/`](ro_stage_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_stage`, at ring2's own sizing (`wstv=0.240u`) — independently drawn geometry, not a relabelled copy of `ro_stage/`'s | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage_ring2.*` |
+| [`ro_stage_ring2/`](ro_stage_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_stage`, at ring2's own sizing (`wstv=0.240u`) — distinct geometry (the starve width moves the channel bands and splits the NMOS channel), drawn by the same generator as `ro_stage/` (`_ro_stage_shapes.py`) and byte-checked, DRC'd and LVS'd on its own | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_stage_ring2.*` |
 | [`ro_nand2/`](ro_nand2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2` (`design/xschem/ro_nand2.sch`) — the ring's one stoppable stage, at ring1's sizing (`wstv=0.220u`) | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2.*` |
 | [`ro_nand2_ring2/`](ro_nand2_ring2/) | `design/ro_array_core.spice`'s `.subckt ro_nand2`, at ring2's own sizing (`wstv=0.240u`) — distinct geometry (the starve width shifts the channel bands), drawn by the same generator as `ro_nand2/` (`_ro_nand2_shapes.py`) and byte-checked, DRC'd and LVS'd on its own | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_nand2_ring2.*` |
 | [`ro_buf/`](ro_buf/) | the `.subckt ro_buf` `design/netlist.py` flattens into `design/trng_top.spice` (and `ro_array_core.spice`/`ro_array_core_meta.spice`/`sampler_core.spice` — four identical copies, `design/xschem/ro_buf.sch`) — DR-0018's per-ring output buffer, one drawn cell for both `xb1`/`xb2` instances | DRC-clean, LVS-match, 0 errors — see `layout/reports/ro_buf.*` |
@@ -34,8 +34,9 @@ DRC/LVS ever being able to see it, per issue #106's own framing.
 array uses two different starve widths specifically so ring1 and ring2 are
 *not* frequency-matched (`layout/floorplan/README.md`, "Mechanism 1" — a
 deliberate mismatch load-bearing for the two rings' independence argument),
-so `ro_stage_ring2` is its own drawn geometry at `wstv=0.240u`, not a
-parameter override on `ro_stage/`'s. `ro_nand2` is the ring's one stoppable
+so `ro_stage_ring2` is its own drawn geometry at `wstv=0.240u` — the same
+generator as `ro_stage/` (`_ro_stage_shapes.py`, parameterised on `W_STARVE`),
+but a distinct, separately checked `.gds`. `ro_nand2` is the ring's one stoppable
 stage: the same series-starved topology as `ro_stage`, plus a parallel
 pull-up pair (`XMpa`/`XMpb`, gated by `a`/`en`) and a series pull-down pair
 (`XMna`/`XMnb`) that make it a 2-input NAND — `en` low forces the ring's
