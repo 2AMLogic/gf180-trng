@@ -218,3 +218,56 @@ stale and must be regenerated, each in an append-only fashion where it is a
   filed as `loom:triage` issues linked from #449.
 - **Revisit if**: a controlled DRM revision is supplied, whichever column it
   assigns; or klt grows a tapcell override.
+
+## Follow-up: extracted/routed ro-array startup family (#734)
+
+Measured on the #717 re-placement as stacked under #718 (`0ff3a33e`), against
+`origin/main` (`d1ce0dd8`), with klayout-tools 0.8.0 (the repository's grader
+pin) in a throwaway venv. No `sim/` record was minted or edited.
+
+**Determination (inputs of `layout/pex/*.extracted.spice`).**
+
+- The leaf-cell, ring and combiner/sampler streams `layout/pex/build.py` reads
+  (`layout/cells/`, `layout/rings/`, `layout/blocks/`) and `layout/pex/` itself
+  have an empty `git diff origin/main HEAD`. The `ro_array_core.*` /
+  `sampler_core.{extracted,routed}` netlists and the ring/array startup
+  records built on them are therefore unaffected. This confirms the claim #732
+  made without measuring it.
+- `layout/floorplan/trng_floorplan.gds` did change
+  (`sha256` normalised `5d20e880...` -> `2382d2c4...`, `compose.json`). A
+  per-layer XOR of the flattened stream against `main` is non-empty only inside
+  the digital instance (14 layers, bbox 532-908 um in x), and is empty for the
+  guard rings, rings, combiner/sampler and `trng_interregion` instances. The
+  trunk/riser geometry is byte-identical; only the digital block moved
+  (`trng_top.gds` sha256 `b164476c...` -> `8c441fe8...`).
+- The four digital-facing driver loads (`raw_bit`, `raw_valid`, `ring_bit[0]`,
+  `ring_bit[1]`) are routed inside that block, and their DEF routes differ
+  (1478 of 1511 digital nets have different routing). The digital-side share of
+  `layout/pex/reports/fullchip_parasitics.json`'s `driver_side_load` figures
+  (`delta`, `fullchip`) is therefore expected to have moved. The
+  `entropy_tap` ring-to-combiner figures are not expected to.
+
+**`--check` baseline.** `python3 layout/pex/build.py --check --require-tools`
+exits 1 identically on `origin/main` and on the head, with klt 0.8.0 and with
+the host klt 0.8.1.dev811, at the same message: the committed report's cached
+`ro1` ring R is 105.8341 ohm against 73.8871 ohm freshly extracted (C agrees at
+7.889961 fF). The ring geometry is unchanged between the two, so the staleness
+predates #717.
+
+**`--fullchip-extract` could not refresh the report.** It runs for about two and
+a half minutes, then fails on both `origin/main` and the head, with klt 0.8.0
+and the host klt, with `expected exactly one parasitics.nets[] entry carrying
+the drawn label 'ring_bit1' ... found 0`. In both extractions the drawn label
+`q` is split over four nets and the digital pins surface as separate nets
+(`raw_bit`, `ring_bit[0]`, ...), where the committed report's nets read
+`q|raw_bit`, `q|ring_bit1|ring_bit[0]`. The report was therefore last produced
+under a connectivity the current composed stream does not extract to. This is
+not caused by #717 and was not diagnosed here (changing `build.py` is out of
+scope for #734).
+
+**Consequence.** The driver-side delta figures and
+`sampler_core.fullchip.extracted.spice` cannot be regenerated, and no
+fullchip-dependent record can be re-minted, until the label-merge failure is
+resolved. The ring/array startup records that depend only on the unchanged
+streams remain valid. The label-merge failure and the stale
+`--check` cache are tracked in #736.
