@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-30
 
+- **PR #743**: fix: exempt pdk-models.json and declared netlist dependencies from the stored-bytes check
+- **Issue #741** (closed): check:artifact-manifests rejects stored dependency snapshots and pdk-models.json that equal committed files
 - **PR #738**: pex: resolve full-chip nets via DEF net name; refresh PEX evidence
 - **Issue #736** (closed): pex: --fullchip-extract fails on main (inter-region label merge) and --check cache is stale
 - **PR #728**: refactor: share cmd_run/cmd_record scaffold between power tools
