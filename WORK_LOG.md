@@ -6,6 +6,12 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-30
 
+- **PR #747**: refactor: use the shared sha256_file in place of local digest helpers
+- **Issue #744** (closed): Consolidate ~11 duplicated file-sha256 helpers onto the existing shared one
+- **PR #746**: refactor(layout): share the ro_stage generator between ring1 and ring2
+- **Issue #733** (closed): Share ro_stage build_shapes between ring1 and ring2 (as ro_nand2 already does)
+- **PR #742**: sim: supersede the eight extracted-fullchip records after the PEX netlist refresh
+- **Issue #739** (closed): Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values
 - **PR #743**: fix: exempt pdk-models.json and declared netlist dependencies from the stored-bytes check
 - **Issue #741** (closed): check:artifact-manifests rejects stored dependency snapshots and pdk-models.json that equal committed files
 - **PR #738**: pex: resolve full-chip nets via DEF net name; refresh PEX evidence
