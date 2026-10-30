@@ -73,7 +73,7 @@
     },
     {
       "path": "layout/cells/ro_stage/build.py",
-      "sha256": "sha256:8f68da3496556f45e3d24d3d64734a60d7f1aff8dc8646eaa6d1f2016e117820"
+      "sha256": "sha256:b7b4cf77ffdb3366c1208258dde4d402c6c120c6b1d1a6f054c75fd71c4abca4"
     },
     {
       "path": "layout/cells/ro_stage/ro_stage.gds",
@@ -85,7 +85,7 @@
     },
     {
       "path": "layout/cells/ro_stage_ring2/build.py",
-      "sha256": "sha256:65b253172792260a1f363c46d80ff7c869949cd526e292864ceb585bac4b3c6e"
+      "sha256": "sha256:2f5869eeda8538c55fb9e354ff1dfb166dbdc3bf2959f8c976c750c9e177f4ce"
     },
     {
       "path": "layout/cells/ro_stage_ring2/ro_stage_ring2.gds",
