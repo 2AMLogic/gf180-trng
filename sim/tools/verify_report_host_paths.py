@@ -28,27 +28,25 @@ import argparse
 import hashlib
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
 
 ROOTS = ("design/", "layout/", "signoff/")
 HOST_PATH = re.compile(r"/(?:home|Users)/[^/\s\"']+/")
 
 HISTORICAL_EXEMPTIONS = {
     "signoff/evidence/post-route/gate_klt_response.json": (
-        "af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7"
+        "a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc"
     ),
 }
 
 
 def tracked_json(repo: Path) -> list[str]:
-    out = subprocess.run(
-        ["git", "-C", str(repo), "ls-files", "-z"],
-        check=True,
-        capture_output=True,
-    ).stdout
-    names = [n.decode("utf-8", "surrogateescape") for n in out.split(b"\0") if n]
+    names = _git_files.tracked_files(repo)
     return sorted(n for n in names if n.endswith(".json") and n.startswith(ROOTS))
 
 
@@ -90,7 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     args = ap.parse_args(argv)
-    problems = check(args.repo)
+    try:
+        problems = check(args.repo)
+    except _git_files.GitError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     for p in problems:
         print(p, file=sys.stderr)
     if problems:

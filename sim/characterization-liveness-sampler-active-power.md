@@ -92,7 +92,7 @@ Like-for-like effect on that corner's whole-block active total
 (`power_rollup.py`): 540.8 µW without the samplers, **566.1 µW with them**
 (113.2 % of the 500 µW row; the sum without them was already 108.2 %). The
 samplers add 5.1 % of the row's budget at this corner. The ledger's binding
-corner is `ff` / −40 °C / 3.63 V; that point is not measured, so its 758.2 µW
+corner is `ff` / −40 °C / 3.63 V; that point is not measured, so its 758.7 µW
 total remains a lower bound.
 
 The loading delta is not small next to the flops themselves: roughly a quarter

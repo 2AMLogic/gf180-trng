@@ -208,7 +208,7 @@
         "nets": {
           "layout": 1535,
           "reference": 1535,
-          "matched": 2047
+          "matched": 2043
         },
         "devices": {
           "layout": 0,
@@ -218,7 +218,7 @@
         "pins": {
           "layout": 111,
           "reference": 111,
-          "matched": 623
+          "matched": 619
         }
       }
     },
