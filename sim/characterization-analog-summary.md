@@ -109,6 +109,8 @@ only over that grid.
 | **Operating envelope**: −40 … +125 °C, 2.97–3.63 V | Covered at the 27 `tt`/`ff`/`ss` points for the array and at 45 points for the sampler and idle leakage | §0.2 | Families above | Coverage statement | `fs`/`sf` are uncovered for the array ([DR-0006]). Monte Carlo covers 2 points, and post-layout covers binding corners only. |
 | **Interface**: raw always observable ([DR-0001], [DR-0013]) | The analog side exposes `raw_bit`/`raw_valid`/`ring_bit1`/`ring_bit2` at the boundary | n/a | `design/floorplan_netlist.py` `INTER_REGION_NETS`, `npm run check:floorplan-netlist` | Structural | This is not a performance row. Layout correctness is items 3 and 4. |
 
+> **Superseded evidence (issue #739).** Rows above that cite `2026-09-12-*extracted-fullchip*` records (for example the 127.04 nA full-chip idle figure) were simulated against a since-refreshed netlist; the replacements are `2026-10-30-*extracted-fullchip*-01` (idle `sampler_core` at `ff`/125 C/3.63 V is now 128.83 nA). The old figures must not be cited.
+
 ### 1.1 Figures at the current ratified rate (2 kbps)
 
 Derived from the same committed records by `python3 sim/tools/power_rollup.py`
