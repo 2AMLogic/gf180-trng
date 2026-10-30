@@ -39,6 +39,7 @@ Issues currently being built (`loom:building`).
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 - **#718**: Refresh sim/signoff evidence after digital tapcell re-placement (DR-0029 inventory, evidence unit of #487)
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
+- **#739**: Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values
 
 ## PRs Awaiting Review
 
@@ -52,6 +53,7 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
 - **#732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
+- **#737**: docs: record measured DR-0029 follow-up for the extracted ro-array startup family
 
 ## Proposed
 
@@ -71,6 +73,7 @@ Issues carrying `loom:curated`.
 - **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry *(curated)*
+- **#739**: Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -88,10 +91,10 @@ _None._
 | Very important | 1 |
 | Important | 1 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 5 |
+| In Progress (`loom:building`) | 6 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 14 |
+| Approved PRs awaiting merge | 3 |
+| Curated | 15 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
