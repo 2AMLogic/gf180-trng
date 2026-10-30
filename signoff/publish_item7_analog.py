@@ -13,7 +13,7 @@ layout/rings/ro_ring11/ro_ring11.gds with parasitics, run
 sim/tb/ro-ring11-pex/request.json against the schematic DUT and against the
 extracted netlist at every corner of DR-0006's 27-point grid, and report the
 per-corner, per-row delta. Use the DR-0026 producer build
-(`pip install "klayout-tools==0.6.0" "klayout==0.30.10"`). A 27-corner grid
+(`pip install "klayout-tools==0.8.0" "klayout==0.30.10"`). A 27-corner grid
 on each side is a SPICE grid: on a host that exports `KLT_SIM_BACKEND=batch`
 it goes to the batch fleet; elsewhere it runs on the local backend.
 `--envelope` publishes a run already made with exactly these arguments (its

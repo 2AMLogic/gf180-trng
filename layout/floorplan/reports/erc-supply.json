@@ -1,11 +1,67 @@
 {
-  "schema_version": 1,
-  "file": "layout/floorplan/trng_floorplan.gds",
+  "schema_version": 2,
+  "file": {
+    "path": "layout/floorplan/trng_floorplan.gds",
+    "scope": "repo"
+  },
   "spec": "layout/floorplan/erc-supply-spec.json",
   "pdk": null,
   "findings_only": true,
   "gate_role": "poly2",
   "gate_count": 4035,
+  "antenna_tables_omitted": false,
+  "nets": [
+    {
+      "name": "vddr1",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "vddr2",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "vdd",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "vddd",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "vss",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    }
+  ],
   "erc_findings": [],
   "erc_finding_count": 0,
   "erc_status": "clean",
@@ -33,6 +89,19 @@
     "nothing_checked_reasons": [],
     "checked_by_assertion": [],
     "checked_by_well_assertion": [],
+    "layers_in_stream_without_declaration": [
+      "0/0",
+      "21/0",
+      "21/10",
+      "31/0",
+      "32/0",
+      "55/0",
+      "63/63",
+      "112/1",
+      "204/0",
+      "204/10"
+    ],
+    "well_assertion_coverage": [],
     "floating_gate_checked_count": 4035
   },
   "ties_disclosure": {
@@ -40,18 +109,41 @@
     "kind": "unexpressible"
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.8.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:5d20e8808b5b7f59f27bc750128d5008899391b742a2f2bf902754b11428cc21",
+      "content_hash": "sha256:3c9e3694b4fa8264dd35fda9801d5e10bbcce1cb400b6a8ea09a2302d0bc600e",
       "role": "layout"
     },
     "spec": {
       "content_hash": "sha256:36152df43c8d5638934098519916067a24cf6fe5f8ba38ccfb5ef9e29405ea02"
     },
-    "devices": []
+    "devices": [],
+    "net_exclusions": [],
+    "label_layers": [
+      {
+        "name": "Metal1",
+        "label_layer": "34/10",
+        "label_text_count": 15280
+      },
+      {
+        "name": "Metal2",
+        "label_layer": "36/10",
+        "label_text_count": 29
+      },
+      {
+        "name": "Metal4",
+        "label_layer": "46/10",
+        "label_text_count": 124
+      },
+      {
+        "name": "Metal5",
+        "label_layer": "81/10",
+        "label_text_count": 2
+      }
+    ]
   },
   "trimmed": {
     "gates": "per-gate antenna tables omitted (gate_count kept)",

@@ -128,8 +128,8 @@ class Item7RunPex(Scratch):
         self.assertNotIn("--backend", argv)
 
     def test_multi_word_klt_is_split(self):
-        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.6.0 klt"}, "ring1", "local")
-        self.assertEqual(argv[:5], ["uvx", "--from", "klayout-tools==0.6.0", "klt", "pex"])
+        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.8.0 klt"}, "ring1", "local")
+        self.assertEqual(argv[:5], ["uvx", "--from", "klayout-tools==0.8.0", "klt", "pex"])
         self.assertEqual(argv[-2:], ["--backend", "local"])
 
     def test_ring2_uses_its_own_args_and_scratch(self):
@@ -307,8 +307,8 @@ class CombinerSamplerRunPex(Scratch):
         self.assertTrue(kw["check"])
 
     def test_multi_word_klt_is_split(self):
-        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"}, "batch")
-        self.assertEqual(argv[:7], ["uvx", "--from", "klayout-tools==0.6.0", "--with", "klayout==0.30.10",
+        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.8.0 --with klayout==0.30.10 klt"}, "batch")
+        self.assertEqual(argv[:7], ["uvx", "--from", "klayout-tools==0.8.0", "--with", "klayout==0.30.10",
                                     "klt", "pex"])
         self.assertEqual(argv[-2:], ["--backend", "batch"])
 

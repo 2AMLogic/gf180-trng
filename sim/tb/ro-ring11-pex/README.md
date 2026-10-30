@@ -21,7 +21,7 @@ own drawn devices plus its hand-routed inter-stage chain and rail straps.
 ## Cold start
 
 ```bash
-pip install "klayout-tools==0.6.0" "klayout==0.30.10"   # DR-0026's producer build
+pip install "klayout-tools==0.8.0" "klayout==0.30.10"   # DR-0026's producer build
 python3 sim/tb/ro-ring11-pex/build_dut.py --check
 python3 signoff/publish_item7_analog.py                 # runs klt pex, then publishes
 python3 signoff/check.py --write

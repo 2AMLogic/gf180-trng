@@ -9,7 +9,7 @@ oscillator (`xr2`, `wstv=0.240u`, versus ring1's `wstv=0.220u` in
 
 **Status: unrun fixture.** The fixture is committed and freshness-checked
 offline; no ring2 `klt pex` result is committed. The one attempt to submit the
-27-corner grid to the batch backend (two tries, `klayout-tools==0.6.0`) was
+27-corner grid to the batch backend (two tries, `klayout-tools==0.6.0`; klt-pin: historical) was
 refused by the fleet for capacity (`8 instance(s) already running + 1
 requested exceeds BATCH_MAX_CONCURRENT_INSTANCES=8`, then `no capacity in any
 of the 30 pools`). The grid was deliberately not run locally.
@@ -48,7 +48,7 @@ tied on position.
 
 ```bash
 # DR-0026's producer build, in a throwaway environment (do not install it on a shared host)
-export KLT="uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"
+export KLT="uvx --from klayout-tools==0.8.0 --with klayout==0.30.10 klt"
 
 python3 sim/tb/ro-ring11-pex/build_dut.py --ring ring2 --check-source   # offline
 python3 sim/tb/ro-ring11-pex/build_dut.py --ring ring2 --check          # re-extracts (klt extract only)

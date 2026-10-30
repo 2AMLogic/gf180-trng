@@ -333,7 +333,7 @@ jobs:
       # that module's own docstring, "Routing-level composition", for how
       # each assembled block's true external ports are identified.
       #
-      # klayout-tools==0.6.0 (#281, per DR-0026 as amended) supersedes the
+      # klayout-tools==0.6.0 (#281, per DR-0026 as amended; klt-pin: historical) supersedes the
       # 3fbb4478 git pin above -- and ends this file's git-SHA era: 0.6.0 is a
       # tagged PyPI release (tag v0.6.0 -> commit
       # c622e8addb362491664d44ba4d717f354ca88bbd, 469 commits forward of
@@ -360,11 +360,18 @@ jobs:
       # and a future KLayout release would move `provenance.klayout_version`
       # in every committed report. Measured: 0.30.10 vs 0.30.12 changes only
       # those two version fields, nothing else.
+      # klayout-tools==0.8.0 (#705, DR-0026's 2026-10-30 amendment) supersedes
+      # the 0.6.0 pin described above: a tagged release, so `klt --version`
+      # prints a bare `klt 0.8.0` (a git build reports `0.8.1.devN+g<sha>`,
+      # which no longer satisfies an `==0.8.0` pin, klayout-tools#2823). The
+      # move needed the layout fixtures to draw implants and well/substrate
+      # taps first (klayout-tools's `comp.coverage.1` and `comp.tap_distance.*`
+      # rules); layout/reports/ was regenerated with it, no expectation added.
       - name: Install klayout-tools (the DRC/LVS driver)
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade \
-            "klayout-tools==0.6.0" "klayout==0.30.10"
+            "klayout-tools==0.8.0" "klayout==0.30.10"
           klt --version
           klt version --format json
 

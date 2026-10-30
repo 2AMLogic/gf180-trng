@@ -38,7 +38,7 @@ TOP_CELL = "trng_floorplan"
 
 #: The klt release this repo pins (`signoff/check.py` KLT_PIN); a test holds
 #: the two equal.
-KLT_PIN = "0.6.0"
+KLT_PIN = "0.8.0"
 
 #: Supplies the spec must declare and the report must show computed.
 DECLARED_SUPPLIES = ("vddr1", "vddr2", "vdd", "vddd", "vss")

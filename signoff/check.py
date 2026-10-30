@@ -123,7 +123,7 @@ EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence"
 #: The klayout-tools release that PRODUCES this block's layout reports
 #: (DR-0026): publish_*.py and layout/floorplan/erc_supply.py refuse a response
 #: from any other build. It is not the grader; see KLT_GRADER_PIN.
-KLT_PIN = "0.6.0"
+KLT_PIN = "0.8.0"
 #: The klayout-tools release that GRADES this block (`klt signoff`). Since
 #: #653 it is newer than the producer: 0.7.0 is the first release that grades
 #: the artifact-anchored generic envelopes for T1 items 1, 2, 9 and 10

@@ -13,7 +13,7 @@ Two groups:
   run, so the controls mutate a tiny stand-in in a temp dir (never a
   committed file). They skip unless the `klt` on PATH reports exactly the
   pinned version; on a host with a different klt, put a pinned shim first:
-  `uvx --from "klayout-tools==0.6.0" klt`.
+  `uvx --from "klayout-tools==0.8.0" klt`.
 """
 
 from __future__ import annotations

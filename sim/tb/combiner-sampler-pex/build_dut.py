@@ -9,7 +9,7 @@
                                                                 # hold a klt-pex-written netlist to the DUT
 
 `--check` and the default mode run `klt extract`; set `KLT` to choose the
-binary (for example `KLT="uvx --from klayout-tools==0.6.0 --with
+binary (for example `KLT="uvx --from klayout-tools==0.8.0 --with
 klayout==0.30.10 klt"` for DR-0026's producer build). The other two modes
 need no klt, ngspice or PDK.
 

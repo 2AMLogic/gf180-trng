@@ -49,7 +49,7 @@ the build the newer evidence was made with, do not regenerate under the
 older `3fbb4478` pin (Alternative A stays rejected, for the reasons given
 there). What changes is the **target**: not `c903103cba9e` "or later", but
 the tagged **klayout-tools `0.6.0` PyPI release**, installed as
-`pip install "klayout-tools==0.6.0" "klayout==0.30.10"`.
+`pip install "klayout-tools==0.6.0" "klayout==0.30.10"` (klt-pin: historical).
 
 Why the release rather than `c903103cba9e`:
 
@@ -161,7 +161,7 @@ amendment records.
 ### Decision, as amended
 
 1. `.github/workflows/pdk-nightly.yml` installs
-   `"klayout-tools==0.6.0" "klayout==0.30.10"` (done in #281's PR, with a
+   `"klayout-tools==0.6.0" "klayout==0.30.10"` (klt-pin: historical; done in #281's PR, with a
    dated comment block in that file's convention).
 2. `layout/reports/` is regenerated under that build with
    `python3 layout/verify.py --write` — including `environment.json`, whose

@@ -365,7 +365,7 @@ within limits, and extracted clock-to-Q was about 4x the schematic value.
 That probe is a debug observation, not a PVT record.
 
 **Attempt log (2026-10-10).** With the pinned producer
-(`klayout-tools==0.6.0`, `klayout==0.30.10`), the offline checks and
+(`klayout-tools==0.6.0`, `klayout==0.30.10`; klt-pin: historical), the offline checks and
 `build_dut.py --check` passed. Two further `publish_combiner_sampler_pex.py
 --backend batch` submissions both failed on the schematic side with
 `batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of

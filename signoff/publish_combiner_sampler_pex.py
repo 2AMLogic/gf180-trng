@@ -14,7 +14,7 @@ sim/tb/combiner-sampler-pex/stimulus.py, compared schematic vs. extracted at
 DR-0006's 27-point grid.
 
 The run is one `klt pex` invocation (KLT_PEX_ARGS). Use DR-0026's producer
-build: set `KLT` to e.g. `uvx --from klayout-tools==0.6.0 --with
+build: set `KLT` to e.g. `uvx --from klayout-tools==0.8.0 --with
 klayout==0.30.10 klt`, or install it. klt 0.6.0 does not read
 `KLT_SIM_BACKEND`, so the backend is passed explicitly (`--backend`, default
 the `KLT_SIM_BACKEND` environment variable, else `local`); a 27-corner grid

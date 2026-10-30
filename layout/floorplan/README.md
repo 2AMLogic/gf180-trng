@@ -1580,7 +1580,7 @@ a shared two-stack `vss` is clean; removing Via1 under one `vss` stack gives
 `erc.unconnected_net`; a Metal4 bar across two trunks (`vddr1`/`vddr2`, and
 separately `vdd`/`vddd`) gives `erc.supply_short`; a trunk with no label gives
 `erc.unconnected_net`. They need the pinned klt first on PATH and skip
-otherwise (`uvx --from "klayout-tools==0.6.0" klt`). No control was run on
+otherwise (`uvx --from "klayout-tools==0.8.0" klt`). No control was run on
 the full composed stream.
 
 **Freshness.** `python3 layout/floorplan/floorplan.py` fails when the report's

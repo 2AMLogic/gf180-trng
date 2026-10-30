@@ -325,10 +325,10 @@ class RunScaffoldTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
             with mock.patch("subprocess.call", fake_call):
-                rc = sr.cmd_run("nominal-lowf-p1", str(out), "batch", "uvx --from klayout-tools==0.6.0 klt")
+                rc = sr.cmd_run("nominal-lowf-p1", str(out), "batch", "uvx --from klayout-tools==0.8.0 klt")
         self.assertEqual(rc, 5)
         self.assertEqual(seen["cmd"], [
-            "uvx", "--from", "klayout-tools==0.6.0", "klt", "sim",
+            "uvx", "--from", "klayout-tools==0.8.0", "klt", "sim",
             str(sr.request_path("nominal-lowf-p1")), "--backend", "batch",
             "-o", str(out / "nominal-lowf-p1"), "--format", "json"])
 

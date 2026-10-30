@@ -149,12 +149,12 @@ class RunTests(unittest.TestCase):
             seen["stdout"], seen["stderr"] = stdout.name, stderr.name
             return 5
 
-        klt = "uvx --from klayout-tools==0.6.0 klt"
+        klt = "uvx --from klayout-tools==0.8.0 klt"
         with mock.patch("subprocess.call", fake_call):
             rc = kreq.run_klt_request(self.outdir, "grid", self.req, "batch", klt)
         self.assertEqual(rc, 5)
         self.assertEqual(seen["cmd"], [
-            "uvx", "--from", "klayout-tools==0.6.0", "klt", "sim", str(self.req),
+            "uvx", "--from", "klayout-tools==0.8.0", "klt", "sim", str(self.req),
             "--backend", "batch", "-o", str(self.outdir / "grid"), "--format", "json"])
         self.assertEqual(seen["stdout"], str(self.outdir / "grid.report.json"))
         self.assertEqual(seen["stderr"], str(self.outdir / "grid.stderr.txt"))

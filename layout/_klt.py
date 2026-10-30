@@ -156,7 +156,7 @@ def klt_origin() -> dict | None:
        from a git URL (`pip install "klayout-tools @ git+...@<sha>"`), and
        naming the URL and the resolved commit.
     2. `klt version --format json` -- for an install from a package index
-       (`pip install "klayout-tools==0.6.0"`, the form
+       (`pip install "klayout-tools==0.8.0"`, the form
        `.github/workflows/pdk-nightly.yml` pins since #281), which has no
        `direct_url.json`. klayout-tools records the commit, tag and dirty
        state its wheel was built from at build time (klayout-tools#1202),

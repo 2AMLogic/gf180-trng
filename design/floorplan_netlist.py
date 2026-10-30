@@ -107,33 +107,17 @@ both ties (a Metal5 route into `digital`'s own PDN strap, since that
 mechanism's own reach is real geometry, not an internal net any more) -- see
 that module's own "The `digital` PDN tie" docstring section.
 
-The substrate net `vsubs` (not in issue #219/#221's own inter-region table)
+No substrate net (`vsubs`)
 --------------------------------------------------------------------------------
-`ring1`, `ring2` and `combiner_sampler`'s own committed reference netlists
-each declare a `vsubs` pin (`layout/rings/ro_ring11/ro_ring11.spice`'s own
-header comment: "NMOS bulk is the deck's `vsubs` substrate global" --
-`layout/verify.py`'s own `EXPECTATIONS` table explains the same thing from
-the extraction side: `klt extract` *synthesizes* this net rather than
-resolving it from a real drawn label, which is exactly why `device.body_
-unverified` is an expected, not a real, LVS disclosure on every one of those
-three regions' own standalone checks). `design/trng_top.spice`'s schematic
-has no `vsubs` pin at all -- it is a layout-LVS-reference artifact of the
-three `klt gen`/`klt draw`-descended regions' own hand-derived `.spice`
-files, not part of the design's own inter-region signal/supply list the
-issue's table enumerates. It is declared here anyway, as its own net (not
-merged into `vss`, even though the guard rings' own p-substrate taps are
-physically tied to each region's `vss` return per README Mechanism 2 -- that
-is a DRC/physical statement about drawn geometry, not a schematic-netlist
-statement, and this reference stays a textually distinct node the same way
-the extraction deck's own synthesized `vsubs` handle stays distinct from a
-real `vss` label), purely so `generate_lvs_reference()` below can wire a
-complete, well-formed `X`-card for all three regions (their own `.SUBCKT`
-headers require a 5th/11th pin no matter what this module declares). `digital`
-has no `vsubs` pin (its standard-cell library ties NMOS bulk internally, the
-same way it has no separate pin for it in any of its abstracted cell types --
-see `layout/digital/trng_top.lvs_reference.spice`'s own per-cell-type
-`.SUBCKT` headers, none of which carry one either), so `vsubs` never reaches
-`digital` and is not a `trng_floorplan` chip pin.
+Until #705, `ring1`, `ring2` and `combiner_sampler`'s committed reference
+netlists each declared a `vsubs` pin, standing in for the substrate handle
+`klt extract` synthesized because no cell drew a tap, and this module carried
+a `vsubs` net purely so the composed reference could wire a complete X-card.
+Every cell now draws a substrate tap tied to `vss` and an Nwell tap tied to
+its supply (klt >= 0.8.0's `comp.tap_distance.*`), the three regions'
+`.SUBCKT` headers have no `vsubs` pin, and so this module declares no such
+net. `digital` never had one (its standard-cell library ties NMOS bulk
+internally).
 
 The `ro1` long-haul route (`spans_regions`)
 ------------------------------------------------
@@ -233,8 +217,7 @@ REGION_ORDER: tuple[str, ...] = ("ring1", "ring2", "combiner_sampler", "digital"
 # per-net table (itself derived from `design/trng_top.spice`'s own
 # `sampler_core` netlist -- `en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit
 # raw_valid ring_bit1 ring_bit2` -- plus the four regions' own supply/ground
-# pins), with `vsubs` added for well-formedness only (see the module
-# docstring). Nothing here is inferred or renamed: every `endpoints` pin
+# pins). Nothing here is inferred or renamed: every `endpoints` pin
 # name is the region's own already-committed `.SUBCKT` pin name, unchanged.
 INTER_REGION_NETS: list[dict] = [
     {
@@ -463,29 +446,6 @@ INTER_REGION_NETS: list[dict] = [
             "digital does too (same reference-promotion mechanism as `vddd` "
             "above), so all four are now ordinary `endpoints` and the wiring "
             "into digital is drawn, not just documented."
-        ),
-    },
-    {
-        "name": "vsubs",
-        "role": "substrate",
-        "chip_pin": False,
-        "endpoints": [
-            ("ring1", "vsubs"),
-            ("ring2", "vsubs"),
-            ("combiner_sampler", "vsubs"),
-        ],
-        "layer_role": "guard_ring_tap",
-        "rationale": (
-            "Not in issue #221's own inter-region table -- design/"
-            "trng_top.spice's schematic has no `vsubs` pin; it exists only "
-            "in ring1/ring2/combiner_sampler's own hand-derived layout LVS "
-            "reference netlists, standing in for the extraction deck's own "
-            "synthesized substrate handle (see the module docstring). "
-            "Declared as its own net, not merged into `vss`, purely so the "
-            "composed reference below can wire a complete X-card for these "
-            "three regions -- no metal route is implied; physically this is "
-            "the guard rings' own p-substrate taps (`add_well: False`), not "
-            "a drawn wire."
         ),
     },
 ]

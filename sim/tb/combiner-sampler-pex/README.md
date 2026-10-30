@@ -27,8 +27,8 @@ to `signoff/evidence/post-layout/combiner_sampler/`.
 ## Cold start
 
 ```bash
-export KLT="uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"  # DR-0026's producer build
-# (or: pip install "klayout-tools==0.6.0" "klayout==0.30.10" and leave KLT unset)
+export KLT="uvx --from klayout-tools==0.8.0 --with klayout==0.30.10 klt"  # DR-0026's producer build
+# (or: pip install "klayout-tools==0.8.0" "klayout==0.30.10" and leave KLT unset)
 python3 sim/tb/combiner-sampler-pex/stimulus.py --check
 python3 sim/tb/combiner-sampler-pex/build_dut.py --check-source      # offline
 python3 sim/tb/combiner-sampler-pex/build_dut.py --check             # runs klt extract
