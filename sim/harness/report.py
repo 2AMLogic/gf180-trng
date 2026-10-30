@@ -125,8 +125,11 @@ def git_blob_sha1(data: bytes) -> str:
 
 
 def sha256_file(path: Path) -> str:
+    """Bare-hex SHA-256 of ``path``, streamed in 1 MiB chunks (bounded memory)."""
     digest = hashlib.sha256()
-    digest.update(path.read_bytes())
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
     return digest.hexdigest()
 
 
