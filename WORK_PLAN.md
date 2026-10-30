@@ -38,6 +38,7 @@ Issues currently being built (`loom:building`).
 - **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 - **#718**: Refresh sim/signoff evidence after digital tapcell re-placement (DR-0029 inventory, evidence unit of #487)
+- **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
 
 ## PRs Awaiting Review
 
@@ -50,6 +51,7 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
+- **#732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
 
 ## Proposed
 
@@ -68,6 +70,7 @@ Issues carrying `loom:curated`.
 - **#708**: Power gating: define and verify the power-intent flow for a gated digital domain *(curated)*
 - **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
+- **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -85,10 +88,10 @@ _None._
 | Very important | 1 |
 | Important | 1 |
 | Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 4 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 13 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 14 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
