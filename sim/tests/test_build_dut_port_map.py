@@ -3,9 +3,12 @@
 Synthetic extracted netlists only; no klt, ngspice or PDK.
 """
 
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -203,6 +206,27 @@ class SourceAudits(unittest.TestCase):
         self.assertNotEqual(
             bd.source_identity(DESIGN), bd.source_identity(DESIGN.replace("m1 y a", "m9 y a"))
         )
+
+
+class ExtractKltTests(unittest.TestCase):
+    """`extract` runs the binary named by $KLT, like the combiner generator."""
+
+    def _argv(self, env):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
+                mock.patch.object(bd.pex_dut.subprocess, "run") as run:
+            out = Path(tmp) / "ro_ring11.extracted.spice"
+            out.write_text("")
+            bd.extract(Path(tmp))
+        return run.call_args.args[0]
+
+    def test_klt_env_selects_the_binary(self):
+        argv = self._argv({"KLT": "uvx --from klayout-tools==0.6.0 klt"})
+        self.assertEqual(argv[:5], ["uvx", "--from", "klayout-tools==0.6.0", "klt", "extract"])
+
+    def test_default_is_klt(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop("KLT", None)
+            self.assertEqual(self._argv({})[:2], ["klt", "extract"])
 
 
 if __name__ == "__main__":
