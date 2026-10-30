@@ -29,7 +29,6 @@ it absent, `--check` self-skips unless `--require-tools` is given.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import sys
@@ -37,6 +36,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.harness.report import sha256_file  # noqa: E402
 DEFAULT_GDS = HERE / "trng_top.gds"
 DEFAULT_SPEC = HERE / "tap-distance-spec.json"
 DEFAULT_REPORT = HERE / "reports" / "tap-distance.json"
@@ -45,10 +47,6 @@ SCHEMA_VERSION = 1
 #: Report keys that describe the machine/tool rather than the artifact; they
 #: are excluded when `--check` compares a fresh run against the committed one.
 UNSTABLE_KEYS = ("provenance",)
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _rel(path: Path) -> str:
@@ -497,10 +495,10 @@ def analyze(gds: Path, spec: dict, spec_path: Path | None = None, top: str | Non
         "kind": "tap-distance",
         "input": {
             "gds": _rel(gds),
-            "gds_sha256": _sha256(gds),
+            "gds_sha256": sha256_file(gds),
             "top_cell": geo.top_name,
             "spec": _rel(spec_path) if spec_path else None,
-            "spec_sha256": _sha256(spec_path) if spec_path else None,
+            "spec_sha256": sha256_file(spec_path) if spec_path else None,
             "database_unit_um": geo.dbu,
             "extent_um": _bbox_um(geo, die),
         },

@@ -36,7 +36,6 @@ tracked files. Stdlib only; no ngspice, no PDK, no broker.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import re
 import sys
 from pathlib import Path
@@ -46,6 +45,7 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
 from harness import evidence_store, pdk_models, startup, testbench  # noqa: E402
+from harness.report import sha256_file  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -100,14 +100,6 @@ def declared_dependencies(repo: Path) -> dict[str, set[str]]:
     return declared
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def check(repo: Path, tracked: list[str]) -> list[str]:
     """Every violation under ``repo``; empty means the manifests are sound."""
     problems: list[str] = []
@@ -150,7 +142,7 @@ def check(repo: Path, tracked: list[str]) -> list[str]:
             size = path.stat().st_size
             if size not in stored:
                 continue
-            digest = _sha256(path)
+            digest = sha256_file(path)
         except OSError:
             continue
         if digest in stored[size]:
