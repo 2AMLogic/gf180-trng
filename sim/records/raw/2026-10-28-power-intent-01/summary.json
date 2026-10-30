@@ -1,0 +1,99 @@
+{
+  "monitor_violations": [],
+  "sequence_violations": [],
+  "passed_checks": [
+    "alarm_pin_survives",
+    "alarm_set_pre_down",
+    "alarm_survives_power_cycle",
+    "ctrl_retained",
+    "ctrl_retained_back_to_back",
+    "ctrl_retained_with_alarm",
+    "pre_down_cond_ready",
+    "pre_down_ctrl",
+    "startup_rerun",
+    "state_reinitialised"
+  ],
+  "failed_checks": [],
+  "flops": {
+    "retained": 5,
+    "gated": 315,
+    "missing": []
+  },
+  "wake_budget": {
+    "wake_cycles": 27,
+    "wake_overhead_s": 0.0135,
+    "digital_floor_s": 0.6405,
+    "wake_time_to_first_valid_s": 0.654,
+    "readme_floor_s": 0.64,
+    "provisional": true
+  },
+  "broken_fixtures": {
+    "no_iso": {
+      "reported": [
+        "unisolated_output"
+      ],
+      "required": [
+        "unisolated_output"
+      ]
+    },
+    "iso_early": {
+      "reported": [
+        "iso_release_before_rail_good",
+        "x_on_visible_output"
+      ],
+      "required": [
+        "iso_release_before_rail_good",
+        "x_on_visible_output"
+      ]
+    },
+    "reset_early": {
+      "reported": [
+        "reset_release_before_iso_release"
+      ],
+      "required": [
+        "reset_release_before_iso_release"
+      ]
+    },
+    "ret_lost": {
+      "reported": [
+        "CHECK:alarm_pin_survives",
+        "CHECK:alarm_set_pre_down",
+        "CHECK:alarm_survives_power_cycle",
+        "CHECK:ctrl_retained",
+        "CHECK:ctrl_retained_back_to_back",
+        "CHECK:ctrl_retained_with_alarm",
+        "CHECK:pre_down_cond_ready",
+        "CHECK:startup_rerun",
+        "CHECK:state_reinitialised",
+        "x_on_visible_output"
+      ],
+      "required": [
+        "CHECK:ctrl_retained"
+      ]
+    },
+    "ret_clk_on": {
+      "reported": [
+        "CHECK:alarm_pin_survives",
+        "CHECK:alarm_set_pre_down",
+        "CHECK:alarm_survives_power_cycle",
+        "CHECK:pre_down_cond_ready",
+        "CHECK:startup_rerun",
+        "CHECK:state_reinitialised",
+        "missing_step",
+        "x_on_visible_output"
+      ],
+      "required": [
+        "missing_step",
+        "x_on_visible_output"
+      ]
+    },
+    "no_decay_wait": {
+      "reported": [
+        "wake_inside_decay"
+      ],
+      "required": [
+        "wake_inside_decay"
+      ]
+    }
+  }
+}
