@@ -108,7 +108,7 @@ class ManifestCheckTests(unittest.TestCase):
     def test_snapshot_name_set_is_the_harness_constants(self):
         self.assertEqual(
             vam.INPUT_SNAPSHOT_NAMES,
-            {"spinit", "tb.fragment.spice", "dut.netlist.spice", "tb.manifest.json"},
+            {"spinit", "tb.fragment.spice", "dut.netlist.spice", "tb.manifest.json", "pdk-models.json"},
         )
 
     def test_exempt_entry_does_not_exempt_other_names_with_same_bytes(self):
@@ -122,6 +122,45 @@ class ManifestCheckTests(unittest.TestCase):
         problems = self.check()
         self.assertEqual(len(problems), 1, problems)
         self.assertIn("out.log", problems[0])
+
+    def record(self, stem: str, deps: str | None) -> None:
+        lines = ["---", "manifest:", "inputs:"]
+        if deps is not None:
+            lines.append(f"  netlist_dependencies: {deps}")
+        lines += ["stored_evidence:", f"  manifest: manifests/artifacts/{stem}.manifest.json", "---", ""]
+        self.put(f"sim/records/{stem}.md", "\n".join(lines))
+
+    def test_declared_dependency_may_equal_tracked_bytes(self):
+        self.path.write_text(manifest(name="models.spice"))
+        self.record("2026-01-01-demo-01", "other.spice, models.spice")
+        self.put("layout/models.spice", RAW)
+        self.assertEqual(self.check(), [])
+
+    def test_declared_dependency_does_not_exempt_same_bytes_under_another_name(self):
+        entries = [
+            {"sha256": SHA, "size": len(RAW), "kind": "evidence", "name": n,
+             "uri": f"artifact:evidence/example__repo/{SHA[:2]}/{SHA}"}
+            for n in ("models.spice", "out.log")
+        ]
+        self.path.write_text(json.dumps({"schema_version": 1, "entries": entries}))
+        self.record("2026-01-01-demo-01", "models.spice")
+        self.put("leak.log", RAW)
+        problems = self.check()
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("out.log", problems[0])
+
+    def test_dependency_declared_by_another_record_does_not_exempt(self):
+        self.path.write_text(manifest(name="models.spice"))
+        self.record("2026-01-01-demo-01", None)
+        self.record("2026-02-02-other-01", "models.spice")
+        self.put("layout/models.spice", RAW)
+        self.assertEqual(len(self.check()), 1)
+
+    def test_record_without_inputs_or_with_missing_manifest_is_tolerated(self):
+        self.path.write_text(manifest())
+        self.put("sim/records/old.md", "---\nname: old\n---\n")
+        self.record("2026-03-03-gone-01", "x.spice")
+        self.assertEqual(self.check(), [])
 
     def test_same_size_different_bytes_passes(self):
         self.path.write_text(manifest())
