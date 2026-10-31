@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-10-30
 
+- **PR #753**: refactor(sim): share pex DUT generator helpers and honour KLT in ring11
+- **Issue #751** (closed): Consolidate helpers duplicated between the two pex build_dut.py generators
 - **PR #749**: fix(harness): stream sha256_file in 1 MiB chunks
 - **Issue #748** (closed): sim.harness.report.sha256_file reads whole file into memory; callers hash large artifacts
 - **PR #747**: refactor: use the shared sha256_file in place of local digest helpers
