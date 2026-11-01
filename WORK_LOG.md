@@ -6,6 +6,7 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-01
 
+- **Issue #414** (closed): Characterize deterministic supply-ripple sensitivity of the buffered RO array
 - **PR #755**: Bump Repo Skills 0.24.7 -> 0.25.1
 
 ### 2026-10-30
