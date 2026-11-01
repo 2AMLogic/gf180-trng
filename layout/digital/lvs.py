@@ -742,6 +742,23 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
     compares against.
     """
     restated = dict(payload)
+    # `klt` >= 0.8.0 echoes each cell library's SPICE `path` in
+    # `provenance.pin_order_sources`: an absolute path into the local PDK
+    # install, which names the producing host. The library name and cell count
+    # stay; the machine-local path does not.
+    provenance = restated.get("provenance")
+    if isinstance(provenance, dict) and isinstance(
+        provenance.get("pin_order_sources"), list
+    ):
+        restated["provenance"] = {
+            **provenance,
+            "pin_order_sources": [
+                {k: v for k, v in source.items() if k != "path"}
+                if isinstance(source, dict)
+                else source
+                for source in provenance["pin_order_sources"]
+            ],
+        }
     restated["layout"] = str(EXTRACTED_PATH.relative_to(REPO_ROOT))
     restated["reference"] = str(PNR_NETLIST_PATH.relative_to(REPO_ROOT))
     restated["reference_generation"] = {

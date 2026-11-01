@@ -17,6 +17,7 @@ the bounding box of the rectangles that were written.
 
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -299,6 +300,56 @@ class ComponentCheckTests(DefFixtureMixin, unittest.TestCase):
             r = build._component_check(path, build._def_summary(path), (TAP,))
         self.assertEqual(r["status"], "skipped")
         self.assertIsNone(r["as_built_netlist"])
+
+
+class TapcellRequestTests(unittest.TestCase):
+    """`request.power.tapcell.distance_um` (klayout-tools#3051, #717)."""
+
+    def request(self, distance):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(
+            build, "TAPCELL_DISTANCE_UM", distance
+        ):
+            path = Path(d) / "request.json"
+            build._write_request(path)
+            return json.loads(path.read_text())
+
+    def test_pitch_is_emitted_as_tapcell_distance(self):
+        power = self.request(30.0)["power"]
+        self.assertEqual(power["tapcell"], {"distance_um": 30.0})
+
+    def test_none_omits_the_field_and_reproduces_the_previous_request(self):
+        power = self.request(None)["power"]
+        self.assertNotIn("tapcell", power)
+        self.assertEqual(
+            power,
+            {
+                "power_net": build.POWER["power_net"],
+                "ground_net": build.POWER["ground_net"],
+                "straps": build.POWER["straps"],
+            },
+        )
+
+    def test_committed_request_restates_what_was_sent(self):
+        with mock.patch.object(build, "TAPCELL_DISTANCE_UM", 30.0):
+            restated = build._committed_view({})["request"]["power"]
+        self.assertEqual(restated["tapcell"], {"distance_um": 30.0})
+
+    def test_power_constant_is_not_mutated(self):
+        with mock.patch.object(build, "TAPCELL_DISTANCE_UM", 30.0):
+            build._power_request()
+        self.assertNotIn("tapcell", build.POWER)
+
+    def test_committed_report_records_the_effective_pitch(self):
+        report = json.loads(
+            (LAYOUT_DIR / "digital" / "reports" / "place_and_route.json").read_text()
+        )
+        if build.TAPCELL_DISTANCE_UM is None:
+            self.skipTest("no pitch override configured")
+        self.assertEqual(report["power"]["tapcell_distance_um"], build.TAPCELL_DISTANCE_UM)
+        self.assertEqual(
+            report["request"]["power"]["tapcell"],
+            {"distance_um": build.TAPCELL_DISTANCE_UM},
+        )
 
 
 if __name__ == "__main__":

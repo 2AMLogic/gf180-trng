@@ -536,5 +536,27 @@ class DefPhysicalOnlyInstancesTests(_TempRepoMixin, unittest.TestCase):
         self.assertIn("fill_64", str(ctx.exception))
 
 
+class CommittedViewHostPathTests(unittest.TestCase):
+    """`klt` >= 0.8.0 echoes the PDK install's absolute SPICE path (#717)."""
+
+    def test_pin_order_source_paths_are_dropped_and_input_not_mutated(self):
+        payload = {
+            "provenance": {
+                "pin_order_sources": [
+                    {"library": "lib", "path": "/home/someone/pdk/lib.spice", "cells": 3}
+                ]
+            }
+        }
+        view = lvs._committed_view(payload, {})
+        self.assertEqual(
+            view["provenance"]["pin_order_sources"], [{"library": "lib", "cells": 3}]
+        )
+        self.assertIn("path", payload["provenance"]["pin_order_sources"][0])
+
+    def test_envelope_without_pin_order_sources_is_unchanged(self):
+        view = lvs._committed_view({"provenance": {"klt_version": "0.6.0"}}, {})
+        self.assertEqual(view["provenance"], {"klt_version": "0.6.0"})
+
+
 if __name__ == "__main__":
     unittest.main()
