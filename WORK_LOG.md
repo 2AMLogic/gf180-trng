@@ -1,8 +1,12 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-30.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-01.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-01
+
+- **PR #755**: Bump Repo Skills 0.24.7 -> 0.25.1
 
 ### 2026-10-30
 
