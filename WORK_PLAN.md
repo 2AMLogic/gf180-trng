@@ -27,7 +27,6 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
-- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array
 - **#654**: T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign
 
@@ -62,7 +61,6 @@ Issues carrying `loom:curated`.
 - **#200**: Champion: Merge-Risk Hold Digest *(curated)*
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
 - **#366**: Guard telemetry: process substitution misclassified as worktree write *(curated)*
-- **#414**: Characterize deterministic supply-ripple sensitivity of the buffered RO array *(curated)*
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
@@ -91,11 +89,11 @@ _None._
 | Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`) | 4 |
+| Ready (`loom:issue`) | 3 |
 | In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 3 |
-| Curated | 16 |
+| Curated | 15 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
