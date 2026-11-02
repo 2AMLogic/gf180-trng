@@ -1,8 +1,12 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-01.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-02.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-02
+
+- **Issue #654** (closed): T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
 
 ### 2026-11-01
 
