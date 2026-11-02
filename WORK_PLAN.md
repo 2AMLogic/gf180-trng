@@ -9,6 +9,7 @@ dependency block or an operator-only decision.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
+- **#732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
 
 ## Very Important
 
@@ -86,7 +87,7 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Very important | 1 |
 | Important | 1 |
 | Ready (`loom:issue`) | 3 |
