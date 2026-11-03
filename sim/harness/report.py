@@ -106,6 +106,36 @@ def repo_commit_field(git: dict) -> str:
     return git["commit"] + ("-dirty" if git["dirty"] else "")
 
 
+def fleet_provenance(report: dict) -> dict:
+    """Fleet-side provenance of a ``klt sim`` report, for record front matter.
+
+    Returns ``{"jobs", "pdk_ver", "ngspice", "klt_ver"}``. ``jobs`` is the list
+    of batch job ids (empty for a local run). The simulating PDK and ngspice
+    are the fleet worker's, not the submitting host's, so they are read from
+    each fleet entry's ``worker_environment``; the host's own ``provenance``
+    and ``engine_version`` are only the fallback when the workers disagree or
+    report nothing. A ``remote`` that is one job rather than a ``fleet`` list
+    is treated as a one-entry fleet. Parsing is tolerant: a one-line
+    ``version_banner`` or a missing section yields the fallback, not an error.
+    """
+    env = report.get("environment") or {}
+    prov = report.get("provenance") or {}
+    remote = env.get("remote") or {}
+    fleet = remote.get("fleet") or ([remote] if remote.get("job_id") else [])
+    worker = [(f.get("worker_environment") or {}) for f in fleet]
+    jobs = [f["job_id"] for f in fleet if f.get("job_id")]
+    stamps = sorted({(w.get("pdk") or {}).get("stamp_text", "") for w in worker} - {""})
+    pdk_ver = (stamps[0].replace("open_pdks ", "") if len(stamps) == 1
+               else ("; ".join(stamps) or (prov.get("pdk") or {}).get("version") or "unknown"))
+    banners = sorted({
+        ((w.get("simulator") or {}).get("version_banner", "").split("\n")[1:2] or [""])[0]
+        .strip("* ").strip()
+        for w in worker} - {""})
+    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
+    return {"jobs": jobs, "pdk_ver": pdk_ver, "ngspice": ngspice,
+            "klt_ver": prov.get("klt_version") or "unknown"}
+
+
 def blob_sha(repo_root: Path, path: Path) -> str:
     """Git blob SHA of ``path``'s current content.
 
