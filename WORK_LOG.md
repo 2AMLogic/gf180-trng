@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-02.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-03.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-03
+
+- **PR #763**: refactor: share record provenance derivation via harness.report
+- **Issue #762** (closed): Consolidate duplicated record-provenance code in sim/tools into sim/harness/report.py
 
 ### 2026-11-02
 
