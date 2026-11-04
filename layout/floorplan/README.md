@@ -963,6 +963,68 @@ inventory options was not run because none has landed. Whether to keep the row
 unchanged and rely on #709 or to bring the row back for a decision is
 #700's call; this issue does not edit the row.
 
+### Re-run on the #709 inventory (issue #710, follow-up)
+
+#709 has landed (`main` @ `dcd219c`), so the sweep above was repeated on the
+committed post-#709 inventory. Same method as "How this was run"; nothing
+committed was changed. Area is geometry and does not vary with PVT corner;
+the P&R run is at `ss_125C_3v00`. The committed `area.json` records
+173 157.92 µm² (346.3 %); a fresh `floorplan.py` composition of the committed
+inputs gives 173 589.3 µm² (347.2 %), the same ≈ 0.25 % regeneration drift
+noted above (not investigated here).
+
+| Requested util. | Achieved util. | Die µm² | Placed area µm² (util × core) | Digital guarded µm² | Floorplan µm² | % of row | Route DRC / antenna | Setup / hold viol. | Digital LVS mismatches |
+|---:|---:|---:|---:|---:|---:|---:|---|---|---:|
+| 40 (committed) | 43.4 | 156 590 | 60 744 | 158 432 | 173 589 (fresh) | 347.2 | 0 / 0 | 0 / 0 | 0 |
+| 70 | 75.1 | 92 425 | 60 191 | 93 841 | 107 165 | 214.3 | 0 / 0 | 0 / 0 | 6 |
+| 85 | 90.4 | 77 140 | 59 863 | 78 434 | **91 232** | **182.5** | 0 / 0 | 0 / 0 | 7 |
+
+Wall-clock per P&R point was 488 s, 690 s and 897 s. The 55 % point was
+skipped: the 40/70/85 points already bracket the trend of the previous sweep.
+
+What changed against the `FIFO_DEPTH = 2` sweep (`main` @ `18d24d1`, 185.0 %
+best): placed area fell only from ≈ 61–62 k to ≈ 60–61 k µm² (about 2 %), and
+the best floorplan point from 92 516 to 91 232 µm² (185.0 % → 182.5 %). The
+inventory change moves the cell-area floor by far less than the roughly half
+that the row needs.
+
+**Limits, with evidence**
+
+1. **Cell area is still the floor.** Placed area is ≈ 59.9 k µm² at the best
+   point, above the 50 000 µm² budget before die margin, guard ring,
+   isolation channel or the 7 196.8 µm² analog side are added. With the
+   analog side fixed, the digital region plus its 20 µm channel would have to
+   fit in ≈ 42.8 k µm², i.e. a guarded side of ≈ 197 µm against 280 µm at the
+   85 % point. Derived, not run: that is a placed area near 31 k µm² at 100 %
+   utilisation, about half of today's.
+2. **Routing did not limit at 90.4 % achieved.** All three points routed with
+   0 route-DRC and 0 antenna violations and met setup and hold
+   (`worst_slack_ns` 32.9 / 33.2 / 33.1). Where congestion starts was not
+   found; no point above 85 % requested was run.
+3. **Composed digital LVS is clean at 40 % and reports mismatches at 70 % and
+   85 %.** `floorplan.py` prints `lvs match (0 mismatches)` for the digital
+   region at 40 % and `lvs mismatch (6 mismatches, unexpected categories:
+   none)` / `(7 mismatches, ...)` at 70 % / 85 %. The mismatches were not
+   diagnosed, so a high-utilisation layout is not shown to be LVS-clean in the
+   composed floorplan. Composed digital DRC introduced 0 new violations at all
+   three points (ring alone: 2 769 / 2 728 / 2 628 pre-existing).
+4. **Latch-up tap spacing (#449, #487) is unchanged and unresolved.**
+   `tap_distance.py` was run on the 70 % and 85 % layouts this time: both
+   fail LU.3 (max 49.691 µm) and LU.4 (max 49.727 µm) against the 15 µm MV
+   limit, the same maxima as the committed 40 % layout, because the tapcell
+   pitch (`-distance 100`) does not change with utilisation. The area cost of
+   meeting the rule is still unmeasured (a tighter pitch was not run). The
+   rule's applicability is #449 and the pitch default is #487.
+5. **Isolation channel** stays ≈ 5.6 k µm² of the 85 % point (≈ 11 % of the
+   row); `ISOLATION_CHANNEL_UM` was not changed, as no isolation analysis
+   supports it.
+
+**Outcome.** Floorplan levers on the post-#709 inventory reach **182.5 %** of
+the row at best, and no floorplan lever can reach 100 %. The combined
+measurement is the one reported here; the result is input to #700, which
+decides whether to keep the row or bring it back. This issue does not edit
+the row.
+
 ### How this was run
 
 `FLOORPLAN["utilization_pct"]` was overridden in memory and
