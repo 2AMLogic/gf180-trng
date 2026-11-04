@@ -61,6 +61,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness import klt_request as _kreq  # noqa: E402
+from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -365,22 +366,9 @@ def cmd_emit(check: bool) -> int:
 
 
 def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) -> int:
-    if only is not None and backend != "local":
-        print("--only is a single-point debug probe and runs with --backend local", file=sys.stderr)
-        return 2
-    stem = "grid" if only is None else "probe-" + only.replace("/", "_")
-    req = request_path()
-    tmp = None
-    if only is not None:
-        # klt resolves `netlist` relative to the request file, so the restricted
-        # request has to sit next to the deck for the duration of the run.
-        tmp = TB_DIR / f".{stem}.request.json"
-        tmp.write_text(render(build_request(only)))
-        req = tmp
-    return _kreq.run_klt_request(
-        outdir, stem, req, backend, klt_cmd,
-        single_point=only is not None, probe_hint="--only PROCESS/TEMP/VDD",
-        cleanup=None if tmp is None else (lambda: tmp.unlink(missing_ok=True)))
+    return _kreq.run_probe_or_grid(
+        outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR,
+        render_probe=lambda point: render(build_request(point)), probe_hint="--only PROCESS/TEMP/VDD")
 
 
 SLUG = "sampler-core-liveness-active"
@@ -397,11 +385,6 @@ RECORD_FIELDS = (
     "f_r1_hz", "f_r2_hz", "f_r1_ctl_hz", "f_r2_ctl_hz",
     "i_arr_tapped_a", "i_arr_ctl_a", "w1_s", "w2_s", "cw1_s", "cw2_s",
 )
-
-
-def _sanitize(text: str) -> str:
-    """Strip this host's absolute paths from a raw artifact before it is hashed."""
-    return text.replace(str(REPO_ROOT), "<repo>").replace(str(Path.home()), "~")
 
 
 def _fmt(x: float) -> str:
@@ -520,42 +503,9 @@ def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list
 
 
 def cmd_record(paths: list[str], note: str, records_dir: Path | None = None) -> int:
-    """Mint append-only records from klt reports: one measured record per usable
-    corner, and one UNMEASURED record for the units that did not produce data."""
-    records_dir = records_dir or REPO_ROOT / "sim" / "records"
-    now = _dt.datetime.now(_dt.timezone.utc)
-    date = now.strftime("%Y-%m-%d")
-    git = _report.git_provenance(REPO_ROOT)
-    for path in paths:
-        rp = Path(path)
-        rep = json.loads(rp.read_text())
-        rows = analyse_report(rep)
-        good = [(r, c) for r, c in zip(rows, rep.get("corners", [])) if r["verdict"] == "OK"]
-        bad = [c for r, c in zip(rows, rep.get("corners", [])) if r["verdict"] != "OK"]
-        stems = _report.reserve_record_stems(records_dir, date, SLUG, len(good)) if good else []
-        for (row, corner), stem in zip(good, stems):
-            raw = records_dir / _report.RAW_DIRNAME / stem
-            files: list[tuple[str, str]] = []
-            for name, key in (("corner.cir", "deck"), ("ngspice.log", "log")):
-                src = (corner.get("artifacts") or {}).get(key)
-                if src and Path(src).is_file():
-                    (raw / name).write_text(_sanitize(Path(src).read_text(errors="replace")))
-                    files.append((name, _report.sha256_file(raw / name)))
-            sl = {"environment": rep.get("environment"), "provenance": rep.get("provenance"), "corner": corner}
-            (raw / "report-unit.json").write_text(_sanitize(json.dumps(sl, indent=1)) + "\n")
-            files.append(("report-unit.json", _report.sha256_file(raw / "report-unit.json")))
-            (records_dir / f"{stem}.md").write_text(render_measured(stem, row, corner, rep, files, now, git))
-            print(f"wrote {stem}.md  ({row['corner']})")
-        if bad:
-            stem = _report.reserve_record_stems(records_dir, date, SLUG_ATTEMPT, 1)[0]
-            raw = records_dir / _report.RAW_DIRNAME / stem
-            slim = dict(rep)
-            slim["corners"] = [{k: v for k, v in c.items() if k != "measurements"} for c in bad]
-            (raw / "report-errored.json").write_text(_sanitize(json.dumps(slim, indent=1)) + "\n")
-            files = [("report-errored.json", _report.sha256_file(raw / "report-errored.json"))]
-            (records_dir / f"{stem}.md").write_text(render_unmeasured(stem, bad, rep, files, now, git, note))
-            print(f"wrote {stem}.md  (UNMEASURED, {len(bad)} units)")
-    return 0
+    return _mint.mint_records(
+        paths, note, records_dir, repo_root=REPO_ROOT, slug=SLUG, slug_attempt=SLUG_ATTEMPT,
+        analyse_report=analyse_report, render_measured=render_measured, render_unmeasured=render_unmeasured)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:

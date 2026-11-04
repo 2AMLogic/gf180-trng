@@ -157,18 +157,18 @@ def estimate_fifo_depth() -> int:
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 31.22029,
+    "setup_binding_slack_ns": 31.50264,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.69456,
-    "fmax_floor_mhz": 53.2488,
+    "hold_binding_slack_ns": 0.69277,
+    "fmax_floor_mhz": 54.0598,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 62_081.51,
-    "area_ratio_vs_inventory": 1.84467,
-    "power_1mhz_max_w": 3.48190e-4,
+    "cell_area_um2": 64_062.84,
+    "area_ratio_vs_inventory": 1.90354,
+    "power_1mhz_max_w": 3.48696e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 7.84212e-6,
+    "leakage_max_w": 8.23858e-6,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 2.17837e-6,
+    "leakage_max_current_a": 2.28849e-6,
     # [#255] re-synthesized and re-placed-and-routed at DR-0020's ratified
     # `FIFO_DEPTH = 2`, reusing `layout/digital/build.py`'s existing
     # `CONSTRAINTS` (`max_transition_ns`/`max_capacitance_pf`, [#240]) --
@@ -215,8 +215,14 @@ RECORDED = {
     # run (pre-#292 netlist, same OpenROAD build) attributes most of each move
     # to the OpenROAD build rather than to the netlist -- see the document's
     # section 0b for the three-way table.
+    # [#718] re-measured on #717's 30 um-pitch tapcell re-placement
+    # (5673 placed instances; the die is unchanged at 398.93 um). Every
+    # figure above moved: placed cell area +3.2 % (62,081.5 -> 64,062.8
+    # um^2), Fmax floor +1.5 %, max leakage +5.1 %, 1 MHz power +0.1 %; the
+    # binding corners are unchanged. The document's section 0d carries the
+    # before/after table.
     "max_transition_violating_corners": 0,
-    "max_transition_worst_slack_ns": 3.00899,
+    "max_transition_worst_slack_ns": 2.96981,
     "max_transition_worst_corner": "ff_125C_3v60/rc-max",
     "max_transition_worst_violating_pins": 0,
     # No violating pin is on one of the six #233 trunk nets, at any corner --

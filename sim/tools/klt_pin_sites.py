@@ -69,10 +69,13 @@ from __future__ import annotations
 import argparse
 import ast
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -167,11 +170,7 @@ def is_scanned(rel: str) -> bool:
 
 
 def tracked_files(root: Path) -> list[str]:
-    out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
-        check=True, capture_output=True, text=True,
-    ).stdout
-    return sorted(p for p in out.split("\0") if p and is_scanned(p))
+    return sorted(p for p in _git_files.tracked_files(root) if is_scanned(p))
 
 
 def find_mentions(rel: str, text: str) -> list[Mention]:
@@ -254,7 +253,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         pins, mentions, problems = check_tree(args.root.resolve())
     except (OSError, ValueError, SyntaxError,
-            subprocess.CalledProcessError) as exc:
+            _git_files.GitError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     for pkg, version in pins.items():

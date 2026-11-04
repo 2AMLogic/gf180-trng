@@ -587,7 +587,7 @@
       "device_count": 196,
       "net_count": 1678,
       "pin_count": 112,
-      "abstracted_cell_types": 92
+      "abstracted_cell_types": 91
     },
     "drawn_nets": [
       "en1",

@@ -21,6 +21,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 VENDORED_PREFIXES = (".loom/", ".claude/")
 SEVERITY = "warning"
@@ -33,9 +37,7 @@ def select_scripts(tracked: list[str]) -> list[str]:
 
 
 def tracked_files() -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z", "*.sh"], cwd=ROOT,
-                         check=True, capture_output=True, text=True).stdout
-    return [p for p in out.split("\0") if p]
+    return _git_files.tracked_files(ROOT, "*.sh")
 
 
 def run(require_tools: bool, which=shutil.which, files=None) -> int:
@@ -47,7 +49,11 @@ def run(require_tools: bool, which=shutil.which, files=None) -> int:
         print("SKIP: shellcheck unavailable; shell lint not run "
               "(pass --require-tools to fail instead)")
         return 0
-    scripts = select_scripts(tracked_files() if files is None else files)
+    try:
+        scripts = select_scripts(tracked_files() if files is None else files)
+    except _git_files.GitError as exc:
+        print(f"FAIL: {exc}")
+        return 1
     if not scripts:
         print("FAIL: no tracked shell scripts found; file selection is broken")
         return 1

@@ -403,6 +403,7 @@ DIGITAL_TESTBENCHES = frozenset(
         "digital-sta-power",
         "health-test-fault-injection",
         "interface-regfile",
+        "power-intent",
         "ring-liveness-fault-injection",
         "smoke-trng-top",
         "trng-top-crosscheck",

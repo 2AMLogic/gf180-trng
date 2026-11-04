@@ -95,7 +95,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/max_transition_probe.py",
-          "sha256": "sha256:92b312795bd12ebd8926bbb9b0e4375e25d0064358dcd2773c61a0dc4ea97d8c"
+          "sha256": "sha256:c1f2251ae0dd1dbbf407272d9f458d47a99b47dcca0b81a1e1b340a103dd5fbc"
         },
         {
           "path": "sim/tb/digital-sta-power/run_sta.py",
@@ -148,6 +148,26 @@
         {
           "path": "sim/tb/interface-regfile/tb_rtl_equivalence.v",
           "sha256": "sha256:36eb8e4f9b80506fdccd7f8423c3bdeabc2956fd7f6cad552d911c404196de52"
+        }
+      ]
+    },
+    "power-intent": {
+      "invocation": {
+        "command": "python3 sim/tools/power_intent_check.py --check --require-tools",
+        "documented_in": "sim/tb/power-intent/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/power-intent/README.md",
+          "sha256": "sha256:11a00f2e0c9207af5a1a7233a5993ae7cdc7ff6349d866288ce8b8dff9d34110"
+        },
+        {
+          "path": "sim/tb/power-intent/pi_cells.v",
+          "sha256": "sha256:8529b71aa275d71d03c25e04a90cc4d343cc3e99d3b8a87298cb841c0312c1ed"
+        },
+        {
+          "path": "sim/tb/power-intent/tb_power_intent.v",
+          "sha256": "sha256:7135e279f8f1ba05d89f25d08c644b662d27aa6c2ed3de4528c79aa77ee70f8d"
         }
       ]
     },
@@ -250,7 +270,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:a24d68f6e4b9cc7d30de167990ac4a5db3e94656acf87c6881e47db6cece14ca"
+      "sha256": "sha256:ab22c428cb854dc51df0e3ce6f76cfd574506c621b35cb75624b9c28a4eeb66f"
     },
     {
       "path": "sim/README.md",

@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import subprocess
 import sys
 from pathlib import Path
 
@@ -43,6 +42,10 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
 from harness import evidence_store, startup, testbench  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _git_files import GitError, tracked_files  # noqa: E402
 
 MANIFESTS_ROOT = "manifests"
 STAGE_PREFIX = "sim/.work/"
@@ -57,25 +60,6 @@ INPUT_SNAPSHOT_NAMES = frozenset(
         testbench.MANIFEST_SNAPSHOT_NAME,
     }
 )
-
-
-class GitError(RuntimeError):
-    """git could not list the tracked files."""
-
-
-def tracked_files(repo: Path) -> list[str]:
-    try:
-        proc = subprocess.run(
-            ["git", "ls-files", "-z"], cwd=repo, capture_output=True, check=False
-        )
-    except OSError as exc:
-        raise GitError(f"cannot run git in {repo}: {exc}") from exc
-    if proc.returncode != 0:
-        raise GitError(
-            f"git ls-files in {repo} failed (exit {proc.returncode}): "
-            f"{proc.stderr.decode(errors='replace').strip()}"
-        )
-    return [p.decode(errors="surrogateescape") for p in proc.stdout.split(b"\0") if p]
 
 
 def _sha256(path: Path) -> str:

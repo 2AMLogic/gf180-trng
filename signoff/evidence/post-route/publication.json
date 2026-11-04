@@ -1,27 +1,27 @@
 {
   "schema": "gf180-trng/item7-publication/1",
-  "record": "sim/records/2026-10-08-trng-top-post-route-02.md",
-  "raw_dir": "sim/records/raw/2026-10-08-trng-top-post-route-02",
+  "record": "sim/records/2026-10-30-trng-top-post-route-01.md",
+  "raw_dir": "sim/records/raw/2026-10-30-trng-top-post-route-01",
   "raw_sha256": {
-    "environment.json": "sha256:c84aa4f630f89206d1d17d3babc5489f7f96c4db122271e4c723d39c09552f77",
-    "gate_comparison.json": "sha256:9471db0c2ed97a34590bdd57b61611fcbc592ce6ee62b1b5c6082649aa041f22",
-    "gate_klt_response.json": "sha256:af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7",
-    "gate_request.json": "sha256:4da282bf9e5e8dd7bf98251c6a07b6291b204453f72a16b84486069934a741eb",
-    "gate_transcript_digest.json": "sha256:c717f67436f60fe81fee9353bfd10087312dffcaaa153015ccb08479fc66042b",
-    "rtl_comparison.json": "sha256:a086b2148515060a61eee23b5f73221eacfd064469c2ae893d9d6877d6aef17c",
-    "rtl_klt_response.json": "sha256:ab350926bd967dea1660d7f3dcf27d21810aabd63eab9b74592d655b08a5efbc",
-    "rtl_request.json": "sha256:39cd7bf23a26e03b559b9e2fd7c21f7eb745332e758a6c6eb33a4e5af4f350c0",
-    "rtl_transcript_digest.json": "sha256:81986f5fe8b015cfe550195e79eaf569bd7237486e54563f0983dfaf136b4139",
-    "sources.json": "sha256:7610a9233230b833a15a3078e8d015d383b66ae53447a759833b71a3ec34f52b",
+    "environment.json": "sha256:a40797f97c6159794fe9e77256f85ea5800418315ca03713d111c836e3aa40e2",
+    "gate_comparison.json": "sha256:d137921cc816b68eb2980f32a528e350253de978625ddeb4d1e8d9b0417b595a",
+    "gate_klt_response.json": "sha256:a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc",
+    "gate_request.json": "sha256:0113426a360431f55e8a41c635142f0bbd88529163dc1c2e862d8d14d31d3218",
+    "gate_transcript_digest.json": "sha256:182f44ab59e06077de68616322a452535a8299463da5659a1a454aad1c3bd53a",
+    "rtl_comparison.json": "sha256:5fca8e8c1bbd5e2f2bd3c922ff3fc02432ddf55c0f261791b35028eaeb7b0584",
+    "rtl_klt_response.json": "sha256:f071482e917e308550b9afe41d250fe4652cd719de6e9c5828dda0261a91a862",
+    "rtl_request.json": "sha256:a0f7c2bafa89d8e965f94a625aef040cdccae3593675a9b626b2b21ecb7f88b2",
+    "rtl_transcript_digest.json": "sha256:9d945233591e2f73a1b3b1b7f1f22bb72ae7527e3d5eed8b4e76f07fb5077756",
+    "sources.json": "sha256:afef7ed731105cbff851112d851b370e9f76c1eecb3f2aedf1db77512bd343d2",
     "verdict.json": "sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9"
   },
   "netlist": {
     "path": "layout/digital/trng_top.pnr.v",
-    "sha256": "sha256:1342adf83949a6beb5e078ba82b9bafe69fe11166d61971187856ca7cba7a8e0"
+    "sha256": "sha256:3bd78c4d16d84ff59cc69100efbe88dc00d91cbd6b250bc65fbfa9d4cfae94e2"
   },
   "sdf": {
     "path": "layout/digital/trng_top.sdf",
-    "sha256": "sha256:137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af"
+    "sha256": "sha256:760606457adc20061830209278d2866ffaaefb4f729c73a566ed72707791f1b0"
   },
   "limits": "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no timing violation is reported or ruled out. IOPATH arcs of ifnone-qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/toggle) run at library default delay. Functional equivalence with the applied delays is not timing signoff; see sim/tb/trng-top-post-route/README.md. Local source files the run consumed (RTL, included headers, behavioural model, testbench and stimulus, with their local imports) are pinned by sha256; the cell library, PDK, simulator and klt versions are not source-pinned.",
   "sources": {
@@ -42,6 +42,7 @@
     "sim/tb/conditioner-crc32/source_model.py": "sha256:b536d4a50bdffec054b9981e14e80cfaf5eabf7e601312f8da39e9124fad7867",
     "sim/tb/ring-liveness-fault-injection/ring_source_model.py": "sha256:ea3571717444606ff8ebc4726c3386972053339765c7c7deef969795a3ed3d93",
     "sim/tb/smoke-trng-top/raw_source.py": "sha256:255843531552254d3ecacd97c35c1b36fefaa0dc35cabb7e172e5c6bfff1f014",
+    "sim/tb/trng-top-post-route/activity_workloads.py": "sha256:1e5b05fb2654e3ab75761975a30b3e7b3dfb06b0612d246b54dc9153b3457b88",
     "sim/tb/trng-top-post-route/input_inventory.py": "sha256:3662957a844ae71c3e893b6de9adf0869773861dcd73a5ae630ff2856ef16b0a",
     "sim/tb/trng-top-post-route/model_probe.py": "sha256:65e5872d971ed544a26335aafbf4f06fa635433870cbbef46d9e8c1621f300a8",
     "sim/tb/trng-top-post-route/post_route_tb.py": "sha256:14e2cf014145a59f0cdfde884c72c38fcdffb8235361486bc1b9a62def7a8ebe",
@@ -50,6 +51,6 @@
   },
   "envelope": {
     "file": "signoff/evidence/post-route/gate_klt_response.json",
-    "sha256": "sha256:af63e5193ea6af94003478089aceb4eaeff81faf635ffe538944a12d1c3f17c7"
+    "sha256": "sha256:a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc"
   }
 }
