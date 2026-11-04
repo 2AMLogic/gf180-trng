@@ -8,14 +8,13 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
 - **#732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
 
 ## Very Important
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
+_None._
 
 ## Important
 
@@ -28,14 +27,13 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
-- **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
-- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds
+- **#710**: Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 - **#718**: Refresh sim/signoff evidence after digital tapcell re-placement (DR-0029 inventory, evidence unit of #487)
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
@@ -50,7 +48,6 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
 - **#732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
 - **#737**: docs: record measured DR-0029 follow-up for the extracted ro-array startup family
 
@@ -69,7 +66,6 @@ Issues carrying `loom:curated`.
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
 - **#705**: Bump klayout-tools pin 0.6.0 → 0.8.0 *(curated)*
 - **#708**: Power gating: define and verify the power-intent flow for a gated digital domain *(curated)*
-- **#709**: Area and power: FIFO and cell-inventory reductions toward the ratified bounds *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
 - **#734**: Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry *(curated)*
 
@@ -85,14 +81,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
-| Very important | 1 |
+| Operator merge-risk holds | 1 |
+| Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 2 |
+| Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 3 |
-| Curated | 14 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 13 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
