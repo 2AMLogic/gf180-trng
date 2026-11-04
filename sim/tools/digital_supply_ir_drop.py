@@ -123,6 +123,7 @@ sys.path.insert(0, str(REPO_ROOT / "design"))
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 from layout.floorplan import interregion  # noqa: E402
+from sim.harness.report import sha256_file  # noqa: E402
 
 import digital_corner_characterization as dcc  # noqa: E402
 import vss_trunk_ir_drop as analog  # noqa: E402
@@ -666,7 +667,7 @@ def load_currents(records_dir: Path = dcc.RECORDS, def_path: Path = DIGITAL_DEF)
             t = float(r.fields["temperature"])
             row = {
                 "corner": r.corner, "record": r.stem,
-                "sha256": hashlib.sha256(r.path.read_bytes()).hexdigest(),
+                "sha256": sha256_file(r.path),
                 "voltage_v": v, "temperature_c": t,
                 "active": r.v("p_total_1mhz_w") / v,
                 "stress": r.v("p_total_20mhz_w") / v,
@@ -686,10 +687,6 @@ def load_currents(records_dir: Path = dcc.RECORDS, def_path: Path = DIGITAL_DEF)
 # --------------------------------------------------------------------------- #
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def erc_precondition(report_path: Path = ERC_SUPPLY_REPORT, gds_path: Path = COMPOSED_GDS) -> dict:
     """The structural half: the composed-floorplan `klt erc` supply report
     must describe the committed composed stream and report both nets as one
@@ -697,7 +694,7 @@ def erc_precondition(report_path: Path = ERC_SUPPLY_REPORT, gds_path: Path = COM
     if not report_path.is_file() or not gds_path.is_file():
         raise ConnectivityError("composed ERC supply report or composed stream is missing")
     rep = json.loads(report_path.read_text())
-    want = "sha256:" + _sha256(gds_path)
+    want = "sha256:" + sha256_file(gds_path)
     got = rep.get("provenance", {}).get("input", {}).get("content_hash")
     if got != want:
         raise ConnectivityError(
@@ -803,10 +800,10 @@ def derive(records_dir: Path = dcc.RECORDS, def_path: Path = DIGITAL_DEF) -> dic
     provenance = {
         "geometry": {
             "layout/digital/trng_top.def": {"git_blob_sha": dcc.blob_sha(def_path)},
-            "layout/floorplan/trng_floorplan.gds": {"sha256": _sha256(COMPOSED_GDS)},
-            "layout/floorplan/reports/compose.json": {"sha256": _sha256(COMPOSE_REPORT)},
-            "layout/floorplan/reports/area.json": {"sha256": _sha256(AREA_REPORT)},
-            "layout/floorplan/reports/interregion.json": {"sha256": _sha256(INTERREGION_REPORT)},
+            "layout/floorplan/trng_floorplan.gds": {"sha256": sha256_file(COMPOSED_GDS)},
+            "layout/floorplan/reports/compose.json": {"sha256": sha256_file(COMPOSE_REPORT)},
+            "layout/floorplan/reports/area.json": {"sha256": sha256_file(AREA_REPORT)},
+            "layout/floorplan/reports/interregion.json": {"sha256": sha256_file(INTERREGION_REPORT)},
             "wiring_plan(vddd, vss) shapes+routes": {"sha256": plan_digest(plan)},
         },
         "connectivity": erc,

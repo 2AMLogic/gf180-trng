@@ -564,7 +564,7 @@ post_wave_integration_gate()                    # step 8 — buildGate-against-m
 - Otherwise (`builder-done`, or no checkpoint yet because Builder just ran in this wave), run Judge normally.
 
 - Load and follow the instructions in `.claude/commands/loom/judge.md` for the PR.
-- **In-session Judge dispatch (#13222):** do not hand the Judge the orchestrator's run id as `LOOM_SWEEP_ID` — the gate reads the review start from a `step-judge-<pr>-<epoch>` id or the PR judge lease, and a run id that predates the Curator's body edit makes `post-verdict.sh` refuse every approval (exit 7).
+- **In-session Judge dispatch (#13222):** do not hand the Judge the orchestrator's run id as `LOOM_SWEEP_ID` — the gate reads the review start from a `step-judge-<pr>-<epoch>` id or the PR judge lease, and a run id that predates the Curator's body edit makes `post-verdict.sh` refuse every approval (exit 7). Brief the Judge to run `loom-daemon lease pr claim <pr> --role judge --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"` (and `release`) with that same `--watch-pid` value on every call (#13264): without it the claim records `pr-lease-unknown` and `post-verdict.sh` refuses the approval as a peer's lease (exit 10).
 - The judge uses `gh pr comment` (NOT `gh pr review --approve`) because GitHub's self-review API restriction applies — see `judge.md` for the full explanation.
 - Like the Builder above, the Judge files its own follow-up issues for out-of-scope discoveries via `./.loom/scripts/create-issue.sh` — see `judge.md` § "Creating Follow-up Issues"; the sweep orchestrator does not suppress this.
 - **If a previous Judge attempt for this PR died mid-flight without writing a fresh checkpoint** (rate limit, crash), re-verify forge state and complete only the missing steps before re-dispatching — see "Mid-phase-death recovery" above.
@@ -645,10 +645,10 @@ Overlapping PRs in a wave are thus **serialized-with-revalidation**; disjoint PR
 Use the merge script (CLAUDE.md "Merging PRs" mandate — never `gh pr merge`):
 
 ```bash
-LOOM_AUTO_MERGE_TIMEOUT=420 ./.loom/scripts/merge-pr.sh <PR_NUMBER> --auto
+./.loom/scripts/merge-pr.sh <PR_NUMBER> --auto
 ```
 
-**Give that call a 600000 ms Bash-tool timeout (#9395)**: the 420s pin must stay strictly under its caller's, or the tool kills the script and no exit code reaches the branches below. Raise neither alone. Why the pin but no `CHAMPION-MERGE-OUTCOME` sentinel (#9096): [exit codes](../../../.loom/docs/merge-pr-exit-code-exceptions.md).
+That call waits on no checks (#12063), so the default Bash-tool timeout suffices. Why no `CHAMPION-MERGE-OUTCOME` sentinel (#9096): [exit codes](../../../.loom/docs/merge-pr-exit-code-exceptions.md).
 
 It merges via the forge API and cleans the worktree. `--auto` waits for the head's check-runs to settle, re-validates `loom:pr` and the head SHA, then merges **in this process** — never via the server-side queue, which re-reads neither once armed (#8410). An already-settled head merges at once, so `--auto` is always safe to pass (#3820).
 

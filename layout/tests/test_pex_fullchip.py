@@ -48,6 +48,7 @@ from layout.pex.build import (  # noqa: E402
     FlowError,
     _coupling_total_ff,
     _fullchip_cache_key,
+    _label_aliases,
     _net_labels,
     _parasitics_entry_by_label,
     _reconcile_cached_report,
@@ -96,6 +97,27 @@ class NetLabelResolutionTests(unittest.TestCase):
     def test_an_ambiguous_label_raises_rather_than_picking_one(self):
         with self.assertRaises(FlowError):
             _parasitics_entry_by_label(self._payload("a|ro1|y", "ro1|z"), "ro1")
+
+    def test_resolves_through_a_def_net_name_alias(self):
+        """`--def-net-names` drops the drawn labels from a net carrying
+        `digital`'s DEF routing: `ring_bit1` arrives as bare `ring_bit[0]`."""
+        payload = self._payload("raw_bit", "ring_bit[0]", "ring_bit[1]")
+        entry = _parasitics_entry_by_label(payload, "ring_bit1", {"ring_bit[0]"})
+        self.assertEqual(entry["net"], "ring_bit[0]")
+
+    def test_an_alias_cannot_hide_a_split_net(self):
+        """Joined is one net; the drawn label and the DEF name on two
+        different nets is an open and must raise, not pick one."""
+        payload = self._payload("q|ring_bit1", "ring_bit[0]")
+        with self.assertRaises(FlowError):
+            _parasitics_entry_by_label(payload, "ring_bit1", {"ring_bit[0]"})
+
+    def test_label_aliases_come_from_the_digital_endpoint(self):
+        from design.floorplan_netlist import INTER_REGION_NETS
+
+        by_name = {n["name"]: n for n in INTER_REGION_NETS}
+        self.assertEqual(_label_aliases(by_name["ring_bit1"]), {"ring_bit[0]"})
+        self.assertEqual(_label_aliases(by_name["ro1"]), set())
 
     def test_an_extraction_without_parasitics_raises(self):
         with self.assertRaises(FlowError):

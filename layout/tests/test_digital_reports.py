@@ -37,7 +37,6 @@ party can re-grade.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 import unittest
@@ -47,6 +46,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from sim.harness.report import sha256_file  # noqa: E402
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 DIGITAL_DIR = LAYOUT_DIR / "digital"
@@ -71,7 +71,7 @@ lvs = _load("layout_digital_lvs", DIGITAL_DIR / "lvs.py")
 
 
 def _sha256(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    return "sha256:" + sha256_file(path)
 
 
 class CommittedViewTests(unittest.TestCase):

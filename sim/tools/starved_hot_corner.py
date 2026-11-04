@@ -37,7 +37,6 @@ import json
 import math
 import platform
 import statistics
-import subprocess
 import sys
 from pathlib import Path
 
@@ -269,33 +268,14 @@ def result_lines(per_unit: list[dict[str, float]]) -> list[str]:
     return lines
 
 
-def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True,
-                          check=True).stdout.strip()
-
-
 def render_record(stem: str, report: dict, per_unit: list[dict[str, float]],
                   raw_files: list[tuple[str, str]], wall_s: float, date: str,
                   commit: str, tb_sha: str, dut_sha: str) -> str:
-    env = report.get("environment", {})
-    prov = report.get("provenance", {})
-    fleet = (env.get("remote") or {}).get("fleet") or []
-    # The simulating PDK is the fleet worker's, not the submitting host's (the client's
-    # provenance names the host's own install, which the batch job does not read).
-    stamps = sorted({(f.get("worker_environment") or {}).get("pdk", {}).get("stamp_text", "")
-                     for f in fleet} - {""})
-    pdk_ver = (stamps[0].replace("open_pdks ", "") if len(stamps) == 1
-               else ("; ".join(stamps) or (prov.get("pdk") or {}).get("version") or "unknown"))
-    klt_ver = prov.get("klt_version") or "unknown"
-    jobs = [f.get("job_id") for f in fleet if f.get("job_id")]
-    banners = sorted({((f.get("worker_environment") or {}).get("simulator") or {})
-                      .get("version_banner", "").split("\n")[1].strip("* ").strip()
-                      for f in fleet if ((f.get("worker_environment") or {}).get("simulator") or {})
-                      .get("version_banner")})
+    fp = _rep.fleet_provenance(report)
+    pdk_ver, klt_ver, ngspice = fp["pdk_ver"], fp["klt_ver"], fp["ngspice"]
     repro = _rep.reproduction_scope("tran-noise")
     seeds = ", ".join(str(s) for s in SEEDS[:len(per_unit)])
-    job = ", ".join(jobs) if jobs else "not reported"
-    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
+    job = ", ".join(fp["jobs"]) if fp["jobs"] else "not reported"
     fm = [
         "---", f"record: {stem}", f"date: {date}", "status: valid", "",
         "testbench:", f"  path: sim/tb/ro-ring5-starved-jitter-long-batch/{DECK}", f"  sha: {tb_sha}",
@@ -391,7 +371,7 @@ def cmd_ingest(report_path: Path, stderr_path: Path | None, request: Path | None
     names = sorted(p.name for p in raw_dir.iterdir())
     raw_files = [(n, _rep.sha256_file(raw_dir / n)) for n in names]
     wall = sum(float(c.get("runtime_s") or 0.0) for c in corners)
-    commit = _git("rev-parse", "HEAD") + ("-dirty" if _git("status", "--porcelain") else "")
+    commit = _rep.repo_commit_field(_rep.git_provenance(REPO_ROOT))
     tb_sha = _rep.git_blob_sha1((TB_DIR / DECK).read_bytes())
     dut_sha = _rep.git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes())
     text = render_record(stem, report, per_unit, raw_files, wall,

@@ -1,8 +1,43 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-29.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-03.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-03
+
+- **PR #763**: refactor: share record provenance derivation via harness.report
+- **Issue #762** (closed): Consolidate duplicated record-provenance code in sim/tools into sim/harness/report.py
+
+### 2026-11-02
+
+- **Issue #654** (closed): T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
+
+### 2026-11-01
+
+- **Issue #414** (closed): Characterize deterministic supply-ripple sensitivity of the buffered RO array
+- **PR #755**: Bump Repo Skills 0.24.7 -> 0.25.1
+
+### 2026-10-30
+
+- **PR #753**: refactor(sim): share pex DUT generator helpers and honour KLT in ring11
+- **Issue #751** (closed): Consolidate helpers duplicated between the two pex build_dut.py generators
+- **PR #749**: fix(harness): stream sha256_file in 1 MiB chunks
+- **Issue #748** (closed): sim.harness.report.sha256_file reads whole file into memory; callers hash large artifacts
+- **PR #747**: refactor: use the shared sha256_file in place of local digest helpers
+- **Issue #744** (closed): Consolidate ~11 duplicated file-sha256 helpers onto the existing shared one
+- **PR #746**: refactor(layout): share the ro_stage generator between ring1 and ring2
+- **Issue #733** (closed): Share ro_stage build_shapes between ring1 and ring2 (as ro_nand2 already does)
+- **PR #742**: sim: supersede the eight extracted-fullchip records after the PEX netlist refresh
+- **Issue #739** (closed): Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values
+- **PR #743**: fix: exempt pdk-models.json and declared netlist dependencies from the stored-bytes check
+- **Issue #741** (closed): check:artifact-manifests rejects stored dependency snapshots and pdk-models.json that equal committed files
+- **PR #738**: pex: resolve full-chip nets via DEF net name; refresh PEX evidence
+- **Issue #736** (closed): pex: --fullchip-extract fails on main (inter-region label merge) and --check cache is stale
+- **PR #728**: refactor: share cmd_run/cmd_record scaffold between power tools
+- **PR #712**: sim: add power-intent spec and gate-level isolation/sequencing check for a gated digital section
+- **Issue #727** (closed): ci: all jobs fail within 2s with no steps on a docs-only PR (runner startup failure?)
+- **Issue #726** (closed): Dedupe cmd_run/cmd_record/_sanitize between power_switch.py and liveness_sampler_power.py
 
 ### 2026-10-29
 

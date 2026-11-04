@@ -36,8 +36,8 @@ cdelta2a dro2 vsubs 1.594116e-15
 rdelta2 dro2 rn2 30.223600
 cdelta2b rn2 vsubs 1.594116e-15
 xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs combiner_sampler_routed_extracted
-cload_raw_bit raw_bit vsubs 8.800307e-14
-cload_raw_valid raw_valid vsubs 9.240300e-14
-cload_ring_bit1 ring_bit1 vsubs 2.795017e-14
-cload_ring_bit2 ring_bit2 vsubs 2.894170e-14
+cload_raw_bit raw_bit vsubs 1.156398e-13
+cload_raw_valid raw_valid vsubs 1.194021e-13
+cload_ring_bit1 ring_bit1 vsubs 7.263067e-14
+cload_ring_bit2 ring_bit2 vsubs 8.233621e-14
 .ends

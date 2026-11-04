@@ -20,12 +20,13 @@ Stdlib only; the manifest schema checks here are shared with
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
 import subprocess
 from pathlib import Path, PurePosixPath
+
+from .report import sha256_file
 
 BROKER_ENV = "KLT_ARTIFACT_BROKER"
 MANIFEST_SUFFIX = ".manifest.json"
@@ -120,14 +121,6 @@ def manifest_path(manifests_dir: Path, stem: str) -> Path:
     return manifests_dir / f"{stem}{MANIFEST_SUFFIX}"
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def validate_manifest(data: object) -> list[str]:
     """Schema problems of a parsed manifest; empty means well formed."""
     if not isinstance(data, dict):
@@ -209,7 +202,7 @@ def store_files(
         path = stage_dir / name
         if not path.is_file():
             raise EvidenceStoreError(f"staged file {path} is missing")
-        local[name] = (name, path.stat().st_size, _sha256(path))
+        local[name] = (name, path.stat().st_size, sha256_file(path))
         if local[name][1] == 0:
             # The store takes 1 byte to 5 GiB per object; refuse before any
             # put so a half-stored point is never left behind.
