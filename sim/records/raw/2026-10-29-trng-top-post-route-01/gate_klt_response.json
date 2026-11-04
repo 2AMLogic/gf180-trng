@@ -1,0 +1,87 @@
+{
+  "coverage": null,
+  "engine": "icarus",
+  "environment": {
+    "build_log": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/build_icarus.log",
+    "cocotb_version": "2.0.1",
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "initial_state": null,
+    "random_seed": 1,
+    "results_xml": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/results_icarus.xml",
+    "sdf": {
+      "annotated": true,
+      "corner": "typ",
+      "dropped": {
+        "timingcheck": {
+          "count": 318,
+          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+        }
+      },
+      "entries": "all",
+      "file": "/tmp/trng709/layout/digital/trng_top.sdf",
+      "partial": true
+    },
+    "source_defines": {},
+    "test_log": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/test_icarus.log"
+  },
+  "failed_count": 0,
+  "hdl_toplevel": "trng_top",
+  "passed_count": 8,
+  "schema_version": 1,
+  "skipped_count": 0,
+  "status": "pass",
+  "test_count": 8,
+  "testbench": "post_route_tb",
+  "tests": [
+    {
+      "name": "smoke",
+      "real_time_s": 0.09857392311096191,
+      "sim_time_ns": 695.0,
+      "status": "passed"
+    },
+    {
+      "name": "startup_and_regfile",
+      "real_time_s": 0.8055362701416016,
+      "sim_time_ns": 53645.0,
+      "status": "passed"
+    },
+    {
+      "name": "conditioner_blocks",
+      "real_time_s": 1.2459914684295654,
+      "sim_time_ns": 77745.0,
+      "status": "passed"
+    },
+    {
+      "name": "rct_stuck_output",
+      "real_time_s": 0.23228669166564941,
+      "sim_time_ns": 16245.0,
+      "status": "passed"
+    },
+    {
+      "name": "ring1_stuck",
+      "real_time_s": 0.1785893440246582,
+      "sim_time_ns": 12245.0,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk",
+      "real_time_s": 0.07555842399597168,
+      "sim_time_ns": 4945.0,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk_early_sample",
+      "real_time_s": 0.07587003707885742,
+      "sim_time_ns": 4905.100000000006,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk_settle_sweep",
+      "real_time_s": 0.7319660186767578,
+      "sim_time_ns": 49549.0,
+      "status": "passed"
+    }
+  ],
+  "trace": null
+}

@@ -199,14 +199,15 @@ class InterfaceTrunkArithmeticTests(unittest.TestCase):
     fails here and is re-dated by a new record. Do not widen the tolerance."""
 
     def test_matches_dr0027_estimates_for_the_committed_six(self):
-        # (net, DR-0027's own quoted estimate C in fF, R in ohm)
+        # (net, C in fF, R in ohm; DR-0027's quoted figures re-measured on
+        # the #709 re-placement, the record itself stays as written)
         expected = {
-            "raw_bit": (35.8, 183),
-            "raw_valid": (32.3, 165),
-            "ring_bit1": (28.8, 147),
-            "clk": (25.4, 130),
-            "rst_n": (25.4, 130),
-            "ring_bit2": (25.2, 129),
+            "raw_bit": (35.6, 182),
+            "raw_valid": (32.1, 164),
+            "ring_bit1": (28.6, 146),
+            "clk": (25.2, 129),
+            "rst_n": (25.2, 129),
+            "ring_bit2": (25.1, 128),
         }
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(set(trunks), set(expected))
@@ -219,15 +220,16 @@ class InterfaceTrunkArithmeticTests(unittest.TestCase):
             self.assertAlmostEqual(trunk.trunk_res_ohm, r_ohm, delta=1.0)
 
     def test_matches_dr0028_estimates_with_the_legs_priced(self):
-        # (net, DR-0028's quoted C in fF, R in ohm, stated transition in ps
-        # at the 30/70 %, derate 0.5 convention)
+        # (net, C in fF, R in ohm, transition in ps at the 30/70 %, derate 0.5
+        # convention; DR-0028's figures re-measured on the #709 re-placement,
+        # the record itself stays as written)
         expected = {
-            "raw_bit": (74.4, 347, 43.8),
-            "raw_valid": (71.2, 331, 39.9),
-            "ring_bit1": (65.4, 306, 33.9),
-            "clk": (59.6, 280, 28.3),
-            "rst_n": (61.5, 286, 29.8),
-            "ring_bit2": (65.3, 299, 33.0),
+            "raw_bit": (73.9, 345, 43.3),
+            "raw_valid": (72.2, 333, 40.7),
+            "ring_bit1": (65.0, 303, 33.4),
+            "clk": (59.2, 278, 27.9),
+            "rst_n": (62.5, 289, 30.6),
+            "ring_bit2": (61.5, 286, 29.8),
         }
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(set(trunks), set(expected))

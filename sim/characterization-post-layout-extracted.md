@@ -1059,6 +1059,8 @@ the six `digital`-facing trunks stays unpriced.
 
 ## 8. 2026-09-12 delta: full-chip *inter-region* extraction, scoped to `ro1`/`ro2` (issue #232, [DR-0025])
 
+> **Superseded evidence (issue #739).** The `layout/pex/sampler_core.fullchip.extracted.spice` netlist was refreshed after the `2026-09-12-*extracted-fullchip*` records below were simulated (the `cload_*` values changed; netlist sha `9c992f58...` -> `9928e2c5...`). Those eight records are stale: do not cite the figures in this section as current. Each is superseded by the same-named `2026-10-30-*extracted-fullchip*-01` record at the same PVT point (for example `records/2026-10-30-ro-array-core-pvt-q-extracted-fullchip-01.md`). The prose below is left as written for history.
+
 ### 8.0 What changed, what did not, and why every number below has a control
 
 §7.7 wrote down, from committed geometry and the deck's own published

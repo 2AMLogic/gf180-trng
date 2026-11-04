@@ -1,27 +1,27 @@
 {
   "schema": "gf180-trng/item7-publication/1",
-  "record": "sim/records/2026-10-30-trng-top-post-route-01.md",
-  "raw_dir": "sim/records/raw/2026-10-30-trng-top-post-route-01",
+  "record": "sim/records/2026-10-29-trng-top-post-route-01.md",
+  "raw_dir": "sim/records/raw/2026-10-29-trng-top-post-route-01",
   "raw_sha256": {
-    "environment.json": "sha256:a40797f97c6159794fe9e77256f85ea5800418315ca03713d111c836e3aa40e2",
-    "gate_comparison.json": "sha256:d137921cc816b68eb2980f32a528e350253de978625ddeb4d1e8d9b0417b595a",
-    "gate_klt_response.json": "sha256:a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc",
-    "gate_request.json": "sha256:0113426a360431f55e8a41c635142f0bbd88529163dc1c2e862d8d14d31d3218",
-    "gate_transcript_digest.json": "sha256:182f44ab59e06077de68616322a452535a8299463da5659a1a454aad1c3bd53a",
-    "rtl_comparison.json": "sha256:5fca8e8c1bbd5e2f2bd3c922ff3fc02432ddf55c0f261791b35028eaeb7b0584",
-    "rtl_klt_response.json": "sha256:f071482e917e308550b9afe41d250fe4652cd719de6e9c5828dda0261a91a862",
-    "rtl_request.json": "sha256:a0f7c2bafa89d8e965f94a625aef040cdccae3593675a9b626b2b21ecb7f88b2",
-    "rtl_transcript_digest.json": "sha256:9d945233591e2f73a1b3b1b7f1f22bb72ae7527e3d5eed8b4e76f07fb5077756",
-    "sources.json": "sha256:afef7ed731105cbff851112d851b370e9f76c1eecb3f2aedf1db77512bd343d2",
+    "environment.json": "sha256:a6cb766a498f800745f09905e44ef1b445ba580322337152b8a5cb5dcd86905c",
+    "gate_comparison.json": "sha256:3ac36b09274ce3546ada252886699c43d1b8a5f6234dd29268edb50131ef7217",
+    "gate_klt_response.json": "sha256:a29223a149a6b4840f7298eda74a3c8aef41fd78ae4dfc567c8ddc96c3243c86",
+    "gate_request.json": "sha256:d540d8a969ff545134243457fdd0166b1cdf7744584609e1086e730778b4d0b9",
+    "gate_transcript_digest.json": "sha256:c98e5e4b4b5a8f030a56a81ae3743a442aedd0cd125addb83250bc32100486a7",
+    "rtl_comparison.json": "sha256:9eb9d50acb39dc781adc7201165ee53f885273454c500efcf2f188049b3c8a58",
+    "rtl_klt_response.json": "sha256:cc7c166d58489963dc85d807705987f68aca977c3a02c3ccda31eeb57d90b086",
+    "rtl_request.json": "sha256:e07d537dcb07d602e17d19893dc97c6047ff34dce0a5c3f986cf2d015770570e",
+    "rtl_transcript_digest.json": "sha256:20b8f6548d2a25c3ad5c01ed2624deeec808d5f3f3f1cfe43ce4d3ebd6c13d6b",
+    "sources.json": "sha256:84df1f776d7eb5f956ac4fff240cf33954a86028d3a402da58c849f757408388",
     "verdict.json": "sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9"
   },
   "netlist": {
     "path": "layout/digital/trng_top.pnr.v",
-    "sha256": "sha256:3bd78c4d16d84ff59cc69100efbe88dc00d91cbd6b250bc65fbfa9d4cfae94e2"
+    "sha256": "sha256:78f626f23b7f72c8585be6236e1d56046ab2954f3041b01533e4f0024d230ec4"
   },
   "sdf": {
     "path": "layout/digital/trng_top.sdf",
-    "sha256": "sha256:760606457adc20061830209278d2866ffaaefb4f729c73a566ed72707791f1b0"
+    "sha256": "sha256:1817570b6ae837d724d1d6cfb3348fda415dcf9b266843d1fce99e6d3b353683"
   },
   "limits": "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no timing violation is reported or ruled out. IOPATH arcs of ifnone-qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/toggle) run at library default delay. Functional equivalence with the applied delays is not timing signoff; see sim/tb/trng-top-post-route/README.md. Local source files the run consumed (RTL, included headers, behavioural model, testbench and stimulus, with their local imports) are pinned by sha256; the cell library, PDK, simulator and klt versions are not source-pinned.",
   "sources": {
@@ -33,7 +33,7 @@
     "design/health_test/ring_liveness.v": "sha256:f64a4d4ce86c757bfea49e120323eba33f449c7df76481b0d2b104f0ef5ef620",
     "design/interface/regmap.py": "sha256:0c43d12fea9a3207d6606a168222092b5a839b8380f1f0fe7ffa8cabde229046",
     "design/interface/trng_interface.py": "sha256:9efcd000d179a9e6cb6e3ceefcd4bfad365e7ab681d8722959bce73928af673e",
-    "design/interface/trng_interface.v": "sha256:41ab916a6309e2edc31c7ab26b67c41da7f817ece86de78a2d6c5a7be4de676e",
+    "design/interface/trng_interface.v": "sha256:bb579bd3d76e20b6d691d07172c5fba136bbb9647b38d92e31fec78feea50336",
     "design/interface/trng_regmap.vh": "sha256:16ee218cdcab1df31e8d162833b85da7351560885cb96f9b010f7c3818fcaf1e",
     "design/trng_top/trng_top.py": "sha256:a808f55f32555c6282df3bed4f7ff16eb24aef2cba0df4f72376db517d146c42",
     "design/trng_top/trng_top.v": "sha256:0ce4c694ac2a627afe3ef653241dcb6ff7d0791b415a922669deddeaa91cdd16",
@@ -51,6 +51,6 @@
   },
   "envelope": {
     "file": "signoff/evidence/post-route/gate_klt_response.json",
-    "sha256": "sha256:a4917849137b0b1dfc6e8253cfb07c39ee27450a08c916294c4370ebaadfdbfc"
+    "sha256": "sha256:a29223a149a6b4840f7298eda74a3c8aef41fd78ae4dfc567c8ddc96c3243c86"
   }
 }

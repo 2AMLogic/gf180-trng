@@ -493,6 +493,7 @@ import layout.rings.ro_ring11.build as _ring1_mod  # noqa: E402
 import layout.rings.ro_ring11_ring2.build as _ring2_mod  # noqa: E402
 from design.floorplan_netlist import INTER_REGION_NETS  # noqa: E402
 from layout.floorplan.floorplan import _reference_top_pins  # noqa: E402
+from layout.floorplan.interregion import route_net_labels  # noqa: E402
 
 PEX_DIR = REPO_ROOT / "layout" / "pex"
 WORK_DIR = REPO_ROOT / "layout" / ".work" / "pex-check"
@@ -666,9 +667,18 @@ def _net_labels(name: str) -> set[str]:
     return {part for part in _NET_LABEL_SEPARATORS.split(name) if part}
 
 
-def _parasitics_entry_by_label(payload: dict, label: str) -> dict:
+def _parasitics_entry_by_label(payload: dict, label: str, aliases=()) -> dict:
     """Like `_parasitics_entry_by_net_id`, but for a full-chip net identified
     by one of its own drawn labels.
+
+    `aliases` are the other names the same net may legitimately arrive
+    under. `--def-net-names` (which `_fullchip_extract_args` passes) names a
+    net containing `digital`'s DEF-annotated routing by its DEF net name and
+    drops the drawn text labels, so `ring_bit1` comes back as just
+    `ring_bit[0]` (`interregion.route_net_labels`, measured under klt 0.8.0
+    on the committed stream). A net matches if it carries `label` OR any
+    alias; the exactly-one check below still applies to the union, so an
+    alias can never paper over an open (a split net would match twice).
 
     Positional resolution is not needed here, and exact-name matching does
     not work: flat extraction of the composed stream merges every label on a
@@ -686,15 +696,23 @@ def _parasitics_entry_by_label(payload: dict, label: str) -> dict:
         raise FlowError(
             "this extraction has no `parasitics` block -- was `--parasitics` given?"
         )
-    matches = [net for net in parasitics["nets"] if label in _net_labels(net["net"])]
+    wanted = {label, *aliases}
+    matches = [net for net in parasitics["nets"] if wanted & _net_labels(net["net"])]
     if len(matches) != 1:
         raise FlowError(
             f"expected exactly one parasitics.nets[] entry carrying the drawn label "
-            f"{label!r} in the full-chip extraction, found {len(matches)} "
+            f"{label!r} (or its DEF net name, {sorted(wanted - {label})}) in the full-chip extraction, found {len(matches)} "
             f"({[net['net'] for net in matches]}) -- see {FRICTION_ISSUE} and this "
             "module's own docstring, 'Full-chip (inter-region) delta composition'"
         )
     return matches[0]
+
+
+def _label_aliases(net: dict) -> set[str]:
+    """The DEF net names of `net`'s `digital` endpoints -- every other label
+    the full-chip extraction may report it under (see
+    `_parasitics_entry_by_label`). Empty for a net with no `digital` end."""
+    return route_net_labels(net) - {net["name"]}
 
 
 def _coupling_total_ff(entry: dict) -> float:
@@ -892,7 +910,9 @@ def compute_fullchip_report(
 
         ring_entry = _entry_for(region_payload[ring_region], region_ports[ring_region], ring_pin)
         cs_entry = _entry_for(cs_payload, cs_ports, cs_pin)
-        fc_entry = _parasitics_entry_by_label(fullchip_payload, name)
+        fc_entry = _parasitics_entry_by_label(
+            fullchip_payload, name, _label_aliases(net)
+        )
 
         delta = _reconcile_delta(name, fc_entry, [ring_entry, cs_entry])
         entropy[name] = {
@@ -921,7 +941,9 @@ def compute_fullchip_report(
         name = net["name"]
         cs_pin = next(p for r, p in net["endpoints"] if r == "combiner_sampler")
         cs_entry = _entry_for(cs_payload, cs_ports, cs_pin)
-        fc_entry = _parasitics_entry_by_label(fullchip_payload, name)
+        fc_entry = _parasitics_entry_by_label(
+            fullchip_payload, name, _label_aliases(net)
+        )
         delta = _reconcile_delta(name, fc_entry, [cs_entry])
         loads[name] = {
             "cs_pin": cs_pin,

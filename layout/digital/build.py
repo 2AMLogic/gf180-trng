@@ -249,16 +249,6 @@ POWER = {
     ],
 }
 
-#: Tapcell pitch (um) handed to `klt place-and-route` as
-#: `request.power.tapcell.distance_um` (klayout-tools#3051, first released in
-#: klt 0.8.0). `None` omits the field, which reproduces the request this flow
-#: sent before the override existed: the tool then uses its per-library default
-#: (100 um for this cell library). The value actually applied is echoed back as
-#: `power.tapcell_distance_um` and lands in `reports/place_and_route.json`; the
-#: pitch is justified by what `tap_distance.py --write` measures on the result,
-#: not by the number itself.
-TAPCELL_DISTANCE_UM: float | None = 30.0
-
 #: The timing constraints this run is placed and routed against.
 #:
 #: **`max_transition_ns`/`max_capacitance_pf` are stated here, and that is a
@@ -425,20 +415,6 @@ def _check_environment() -> list[str]:
     return missing
 
 
-def _power_request() -> dict:
-    """`request.power`: the net names and straps, plus the tapcell pitch
-    override when `TAPCELL_DISTANCE_UM` is set. Shared by the request the tool
-    receives and the request restated in the committed report."""
-    power = {
-        "power_net": POWER["power_net"],
-        "ground_net": POWER["ground_net"],
-        "straps": [dict(strap) for strap in POWER["straps"]],
-    }
-    if TAPCELL_DISTANCE_UM is not None:
-        power["tapcell"] = {"distance_um": TAPCELL_DISTANCE_UM}
-    return power
-
-
 def _write_request(request_path: Path) -> None:
     request = {
         "schema": "klt.place_and_route.request/1",
@@ -448,7 +424,11 @@ def _write_request(request_path: Path) -> None:
         "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
         "floorplan": dict(FLOORPLAN),
         "io": dict(IO),
-        "power": _power_request(),
+        "power": {
+            "power_net": POWER["power_net"],
+            "ground_net": POWER["ground_net"],
+            "straps": [dict(strap) for strap in POWER["straps"]],
+        },
         "constraints": dict(CONSTRAINTS),
         "seed": SEED,
         "target_stage": TARGET_STAGE,
@@ -850,7 +830,7 @@ def _committed_view(payload: dict) -> dict:
         "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
         "floorplan": FLOORPLAN,
         "io": IO,
-        "power": _power_request(),
+        "power": POWER,
         "constraints": CONSTRAINTS,
         "seed": SEED,
         "target_stage": TARGET_STAGE,

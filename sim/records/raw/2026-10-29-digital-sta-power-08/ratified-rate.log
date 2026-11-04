@@ -1,0 +1,146 @@
+OpenROAD 26Q3-1510-g6cb3f2b704 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/techlef/gf180mcu_fd_sc_mcu9t5v0__nom.tlef, created 15 layers, 56 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef at line 2.
+
+[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lef/gf180mcu_fd_sc_mcu9t5v0.lef, created 229 library cells
+[INFO ODB-0127] Reading DEF file: /home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-709/layout/digital/trng_top.def
+[INFO ODB-0128] Design: trng_top
+[INFO ODB-0130]     Created 111 pins.
+[INFO ODB-0131]     Created 4788 components and 23662 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 18628 connections.
+[INFO ODB-0133]     Created 1445 nets and 5013 connections.
+[INFO ODB-0134] Finished DEF file: /home/ubuntu/GitHub/gf180-trng/.loom/worktrees/issue-709/layout/digital/trng_top.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[WARNING RCX-0514] The ext_model_file option is deprecated. Use set_extraction_rules_file command instead.
+[INFO RCX-0435] Reading extraction model file /home/ubuntu/.ciel/gf180mcuD/libs.tech/librelane/rules.openrcx.gf180mcuD.nom ...
+[INFO RCX-0436] RC segment generation trng_top (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 6009 rc segments
+[INFO RCX-0439] Coupling Cap extraction trng_top ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 52% of 14289 wires extracted
+[INFO RCX-0442] 100% of 14289 wires extracted
+[INFO RCX-0045] Extract 1445 nets, 7422 rsegs, 7422 caps, 14053 ccs
+[INFO RCX-0443] 1445 nets finished
+STA_METRIC worst_setup_slack_ideal_s 9.905038496071938e-7
+STA_METRIC worst_hold_slack_ideal_s 1.1673013666779752e-9
+STA_METRIC period_ns 1000.0
+STA_METRIC worst_setup_slack_s 9.904501894197892e-7
+STA_METRIC worst_hold_slack_s 1.2027111528922774e-9
+STA_METRIC tns_setup_s 0.0
+STA_METRIC tns_hold_s 0.0
+STA_METRIC clock_skew_setup_s 7.666656198779265e-11
+STA_METRIC clock_skew_hold_s 7.666656198779265e-11
+STA_METRIC cell_area_m2 6.074369451880557e-8
+STA_METRIC utilization 0.4340863251311005
+worst slack max 990.4502
+worst slack min 1.2027
+tns max 0.0000
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_1317_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1203_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)  990.4502
+u_interface/_1317_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1220_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)  990.5345
+u_interface/_1317_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1222_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)  990.5363
+u_interface/_1317_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1218_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)  990.5463
+u_interface/_1317_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1229_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)  990.5480
+
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+u_interface/_1229_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1229_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2027
+u_interface/_1232_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1232_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2077
+u_interface/_1228_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1228_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2082
+u_interface/_1233_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1233_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2093
+u_interface/_1219_/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_1) u_interface/_1219_/D (gf180mcu_fd_sc_mcu9t5v0__dffq_1)    1.2097
+
+Clock clk
+ 1.6474 source latency u_interface/_1320_/CLK ^
+-1.5707 target latency u_interface/_1203_/CLK ^
+ 0.0000 CRPR
+--------------
+ 0.0767 setup skew
+
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.215165e-04 9.539060e-06 6.984066e-08 1.311254e-04  52.2%
+Combinational        3.182170e-05 3.414182e-05 6.795992e-08 6.603147e-05  26.3%
+Clock                1.982880e-05 3.428016e-05 7.679721e-08 5.418576e-05  21.6%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                1.731669e-04 7.796100e-05 2.145970e-07 2.513425e-04 100.0%
+                            68.9%        31.0%         0.1%
+Design area 60744 um^2 43% utilization.
+Warning: There are 42 input ports missing set_input_delay.
+Warning: There are 66 output ports missing set_output_delay.
+Warning: There are 68 unconstrained endpoints.
+STA_METRIC max_slew_limit_ns 6.0
+STA_METRIC max_slew_slack_ns 3.8957531452178955
+STA_METRIC max_slew_violations 0
+STA_IFACE_PIN clk clkbuf_0_clk/I
+STA_IFACE_PIN rst_n max_cap5/I
+STA_IFACE_PIN rst_n u_ring_liveness/_177_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_176_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_174_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_173_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_172_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_171_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_170_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_169_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_168_/RN
+STA_IFACE_PIN rst_n u_ring_liveness/_167_/RN
+STA_IFACE_PIN rst_n u_interface/_1321_/RN
+STA_IFACE_PIN rst_n u_interface/_1320_/RN
+STA_IFACE_PIN rst_n u_interface/_1317_/RN
+STA_IFACE_PIN rst_n u_interface/_1316_/SETN
+STA_IFACE_PIN rst_n u_interface/_1239_/RN
+STA_IFACE_PIN rst_n u_interface/_1238_/RN
+STA_IFACE_PIN rst_n u_interface/_1237_/RN
+STA_IFACE_PIN rst_n u_interface/_1236_/RN
+STA_IFACE_PIN rst_n u_interface/_1235_/RN
+STA_IFACE_PIN rst_n u_interface/_0923_/A1
+STA_IFACE_PIN rst_n u_interface/_0912_/A1
+STA_IFACE_PIN raw_bit u_interface/_1034_/I1
+STA_IFACE_PIN raw_bit u_interface/_0909_/I1
+STA_IFACE_PIN raw_bit u_interface/_0906_/I0
+STA_IFACE_PIN raw_bit u_health_test/_390_/I0
+STA_IFACE_PIN raw_bit u_health_test/_389_/I0
+STA_IFACE_PIN raw_bit u_health_test/_241_/A1
+STA_IFACE_PIN raw_bit u_health_test/_205_/A1
+STA_IFACE_PIN raw_bit u_conditioner/_349_/A2
+STA_IFACE_PIN raw_bit u_conditioner/_209_/A2
+STA_IFACE_PIN raw_valid u_interface/_1121_/A2
+STA_IFACE_PIN raw_valid u_interface/_0904_/A2
+STA_IFACE_PIN raw_valid u_interface/_0853_/A3
+STA_IFACE_PIN raw_valid u_health_test/_399_/A1
+STA_IFACE_PIN raw_valid u_health_test/_396_/A2
+STA_IFACE_PIN raw_valid u_health_test/_386_/A1
+STA_IFACE_PIN raw_valid u_health_test/_384_/A1
+STA_IFACE_PIN raw_valid u_health_test/_375_/A1
+STA_IFACE_PIN raw_valid u_health_test/_371_/A1
+STA_IFACE_PIN raw_valid u_health_test/_285_/A2
+STA_IFACE_PIN raw_valid u_health_test/_277_/A2
+STA_IFACE_PIN raw_valid u_health_test/_235_/I
+STA_IFACE_PIN raw_valid u_conditioner/_219_/A1
+STA_IFACE_PIN raw_valid u_conditioner/_206_/I
+STA_IFACE_PIN raw_valid u_conditioner/_203_/A3
+STA_IFACE_PIN raw_valid u_conditioner/_195_/A4
+STA_IFACE_PIN raw_valid u_conditioner/_181_/I
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_176_/D
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_137_/A1
+STA_IFACE_PIN ring_bit[0] u_ring_liveness/_089_/A1
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_177_/D
+STA_IFACE_PIN ring_bit[1] u_ring_liveness/_100_/A1
+STA_MAX_SLEW_VIOLATORS_BEGIN
+STA_MAX_SLEW_VIOLATORS_END

@@ -416,20 +416,12 @@ RECORD_FIELDS = (
 
 def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: list[tuple[str, str]],
                     now: _dt.datetime, git: dict) -> str:
-    env, prov = rep.get("environment", {}), rep.get("provenance", {})
+    prov = rep.get("provenance", {})
     tb = TB_DIR / DECK
     netlist = REPO_ROOT / "design" / "power_switch.spice"
-    remote = env.get("remote")
-    fleet = (remote or {}).get("fleet", [])
-    # The simulating PDK and ngspice are the fleet worker's, not the submitting host's.
-    worker = [(f.get("worker_environment") or {}) for f in fleet]
-    stamps = sorted({(w.get("pdk") or {}).get("stamp_text", "") for w in worker} - {""})
-    pdk_ver = (stamps[0].replace("open_pdks ", "") if len(stamps) == 1
-               else ("; ".join(stamps) or str((prov.get("pdk") or {}).get("version", "unknown"))))
-    banners = sorted({((w.get("simulator") or {}).get("version_banner", "").split("\n")[1:2] or [""])[0].strip("* ").strip()
-                      for w in worker} - {""})
-    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
-    jobs = ", ".join(f["job_id"] for f in (remote or {}).get("fleet", []) if f.get("job_id"))
+    fp = _report.fleet_provenance(rep)
+    pdk_ver, ngspice = fp["pdk_ver"], fp["ngspice"]
+    jobs = ", ".join(fp["jobs"])
     where = f"batch fleet through klt sim (jobs {jobs})" if jobs else "local ngspice (single-point debug probe)"
     lines = [
         "---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}", "status: valid", "",

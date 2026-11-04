@@ -2,7 +2,7 @@
   "schema_version": 1,
   "engine": "opensta",
   "engine_version": "26Q3-1510-g6cb3f2b704",
-  "klt_version": "klt 0.8.0",
+  "klt_version": "klt 0.6.0",
   "hdl_toplevel": "trng_top",
   "netlist_path": "layout/digital/trng_top.pnr.v",
   "sdf_path": "layout/digital/trng_top.sdf",
@@ -20,10 +20,10 @@
     "cell_delay": "modeled (per-instance IOPATH from the resolved liberty timing arcs, at the as-built netlist's real fan-out)",
     "interconnect_delay": "not modeled -- zero-length/zero-RC net assumption; no DEF, no placement, no parasitic extraction (see this script's own module docstring)",
     "min_typ_max": "identical -- one liberty corner only, no min/max variation written",
-    "icarus_unsupported_arcs_excluded": 648,
-    "icarus_unsupported_cells_dropped_entirely": 49,
+    "icarus_unsupported_arcs_excluded": 676,
+    "icarus_unsupported_cells_dropped_entirely": 41,
     "top_level_interconnect_block_dropped": true
   },
-  "sdf_sha256": "760606457adc20061830209278d2866ffaaefb4f729c73a566ed72707791f1b0",
-  "sdf_content_sha256": "944d39a3c4ae42a50443c87a500e1354ad02372381030ead4bdccb0c7f0b90fb"
+  "sdf_sha256": "1817570b6ae837d724d1d6cfb3348fda415dcf9b266843d1fce99e6d3b353683",
+  "sdf_content_sha256": "62ba4715dfe6bdb5565e3430c100f69caf0bf8d5f913ee6f8f07e74a26f8487a"
 }

@@ -1,6 +1,6 @@
 {
   "device_class": {
-    "gate_polygons": 18410,
+    "gate_polygons": 18004,
     "gates_outside_dualgate": 0,
     "limit_column_applied": "MV (5 V/6 V)"
   },
@@ -8,29 +8,29 @@
     "dnwell_shapes": 0,
     "latchup_mk_shapes": 0,
     "nat_shapes": 0,
-    "ncomp_outside_nwell_polygons": 2141,
-    "ntap_polygons": 612,
-    "nwell_islands": 38,
-    "pcomp_in_nwell_polygons": 2339,
-    "ptap_polygons": 612
+    "ncomp_outside_nwell_polygons": 2071,
+    "ntap_polygons": 262,
+    "nwell_islands": 37,
+    "pcomp_in_nwell_polygons": 2240,
+    "ptap_polygons": 262
   },
   "input": {
     "database_unit_um": 0.0005,
     "extent_um": [
       0.0,
       0.0,
-      398.93,
-      398.93
+      395.715,
+      395.715
     ],
     "gds": "layout/digital/trng_top.gds",
-    "gds_sha256": "8c441fe83fc9d7c4e489df5ed06a212597c27a704681e45f8a430d4e8df13d04",
+    "gds_sha256": "00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3",
     "spec": "layout/digital/tap-distance-spec.json",
     "spec_sha256": "f54e4d3ff0b6323c30cc8804702d10032582e878fafeddfaa004b548467f68c4",
     "top_cell": "trng_top"
   },
   "kind": "tap-distance",
   "provenance": {
-    "klayout_version": "0.30.12",
+    "klayout_version": "0.30.10",
     "tool": "layout/digital/tap_distance.py"
   },
   "rule_source": {
@@ -43,19 +43,19 @@
       "coverage_profile": [
         {
           "radius_um": 7.5,
-          "uncovered_boundary_um": 15263.112
+          "uncovered_boundary_um": 24246.625
         },
         {
           "radius_um": 15.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 19293.877
         },
         {
           "radius_um": 30.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 10691.311
         },
         {
           "radius_um": 45.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 2476.265
         },
         {
           "radius_um": 60.0,
@@ -63,31 +63,35 @@
         }
       ],
       "description": "Max Nwell tap space to every point on the boundary of PCOMP inside Nwell (outside DNWELL)",
-      "geometry_only_max_distance_um": 14.857,
+      "geometry_only_max_distance_um": 49.727,
       "groups": [
         {
           "bbox_um": [
             7.15,
             12.345,
-            391.57,
+            388.21,
             17.895
           ],
           "group": "nwell_island_0",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 7.09,
-          "status": "within_limit",
-          "subject_polygons": 3,
-          "tap_polygons": 22,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 37.602,
+          "status": "over_limit",
+          "subject_polygons": 4,
+          "tap_polygons": 8,
+          "violating_edge_length_um": 18.24,
+          "violating_subject_polygons": 4,
           "worst_locations": [
             {
-              "x_um": 178.92,
-              "y_um": 17.287
+              "x_um": 172.2,
+              "y_um": 16.845
             },
             {
-              "x_um": 178.924,
+              "x_um": 172.203,
               "y_um": 17.295
+            },
+            {
+              "x_um": 172.203,
+              "y_um": 16.395
             }
           ]
         },
@@ -95,24 +99,24 @@
           "bbox_um": [
             7.15,
             22.425,
-            391.57,
+            388.21,
             27.975
           ],
           "group": "nwell_island_1",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 8.096,
-          "status": "within_limit",
+          "max_distance_um": 45.578,
+          "status": "over_limit",
           "subject_polygons": 2,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 9.12,
+          "violating_subject_polygons": 2,
           "worst_locations": [
             {
-              "x_um": 181.16,
-              "y_um": 23.032
+              "x_um": 164.36,
+              "y_um": 23.085
             },
             {
-              "x_um": 181.163,
+              "x_um": 164.364,
               "y_um": 23.025
             }
           ]
@@ -120,96 +124,26 @@
         {
           "bbox_um": [
             7.15,
-            32.505,
-            391.57,
-            38.055
-          ],
-          "group": "nwell_island_2",
-          "max_distance_resolution_um": 0.005,
-          "max_distance_um": 8.606,
-          "status": "within_limit",
-          "subject_polygons": 1,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
-          "worst_locations": [
-            {
-              "x_um": 180.6,
-              "y_um": 33.115
-            },
-            {
-              "x_um": 180.605,
-              "y_um": 33.105
-            }
-          ]
-        },
-        {
-          "bbox_um": [
-            7.15,
-            42.585,
-            391.57,
-            48.135
-          ],
-          "group": "nwell_island_3",
-          "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.798,
-          "status": "within_limit",
-          "subject_polygons": 1,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
-          "worst_locations": [
-            {
-              "x_um": 144.316,
-              "y_um": 46.995
-            }
-          ]
-        },
-        {
-          "bbox_um": [
-            7.15,
-            52.665,
-            391.57,
-            58.215
-          ],
-          "group": "nwell_island_4",
-          "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.845,
-          "status": "within_limit",
-          "subject_polygons": 15,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
-          "worst_locations": [
-            {
-              "x_um": 143.996,
-              "y_um": 53.365
-            }
-          ]
-        },
-        {
-          "bbox_um": [
-            7.15,
             62.745,
-            391.57,
+            388.21,
             68.295
           ],
           "group": "nwell_island_5",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 14,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.691,
+          "status": "over_limit",
+          "subject_polygons": 2,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 24.08,
+          "violating_subject_polygons": 2,
           "worst_locations": [
             {
-              "x_um": 114.305,
-              "y_um": 67.695
+              "x_um": 160.114,
+              "y_um": 66.595
             },
             {
-              "x_um": 144.375,
-              "y_um": 67.695
+              "x_um": 160.132,
+              "y_um": 65.865
             }
           ]
         },
@@ -217,37 +151,21 @@
           "bbox_um": [
             7.15,
             72.825,
-            391.57,
+            388.21,
             78.375
           ],
           "group": "nwell_island_6",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 27,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.706,
+          "status": "over_limit",
+          "subject_polygons": 18,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 164.037,
+          "violating_subject_polygons": 16,
           "worst_locations": [
             {
-              "x_um": 55.335,
-              "y_um": 73.425
-            },
-            {
-              "x_um": 85.015,
-              "y_um": 77.775
-            },
-            {
-              "x_um": 114.305,
-              "y_um": 77.775
-            },
-            {
-              "x_um": 173.665,
-              "y_um": 77.775
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 73.425
+              "x_um": 160.184,
+              "y_um": 73.965
             }
           ]
         },
@@ -255,21 +173,21 @@
           "bbox_um": [
             7.15,
             82.905,
-            391.57,
+            388.21,
             88.455
           ],
           "group": "nwell_island_7",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 25,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 17,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 126.14,
+          "violating_subject_polygons": 10,
           "worst_locations": [
             {
-              "x_um": 114.695,
-              "y_um": 83.505
+              "x_um": 160.076,
+              "y_um": 87.855
             }
           ]
         },
@@ -277,25 +195,29 @@
           "bbox_um": [
             7.15,
             92.985,
-            391.57,
+            388.21,
             98.535
           ],
           "group": "nwell_island_8",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 44,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 21,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 196.945,
+          "violating_subject_polygons": 16,
           "worst_locations": [
             {
-              "x_um": 85.015,
+              "x_um": 259.756,
+              "y_um": 93.585
+            },
+            {
+              "x_um": 259.884,
               "y_um": 97.935
             },
             {
-              "x_um": 114.695,
-              "y_um": 93.585
+              "x_um": 160.079,
+              "y_um": 97.85
             }
           ]
         },
@@ -303,21 +225,21 @@
           "bbox_um": [
             7.15,
             103.065,
-            391.57,
+            388.21,
             108.615
           ],
           "group": "nwell_island_9",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 42,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.724,
+          "status": "over_limit",
+          "subject_polygons": 64,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 522.909,
+          "violating_subject_polygons": 51,
           "worst_locations": [
             {
-              "x_um": 55.335,
-              "y_um": 103.665
+              "x_um": 259.88,
+              "y_um": 107.915
             }
           ]
         },
@@ -325,21 +247,25 @@
           "bbox_um": [
             7.15,
             113.145,
-            391.57,
+            388.21,
             118.695
           ],
           "group": "nwell_island_10",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 49,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 73,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 638.277,
+          "violating_subject_polygons": 58,
           "worst_locations": [
             {
-              "x_um": 144.375,
+              "x_um": 160.076,
               "y_um": 118.095
+            },
+            {
+              "x_um": 259.756,
+              "y_um": 113.745
             }
           ]
         },
@@ -347,37 +273,33 @@
           "bbox_um": [
             7.15,
             123.225,
-            391.57,
+            388.21,
             128.775
           ],
           "group": "nwell_island_11",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 67,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 70,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 631.039,
+          "violating_subject_polygons": 53,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 60.524,
               "y_um": 128.175
             },
             {
-              "x_um": 143.985,
+              "x_um": 160.076,
+              "y_um": 128.175
+            },
+            {
+              "x_um": 160.204,
               "y_um": 123.825
             },
             {
-              "x_um": 174.055,
-              "y_um": 123.825
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 123.825
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 123.825
+              "x_um": 259.756,
+              "y_um": 123.83
             }
           ]
         },
@@ -385,37 +307,25 @@
           "bbox_um": [
             7.15,
             133.305,
-            391.57,
+            388.21,
             138.855
           ],
           "group": "nwell_island_12",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 70,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 72,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 624.422,
+          "violating_subject_polygons": 54,
           "worst_locations": [
             {
-              "x_um": 114.695,
-              "y_um": 133.905
-            },
-            {
-              "x_um": 144.375,
+              "x_um": 160.076,
               "y_um": 138.255
             },
             {
-              "x_um": 203.345,
+              "x_um": 259.756,
               "y_um": 133.905
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 133.905
-            },
-            {
-              "x_um": 263.095,
-              "y_um": 138.255
             }
           ]
         },
@@ -423,37 +333,33 @@
           "bbox_um": [
             7.15,
             143.385,
-            391.57,
+            388.21,
             148.935
           ],
           "group": "nwell_island_13",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 64,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 74,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 693.37,
+          "violating_subject_polygons": 58,
           "worst_locations": [
             {
-              "x_um": 173.665,
+              "x_um": 259.756,
+              "y_um": 143.985
+            },
+            {
+              "x_um": 259.884,
               "y_um": 148.335
             },
             {
-              "x_um": 174.055,
-              "y_um": 143.985
+              "x_um": 160.08,
+              "y_um": 148.235
             },
             {
-              "x_um": 203.735,
-              "y_um": 148.335
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 143.985
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 143.985
+              "x_um": 160.2,
+              "y_um": 144.085
             }
           ]
         },
@@ -461,25 +367,25 @@
           "bbox_um": [
             7.15,
             153.465,
-            391.57,
+            388.21,
             159.015
           ],
           "group": "nwell_island_14",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 79,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 80,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 725.609,
+          "violating_subject_polygons": 62,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 60.524,
               "y_um": 158.415
             },
             {
-              "x_um": 203.735,
-              "y_um": 158.415
+              "x_um": 160.08,
+              "y_um": 158.315
             }
           ]
         },
@@ -487,37 +393,21 @@
           "bbox_um": [
             7.15,
             163.545,
-            391.57,
+            388.21,
             169.095
           ],
           "group": "nwell_island_15",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 77,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 73,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 618.567,
+          "violating_subject_polygons": 57,
           "worst_locations": [
             {
-              "x_um": 203.345,
+              "x_um": 259.756,
               "y_um": 164.145
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 164.145
-            },
-            {
-              "x_um": 292.385,
-              "y_um": 168.495
-            },
-            {
-              "x_um": 322.065,
-              "y_um": 164.145
-            },
-            {
-              "x_um": 322.455,
-              "y_um": 168.495
             }
           ]
         },
@@ -525,37 +415,33 @@
           "bbox_um": [
             7.15,
             173.625,
-            391.57,
+            388.21,
             179.175
           ],
           "group": "nwell_island_16",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 71,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 80,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 669.332,
+          "violating_subject_polygons": 63,
           "worst_locations": [
             {
-              "x_um": 54.945,
+              "x_um": 160.076,
               "y_um": 178.575
             },
             {
-              "x_um": 114.695,
+              "x_um": 259.756,
               "y_um": 174.225
             },
             {
-              "x_um": 174.055,
-              "y_um": 174.225
+              "x_um": 60.52,
+              "y_um": 178.475
             },
             {
-              "x_um": 203.345,
-              "y_um": 174.225
-            },
-            {
-              "x_um": 203.735,
-              "y_um": 178.575
+              "x_um": 160.2,
+              "y_um": 174.325
             }
           ]
         },
@@ -563,37 +449,25 @@
           "bbox_um": [
             7.15,
             183.705,
-            391.57,
+            388.21,
             189.255
           ],
           "group": "nwell_island_17",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 69,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 84,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 666.078,
+          "violating_subject_polygons": 61,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 259.884,
               "y_um": 188.655
             },
             {
-              "x_um": 144.375,
-              "y_um": 188.655
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 184.305
-            },
-            {
-              "x_um": 233.025,
-              "y_um": 188.655
-            },
-            {
-              "x_um": 322.065,
-              "y_um": 184.305
+              "x_um": 259.756,
+              "y_um": 184.31
             }
           ]
         },
@@ -601,36 +475,24 @@
           "bbox_um": [
             7.15,
             193.785,
-            391.57,
+            388.21,
             199.335
           ],
           "group": "nwell_island_18",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 82,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 79,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 700.635,
+          "violating_subject_polygons": 62,
           "worst_locations": [
             {
-              "x_um": 54.945,
+              "x_um": 60.524,
               "y_um": 198.735
             },
             {
-              "x_um": 55.335,
-              "y_um": 194.385
-            },
-            {
-              "x_um": 84.625,
-              "y_um": 194.385
-            },
-            {
-              "x_um": 85.015,
-              "y_um": 198.735
-            },
-            {
-              "x_um": 114.695,
+              "x_um": 259.756,
               "y_um": 194.385
             }
           ]
@@ -639,37 +501,21 @@
           "bbox_um": [
             7.15,
             203.865,
-            391.57,
+            388.21,
             209.415
           ],
           "group": "nwell_island_19",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 74,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 77,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 614.341,
+          "violating_subject_polygons": 59,
           "worst_locations": [
             {
-              "x_um": 55.335,
-              "y_um": 204.465
-            },
-            {
-              "x_um": 84.625,
-              "y_um": 204.465
-            },
-            {
-              "x_um": 144.375,
+              "x_um": 259.884,
               "y_um": 208.815
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 204.465
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 204.465
             }
           ]
         },
@@ -677,37 +523,29 @@
           "bbox_um": [
             7.15,
             213.945,
-            391.57,
+            388.21,
             219.495
           ],
           "group": "nwell_island_20",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 89,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 81,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 636.264,
+          "violating_subject_polygons": 58,
           "worst_locations": [
             {
-              "x_um": 54.945,
+              "x_um": 160.076,
               "y_um": 218.895
             },
             {
-              "x_um": 55.335,
+              "x_um": 160.204,
               "y_um": 214.545
             },
             {
-              "x_um": 84.625,
-              "y_um": 214.545
-            },
-            {
-              "x_um": 85.015,
+              "x_um": 259.884,
               "y_um": 218.895
-            },
-            {
-              "x_um": 143.985,
-              "y_um": 214.545
             }
           ]
         },
@@ -715,37 +553,25 @@
           "bbox_um": [
             7.15,
             224.025,
-            391.57,
+            388.21,
             229.575
           ],
           "group": "nwell_island_21",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 102,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 70,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 660.986,
+          "violating_subject_polygons": 55,
           "worst_locations": [
             {
-              "x_um": 54.945,
+              "x_um": 259.884,
               "y_um": 228.975
             },
             {
-              "x_um": 144.375,
-              "y_um": 228.975
-            },
-            {
-              "x_um": 203.735,
-              "y_um": 228.975
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 224.625
-            },
-            {
-              "x_um": 263.095,
-              "y_um": 228.975
+              "x_um": 160.08,
+              "y_um": 228.875
             }
           ]
         },
@@ -753,36 +579,32 @@
           "bbox_um": [
             7.15,
             234.105,
-            391.57,
+            388.21,
             239.655
           ],
           "group": "nwell_island_22",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
+          "max_distance_um": 49.727,
+          "status": "over_limit",
           "subject_polygons": 76,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 662.51,
+          "violating_subject_polygons": 59,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 160.076,
               "y_um": 239.055
             },
             {
-              "x_um": 173.665,
-              "y_um": 239.055
+              "x_um": 160.204,
+              "y_um": 234.705
             },
             {
-              "x_um": 203.735,
-              "y_um": 239.055
+              "x_um": 259.756,
+              "y_um": 234.705
             },
             {
-              "x_um": 263.095,
-              "y_um": 239.055
-            },
-            {
-              "x_um": 292.385,
+              "x_um": 259.884,
               "y_um": 239.055
             }
           ]
@@ -791,36 +613,28 @@
           "bbox_um": [
             7.15,
             244.185,
-            391.57,
+            388.21,
             249.735
           ],
           "group": "nwell_island_23",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 80,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 89,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 746.131,
+          "violating_subject_polygons": 63,
           "worst_locations": [
             {
-              "x_um": 114.695,
+              "x_um": 160.204,
               "y_um": 244.785
             },
             {
-              "x_um": 203.735,
-              "y_um": 249.135
-            },
-            {
-              "x_um": 233.025,
-              "y_um": 249.135
-            },
-            {
-              "x_um": 262.705,
+              "x_um": 259.756,
               "y_um": 244.785
             },
             {
-              "x_um": 322.455,
+              "x_um": 259.884,
               "y_um": 249.135
             }
           ]
@@ -829,37 +643,29 @@
           "bbox_um": [
             7.15,
             254.265,
-            391.57,
+            388.21,
             259.815
           ],
           "group": "nwell_island_24",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 88,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 86,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 683.647,
+          "violating_subject_polygons": 60,
           "worst_locations": [
             {
-              "x_um": 54.945,
+              "x_um": 160.076,
               "y_um": 259.215
             },
             {
-              "x_um": 85.015,
-              "y_um": 259.215
-            },
-            {
-              "x_um": 114.305,
-              "y_um": 259.215
-            },
-            {
-              "x_um": 114.695,
+              "x_um": 160.204,
               "y_um": 254.865
             },
             {
-              "x_um": 144.375,
-              "y_um": 259.215
+              "x_um": 259.756,
+              "y_um": 254.865
             }
           ]
         },
@@ -867,37 +673,29 @@
           "bbox_um": [
             7.15,
             264.345,
-            391.57,
+            388.21,
             269.895
           ],
           "group": "nwell_island_25",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 82,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 72,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 638.737,
+          "violating_subject_polygons": 51,
           "worst_locations": [
             {
-              "x_um": 55.335,
+              "x_um": 160.204,
               "y_um": 264.945
             },
             {
-              "x_um": 114.305,
-              "y_um": 269.295
-            },
-            {
-              "x_um": 143.985,
+              "x_um": 259.756,
               "y_um": 264.945
             },
             {
-              "x_um": 203.345,
-              "y_um": 264.945
-            },
-            {
-              "x_um": 203.735,
-              "y_um": 269.295
+              "x_um": 259.881,
+              "y_um": 269.21
             }
           ]
         },
@@ -905,37 +703,29 @@
           "bbox_um": [
             7.15,
             274.425,
-            391.57,
+            388.21,
             279.975
           ],
           "group": "nwell_island_26",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 86,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 90,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 813.157,
+          "violating_subject_polygons": 72,
           "worst_locations": [
             {
-              "x_um": 25.655,
+              "x_um": 60.524,
               "y_um": 279.375
             },
             {
-              "x_um": 54.945,
+              "x_um": 259.884,
               "y_um": 279.375
             },
             {
-              "x_um": 85.015,
-              "y_um": 279.375
-            },
-            {
-              "x_um": 173.665,
-              "y_um": 279.375
-            },
-            {
-              "x_um": 203.735,
-              "y_um": 279.375
+              "x_um": 160.08,
+              "y_um": 279.275
             }
           ]
         },
@@ -943,36 +733,24 @@
           "bbox_um": [
             7.15,
             284.505,
-            391.57,
+            388.21,
             290.055
           ],
           "group": "nwell_island_27",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 78,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 76,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 666.901,
+          "violating_subject_polygons": 55,
           "worst_locations": [
             {
-              "x_um": 85.015,
+              "x_um": 160.076,
               "y_um": 289.455
             },
             {
-              "x_um": 114.695,
-              "y_um": 285.105
-            },
-            {
-              "x_um": 144.375,
-              "y_um": 289.455
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 285.105
-            },
-            {
-              "x_um": 233.415,
+              "x_um": 259.756,
               "y_um": 285.105
             }
           ]
@@ -981,37 +759,29 @@
           "bbox_um": [
             7.15,
             294.585,
-            391.57,
+            388.21,
             300.135
           ],
           "group": "nwell_island_28",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 75,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 77,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 678.299,
+          "violating_subject_polygons": 61,
           "worst_locations": [
             {
-              "x_um": 55.335,
-              "y_um": 295.185
-            },
-            {
-              "x_um": 114.695,
-              "y_um": 295.185
-            },
-            {
-              "x_um": 173.665,
+              "x_um": 160.076,
               "y_um": 299.535
             },
             {
-              "x_um": 203.345,
-              "y_um": 295.185
+              "x_um": 60.524,
+              "y_um": 299.53
             },
             {
-              "x_um": 203.735,
-              "y_um": 299.535
+              "x_um": 160.2,
+              "y_um": 295.285
             }
           ]
         },
@@ -1019,37 +789,25 @@
           "bbox_um": [
             7.15,
             304.665,
-            391.57,
+            388.21,
             310.215
           ],
           "group": "nwell_island_29",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 78,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 72,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 677.874,
+          "violating_subject_polygons": 54,
           "worst_locations": [
             {
-              "x_um": 25.655,
+              "x_um": 60.524,
               "y_um": 309.615
             },
             {
-              "x_um": 55.335,
-              "y_um": 305.265
-            },
-            {
-              "x_um": 84.625,
-              "y_um": 305.265
-            },
-            {
-              "x_um": 114.695,
-              "y_um": 305.265
-            },
-            {
-              "x_um": 143.985,
-              "y_um": 305.265
+              "x_um": 160.076,
+              "y_um": 309.615
             }
           ]
         },
@@ -1057,36 +815,32 @@
           "bbox_um": [
             7.15,
             314.745,
-            391.57,
+            388.21,
             320.295
           ],
           "group": "nwell_island_30",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 79,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 64,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 614.782,
+          "violating_subject_polygons": 46,
           "worst_locations": [
             {
-              "x_um": 84.625,
+              "x_um": 60.524,
+              "y_um": 319.695
+            },
+            {
+              "x_um": 160.076,
+              "y_um": 319.695
+            },
+            {
+              "x_um": 259.756,
               "y_um": 315.345
             },
             {
-              "x_um": 143.985,
-              "y_um": 315.345
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 315.345
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 315.345
-            },
-            {
-              "x_um": 292.385,
+              "x_um": 259.884,
               "y_um": 319.695
             }
           ]
@@ -1095,37 +849,21 @@
           "bbox_um": [
             7.15,
             324.825,
-            391.57,
+            388.21,
             330.375
           ],
           "group": "nwell_island_31",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
+          "max_distance_um": 49.727,
+          "status": "over_limit",
           "subject_polygons": 78,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 734.001,
+          "violating_subject_polygons": 59,
           "worst_locations": [
             {
-              "x_um": 25.655,
-              "y_um": 329.775
-            },
-            {
-              "x_um": 54.945,
-              "y_um": 329.775
-            },
-            {
-              "x_um": 114.695,
+              "x_um": 259.756,
               "y_um": 325.425
-            },
-            {
-              "x_um": 143.985,
-              "y_um": 325.425
-            },
-            {
-              "x_um": 173.665,
-              "y_um": 329.775
             }
           ]
         },
@@ -1133,37 +871,29 @@
           "bbox_um": [
             7.15,
             334.905,
-            391.57,
+            388.21,
             340.455
           ],
           "group": "nwell_island_32",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
+          "max_distance_um": 49.727,
+          "status": "over_limit",
           "subject_polygons": 85,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 686.499,
+          "violating_subject_polygons": 60,
           "worst_locations": [
             {
-              "x_um": 114.695,
+              "x_um": 160.204,
               "y_um": 335.505
             },
             {
-              "x_um": 144.375,
+              "x_um": 259.884,
               "y_um": 339.855
             },
             {
-              "x_um": 174.055,
-              "y_um": 335.505
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 335.505
-            },
-            {
-              "x_um": 263.095,
-              "y_um": 339.855
+              "x_um": 160.076,
+              "y_um": 339.85
             }
           ]
         },
@@ -1171,37 +901,25 @@
           "bbox_um": [
             7.15,
             344.985,
-            391.57,
+            388.21,
             350.535
           ],
           "group": "nwell_island_33",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 100,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 83,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 675.788,
+          "violating_subject_polygons": 61,
           "worst_locations": [
             {
-              "x_um": 54.945,
-              "y_um": 349.935
-            },
-            {
-              "x_um": 114.695,
+              "x_um": 160.204,
               "y_um": 345.585
             },
             {
-              "x_um": 143.985,
-              "y_um": 345.585
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 345.585
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 345.585
+              "x_um": 160.076,
+              "y_um": 349.93
             }
           ]
         },
@@ -1209,36 +927,24 @@
           "bbox_um": [
             7.15,
             355.065,
-            391.57,
+            388.21,
             360.615
           ],
           "group": "nwell_island_34",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 81,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 82,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 683.784,
+          "violating_subject_polygons": 58,
           "worst_locations": [
             {
-              "x_um": 174.055,
-              "y_um": 355.665
-            },
-            {
-              "x_um": 233.025,
+              "x_um": 160.076,
               "y_um": 360.015
             },
             {
-              "x_um": 262.705,
-              "y_um": 355.665
-            },
-            {
-              "x_um": 292.775,
-              "y_um": 355.665
-            },
-            {
-              "x_um": 351.745,
+              "x_um": 259.884,
               "y_um": 360.015
             }
           ]
@@ -1247,37 +953,25 @@
           "bbox_um": [
             7.15,
             365.145,
-            391.57,
+            388.21,
             370.695
           ],
           "group": "nwell_island_35",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 87,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.72,
+          "status": "over_limit",
+          "subject_polygons": 82,
+          "tap_polygons": 7,
+          "violating_edge_length_um": 663.841,
+          "violating_subject_polygons": 64,
           "worst_locations": [
             {
-              "x_um": 54.945,
-              "y_um": 370.095
+              "x_um": 60.517,
+              "y_um": 369.91
             },
             {
-              "x_um": 85.015,
-              "y_um": 370.095
-            },
-            {
-              "x_um": 143.985,
-              "y_um": 365.745
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 365.745
-            },
-            {
-              "x_um": 203.735,
-              "y_um": 370.095
+              "x_um": 160.083,
+              "y_um": 369.91
             }
           ]
         },
@@ -1285,69 +979,31 @@
           "bbox_um": [
             7.15,
             375.225,
-            391.57,
+            388.21,
             380.775
           ],
           "group": "nwell_island_36",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.857,
-          "status": "within_limit",
-          "subject_polygons": 86,
-          "tap_polygons": 16,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.727,
+          "status": "over_limit",
+          "subject_polygons": 87,
+          "tap_polygons": 9,
+          "violating_edge_length_um": 727.534,
+          "violating_subject_polygons": 66,
           "worst_locations": [
             {
-              "x_um": 54.945,
-              "y_um": 380.175
-            },
-            {
-              "x_um": 85.015,
-              "y_um": 380.175
-            },
-            {
-              "x_um": 114.305,
-              "y_um": 380.175
-            },
-            {
-              "x_um": 143.985,
+              "x_um": 259.756,
               "y_um": 375.825
             },
             {
-              "x_um": 203.345,
-              "y_um": 375.825
-            }
-          ]
-        },
-        {
-          "bbox_um": [
-            7.15,
-            385.305,
-            391.57,
-            388.51
-          ],
-          "group": "nwell_island_37",
-          "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.409,
-          "status": "within_limit",
-          "subject_polygons": 33,
-          "tap_polygons": 14,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
-          "worst_locations": [
-            {
-              "x_um": 83.42,
-              "y_um": 387.74
-            },
-            {
-              "x_um": 199.9,
-              "y_um": 387.735
+              "x_um": 160.204,
+              "y_um": 375.83
             }
           ]
         }
       ],
-      "groups_over_limit": 0,
-      "groups_total": 38,
+      "groups_over_limit": 34,
+      "groups_total": 34,
       "groups_without_qualifying_tap": 0,
       "id": "LU.4",
       "kind": "max_tap_distance",
@@ -1361,40 +1017,44 @@
         ],
         "MV": 15
       },
-      "max_distance_um": 14.857,
-      "measurement_error_bound_um": 0.009,
+      "max_distance_um": 49.727,
+      "measurement_error_bound_um": 0.02,
       "measurement_resolution_um": 0.005,
-      "status": "pass",
+      "status": "fail",
       "subject_extent_um": [
-        11.4,
-        12.945,
-        387.26,
-        387.765
+        11.48,
+        16.395,
+        383.9,
+        380.175
       ],
       "supply": "VDD",
       "tap_identity": {
         "on_neither_rail": 0,
         "on_other_rail": 0,
-        "on_required_rail": 612,
+        "on_required_rail": 262,
         "on_shorted_rails": 0,
         "required_rail": "VDD",
         "rule": "only taps on the required rail count toward coverage",
-        "tap_polygons_total": 612
+        "tap_polygons_total": 262
       },
       "worst_groups": [
         {
           "bbox_um": [
             7.15,
             113.145,
-            391.57,
+            388.21,
             118.695
           ],
           "group": "nwell_island_10",
-          "max_distance_um": 14.857,
+          "max_distance_um": 49.727,
           "worst_locations": [
             {
-              "x_um": 144.375,
+              "x_um": 160.076,
               "y_um": 118.095
+            },
+            {
+              "x_um": 259.756,
+              "y_um": 113.745
             }
           ]
         },
@@ -1402,31 +1062,27 @@
           "bbox_um": [
             7.15,
             123.225,
-            391.57,
+            388.21,
             128.775
           ],
           "group": "nwell_island_11",
-          "max_distance_um": 14.857,
+          "max_distance_um": 49.727,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 60.524,
               "y_um": 128.175
             },
             {
-              "x_um": 143.985,
+              "x_um": 160.076,
+              "y_um": 128.175
+            },
+            {
+              "x_um": 160.204,
               "y_um": 123.825
             },
             {
-              "x_um": 174.055,
-              "y_um": 123.825
-            },
-            {
-              "x_um": 203.345,
-              "y_um": 123.825
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 123.825
+              "x_um": 259.756,
+              "y_um": 123.83
             }
           ]
         },
@@ -1434,31 +1090,19 @@
           "bbox_um": [
             7.15,
             133.305,
-            391.57,
+            388.21,
             138.855
           ],
           "group": "nwell_island_12",
-          "max_distance_um": 14.857,
+          "max_distance_um": 49.727,
           "worst_locations": [
             {
-              "x_um": 114.695,
-              "y_um": 133.905
-            },
-            {
-              "x_um": 144.375,
+              "x_um": 160.076,
               "y_um": 138.255
             },
             {
-              "x_um": 203.345,
+              "x_um": 259.756,
               "y_um": 133.905
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 133.905
-            },
-            {
-              "x_um": 263.095,
-              "y_um": 138.255
             }
           ]
         },
@@ -1466,31 +1110,27 @@
           "bbox_um": [
             7.15,
             143.385,
-            391.57,
+            388.21,
             148.935
           ],
           "group": "nwell_island_13",
-          "max_distance_um": 14.857,
+          "max_distance_um": 49.727,
           "worst_locations": [
             {
-              "x_um": 173.665,
+              "x_um": 259.756,
+              "y_um": 143.985
+            },
+            {
+              "x_um": 259.884,
               "y_um": 148.335
             },
             {
-              "x_um": 174.055,
-              "y_um": 143.985
+              "x_um": 160.08,
+              "y_um": 148.235
             },
             {
-              "x_um": 203.735,
-              "y_um": 148.335
-            },
-            {
-              "x_um": 233.415,
-              "y_um": 143.985
-            },
-            {
-              "x_um": 262.705,
-              "y_um": 143.985
+              "x_um": 160.2,
+              "y_um": 144.085
             }
           ]
         },
@@ -1498,19 +1138,19 @@
           "bbox_um": [
             7.15,
             153.465,
-            391.57,
+            388.21,
             159.015
           ],
           "group": "nwell_island_14",
-          "max_distance_um": 14.857,
+          "max_distance_um": 49.727,
           "worst_locations": [
             {
-              "x_um": 114.305,
+              "x_um": 60.524,
               "y_um": 158.415
             },
             {
-              "x_um": 203.735,
-              "y_um": 158.415
+              "x_um": 160.08,
+              "y_um": 158.315
             }
           ]
         }
@@ -1520,19 +1160,19 @@
       "coverage_profile": [
         {
           "radius_um": 7.5,
-          "uncovered_boundary_um": 13864.08
+          "uncovered_boundary_um": 22449.365
         },
         {
           "radius_um": 15.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 17839.798
         },
         {
           "radius_um": 30.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 9920.402
         },
         {
           "radius_um": 45.0,
-          "uncovered_boundary_um": 0.0
+          "uncovered_boundary_um": 2281.751
         },
         {
           "radius_um": 60.0,
@@ -1540,48 +1180,48 @@
         }
       ],
       "description": "Max Psub (LVPWELL) tap space to every point on the boundary of NCOMP outside Nwell (outside DNWELL)",
-      "geometry_only_max_distance_um": 14.739,
+      "geometry_only_max_distance_um": 49.691,
       "groups": [
         {
           "bbox_um": [
-            11.4,
-            11.085,
-            387.34,
-            384.705
+            11.38,
+            18.495,
+            383.98,
+            382.765
           ],
           "group": "global",
           "max_distance_resolution_um": 0.005,
-          "max_distance_um": 14.739,
-          "status": "within_limit",
-          "subject_polygons": 2141,
-          "tap_polygons": 612,
-          "violating_edge_length_um": 0.0,
-          "violating_subject_polygons": 0,
+          "max_distance_um": 49.691,
+          "status": "over_limit",
+          "subject_polygons": 2071,
+          "tap_polygons": 262,
+          "violating_edge_length_um": 17839.798,
+          "violating_subject_polygons": 1577,
           "worst_locations": [
             {
-              "x_um": 292.505,
-              "y_um": 220.107
+              "x_um": 60.483,
+              "y_um": 119.295
             },
             {
-              "x_um": 25.532,
+              "x_um": 60.483,
+              "y_um": 129.375
+            },
+            {
+              "x_um": 60.483,
+              "y_um": 149.535
+            },
+            {
+              "x_um": 60.483,
+              "y_um": 199.935
+            },
+            {
+              "x_um": 60.483,
               "y_um": 280.575
-            },
-            {
-              "x_um": 25.532,
-              "y_um": 310.815
-            },
-            {
-              "x_um": 25.532,
-              "y_um": 330.975
-            },
-            {
-              "x_um": 55.066,
-              "y_um": 179.775
             }
           ]
         }
       ],
-      "groups_over_limit": 0,
+      "groups_over_limit": 1,
       "groups_total": 1,
       "groups_without_qualifying_tap": 0,
       "id": "LU.3",
@@ -1596,56 +1236,56 @@
         ],
         "MV": 15
       },
-      "max_distance_um": 14.739,
-      "measurement_error_bound_um": 0.009,
+      "max_distance_um": 49.691,
+      "measurement_error_bound_um": 0.02,
       "measurement_resolution_um": 0.005,
-      "status": "pass",
+      "status": "fail",
       "subject_extent_um": [
-        11.4,
-        11.085,
-        387.34,
-        384.705
+        11.38,
+        18.495,
+        383.98,
+        382.765
       ],
       "supply": "VSS",
       "tap_identity": {
         "on_neither_rail": 0,
         "on_other_rail": 0,
-        "on_required_rail": 612,
+        "on_required_rail": 262,
         "on_shorted_rails": 0,
         "required_rail": "VSS",
         "rule": "only taps on the required rail count toward coverage",
-        "tap_polygons_total": 612
+        "tap_polygons_total": 262
       },
       "worst_groups": [
         {
           "bbox_um": [
-            11.4,
-            11.085,
-            387.34,
-            384.705
+            11.38,
+            18.495,
+            383.98,
+            382.765
           ],
           "group": "global",
-          "max_distance_um": 14.739,
+          "max_distance_um": 49.691,
           "worst_locations": [
             {
-              "x_um": 292.505,
-              "y_um": 220.107
+              "x_um": 60.483,
+              "y_um": 119.295
             },
             {
-              "x_um": 25.532,
+              "x_um": 60.483,
+              "y_um": 129.375
+            },
+            {
+              "x_um": 60.483,
+              "y_um": 149.535
+            },
+            {
+              "x_um": 60.483,
+              "y_um": 199.935
+            },
+            {
+              "x_um": 60.483,
               "y_um": 280.575
-            },
-            {
-              "x_um": 25.532,
-              "y_um": 310.815
-            },
-            {
-              "x_um": 25.532,
-              "y_um": 330.975
-            },
-            {
-              "x_um": 55.066,
-              "y_um": 179.775
             }
           ]
         }
@@ -1714,11 +1354,11 @@
   ],
   "schema_version": 1,
   "summary": {
-    "fail": 0,
+    "fail": 2,
     "not_applicable": 3,
-    "pass": 2,
+    "pass": 0,
     "unsupported": 5
   },
-  "verdict": "incomplete",
+  "verdict": "fail",
   "verdict_meaning": "pass: every rule decided and none failed. fail: at least one measured rule is over its limit. incomplete: no measured rule failed but at least one rule is unsupported (never a pass)."
 }

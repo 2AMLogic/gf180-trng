@@ -1,0 +1,55 @@
+{
+  "iverilog": "Icarus Verilog version 13.0 (stable) (v13_0)",
+  "klt": {
+    "abi_tag": "cp313",
+    "cocotb": "2.0.1",
+    "cocotb_wheel_tags": [
+      "cp313-cp313-manylinux_2_17_x86_64",
+      "cp313-cp313-manylinux2014_x86_64"
+    ],
+    "interpreter": "/tmp/klt-cocotb/bin/python",
+    "klt": "/tmp/klt-cocotb/bin/klt",
+    "klt_commit": null,
+    "klt_version": "0.8.0",
+    "python": "3.13.14",
+    "reason": null,
+    "usable": true
+  },
+  "klt_candidates": [
+    {
+      "abi_tag": "cp313",
+      "cocotb": "2.0.1",
+      "cocotb_wheel_tags": [
+        "cp313-cp313-manylinux_2_17_x86_64",
+        "cp313-cp313-manylinux2014_x86_64"
+      ],
+      "interpreter": "/tmp/klt-cocotb/bin/python",
+      "klt": "/tmp/klt-cocotb/bin/klt",
+      "klt_commit": null,
+      "klt_version": "0.8.0",
+      "python": "3.13.14",
+      "reason": null,
+      "usable": true
+    },
+    {
+      "abi_tag": "cp313",
+      "cocotb": null,
+      "cocotb_error": "PackageNotFoundError('cocotb')",
+      "interpreter": "/home/ubuntu/.local/share/uv/tools/klayout-tools/bin/python",
+      "klt": "/home/ubuntu/.local/bin/klt",
+      "klt_commit": "d73dc11df57f28f235fd08120041d05a5d624222",
+      "klt_version": "0.8.1.dev738+gd73dc11df57f",
+      "python": "3.13.14",
+      "reason": "cocotb is not installed on this interpreter",
+      "usable": false
+    }
+  ],
+  "klt_on_path": "klt 0.8.1.dev738+gd73dc11df57f",
+  "pdk": {
+    "name": "gf180mcuD",
+    "path": "/home/ubuntu/.ciel/gf180mcuD"
+  },
+  "pdk_version": "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.12.3 (CPython)"
+}

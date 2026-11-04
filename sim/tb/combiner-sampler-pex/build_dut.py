@@ -82,7 +82,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import re
 import shlex
 import subprocess
@@ -93,6 +92,16 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
+sys.path.insert(0, str(REPO_ROOT / "sim" / "tools"))
+
+import pex_dut  # noqa: E402
+from pex_dut import (  # noqa: E402,F401
+    BuildError,
+    logical_lines as _logical_lines,
+    rel as _rel,
+    subckt_block as _subckt_block,
+)
+
 ARRAY_SRC = REPO_ROOT / "design" / "ro_array_core.spice"
 SAMPLER_SRC = REPO_ROOT / "design" / "sampler_core.spice"
 GDS = "layout/blocks/combiner_sampler/combiner_sampler.gds"
@@ -123,41 +132,7 @@ _PARAM = re.compile(r"^([A-Za-z_]\w*)=(.*)$")
 _SCALE = {"t": 1e12, "g": 1e9, "meg": 1e6, "k": 1e3, "m": 1e-3, "u": 1e-6, "n": 1e-9, "p": 1e-12, "f": 1e-15}
 
 
-class BuildError(Exception):
-    pass
-
-
-def _rel(path: Path) -> str:
-    try:
-        return str(path.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
-
-
 # ---------------------------------------------------------------- source
-
-def _logical_lines(text: str) -> list[str]:
-    out: list[str] = []
-    for raw in text.splitlines():
-        if raw.startswith("+") and out:
-            out[-1] += " " + raw[1:].strip()
-        else:
-            out.append(raw.rstrip())
-    return out
-
-
-def _subckt_block(text: str, name: str, where: str) -> list[str]:
-    """Raw lines of `.subckt name` .. `.ends` (exactly one definition)."""
-    lines = text.splitlines()
-    starts = [i for i, l in enumerate(lines) if re.match(rf"^\.subckt\s+{re.escape(name)}\s", l + " ", re.I)]
-    if len(starts) != 1:
-        raise BuildError(f"{where}: expected one .subckt {name}, found {len(starts)}")
-    start = starts[0]
-    end = next((i for i in range(start, len(lines)) if re.match(r"^\.ends\b", lines[i], re.I)), None)
-    if end is None:
-        raise BuildError(f"{where}: .subckt {name} has no .ends")
-    return lines[start : end + 1]
-
 
 def _canonical(lines: list[str]) -> list[str]:
     """Logical lines without comments/blank lines, whitespace collapsed."""
@@ -267,10 +242,7 @@ def render_dut(port_names: list[str], sources: dict[Path, str] | None = None) ->
 
 
 def dut_header(text: str) -> list[str]:
-    for line in _logical_lines(text):
-        if re.match(rf"^\.subckt\s+{TOP}\b", line, re.I):
-            return [t for t in line.split()[2:] if "=" not in t]
-    raise BuildError(f"{_rel(DUT)}: no .subckt {TOP}")
+    return pex_dut.dut_header(text, TOP, DUT)
 
 
 def dut_source_problem(dut_text: str | None = None, sources: dict[Path, str] | None = None) -> str | None:
@@ -554,24 +526,11 @@ def extraction_port_map(netlist_text: str, dut_text: str | None = None,
 # -------------------------------------------------------------------- CLI
 
 def check_testbench(port_names: list[str]) -> None:
-    xdut = next(
-        (l for l in _logical_lines(TESTBENCH.read_text()) if l.lower().startswith("xdut ")),
-        None,
-    )
-    want = ["xdut", *port_names, TOP]
-    if xdut is None or xdut.split() != want:
-        raise BuildError(f"{_rel(TESTBENCH)}: xdut line must read {' '.join(want)!r}")
+    pex_dut.check_testbench(port_names, TOP, TESTBENCH)
 
 
 def extract(outdir: Path) -> str:
-    out = outdir / f"{TOP}.extracted.spice"
-    klt = shlex.split(os.environ.get("KLT", "klt"))
-    subprocess.run(
-        [*klt, "extract", GDS, "--deck", "gf180mcu", "--pdk", "gf180mcuD",
-         "--top", TOP, "--parasitics", "-o", str(out), "--format", "json"],
-        cwd=REPO_ROOT, check=True, stdout=subprocess.DEVNULL,
-    )
-    return out.read_text()
+    return pex_dut.extract(outdir, GDS, TOP)
 
 
 def main(argv: list[str] | None = None) -> int:

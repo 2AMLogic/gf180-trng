@@ -25,11 +25,14 @@ The report is evidence of what `klt erc` said; it is not a tier input
 
 from __future__ import annotations
 
-import hashlib
 import json
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.harness.report import sha256_file  # noqa: E402
 FLOORPLAN_DIR = REPO_ROOT / "layout" / "floorplan"
 GDS = FLOORPLAN_DIR / "trng_floorplan.gds"
 SPEC = FLOORPLAN_DIR / "erc-supply-spec.json"
@@ -54,7 +57,7 @@ def _rel(path: Path) -> str:
 
 
 def sha256_ref(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    return "sha256:" + sha256_file(path)
 
 
 def project_report(native: dict, *, gates_stub: bool = False) -> dict:

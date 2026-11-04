@@ -382,7 +382,7 @@ pins against the stated `repair_design` targets, down from 720 and 3.
 These are all still at the 1.62 V/1.80 V decks or on the inserted buffers,
 as §0a describes, and none is a library violation at any of the fifteen
 swept corners. The design's worst-fanout net moved again, to
-`u_interface/net75` at 34 loads.
+`u_interface/net75` at 34 loads (and to `u_interface/net64`, 41 loads, after #709).
 
 **Reproducing the control column:**
 
@@ -396,65 +396,42 @@ cd /tmp/ctrl && python3 layout/digital/build.py && python3 sim/tb/digital-sta-po
 `sim/tb/digital-sta-power/max_transition_probe.py`'s `RECORDED` table now
 describe the #293 DEF.
 
----
+## 0c. Rebuild after the interface `raw_shift` / `raw_bit_count` change (#709)
 
-## 0d. Update — re-measured on the 30 µm tapcell re-placement (issue [#718], DR-0029)
+`design/interface/trng_interface.v` no longer resets or clears `raw_shift` and
+sizes `raw_bit_count` from `TRNG_RAW_PACK_BITS` (5 bits instead of 6; DR-0013's
+regmap and streaming behaviour unchanged). The whole digital chain was re-run on
+the new RTL: `design/synth.py`, `layout/digital/build.py`, `lvs.py`,
+`gen_sdf.py`, `run_sta.py` (new record family `2026-10-29-digital-sta-power-01..15`;
+earlier families stay as append-only evidence) and `layout/floorplan/floorplan.py
+--write`. `klt` was the 0.6.0 release and OpenROAD the same 26Q3-1510 build as
+§0b. The host's Yosys is 0.67+post where the previous netlist recorded 0.69, so
+the synthesized netlist carries that engine version in `trng_top.synth.json`.
 
-[#717] re-placed the block with a configurable tapcell pitch (30 µm) so the
-tap distances meet the DRM 14.3.1 limit, which changes the routed geometry
-every figure here is derived from. This update re-ran the fifteen-corner
-`digital-sta-power` grid (`2026-10-30-digital-sta-power-01…15`, new append-only
-records; the 2026-10-10 family is untouched) on the committed DEF, with the
-same fifteen corners as before. The geometry identity is the GDS hash in
-`layout/digital/reports/tap-distance.json`, `8c441fe83fc9…`; the records cite the
-DEF blob `d24d862fc383`. Nothing else was changed: same netlist, same
-constraints, same OpenROAD build, `klt` 0.6.0.
+| | #293 DEF | **#709 DEF** |
+|---|---:|---:|
+| Synthesized instances / area | 1459 / 57 435.84 µm² | **1395 / 56 464.93 µm²** |
+| Placed logical instances | 1490 | **1423** |
+| DEF `COMPONENTS` | 4960 | **4788** |
+| Die | 398.93 µm square, 159 145 µm² | **395.715 µm square, 156 590 µm²** |
+| Achieved utilization | 43.38 % | **43.41 %** |
+| Routed wirelength | 77 781 µm | **72 506 µm** |
+| Placed cell area | 62 081.5 µm² | **60 743.7 µm²** |
+| vs the pre-synthesis inventory | ×1.845 | **×1.828** |
+| Setup binding slack (`ss_125C_3v00`/`max`) | +31.220 ns | **+30.841 ns** |
+| Hold binding slack (`ff_n40C_3v60`/`min`) | +0.6946 ns | **+0.6958 ns** |
+| Fmax floor (`ss_125C_3v00`/`max`) | 53.249 MHz | **52.195 MHz** |
+| Active power @ 1 MHz, max (`ff_125C_3v60`/`max`) | 348.2 µW | **339.4 µW** |
+| Leakage, max (`ff_125C_3v60`) | 7.842 µW / 2.178 µA | **7.617 µW / 2.116 µA** |
+| Library `max_transition` violations | 0 of 15 corners | **0 of 15 corners** |
 
-| | #293 DEF (before) | **#717 DEF (after)** | change |
-|---|---:|---:|---:|
-| Placed cell area | 62 081.5 µm² | **64 062.8 µm²** | +3.2 % |
-| vs the pre-synthesis inventory (33 654.6 µm²) | ×1.845 | **×1.904** | |
-| Die | 159 145 µm² | **159 145 µm²** | 0 |
-| Setup binding slack (`ss_125C_3v00`/`max`) | +31.220 ns | **+31.503 ns** | +0.28 ns |
-| Hold binding slack (`ff_n40C_3v60`/`min`) | +0.6946 ns | **+0.6928 ns** | −0.002 ns |
-| Fmax floor (`ss_125C_3v00`/`max`) | 53.249 MHz | **54.060 MHz** | +1.5 % |
-| Active power @ 1 MHz, max (`ff_125C_3v60`/`max`) | 348.2 µW | **348.7 µW** | +0.1 % |
-| Leakage, max (`ff_125C_3v60`) | 7.842 µW / 2.178 µA | **8.239 µW / 2.288 µA** | +5.1 % |
-| Library `max_transition` violations | 0 of 15 corners | **0 of 15 corners** | |
-| Worst `max_transition` slack | +3.009 ns | **+2.970 ns** | |
-| Worst-fanout net | `u_interface/net75`, 34 loads | **`u_interface/net46`, 32 loads** | |
-
-Timing and the library `max_transition` check close at all fifteen corners on
-the new geometry, so no miss is reported. The headline figures that moved are
-the cell area (+1 981 µm², the added tapcells and the buffering the re-place
-chose) and the leakage (+0.11 µA on the 2.29 µA digital term, which feeds the
-idle roll-up). They are reported as measured: the area and idle-current rows
-were missed before and are missed by slightly more now, and the
-`sim/tools/power_rollup.py` worst idle corner reads 2.321 µA. The
-`sim/tools/digital_corner_characterization.py` and
-`sim/tb/digital-sta-power/max_transition_probe.py` `RECORDED` tables now
-describe this DEF.
-
-**What this does and does not claim.** It claims that the evidence is fresh:
-the numbers above come from the committed geometry, not from the one before
-it. It does not claim physical compliance. Report freshness is not latch-up
-sign-off, and final LU.3/LU.4 acceptance still waits on [#486].
-
-**Not re-run, and why.** The `ro-array-core-*-extracted-routed` and
-`-extracted-fullchip` testbench families read `layout/pex/*.extracted.spice`,
-which `layout/pex/build.py` composes from the analog ring and sampler streams;
-none of those inputs is in this change's diff, so the 2026-09 records stay the
-current evidence for them. The one path by which the digital geometry could
-reach them is the full-chip extraction of `layout/floorplan/trng_floorplan.gds`
-(`layout/pex/build.py --fullchip-extract`, about an hour of `klt extract`); it
-was not re-run here. In this environment `layout/pex/build.py --check` reports
-stale cached intra-region R/C and stale rebuilt netlists under klt 0.6.0; this
-change touched none of its inputs, but the check was not run on the base to
-confirm it fails there too, so no attribution is made.
-
-[#717]: https://github.com/2AMLogic/gf180-trng/issues/717
-[#718]: https://github.com/2AMLogic/gf180-trng/issues/718
-[#486]: https://github.com/2AMLogic/gf180-trng/issues/486
+Place-and-route is a single stochastic sample, so the Fmax floor and slack
+columns moving the other way from the area is not evidence either build places
+better. Every ratified-row verdict is unchanged: timing closes at all fifteen
+corners, `max_transition` is clean, and the worst-slack corner for it is
+`ff_n40C_3v60`/`max` at +3.107 ns. The Area and idle rows are still missed (see
+`README.md`'s Power and Area rows); `sim/tools/digital_corner_characterization.py`'s
+`RECORDED` table describes this DEF.
 
 ---
 
