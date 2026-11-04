@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-03.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-04.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-04
+
+- **PR #729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
+- **Issue #709** (closed): Area and power: FIFO and cell-inventory reductions toward the ratified bounds
 
 ### 2026-11-03
 
