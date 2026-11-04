@@ -3,8 +3,7 @@
 
     python3 sim/tools/inventory_levers.py            # print the table
     python3 sim/tools/inventory_levers.py --write    # regenerate sim/inventory-levers/levers.md
-    python3 sim/tools/inventory_levers.py --check    # fail if that file is stale, or if the
-                                                     # candidate RTL patch no longer applies
+    python3 sim/tools/inventory_levers.py --check    # fail if that file is stale
 
 Each lever is an edit to the shipped inventories in
 `design/digital_power_estimate.py` (the one copy `layout/floorplan/floorplan.py`
@@ -45,7 +44,6 @@ import digital_power_estimate as dpe  # noqa: E402
 from harness import pdk as pdk_mod  # noqa: E402  (sim/harness, as digital_power_estimate does)
 
 OUT = REPO / "sim" / "inventory-levers" / "levers.md"
-PATCH = REPO / "sim" / "inventory-levers" / "interface-raw-shift-no-reset.patch"
 AREA_JSON = REPO / "layout" / "floorplan" / "reports" / "area.json"
 
 
@@ -67,15 +65,6 @@ def _storage_dffq(rows):
     return _swap(rows, "FIFO storage", "dffrnq_1", "dffq_1")
 
 
-def _raw_shift_dffq(rows):
-    return _swap(rows, "raw packing shift register", "dffrnq_1", "dffq_1")
-
-
-def _raw_count_5b(rows):
-    return [(r[0], {**r[1], "dffrnq_1": 5}, *r[2:]) if r[0] == "raw bit counter" else r
-            for r in rows]
-
-
 def _storage_latch(rows):
     return _swap(rows, "FIFO storage", "dffq_1", "latq_1")
 
@@ -94,13 +83,9 @@ def _read_mux4(rows):
 CANDIDATES = [
     ("storage priced as `dffq_1`", _storage_dffq,
      "model correction, no RTL change: `cond_mem`/`raw_mem` have no reset in "
-     "`trng_interface.v`, and synthesis already maps all 128 to `dffq_1`"),
-    ("`raw_shift` without reset", _raw_shift_dffq,
-     "RTL candidate (`interface-raw-shift-no-reset.patch`): the register is fully "
-     "overwritten before it is ever read"),
-    ("`raw_bit_count` 5 bits", _raw_count_5b,
-     "RTL candidate (same patch): 0..31 needs 5 bits; synthesis had already "
-     "pruned the unused top bit, so the synthesized saving is zero"),
+     "`trng_interface.v`, and synthesis already maps all 128 to `dffq_1`, so the "
+     "measured baseline already contains this saving and the row is not an "
+     "additional one"),
 ]
 ALTERNATIVES = [
     ("FIFO storage as `latq_1`", _storage_latch,
@@ -255,13 +240,8 @@ def main(argv=None) -> int:
         if not OUT.is_file() or OUT.read_text() != text:
             print(f"STALE  {OUT.relative_to(REPO)}: run with --write")
             rc = 1
-        r = subprocess.run(["git", "apply", "--check", str(PATCH)], cwd=REPO,
-                           capture_output=True, text=True)
-        if r.returncode:
-            print(f"STALE  {PATCH.relative_to(REPO)} no longer applies:\n{r.stderr}")
-            rc = 1
         if rc == 0:
-            print("ok     inventory levers table and candidate RTL patch are current")
+            print("ok     inventory levers table is current")
         return rc
     print(text, end="")
     return 0

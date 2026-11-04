@@ -1,5 +1,4 @@
-"""The inventory-levers table and its candidate RTL patch stay current (#709)."""
-import subprocess
+"""The inventory-levers table and the adopted interface RTL stay consistent (#709)."""
 import sys
 import unittest
 from pathlib import Path
@@ -12,10 +11,15 @@ import inventory_levers as il  # noqa: E402
 
 
 class InventoryLeversTest(unittest.TestCase):
-    def test_patch_applies_to_the_shipped_rtl(self):
-        r = subprocess.run(["git", "apply", "--check", str(il.PATCH)], cwd=REPO,
-                           capture_output=True, text=True)
-        self.assertEqual(r.returncode, 0, r.stderr)
+    def test_adopted_rtl_matches_the_inventory(self):
+        rtl = (REPO / "design" / "interface" / "trng_interface.v").read_text()
+        # raw_shift has no reset: it is written only by its own un-reset always block.
+        self.assertNotRegex(rtl, r"raw_shift\s*<=\s*32'd0")
+        self.assertRegex(rtl, r"reg \[RAW_CNT_W-1:0\] raw_bit_count")
+        self.assertRegex(rtl, r"RAW_CNT_W\s*=\s*\$clog2\(TRNG_RAW_PACK_BITS\)")
+        rows = {r[0]: r[1] for r in il.dpe.INTERFACE_INVENTORY}
+        self.assertEqual(rows["raw packing shift register"], {"dffq_1": 32})
+        self.assertEqual(rows["raw bit counter"], {"dffrnq_1": 5})
 
     def test_candidates_only_lower_area_and_flops(self):
         from harness import pdk as pdk_mod

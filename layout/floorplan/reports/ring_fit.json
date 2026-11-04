@@ -176,12 +176,12 @@
     "ring_bbox_um": {
       "x0": 0.0,
       "y0": 0.0,
-      "x1": 398.93,
-      "y1": 398.93
+      "x1": 395.71500000000003,
+      "y1": 395.71500000000003
     },
     "guard_inner_um": {
-      "w_um": 399.73,
-      "h_um": 399.73
+      "w_um": 396.515,
+      "h_um": 396.515
     },
     "ring_placement_clearance_um": 0.4,
     "fit_offset_um": {
@@ -206,9 +206,9 @@
       "category_counts": {},
       "counts": {
         "nets": {
-          "layout": 1535,
-          "reference": 1535,
-          "matched": 2047
+          "layout": 1468,
+          "reference": 1468,
+          "matched": 1953
         },
         "devices": {
           "layout": 0,
@@ -218,7 +218,7 @@
         "pins": {
           "layout": 111,
           "reference": 111,
-          "matched": 623
+          "matched": 596
         }
       }
     },

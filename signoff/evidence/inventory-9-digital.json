@@ -95,7 +95,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/max_transition_probe.py",
-          "sha256": "sha256:92b312795bd12ebd8926bbb9b0e4375e25d0064358dcd2773c61a0dc4ea97d8c"
+          "sha256": "sha256:aa55b5bcc44bc4c73e865731b3d96d07d678ef5289dfa902bd15fcd3782ee007"
         },
         {
           "path": "sim/tb/digital-sta-power/run_sta.py",
@@ -270,7 +270,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:e9ad0285e133324312c4a940cc04e3181299dd223c804758a763924529655f2b"
+      "sha256": "sha256:658a84c4704c72e4ca5bb3f7a52de54c51d5558d56a3c565d4d2c8607865f275"
     },
     {
       "path": "sim/README.md",

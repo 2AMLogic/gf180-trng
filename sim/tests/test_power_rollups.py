@@ -672,13 +672,13 @@ class InventoryStalenessTests(unittest.TestCase):
         # floorplan's own area rollup together.
         self.assertEqual(_param(RTL["interface"], "FIFO_DEPTH"), 2)
         # TRNG_LEVEL_BITS stays 4 although 2 would now cover 0..FIFO_DEPTH:
-        # trng_interface.v sizes raw_bit_count (a 0..31 RAW_PACK_BITS counter)
-        # off it, so narrowing it would silently truncate that counter --
-        # DR-0020's own sizing hazard. See design/interface/regmap.py.
+        # narrowing it is a regmap change (DR-0013/DR-0020), not an inventory
+        # tweak. raw_bit_count no longer depends on it (#709: it is sized from
+        # TRNG_RAW_PACK_BITS). See design/interface/regmap.py.
         self.assertEqual(_param(RTL["regmap"], "TRNG_LEVEL_BITS"), 4)
         self.assertEqual(_param(RTL["regmap"], "TRNG_RAW_PACK_BITS"), 32)
-        # 2 x 2 x 32 FIFO + 2 head + 8 count + 32 shift + 6 bitcount + 8 ctrl
-        self.assertEqual(_flops(dpe.INTERFACE_INVENTORY), 184)
+        # 2 x 2 x 32 FIFO + 2 head + 8 count + 32 shift + 5 bitcount + 8 ctrl
+        self.assertEqual(_flops(dpe.INTERFACE_INVENTORY), 183)
 
     def test_conditioner_inventory_is_the_one_area_estimate_ships(self):
         import area_estimate

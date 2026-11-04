@@ -291,7 +291,9 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
     entropy source's own share (393 + 17 µW) is unchanged by any of these
     substitutions — the digital section's own build is the only thing that
     moved.
-  - **Idle: missed, by ~2.2×** (2.12 µA at #264/#277's build before #293's
+  - **Idle: missed, by ~2.1×** (2.148 µA after #709's interface
+    `raw_shift` / `raw_bit_count` change, measured by `power_rollup.py`
+    with digital leakage 2.116 µA / 7.617 µW; 2.211 µA before it; 2.12 µA at #264/#277's build before #293's
     re-run, ~2.0× at the violating depth-2 build, ~4.1× at depth 8, 4.5×
     estimated). 2.21 µA at
     `ff`/+125 °C/3.63 V — analog block 32.8 nA (3.3 % of the row, measured
@@ -336,7 +338,8 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
 - **Area: the regenerated floorplan misses by 3.5×.** The row is
   `< 0.05 mm²`. The current figure is the regenerated depth-2 floorplan
   rollup in `layout/floorplan/reports/area.json` (#256, via #454):
-  **175 789.9 µm² including isolation channels, 351.6 % of the row** (a
+  **173 157.9 µm² including isolation channels, 346.3 % of the row** (175 789.9 µm²,
+  351.6 %, before #709's interface change; a
   floorplan-area sum; the row bounding box, 934.4 × 416.7 µm, is reported
   separately). The rest of this bullet is historical context from before
   that regeneration. #16's floorplan work had priced the block bottom-up
@@ -403,7 +406,8 @@ not that inventory.
 
 **What the 351.6 % is.** In `area.json` the rollup's `floorplan_area_um2` is
 the sum of the guarded-region areas plus the declared 20 µm isolation channels:
-175 789.9 µm² = 167 271.3 µm² guarded regions + 8 518.6 µm² channels, against
+173 157.9 µm² = 164 703.6 µm² guarded regions + 8 454.3 µm² channels (after #709; was
+175 789.9 µm² = 167 271.3 + 8 518.6), against
 the 50 000 µm² budget. Each of the four regions is sized from the bounding box
 of its committed, DRC-checked assembled GDS, not from a cell-area estimate:
 the digital region from `layout/digital/trng_top.gds` (398.93 × 398.93 µm, the

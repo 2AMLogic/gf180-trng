@@ -16,10 +16,10 @@
   "spef_path": null,
   "provenance": {
     "klt_version": "0.8.0",
-    "klayout_version": "0.30.12",
+    "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "PDK_ROOT environment variable",
+      "source": "search root: ~/.ciel",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
       "ambiguous_sources": [
         "search root: ~/.volare"
@@ -27,7 +27,7 @@
     },
     "deck": null,
     "input": {
-      "content_hash": "sha256:4685d4e248b54a898a5d2c6fa55c7fd22cf0b67659a1dc1b1e65306ad97fec7a",
+      "content_hash": "sha256:e3fb53047800ca2076b3bbbe8936fd5a09df39662a43a2007756233be5d970b5",
       "role": "layout"
     }
   },
@@ -40,13 +40,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "36e35e573f2841c3967914efea149d27",
+        "invocation_id": "85145bf07e194b0394fd9f91fe80012d",
         "script_name": "sta_trng_top__ss_125C_3v00__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "dfa0667367926617bd4809a5cdbbcd4b9e199004376567badb61ecd423dbbbb0",
+        "script_sha256": "1b2427f2f2ac8272400e408396cd3dfd2285903d4bc8538970fde6ff3b488923",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__min_metrics.json",
           "scope": "repo"
@@ -54,28 +54,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/85145bf07e194b0394fd9f91fe80012d",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/85145bf07e194b0394fd9f91fe80012d/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/85145bf07e194b0394fd9f91fe80012d/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/36e35e573f2841c3967914efea149d27/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/85145bf07e194b0394fd9f91fe80012d/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.8047,
+      "worst_slack_ns": 31.5628,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.36821,
+      "worst_hold_slack_ns": 2.37197,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 54.9593,
+      "fmax_mhz": 54.2382,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -122,9 +122,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.80471,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 31.56282,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -132,14 +132,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 2.36821,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 2.37197,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.14677,
-      "estimated_power_mw": 3.1611,
+      "clock_skew_ns": 0.12663,
+      "estimated_power_mw": 3.4047,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -147,10 +147,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -175,30 +175,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -327,7 +327,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -352,10 +352,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.976914,
+        "max_network_latency_ns": 3.019613,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -377,13 +377,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "c181049fd8a844d39cd915f528a7b708",
+        "invocation_id": "b22b4ebb58924a2683820f48ab28e4ab",
         "script_name": "sta_trng_top__ss_125C_3v00__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "f9c675759582bdcf1db9a43967281dc4e19dc006594e2420ec6a1837e3acbe3c",
+        "script_sha256": "e5d986e6f17362ae7c84771e6abc84d94466e5f5ebde4d8ccfd4d117c94f9708",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__nom_metrics.json",
           "scope": "repo"
@@ -391,28 +391,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b22b4ebb58924a2683820f48ab28e4ab",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b22b4ebb58924a2683820f48ab28e4ab/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b22b4ebb58924a2683820f48ab28e4ab/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c181049fd8a844d39cd915f528a7b708/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/b22b4ebb58924a2683820f48ab28e4ab/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.548,
+      "worst_slack_ns": 31.2381,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.37494,
+      "worst_hold_slack_ns": 2.37917,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 54.1948,
+      "fmax_mhz": 53.2996,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -459,9 +459,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.54803,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 31.23812,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -469,14 +469,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 2.37494,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 2.37917,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.1644,
-      "estimated_power_mw": 3.1932,
+      "clock_skew_ns": 0.14195,
+      "estimated_power_mw": 3.4403,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -484,10 +484,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -512,30 +512,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -664,7 +664,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -689,10 +689,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 3.067886,
+        "max_network_latency_ns": 3.101437,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -714,13 +714,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "265cc683857942fcbc4bd801b71fb8a6",
+        "invocation_id": "1257493ec58a4f5db570729e17cabcf3",
         "script_name": "sta_trng_top__ss_125C_3v00__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_125C_3v00__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "9994cf3a9e253fa89623ee3dfc4fb8e0845fed90dba4cdd0d73b0bf1c0f2b3ca",
+        "script_sha256": "49709ac63f00bdaf5c9e2572f8113f3fb0edec2b5744c79e1ff6823dfece848e",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_125C_3v00__max_metrics.json",
           "scope": "repo"
@@ -728,28 +728,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1257493ec58a4f5db570729e17cabcf3",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1257493ec58a4f5db570729e17cabcf3/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1257493ec58a4f5db570729e17cabcf3/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/265cc683857942fcbc4bd801b71fb8a6/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1257493ec58a4f5db570729e17cabcf3/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 31.2203,
+      "worst_slack_ns": 30.8411,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 2.38314,
+      "worst_hold_slack_ns": 2.38801,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 53.2489,
+      "fmax_mhz": 52.1951,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -796,9 +796,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 31.22028,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 30.84113,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -806,14 +806,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1415_/Q",
-        "endpoint": "u_interface/_1415_/D",
-        "slack_ns": 2.38314,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 2.38801,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.18427,
-      "estimated_power_mw": 3.2328,
+      "clock_skew_ns": 0.16173,
+      "estimated_power_mw": 3.4842,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -821,10 +821,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -849,30 +849,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -1001,7 +1001,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -1026,10 +1026,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 3.179895,
+        "max_network_latency_ns": 3.202914,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -1051,13 +1051,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "3d216e25fa9e4d9bb530bc671b2dcfe7",
+        "invocation_id": "74aa3a7cab024f998fcffdae8f884faa",
         "script_name": "sta_trng_top__ss_n40C_3v00__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "87f3b687ec4fe20fc4c370b2788a752b1942cab3157cf73f03817f347fbb0886",
+        "script_sha256": "787f70b3b1b30f9ec111143c7fcfe486dc448ee03c232a6b1088b6208330acca",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__min_metrics.json",
           "scope": "repo"
@@ -1065,28 +1065,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/74aa3a7cab024f998fcffdae8f884faa",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/74aa3a7cab024f998fcffdae8f884faa/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/74aa3a7cab024f998fcffdae8f884faa/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/3d216e25fa9e4d9bb530bc671b2dcfe7/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/74aa3a7cab024f998fcffdae8f884faa/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.5233,
+      "worst_slack_ns": 37.3059,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.64742,
+      "worst_hold_slack_ns": 1.65057,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 80.1496,
+      "fmax_mhz": 78.7768,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1133,9 +1133,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.52333,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 37.3059,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1143,14 +1143,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.64742,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.65057,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.10476,
-      "estimated_power_mw": 2.9914,
+      "clock_skew_ns": 0.09193,
+      "estimated_power_mw": 3.216,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1158,10 +1158,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -1186,30 +1186,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -1338,7 +1338,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -1363,10 +1363,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.133434,
+        "max_network_latency_ns": 2.162167,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -1388,13 +1388,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "dd557d80c71d43ee85cc1265a7e645ca",
+        "invocation_id": "adf283ed090b4ca984235fe0ea9ee84f",
         "script_name": "sta_trng_top__ss_n40C_3v00__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "aba234e03caf36982375c9a2f4ca41bade72481fdbfcc9b80de9bc7cbb83e3f1",
+        "script_sha256": "37f4f9f77bffeed2e1e0926e6037295269cf45d3db5fed0edc81edc6129360d1",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__nom_metrics.json",
           "scope": "repo"
@@ -1402,28 +1402,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/adf283ed090b4ca984235fe0ea9ee84f",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/adf283ed090b4ca984235fe0ea9ee84f/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/adf283ed090b4ca984235fe0ea9ee84f/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dd557d80c71d43ee85cc1265a7e645ca/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/adf283ed090b4ca984235fe0ea9ee84f/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.3486,
+      "worst_slack_ns": 37.0745,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.65079,
+      "worst_hold_slack_ns": 1.65422,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 79.0425,
+      "fmax_mhz": 77.3666,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1470,9 +1470,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.34858,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 37.07453,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1480,14 +1480,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.65079,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.65422,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.11739,
-      "estimated_power_mw": 3.0216,
+      "clock_skew_ns": 0.10542,
+      "estimated_power_mw": 3.2497,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1495,10 +1495,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -1523,30 +1523,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -1675,7 +1675,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -1700,10 +1700,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 2.200792,
+        "max_network_latency_ns": 2.225145,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -1725,13 +1725,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "5cdbf6a7b01243c996daf39940d3ff47",
+        "invocation_id": "4a2eb2923dbc494e948e56c9fa3535e1",
         "script_name": "sta_trng_top__ss_n40C_3v00__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ss_n40C_3v00__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "2b6863514ec9abc182727fe67a3758760f86c1edaf9b8ec31756612040bc5cb6",
+        "script_sha256": "fd022bf5bc001dfe48160c47fe2bfc9d6b3d613d9b6271bbc54eae7ed042a65a",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ss_n40C_3v00__max_metrics.json",
           "scope": "repo"
@@ -1739,28 +1739,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4a2eb2923dbc494e948e56c9fa3535e1",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4a2eb2923dbc494e948e56c9fa3535e1/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4a2eb2923dbc494e948e56c9fa3535e1/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5cdbf6a7b01243c996daf39940d3ff47/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4a2eb2923dbc494e948e56c9fa3535e1/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 37.1334,
+      "worst_slack_ns": 36.7888,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.65687,
+      "worst_hold_slack_ns": 1.6608,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 77.7203,
+      "fmax_mhz": 75.6936,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -1807,9 +1807,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1448_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 37.13335,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 36.78884,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -1817,14 +1817,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.65687,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.6608,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.13259,
-      "estimated_power_mw": 3.0588,
+      "clock_skew_ns": 0.12183,
+      "estimated_power_mw": 3.291,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -1832,10 +1832,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -1860,30 +1860,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -2012,7 +2012,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -2036,12 +2036,11 @@
         }
       },
       "clock_propagation": {
-        "clock_sinks": 3,
-        "max_network_latency_ns": 2.285004,
+        "clock_sinks": 2,
+        "max_network_latency_ns": 2.303206,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK",
-          "u_interface/_1445_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -2063,13 +2062,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "8bb2f73d248443708bff9609abc9546e",
+        "invocation_id": "2c99d851415e46b59b7b4931012e06d1",
         "script_name": "sta_trng_top__tt_025C_3v30__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "df6712a41154db1681398c97721f9d16d3ee6b4d7b30c5d368d11406884486de",
+        "script_sha256": "c0a4dc98cf6a7418c85cd1bc2356705668e166fb70ed08db2b86180d9f062748",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__min_metrics.json",
           "scope": "repo"
@@ -2077,28 +2076,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/2c99d851415e46b59b7b4931012e06d1",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/2c99d851415e46b59b7b4931012e06d1/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/2c99d851415e46b59b7b4931012e06d1/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8bb2f73d248443708bff9609abc9546e/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/2c99d851415e46b59b7b4931012e06d1/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.8619,
+      "worst_slack_ns": 40.616,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.19689,
+      "worst_hold_slack_ns": 1.19887,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 109.433,
+      "fmax_mhz": 106.564,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2145,9 +2144,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.86195,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 40.61596,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2155,14 +2154,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.19689,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.19887,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.07934,
-      "estimated_power_mw": 3.7833,
+      "clock_skew_ns": 0.06685,
+      "estimated_power_mw": 4.0819,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2170,10 +2169,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -2198,30 +2197,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -2350,7 +2349,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -2375,10 +2374,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.577398,
+        "max_network_latency_ns": 1.596632,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -2400,13 +2399,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "dfd811c9f2604c579a3576ce709bf932",
+        "invocation_id": "415c1c0465314fb1b664679cc8730782",
         "script_name": "sta_trng_top__tt_025C_3v30__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "c84dd196c4a2c86de81d028c826c1d8e9338e11b1597635d8e2c0574013531b1",
+        "script_sha256": "fa6156280caf3f1f76d2216df83558b9979427423f4c2c522fbf720cc50ff820",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__nom_metrics.json",
           "scope": "repo"
@@ -2414,28 +2413,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/415c1c0465314fb1b664679cc8730782",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/415c1c0465314fb1b664679cc8730782/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/415c1c0465314fb1b664679cc8730782/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/dfd811c9f2604c579a3576ce709bf932/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/415c1c0465314fb1b664679cc8730782/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.7397,
+      "worst_slack_ns": 40.4502,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.20045,
+      "worst_hold_slack_ns": 1.20271,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 107.987,
+      "fmax_mhz": 104.714,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2482,9 +2481,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.73965,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 40.45022,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2492,14 +2491,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.20045,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.20271,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.08874,
-      "estimated_power_mw": 3.8245,
+      "clock_skew_ns": 0.07667,
+      "estimated_power_mw": 4.1274,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2507,10 +2506,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -2535,30 +2534,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -2687,7 +2686,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -2712,10 +2711,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.625772,
+        "max_network_latency_ns": 1.641466,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -2737,13 +2736,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "8b3658d23f744620b493e8ded4a3d63f",
+        "invocation_id": "cf991f0e512f421eb50603ff455a087b",
         "script_name": "sta_trng_top__tt_025C_3v30__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__tt_025C_3v30__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "93cf5fd9b7abda09f8f5a11285a8652f63410d0064f5fc2b932bdecbb24464a7",
+        "script_sha256": "cb87fe7883d10761d3860d4f5eaac4768f69c7bf3736abad459224448523da27",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__tt_025C_3v30__max_metrics.json",
           "scope": "repo"
@@ -2751,28 +2750,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/cf991f0e512f421eb50603ff455a087b",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/cf991f0e512f421eb50603ff455a087b/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/cf991f0e512f421eb50603ff455a087b/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/8b3658d23f744620b493e8ded4a3d63f/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/cf991f0e512f421eb50603ff455a087b/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 40.5896,
+      "worst_slack_ns": 40.2464,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.20481,
+      "worst_hold_slack_ns": 1.20735,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 106.265,
+      "fmax_mhz": 102.526,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -2819,9 +2818,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 40.5896,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 40.24638,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -2829,14 +2828,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.20481,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.20735,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.10043,
-      "estimated_power_mw": 3.8754,
+      "clock_skew_ns": 0.08866,
+      "estimated_power_mw": 4.1834,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -2844,10 +2843,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -2872,30 +2871,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -3024,7 +3023,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -3049,10 +3048,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.68665,
+        "max_network_latency_ns": 1.697303,
         "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -3074,13 +3073,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "4ba0cc7475774686b79722df63639d65",
+        "invocation_id": "f586d07b6bb54bac9104a6197110f346",
         "script_name": "sta_trng_top__ff_125C_3v60__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "c8752c34b603a408b760a225643aa7260e29530ac7121723a02e46438e1da1a3",
+        "script_sha256": "46ba5da3152c6f2a3515994938dac7d2c25cee7ce7b282f53d73b02c227f409a",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__min_metrics.json",
           "scope": "repo"
@@ -3088,28 +3087,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/f586d07b6bb54bac9104a6197110f346",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/f586d07b6bb54bac9104a6197110f346/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/f586d07b6bb54bac9104a6197110f346/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4ba0cc7475774686b79722df63639d65/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/f586d07b6bb54bac9104a6197110f346/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 42.2954,
+      "worst_slack_ns": 42.0571,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.99982,
+      "worst_hold_slack_ns": 1.00114,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 129.793,
+      "fmax_mhz": 125.899,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -3156,9 +3155,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 42.29542,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 42.05713,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -3166,14 +3165,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.99982,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.00114,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.06569,
-      "estimated_power_mw": 4.8954,
+      "clock_skew_ns": 0.05441,
+      "estimated_power_mw": 5.3037,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -3181,10 +3180,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -3209,30 +3208,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -3361,7 +3360,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -3386,10 +3385,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.314584,
+        "max_network_latency_ns": 1.329841,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -3411,13 +3410,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "c15e877335f745a8b82d7d829d85135f",
+        "invocation_id": "4308cbffcf0c445b8d6867b82cae947b",
         "script_name": "sta_trng_top__ff_125C_3v60__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "e78bfbeaca35f3ec87223bf87a85cb97fd2e5f1d683513dba98d306269d31c3e",
+        "script_sha256": "e700bf98944bd55c7839973e6f17e05463bc2027986e52ac5c1a30c35445f1bf",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__nom_metrics.json",
           "scope": "repo"
@@ -3425,28 +3424,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4308cbffcf0c445b8d6867b82cae947b",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4308cbffcf0c445b8d6867b82cae947b/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4308cbffcf0c445b8d6867b82cae947b/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/c15e877335f745a8b82d7d829d85135f/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/4308cbffcf0c445b8d6867b82cae947b/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 42.1859,
+      "worst_slack_ns": 41.9166,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.0028,
+      "worst_hold_slack_ns": 1.00429,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 127.973,
+      "fmax_mhz": 123.71,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -3493,9 +3492,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 42.18586,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 41.91656,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -3503,14 +3502,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 1.0028,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.00429,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.07343,
-      "estimated_power_mw": 4.9539,
+      "clock_skew_ns": 0.06271,
+      "estimated_power_mw": 5.3672,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -3518,10 +3517,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -3546,30 +3545,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -3698,7 +3697,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -3723,10 +3722,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.354281,
+        "max_network_latency_ns": 1.366718,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -3748,13 +3747,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "66265fc0072240f08808cb36170ec78a",
+        "invocation_id": "a0f859cfc4b84882a6333fbbf20799e6",
         "script_name": "sta_trng_top__ff_125C_3v60__max.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_125C_3v60__max.tcl",
           "scope": "repo"
         },
-        "script_sha256": "959b1498bf65767f312bad58ce9909cf812e1f8244ca12a3796b71bb8c4748c9",
+        "script_sha256": "5b3fa677900a84a2ebc8def552852798aa5905ea1a13155195c85bffe5543c80",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_125C_3v60__max_metrics.json",
           "scope": "repo"
@@ -3762,28 +3761,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/a0f859cfc4b84882a6333fbbf20799e6",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/a0f859cfc4b84882a6333fbbf20799e6/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/a0f859cfc4b84882a6333fbbf20799e6/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/66265fc0072240f08808cb36170ec78a/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/a0f859cfc4b84882a6333fbbf20799e6/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 42.0351,
+      "worst_slack_ns": 41.7475,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 1.00638,
+      "worst_hold_slack_ns": 1.00811,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 125.551,
+      "fmax_mhz": 121.175,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -3830,9 +3829,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_ring_liveness/_174_/Q",
-        "endpoint": "u_health_test/_431_/D",
-        "slack_ns": 42.03513,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 41.74748,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -3840,14 +3839,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1415_/Q",
-        "endpoint": "u_interface/_1415_/D",
-        "slack_ns": 1.00638,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 1.00811,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.08317,
-      "estimated_power_mw": 5.0263,
+      "clock_skew_ns": 0.07271,
+      "estimated_power_mw": 5.4456,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -3855,10 +3854,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -3883,30 +3882,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -4035,7 +4034,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -4060,10 +4059,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 1.403997,
+        "max_network_latency_ns": 1.412524,
         "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -4085,13 +4084,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "5d7b08c6a8c94a74ad864adfb034d198",
+        "invocation_id": "bf2642a0b753457888095196118b8db2",
         "script_name": "sta_trng_top__ff_n40C_3v60__min.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__min.tcl",
           "scope": "repo"
         },
-        "script_sha256": "1c2f652c8421eaf91e3747167347b5e77bf76cdb414d3ec28451579012f07331",
+        "script_sha256": "278e364f3a4a4842349191a6677ad10a58a917286b5cb380d764c62b33f7749e",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__min_metrics.json",
           "scope": "repo"
@@ -4099,28 +4098,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/bf2642a0b753457888095196118b8db2",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/bf2642a0b753457888095196118b8db2/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/bf2642a0b753457888095196118b8db2/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/5d7b08c6a8c94a74ad864adfb034d198/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/bf2642a0b753457888095196118b8db2/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 44.6125,
+      "worst_slack_ns": 44.5048,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69456,
+      "worst_hold_slack_ns": 0.69576,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 185.615,
+      "fmax_mhz": 181.976,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -4167,9 +4166,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_425_/D",
-        "slack_ns": 44.6125,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 44.50476,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -4177,14 +4176,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69456,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 0.69576,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.04949,
-      "estimated_power_mw": 4.5899,
+      "clock_skew_ns": 0.04238,
+      "estimated_power_mw": 4.9616,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -4192,10 +4191,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -4220,30 +4219,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -4372,7 +4371,7 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -4397,10 +4396,10 @@
       },
       "clock_propagation": {
         "clock_sinks": 2,
-        "max_network_latency_ns": 0.967111,
+        "max_network_latency_ns": 0.979679,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_ring_liveness/_176_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
         ]
       },
       "sdf": null,
@@ -4422,13 +4421,13 @@
         "scope": "repo"
       },
       "engine_log": {
-        "invocation_id": "1cccd547dccc47aa8aca27f7758fea73",
+        "invocation_id": "750428ee0a1b4846a26fd18e8eb8da2c",
         "script_name": "sta_trng_top__ff_n40C_3v60__nom.tcl",
         "script_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__nom.tcl",
           "scope": "repo"
         },
-        "script_sha256": "fc01056c8cbdfd8e0253765e7abe6e53d0e95034c3a6a616347ad6bddb3ad886",
+        "script_sha256": "59afe143ea030bdf938f63006e56b693b4692312efc7894510a0fb56be4b33fa",
         "metrics_path": {
           "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__nom_metrics.json",
           "scope": "repo"
@@ -4436,28 +4435,28 @@
         "outcome": "exited",
         "returncode": 0,
         "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/750428ee0a1b4846a26fd18e8eb8da2c",
           "scope": "repo"
         },
         "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/stdout.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/750428ee0a1b4846a26fd18e8eb8da2c/stdout.log",
           "scope": "repo"
         },
         "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/stderr.log",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/750428ee0a1b4846a26fd18e8eb8da2c/stderr.log",
           "scope": "repo"
         },
         "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/1cccd547dccc47aa8aca27f7758fea73/invocation.json",
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/750428ee0a1b4846a26fd18e8eb8da2c/invocation.json",
           "scope": "repo"
         },
         "retention_errors": []
       },
-      "worst_slack_ns": 44.5369,
+      "worst_slack_ns": 44.405,
       "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69662,
+      "worst_hold_slack_ns": 0.69799,
       "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 183.045,
+      "fmax_mhz": 178.732,
       "timing_status": "constrained",
       "constraint_completeness": {
         "status": "incomplete",
@@ -4504,9 +4503,9 @@
         "status": "ok",
         "check_type": "setup",
         "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_398_/D",
-        "slack_ns": 44.53686,
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 44.40501,
         "consistent_with_aggregate": true,
         "reason": null
       },
@@ -4514,14 +4513,14 @@
         "status": "ok",
         "check_type": "hold",
         "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69662,
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 0.69799,
         "consistent_with_aggregate": true,
         "reason": null
       },
-      "clock_skew_ns": 0.0552,
-      "estimated_power_mw": 4.6434,
+      "clock_skew_ns": 0.0481,
+      "estimated_power_mw": 5.0206,
       "power_basis": {
         "activity_source": "engine_default",
         "activity": null,
@@ -4529,10 +4528,10 @@
         "parasitics": "spef_annotated"
       },
       "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
         "design_nets_missing_sample": [
           "reg_wdata[10]",
           "reg_wdata[11]",
@@ -4557,30 +4556,30 @@
         ],
         "reader_warning_count": 0,
         "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
+        "unannotated_driver_count": 53,
         "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
+        "floating_driver_count": 27,
         "floating_driver_sample": [
-          "clkload0/Z",
+          "clkload0/ZN",
           "clkload1/ZN",
           "clkload10/ZN",
           "clkload11/ZN",
           "clkload12/ZN",
-          "clkload13/ZN",
+          "clkload13/Z",
           "clkload14/ZN",
-          "clkload15/ZN",
+          "clkload15/Z",
           "clkload16/ZN",
           "clkload17/ZN",
           "clkload18/ZN",
           "clkload19/ZN",
           "clkload2/ZN",
           "clkload20/ZN",
-          "clkload21/ZN",
           "clkload3/ZN",
           "clkload4/ZN",
           "clkload5/ZN",
           "clkload6/ZN",
-          "clkload7/ZN"
+          "clkload7/ZN",
+          "clkload8/ZN"
         ],
         "unannotated_driver_sample": [
           "reg_wdata[10]",
@@ -4709,7 +4708,344 @@
         "partially_unannotated_driver_sample": [],
         "delay_changed": true,
         "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "electrical_checks": {
+        "parasitics_source": "spef",
+        "max_transition": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "ns",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        },
+        "max_capacitance": {
+          "coverage": "checked",
+          "limit_source": "liberty",
+          "unit": "pF",
+          "violation_count": 0,
+          "net_count": 0,
+          "worst_excess": null,
+          "worst_pin": null
+        }
+      },
+      "clock_propagation": {
+        "clock_sinks": 2,
+        "max_network_latency_ns": 1.008234,
+        "clock_sinks_sample": [
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK"
+        ]
+      },
+      "sdf": null,
+      "deck": {
+        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
+        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
+        "released": false,
+        "path": {
+          "path": null,
+          "scope": "external"
+        }
+      }
+    },
+    {
+      "corner": "ff_n40C_3v60",
+      "interconnect_corner": "max",
+      "spef_path": {
+        "path": "layout/.work/digital-sta/klt-sta/trng_top.max.spef",
+        "scope": "repo"
+      },
+      "engine_log": {
+        "invocation_id": "57637e7a6a8544b0b24d0db36ccdd18a",
+        "script_name": "sta_trng_top__ff_n40C_3v60__max.tcl",
+        "script_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__max.tcl",
+          "scope": "repo"
+        },
+        "script_sha256": "491922f8c90535483b4cd87a57ca8b0ed9fcae572c236c32120398235581b56b",
+        "metrics_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__max_metrics.json",
+          "scope": "repo"
+        },
+        "outcome": "exited",
+        "returncode": 0,
+        "directory": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/57637e7a6a8544b0b24d0db36ccdd18a",
+          "scope": "repo"
+        },
+        "stdout_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/57637e7a6a8544b0b24d0db36ccdd18a/stdout.log",
+          "scope": "repo"
+        },
+        "stderr_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/57637e7a6a8544b0b24d0db36ccdd18a/stderr.log",
+          "scope": "repo"
+        },
+        "metadata_path": {
+          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/57637e7a6a8544b0b24d0db36ccdd18a/invocation.json",
+          "scope": "repo"
+        },
+        "retention_errors": []
+      },
+      "worst_slack_ns": 44.2844,
+      "total_negative_slack_ns": 0,
+      "worst_hold_slack_ns": 0.70078,
+      "total_negative_hold_slack_ns": 0,
+      "fmax_mhz": 174.961,
+      "timing_status": "constrained",
+      "constraint_completeness": {
+        "status": "incomplete",
+        "unconstrained_endpoints": {
+          "status": "ok",
+          "count": 68,
+          "sample": [
+            "ht_alarm",
+            "reg_rdata[0]",
+            "reg_rdata[10]",
+            "reg_rdata[11]",
+            "reg_rdata[12]",
+            "reg_rdata[13]",
+            "reg_rdata[14]",
+            "reg_rdata[15]",
+            "reg_rdata[16]",
+            "reg_rdata[17]",
+            "reg_rdata[18]",
+            "reg_rdata[19]",
+            "reg_rdata[1]",
+            "reg_rdata[20]",
+            "reg_rdata[21]",
+            "reg_rdata[22]",
+            "reg_rdata[23]",
+            "reg_rdata[24]",
+            "reg_rdata[25]",
+            "reg_rdata[26]"
+          ],
+          "truncated": true,
+          "reason": null
+        },
+        "unclocked_registers": {
+          "status": "ok",
+          "count": 0,
+          "sample": [],
+          "truncated": false,
+          "reason": null
+        },
+        "sample_limit": 20
+      },
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "worst_setup_path": {
+        "status": "ok",
+        "check_type": "setup",
+        "engine_check_role": "setup",
+        "startpoint": "u_interface/_1317_/Q",
+        "endpoint": "u_interface/_1203_/D",
+        "slack_ns": 44.28443,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "worst_hold_path": {
+        "status": "ok",
+        "check_type": "hold",
+        "engine_check_role": "hold",
+        "startpoint": "u_interface/_1229_/Q",
+        "endpoint": "u_interface/_1229_/D",
+        "slack_ns": 0.70078,
+        "consistent_with_aggregate": true,
+        "reason": null
+      },
+      "clock_skew_ns": 0.05462,
+      "estimated_power_mw": 5.0937,
+      "power_basis": {
+        "activity_source": "engine_default",
+        "activity": null,
+        "duty": null,
+        "parasitics": "spef_annotated"
+      },
+      "spef_annotation": {
+        "nets_annotated": 1413,
+        "nets_total": 1413,
+        "design_nets_annotated": 1413,
+        "design_nets_total": 1447,
+        "design_nets_missing_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "reader_warning_count": 0,
+        "reader_warning_sample": [],
+        "unannotated_driver_count": 53,
+        "partially_unannotated_driver_count": 0,
+        "floating_driver_count": 27,
+        "floating_driver_sample": [
+          "clkload0/ZN",
+          "clkload1/ZN",
+          "clkload10/ZN",
+          "clkload11/ZN",
+          "clkload12/ZN",
+          "clkload13/Z",
+          "clkload14/ZN",
+          "clkload15/Z",
+          "clkload16/ZN",
+          "clkload17/ZN",
+          "clkload18/ZN",
+          "clkload19/ZN",
+          "clkload2/ZN",
+          "clkload20/ZN",
+          "clkload3/ZN",
+          "clkload4/ZN",
+          "clkload5/ZN",
+          "clkload6/ZN",
+          "clkload7/ZN",
+          "clkload8/ZN"
+        ],
+        "unannotated_driver_sample": [
+          "reg_wdata[10]",
+          "reg_wdata[11]",
+          "reg_wdata[12]",
+          "reg_wdata[13]",
+          "reg_wdata[14]",
+          "reg_wdata[15]",
+          "reg_wdata[16]",
+          "reg_wdata[17]",
+          "reg_wdata[18]",
+          "reg_wdata[19]",
+          "reg_wdata[20]",
+          "reg_wdata[21]",
+          "reg_wdata[22]",
+          "reg_wdata[23]",
+          "reg_wdata[24]",
+          "reg_wdata[25]",
+          "reg_wdata[26]",
+          "reg_wdata[27]",
+          "reg_wdata[28]",
+          "reg_wdata[29]"
+        ],
+        "unannotated_driver_detail": [
+          {
+            "pin": "reg_wdata[10]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[11]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[12]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[13]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[14]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[15]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[16]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[17]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[18]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[19]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[20]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[21]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[22]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[23]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[24]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[25]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[26]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[27]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[28]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          },
+          {
+            "pin": "reg_wdata[29]",
+            "net_status": "net_with_other_pins",
+            "net": null
+          }
+        ],
+        "partially_unannotated_driver_sample": [],
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 1413 of 1447 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
       },
       "electrical_checks": {
         "parasitics_source": "spef",
@@ -4734,348 +5070,11 @@
       },
       "clock_propagation": {
         "clock_sinks": 3,
-        "max_network_latency_ns": 0.998264,
+        "max_network_latency_ns": 1.042732,
         "clock_sinks_sample": [
-          "u_health_test/_434_/CLK",
-          "u_interface/_1309_/CLK",
-          "u_interface/_1445_/CLK"
-        ]
-      },
-      "sdf": null,
-      "deck": {
-        "name": "gf180mcu_fd_sc_mcu9t5v0__ff_n40C_3v60",
-        "content_hash": "sha256:0b48b93d6800da325a2613ff6c0b998b230a1bbd28031f6da592e9ff30066602",
-        "released": false,
-        "path": {
-          "path": null,
-          "scope": "external"
-        }
-      }
-    },
-    {
-      "corner": "ff_n40C_3v60",
-      "interconnect_corner": "max",
-      "spef_path": {
-        "path": "layout/.work/digital-sta/klt-sta/trng_top.max.spef",
-        "scope": "repo"
-      },
-      "engine_log": {
-        "invocation_id": "6dcfc9d16d0749cdad1957e256c218d0",
-        "script_name": "sta_trng_top__ff_n40C_3v60__max.tcl",
-        "script_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/sta_trng_top__ff_n40C_3v60__max.tcl",
-          "scope": "repo"
-        },
-        "script_sha256": "791397ad612b0ae1c2a6b1d9d254920b4ac95b8f54334c9bbb67e56878db0746",
-        "metrics_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/trng_top__ff_n40C_3v60__max_metrics.json",
-          "scope": "repo"
-        },
-        "outcome": "exited",
-        "returncode": 0,
-        "directory": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0",
-          "scope": "repo"
-        },
-        "stdout_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/stdout.log",
-          "scope": "repo"
-        },
-        "stderr_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/stderr.log",
-          "scope": "repo"
-        },
-        "metadata_path": {
-          "path": "layout/.work/digital-sta/klt-sta/.klt/sta/openroad-logs/6dcfc9d16d0749cdad1957e256c218d0/invocation.json",
-          "scope": "repo"
-        },
-        "retention_errors": []
-      },
-      "worst_slack_ns": 44.4412,
-      "total_negative_slack_ns": 0,
-      "worst_hold_slack_ns": 0.69915,
-      "total_negative_hold_slack_ns": 0,
-      "fmax_mhz": 179.895,
-      "timing_status": "constrained",
-      "constraint_completeness": {
-        "status": "incomplete",
-        "unconstrained_endpoints": {
-          "status": "ok",
-          "count": 68,
-          "sample": [
-            "ht_alarm",
-            "reg_rdata[0]",
-            "reg_rdata[10]",
-            "reg_rdata[11]",
-            "reg_rdata[12]",
-            "reg_rdata[13]",
-            "reg_rdata[14]",
-            "reg_rdata[15]",
-            "reg_rdata[16]",
-            "reg_rdata[17]",
-            "reg_rdata[18]",
-            "reg_rdata[19]",
-            "reg_rdata[1]",
-            "reg_rdata[20]",
-            "reg_rdata[21]",
-            "reg_rdata[22]",
-            "reg_rdata[23]",
-            "reg_rdata[24]",
-            "reg_rdata[25]",
-            "reg_rdata[26]"
-          ],
-          "truncated": true,
-          "reason": null
-        },
-        "unclocked_registers": {
-          "status": "ok",
-          "count": 0,
-          "sample": [],
-          "truncated": false,
-          "reason": null
-        },
-        "sample_limit": 20
-      },
-      "setup_violation_count": 0,
-      "hold_violation_count": 0,
-      "worst_setup_path": {
-        "status": "ok",
-        "check_type": "setup",
-        "engine_check_role": "setup",
-        "startpoint": "u_interface/_1447_/Q",
-        "endpoint": "u_conditioner/_398_/D",
-        "slack_ns": 44.44119,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "worst_hold_path": {
-        "status": "ok",
-        "check_type": "hold",
-        "engine_check_role": "hold",
-        "startpoint": "u_interface/_1284_/Q",
-        "endpoint": "u_interface/_1284_/D",
-        "slack_ns": 0.69915,
-        "consistent_with_aggregate": true,
-        "reason": null
-      },
-      "clock_skew_ns": 0.06281,
-      "estimated_power_mw": 4.7098,
-      "power_basis": {
-        "activity_source": "engine_default",
-        "activity": null,
-        "duty": null,
-        "parasitics": "spef_annotated"
-      },
-      "spef_annotation": {
-        "nets_annotated": 1479,
-        "nets_total": 1479,
-        "design_nets_annotated": 1479,
-        "design_nets_total": 1513,
-        "design_nets_missing_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "reader_warning_count": 0,
-        "reader_warning_sample": [],
-        "unannotated_driver_count": 54,
-        "partially_unannotated_driver_count": 0,
-        "floating_driver_count": 28,
-        "floating_driver_sample": [
-          "clkload0/Z",
-          "clkload1/ZN",
-          "clkload10/ZN",
-          "clkload11/ZN",
-          "clkload12/ZN",
-          "clkload13/ZN",
-          "clkload14/ZN",
-          "clkload15/ZN",
-          "clkload16/ZN",
-          "clkload17/ZN",
-          "clkload18/ZN",
-          "clkload19/ZN",
-          "clkload2/ZN",
-          "clkload20/ZN",
-          "clkload21/ZN",
-          "clkload3/ZN",
-          "clkload4/ZN",
-          "clkload5/ZN",
-          "clkload6/ZN",
-          "clkload7/ZN"
-        ],
-        "unannotated_driver_sample": [
-          "reg_wdata[10]",
-          "reg_wdata[11]",
-          "reg_wdata[12]",
-          "reg_wdata[13]",
-          "reg_wdata[14]",
-          "reg_wdata[15]",
-          "reg_wdata[16]",
-          "reg_wdata[17]",
-          "reg_wdata[18]",
-          "reg_wdata[19]",
-          "reg_wdata[20]",
-          "reg_wdata[21]",
-          "reg_wdata[22]",
-          "reg_wdata[23]",
-          "reg_wdata[24]",
-          "reg_wdata[25]",
-          "reg_wdata[26]",
-          "reg_wdata[27]",
-          "reg_wdata[28]",
-          "reg_wdata[29]"
-        ],
-        "unannotated_driver_detail": [
-          {
-            "pin": "reg_wdata[10]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[11]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[12]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[13]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[14]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[15]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[16]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[17]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[18]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[19]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[20]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[21]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[22]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[23]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[24]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[25]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[26]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[27]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[28]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          },
-          {
-            "pin": "reg_wdata[29]",
-            "net_status": "net_with_other_pins",
-            "net": null
-          }
-        ],
-        "partially_unannotated_driver_sample": [],
-        "delay_changed": true,
-        "annotation_complete": false,
-        "annotation_warning": "only 1479 of 1513 nets in the linked design are named by this SPEF; report_parasitic_annotation found 26 driver(s) with no parasitics attached after read_spef (first: reg_wdata[10], net_with_other_pins) -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
-      },
-      "electrical_checks": {
-        "parasitics_source": "spef",
-        "max_transition": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "ns",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        },
-        "max_capacitance": {
-          "coverage": "checked",
-          "limit_source": "liberty",
-          "unit": "pF",
-          "violation_count": 0,
-          "net_count": 0,
-          "worst_excess": null,
-          "worst_pin": null
-        }
-      },
-      "clock_propagation": {
-        "clock_sinks": 2,
-        "max_network_latency_ns": 1.036934,
-        "clock_sinks_sample": [
-          "u_interface/_1445_/CLK",
-          "u_interface/_1309_/CLK"
+          "u_interface/_1203_/CLK",
+          "u_interface/_1147_/CLK",
+          "u_interface/_1254_/CLK"
         ]
       },
       "sdf": null,
