@@ -6,6 +6,13 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-04
 
+- **Issue #734** (closed): Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
+- **PR #737**: docs: record measured DR-0029 follow-up for the extracted ro-array startup family
+- **PR #732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
+- **Issue #710** (closed): Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2
+- **PR #768**: docs(floorplan): re-run the utilisation sweep on the post-709 inventory
+- **Issue #730** (closed): Reconcile README/spec-row-status whole-block active figure (758.2 uW) with re-measured 749.4 uW
+- **PR #765**: docs: quote post-#729 active power figure and regenerate signoff citations
 - **PR #729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
 - **Issue #709** (closed): Area and power: FIFO and cell-inventory reductions toward the ratified bounds
 
