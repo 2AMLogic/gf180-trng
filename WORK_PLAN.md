@@ -39,7 +39,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#772**: docs(sim): record measured ring2 paired PEX grid under klt 0.9.0, unpublished pending pin decision
 
 ## Approved (Awaiting Merge)
 
@@ -81,7 +81,7 @@ _None._
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 12 |
 | Architect / Hermit proposals | 0 |
