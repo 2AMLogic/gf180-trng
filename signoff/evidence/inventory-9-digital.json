@@ -159,7 +159,7 @@
       "files": [
         {
           "path": "sim/tb/power-intent/README.md",
-          "sha256": "sha256:11a00f2e0c9207af5a1a7233a5993ae7cdc7ff6349d866288ce8b8dff9d34110"
+          "sha256": "sha256:8a2b8aa5c8043f4a2374cef091748297c22bfdd7efad38f63268b16cf2d09113"
         },
         {
           "path": "sim/tb/power-intent/pi_cells.v",
@@ -167,7 +167,7 @@
         },
         {
           "path": "sim/tb/power-intent/tb_power_intent.v",
-          "sha256": "sha256:7135e279f8f1ba05d89f25d08c644b662d27aa6c2ed3de4528c79aa77ee70f8d"
+          "sha256": "sha256:7fb321a5213981ca2ba163496f25a45d31267a1b39614decfa044782fb6a4502"
         }
       ]
     },
