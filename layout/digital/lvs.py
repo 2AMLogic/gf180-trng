@@ -166,8 +166,10 @@ REPORTS_DIR = DIGITAL_DIR / "reports"
 WORK_DIR = REPO_ROOT / "layout" / ".work" / "digital-lvs"
 
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "design"))
 
 from layout._klt import _run_klt, klt_origin, klt_version  # noqa: E402
+from spice_text import SUBCKT_HEADER_RE, join_spice_continuations  # noqa: E402
 
 PNR_NETLIST_PATH = DIGITAL_DIR / "trng_top.pnr.v"
 GDS_PATH = DIGITAL_DIR / "trng_top.gds"
@@ -200,13 +202,6 @@ POWER_PINS = ("VDD", "VSS")
 #: `_def_physical_only_instances` reads the tapcell/endcap/filler instances
 #: back out of the committed DEF through this.
 _COMPONENT_ENTRY_RE = re.compile(r"^\s*-\s+(\S+)\s+(\S+)", re.M)
-
-#: Matches a `.SUBCKT <name> <pins...>` header line (SPICE keywords are
-#: case-insensitive, but every writer this script's output is compared
-#: against -- `klt extract`'s own -- emits upper-case, so this only matches
-#: that). `_library_cell_pins` reads each abstracted cell type's resolved
-#: interface back out of `trng_top.extracted.spice` through this.
-_SUBCKT_HEADER_RE = re.compile(r"^\.SUBCKT\s+(\S+)\s+(.*)$", re.M)
 
 
 class LvsFlowError(RuntimeError):
@@ -375,36 +370,6 @@ def _bit_names(module: dict) -> dict[int, str]:
     return names
 
 
-def _join_spice_continuations(text: str) -> str:
-    """Fold every SPICE `+`-prefixed continuation line into its card.
-
-    A continuation attaches to the last non-comment line, so `*` comment
-    lines between a card and its `+` line are left in place and do not
-    swallow the continued tokens (HSPICE-style). A blank line is not a
-    comment: a `+` after one attaches to the blank line, as before. A `+`
-    with no earlier non-comment line (start of file, or only comments
-    before it) has nothing to continue and is passed through unchanged.
-
-    None of this design's cell-type `.SUBCKT` headers happen to wrap (the
-    widest, `aoi222_1`, is 10 pins on one line, verified directly against
-    `trng_top.extracted.spice`) but the *top-level* `trng_top` header does
-    (109 pins), and nothing about SPICE's line-length convention guarantees
-    a future cell type stays under it either -- so `_library_cell_pins`
-    parses this joined form rather than assuming one physical line per
-    logical one.
-    """
-    joined: list[str] = []
-    card: int | None = None  # index in `joined` of the last non-comment line
-    for line in text.split("\n"):
-        if line.startswith("+") and card is not None:
-            joined[card] = f"{joined[card]} {line[1:].strip()}"
-            continue
-        joined.append(line)
-        if not line.startswith("*"):
-            card = len(joined) - 1
-    return "\n".join(joined)
-
-
 def _library_cell_pins(
     extracted_path: Path, cell_types: set[str]
 ) -> dict[str, list[str]]:
@@ -425,10 +390,10 @@ def _library_cell_pins(
     `klt extract`'s own output instead means the reference always agrees
     with the layout side on what each cell type's pins are, by construction.
     """
-    text = _join_spice_continuations(extracted_path.read_text(errors="replace"))
+    text = join_spice_continuations(extracted_path.read_text(errors="replace"))
     found: dict[str, list[str]] = {
         name: pins.split()
-        for name, pins in _SUBCKT_HEADER_RE.findall(text)
+        for name, pins in SUBCKT_HEADER_RE.findall(text)
         if name in cell_types
     }
     missing = cell_types - found.keys()
