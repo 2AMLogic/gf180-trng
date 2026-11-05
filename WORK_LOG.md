@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-04.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-05.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-05
+
+- **PR #771**: docs(signoff): record working klt yield install route and the missing limit blocking item 6
+- **Issue #707** (closed): Power gating: design a custom power-switch cell for the digital section
 
 ### 2026-11-04
 
