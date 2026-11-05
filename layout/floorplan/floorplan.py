@@ -96,6 +96,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
+from spice_text import subckt_pins  # noqa: E402  (design/spice_text.py)
 from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 from layout.floorplan import erc_supply  # noqa: E402  (issue #447)
@@ -923,35 +924,17 @@ def run_lvs(
     return _run_klt(["lvs", str(request_path.relative_to(REPO_ROOT))])
 
 
-_SUBCKT_HEADER_RE = re.compile(r"^\.subckt\s+(\S+)\s+(.*)$", re.MULTILINE | re.IGNORECASE)
-
-
 def _reference_top_pins(reference: Path, top: str) -> list[str]:
     """The declared pin list off `reference`'s own `.SUBCKT <top> ...`
-    header, joining SPICE's `+`-prefixed continuation lines first.
-
-    A small, purpose-built copy of `layout/digital/lvs.py`'s own
-    `_join_spice_continuations`/`_SUBCKT_HEADER_RE` helpers, not an import
-    of them: this one only ever *reads* a header a reference file already
-    carries (whether that script wrote it, for `digital`, or a region's own
-    hand-drawn `.spice` did, for everything else `RING_LVS_ABSTRACT_CELLS`
-    could grow to cover) -- it never builds one.
-    """
-    joined: list[str] = []
-    for line in reference.read_text(errors="replace").split("\n"):
-        if line.startswith("+") and joined:
-            joined[-1] = f"{joined[-1]} {line[1:].strip()}"
-        else:
-            joined.append(line)
-    text = "\n".join(joined)
-    for name, pins in _SUBCKT_HEADER_RE.findall(text):
-        if name.lower() == top.lower():
-            return pins.split()
-    raise FlowError(
-        f"{reference.relative_to(REPO_ROOT)} has no `.SUBCKT {top}` header -- "
-        "cannot derive its declared pin list for an abstract-cell placement "
-        "check"
-    )
+    header (continuations joined), via `design/spice_text.py`."""
+    pins = subckt_pins(reference.read_text(errors="replace"), top)
+    if pins is None:
+        raise FlowError(
+            f"{reference.relative_to(REPO_ROOT)} has no `.SUBCKT {top}` header -- "
+            "cannot derive its declared pin list for an abstract-cell placement "
+            "check"
+        )
+    return pins
 
 
 def run_extract_abstract(gds_path: str, top: str, abstract_cells: str, pins: list[str], tag: str) -> dict:
