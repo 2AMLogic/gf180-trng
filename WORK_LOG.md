@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-05.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-06.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-06
+
+- **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
+- **Issue #778** (closed): Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators
 
 ### 2026-11-05
 
