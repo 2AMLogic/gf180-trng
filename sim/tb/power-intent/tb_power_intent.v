@@ -31,8 +31,8 @@
 `default_nettype none
 
 module tb;
-    parameter integer T_SETTLE = 20;   // rail settle, clock cycles (PLACEHOLDER, #707)
-    parameter integer T_DECAY  = 8;    // rail decay, clock cycles (PLACEHOLDER, #707)
+    parameter integer T_SETTLE = 20;   // rail settle, clock cycles (see design/power-intent.md)
+    parameter integer T_DECAY  = 8;    // rail decay, clock cycles (see design/power-intent.md)
     localparam integer HALF = 5;       // 10 ns clock
 
     reg clk = 1'b0;
@@ -168,7 +168,7 @@ module tb;
 `endif
             @(negedge clk); pwr_en = 1'b1;
 `ifdef VARIANT_ISO_EARLY
-            cycles(2); iso_n = 1'b1;
+            iso_n = 1'b1;  // released with the switch, before the (now 1-cycle) settle
 `endif
             wait (vdd_ok === 1'b1);
             cycles(2);

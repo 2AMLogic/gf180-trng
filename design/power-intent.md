@@ -89,7 +89,7 @@ cannot be skipped, because the health-test window and the conditioner are
 discarded. So every idle exit is a full start-up event: the digital total in
 `sim/tools/time_to_first_valid.py` (1281 samples, 640.5 ms) plus the wake
 latency the tool prints. The `check` output reports the figure; it is
-**provisional** while rail settle and decay are placeholders. This does not
+**provisional** while rail decay remains a placeholder (rail settle is evidenced; see below). This does not
 claim the README time-to-first-valid row is met or missed on wake; the row is
 not edited.
 
@@ -105,9 +105,19 @@ decision record or `docs/spec-row-status.md` is edited here.
 
 ## Open items (not verified here)
 
-- **Switch parameters** (on-resistance, rail settling, decay, inrush) are
-  placeholders until #707's evidence lands; the budget is provisional and this
-  work is not complete until they are resolved.
+- **Switch parameters.** From `sim/characterization-power-switch.md` section 3
+  (400 um switch, worst case over all corners, pre-layout):
+  - `t_rail_settle`: the rail reaches 95 % of vdd within **21.4 ns** (200 pF
+    rail, 10 ns sleep edge) to **462.6 ns** (200 pF, 1 us edge). Both are under
+    one 500 us sample cycle, so the sequencer budgets **1 cycle**. The rail
+    capacitances (50 and 200 pF) are #707's stated assumptions, not extracted
+    values; a larger real rail would need this re-derived.
+  - Inrush at wake, an input to the close-switch step: peak **104 mA** (200 pF,
+    10 ns edge) and **8.6 mA** (200 pF, 1 us edge). Nothing here constrains the
+    supply to those currents; they are recorded, not checked.
+  - `t_rail_decay` stays a **named placeholder** (8 cycles): #707 reports no
+    decay or discharge time, and none is derived here. The wake time budget is
+    therefore still provisional on this one value.
 - **Input side.** Only output crossings are modelled. Inputs (`reg_*`, `raw_*`,
   `ring_bit`, `str_ready`, `clk`) driven into an unpowered domain need a
   protection decision (hold low in the host, or input AND cells) that this check
@@ -136,8 +146,8 @@ decision record or `docs/spec-row-status.md` is edited here.
     {"port": "ht_alarm", "width": 1, "clamp": 0}
   ],
   "timing": {
-    "t_rail_settle_cycles": {"value": 20, "status": "placeholder", "source": "#707"},
-    "t_rail_decay_cycles": {"value": 8, "status": "placeholder", "source": "#707"}
+    "t_rail_settle_cycles": {"value": 1, "status": "measured", "source": "sim/characterization-power-switch.md section 3"},
+    "t_rail_decay_cycles": {"value": 8, "status": "placeholder", "source": "none: #707 reports no decay time"}
   },
   "sequence": {
     "power_down": [

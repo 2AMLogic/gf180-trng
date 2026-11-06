@@ -40,5 +40,5 @@ reported; the check fails if one is not.
 ## Limits
 
 No P/V/T corner exists here and no timing, leakage or switch claim follows from
-a run. Rail settle and decay are placeholders until #707. Only output crossings
+a run. Rail settle comes from #707; rail decay is still a placeholder. Only output crossings
 are modelled.
