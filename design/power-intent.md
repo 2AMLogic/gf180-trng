@@ -115,9 +115,14 @@ decision record or `docs/spec-row-status.md` is edited here.
   - Inrush at wake, an input to the close-switch step: peak **104 mA** (200 pF,
     10 ns edge) and **8.6 mA** (200 pF, 1 us edge). Nothing here constrains the
     supply to those currents; they are recorded, not checked.
-  - `t_rail_decay` stays a **named placeholder** (8 cycles): #707 reports no
-    decay or discharge time, and none is derived here. The wake time budget is
-    therefore still provisional on this one value.
+  - `t_rail_decay` stays a **named placeholder** (8 cycles). The decay was measured
+    for this issue (#782, `sim/characterization-power-switch.md` section 6, 45 PVT
+    records) and does not yield a usable value: with leakage as the only discharge
+    path the rail takes 0.1 ms to seconds to fall to 50 % of vdd, and at 27 of the 45
+    corners it never reaches 5 %. No single cycle count both means something and
+    covers every corner; the budget needs a defined discharge mechanism (or a rule
+    that wake does not depend on decay) first. The wake time budget is therefore
+    still provisional on this one value.
 - **Input side.** Only output crossings are modelled. Inputs (`reg_*`, `raw_*`,
   `ring_bit`, `str_ready`, `clk`) driven into an unpowered domain need a
   protection decision (hold low in the host, or input AND cells) that this check
@@ -147,7 +152,7 @@ decision record or `docs/spec-row-status.md` is edited here.
   ],
   "timing": {
     "t_rail_settle_cycles": {"value": 1, "status": "measured", "source": "sim/characterization-power-switch.md section 3"},
-    "t_rail_decay_cycles": {"value": 8, "status": "placeholder", "source": "none: #707 reports no decay time"}
+    "t_rail_decay_cycles": {"value": 8, "status": "placeholder", "source": "none: sim/characterization-power-switch.md section 6 (#782) finds no usable decay time"}
   },
   "sequence": {
     "power_down": [
