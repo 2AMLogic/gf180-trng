@@ -325,6 +325,35 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
   more active power than this row allows — was resolved by [DR-0010]
   shrinking the array to N = 2, which is the 415 µW measured above.
 
+### 2026-11-06 — gap accounting after the #700 child issues (#700)
+
+Evidence only; the row, its `missed` tag, [DR-0017] (`Proposed`) and [DR-0023]
+are unchanged. Operator ruling on #700 (2026-10-28, option c) keeps both bounds
+and asks for power gating plus FIFO and inventory reductions.
+
+- **Switch (#707, PR #713; `sim/characterization-power-switch.md`).** One
+  400 µm PMOS header, DRC clean and LVS match, 589 µm². Off leakage at most
+  41.91 nA at ff / +10 % / +125 °C. Modelled gated-domain idle there:
+  **74.44 nA** (gated digital 41.67 nA + analog 32.77 nA) against 2 212.5 nA
+  ungated, 7.4 % of the `< 1 µA` row. The load behind the switch is a
+  leakage-equivalent NFET, not the library cells.
+- **Caveat that keeps idle `missed`.** That figure is with the domain *off*.
+  The ratified idle keeps register state, and no retention exists in the
+  library or in this design (power-intent work, #708, PRs #712, #776;
+  `design/power-intent.md`). Input-side protection is still an open item there
+  and the `t_rail_decay` placeholder is tracked as #782. Until retention or a
+  state-save scheme is designed and measured, the gated figure is not a
+  measurement of the ratified idle condition.
+- **Active power.** Gating does not lower it: active stays 749.4 µW (1.5×).
+  The header's I²R loss is 58.6 µW at the informational 20 MHz bound and
+  negligible at the ratified rate. FIFO/inventory work (#709) did not close it.
+- **Wake (#707).** Peak inrush 104 mA (10 ns edge) or 8.6 mA (1 µs edge) on
+  an assumed 200 pF rail.
+
+Idle therefore has a credible path (gating plus a retention answer); active
+power has none in evidence. A decision on the active row is requested on #700.
+
+
 ## Area
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -436,6 +465,30 @@ floorplan" and is not misleading, so it is unchanged. The target and
 or router has been run" wording; they are generated or code-side text outside
 this docs-only change and describe the estimate method only, not the footprint
 sizing above.
+
+### 2026-11-06 — gap accounting after the #700 child issues (#700)
+
+Evidence only; the row, its `missed` tag and [DR-0019] are unchanged. Operator
+ruling on #700 (2026-10-28, option c) keeps the `< 0.05 mm²` bound and asks for
+design changes. Both area levers it named have now been run:
+
+- **Floorplan (#710, PRs #714, #768).** On the post-#709 inventory the best
+  point is 91 232 µm² = **182.5 %** of the row at 85 % requested utilisation
+  (347.2 % at 40 %), routed with 0 DRC and 0 antenna violations. Placed cell
+  area is ≈ 59.9–60.7 k µm² at every point, already above the 50 000 µm²
+  budget before die margin, guard rings, isolation channels or the
+  7 196.8 µm² analog side. No floorplan lever reaches the row.
+- **Inventory (#709).** Moved the best point only from 185.0 % to 182.5 %.
+  Reaching the row needs placed digital area roughly halved (derived, not run).
+- **Not measured:** the area cost of tap pitch for LU.3/LU.4 (#449, #487;
+  49.7 µm vs 15 µm today), and the combined case. Composed digital LVS shows
+  6 / 7 mismatches at 70 / 85 % utilisation (undiagnosed).
+- **Power switch (#707).** The header costs 589 µm² (1.2 % of the row), so it
+  does not change this picture.
+
+The ruling says to bring such evidence back as a new decision rather than
+supersede; that decision is requested on #700. This entry supersedes nothing.
+
 
 ## Operating envelope
 
