@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from harness import klt_request as _kreq  # noqa: E402
+from harness.corners import CORNERS  # noqa: E402
 from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
 import _record_parsing as _rp  # noqa: E402
@@ -50,14 +51,8 @@ SLUG_ATTEMPT = "power-switch-attempt"
 # Declared grid (chosen before any run)
 # --------------------------------------------------------------------------
 
-PROCESS_SECTIONS = {
-    "tt": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "ff": ["ff", "bjt_ff", "diode_ff", "res_ff", "moscap_ff", "mimcap_ff"],
-    "ss": ["ss", "bjt_ss", "diode_ss", "res_ss", "moscap_ss", "mimcap_ss"],
-    "fs": ["fs", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "sf": ["sf", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-}
 PROCESSES = ("tt", "ff", "ss", "fs", "sf")
+PROCESS_SECTIONS = {p: list(CORNERS[p].sections) for p in PROCESSES}
 TEMPS_C = (-40, 27, 125)
 SUPPLIES_V = (2.97, 3.30, 3.63)
 TSTEP_S = 100e-12

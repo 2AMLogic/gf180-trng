@@ -61,6 +61,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness import klt_request as _kreq  # noqa: E402
+from harness.corners import CORNERS  # noqa: E402
 from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
 
@@ -73,12 +74,8 @@ REQUEST_NAME = "request-grid.json"
 # Declared grid (chosen before any run)
 # --------------------------------------------------------------------------
 
-PROCESS_SECTIONS = {
-    "tt": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "ff": ["ff", "bjt_ff", "diode_ff", "res_ff", "moscap_ff", "mimcap_ff"],
-    "ss": ["ss", "bjt_ss", "diode_ss", "res_ss", "moscap_ss", "mimcap_ss"],
-}
 PROCESSES = ("tt", "ff", "ss")
+PROCESS_SECTIONS = {p: list(CORNERS[p].sections) for p in PROCESSES}
 TEMPS_C = (-40, 27, 125)
 SUPPLIES_V = (2.97, 3.30, 3.63)
 
