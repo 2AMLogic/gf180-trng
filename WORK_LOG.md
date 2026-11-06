@@ -1,11 +1,18 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-05.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-06.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
+### 2026-11-06
+
+- **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
+- **Issue #778** (closed): Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators
+
 ### 2026-11-05
 
+- **PR #775**: refactor: share one SPICE continuation joiner and .SUBCKT pin reader
+- **Issue #774** (closed): Consolidate duplicated SPICE continuation-join and .SUBCKT pin-list readers
 - **PR #771**: docs(signoff): record working klt yield install route and the missing limit blocking item 6
 - **Issue #707** (closed): Power gating: design a custom power-switch cell for the digital section
 

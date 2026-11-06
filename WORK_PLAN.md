@@ -33,6 +33,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
+- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 
 ## PRs Awaiting Review
@@ -57,6 +58,7 @@ Issues carrying `loom:curated`.
 - **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
+- **#476**: Complete the unrun 27-corner ring2 paired PEX diagnostic campaign *(curated)*
 - **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
@@ -66,7 +68,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#778**: Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators *(hermit)*
 
 ## Epics
 
@@ -80,10 +82,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 12 |
-| Architect / Hermit proposals | 0 |
+| Curated | 13 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
