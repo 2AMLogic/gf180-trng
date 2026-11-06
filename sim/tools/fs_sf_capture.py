@@ -39,6 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
+from harness.corners import CORNERS  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "sampler-array-fs-sf"
@@ -49,12 +50,8 @@ DUT_PATH = "design/sampler_core.spice"
 # Declared grid (chosen before any run)
 # --------------------------------------------------------------------------
 
-PROCESS_SECTIONS = {
-    "tt": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "fs": ["fs", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "sf": ["sf", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-}
 ASYM_PROCESSES = ("fs", "sf")
+PROCESS_SECTIONS = {p: list(CORNERS[p].sections) for p in ("tt",) + ASYM_PROCESSES}
 TEMPS_C = (-40, 27, 125)
 SUPPLIES_V = (2.97, 3.30, 3.63)
 
