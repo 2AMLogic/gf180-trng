@@ -27,20 +27,22 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+- **#700**: T1 item 5 (corner verification): resolve the missed Power (758 uW vs < 500 uW) and Area (0.176 mm^2 vs < 0.05 mm^2) rows
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
-- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
+- **#782**: Power switch: measure gated-rail decay time and replace the t_rail_decay placeholder
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#772**: docs(sim): record measured ring2 paired PEX grid under klt 0.9.0, unpublished pending pin decision
+- **#783**: sim: measure gated-rail decay after the power switch opens
 
 ## Approved (Awaiting Merge)
 
@@ -63,12 +65,12 @@ Issues carrying `loom:curated`.
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 - **#656**: T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign *(curated)*
 - **#705**: Bump klayout-tools pin 0.6.0 → 0.8.0 *(curated)*
-- **#708**: Power gating: define and verify the power-intent flow for a gated digital domain *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
+- **#782**: Power switch: measure gated-rail decay time and replace the t_rail_decay placeholder *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#778**: Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators *(hermit)*
+_None._
 
 ## Epics
 
@@ -81,11 +83,11 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 2 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 13 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-06
 
+- **PR #776**: docs: replace rail-settle placeholder in power intent with evidenced figure
+- **Issue #708** (closed): Power gating: define and verify the power-intent flow for a gated digital domain
 - **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
 - **Issue #778** (closed): Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators
 
