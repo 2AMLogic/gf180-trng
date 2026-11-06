@@ -1,0 +1,81 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vdd                                       3.63
+rma                                          0
+rmb                                          0
+sla                                          0
+slb                                          0
+vd1                                    3.62998
+vd2                                    3.62998
+vd3                                    3.62998
+vd4                                    3.62998
+ct90_1                                0.362976
+ct50_1                                 1.81498
+ct05_1                                 3.44848
+ct90_2                                0.362976
+ct50_2                                 1.81498
+ct05_2                                 3.44848
+ct90_3                                0.362976
+ct50_3                                 1.81498
+ct05_3                                 3.44848
+ct90_4                                0.362976
+ct50_4                                 1.81498
+ct05_4                                 3.44848
+bct05_4#branch                               0
+bct50_4#branch                               0
+bct90_4#branch                               0
+bct05_3#branch                               0
+bct50_3#branch                               0
+bct90_3#branch                               0
+bct05_2#branch                               0
+bct50_2#branch                               0
+bct90_2#branch                               0
+bct05_1#branch                               0
+bct50_1#branch                               0
+bct90_1#branch                               0
+bsb#branch                                   0
+bsa#branch                                   0
+vrmb#branch                                  0
+vrma#branch                                  0
+vsup#branch                       -8.71859e-06
+
+
+No. of Data Rows : 37869
+
+  Measurements for Transient Analysis
+
+t90_d1              =   1.013972158484e-05
+t50_d1              =   9.268183678289e-05
+t05_d1              =   4.263171956274e-04
+vmin_d1             =  1.370714163783e-02 at=  6.163818532660e-04
+vfin_d1             =  1.454575020038e-02
+t90_d2              =   3.946449720673e-05
+t50_d2              =   3.652380610528e-04
+t05_d2              =   1.787221369427e-03
+vmin_d2             =  2.480510964784e-03 at=  2.751220748473e-03
+vfin_d2             =  1.454574964309e-02
+t90_d3              =   1.086879229719e-05
+t50_d3              =   9.349473041666e-05
+t05_d3              =   4.274968380164e-04
+vmin_d3             =  1.367069292510e-02 at=  6.163818532660e-04
+vfin_d3             =  1.454574974917e-02
+t90_d4              =   4.005898459952e-05
+t50_d4              =   3.658523260733e-04
+t05_d4              =   1.787667609226e-03
+vmin_d4             =  2.462870989339e-03 at=  2.751220748473e-03
+vfin_d4             =  1.454574973777e-02
+
+ngspice-46 done

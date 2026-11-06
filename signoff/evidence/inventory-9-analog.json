@@ -268,12 +268,20 @@
           "sha256": "sha256:b4a9b4c77955129db0c55080ebdf233f20539c2da9d6b465a03537c021bbf705"
         },
         {
+          "path": "sim/tb/power-switch/request-decay.json",
+          "sha256": "sha256:b31b0df3ecf89ab2c5b404392f93d7656a986729756944d0db73ef487e03cba3"
+        },
+        {
           "path": "sim/tb/power-switch/request-grid.json",
           "sha256": "sha256:aad1877fb73232fda933fa4532156e6704e2dcd30749db0af0897a817a7ddf04"
         },
         {
           "path": "sim/tb/power-switch/tb_power_switch.sp",
           "sha256": "sha256:a69d975a4fe296272a3cdd7a702d59a87cc7932128746c535379cee8050aba81"
+        },
+        {
+          "path": "sim/tb/power-switch/tb_power_switch_decay.sp",
+          "sha256": "sha256:8b36a41cf44a29ae694e69cce164bce754b96a3826c86ccaa4d0b9488410b56d"
         }
       ]
     },
@@ -1552,7 +1560,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:3df93c2164fb12439cfbeab6961a720502db010bbdc4635105a62def1dcef262"
+      "sha256": "sha256:21469cda9eb46e891c15dbd8cf6eea9288f035f5e38ff525d3d2d67606623356"
     },
     {
       "path": "sim/README.md",
