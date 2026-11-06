@@ -6,6 +6,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-06
 
+- **PR #783**: sim: measure gated-rail decay after the power switch opens
+- **Issue #782** (closed): Power switch: measure gated-rail decay time and replace the t_rail_decay placeholder
 - **PR #776**: docs: replace rail-settle placeholder in power intent with evidenced figure
 - **Issue #708** (closed): Power gating: define and verify the power-intent flow for a gated digital domain
 - **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
