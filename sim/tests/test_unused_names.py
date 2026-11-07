@@ -457,5 +457,67 @@ class Discovery(unittest.TestCase):
             self.assertIn("sim/tracked.py:1: checker error", err.stderr)
 
 
+class SysPathInsertGuard(unittest.TestCase):
+    """The #520 guard: no new `sys.path.insert`, no stale allowlist entry."""
+
+    CALL = "import sys\nsys.path.insert(0, '/x')\n"
+
+    def _tree(self, root: Path, files: dict[str, str]) -> list[str]:
+        for rel, text in files.items():
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(text)
+        return sorted(files)
+
+    def test_detects_call_but_not_strings_or_other_inserts(self):
+        self.assertTrue(un.has_sys_path_insert(self.CALL))
+        self.assertFalse(un.has_sys_path_insert(
+            "x = 'sys.path.insert(0, 1)'\n# sys.path.insert(0, 1)\n"
+            "l = []\nl.insert(0, 1)\nsys = l\nsys.insert(0, 1)\n"))
+
+    def test_new_call_outside_allowlist_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self._tree(root, {"a.py": self.CALL, "b.py": "x = 1\n"})
+            problems = un.check_sys_path_inserts(root, files, frozenset())
+            self.assertEqual(len(problems), 1)
+            self.assertIn("a.py: SYSPATH sys.path.insert outside", problems[0])
+
+    def test_stale_allowlist_entry_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self._tree(root, {"a.py": self.CALL, "b.py": "x = 1\n"})
+            problems = un.check_sys_path_inserts(root, files, frozenset({"a.py", "b.py"}))
+            self.assertEqual(len(problems), 1)
+            self.assertIn("b.py: SYSPATH stale allowlist entry", problems[0])
+
+    def test_allowlisted_call_and_helper_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self._tree(root, {"a.py": self.CALL, "h/__init__.py": self.CALL})
+            self.assertEqual(
+                un.check_sys_path_inserts(root, files, frozenset({"a.py"}),
+                                          helper="h/__init__.py"), [])
+
+    def test_real_tree_matches_baseline_and_migrated_script_is_absent(self):
+        root = SIM_DIR.parent
+        self.assertEqual(
+            un.check_sys_path_inserts(root, un.all_tracked_python(root)), [])
+        self.assertNotIn("sim/tools/vss_trunk_ir_drop.py", un.SYS_PATH_INSERT_ALLOWLIST)
+        self.assertNotIn(un.BOOTSTRAP_HELPER, un.SYS_PATH_INSERT_ALLOWLIST)
+
+    def test_cli_rejects_new_call_in_fixture_repo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            self._tree(root, {"tool.py": self.CALL})
+            subprocess.run(["git", "-C", str(root), "add", "tool.py"], check=True)
+            res = subprocess.run(
+                [sys.executable, "-m", "sim.tools.unused_names", "--check",
+                 "--root", str(root)],
+                cwd=SIM_DIR.parent, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+            self.assertIn("tool.py: SYSPATH", res.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
