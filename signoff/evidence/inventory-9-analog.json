@@ -581,6 +581,22 @@
         }
       ]
     },
+    "ro-array-core-power-split": {
+      "invocation": {
+        "command": "python3 sim/run_corners.py ro-array-core-power-split",
+        "documented_in": "README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/ro-array-core-power-split/tb.json",
+          "sha256": "sha256:7907dce4a68807157e035e03b67300567da3106d9cdf2a5d50f350088cfbce6e"
+        },
+        {
+          "path": "sim/tb/ro-array-core-power-split/tb_ro_array_core_power_split.sp",
+          "sha256": "sha256:fcfd0d1406280b8aaacf03666e0100d91ff5ea3b9ac0aa069ded5dc586a06322"
+        }
+      ]
+    },
     "ro-array-core-pvt-q": {
       "invocation": {
         "command": "python3 sim/run_corners.py ro-array-core-pvt-q",
@@ -1584,7 +1600,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:6d094502fa05bdcc9aaf9951bffd4b7565c0693ee38dac188bd0a7d6e8c60750"
+      "sha256": "sha256:961572d570f9f3173a2e7410ce41ffed6168860858b72b5106975a5969d4cf3e"
     },
     {
       "path": "sim/README.md",
