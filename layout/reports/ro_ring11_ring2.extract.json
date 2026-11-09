@@ -1839,6 +1839,7 @@
   "declared_pins": null,
   "def_pins": null,
   "label_layers": null,
+  "device_models": null,
   "probes": [],
   "pdk": {
     "variant": "gf180mcuD",
@@ -1849,19 +1850,22 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.0",
+    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+    "klt_reinstall_spec": "klayout-tools==0.9.0",
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuD",
-      "source": "search root: ~/.ciel",
+      "source": "PDK_ROOT environment variable",
       "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
       "ambiguous_sources": [
+        "search root: ~/.ciel",
         "search root: ~/.volare"
       ]
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666",
+      "content_hash": "sha256:cf44de63f0a5b01c1d09c4d58e0535e990aa4b070bcaae17fd3a94a67a1d97e1",
       "released": true,
       "options": {
         "metal_top": "9K",
@@ -1890,14 +1894,14 @@
   },
   "timing": {
     "stages": {
-      "read_layout": 0.0,
+      "read_layout": 0.001,
       "device_extraction": 0.024,
       "diagnostics": 0.0,
       "netlist_write": 0.002,
       "netlist_hash": 0.0,
       "netlist_normalized_hash": 0.001
     },
-    "total_seconds": 0.127,
-    "unattributed_seconds": 0.1
+    "total_seconds": 0.143,
+    "unattributed_seconds": 0.115
   }
 }

@@ -102,6 +102,9 @@ ro_nand2_ring2_cell = _load_build_module(
 ro_buf_cell = _load_build_module(
     "layout_cells_ro_buf_build", CELLS_DIR / "ro_buf" / "build.py"
 )
+power_switch_cell = _load_build_module(
+    "layout_cells_power_switch_build", CELLS_DIR / "power_switch" / "build.py"
+)
 xor2_cell = _load_build_module("layout_cells_xor2_build", CELLS_DIR / "xor2" / "build.py")
 sampler_dff_cell = _load_build_module(
     "layout_cells_sampler_dff_build", CELLS_DIR / "sampler_dff" / "build.py"
@@ -128,6 +131,7 @@ _STALENESS_CHECKS = (
     ("layout/cells/ro_nand2", ro_nand2_cell.check),
     ("layout/cells/ro_nand2_ring2", ro_nand2_ring2_cell.check),
     ("layout/cells/ro_buf", ro_buf_cell.check),
+    ("layout/cells/power_switch", power_switch_cell.check),
     ("layout/cells/xor2", xor2_cell.check),
     ("layout/cells/sampler_dff", sampler_dff_cell.check),
     ("layout/rings/ro_ring11", ro_ring11_cell.check),
@@ -396,6 +400,31 @@ EXPECTATIONS: dict[str, dict] = {
             # cell's two devices are both MOS, so nothing else is declared.
             # One inverter stage: 1 NMOS + 1 PMOS, both untapped.
             "category_counts": {"topology": 1},
+            "body_unverified": {},
+            "power_connectivity": "unchecked",
+            "error_count": 0,
+        },
+    },
+    "power_switch": {
+        # A real design cell (issue #707): the PMOS header for the gated digital
+        # supply -- see layout/cells/power_switch/build.py for the geometry and
+        # what it deliberately does not draw (no guard ring, no substrate tap).
+        "why": (
+            "design/power_switch.spice's power_switch (the PMOS header that "
+            "gates the digital section's supply, 40 x 10um fingers) must be "
+            "DRC-clean and LVS-match its hand-written schematic-side reference"
+        ),
+        "dir": "layout/cells/power_switch",
+        "top": "power_switch",
+        "drc": {"status": "clean", "rule_counts": {}},
+        "lvs": {
+            "reference": "power_switch.spice",
+            "status": "match",
+            # 40 PMOS fingers over a well tapped to vdd (four Nplus taps), so
+            # the body connection is verified; klt reports two topology
+            # warnings for the parallel group (the 40 fingers share every
+            # terminal).
+            "category_counts": {"topology": 2},
             "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
@@ -836,7 +865,7 @@ def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
 def _stable(payload: dict) -> dict:
     """Strip the fields that legitimately move between machines.
 
-    Four fields are dropped, each because it records *where this machine
+    Six fields are dropped, each because it records *where this machine
     happened to find something* or *how this run happened to number
     something*, not *what was verified*. Every field beside these four --
     including every content hash, every verdict, every count, and the PDK's
@@ -900,6 +929,18 @@ def _stable(payload: dict) -> dict:
       break the one thing `layout/pex/build.py`'s routing-level composition
       path actually depends on it for, and this gate must still catch that.
 
+    - `provenance.pdk.ambiguous_sources` (`klt extract` reports from
+      klayout-tools 0.9.0): the other PDK search roots on *this* machine that
+      also held a copy of the PDK (a host with both `~/.ciel` and `~/.volare`
+      lists the one it did not use). Like `provenance.pdk.source`, it
+      describes the machine, not the PDK that was verified against.
+
+    - `timing` (`klt extract` reports from klayout-tools 0.9.0): per-stage
+      and total wall-clock seconds of this run. They differ between two runs
+      of the same command on the same machine, so a committed copy could
+      never match a fresh run; they record how long the run took, not what
+      it verified.
+
     Verified empirically (issue #148): running `klt extract` twice over the
     same `.gds`, identical in every argument except `--pdk-root` pointed at
     two different filesystem locations for the same PDK release, produced
@@ -922,6 +963,7 @@ def _stable(payload: dict) -> dict:
     the "no-op gate" this fix exists to avoid.
     """
     trimmed = dict(payload)
+    trimmed.pop("timing", None)
 
     environment = trimmed.get("environment")
     if isinstance(environment, dict):
@@ -942,6 +984,7 @@ def _stable(payload: dict) -> dict:
         if isinstance(provenance_pdk, dict):
             provenance_pdk = dict(provenance_pdk)
             provenance_pdk.pop("source", None)
+            provenance_pdk.pop("ambiguous_sources", None)
             provenance["pdk"] = provenance_pdk
         trimmed["provenance"] = provenance
 

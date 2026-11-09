@@ -82,6 +82,33 @@ def run_klt_request(outdir: str | Path, stem: str, request: Path, backend: str,
             cleanup()
 
 
+def run_probe_or_grid(outdir: str | Path, backend: str, klt_cmd: str, only: str | None, *,
+                      request: Path, tb_dir: Path, render_probe: Callable[[str], str],
+                      probe_hint: str) -> int:
+    """Run a tool's declared grid, or one ``only`` probe point, through ``klt sim``.
+
+    ``only`` is a single-point debug probe: it needs ``--backend local`` (else
+    2 is returned) and runs a restricted request, ``render_probe(only)``,
+    written next to the deck in ``tb_dir`` because klt resolves ``netlist``
+    relative to the request file. That temporary request is removed on every
+    path. Without ``only`` the committed ``request`` is run as the whole grid
+    (stem ``grid``), which ``run_klt_request`` refuses on the local backend.
+    """
+    if only is not None and backend != "local":
+        print("--only is a single-point debug probe and runs with --backend local", file=sys.stderr)
+        return 2
+    stem = "grid" if only is None else "probe-" + only.replace("/", "_")
+    tmp = None
+    if only is not None:
+        tmp = tb_dir / f".{stem}.request.json"
+        tmp.write_text(render_probe(only))
+        request = tmp
+    return run_klt_request(
+        outdir, stem, request, backend, klt_cmd,
+        single_point=only is not None, probe_hint=probe_hint,
+        cleanup=None if tmp is None else (lambda: tmp.unlink(missing_ok=True)))
+
+
 def _prefix_products(out: Path, stem: str, own: set[str]) -> list[str]:
     """Names in ``out`` that already belong to the klt output prefix ``stem``."""
     return sorted(e.name for e in out.iterdir()

@@ -25,25 +25,30 @@ The report is evidence of what `klt erc` said; it is not a tier input
 
 from __future__ import annotations
 
-import hashlib
 import json
+import sys
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from sim.harness.report import sha256_file  # noqa: E402
 FLOORPLAN_DIR = REPO_ROOT / "layout" / "floorplan"
 GDS = FLOORPLAN_DIR / "trng_floorplan.gds"
 SPEC = FLOORPLAN_DIR / "erc-supply-spec.json"
 REPORT = FLOORPLAN_DIR / "reports" / "erc-supply.json"
 TOP_CELL = "trng_floorplan"
 
-#: The klt release this repo pins (`signoff/check.py` KLT_PIN); a test holds
-#: the two equal.
-KLT_PIN = "0.8.0"
+#: A producer version is a tagged release (`X.Y.Z`). The repo no longer pins
+#: one klt build (DR-0026, 2026-11-09 amendment): the report names the
+#: version that produced it, and that must be a release build.
+_RELEASE_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 #: Supplies the spec must declare and the report must show computed.
 DECLARED_SUPPLIES = ("vddr1", "vddr2", "vdd", "vddd", "vss")
 
-_REGENERATE = "re-run `python3 layout/floorplan/floorplan.py --write` with klt 0.6.0"
+_REGENERATE = "re-run `python3 layout/floorplan/floorplan.py --write` with the fleet's klt"
 
 
 def _rel(path: Path) -> str:
@@ -54,7 +59,7 @@ def _rel(path: Path) -> str:
 
 
 def sha256_ref(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    return "sha256:" + sha256_file(path)
 
 
 def project_report(native: dict, *, gates_stub: bool = False) -> dict:
@@ -103,10 +108,10 @@ def run_erc(run_klt) -> dict:
         timeout_s=3600,
     )
     version = (native.get("provenance") or {}).get("klt_version")
-    if version != KLT_PIN:
+    if not _RELEASE_RE.match(str(version)):
         raise RuntimeError(
-            f"klt erc ran under klt {version}, not the pinned {KLT_PIN}; "
-            f'use `uvx --from "klayout-tools=={KLT_PIN}" klt` (on PATH as klt)'
+            f"klt erc ran under klt {version!r}, not a tagged release build; "
+            "use a release klt (PyPI `klayout-tools`) on PATH"
         )
     return project_report(native)
 
@@ -115,9 +120,9 @@ def report_problems(report: dict, *, gds: Path = GDS, spec: Path = SPEC) -> list
     """Everything wrong with `report` as evidence for `gds` + `spec`."""
     problems: list[str] = []
     prov = report.get("provenance") or {}
-    if prov.get("klt_version") != KLT_PIN:
+    if not _RELEASE_RE.match(str(prov.get("klt_version"))):
         problems.append(
-            f"provenance.klt_version is {prov.get('klt_version')!r}, not the pinned {KLT_PIN!r}"
+            f"provenance.klt_version is {prov.get('klt_version')!r}, not a tagged release build"
         )
     if (prov.get("input") or {}).get("content_hash") != sha256_ref(gds):
         problems.append(

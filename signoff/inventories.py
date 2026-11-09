@@ -77,6 +77,9 @@ class AuditError(Exception):
     """The tree does not support the claim an inventory would make."""
 
 
+# Deliberately not ``sim.harness.report.sha256_file``: this module audits the
+# harness's own output, so its digest stays stdlib-only and independent of the
+# code being checked. It returns the ``sha256:``-prefixed form the inventories pin.
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -403,6 +406,7 @@ DIGITAL_TESTBENCHES = frozenset(
         "digital-sta-power",
         "health-test-fault-injection",
         "interface-regfile",
+        "power-intent",
         "ring-liveness-fault-injection",
         "smoke-trng-top",
         "trng-top-crosscheck",

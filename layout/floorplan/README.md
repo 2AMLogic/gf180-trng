@@ -879,6 +879,165 @@ script reports exactly what that inventory declares and prices the monitor
 separately rather than silently including or dropping it. Reconciling the flag
 belongs with whoever owns that inventory.
 
+## Floorplan levers toward the `< 0.05 mm²` row — issue #710
+
+Child of #700, whose operator ruling keeps the Area row. This section records
+what the floorplan's own levers reach at `FIFO_DEPTH = 2`. **No committed
+geometry or report was changed**; everything below was measured on scratch
+copies (see "How this was run").
+
+### Re-baseline: which utilisation applies
+
+- The `digital` region is **not** sized by the `60 %` / `80 %` estimate any
+  more. Its guarded footprint is the routed P&R die from
+  `layout/digital/trng_top.gds` plus the 2 µm guard (400.93 µm square), and
+  that die is a *consequence* of `FLOORPLAN["utilization_pct"]` in
+  `layout/digital/build.py` (40 % requested, 43.4 % achieved). The `60 %` /
+  `80 %` rows in `reports/area.json` (`placed_area_um2`) and in DR-0019 are
+  the older estimate and no longer size anything.
+- A fresh `floorplan.py` run on `main` @ `18d24d1` reports
+  `floorplan_area_um2 = 176 223.3 µm²` (352.4 % of the row) against the
+  committed `175 789.86 µm²` (351.6 %). The committed `area.json`,
+  `compose.json`, `floorplan.drc.json`, `ring_fit.json`, `interregion.json`
+  and `trng_floorplan.gds` all fail `floorplan.py`'s regeneration check on
+  this host. That drift (0.25 %) is not investigated or fixed here.
+
+### Utilisation sweep (P&R request → composed floorplan)
+
+Area is geometry, so it is independent of PVT corner. Each row is one
+serial `klt place-and-route` run at `ss_125C_3v00`, seed and constraints as in
+`build.py`, then one `floorplan.py` composition over that run's DEF and GDS.
+
+| Requested util. | Achieved util. | Die µm² | Placed area µm² (util × core) | Digital guarded µm² | Floorplan µm² | % of row | Route DRC / antenna |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 40 (committed) | 43.4 | 159 145 | 62 081 | 160 745 | 176 223 (fresh) | 352.4 | 0 / 0 |
+| 55 | 59.8 | 117 755 | 62 268 | 119 353 | 133 459 | 266.9 | 0 / 0 |
+| 70 | 76.0 | 93 908 | 61 415 | 95 336 | 108 708 | 217.4 | 0 / 0 |
+| 85 | 91.4 | 78 369 | 61 020 | 79 674 | **92 516** | **185.0** | 0 / 0 |
+
+Placed area (the cell area OpenROAD reports in the core, including
+tapcells and endcaps, excluding fillers) is flat at ≈ 61–62 k µm² across the
+sweep. It matches the 62 081.5 µm² recorded above for #293. The composed row
+also stayed DRC-clean relative to each region's standalone DRC (0 new
+violations) at every point.
+
+### What limits it
+
+1. **Cell area, not the floorplan, is the floor.** Placed area is
+   ≈ 61 k µm², above the 50 000 µm² budget before any die margin, guard ring,
+   isolation channel or analog region is added. Even 100 % utilisation with no
+   margin cannot reach the row. Extrapolating the sweep (derived, not run): a
+   100 % point would be a ≈ 271 µm die and ≈ 86 k µm² composed (≈ 172 %).
+   With the analog side fixed at 7 026 µm² (14.05 %), the digital region plus
+   its channel would have to fit in ≈ 43 k µm², i.e. placed cell area roughly
+   35–40 % below today's, before any utilisation headroom. That is #709's
+   territory (inventory), not a floorplan lever.
+2. **Routing did not limit at 91.4 % achieved.** All three swept points routed
+   with 0 route-DRC and 0 antenna violations and met setup/hold at
+   `ss_125C_3v00` (`worst_slack_ns` 31.4 / 32.4 / 32.1). Where routing congestion
+   starts was not found; no point above 85 % requested was run.
+3. **Isolation channel.** The 20 µm channel against the digital neighbour
+   falls from 8 018 µm² (committed) to 5 645 µm² at the 85 % point. It is
+   ≈ 6 % of the row, so shrinking the channel itself is worth little and was
+   not changed (`ISOLATION_CHANNEL_UM` stays 20 µm; no isolation analysis
+   supports a change).
+4. **Latch-up tap spacing (#449, #487) is the open constraint on the high
+   utilisation points.** `layout/digital/reports/tap-distance.json` (committed
+   40 % layout, 265 tapcells at `-distance 100`) fails LU.3 and LU.4 against the
+   15 µm MV column: max 49.7 µm, with 18 598 µm of NCOMP boundary uncovered
+   at 15 µm. The sweep points above use the same tap pitch and so inherit that
+   failure. `tap_distance.py` was **not** run on the swept layouts, and a
+   tighter pitch (more tapcells) was not measured, so the area cost of
+   meeting the rule is unknown. Whether the rule applies is #449; the pitch
+   default is #487.
+5. **Timing-repair noise is unrelated to utilisation.** `max_transition`
+   violation counts (668 / 702 / 688 against 660 committed, all at the
+   `ss_*_1v62` corners) do not trend with utilisation.
+
+### Outcome
+
+The floorplan levers alone reach **185 %** of the row at best (85 % requested,
+91.4 % achieved), and no floorplan lever can reach 100 % because the placed
+cell area already exceeds the budget. The combined measurement with #709's
+inventory options was not run because none has landed. Whether to keep the row
+unchanged and rely on #709 or to bring the row back for a decision is
+#700's call; this issue does not edit the row.
+
+### Re-run on the #709 inventory (issue #710, follow-up)
+
+#709 has landed (`main` @ `dcd219c`), so the sweep above was repeated on the
+committed post-#709 inventory. Same method as "How this was run"; nothing
+committed was changed. Area is geometry and does not vary with PVT corner;
+the P&R run is at `ss_125C_3v00`. The committed `area.json` records
+173 157.92 µm² (346.3 %); a fresh `floorplan.py` composition of the committed
+inputs gives 173 589.3 µm² (347.2 %), the same ≈ 0.25 % regeneration drift
+noted above (not investigated here).
+
+| Requested util. | Achieved util. | Die µm² | Placed area µm² (util × core) | Digital guarded µm² | Floorplan µm² | % of row | Route DRC / antenna | Setup / hold viol. | Digital LVS mismatches |
+|---:|---:|---:|---:|---:|---:|---:|---|---|---:|
+| 40 (committed) | 43.4 | 156 590 | 60 744 | 158 432 | 173 589 (fresh) | 347.2 | 0 / 0 | 0 / 0 | 0 |
+| 70 | 75.1 | 92 425 | 60 191 | 93 841 | 107 165 | 214.3 | 0 / 0 | 0 / 0 | 6 |
+| 85 | 90.4 | 77 140 | 59 863 | 78 434 | **91 232** | **182.5** | 0 / 0 | 0 / 0 | 7 |
+
+Wall-clock per P&R point was 488 s, 690 s and 897 s. The 55 % point was
+skipped: the 40/70/85 points already bracket the trend of the previous sweep.
+
+What changed against the `FIFO_DEPTH = 2` sweep (`main` @ `18d24d1`, 185.0 %
+best): placed area fell only from ≈ 61–62 k to ≈ 60–61 k µm² (about 2 %), and
+the best floorplan point from 92 516 to 91 232 µm² (185.0 % → 182.5 %). The
+inventory change moves the cell-area floor by far less than the roughly half
+that the row needs.
+
+**Limits, with evidence**
+
+1. **Cell area is still the floor.** Placed area is ≈ 59.9 k µm² at the best
+   point, above the 50 000 µm² budget before die margin, guard ring,
+   isolation channel or the 7 196.8 µm² analog side are added. With the
+   analog side fixed, the digital region plus its 20 µm channel would have to
+   fit in ≈ 42.8 k µm², i.e. a guarded side of ≈ 197 µm against 280 µm at the
+   85 % point. Derived, not run: that is a placed area near 31 k µm² at 100 %
+   utilisation, about half of today's.
+2. **Routing did not limit at 90.4 % achieved.** All three points routed with
+   0 route-DRC and 0 antenna violations and met setup and hold
+   (`worst_slack_ns` 32.9 / 33.2 / 33.1). Where congestion starts was not
+   found; no point above 85 % requested was run.
+3. **Composed digital LVS is clean at 40 % and reports mismatches at 70 % and
+   85 %.** `floorplan.py` prints `lvs match (0 mismatches)` for the digital
+   region at 40 % and `lvs mismatch (6 mismatches, unexpected categories:
+   none)` / `(7 mismatches, ...)` at 70 % / 85 %. The mismatches were not
+   diagnosed, so a high-utilisation layout is not shown to be LVS-clean in the
+   composed floorplan. Composed digital DRC introduced 0 new violations at all
+   three points (ring alone: 2 769 / 2 728 / 2 628 pre-existing).
+4. **Latch-up tap spacing (#449, #487) is unchanged and unresolved.**
+   `tap_distance.py` was run on the 70 % and 85 % layouts this time: both
+   fail LU.3 (max 49.691 µm) and LU.4 (max 49.727 µm) against the 15 µm MV
+   limit, the same maxima as the committed 40 % layout, because the tapcell
+   pitch (`-distance 100`) does not change with utilisation. The area cost of
+   meeting the rule is still unmeasured (a tighter pitch was not run). The
+   rule's applicability is #449 and the pitch default is #487.
+5. **Isolation channel** stays ≈ 5.6 k µm² of the 85 % point (≈ 11 % of the
+   row); `ISOLATION_CHANNEL_UM` was not changed, as no isolation analysis
+   supports it.
+
+**Outcome.** Floorplan levers on the post-#709 inventory reach **182.5 %** of
+the row at best, and no floorplan lever can reach 100 %. The combined
+measurement is the one reported here; the result is input to #700, which
+decides whether to keep the row or bring it back. This issue does not edit
+the row.
+
+### How this was run
+
+`FLOORPLAN["utilization_pct"]` was overridden in memory and
+`build.place_and_route()` called into a scratch directory, so `build.py`'s
+committed outputs were never written. For each point the run's `trng_top.gds`
+and `trng_top.def` were copied over the committed ones, `floorplan.py` run in
+its default (non-`--write`) mode, and the committed files restored with
+`git checkout`. `floorplan.py` needs the DEF as well as the GDS because
+`interregion.py` reads the digital pin positions from the DEF's `PINS`
+section; the checked-in tree has no supported way to compose against a
+non-committed P&R result. Wall-clock per P&R point was 494 s (55 %), 705 s
+(70 %) and 971 s (85 %) on a shared host.
+
 ---
 
 ## Placement — issue #110
@@ -1579,8 +1738,8 @@ numbers, mutated in a temp dir (no committed file is touched): a baseline with
 a shared two-stack `vss` is clean; removing Via1 under one `vss` stack gives
 `erc.unconnected_net`; a Metal4 bar across two trunks (`vddr1`/`vddr2`, and
 separately `vdd`/`vddd`) gives `erc.supply_short`; a trunk with no label gives
-`erc.unconnected_net`. They need the pinned klt first on PATH and skip
-otherwise (`uvx --from "klayout-tools==0.8.0" klt`). No control was run on
+`erc.unconnected_net`. They need a release klt first on PATH and skip
+otherwise (`uvx --from klayout-tools klt`). No control was run on
 the full composed stream.
 
 **Freshness.** `python3 layout/floorplan/floorplan.py` fails when the report's

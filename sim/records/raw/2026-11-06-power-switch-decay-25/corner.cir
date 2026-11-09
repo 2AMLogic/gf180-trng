@@ -1,0 +1,36 @@
+* klt sim -- generated corner deck, do not edit
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice ss
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_ss
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_ss
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_ss
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_ss
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_ss
+.include /var/tmp/eda-job-klt-sim-ebb0911800c8/inputs/netlist.cir
+.temp -40
+.meas tran t90_d1 when v(ct90_1)=0 fall=1
+.meas tran t50_d1 when v(ct50_1)=0 fall=1
+.meas tran t05_d1 when v(ct05_1)=0 fall=1
+.meas tran vmin_d1 min v(vd1) from=0 to=100000
+.meas tran vfin_d1 find v(vd1) at=99000
+.meas tran t90_d2 when v(ct90_2)=0 fall=1
+.meas tran t50_d2 when v(ct50_2)=0 fall=1
+.meas tran t05_d2 when v(ct05_2)=0 fall=1
+.meas tran vmin_d2 min v(vd2) from=0 to=100000
+.meas tran vfin_d2 find v(vd2) at=99000
+.meas tran t90_d3 when v(ct90_3)=0 fall=1
+.meas tran t50_d3 when v(ct50_3)=0 fall=1
+.meas tran t05_d3 when v(ct05_3)=0 fall=1
+.meas tran vmin_d3 min v(vd3) from=0 to=100000
+.meas tran vfin_d3 find v(vd3) at=99000
+.meas tran t90_d4 when v(ct90_4)=0 fall=1
+.meas tran t50_d4 when v(ct50_4)=0 fall=1
+.meas tran t05_d4 when v(ct05_4)=0 fall=1
+.meas tran vmin_d4 min v(vd4) from=0 to=100000
+.meas tran vfin_d4 find v(vd4) at=99000
+.control
+save all
+alter vsup=3.63
+tran 100 100000
+quit
+.endc
+.end

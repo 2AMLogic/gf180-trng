@@ -5,7 +5,7 @@ The normative klayout-tools build (DR-0026) is a pair: a klayout-tools
 release and the KLayout engine release it is installed with. The pair is
 defined once, as two constants in signoff/check.py:
 
-  KLT_PIN       the klayout-tools release  (``klayout-tools==<KLT_PIN>``)
+  (no KLT_PIN: the producer klayout-tools is not pinned, see below)
   KLAYOUT_PIN   the KLayout engine release (``klayout==<KLAYOUT_PIN>``)
   KLT_GRADER_PIN  optional; the klayout-tools release that GRADES the block
                 (``klt signoff``), when it differs from the normative
@@ -69,10 +69,13 @@ from __future__ import annotations
 import argparse
 import ast
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -80,8 +83,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PIN_SOURCE = "signoff/check.py"
 
 #: package name -> constant in PIN_SOURCE that pins it.
+#: The producer klayout-tools is deliberately NOT here: the repo tracks the
+#: fleet's klt version and carries no producer pin (DR-0026, 2026-11-09
+#: amendment). Only the engine and the grader are pinned.
 PIN_CONSTANTS = {
-    "klayout-tools": "KLT_PIN",
     "klayout": "KLAYOUT_PIN",
 }
 
@@ -152,7 +157,8 @@ def read_pins(root: Path) -> dict[str, str]:
     missing = sorted(wanted - {GRADER_CONSTANT} - found.keys())
     if missing:
         raise ValueError(f"{PIN_SOURCE}: missing {', '.join(missing)}")
-    pins = {pkg: found[const] for pkg, const in PIN_CONSTANTS.items()}
+    pins: dict[str, str | None] = {"klayout-tools": None}
+    pins.update({pkg: found[const] for pkg, const in PIN_CONSTANTS.items()})
     if GRADER_CONSTANT in found:
         pins[GRADER_KEY] = found[GRADER_CONSTANT]
     return pins
@@ -167,11 +173,7 @@ def is_scanned(rel: str) -> bool:
 
 
 def tracked_files(root: Path) -> list[str]:
-    out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
-        check=True, capture_output=True, text=True,
-    ).stdout
-    return sorted(p for p in out.split("\0") if p and is_scanned(p))
+    return sorted(p for p in _git_files.tracked_files(root) if is_scanned(p))
 
 
 def find_mentions(rel: str, text: str) -> list[Mention]:
@@ -190,7 +192,7 @@ def marker_lines(text: str, marker: str = MARKER) -> list[int]:
             if marker in line]
 
 
-def check_text(rel: str, text: str, pins: dict[str, str]
+def check_text(rel: str, text: str, pins: dict[str, str | None]
                ) -> tuple[list[Mention], list[str]]:
     """Every pin mention in one file, and the diagnostics for it."""
     mentions = find_mentions(rel, text)
@@ -202,10 +204,19 @@ def check_text(rel: str, text: str, pins: dict[str, str]
         if m.grader and m.package == "klayout-tools":
             grader_lines.add(m.line)
             want = pins.get(GRADER_KEY, want)
-        if m.version == want:
+        if want is not None and m.version == want:
             continue
         if m.marked:
             exempted_lines.add(m.line)
+            continue
+        if want is None:
+            problems.append(
+                f"{rel}:{m.line}: {m.package}=={m.version}: the producer klt "
+                f"is not pinned here (it tracks the fleet version; records "
+                f"name their own producer). Write the install line without "
+                f"==, or mark a narrated older build with '{MARKER}'"
+                + ("" if m.grader else f"; a line restating the grader carries '{GRADER_MARKER}'")
+                + ")")
             continue
         problems.append(
             f"{rel}:{m.line}: {m.package}=={m.version}, but {PIN_SOURCE} "
@@ -254,10 +265,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         pins, mentions, problems = check_tree(args.root.resolve())
     except (OSError, ValueError, SyntaxError,
-            subprocess.CalledProcessError) as exc:
+            _git_files.GitError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     for pkg, version in pins.items():
+        if version is None:
+            print(f"unpinned: {pkg} (tracks the fleet version; DR-0026 amendment 2026-11-09)")
+            continue
         const = GRADER_CONSTANT if pkg == GRADER_KEY else PIN_CONSTANTS[pkg]
         name = "klayout-tools (grader)" if pkg == GRADER_KEY else pkg
         print(f"pinned: {name}=={version}  ({PIN_SOURCE} {const})")

@@ -8,7 +8,7 @@
   "pdk": null,
   "findings_only": true,
   "gate_role": "poly2",
-  "gate_count": 4035,
+  "gate_count": 4018,
   "antenna_tables_omitted": false,
   "nets": [
     {
@@ -82,11 +82,16 @@
       {
         "id": "erc.missing_tie:[]",
         "reason": "ties_disclosed_unexpressible"
+      },
+      {
+        "id": "erc.supply_short",
+        "reason": "substrate_continuity_not_modelled"
       }
     ],
     "unknown": [],
     "nothing_checked": false,
     "nothing_checked_reasons": [],
+    "missing_tie_checked": false,
     "checked_by_assertion": [],
     "checked_by_well_assertion": [],
     "layers_in_stream_without_declaration": [
@@ -102,19 +107,21 @@
       "204/10"
     ],
     "well_assertion_coverage": [],
-    "floating_gate_checked_count": 4035
+    "floating_gate_checked_count": 4018
   },
   "ties_disclosure": {
     "reason": "No ties[] is declared and erc.missing_tie is not computed for the composed stream. The analog regions draw no Nplus/Pplus (31/0, 32/0) or LVPWELL (204/0) layer, so a well tap cannot be told from source/drain diffusion by layer, and their reference netlists give every PMOS a floating well; the digital partition's own spec (layout/digital/erc-supply-spec.json) checks its tap sites. The substrate/guard-ring identity is likewise unverified here: no vsubs label exists in the stream and the guard ring is deliberately not merged into vss. Well-tie coverage and the substrate connection are unverified for the composed floorplan, not passed.",
     "kind": "unexpressible"
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.0",
+    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+    "klt_reinstall_spec": "klayout-tools==0.9.0",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:3c9e3694b4fa8264dd35fda9801d5e10bbcce1cb400b6a8ea09a2302d0bc600e",
+      "content_hash": "sha256:0184d2a067fb22f03b56ffc1a2de3d647d16784d133ebca44ecf40e4818d220a",
       "role": "layout"
     },
     "spec": {
@@ -126,7 +133,7 @@
       {
         "name": "Metal1",
         "label_layer": "34/10",
-        "label_text_count": 15280
+        "label_text_count": 14708
       },
       {
         "name": "Metal2",

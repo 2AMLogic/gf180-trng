@@ -1,8 +1,86 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-10-27.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-07.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-07
+
+- **PR #787**: Bump Repo Skills 0.25.1 -> 0.25.10
+
+### 2026-11-06
+
+- **PR #783**: sim: measure gated-rail decay after the power switch opens
+- **Issue #782** (closed): Power switch: measure gated-rail decay time and replace the t_rail_decay placeholder
+- **PR #776**: docs: replace rail-settle placeholder in power intent with evidenced figure
+- **Issue #708** (closed): Power gating: define and verify the power-intent flow for a gated digital domain
+- **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
+- **Issue #778** (closed): Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators
+
+### 2026-11-05
+
+- **PR #775**: refactor: share one SPICE continuation joiner and .SUBCKT pin reader
+- **Issue #774** (closed): Consolidate duplicated SPICE continuation-join and .SUBCKT pin-list readers
+- **PR #771**: docs(signoff): record working klt yield install route and the missing limit blocking item 6
+- **Issue #707** (closed): Power gating: design a custom power-switch cell for the digital section
+
+### 2026-11-04
+
+- **Issue #734** (closed): Refresh extracted/routed ro-array startup records on the 30 um tapcell geometry
+- **PR #737**: docs: record measured DR-0029 follow-up for the extracted ro-array startup family
+- **PR #732**: evidence: refresh digital STA, activity and post-route records on the 30 um tapcell geometry
+- **Issue #710** (closed): Area: rework floorplan utilisation and isolation channels toward < 0.05 mm^2
+- **PR #768**: docs(floorplan): re-run the utilisation sweep on the post-709 inventory
+- **Issue #730** (closed): Reconcile README/spec-row-status whole-block active figure (758.2 uW) with re-measured 749.4 uW
+- **PR #765**: docs: quote post-#729 active power figure and regenerate signoff citations
+- **PR #729**: feat(interface): drop raw_shift reset and size raw_bit_count from RAW_PACK_BITS, with measured digital chain
+- **Issue #709** (closed): Area and power: FIFO and cell-inventory reductions toward the ratified bounds
+
+### 2026-11-03
+
+- **PR #763**: refactor: share record provenance derivation via harness.report
+- **Issue #762** (closed): Consolidate duplicated record-provenance code in sim/tools into sim/harness/report.py
+
+### 2026-11-02
+
+- **Issue #654** (closed): T1 item 5.analog: klayout-tools#2533 is fixed; emit the ratified analog rows as klt sim envelopes
+
+### 2026-11-01
+
+- **Issue #414** (closed): Characterize deterministic supply-ripple sensitivity of the buffered RO array
+- **PR #755**: Bump Repo Skills 0.24.7 -> 0.25.1
+
+### 2026-10-30
+
+- **PR #753**: refactor(sim): share pex DUT generator helpers and honour KLT in ring11
+- **Issue #751** (closed): Consolidate helpers duplicated between the two pex build_dut.py generators
+- **PR #749**: fix(harness): stream sha256_file in 1 MiB chunks
+- **Issue #748** (closed): sim.harness.report.sha256_file reads whole file into memory; callers hash large artifacts
+- **PR #747**: refactor: use the shared sha256_file in place of local digest helpers
+- **Issue #744** (closed): Consolidate ~11 duplicated file-sha256 helpers onto the existing shared one
+- **PR #746**: refactor(layout): share the ro_stage generator between ring1 and ring2
+- **Issue #733** (closed): Share ro_stage build_shapes between ring1 and ring2 (as ro_nand2 already does)
+- **PR #742**: sim: supersede the eight extracted-fullchip records after the PEX netlist refresh
+- **Issue #739** (closed): Follow-on from PR #738: re-run extracted-fullchip PVT sims with refreshed cload values
+- **PR #743**: fix: exempt pdk-models.json and declared netlist dependencies from the stored-bytes check
+- **Issue #741** (closed): check:artifact-manifests rejects stored dependency snapshots and pdk-models.json that equal committed files
+- **PR #738**: pex: resolve full-chip nets via DEF net name; refresh PEX evidence
+- **Issue #736** (closed): pex: --fullchip-extract fails on main (inter-region label merge) and --check cache is stale
+- **PR #728**: refactor: share cmd_run/cmd_record scaffold between power tools
+- **PR #712**: sim: add power-intent spec and gate-level isolation/sequencing check for a gated digital section
+- **Issue #727** (closed): ci: all jobs fail within 2s with no steps on a docs-only PR (runner startup failure?)
+- **Issue #726** (closed): Dedupe cmd_run/cmd_record/_sanitize between power_switch.py and liveness_sampler_power.py
+
+### 2026-10-29
+
+- **PR #716**: evidence: price digital inventory levers against idle and area rows
+- **PR #722**: refactor: share one git ls-files wrapper across sim/tools scripts
+- **Issue #721** (closed): Consolidate duplicated git ls-files and file-SHA-256 helpers in sim/tools
+
+### 2026-10-28
+
+- **PR #714**: docs: record floorplan utilisation sweep toward the Area row
+- **PR #713**: feat: add a 400 um PMOS header cell for the digital supply, with 45-point sizing evidence
 
 ### 2026-10-27
 

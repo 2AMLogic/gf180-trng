@@ -48,7 +48,7 @@ tied on position.
 
 ```bash
 # DR-0026's producer build, in a throwaway environment (do not install it on a shared host)
-export KLT="uvx --from klayout-tools==0.8.0 --with klayout==0.30.10 klt"
+export KLT="uvx --from klayout-tools --with klayout==0.30.10 klt"
 
 python3 sim/tb/ro-ring11-pex/build_dut.py --ring ring2 --check-source   # offline
 python3 sim/tb/ro-ring11-pex/build_dut.py --ring ring2 --check          # re-extracts (klt extract only)

@@ -1,11 +1,15 @@
 {
-  "schema_version": 1,
-  "file": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+  "schema_version": 2,
+  "file": {
+    "path": "layout/blocks/combiner_sampler/combiner_sampler.gds",
+    "scope": "repo"
+  },
   "spec": "layout/analog/erc-supply-spec-combiner_sampler.json",
   "pdk": null,
   "findings_only": false,
   "gate_role": "poly2",
   "gate_count": 28,
+  "antenna_tables_omitted": false,
   "gates": [
     {
       "gate_id": "gate0",
@@ -995,9 +999,9 @@
         },
         {
           "layer": "Metal2",
-          "step_area_um2": 94.9524,
-          "cumulative_area_um2": 98.638,
-          "antenna_ratio": 177.91847,
+          "step_area_um2": 95.6964,
+          "cumulative_area_um2": 99.382,
+          "antenna_ratio": 179.260462,
           "antenna_ratio_max": null,
           "antenna_ratio_source": null,
           "verdict": "unchecked",
@@ -1006,8 +1010,8 @@
         {
           "layer": "Metal3",
           "step_area_um2": 11.826,
-          "cumulative_area_um2": 110.464,
-          "antenna_ratio": 199.249639,
+          "cumulative_area_um2": 111.208,
+          "antenna_ratio": 200.591631,
           "antenna_ratio_max": null,
           "antenna_ratio_source": null,
           "verdict": "unchecked",
@@ -1043,9 +1047,9 @@
         },
         {
           "layer": "Metal2",
-          "step_area_um2": 110.5554,
-          "cumulative_area_um2": 114.241,
-          "antenna_ratio": 206.06241,
+          "step_area_um2": 110.9274,
+          "cumulative_area_um2": 114.613,
+          "antenna_ratio": 206.733405,
           "antenna_ratio_max": null,
           "antenna_ratio_source": null,
           "verdict": "unchecked",
@@ -1054,8 +1058,8 @@
         {
           "layer": "Metal3",
           "step_area_um2": 13.041,
-          "cumulative_area_um2": 127.282,
-          "antenna_ratio": 229.585137,
+          "cumulative_area_um2": 127.654,
+          "antenna_ratio": 230.256133,
           "antenna_ratio_max": null,
           "antenna_ratio_source": null,
           "verdict": "unchecked",
@@ -1350,6 +1354,28 @@
           "remedy": null
         }
       ]
+    }
+  ],
+  "nets": [
+    {
+      "name": "vdd",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "vss",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
     }
   ],
   "erc_findings": [],
@@ -1861,30 +1887,56 @@
       {
         "id": "erc.missing_tie:[]",
         "reason": "ties_disclosed_unexpressible"
+      },
+      {
+        "id": "erc.supply_short",
+        "reason": "substrate_continuity_not_modelled"
       }
     ],
     "unknown": [],
     "nothing_checked": false,
     "nothing_checked_reasons": [],
+    "missing_tie_checked": false,
     "checked_by_assertion": [],
-    "checked_by_well_assertion": []
+    "checked_by_well_assertion": [],
+    "layers_in_stream_without_declaration": [
+      "21/0",
+      "31/0",
+      "32/0"
+    ],
+    "well_assertion_coverage": []
   },
   "ties_disclosure": {
     "reason": "This stream draws no Nplus/Pplus (31/0, 32/0) or LVPWELL (204/0) layer, so a well tap cannot be told from source/drain diffusion by layer, and the committed reference netlist (layout/blocks/combiner_sampler/combiner_sampler.spice) gives every PMOS an anonymous floating well (NWELL_FLOAT_*) and every NMOS the deck's vsubs global, so no drawn well tie exists to check. No ties[] is declared and erc.missing_tie is not computed: well-tie coverage and the vsubs body connection are unverified for this region, not passed.",
     "kind": "unexpressible"
   },
   "provenance": {
-    "klt_version": "0.6.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.9.0",
+    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+    "klt_reinstall_spec": "klayout-tools==0.9.0",
+    "klayout_version": "0.30.10",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:d66c91dc3881b161aa2b3b57844ec8b80287a4980552ffceb3e22f398eb0cbcd",
+      "content_hash": "sha256:c00cf8143b8fd4f76cb986d2f0daf014ea51d1ec643999a14ad625e099939d7f",
       "role": "layout"
     },
     "spec": {
       "content_hash": "sha256:ebf60a55787405b4f5e7196e79fbfb759c169a96ec5d3c9ded90b98377f5f7f3"
     },
-    "devices": []
+    "devices": [],
+    "net_exclusions": [],
+    "label_layers": [
+      {
+        "name": "Metal1",
+        "label_layer": "34/10",
+        "label_text_count": 8
+      },
+      {
+        "name": "Metal2",
+        "label_layer": "36/10",
+        "label_text_count": 29
+      }
+    ]
   }
 }

@@ -44,12 +44,12 @@ import json
 import math
 import platform
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
+from harness.corners import CORNERS as _CORNER_REGISTRY  # noqa: E402
 from harness.report import git_blob_sha1  # noqa: E402
 from harness import report as _rep  # noqa: E402
 
@@ -102,11 +102,7 @@ CORNERS = {
 }
 
 #: gf180mcuD corner sections, as sim/tb/ro-ring11-pex/request.json.
-PROCESS_SECTIONS = {
-    "tt": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "ss": ["ss", "bjt_ss", "diode_ss", "res_ss", "moscap_ss", "mimcap_ss"],
-    "ff": ["ff", "bjt_ff", "diode_ff", "res_ff", "moscap_ff", "mimcap_ff"],
-}
+PROCESS_SECTIONS = {p: list(_CORNER_REGISTRY[p].sections) for p in ("tt", "ss", "ff")}
 
 LOW_F_HZ = 2.0e6
 
@@ -651,29 +647,12 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 # --------------------------------------------------------------------------
 
 
-def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True,
-                          check=True).stdout.strip()
-
-
 def render_record(stem: str, name: str, report: dict, an: dict, raw_files: list[tuple[str, str]],
                   wall_s: float, date: str, commit: str, tb_sha: str, dut_sha: str) -> str:
     cname, freq_key, tstep = next((c, f, t) for n, c, f, t in REQUESTS if n == name)
     cfg = CORNERS[cname]
-    env = report.get("environment", {})
-    remote = env.get("remote") or {}
-    fleet = remote.get("fleet") or ([remote] if remote.get("job_id") else [])
-    jobs = [f.get("job_id") for f in fleet if f.get("job_id")]
-    stamps = sorted({(f.get("worker_environment") or {}).get("pdk", {}).get("stamp_text", "")
-                     for f in fleet} - {""})
-    pdk_ver = stamps[0].replace("open_pdks ", "") if len(stamps) == 1 else (
-        "; ".join(stamps) or (report.get("provenance", {}).get("pdk") or {}).get("version") or "unknown")
-    banners = sorted({((f.get("worker_environment") or {}).get("simulator") or {})
-                      .get("version_banner", "").split("\n")[1].strip("* ").strip()
-                      for f in fleet if ((f.get("worker_environment") or {}).get("simulator") or {})
-                      .get("version_banner")})
-    ngspice = banners[0] if len(banners) == 1 else f"ngspice-{env.get('engine_version', 'unknown')}"
-    klt_ver = report.get("provenance", {}).get("klt_version") or "unknown"
+    fp = _rep.fleet_provenance(report)
+    jobs, pdk_ver, ngspice, klt_ver = fp["jobs"], fp["pdk_ver"], fp["ngspice"], fp["klt_ver"]
     tstop = TSTOP_S[freq_key]
     f_hz = an["f_hz"]
     n = len(report["corners"])
@@ -755,7 +734,7 @@ def cmd_ingest(name: str, report_path: Path, stderr_path: Path | None, records_d
     # units of one batch job run concurrently and each reports a job-scale runtime: take the
     # longest unit as the request wall time, never the sum
     wall = max(float(c.get("runtime_s") or 0.0) for c in corners)
-    commit = _git("rev-parse", "HEAD") + ("-dirty" if _git("status", "--porcelain") else "")
+    commit = _rep.repo_commit_field(_rep.git_provenance(REPO_ROOT))
     tb_sha = git_blob_sha1((TB_DIR / DECK).read_bytes())
     text = render_record(stem, name, report, an, raw_files, wall, now.strftime("%Y-%m-%dT%H:%M:%SZ"),
                          commit, tb_sha, dut_blob_sha())

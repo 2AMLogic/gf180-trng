@@ -152,8 +152,9 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 from pathlib import Path
+
+from spice_text import subckt_pins
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYOUT_DIR = REPO_ROOT / "layout"
@@ -455,25 +456,6 @@ INTER_REGION_NETS: list[dict] = [
 # Reading a region's own committed reference pin list
 # --------------------------------------------------------------------------- #
 
-_SUBCKT_HEADER_RE = re.compile(r"^\.subckt\s+(\S+)\s+(.*)$", re.MULTILINE | re.IGNORECASE)
-
-
-def _join_spice_continuations(text: str) -> str:
-    """Fold every SPICE `+`-prefixed continuation line into its predecessor
-    -- the same small helper `layout/floorplan/floorplan.py`'s own
-    `_reference_top_pins` and `layout/digital/lvs.py`'s own `_library_cell_
-    pins` each keep a private copy of, for the same reason: it only ever
-    reads a header a reference file already carries, never builds one.
-    """
-    joined: list[str] = []
-    for line in text.split("\n"):
-        if line.startswith("+") and joined:
-            joined[-1] = f"{joined[-1]} {line[1:].strip()}"
-        else:
-            joined.append(line)
-    return "\n".join(joined)
-
-
 def reference_top_pins(path: Path, top: str) -> list[str]:
     """The declared pin list off `path`'s own `.SUBCKT <top> ...` header."""
     if not path.is_file():
@@ -481,10 +463,9 @@ def reference_top_pins(path: Path, top: str) -> list[str]:
             f"{path.relative_to(REPO_ROOT)} does not exist -- cannot read its "
             f"`.SUBCKT {top}` pin list"
         )
-    text = _join_spice_continuations(path.read_text(errors="replace"))
-    for name, pins in _SUBCKT_HEADER_RE.findall(text):
-        if name.lower() == top.lower():
-            return pins.split()
+    pins = subckt_pins(path.read_text(errors="replace"), top)
+    if pins is not None:
+        return pins
     raise FloorplanNetlistError(
         f"{path.relative_to(REPO_ROOT)} has no `.SUBCKT {top}` header -- "
         "cannot derive its declared pin list"

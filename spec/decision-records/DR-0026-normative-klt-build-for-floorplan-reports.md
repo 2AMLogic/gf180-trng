@@ -228,6 +228,110 @@ rather than assuming this result holds. Pin the KLayout engine the
 candidate release records (`klayout_version_expected`) alongside it, or
 record why not.
 
+## Amendment (2026-11-09): no single producer of record; the repo tracks the fleet's klayout-tools release
+
+The operator's 2026-11-09 ruling on #705 replaces the planned move of the
+producer pin from 0.6.0 to 0.8.0. This repository stops pinning
+klayout-tools as the producer and tracks the release the fleet's batch runner
+carries (0.9.0 at the time of writing). The "normative build" this record
+established is no longer one release; it is "whichever release a record
+names".
+
+### What changes
+
+1. **No producer pin.** `KLT_PIN` is removed from `signoff/check.py` and
+   `layout/floorplan/erc_supply.py`. The publishers
+   (`signoff/publish_common.py`) and the supply-ERC check accept a response
+   from any *tagged release* build (`X.Y.Z`; a git build reports a `.devN+g<sha>`
+   version and is still refused) and record it: a published record's
+   `producer_build`, a report's `provenance.klt_version`.
+2. **Each cited record names its producer version.** Records produced under
+   0.6.0 stay valid as written, and are not regenerated to match a newer
+   release. `sim/tools/klt_pin_sites.py --check` no longer holds
+   `klayout-tools==` install lines to a constant: an install line is written
+   without `==`, a narrated older build carries the historical-pin marker, and
+   the grader's own pin (`KLT_GRADER_PIN`) and the KLayout engine pin
+   (`KLAYOUT_PIN`) are unchanged.
+3. **`.github/workflows/pdk-nightly.yml`** installs the latest tagged
+   `klayout-tools` with the engine still pinned to `klayout==0.30.10`.
+   Because nothing pins klt there, a release that moves a verdict, a rule id
+   or a report shape turns the nightly red until the committed reports are
+   regenerated; that is the intended alarm.
+
+### Control, then candidate (the method this record set)
+
+Same PDK (`gf180mcuD @ f6eeac7d`), same `klayout==0.30.10`, throwaway
+environments, nothing installed on the host.
+
+- **Control, klt 0.6.0, on the layout as committed before #705:** PASS (the
+  committed reports match). Recorded by the first #705 attempt.
+- **Candidate, klt 0.8.0, same layout:** FAIL, 63 expectations. The new curated
+  rule `comp.coverage.1` (Comp not covered by Nplus or Pplus) fired on 12 of 13
+  fixtures, which drew no implants, and `contact.width.1` fired on
+  `ro_stage_ring2`'s contacts, drawn 0.22 x 0.24 um where the rule is a fixed
+  0.22 um square. The rule was right about the drawn geometry; it was not a
+  tool defect. The operator ruled that the fixtures be redrawn, not re-baselined.
+- **After redrawing, klt 0.8.0:** a second new family,
+  `comp.tap_distance.{nwell,psub}.lv.1`, fired on every cell: no cell had a
+  well tap or a substrate tap. The operator ruled that the design be fixed
+  (a missing tap is a latch-up hazard, the class #449/#717 fix for the digital
+  half), so every hand-drawn cell now draws an Nwell tap tied to its supply
+  and a substrate tap tied to ground (`layout/testcells/gdsii.py`'s
+  `add_taps`; `power_switch` carries four Nwell taps and no substrate tap, as
+  it has no NMOS).
+- **Candidate, klt 0.9.0, on the redrawn layout:** `layout/verify.py
+  --require-tools` PASS. All 14 fixtures are DRC-clean (`trng_tc_inv_drcbad`
+  shows only its two intended rules); LVS matches on every cell, ring and
+  block (`trng_tc_inv_lvsbad` fails with exactly its two intended errors).
+- **Control, klt 0.6.0, on the redrawn layout:** every DRC/LVS expectation
+  is also met; only the report files differ (version, deck and provenance
+  fields). The tapped cells do not depend on the newer release to verify.
+
+### Measured differences, none hidden
+
+- **Bulk nets changed.** With taps, `klt extract` reports every PMOS bulk as
+  the supply (`vdd`/`vddr`) and every NMOS bulk as `vss`. The old `vsubs`
+  pin and the floating-well net (`NWELL_FLOAT*`) no longer exist, so the LVS
+  reference netlists were rewritten to the same nets the schematics use, and
+  `lvs.body_verification.status` is `verified` where it was `unverified`
+  (the `device.body_unverified` disclosure is gone). `design/floorplan_netlist.py`
+  no longer declares a `vsubs` net.
+- **`power_switch`** (added after the first attempt) failed `comp.coverage.1`
+  and then `comp.tap_distance.nwell.lv.1`; it now draws implants and four
+  Nplus Nwell taps under the `vdd` bar. Its LVS reference ties the well to `vdd`.
+- **Digital partition: DRC clean (0.6.0) -> 2769 violations (0.9.0).** Only two
+  rules fire, `comp.tap_distance.nwell.mv.1` (1441) and
+  `comp.tap_distance.psub.mv.1` (1328). This is the tap-pitch failure #449 and
+  #717 already track (`layout/digital/reports/tap-distance.json`, verdict
+  `fail`); the deck now reports it. The floorplan's composed DRC shows the
+  same two rules (1441 and 1309) and 0 new violations from composition. These are
+  **recorded as known violations tracked by #717**: the report says
+  `violations`, the region stays in the graded DRC reports, and
+  `layout/tests/test_digital_reports.py` fails if any other rule appears in
+  either report. It is a real latch-up finding and is not exempted.
+  Consequence: T1 item 3 on the digital partition no longer grades `met`
+  until #717 lands.
+- **klt 0.9.0 reports wall-clock `timing`** in `klt extract` envelopes, which
+  differs run to run; `layout/verify.py`'s `_stable()` drops it from the
+  comparison (it records how long the run took, not what it verified).
+- **Report shapes.** The digital DRC envelope is schema 3 (`file` is
+  `{path, scope}`, with a `source_cell_rollup`); the test that resolves the
+  report's pin accepts both forms.
+- **Not re-measured here:** `layout/pex/` (the post-layout composition still
+  assumes a `vsubs` pin that tapped cells no longer have; it is not run by
+  any CI check) and the `sim/tb/*-pex` testbenches built on it. Their
+  committed records describe the layout as it was and stay valid as
+  written; re-deriving them is a follow-up. `design/synth.py --check` is
+  stale on this host under 0.6.0 and 0.9.0 alike (the host's Yosys is not
+  the nightly's), so it is not attributable to this change.
+
+### Revisit if
+
+The fleet's release moves again: re-run `layout/verify.py`,
+`layout/floorplan/floorplan.py` and `layout/digital/build.py --drc-only`
+under it, and diff the verdicts, rule counts and device counts against the
+committed reports before regenerating any of them.
+
 ## Context
 
 ### The drift, and how it was confirmed still current

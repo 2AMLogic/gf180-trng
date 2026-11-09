@@ -38,12 +38,15 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Iterator
 from urllib.parse import unquote
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -100,11 +103,7 @@ class CheckerError(Exception):
 
 
 def tracked_files(root: Path) -> list[str]:
-    out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
-        check=True, capture_output=True,
-    ).stdout.decode("utf-8")
-    return sorted(p for p in out.split("\0") if p)
+    return sorted(_git_files.tracked_files(root))
 
 
 def select_documents(files: Iterable[str]) -> list[str]:
@@ -214,7 +213,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="repository root (default: this checkout)")
     args = ap.parse_args(argv)
 
-    files = tracked_files(args.root)
+    try:
+        files = tracked_files(args.root)
+    except _git_files.GitError as exc:
+        print(exc, file=sys.stderr)
+        return 2
     docs = select_documents(files)
     try:
         findings = check_documents(args.root, docs, files)

@@ -236,7 +236,7 @@ still quotes it at that rate.
 
 Row text as it stood on relocation (the README keeps the two targets and their binding corners; the measurement history moved here):
 
-**Target cell:** < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, #264/#277's re-tune of that depth-2 build's `max_transition_ns` (8.0 → 4.0) and rebuild, and #293's re-run of the same place-and-route on #292's re-baselined netlist, with #145's fifteen-corner `level: gate` sweep re-run against each rebuild — the current family is `sim/records/2026-10-07-digital-sta-power-{01..15}.md`): active 758.2 µW — missed by 1.5×, at 151.6 % of the row. Idle 2.21 µA — missed by ~2.2×**, and the cause on both halves is still the synthesized-and-placed digital section (348.2 µW active / 7.842 µW — 2.178 µA — leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md), §0a/§0b of [`sim/characterization-digital-sta-area-power.md`](../sim/characterization-digital-sta-area-power.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run, #264/#277's re-tuned rebuild and #293's re-run update the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below
+**Target cell:** < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, #264/#277's re-tune of that depth-2 build's `max_transition_ns` (8.0 → 4.0) and rebuild, and #293's re-run of the same place-and-route on #292's re-baselined netlist, with #145's fifteen-corner `level: gate` sweep re-run against each rebuild — the current family is `sim/records/2026-10-07-digital-sta-power-{01..15}.md`): active 749.4 µW — missed by 1.5×, at 149.9 % of the row (#709 and #729 re-measured the whole-block figure). Idle 2.21 µA — missed by ~2.2×**, and the cause on both halves is still the synthesized-and-placed digital section (339.4 µW active / 7.842 µW — 2.178 µA — leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md), §0a/§0b of [`sim/characterization-digital-sta-area-power.md`](../sim/characterization-digital-sta-area-power.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run, #264/#277's re-tuned rebuild and #293's re-run update the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below
 
 From the ratification note ("Ratified, with four rows explicitly unmeasured"; "the note below" in the row text above is this one):
 
@@ -268,9 +268,9 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
   **Both halves are still missed, by a materially narrower active margin
   than at depth 8 — and, on the idle half, by a slightly wider one than the
   violating depth-2 build showed**:
-  - **Active: missed, by 1.5×** (was 2.2×). 758.2 µW at `ff`/−40 °C/3.63 V —
+  - **Active: missed, by 1.5×** (was 2.2×). 749.4 µW at `ff`/−40 °C/3.63 V —
     entropy source 393 µW (measured), sampler 16.9 µW (measured), digital
-    section 348.2 µW (**MEASURED-at-gate-level** at its own worst corner,
+    section 339.4 µW (**MEASURED-at-gate-level** at its own worst corner,
     `ff_125C_3v60`/`rc-max`, [DR-0021]; 345.6 µW at #264/#277's build
     before #293's re-run, down from 358.5 µW at #255/#266's
     violating depth-2 build, from 712.4 µW at the depth-8 build, and from a
@@ -291,7 +291,9 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
     entropy source's own share (393 + 17 µW) is unchanged by any of these
     substitutions — the digital section's own build is the only thing that
     moved.
-  - **Idle: missed, by ~2.2×** (2.12 µA at #264/#277's build before #293's
+  - **Idle: missed, by ~2.1×** (2.148 µA after #709's interface
+    `raw_shift` / `raw_bit_count` change, measured by `power_rollup.py`
+    with digital leakage 2.116 µA / 7.617 µW; 2.211 µA before it; 2.12 µA at #264/#277's build before #293's
     re-run, ~2.0× at the violating depth-2 build, ~4.1× at depth 8, 4.5×
     estimated). 2.21 µA at
     `ff`/+125 °C/3.63 V — analog block 32.8 nA (3.3 % of the row, measured
@@ -336,7 +338,8 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
 - **Area: the regenerated floorplan misses by 3.5×.** The row is
   `< 0.05 mm²`. The current figure is the regenerated depth-2 floorplan
   rollup in `layout/floorplan/reports/area.json` (#256, via #454):
-  **175 789.9 µm² including isolation channels, 351.6 % of the row** (a
+  **173 157.9 µm² including isolation channels, 346.3 % of the row** (175 789.9 µm²,
+  351.6 %, before #709's interface change; a
   floorplan-area sum; the row bounding box, 934.4 × 416.7 µm, is reported
   separately). The rest of this bullet is historical context from before
   that regeneration. #16's floorplan work had priced the block bottom-up
@@ -403,7 +406,8 @@ not that inventory.
 
 **What the 351.6 % is.** In `area.json` the rollup's `floorplan_area_um2` is
 the sum of the guarded-region areas plus the declared 20 µm isolation channels:
-175 789.9 µm² = 167 271.3 µm² guarded regions + 8 518.6 µm² channels, against
+173 157.9 µm² = 164 703.6 µm² guarded regions + 8 454.3 µm² channels (after #709; was
+175 789.9 µm² = 167 271.3 + 8 518.6), against
 the 50 000 µm² budget. Each of the four regions is sized from the bounding box
 of its committed, DRC-checked assembled GDS, not from a cell-area estimate:
 the digital region from `layout/digital/trng_top.gds` (398.93 × 398.93 µm, the

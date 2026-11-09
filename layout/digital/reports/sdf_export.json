@@ -20,10 +20,10 @@
     "cell_delay": "modeled (per-instance IOPATH from the resolved liberty timing arcs, at the as-built netlist's real fan-out)",
     "interconnect_delay": "not modeled -- zero-length/zero-RC net assumption; no DEF, no placement, no parasitic extraction (see this script's own module docstring)",
     "min_typ_max": "identical -- one liberty corner only, no min/max variation written",
-    "icarus_unsupported_arcs_excluded": 648,
-    "icarus_unsupported_cells_dropped_entirely": 49,
+    "icarus_unsupported_arcs_excluded": 676,
+    "icarus_unsupported_cells_dropped_entirely": 41,
     "top_level_interconnect_block_dropped": true
   },
-  "sdf_sha256": "137d1cadb7d1a80b59b9a3e7628fde0bd8d5ae0c8f6db44d5f0ae6374ce998af",
-  "sdf_content_sha256": "3fd7eeb5be8443f18ce0ab18def3b7316735956830f5bb4d040c8343f72c5fe6"
+  "sdf_sha256": "1817570b6ae837d724d1d6cfb3348fda415dcf9b266843d1fce99e6d3b353683",
+  "sdf_content_sha256": "62ba4715dfe6bdb5565e3430c100f69caf0bf8d5f913ee6f8f07e74a26f8487a"
 }

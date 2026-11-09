@@ -112,8 +112,8 @@
     "bbox_um": {
       "x0": -0.16,
       "y0": -11.15,
-      "x1": 965.08,
-      "y1": 405.58
+      "x1": 961.865,
+      "y1": 402.365
     },
     "ports": [],
     "blocks": [
@@ -123,7 +123,7 @@
         "generator": "guard_ring",
         "cell_name": "fp_guard_ring1",
         "source_path": "layout/.work/fp_guard_ring1.gds",
-        "source_digest": "sha256:1d24c4a843f6ac48dbd7570bbe149cb4752df653ab18064d17731cf7c4e2f528",
+        "source_digest": "sha256:0df7d434996d3c931eee5d45674d3cc0c4f93528672856c0a0187b064cfa2e32",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -135,6 +135,7 @@
           "y1": 6.91
         },
         "orientation": "none",
+        "placed_cell_name": "ring1__fp_guard_ring1",
         "abuts": []
       },
       {
@@ -143,7 +144,7 @@
         "generator": "guard_ring",
         "cell_name": "fp_guard_ring2",
         "source_path": "layout/.work/fp_guard_ring2.gds",
-        "source_digest": "sha256:a220104f19b6ab4e736bcefa69a4af15c8dad8a38356e9309a0aff534d6e211c",
+        "source_digest": "sha256:2780511e981b725b38644dcc1036edb6520b4e2286a990c73cf684ce690c7a30",
         "offset_um": {
           "x": 114.87,
           "y": 0.0
@@ -155,6 +156,7 @@
           "y1": 6.91
         },
         "orientation": "none",
+        "placed_cell_name": "ring2__fp_guard_ring2",
         "abuts": []
       },
       {
@@ -163,7 +165,7 @@
         "generator": "guard_ring",
         "cell_name": "fp_guard_combiner_sampler",
         "source_path": "layout/.work/fp_guard_combiner_sampler.gds",
-        "source_digest": "sha256:fdcc9c27c17d5005b11e615968c4a13ba8935aa546fc63926e7b54d7b03ca56a",
+        "source_digest": "sha256:0e77b3da5674bc200ed8ed342b2fa79d3b2f7e77d1712dc4dab7ec32331d676e",
         "offset_um": {
           "x": 229.74,
           "y": 0.0
@@ -175,6 +177,7 @@
           "y1": 19.04
         },
         "orientation": "none",
+        "placed_cell_name": "combiner_sampler__fp_guard_combiner_sampler",
         "abuts": []
       },
       {
@@ -183,7 +186,7 @@
         "generator": "guard_ring",
         "cell_name": "fp_guard_digital",
         "source_path": "layout/.work/fp_guard_digital.gds",
-        "source_digest": "sha256:35e53d997462458effe1a2648066dafd21aae30bfbe532f49928ff9145d4734a",
+        "source_digest": "sha256:5e44b8094b7b5aef9f38120506cb30ea47aa5a9f89898569b7c0f4f2adb5953a",
         "offset_um": {
           "x": 550.3,
           "y": 0.0
@@ -191,10 +194,11 @@
         "bbox_um": {
           "x0": 550.14,
           "y0": -0.16,
-          "x1": 951.39,
-          "y1": 401.09000000000003
+          "x1": 948.175,
+          "y1": 397.875
         },
         "orientation": "none",
+        "placed_cell_name": "digital__fp_guard_digital",
         "abuts": []
       },
       {
@@ -215,6 +219,7 @@
           "y1": 5.75
         },
         "orientation": "none",
+        "placed_cell_name": "ring1_ring__ro_ring11",
         "abuts": []
       },
       {
@@ -235,6 +240,7 @@
           "y1": 5.75
         },
         "orientation": "none",
+        "placed_cell_name": "ring2_ring__ro_ring11_ring2",
         "abuts": []
       },
       {
@@ -255,6 +261,7 @@
           "y1": 17.880000000000003
         },
         "orientation": "none",
+        "placed_cell_name": "combiner_sampler_ring__combiner_sampler",
         "abuts": []
       },
       {
@@ -263,7 +270,7 @@
         "generator": "committed_ring_geometry",
         "cell_name": "trng_top",
         "source_path": "layout/digital/trng_top.gds",
-        "source_digest": "sha256:e0e42839d1dbada68c31489748ffe0c935f28f76aff6f833860986607b34f3c1",
+        "source_digest": "sha256:c99329a3871c4343cdb8b7a06d79cd8539afbe86b4584891438bc084e856acc8",
         "offset_um": {
           "x": 551.3,
           "y": 1.0
@@ -271,10 +278,11 @@
         "bbox_um": {
           "x0": 551.3,
           "y0": 1.0,
-          "x1": 950.23,
-          "y1": 399.93
+          "x1": 947.015,
+          "y1": 396.71500000000003
         },
         "orientation": "none",
+        "placed_cell_name": "digital_ring__trng_top",
         "abuts": []
       },
       {
@@ -283,7 +291,7 @@
         "generator": "layout.floorplan.interregion",
         "cell_name": "trng_interregion",
         "source_path": "layout/.work/trng_interregion.gds",
-        "source_digest": "sha256:656dffc77548317b17c4cbd598fc82493cca2f8e88626a80b6b15b028601bc1f",
+        "source_digest": "sha256:0284e9173a003642a67b86ec6435abacbb41b45462014625258e5253da8c608e",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -291,10 +299,11 @@
         "bbox_um": {
           "x0": 4.16,
           "y0": -11.15,
-          "x1": 965.08,
-          "y1": 405.58
+          "x1": 961.865,
+          "y1": 402.365
         },
         "orientation": "none",
+        "placed_cell_name": "trng_interregion__trng_interregion",
         "abuts": []
       }
     ],
@@ -320,7 +329,9 @@
       "block 'combiner_sampler_ring' gds 'layout/blocks/combiner_sampler/combiner_sampler.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)"
     ],
     "provenance": {
-      "klt_version": "0.8.0",
+      "klt_version": "0.9.0",
+      "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+      "klt_reinstall_spec": "klayout-tools==0.9.0",
       "klayout_version": "0.30.10",
       "pdk": {
         "name": "gf180mcuD",
@@ -334,5 +345,5 @@
       "input": null
     }
   },
-  "gds_sha256_timestamp_normalised": "3c9e3694b4fa8264dd35fda9801d5e10bbcce1cb400b6a8ea09a2302d0bc600e"
+  "gds_sha256_timestamp_normalised": "0184d2a067fb22f03b56ffc1a2de3d647d16784d133ebca44ecf40e4818d220a"
 }

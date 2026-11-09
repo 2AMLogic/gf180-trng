@@ -42,13 +42,16 @@ import argparse
 import ast
 import io
 import re
-import subprocess
 import symtable
 import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _git_files  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -108,16 +111,10 @@ def select_files(paths: Iterable[str]) -> list[str]:
 
 
 def tracked_files(root: Path) -> list[str]:
-    proc = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z", "--", *SCAN_DIRS],
-        capture_output=True, check=False,
-    )
-    if proc.returncode != 0:
-        raise SystemExit(
-            f"error: git ls-files failed in {root}: "
-            f"{proc.stderr.decode(errors='replace').strip()}"
-        )
-    return [p for p in proc.stdout.decode().split("\0") if p]
+    try:
+        return _git_files.tracked_files(root, *SCAN_DIRS)
+    except _git_files.GitError as exc:
+        raise SystemExit(f"error: {exc}") from exc
 
 
 # --------------------------------------------------------------------------

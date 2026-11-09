@@ -186,9 +186,9 @@ RECORDED = {
     # #264's depth-2 rebuild lands on a different net again,
     # `u_interface/net71` at 38 loads. #293's re-run on the re-baselined
     # netlist (and a different OpenROAD build) lands on `u_interface/net75`
-    # at 34 loads. `set_max_fanout` is still not wanted -- see
+    # at 34 loads (#293); 41 loads (`u_interface/net64`) after #709. `set_max_fanout` is still not wanted -- see
     # `layout/digital/build.py`'s own comment.
-    "max_net_fanout": 34,
+    "max_net_fanout": 41,
 }
 
 #: Fractional tolerance for the numeric gates above -- the same 1 % and the

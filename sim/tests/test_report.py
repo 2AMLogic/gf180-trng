@@ -32,6 +32,29 @@ class ChecksumTests(unittest.TestCase):
             expected = hashlib.sha256(path.read_bytes()).hexdigest()
             self.assertEqual(report.sha256_file(path), expected)
 
+    def test_sha256_file_streams_across_chunk_boundaries(self):
+        chunk = 1 << 20
+        with tempfile.TemporaryDirectory() as tmp:
+            for size in (0, chunk, chunk + 1, 2 * chunk + 7):
+                path = Path(tmp) / f"blob-{size}.bin"
+                data = bytes(i % 251 for i in range(size))
+                path.write_bytes(data)
+                with self.subTest(size=size):
+                    self.assertEqual(
+                        report.sha256_file(path), hashlib.sha256(data).hexdigest()
+                    )
+
+    def test_sha256_file_does_not_read_whole_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.bin"
+            path.write_bytes(b"abc")
+            with mock.patch.object(
+                Path, "read_bytes", side_effect=AssertionError("read_bytes called")
+            ):
+                self.assertEqual(
+                    report.sha256_file(path), hashlib.sha256(b"abc").hexdigest()
+                )
+
     def test_blob_sha_is_stable_for_identical_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

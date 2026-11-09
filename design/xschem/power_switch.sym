@@ -1,0 +1,23 @@
+v {xschem version=3.4.4 file_version=1.2}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname wf=@wf nfing=@nfing lsw=@lsw"
+template="name=x1 wf=10u nfing=40 lsw=0.28u"
+description="PMOS header power switch for the gated digital supply (issue #707)."
+}
+V {}
+S {}
+E {}
+B 5 -52.5 -12.5 -47.5 -7.5 {name=sleep dir=in}
+B 5 -2.5 -52.5 2.5 -47.5 {name=vdd dir=inout}
+B 5 -2.5 47.5 2.5 52.5 {name=vvdd dir=inout}
+L 4 -50 -10 -40 -10 {}
+L 4 0 -50 0 -40 {}
+L 4 0 40 0 50 {}
+L 4 -40 -40 40 -40 {}
+L 4 40 -40 40 40 {}
+L 4 40 40 -40 40 {}
+L 4 -40 40 -40 -40 {}
+T {@name} -35 -35 0 0 0.25 0.25 {}
+T {power_switch} -35 10 0 0 0.25 0.25 {}
+T {@nfing x @wf/@lsw} -35 -5 0 0 0.2 0.2 {layer=13}

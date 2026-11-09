@@ -314,6 +314,15 @@ EAST_RISER_PITCH_UM = 0.7
 #: How close (um) a pin's drawn edge must be to the block's bbox edge to
 #: count as sitting on it.
 PIN_EDGE_TOLERANCE_UM = 0.05
+#: How far above a top-edge pin's centre the Metal4 stub starts (um). The
+#: stub is 0.3 um wide against a 0.28 um pin, so it is 0.01 um wider than the
+#: pin on each side. Starting it at the pin's centre put its bottom edge beside
+#: the Metal4 enclosure of a router Via3 sitting 0.27 um to its side (below
+#: `metal4.space`) -- #709's re-placed block has that at one pin. 0.2 um starts
+#: the stub above that enclosure's top, far enough that the corner-to-corner
+#: distance clears 0.28 um, and keeps 0.06 um of real overlap with the 0.52 um
+#: pin rectangle (centred, so its top is 0.26 um above the centre).
+TOP_STUB_START_ABOVE_PIN_CENTRE_UM = 0.2
 
 assert TOP_TRACK_PITCH_UM - WIRE_W >= 0.28, "top track spacing floor"
 assert EAST_RISER_PITCH_UM - WIRE_W >= 0.28, "east riser spacing floor"
@@ -816,14 +825,14 @@ def _vrect(layer: list[int], x: float, y0: float, y1: float, w: float = WIRE_W) 
 
 def _top_edge_coords(anchor: tuple, origin: dict[str, float]
                      ) -> tuple[float, float, float, float]:
-    """`(pin x, pin y, Metal5 track y, east-flank riser x)` of one
+    """`(pin x, stub start y, Metal5 track y, east-flank riser x)` of one
     `digital_pin_top` endpoint, in the composed frame. The single owner of
     this arithmetic: `_endpoint_geometry` draws from it and
     `top_edge_legs` (the report's per-leg lengths, gf180-trng#456) measures
     from it, so the two cannot disagree."""
     _, lx, ly, top, east, slot = anchor
     x = lx + origin["x"]
-    y_pin = ly + origin["y"]
+    y_pin = ly + origin["y"] + TOP_STUB_START_ABOVE_PIN_CENTRE_UM
     track_y = round(origin["y"] + top + TOP_TRACK_CLEAR_UM
                     + slot * TOP_TRACK_PITCH_UM, 4)
     x_east = round(origin["x"] + east + EAST_RISER_CLEAR_UM
@@ -898,8 +907,8 @@ def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
         # block bbox's local top and east edges; `slot` numbers this
         # endpoint among the top-edge ones so each gets its own track/riser.
         x, y_pin, track_y, x_east = _top_edge_coords(anchor, origin)
-        # Metal4 stub: from the pin's centre (real overlap with the pin
-        # rectangle) straight up past the guard ring to the track.
+        # Metal4 stub: from just above the pin's centre (real overlap with
+        # the pin rectangle, see `TOP_STUB_START_ABOVE_PIN_CENTRE_UM`) straight up past the guard ring to the track.
         shapes.append(_vrect(METAL4, x, y_pin, track_y + VIA_RUNOUT))
         shapes.append(_via(VIA4, x, track_y))            # Metal4 stub -> Metal5
         shapes.append(_hrect(METAL5, x - METAL5_VIA4_ENCLOSE_UM,

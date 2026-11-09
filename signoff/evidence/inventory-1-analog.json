@@ -30,6 +30,10 @@
       "sha256": "sha256:5b0307f8d0ffaa8e32c5465820cf72bffcbc2d8d5bc3ec7605ea5c1b7e4c0111"
     },
     {
+      "path": "design/xschem/power_switch.sch",
+      "sha256": "sha256:d6edf0b17969406cbfac30eabfd10103b81006a0eb30eb7ba55e60279f663506"
+    },
+    {
       "path": "design/xschem/ro_array_core.sch",
       "sha256": "sha256:ebfeed50e5ddd2994e13093d99b6ce6dbdfe8ee1da9224632c78bf4ca99cbba7"
     },
@@ -96,6 +100,10 @@
       "sha256": "sha256:6527a47204c9841ca80d0a639fee722c8f0086a26502e8e57e8907bf5e6bbf72"
     },
     {
+      "path": "design/xschem/power_switch.sym",
+      "sha256": "sha256:8b4af61f0a435330103bfc7f76b2f523ae38f793e2c891239ce2e264702f3b5f"
+    },
+    {
       "path": "design/xschem/ro_array_core.sym",
       "sha256": "sha256:644d2411a9883261289ebf31d0c8af158d14fbf3a18b8100f98f62ba8840a08e"
     },
@@ -142,6 +150,10 @@
       "sha256": "sha256:045a96c170f61e0f3b5ad81486a1c08323d93067fa422323b17a5aeee0569407"
     },
     {
+      "path": "design/power_switch.spice",
+      "sha256": "sha256:e9e18de84c92f94e610b9316175f21aaf217ede9fbfe34ac5dff5ad3eb7a7b85"
+    },
+    {
       "path": "design/ro_array_core.spice",
       "sha256": "sha256:754c20ae6474a82b1b1c7eddd566df21f70fedaafaa80350233ecc76755f931d"
     },
@@ -169,7 +181,7 @@
   "gate_scripts": [
     {
       "path": "design/netlist.py",
-      "sha256": "sha256:e4e523526a0473c4b15014013a746fc95effc6ad704fd8321ebae57c68be8a1b"
+      "sha256": "sha256:54bc98c12d4fc397412c15c9b8e96a471298e5b2d561026c9fdb2fee9faeb569"
     }
   ]
 }
