@@ -442,7 +442,7 @@ def _record_body(intent, good, bad, cls, budget) -> str:
   ({budget['wake_overhead_s'] * 1e3:.2f} ms at the ratified raw rate) on top of the
   {budget['digital_floor_s'] * 1e3:.1f} ms digital start-up total:
   **{budget['wake_time_to_first_valid_s'] * 1e3:.1f} ms** wake-to-first-valid, **provisional**
-  (rail settle and decay are placeholders until #707 lands).
+  (rail decay is still a placeholder; rail settle is from #707).
 
 Deliberately broken fixtures, each of which must be (and was) reported:
 
@@ -462,7 +462,7 @@ python3 sim/tools/power_intent_check.py --variant no_iso   # exits 1
 - **No P/V/T corner.** This is a zero-delay functional simulation: it says
   nothing about leakage, switch resistance, rail settling, inrush, timing or
   any other PVT-dependent claim, and must not be cited for one. The rail model
-  is two delays that are placeholders for #707's evidence.
+  is two delays: settle from #707's evidence, decay still a placeholder.
 - The power-down model is behavioural: gated flops go X and gated outputs go X
   when the rail is low. It does not model sneak paths, input-side protection
   or a partially collapsed rail.
@@ -520,7 +520,7 @@ def main(argv=None) -> int:
     print(
         f"     wake budget: {b['wake_cycles']} cycles, wake-to-first-valid "
         f"{b['wake_time_to_first_valid_s'] * 1e3:.1f} ms"
-        + (" (PROVISIONAL: placeholders from #707)" if b["provisional"] else "")
+        + (" (PROVISIONAL: rail decay is a placeholder)" if b["provisional"] else "")
     )
 
     lib = find_cell_lib(netlist_text)

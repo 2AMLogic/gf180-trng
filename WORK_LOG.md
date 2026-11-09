@@ -1,8 +1,28 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-04.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-07.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-07
+
+- **PR #787**: Bump Repo Skills 0.25.1 -> 0.25.10
+
+### 2026-11-06
+
+- **PR #783**: sim: measure gated-rail decay after the power switch opens
+- **Issue #782** (closed): Power switch: measure gated-rail decay time and replace the t_rail_decay placeholder
+- **PR #776**: docs: replace rail-settle placeholder in power intent with evidenced figure
+- **Issue #708** (closed): Power gating: define and verify the power-intent flow for a gated digital domain
+- **PR #780**: refactor: derive request-generator process sections from the CORNERS registry
+- **Issue #778** (closed): Remove duplicated PROCESS_SECTIONS tables in sim/tools request generators
+
+### 2026-11-05
+
+- **PR #775**: refactor: share one SPICE continuation joiner and .SUBCKT pin reader
+- **Issue #774** (closed): Consolidate duplicated SPICE continuation-join and .SUBCKT pin-list readers
+- **PR #771**: docs(signoff): record working klt yield install route and the missing limit blocking item 6
+- **Issue #707** (closed): Power gating: design a custom power-switch cell for the digital section
 
 ### 2026-11-04
 

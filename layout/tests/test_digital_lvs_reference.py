@@ -24,7 +24,7 @@ no network; the whole module runs in well under a second. These tests check
 the helpers' own data handling only. They are not evidence that the digital
 section is LVS-clean -- that is re-answered by running `lvs.py` itself.
 
-Helpers covered: `_join_spice_continuations`, `_bit_names`,
+Helpers covered: `_bit_names`,
 `_library_cell_pins`, `_top_pins`, `_cell_instances` and
 `_def_physical_only_instances`.
 """
@@ -90,71 +90,6 @@ class _TempRepoMixin:
         path = self.root / name
         path.write_text(text)
         return path
-
-
-class JoinSpiceContinuationsTests(unittest.TestCase):
-    def test_folds_continuation_into_previous_line(self):
-        text = ".SUBCKT top A B\n+ C D\n+ E\n.ENDS top"
-        self.assertEqual(
-            lvs._join_spice_continuations(text),
-            ".SUBCKT top A B C D E\n.ENDS top",
-        )
-
-    def test_strips_whitespace_around_continuation_body(self):
-        text = ".SUBCKT top A\n+    B   \n"
-        self.assertEqual(
-            lvs._join_spice_continuations(text), ".SUBCKT top A B\n"
-        )
-
-    def test_text_without_continuations_is_unchanged(self):
-        text = "* comment\n.SUBCKT a A Z\n.ENDS a\n"
-        self.assertEqual(lvs._join_spice_continuations(text), text)
-
-    def test_comment_line_does_not_swallow_following_card(self):
-        """A comment followed by an ordinary (non-`+`) line stays its own line."""
-        text = ".SUBCKT a A\n* pin note\n.ENDS a"
-        self.assertEqual(lvs._join_spice_continuations(text), text)
-
-    def test_continuation_after_comment_continues_the_card(self):
-        """SPICE dialects (HSPICE explicitly) allow a comment line between a
-        card and its `+` continuation; the continuation still belongs to the
-        card. The helper currently folds it into the comment instead, so the
-        continued pins vanish. Latent today -- `klt extract` does not emit an
-        interleaved comment -- (#387).
-        """
-        text = ".SUBCKT a A\n* note\n+ B C\n.ENDS a"
-        self.assertEqual(
-            lvs._join_spice_continuations(text),
-            ".SUBCKT a A B C\n* note\n.ENDS a",
-        )
-
-    def test_leading_continuation_with_no_predecessor_is_kept(self):
-        """Malformed input: a `+` on the very first line has nothing to join
-        onto, so it is passed through rather than dropped or raising."""
-        text = "+ orphan\n.SUBCKT a A\n"
-        self.assertEqual(lvs._join_spice_continuations(text), text)
-
-    def test_multiple_comments_between_card_and_continuation(self):
-        text = ".SUBCKT a A\n* one\n* two\n+ B\n+ C\n.ENDS a"
-        self.assertEqual(
-            lvs._join_spice_continuations(text),
-            ".SUBCKT a A B C\n* one\n* two\n.ENDS a",
-        )
-
-    def test_blank_line_is_not_a_comment(self):
-        """A blank line is a (empty) card, so a `+` after it attaches there
-        and the header is not extended."""
-        text = ".SUBCKT a A\n\n+ B\n.ENDS a"
-        self.assertEqual(
-            lvs._join_spice_continuations(text), ".SUBCKT a A\n B\n.ENDS a"
-        )
-
-    def test_continuation_with_only_comments_before_is_kept(self):
-        text = "* c\n+ orphan\n.SUBCKT a A"
-        self.assertEqual(lvs._join_spice_continuations(text), text)
-
-    def test_empty_text(self):
-        self.assertEqual(lvs._join_spice_continuations(""), "")
 
 
 class BitNamesTests(unittest.TestCase):
@@ -302,13 +237,14 @@ class LibraryCellPinsTests(_TempRepoMixin, unittest.TestCase):
         self.assertIn(FILL_1, str(ctx.exception))
         self.assertNotIn(INV_1 + ",", str(ctx.exception))
 
-    def test_lowercase_subckt_header_is_not_recognised(self):
-        """Malformed (for this reader) input: the header regex is
-        upper-case-only by design, matching `klt extract`'s own writer, so a
-        lower-case `.subckt` is reported as missing rather than half-read."""
+    def test_lowercase_subckt_header_is_recognised(self):
+        """SPICE keywords are case-insensitive; the shared header matcher
+        (`design/spice_text.py`) accepts a lower-case `.subckt` here exactly
+        as the floorplan readers do, so all readers agree on one file."""
         path = self.write("extracted.spice", f".subckt {INV_1} I ZN\n.ends\n")
-        with self.assertRaises(lvs.LvsFlowError):
-            lvs._library_cell_pins(path, {INV_1})
+        self.assertEqual(
+            lvs._library_cell_pins(path, {INV_1}), {INV_1: ["I", "ZN"]}
+        )
 
 
 class TopPinsTests(unittest.TestCase):

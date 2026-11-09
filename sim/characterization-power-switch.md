@@ -1,6 +1,6 @@
 # Digital power switch: sizing, leakage and wake
 
-Status: complete for issue [#707] (child of [#700]). This document sizes a PMOS header for the digital
+Status: complete for issue [#707] (child of [#700]); section 6 adds the rail decay of [#782]. This document sizes a PMOS header for the digital
 section's supply and reports what it costs and what it saves at the `< 1 uA` idle row's binding corner. It
 is an ordinary summary, not evidence: every number below comes from the 45 records
 `sim/records/2026-10-28-power-switch-01..45.md`, through `python3 sim/tools/power_switch.py summarize`
@@ -123,5 +123,46 @@ reports. Not drawn, and so not verified: an n-well tap and implants (the curated
   ngspice-42 takes 1.5 s, until the request pinned `set num_threads=1` (a 1 us run went from 6.2 s to 0.37 s
   with it; the cause is probably thread oversubscription but was not isolated; reported on klayout-tools #3619).
 
+## 6. Rail decay after the switch opens (issue #782)
+
+Follow-up to section 3's wake group, with the same 400 um switch, leakage-equivalent load, 50 / 200 pF
+rail capacitances (assumptions) and 10 ns / 1 us sleep edges, but the switch starts on and opens, and the
+rail discharges. `sim/tb/power-switch/tb_power_switch_decay.sp`, 45 PVT points as one `klt sim` request on the
+batch fleet (`sim/tb/power-switch/request-decay.json`, `python3 sim/tools/power_switch_decay.py`), records
+`sim/records/2026-11-06-power-switch-decay-01..45.md`. The run is 100 000 s long. The tables are
+`python3 sim/tools/power_switch_decay.py summarize`. The repo defines no "rail off" level; the 5 % of vdd used here
+mirrors the 95 % settle threshold, and 50 % is reported as well.
+
+Source: 45 records `sim/records/*-power-switch-decay-NN.md` (current, status valid). Times are from the start of the sleep rise, in seconds; the run ends at 100000 s. A level is counted as reached only if the rail crossed it before then.
+
+| rail capacitance | sleep rise | corners reaching 50 % of vdd | corners reaching 5 % of vdd | slowest to 50 % among those (s, corner) | fastest to 50 % (s, corner) | highest final rail (V, corner) |
+|---|---|---|---|---|---|---|
+| 50 pF | 10 ns | 44 of 45 | 18 of 45 | 0.7254 (sf/-40C/3.63V) | 9.258e-05 (ff/125C/3.63V) | 1.766 (sf/125C/3.63V) |
+| 200 pF | 10 ns | 44 of 45 | 18 of 45 | 2.845 (sf/-40C/3.63V) | 0.0003651 (ff/125C/3.63V) | 1.766 (sf/125C/3.63V) |
+| 50 pF | 1000 ns | 44 of 45 | 18 of 45 | 0.7248 (sf/-40C/3.63V) | 9.339e-05 (ff/125C/3.63V) | 1.766 (sf/125C/3.63V) |
+| 200 pF | 1000 ns | 44 of 45 | 18 of 45 | 2.843 (sf/-40C/3.63V) | 0.0003658 (ff/125C/3.63V) | 1.766 (sf/125C/3.63V) |
+
+Slowest decay to 5 % of vdd among the units that reach it: 0.7406 s (fs/27C/3.63V, case 200pf_10ns).
+
+**Reading.** Nothing in the model pulls the rail down except the load's own leakage and the switch's off
+leakage, so the decay is leakage-limited and strongly corner-dependent:
+
+- The hot corners fall fast: ff / +125 C reaches 50 % in 0.09 to 0.42 ms, and every corner at +125 C except sf
+  reaches 5 % of vdd.
+- At -40 C and at 27 C the rail takes seconds to reach 50 %, and 27 of the 45 corners never reach 5 %: the load's
+  leakage falls with its own drain bias until it balances the switch's off leakage, at a floor between about 0.5
+  and 1.8 V (the final-rail column). So "the rail has decayed to off" is not a state the unit reaches at those corners.
+- sf / +125 C settles at 1.5 to 1.8 V, and at 2.97 V does not even reach 50 % within the run.
+
+**What this does not establish.** The shipped section has switching cells, isolation clamps and pad structures that the
+leakage-equivalent model does not, and a real rail would have a different discharge path; this is a bound for the
+modelled rail only. The rail capacitances are the same assumptions as section 3. Against the sample clock of
+`design/power-intent.md` (500 us per cycle), the units that reach 5 % take from about 4 cycles (ff / +125 C, 200 pF:
+1.8 ms) to about 1500 cycles (0.74 s), and the other 27 never do, so no single cycle count derived from this model is
+both meaningful and covers every corner. `t_rail_decay_cycles` therefore stays a placeholder in `design/power-intent.md`, with this section as the stated
+reason. It needs either a defined discharge mechanism (a bleeder, or a rule that wake does not depend on the rail
+having decayed) or an extracted rail, which are design decisions outside this issue.
+
 [#707]: https://github.com/2AMLogic/gf180-trng/issues/707
+[#782]: https://github.com/2AMLogic/gf180-trng/issues/782
 [#700]: https://github.com/2AMLogic/gf180-trng/issues/700

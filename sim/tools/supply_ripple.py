@@ -49,6 +49,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
+from harness.corners import CORNERS as _CORNER_REGISTRY  # noqa: E402
 from harness.report import git_blob_sha1  # noqa: E402
 from harness import report as _rep  # noqa: E402
 
@@ -101,11 +102,7 @@ CORNERS = {
 }
 
 #: gf180mcuD corner sections, as sim/tb/ro-ring11-pex/request.json.
-PROCESS_SECTIONS = {
-    "tt": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"],
-    "ss": ["ss", "bjt_ss", "diode_ss", "res_ss", "moscap_ss", "mimcap_ss"],
-    "ff": ["ff", "bjt_ff", "diode_ff", "res_ff", "moscap_ff", "mimcap_ff"],
-}
+PROCESS_SECTIONS = {p: list(_CORNER_REGISTRY[p].sections) for p in ("tt", "ss", "ff")}
 
 LOW_F_HZ = 2.0e6
 

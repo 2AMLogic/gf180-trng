@@ -62,6 +62,10 @@ UNWIRED_ALLOWLIST = {
         "only the `run` subcommand needs the batch fleet; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_power_switch.py"
     ),
+    "power_switch_decay.py": (
+        "only the `run` subcommand needs the batch fleet; `emit --check` is offline and is run via "
+        "cmd_emit(check=True) by test_power_switch_decay.py"
+    ),
     "liveness_sampler_power.py": (
         "only the `run` subcommand needs ngspice/PDK; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_liveness_sampler_power.py"
