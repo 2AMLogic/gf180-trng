@@ -1,8 +1,13 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-07.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-09.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+### 2026-11-09
+
+- **PR #785**: docs: record Power and Area gap accounting after the power-gating and floorplan work
+- **PR #772**: docs(sim): record measured ring2 paired PEX grid under klt 0.9.0, unpublished pending pin decision
 
 ### 2026-11-07
 
