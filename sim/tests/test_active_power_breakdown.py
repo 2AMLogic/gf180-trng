@@ -27,6 +27,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-power-by-block"))
 
+import activity  # noqa: E402
 import active_power_breakdown as apb  # noqa: E402
 import power_rollup as pr  # noqa: E402
 import run_by_block as rbb  # noqa: E402
@@ -76,6 +77,84 @@ class GroupingTests(unittest.TestCase):
     def test_missing_block_is_an_error(self):
         with self.assertRaises(run_sta.StaError):
             rbb.parse_instance_rows("no markers here")
+
+
+def _segment(annot: str, rows: str, total: str) -> str:
+    return (
+        "ACT_BEGIN conditioned-streaming steady\n" + annot
+        + "BLOCK_BEGIN\n   hdr\n" + rows + "BLOCK_END\n" + total + "ACT_END\n"
+    )
+
+
+_TOTAL = """\
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power (Watts)
+----------------------------------------------------------------
+Sequential           0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Combinational        0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+----------------------------------------------------------------
+Total                {i:.6e} {s:.6e} {l:.6e} {t:.6e} 100.0%
+"""
+_ROWS = (
+    " 1.0e-06 2.0e-06 3.0e-07 3.3e-06 u_conditioner/_1_\n"
+    " 4.0e-06 1.0e-06 1.0e-07 5.1e-06 u_interface/_3_\n"
+    " 2.0e-06 1.0e-06 1.0e-07 3.1e-06 clkbuf_leaf_0_clk\n"
+)
+_GOOD_ANN = "Annotated 990 pin activities.\nvcd          990\nunannotated     5\n"
+
+
+class ActivityModeTests(unittest.TestCase):
+    def _total(self, t):
+        return _TOTAL.format(i=6e-6, s=4e-6, l=5e-7, t=t)
+
+    def test_activity_session_groups_and_reconciles(self):
+        out = rbb.parse_activity_session(
+            _segment(_GOOD_ANN, _ROWS, self._total(1.15e-5)),
+            "conditioned-streaming", "steady")
+        self.assertAlmostEqual(out["instance_sum_w"], 1.15e-5, places=15)
+        self.assertEqual(out["groups"]["u_interface"]["n"], 1)
+        self.assertEqual(out["groups"][rbb.CLOCK_TREE]["n"], 1)
+        self.assertEqual(out["annotation"]["vcd"], 990)
+
+    def test_sum_gap_beyond_tolerance_is_rejected(self):
+        with self.assertRaises(run_sta.StaError):
+            rbb.parse_activity_session(
+                _segment(_GOOD_ANN, _ROWS, self._total(1.3e-5)),
+                "conditioned-streaming", "steady")
+
+    def test_unbound_trace_is_rejected(self):
+        # Negative control: a wrong scope / empty trace binds no pin to the VCD.
+        for ann in ("Annotated 0 pin activities.\nunannotated   995\n",
+                    "Annotated 500 pin activities.\nvcd          500\nunannotated   495\n"):
+            with self.assertRaises(activity.ActivityError):
+                rbb.parse_activity_session(
+                    _segment(ann, _ROWS, self._total(1.15e-5)),
+                    "conditioned-streaming", "steady")
+
+    def test_missing_segment_is_rejected(self):
+        with self.assertRaises(activity.ActivityError):
+            rbb.parse_activity_session(
+                _segment(_GOOD_ANN, _ROWS, self._total(1.15e-5)),
+                "other-workload", "steady")
+
+    def test_compare_rows_ratio(self):
+        mk = lambda w: {g: {"total_w": w} for g in rbb.GROUPS}
+        rows = rbb.compare_rows({"uniform": {"groups": mk(2.0)}, "observed": {"groups": mk(1.0)}})
+        self.assertEqual([r[0] for r in rows], list(rbb.GROUPS))
+        self.assertTrue(all(abs(r[3] - 0.5) < 1e-12 for r in rows))
+
+    def test_activity_slug_does_not_match_uniform_glob(self):
+        import fnmatch
+        self.assertFalse(fnmatch.fnmatch(
+            f"2026-11-10-{rbb.ACTIVITY_SLUG}-01.md", apb.BY_BLOCK_GLOB))
+
+    def test_only_declared_capture_periods(self):
+        self.assertIn(500_000.0, activity.ALLOWED_PERIODS_NS)
+        with self.assertRaises(activity.ActivityError):
+            activity._check_period(123.0)
 
 
 class BreakdownTests(unittest.TestCase):

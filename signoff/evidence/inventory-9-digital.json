@@ -79,11 +79,11 @@
       "files": [
         {
           "path": "sim/tb/digital-power-by-block/README.md",
-          "sha256": "sha256:49601c8bc39bc961f78d1f723760f352a81a14e9b10196b945365abc5ad4870c"
+          "sha256": "sha256:658f74d994d64e655502b539e97a8c74571c01ddb32d2c641a1d39a6f2a35917"
         },
         {
           "path": "sim/tb/digital-power-by-block/run_by_block.py",
-          "sha256": "sha256:23c6e8c986a07a08752d0c1df1a02c55130d4ea7dc6f4da04dd30c0239fb4042"
+          "sha256": "sha256:9069050fab057bf615e821892da08f64de41f3f661214d54f6393a2beb356eca"
         }
       ]
     },
@@ -99,7 +99,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/activity.py",
-          "sha256": "sha256:fb4c797d896d12a79a92a48049e0a99bcaaada4fb46469100f1b752e8faa9520"
+          "sha256": "sha256:9bdac94ecb909b0b2d7f7d9692de4f70e6165c9f63ed07da8a159ec7a69c7659"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_power.py",
