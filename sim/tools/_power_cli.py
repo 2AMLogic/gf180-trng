@@ -1,6 +1,7 @@
-"""Adapter helpers shared by the power-switch tools (``power_switch``, ``power_switch_decay``,
-``power_retention``): the "emit request / run / record / analyze" layer that was identical in
-each. Per-script pieces (``build_request``, ``derive``, ``checks``, ``render_*``) stay in the
+"""Adapter helpers shared by the power tools (``power_switch``, ``power_switch_decay``,
+``power_retention``, ``liveness_sampler_power``; ``fs_sf_capture``, ``supply_ripple`` and
+``starved_hot_corner`` use only ``render``/``vals``): the "emit request / run / record /
+analyze" layer that was identical in each. Per-script pieces (``build_request``, ``derive``, ``checks``, ``render_*``) stay in the
 tools; they differ for real. Everything here either is pure or takes the per-script pieces as
 arguments, so each tool's emitted requests and minted records are unchanged.
 """
