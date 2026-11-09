@@ -79,7 +79,28 @@ class BreakdownTests(unittest.TestCase):
             self.assertEqual(apb.reconcile(rate), [], f"rate {rate:g} Hz")
 
     def test_historical_total_is_the_row_figure(self):
+        # 749.4 uW is the Power row's whole-block figure WITHOUT the liveness
+        # samplers; the measured liveness row is added on top of it.
         bd = apb.breakdown(1e6)
+        live = sum(w for label, w, _ in bd["rows"] if label == apb.LIVENESS_ROW)
+        self.assertAlmostEqual((bd["total"] - live) * 1e6, 749.4, delta=0.1)
+
+    def test_measured_liveness_row_is_in_the_total(self):
+        for rate in apb.DEFAULT_RATES:
+            bd = apb.breakdown(rate)
+            rows = [(w, prov) for label, w, prov in bd["rows"] if label == apb.LIVENESS_ROW]
+            self.assertEqual(len(rows), 1, f"rate {rate:g} Hz")
+            self.assertEqual(rows[0][1], "MEASURED")
+            self.assertGreater(rows[0][0], 0.0)
+            self.assertAlmostEqual(bd["total"], sum(w for _, w, _ in bd["rows"]), places=12)
+        self.assertIn("measured at " + apb.ARRAY_CORNER, apb.liveness_context(1e6))
+
+    def test_gap_path_without_a_binding_corner_record(self):
+        # With no liveness record at the binding corner the row is absent (a GAP),
+        # the total excludes it, and reconcile-style context names the gap.
+        bd = apb.breakdown(1e6, lives={})
+        self.assertFalse([r for r in bd["rows"] if r[0] == apb.LIVENESS_ROW])
+        self.assertIsNone(bd["liveness"])
         self.assertAlmostEqual(bd["total"] * 1e6, 749.4, delta=0.1)
 
     def test_digital_scaling_exact_at_measurement_rate(self):

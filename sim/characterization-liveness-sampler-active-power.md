@@ -116,12 +116,13 @@ counted the samplers twice, and a test pins that.
 |---|---|---|---|
 | 1 | 2026-10-10 | Whole 27-unit grid, `--backend batch` (fleet job `klt-sim-36eae9fed238`) | Rejected by the runner before any simulation: runner `klt 0.5.0`, client `0.7.0` (`batch_runner_version_mismatch`); no measurement. Recorded in `2026-10-10-sampler-core-liveness-active-attempt-01`. The same skew blocked the `sampler-array-fs-sf` campaign; no compatible client/runner pair exists, and it is already tracked upstream, so no new tool issue was filed. |
 | 2 | 2026-10-10 | Single-point probe `tt/27/3.30`, `--backend local` | Measured: `2026-10-10-sampler-core-liveness-active-01`. |
+| 3 | 2026-11-09 | Single-point probe `ff/-40/3.63` (the corner where the array terms bind), `--backend local` | Measured: `2026-11-09-sampler-core-liveness-active-01`. Data term `p_live_data_w` 39.81 uW (rate-independent; the clock-charge part is added per rate by `power_rollup.liveness_active`) plus 21.78 uW signed array loading; `sim/tools/active_power_breakdown.py` now carries this as a measured row, giving a whole-block total of 811.0 uW at 1 MHz and 479.8 uW at the ratified 2 kHz (corners: array and sampler `ff`/-40 C/3.63 V, digital `ff_125C_3v60`). The Power row and its bound are not edited. |
 
 The grid was **not** run as a local loop. Remaining gaps, to be filled by one
 `liveness_sampler_power.py run --backend batch` submit when a compatible fleet is
 available, then `record`:
 
-- 26 of 27 PVT points, including the ledger's binding `ff` / −40 °C / 3.63 V;
+- 25 of 27 PVT points (the binding `ff` / −40 °C / 3.63 V point is measured, attempt 3);
 - the rate dependence is applied analytically (data term independent of
   `f_clk`), not re-simulated at 1 MHz;
 - post-layout: the analog block is not laid out.

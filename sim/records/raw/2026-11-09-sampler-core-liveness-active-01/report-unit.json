@@ -1,0 +1,365 @@
+{
+ "environment": {
+  "engine": "ngspice",
+  "engine_version": "46",
+  "ngspice_binary": "~/.local/bin/ngspice",
+  "engine_build": {
+   "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******",
+   "binary_sha256": "dc859418bedd0478ff439a2d3e2e09f4386a7f4d5e3f17671953e101a000cc60",
+   "probe": "ok",
+   "reason": null
+  },
+  "models_lib": {
+   "path": null,
+   "scope": "external"
+  },
+  "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+  "models_lib_sha256_scope": "local",
+  "netlist_sha256": "e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8",
+  "corner_coverage": {
+   "pdk": "gf180mcuD",
+   "sections": [
+    {
+     "process": "ff",
+     "unmoved_devices": [
+      "06v0",
+      "06v0_nvt",
+      "fets_mm",
+      "noise_corner"
+     ]
+    }
+   ]
+  },
+  "netlist_closure": [
+   {
+    "path": "sim/tb/sampler-core-liveness-active/tb_sampler_core_liveness_active.sp",
+    "scope": "repo",
+    "sha256": "e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8"
+   },
+   {
+    "path": "design/sampler_core.spice",
+    "scope": "repo",
+    "sha256": "1e0dcf608ac2e45a7552f33af5958eab14b8f34a5bbceb7052eec580038c4c1f"
+   }
+  ],
+  "netlist_identity": "sha256:a79bdba410a98b3844d406636dac9769071688185eb877de63f208fc76134ae3",
+  "engine_host": "local",
+  "backend": {
+   "resolved": "local",
+   "source": "flag",
+   "requested": "local"
+  }
+ },
+ "provenance": {
+  "klt_version": "0.9.2.dev397+gd8fa2907890e",
+  "klt_git_commit": "d8fa2907890eb65ae5e7f66450831334cdadf356",
+  "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@d8fa2907890eb65ae5e7f66450831334cdadf356",
+  "klayout_version": "0.30.13",
+  "pdk": {
+   "name": "gf180mcuD",
+   "source": "search root: ~/.ciel",
+   "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+   "ambiguous_sources": [
+    "search root: ~/.volare"
+   ]
+  },
+  "deck": {
+   "name": "sm141064.ngspice",
+   "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+   "released": false
+  },
+  "input": {
+   "content_hash": "sha256:e67dc97e1ae11591d4d4fb568bcf801939c0b4c6710f4dfe16d162cf3a9050a8",
+   "role": "netlist"
+  }
+ },
+ "corner": {
+  "corner_id": "ff/3.630V/-40C",
+  "process": "ff",
+  "supply_v": {
+   "vsupply": 3.63
+  },
+  "temperature_c": -40,
+  "status": "pass",
+  "runtime_s": 23.187,
+  "peak_rss_bytes": 67379200,
+  "engine_exit_code": 0,
+  "engine_killed_by_signal": null,
+  "measurements": [
+   {
+    "name": "t1a",
+    "value": 8.124535328618e-09,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t1b",
+    "value": 2.420451061926e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t2a",
+    "value": 7.647074911749e-09,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "t2b",
+    "value": 2.276086398867e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc1a",
+    "value": 8.122194178463e-09,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc1b",
+    "value": 2.418497205724e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc2a",
+    "value": 7.644796709714e-09,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "tc2b",
+    "value": 2.273775808891e-08,
+    "unit": "s",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q1_1a",
+    "value": -0.0002889539445739,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q1_1b",
+    "value": -0.0008761582085259,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qt_1a",
+    "value": -0.0002976708221358,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qt_1b",
+    "value": -0.001000419408304,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsb_1a",
+    "value": -4.039920884167e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsb_1b",
+    "value": -0.0001753144240056,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_1a",
+    "value": -2.292647284337e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_1b",
+    "value": -4.532268307288e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs1_1a",
+    "value": -4.949628921884e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs1_1b",
+    "value": -0.0001591166099594,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q2_2a",
+    "value": -0.0002882211577003,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "q2_2b",
+    "value": -0.0008740042051737,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_2a",
+    "value": -2.292638692735e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qsv_2b",
+    "value": -4.53225465262e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs2_2a",
+    "value": -4.878601524031e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "qs2_2b",
+    "value": -0.0001549397170887,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq1i_c1a",
+    "value": -0.0002887242236995,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq1i_c1b",
+    "value": -0.0008749660742087,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqt_c1a",
+    "value": -0.0002641829045397,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqt_c1b",
+    "value": -0.0008703764977312,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsb_c1a",
+    "value": -3.944277821281e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsb_c1b",
+    "value": -0.0001649860039257,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsv_c1a",
+    "value": -2.292647652377e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cqsv_c1b",
+    "value": -4.532268140282e-05,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq2i_c2a",
+    "value": -0.0002879798353158,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "cq2i_c2b",
+    "value": -0.0008727379834801,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring1_max",
+    "value": 3.780800356996,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring1_min",
+    "value": -0.03985625940138,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring2_max",
+    "value": 3.700948588208,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   },
+   {
+    "name": "ring2_min",
+    "value": -0.04088945580939,
+    "unit": "V",
+    "status": "pass",
+    "margin": null
+   }
+  ],
+  "diagnostics": [],
+  "artifacts": {
+   "log": "/tmp/gf810/probe-ff_-40_3.63/ff_3p630V_n40C/ngspice.log",
+   "raw": null,
+   "waveform": null,
+   "deck": "/tmp/gf810/probe-ff_-40_3.63/ff_3p630V_n40C/corner.cir"
+  },
+  "monte_carlo": null
+ }
+}

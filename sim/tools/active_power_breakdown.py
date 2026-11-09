@@ -21,8 +21,13 @@ ring buffers + XOR        the same record: ``p_total_w - p_rings_w`` (the
                           row rather than a guess
 sampler (xsb, xsv)        ``sampler-dff-active-current`` charges x the same
                           corner's ``xo_trans_per_s`` (``power_rollup``'s model)
-liveness samplers         GAP at the binding corner (no record); listed with the
-                          nearest measured corner as context, NEVER summed
+liveness samplers         ``sampler-core-liveness-active`` record at the binding
+                          corner: ``pr.liveness_active`` flops term (xsr1/xsr2
+                          data + clock charge) plus the signed array-loading
+                          change ``dp_load_w``, both from the one record. While
+                          no record exists at the binding corner the row is a
+                          GAP: the nearest measured corner is listed as
+                          context and NEVER summed
 digital: conditioner,     ``digital-power-by-block`` record: OpenSTA per-instance
 health tests, interface,  power summed by the as-built netlist's hierarchy
 ring-liveness logic       prefix, plus the CTS clock tree and the remainder
@@ -105,7 +110,20 @@ def analog_terms(array: pr.Record, sampler: pr.Record, rate_hz: float) -> dict[s
     }
 
 
-def breakdown(rate_hz: float, *, arrays=None, samplers=None, by_block=None) -> dict:
+LIVENESS_ROW = "liveness samplers (xsr1, xsr2)"
+
+
+def liveness_at_rate(rate_hz: float, sampler: pr.Record, lives=None) -> dict | None:
+    """The liveness term at the binding corner and ``rate_hz``, or ``None`` when no
+    record exists there (the GAP path)."""
+    lives = pr.by_corner(pr.load(pr.LIVENESS_GLOB)) if lives is None else lives
+    rec = lives.get(ARRAY_CORNER)
+    if rec is None:
+        return None
+    return pr.liveness_active(rec, rate_hz, abs(sampler.values["q_clkcyc_xsv_c"]))
+
+
+def breakdown(rate_hz: float, *, arrays=None, samplers=None, by_block=None, lives=None) -> dict:
     """Rows ``[(label, watts, provenance)]`` plus the reconciliation figures."""
     arrays = arrays or pr.by_corner(pr.load(pr.ARRAY_GLOBS), prefer="pvt-q")
     samplers = samplers or pr.by_corner(pr.load(pr.SAMPLER_ACTIVE_GLOB))
@@ -117,14 +135,15 @@ def breakdown(rate_hz: float, *, arrays=None, samplers=None, by_block=None) -> d
     array, sampler = arrays[ARRAY_CORNER], samplers[ARRAY_CORNER]
     a = analog_terms(array, sampler, rate_hz)
     d = digital_at_rate(by_block, rate_hz)
+    live = liveness_at_rate(rate_hz, sampler, lives)
     rows = [
         ("ring 1", a["ring 1"], "MEASURED"),
         ("ring 2", a["ring 2"], "MEASURED"),
         ("ring buffers + XOR", a["ring buffers + XOR"], "MEASURED"),
         ("sampler (xsb, xsv)", a["sampler (xsb, xsv)"], "MEASURED"),
-    ] + [(label, d[key], "MEASURED-at-gate-level") for label, key in DIGITAL_ROWS]
+    ] + ([(LIVENESS_ROW, live["p_total_w"], "MEASURED")] if live else []) + [(label, d[key], "MEASURED-at-gate-level") for label, key in DIGITAL_ROWS]
     total = sum(w for _, w, _ in rows)
-    return {"rows": rows, "total": total, "array_total": a["_array_total"],
+    return {"rows": rows, "total": total, "array_total": a["_array_total"], "liveness": live,
             "sampler": a["sampler (xsb, xsv)"], "digital": sum(d.values()),
             "array_record": array.stem, "sampler_record": sampler.stem,
             "by_block_record": by_block.stem}
@@ -135,7 +154,7 @@ def liveness_context(rate_hz: float) -> str:
     samplers = pr.by_corner(pr.load(pr.SAMPLER_ACTIVE_GLOB))
     lives = pr.by_corner(pr.load(pr.LIVENESS_GLOB))
     if ARRAY_CORNER in lives:
-        return f"measured at {ARRAY_CORNER}"
+        return f"measured at {ARRAY_CORNER} ({lives[ARRAY_CORNER].stem}); in the total"
     for corner, rec in lives.items():
         try:
             f_clk = rate_hz
@@ -164,6 +183,16 @@ def reconcile(rate_hz: float) -> list[str]:
         problems.append(f"array rows {ring_rows:.6e} W != rollup array term {rollup_array:.6e} W")
     if abs(bd["sampler"] - rollup_sampler) > ANALOG_RECONCILE_TOL * rollup_sampler:
         problems.append(f"sampler {bd['sampler']:.6e} W != rollup {rollup_sampler:.6e} W")
+    rec_live = pr.by_corner(pr.load(pr.LIVENESS_GLOB)).get(ARRAY_CORNER)
+    live_rows = [w for label, w, _ in bd["rows"] if label == LIVENESS_ROW]
+    if rec_live is not None:
+        want = pr.liveness_active(rec_live, rate_hz, abs(sampler.values["q_clkcyc_xsv_c"]))["p_total_w"]
+        if len(live_rows) != 1:
+            problems.append(f"liveness record exists at {ARRAY_CORNER} but the table has no liveness row")
+        elif abs(live_rows[0] - want) > ANALOG_RECONCILE_TOL * abs(want):
+            problems.append(f"liveness row {live_rows[0]:.6e} W != rollup liveness term {want:.6e} W")
+    elif live_rows:
+        problems.append(f"liveness row present without a record at {ARRAY_CORNER}")
     gap = abs(bd["digital"] - rollup_digital) / rollup_digital
     if gap > DIGITAL_RECONCILE_TOL:
         problems.append(
@@ -195,7 +224,9 @@ def render(rates) -> str:
             cells += f" {_uw(w):>14} | {w / bds[r]['total']:5.1%} |"
         lines.append(f"| {label:<36} | {prov:<22} |{cells}")
     totals = "".join(f" {_uw(bds[r]['total']):>14} | {1.0:5.1%} |" for r in rates)
-    lines.append(f"| {'TOTAL (liveness samplers excluded)':<36} | {'':<22} |{totals}")
+    has_live = bds[rates[0]]["liveness"] is not None
+    total_label = "TOTAL" if has_live else "TOTAL (liveness samplers excluded)"
+    lines.append(f"| {total_label:<36} | {'':<22} |{totals}")
     vs = "".join(f" {bds[r]['total'] / pr.ACTIVE_BUDGET_W:>13.1%}  | {'':5} |" for r in rates)
     lines.append(f"| {'vs the < 500 uW row':<36} | {'':<22} |{vs}")
     lines += ["", f"liveness samplers (xsr1, xsr2): {liveness_context(rates[0])}"]
