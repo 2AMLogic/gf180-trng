@@ -117,61 +117,61 @@ Digital total power in uW at 1 MHz (`report_power`), identical SPEF in both colu
 
 | corner | uniform 0.25 | alarm-gated | backpressure | conditioned-streaming | disabled-clock-running | raw-streaming | observed max / uniform |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| ss_125C_3v00/rc-min | 208.93 | 140.20 | 156.17 | 156.43 | 130.49 | 157.13 | 0.752 |
+| ss_125C_3v00/rc-min | 208.94 | 140.20 | 156.17 | 156.43 | 130.49 | 157.14 | 0.752 |
 | ss_125C_3v00/rc-nom | 211.24 | 141.40 | 157.57 | 157.84 | 131.57 | 158.56 | 0.751 |
 | ss_125C_3v00/rc-max | 214.08 | 142.89 | 159.30 | 159.57 | 132.91 | 160.32 | 0.749 |
-| ss_n40C_3v00/rc-min | 195.15 | 130.96 | 145.85 | 146.10 | 121.84 | 146.77 | 0.752 |
-| ss_n40C_3v00/rc-nom | 197.35 | 132.07 | 147.16 | 147.41 | 122.83 | 148.09 | 0.750 |
+| ss_n40C_3v00/rc-min | 195.16 | 130.96 | 145.86 | 146.11 | 121.85 | 146.77 | 0.752 |
+| ss_n40C_3v00/rc-nom | 197.35 | 132.07 | 147.16 | 147.41 | 122.84 | 148.10 | 0.750 |
 | ss_n40C_3v00/rc-max | 200.05 | 133.44 | 148.76 | 149.02 | 124.06 | 149.73 | 0.748 |
-| tt_025C_3v30/rc-min | 248.43 | 165.62 | 184.82 | 185.13 | 153.99 | 185.98 | 0.749 |
-| tt_025C_3v30/rc-nom | 251.34 | 167.18 | 186.62 | 186.94 | 155.40 | 187.81 | 0.747 |
-| tt_025C_3v30/rc-max | 254.94 | 169.10 | 188.84 | 189.17 | 157.14 | 190.07 | 0.746 |
-| ff_125C_3v60/rc-min | 330.45 | 221.84 | 247.40 | 247.73 | 206.51 | 248.82 | 0.753 |
-| ff_125C_3v60/rc-nom | 334.43 | 224.11 | 250.00 | 250.33 | 208.60 | 251.45 | 0.752 |
-| ff_125C_3v60/rc-max | 339.35 | 226.91 | 253.20 | 253.55 | 211.19 | 254.71 | 0.751 |
-| ff_n40C_3v60/rc-min | 302.05 | 201.10 | 224.45 | 224.83 | 187.06 | 225.86 | 0.748 |
-| ff_n40C_3v60/rc-nom | 305.80 | 203.17 | 226.82 | 227.21 | 188.95 | 228.27 | 0.746 |
-| ff_n40C_3v60/rc-max | 310.42 | 205.73 | 229.76 | 230.17 | 191.30 | 231.26 | 0.745 |
+| tt_025C_3v30/rc-min | 248.43 | 165.63 | 184.82 | 185.13 | 153.99 | 185.98 | 0.749 |
+| tt_025C_3v30/rc-nom | 251.35 | 167.18 | 186.62 | 186.94 | 155.40 | 187.81 | 0.747 |
+| tt_025C_3v30/rc-max | 254.94 | 169.11 | 188.84 | 189.17 | 157.15 | 190.08 | 0.746 |
+| ff_125C_3v60/rc-min | 330.46 | 221.84 | 247.41 | 247.73 | 206.51 | 248.82 | 0.753 |
+| ff_125C_3v60/rc-nom | 334.44 | 224.11 | 250.00 | 250.33 | 208.60 | 251.46 | 0.752 |
+| ff_125C_3v60/rc-max | 339.35 | 226.92 | 253.20 | 253.55 | 211.19 | 254.71 | 0.751 |
+| ff_n40C_3v60/rc-min | 302.06 | 201.11 | 224.45 | 224.84 | 187.06 | 225.86 | 0.748 |
+| ff_n40C_3v60/rc-nom | 305.80 | 203.17 | 226.82 | 227.22 | 188.95 | 228.27 | 0.746 |
+| ff_n40C_3v60/rc-max | 310.43 | 205.74 | 229.76 | 230.17 | 191.31 | 231.27 | 0.745 |
 
 ### Workload-specific maxima over the 15 corners (uW) and where they bind
 
 | workload | window | max total | at corner | internal | switching | leakage | vs uniform at that corner |
 |---|---|---:|---|---:|---:|---:|---:|
 | alarm-gated | reset | 205.85 | ff_125C_3v60/rc-max | 153.41 | 45.39 | 7.051 | 0.607 |
-| alarm-gated | startup | 235.50 | ff_125C_3v60/rc-max | 171.36 | 56.45 | 7.696 | 0.694 |
-| alarm-gated | steady | 226.91 | ff_125C_3v60/rc-max | 166.19 | 53.06 | 7.668 | 0.669 |
-| backpressure | reset | 205.65 | ff_125C_3v60/rc-max | 153.34 | 45.26 | 7.051 | 0.606 |
+| alarm-gated | startup | 235.51 | ff_125C_3v60/rc-max | 171.36 | 56.45 | 7.696 | 0.694 |
+| alarm-gated | steady | 226.92 | ff_125C_3v60/rc-max | 166.19 | 53.06 | 7.668 | 0.669 |
+| backpressure | reset | 205.65 | ff_125C_3v60/rc-max | 153.35 | 45.26 | 7.051 | 0.606 |
 | backpressure | startup | 236.04 | ff_125C_3v60/rc-max | 171.73 | 56.64 | 7.665 | 0.696 |
-| backpressure | steady | 253.20 | ff_125C_3v60/rc-max | 182.36 | 62.86 | 7.977 | 0.746 |
-| conditioned-streaming | reset | 205.82 | ff_125C_3v60/rc-max | 153.39 | 45.38 | 7.051 | 0.607 |
+| backpressure | steady | 253.20 | ff_125C_3v60/rc-max | 182.37 | 62.86 | 7.977 | 0.746 |
+| conditioned-streaming | reset | 205.82 | ff_125C_3v60/rc-max | 153.40 | 45.38 | 7.051 | 0.607 |
 | conditioned-streaming | startup | 236.75 | ff_125C_3v60/rc-max | 172.15 | 56.93 | 7.677 | 0.698 |
 | conditioned-streaming | steady | 253.55 | ff_125C_3v60/rc-max | 182.58 | 63.09 | 7.886 | 0.747 |
 | disabled-clock-running | reset | 204.12 | ff_125C_3v60/rc-max | 152.49 | 44.57 | 7.051 | 0.601 |
-| disabled-clock-running | startup | 211.45 | ff_125C_3v60/rc-max | 156.95 | 47.13 | 7.367 | 0.623 |
+| disabled-clock-running | startup | 211.45 | ff_125C_3v60/rc-max | 156.96 | 47.13 | 7.367 | 0.623 |
 | disabled-clock-running | steady | 211.19 | ff_125C_3v60/rc-max | 156.78 | 47.04 | 7.367 | 0.622 |
 | raw-streaming | reset | 205.90 | ff_125C_3v60/rc-max | 153.27 | 45.57 | 7.051 | 0.607 |
-| raw-streaming | startup | 237.45 | ff_125C_3v60/rc-max | 172.34 | 57.49 | 7.622 | 0.700 |
+| raw-streaming | startup | 237.46 | ff_125C_3v60/rc-max | 172.34 | 57.49 | 7.622 | 0.700 |
 | raw-streaming | steady | 254.71 | ff_125C_3v60/rc-max | 183.02 | 63.79 | 7.898 | 0.751 |
 
 ### Term breakdown at the digital-binding corner of the ratified rollup (ff_125C_3v60/rc-max)
 
 | workload / window | clock | sequential | combinational | internal | switching | leakage | total |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| uniform | 75.74 | 171.82 | 91.79 | 234.69 | 97.04 | 7.617 | 339.35 |
+| uniform | 75.74 | 171.83 | 91.79 | 234.69 | 97.04 | 7.617 | 339.35 |
 | alarm-gated / reset | 75.74 | 122.60 | 7.51 | 153.41 | 45.39 | 7.051 | 205.85 |
-| alarm-gated / startup | 75.74 | 135.34 | 24.43 | 171.36 | 56.45 | 7.696 | 235.50 |
-| alarm-gated / steady | 75.74 | 132.89 | 18.28 | 166.19 | 53.06 | 7.668 | 226.91 |
-| backpressure / reset | 75.74 | 122.59 | 7.32 | 153.34 | 45.26 | 7.051 | 205.65 |
+| alarm-gated / startup | 75.74 | 135.34 | 24.43 | 171.36 | 56.45 | 7.696 | 235.51 |
+| alarm-gated / steady | 75.74 | 132.89 | 18.28 | 166.19 | 53.06 | 7.668 | 226.92 |
+| backpressure / reset | 75.74 | 122.59 | 7.32 | 153.35 | 45.26 | 7.051 | 205.65 |
 | backpressure / startup | 75.74 | 135.48 | 24.82 | 171.73 | 56.64 | 7.665 | 236.04 |
-| backpressure / steady | 75.74 | 144.57 | 32.90 | 182.36 | 62.86 | 7.977 | 253.20 |
-| conditioned-streaming / reset | 75.74 | 122.60 | 7.48 | 153.39 | 45.38 | 7.051 | 205.82 |
+| backpressure / steady | 75.74 | 144.57 | 32.90 | 182.37 | 62.86 | 7.977 | 253.20 |
+| conditioned-streaming / reset | 75.74 | 122.60 | 7.48 | 153.40 | 45.38 | 7.051 | 205.82 |
 | conditioned-streaming / startup | 75.74 | 135.81 | 25.21 | 172.15 | 56.93 | 7.677 | 236.75 |
 | conditioned-streaming / steady | 75.74 | 144.60 | 33.21 | 182.58 | 63.09 | 7.886 | 253.55 |
 | disabled-clock-running / reset | 75.74 | 122.54 | 5.84 | 152.49 | 44.57 | 7.051 | 204.12 |
-| disabled-clock-running / startup | 75.74 | 124.81 | 10.90 | 156.95 | 47.13 | 7.367 | 211.45 |
+| disabled-clock-running / startup | 75.74 | 124.81 | 10.90 | 156.96 | 47.13 | 7.367 | 211.45 |
 | disabled-clock-running / steady | 75.74 | 124.87 | 10.59 | 156.78 | 47.04 | 7.367 | 211.19 |
 | raw-streaming / reset | 75.74 | 122.60 | 7.56 | 153.27 | 45.57 | 7.051 | 205.90 |
-| raw-streaming / startup | 75.74 | 135.54 | 26.17 | 172.34 | 57.49 | 7.622 | 237.45 |
+| raw-streaming / startup | 75.74 | 135.54 | 26.18 | 172.34 | 57.49 | 7.622 | 237.46 |
 | raw-streaming / steady | 75.74 | 144.55 | 34.42 | 183.02 | 63.79 | 7.898 | 254.71 |
 
 ### Annotation coverage

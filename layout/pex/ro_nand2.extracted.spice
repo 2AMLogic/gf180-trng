@@ -4,6 +4,7 @@
 * - coupling: vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled
 * - resistance: single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star
 * - frequency: quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior
+* - substrate tie: 1e+12 ohm to ground -- the substrate is capacitively floating in transient analysis (DC reference only); see --substrate-tie-ohms
 .GLOBAL vsubs
 
 * cell ro_nand2
@@ -41,27 +42,27 @@ R_5_t2 \$5__t2 \$5 0.0944526209677
 * device instance _5 r0 *1 0,0 
 C_5 \$5 vsubs 3.26413e-16
 * device instance a_t0 r0 *1 0,0 
-Ra_t0 a__t0 a 40.14155
+Ra_t0 a__t0 a 24.16805
 * device instance a_t1 r0 *1 0,0 
-Ra_t1 a__t1 a 40.14155
+Ra_t1 a__t1 a 24.16805
 * device instance a r0 *1 0,0 
 Ca a vsubs 4.47462e-16
 * device instance en_t0 r0 *1 0,0 
-Ren_t0 en__t0 en 40.2386
+Ren_t0 en__t0 en 23.93775
 * device instance en_t1 r0 *1 0,0 
-Ren_t1 en__t1 en 40.2386
+Ren_t1 en__t1 en 23.93775
 * device instance en r0 *1 0,0 
 Cen en vsubs 4.38142e-16
 * device instance vddr_t0 r0 *1 0,0 
-Rvddr_t0 vddr__t0 vddr 38.97395
+Rvddr_t0 vddr__t0 vddr 27.18825
 * device instance vddr_t1 r0 *1 0,0 
-Rvddr_t1 vddr__t1 vddr 38.97395
+Rvddr_t1 vddr__t1 vddr 27.18825
 * device instance vddr r0 *1 0,0 
 Cvddr vddr vsubs 1.608645e-15
 * device instance vss_t0 r0 *1 0,0 
-Rvss_t0 vss__t0 vss 91.8256
+Rvss_t0 vss__t0 vss 85.9575
 * device instance vss_t1 r0 *1 0,0 
-Rvss_t1 vss__t1 vss 91.8256
+Rvss_t1 vss__t1 vss 85.9575
 * device instance vss r0 *1 0,0 
 Cvss vss vsubs 1.374979e-15
 * device instance y_t0 r0 *1 0,0 
