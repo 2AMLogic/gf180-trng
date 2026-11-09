@@ -403,6 +403,7 @@ DIGITAL_TESTBENCHES = frozenset(
     {
         "conditioned-stream-battery",
         "conditioner-crc32",
+        "digital-power-by-block",
         "digital-sta-power",
         "health-test-fault-injection",
         "interface-regfile",
