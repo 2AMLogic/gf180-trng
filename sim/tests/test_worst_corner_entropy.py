@@ -360,6 +360,30 @@ class SamplerOffsetLifecycleTests(LifecycleTestCase):
                     wce._sampler_offset(self.CORNER)
 
 
+class SupplySweepTests(unittest.TestCase):
+    """``--supply-sweep`` is a read-only report over the committed records."""
+
+    def test_sweep_prints_every_corner_and_power_returned(self) -> None:
+        out = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(wce, "load", lambda glob: grid_records()))
+            stack.enter_context(mock.patch.object(wce, "shipped_ring_count", lambda: RINGS))
+            stack.enter_context(mock.patch.object(wce, "starved_cell_constants",
+                                                  lambda: (1.8, 1.9)))
+            stack.enter_context(contextlib.redirect_stdout(out))
+            wce.report_supply_sweep(2000.0)
+        text = out.getvalue()
+        self.assertIn("not an SP 800-90B entropy assessment", text)
+        self.assertIn("held fixed", text)
+        rows = [l for l in text.splitlines() if l[:2] in ("tt", "ff", "ss")]
+        self.assertEqual(len(rows), 27)
+        # Power returned is zero at the 3.63 V reference and positive below it.
+        ref = next(l for l in rows if l.startswith("ss/125") and " 3.63 " in l).split()
+        low = next(l for l in rows if l.startswith("ss/125") and " 2.97 " in l).split()
+        self.assertEqual(float(ref[4]), 0.0)
+        self.assertGreater(float(low[4]), 0.0)
+
+
 class DefaultRateTests(unittest.TestCase):
     """The ``--rate`` default is the ratified 2 kbps; DR-0010's 500 bps stays
     reachable explicitly so committed 500 bps tables remain reproducible (#585)."""
