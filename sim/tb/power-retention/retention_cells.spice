@@ -1,0 +1,75 @@
+* Three gf180mcu_fd_sc_mcu9t5v0 cells, copied unmodified from the PDK's
+* libs.ref/gf180mcu_fd_sc_mcu9t5v0/spice/gf180mcu_fd_sc_mcu9t5v0.spice
+* (Copyright 2022 GlobalFoundries PDK Authors, Apache License 2.0), so that a
+* batch-fleet unit does not depend on the PDK's cell-library path. Used by
+* sim/tb/power-retention/tb_power_retention.sp (issue #790): the retained flop
+* (dffrnq_1), the isolation AND (and2_1) and the retention clock gate (icgtp_1).
+* The device models are the PDK's own, selected by the request's corner sections.
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__and2_1 A1 A2 Z VDD VNW VPW VSS
+*.PININFO A1:I A2:I Z:O VDD:P VNW:P VPW:P VSS:G
+*.EQN Z=(A1 * A2)
+X_i_2 net_0 A1 Z_neg VPW nfet_05v0 W=0.660000U L=0.600000U
+X_i_3 VSS A2 net_0 VPW nfet_05v0 W=0.660000U L=0.600000U
+X_i_0 Z Z_neg VSS VPW nfet_05v0 W=1.320000U L=0.600000U
+X_i_4 Z_neg A1 VDD VNW pfet_05v0 W=0.820000U L=0.500000U
+X_i_5 VDD A2 Z_neg VNW pfet_05v0 W=0.820000U L=0.500000U
+X_i_1 Z Z_neg VDD VNW pfet_05v0 W=1.830000U L=0.500000U
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__dffrnq_1 D RN CLK Q VDD VNW VPW VSS
+*.PININFO D:I RN:I CLK:I Q:O VDD:P VNW:P VPW:P VSS:G
+X_tn10 ncki CLK VSS VPW nfet_05v0 W=0.790000U L=0.600000U
+X_tn13 cki ncki VSS VPW nfet_05v0 W=0.790000U L=0.600000U
+X_tn11 net10 D VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn15 net10 ncki net1 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn14 net1 cki net15 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn8 net12 net2 net15 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn9 VSS RN net12 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn18 VSS net1 net2 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn0 net8 cki net2 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn1 net11 ncki net8 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn12 net11 net4 VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn5 net0 RN VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_tn4 net4 net8 net0 VPW nfet_05v0 W=0.790000U L=0.600000U
+X_tn3 Q net4 VSS VPW nfet_05v0 W=1.320000U L=0.600000U
+X_tp8 ncki CLK VDD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_tp11 cki ncki VDD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_tp9 VDD D net10 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp15 net1 cki net10 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp7 net9 ncki net1 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp6 VDD net2 net9 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp12 net9 RN VDD VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp18 VDD net1 net2 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp2 net2 ncki net8 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp3 net8 cki net11 VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp10 net11 net4 VDD VNW pfet_05v0 W=1.000000U L=0.500000U
+X_tp5 net4 RN VDD VNW pfet_05v0 W=0.980000U L=0.500000U
+X_tp4 VDD net8 net4 VNW pfet_05v0 W=0.980000U L=0.500000U
+X_tp1 Q net4 VDD VNW pfet_05v0 W=1.830000U L=0.500000U
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu9t5v0__icgtp_1 CLK E TE Q VDD VNW VPW VSS
+*.PININFO CLK:I E:I TE:I Q:O VDD:P VNW:P VPW:P VSS:G
+X_MU19 net50 TE VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MU20 VSS E net50 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI82 net50 NCK net53 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI91 net53 CK net033 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI92 net033 QD VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI80_M_u2 VSS net53 QD VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MU82_M_u2 VSS NCK CK VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MU81_M_u2 NCK CLK VSS VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI85_M_u3 XI85-net6 CLK d3 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MI85_M_u4 VSS QD XI85-net6 VPW nfet_05v0 W=0.700000U L=0.600000U
+X_MU75_M_u2 Q d3 VSS VPW nfet_05v0 W=1.000000U L=0.600000U
+X_MI81 VDD TE net58 VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MU17 net58 E net61 VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MU16 net61 CK net53 VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MI90 net53 NCK net062 VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MI88 net062 QD VDD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MI80_M_u3 VDD net53 QD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MU82_M_u3 CK NCK VDD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MU81_M_u3 VDD CLK NCK VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MI85_M_u1 d3 CLK VDD VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MI85_M_u2 VDD QD d3 VNW pfet_05v0 W=1.380000U L=0.500000U
+X_MU75_M_u3 Q d3 VDD VNW pfet_05v0 W=1.830000U L=0.500000U
+.ENDS

@@ -257,6 +257,30 @@
         }
       ]
     },
+    "power-retention": {
+      "invocation": {
+        "command": "python3 sim/tools/power_retention.py emit --check",
+        "documented_in": "sim/tb/power-retention/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/power-retention/README.md",
+          "sha256": "sha256:0c81c3851abc1d2f30685a7404ae3510039201152ff4b861672650c6fa60ea48"
+        },
+        {
+          "path": "sim/tb/power-retention/request-grid.json",
+          "sha256": "sha256:a15f6a6e5e8dfeeb8127b2e39a3e06ff552a4810ca74e39739c8d7fe525681cd"
+        },
+        {
+          "path": "sim/tb/power-retention/retention_cells.spice",
+          "sha256": "sha256:d9aac549fc59c164ca347708eac3ad6566e2dad3324f3fa34b6068b644b23c9b"
+        },
+        {
+          "path": "sim/tb/power-retention/tb_power_retention.sp",
+          "sha256": "sha256:47a623370f47f2bba445af5f8d7767d3269d42fe8984fc0880525a383c4446be"
+        }
+      ]
+    },
     "power-switch": {
       "invocation": {
         "command": "python3 sim/tools/power_switch.py emit --check",
@@ -1560,7 +1584,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:24e15952947c3f32a5bb14ed6f892cd91db9deaab7d8528caba7583a1e6b487d"
+      "sha256": "sha256:bb886d15494d43e7a823040695f37df5fa512fc8b5f1aef5b6212a98040ec0cf"
     },
     {
       "path": "sim/README.md",
