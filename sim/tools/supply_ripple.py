@@ -52,6 +52,8 @@ from harness import klt_request as _kreq  # noqa: E402
 from harness.corners import CORNERS as _CORNER_REGISTRY  # noqa: E402
 from harness.report import git_blob_sha1  # noqa: E402
 from harness import report as _rep  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-array-supply-ripple"
@@ -260,8 +262,7 @@ def build_request(name: str, corner: str, freq_key: str, tstep_s: float) -> dict
     }
 
 
-def render(req: dict) -> str:
-    return json.dumps(req, indent=1) + "\n"
+render = _pc.render
 
 
 def request_path(name: str) -> Path:
