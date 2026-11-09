@@ -118,17 +118,17 @@
       "trunk_y_um": -4.0,
       "trunk_x_um": [
         499.83,
-        930.445
+        516.215
       ],
-      "trunk_length_um": 430.615,
-      "chip_pin_x_um": 930.295,
-      "label_x_um": 930.295,
+      "trunk_length_um": 16.385,
+      "chip_pin_x_um": 516.065,
+      "label_x_um": 516.065,
       "endpoints": [
         {
           "region": "digital",
           "pin": "clk",
           "anchor": "digital_pin_top",
-          "riser_x_um": 918.295,
+          "riser_x_um": 504.065,
           "legs": [
             {
               "layer": "metal4",
@@ -145,7 +145,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 403.015,
+              "length_um": 441.265,
               "width_um": 0.3
             }
           ]
@@ -168,17 +168,17 @@
       "trunk_y_um": -4.7,
       "trunk_x_um": [
         500.83,
-        931.145
+        516.915
       ],
-      "trunk_length_um": 430.315,
-      "chip_pin_x_um": 930.995,
-      "label_x_um": 930.995,
+      "trunk_length_um": 16.085,
+      "chip_pin_x_um": 516.765,
+      "label_x_um": 516.765,
       "endpoints": [
         {
           "region": "digital",
           "pin": "rst_n",
           "anchor": "digital_pin_top",
-          "riser_x_um": 918.995,
+          "riser_x_um": 504.765,
           "legs": [
             {
               "layer": "metal4",
@@ -195,7 +195,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 404.415,
+              "length_um": 442.665,
               "width_um": 0.3
             }
           ]
@@ -218,11 +218,11 @@
       "trunk_y_um": -5.4,
       "trunk_x_um": [
         312.36,
-        919.845
+        505.615
       ],
-      "trunk_length_um": 607.485,
+      "trunk_length_um": 193.255,
       "chip_pin_x_um": null,
-      "label_x_um": 616.1025,
+      "label_x_um": 408.9875,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -234,7 +234,7 @@
           "region": "digital",
           "pin": "raw_bit",
           "anchor": "digital_pin_top",
-          "riser_x_um": 919.695,
+          "riser_x_um": 505.465,
           "legs": [
             {
               "layer": "metal4",
@@ -251,7 +251,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 405.815,
+              "length_um": 444.065,
               "width_um": 0.3
             }
           ]
@@ -268,11 +268,11 @@
       "trunk_y_um": -6.1,
       "trunk_x_um": [
         372.6,
-        920.545
+        506.315
       ],
-      "trunk_length_um": 547.945,
+      "trunk_length_um": 133.715,
       "chip_pin_x_um": null,
-      "label_x_um": 646.5725,
+      "label_x_um": 439.4575,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -284,7 +284,7 @@
           "region": "digital",
           "pin": "raw_valid",
           "anchor": "digital_pin_top",
-          "riser_x_um": 920.395,
+          "riser_x_um": 506.165,
           "legs": [
             {
               "layer": "metal4",
@@ -301,7 +301,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 407.215,
+              "length_um": 445.465,
               "width_um": 0.3
             }
           ]
@@ -318,11 +318,11 @@
       "trunk_y_um": -6.8,
       "trunk_x_um": [
         433.49,
-        921.245
+        507.015
       ],
-      "trunk_length_um": 487.755,
+      "trunk_length_um": 73.525,
       "chip_pin_x_um": null,
-      "label_x_um": 677.3675,
+      "label_x_um": 470.2525,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -334,7 +334,7 @@
           "region": "digital",
           "pin": "ring_bit[0]",
           "anchor": "digital_pin_top",
-          "riser_x_um": 921.095,
+          "riser_x_um": 506.865,
           "legs": [
             {
               "layer": "metal4",
@@ -351,7 +351,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 408.615,
+              "length_um": 446.865,
               "width_um": 0.3
             }
           ]
@@ -368,11 +368,11 @@
       "trunk_y_um": -7.5,
       "trunk_x_um": [
         494.38,
-        921.945
+        507.715
       ],
-      "trunk_length_um": 427.565,
+      "trunk_length_um": 13.335,
       "chip_pin_x_um": null,
-      "label_x_um": 708.1625,
+      "label_x_um": 501.0475,
       "endpoints": [
         {
           "region": "combiner_sampler",
@@ -384,7 +384,7 @@
           "region": "digital",
           "pin": "ring_bit[1]",
           "anchor": "digital_pin_top",
-          "riser_x_um": 921.795,
+          "riser_x_um": 507.565,
           "legs": [
             {
               "layer": "metal4",
@@ -401,7 +401,7 @@
             {
               "layer": "metal3",
               "role": "riser",
-              "length_um": 410.015,
+              "length_um": 448.265,
               "width_um": 0.3
             }
           ]
@@ -489,18 +489,18 @@
       "riser_layer": "metal3",
       "trunk_y_um": -10.3,
       "trunk_x_um": [
-        512.43,
-        515.73
+        511.715,
+        515.865
       ],
-      "trunk_length_um": 3.3,
-      "chip_pin_x_um": 515.58,
-      "label_x_um": 515.58,
+      "trunk_length_um": 4.15,
+      "chip_pin_x_um": 515.715,
+      "label_x_um": 515.715,
       "endpoints": [
         {
           "region": "digital",
           "pin": "vddd",
           "anchor": "digital_pdn_strap",
-          "riser_x_um": 512.58
+          "riser_x_um": 512.715
         }
       ]
     },
@@ -514,11 +514,11 @@
       "trunk_y_um": -11.0,
       "trunk_x_um": [
         75.9,
-        514.73
+        512.865
       ],
-      "trunk_length_um": 438.83,
-      "chip_pin_x_um": 514.58,
-      "label_x_um": 514.58,
+      "trunk_length_um": 436.965,
+      "chip_pin_x_um": 512.715,
+      "label_x_um": 512.715,
       "endpoints": [
         {
           "region": "ring1",
@@ -542,7 +542,7 @@
           "region": "digital",
           "pin": "vss",
           "anchor": "digital_pdn_strap",
-          "riser_x_um": 511.58
+          "riser_x_um": 509.715
         }
       ]
     }
@@ -550,10 +550,10 @@
   "wiring_bbox_um": {
     "x0": 4.16,
     "y0": -11.15,
-    "x1": 931.145,
-    "y1": 402.365
+    "x1": 516.915,
+    "y1": 440.615
   },
-  "shape_count": 149,
+  "shape_count": 217,
   "net_labels": [
     "en1",
     "en2",

@@ -710,6 +710,44 @@ def _row_offsets(regions: list[dict]) -> dict[str, float]:
     return offsets
 
 
+def _stack_origins(regions: list[dict]) -> dict[str, dict[str, float]]:
+    """Guard-ring origins of the stacked arrangement (gf180-trng#803): the
+    analog regions keep their left-to-right order as one strip at `y = 0`,
+    `ISOLATION_CHANNEL_UM` apart (`_row_offsets`), and the `digital` region
+    sits above the strip, one `ISOLATION_CHANNEL_UM` above the tallest analog
+    region.
+
+    `digital`'s x is not a free constant. Its east flank carries the top-pin
+    wrap columns and the `vddd`/`vss` docking risers, which must stay clear
+    of `combiner_sampler`'s own east-edge risers; `interregion.
+    stack_digital_east_um` derives the least east edge that guarantees it from
+    the riser tables themselves. The guard ring's own east edge is also kept
+    at or beyond the strip's, so the stack never reads narrower than the
+    strip.
+    """
+    analog = [r for r in regions if r["id"] != "digital"]
+    digital = next(r for r in regions if r["id"] == "digital")
+    offsets = _row_offsets(analog)
+    origins = {rid: {"x": round(offset, 3), "y": 0.0} for rid, offset in offsets.items()}
+
+    strip_east = max(offsets[r["id"]] + r["guarded_w_um"] for r in analog)
+    cs = next(r for r in analog if r["id"] == "combiner_sampler")
+    cs_east_abs = (offsets["combiner_sampler"] + GUARD_RING_WIDTH_UM
+                   - cs["ring_content_bbox_um"]["x0"] + cs["ring_content_bbox_um"]["x1"])
+    content = digital["ring_content_bbox_um"]
+    # content east edge -> guarded east edge: the guard ring's own width,
+    # minus whatever of the content bbox sits past its own x1 (none: guard
+    # origin + width - x0 is where the content bbox starts).
+    content_w = content["x1"] - content["x0"]
+    min_east = interregion.stack_digital_east_um(cs_east_abs)
+    guarded_east = max(strip_east, min_east + GUARD_RING_WIDTH_UM)
+    x = math.ceil((guarded_east - digital["guarded_w_um"]) * 100) / 100
+    assert x + GUARD_RING_WIDTH_UM + content_w <= x + digital["guarded_w_um"]
+    y = max(r["guarded_h_um"] for r in analog) + ISOLATION_CHANNEL_UM
+    origins["digital"] = {"x": round(x, 3), "y": round(y, 3)}
+    return origins
+
+
 def draw_interregion_wiring(
     regions: list[dict],
     content_origins: dict[str, dict[str, float]],
@@ -794,12 +832,12 @@ def compose(regions: list[dict], variant: str,
     # placement `check_ring_fit` already verifies DRC/LVS-clean for
     # (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring explains why that
     # constant, not zero clearance, is what keeps this placement LVS-clean).
-    offsets = _row_offsets(regions)
+    guard_origins = _stack_origins(regions)
     order = [region["id"] for region in regions]
     blocks = [
         {"id": rid, "generator_report": f"fp_guard_{rid}.json"} for rid in order
     ]
-    origins = {rid: {"x": round(offsets[rid], 3), "y": 0.0} for rid in order}
+    origins = {rid: dict(guard_origins[rid]) for rid in order}
 
     content_ids: list[str] = []
     for region in regions:
@@ -810,8 +848,8 @@ def compose(regions: list[dict], variant: str,
         bbox = region["ring_content_bbox_um"]
         blocks.append({"id": content_id, "generator_report": region["ring_content_report"]})
         origins[content_id] = {
-            "x": round(offsets[rid] + GUARD_RING_WIDTH_UM - bbox["x0"], 3),
-            "y": round(GUARD_RING_WIDTH_UM - bbox["y0"], 3),
+            "x": round(guard_origins[rid]["x"] + GUARD_RING_WIDTH_UM - bbox["x0"], 3),
+            "y": round(guard_origins[rid]["y"] + GUARD_RING_WIDTH_UM - bbox["y0"], 3),
         }
         content_ids.append(content_id)
 

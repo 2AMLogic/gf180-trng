@@ -66,8 +66,8 @@
           "y": 0.0
         },
         "digital": {
-          "x": 519.58,
-          "y": 0.0
+          "x": 105.35,
+          "y": 38.25
         },
         "ring1_ring": {
           "x": 5.05,
@@ -82,8 +82,8 @@
           "y": 1.3
         },
         "digital_ring": {
-          "x": 520.58,
-          "y": 1.0
+          "x": 106.35,
+          "y": 39.25
         },
         "trng_interregion": {
           "x": 0.0,
@@ -112,8 +112,8 @@
     "bbox_um": {
       "x0": 0.0,
       "y0": -11.15,
-      "x1": 931.145,
-      "y1": 402.365
+      "x1": 516.915,
+      "y1": 440.615
     },
     "ports": [],
     "blocks": [
@@ -182,14 +182,14 @@
         "source_path": "layout/.work/fp_guard_digital.gds",
         "source_digest": "sha256:2fe7bf30a975273a2d794eb6b26535ff58ee6f50be6da47a7f223f0fc652180a",
         "offset_um": {
-          "x": 519.58,
-          "y": 0.0
+          "x": 105.35,
+          "y": 38.25
         },
         "bbox_um": {
-          "x0": 519.58,
-          "y0": 0.0,
-          "x1": 917.2950000000001,
-          "y1": 397.71500000000003
+          "x0": 105.35,
+          "y0": 38.25,
+          "x1": 503.06500000000005,
+          "y1": 435.96500000000003
         },
         "orientation": "none"
       },
@@ -258,14 +258,14 @@
         "source_path": "layout/digital/trng_top.gds",
         "source_digest": "sha256:c99329a3871c4343cdb8b7a06d79cd8539afbe86b4584891438bc084e856acc8",
         "offset_um": {
-          "x": 520.58,
-          "y": 1.0
+          "x": 106.35,
+          "y": 39.25
         },
         "bbox_um": {
-          "x0": 520.58,
-          "y0": 1.0,
-          "x1": 916.2950000000001,
-          "y1": 396.71500000000003
+          "x0": 106.35,
+          "y0": 39.25,
+          "x1": 502.06500000000005,
+          "y1": 434.96500000000003
         },
         "orientation": "none"
       },
@@ -275,7 +275,7 @@
         "generator": "layout.floorplan.interregion",
         "cell_name": "trng_interregion",
         "source_path": "layout/.work/trng_interregion.gds",
-        "source_digest": "sha256:395a6734b67cea88ce631ffd270049000744d8ccb6d70896d90b268b46bfd7db",
+        "source_digest": "sha256:747a2502973b5b57b8acd1f2aef228550685f3e510f03ffbac761198b7d23616",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -283,8 +283,8 @@
         "bbox_um": {
           "x0": 4.16,
           "y0": -11.15,
-          "x1": 931.145,
-          "y1": 402.365
+          "x1": 516.915,
+          "y1": 440.615
         },
         "orientation": "none"
       }
@@ -322,5 +322,5 @@
       "input": null
     }
   },
-  "gds_sha256_timestamp_normalised": "a704c2dae86151203430b8fed70348b36cd8b24eef419758618ae85e3c1e79f0"
+  "gds_sha256_timestamp_normalised": "f411ace32fbebe512b6901b8b55140777b5762ae1c96e207fb78c09b751173ad"
 }

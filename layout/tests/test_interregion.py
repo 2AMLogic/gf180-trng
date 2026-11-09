@@ -65,16 +65,15 @@ def _content_origins() -> dict[str, dict]:
 def _combiner_sampler_east_edge(origins: dict[str, dict]) -> float:
     """`combiner_sampler`'s own content bbox `x1`, in its local frame.
 
-    The composed row's own arithmetic gives it without a GDS read: the next
-    region's guard ring starts one isolation channel past this region's
-    guarded east edge, and the content sits `GUARD_RING_WIDTH_UM` inside
-    that edge.
+    The composition report's own placed guard-ring bbox gives it without a
+    GDS read: the content sits `GUARD_RING_WIDTH_UM` inside the guarded
+    region's east edge. (The next region is no longer the neighbour to the
+    east -- `digital` is stacked above the strip -- so the region's own
+    placed bbox is the only source.)
     """
-    origins_um = _composition()["placement"]["origins_um"]
-    guard_x = origins_um["combiner_sampler"]["x"]
-    next_guard_x = origins_um["digital"]["x"]
-    guarded_w = next_guard_x - guard_x - 20.0   # ISOLATION_CHANNEL_UM
-    east_edge_composed = guard_x + guarded_w - 1.0   # GUARD_RING_WIDTH_UM
+    blocks = json.loads(COMPOSE_REPORT.read_text())["response"]["blocks"]
+    guard = next(b for b in blocks if b["id"] == "combiner_sampler")["bbox_um"]
+    east_edge_composed = guard["x1"] - 1.0   # placed bbox is composed-frame; GUARD_RING_WIDTH_UM
     return round(east_edge_composed - origins["combiner_sampler"]["x"], 4)
 
 
@@ -200,6 +199,97 @@ class TrunkLanes(unittest.TestCase):
                 route["trunk_x_um"][0], west_limit,
                 f"net {route['net']} runs west of the combiner_sampler region",
             )
+
+
+class StackedDigitalSupplyTie(unittest.TestCase):
+    """gf180-trng#803: `digital` is stacked above the analog strip and its
+    `vddd`/`vss` ties run on the stack's east flank."""
+
+    def setUp(self):
+        self.plan = _plan()
+        self.origins = _content_origins()
+        self.cs_east = (_combiner_sampler_east_edge(self.origins)
+                        + self.origins["combiner_sampler"]["x"])
+        self.routes = {r["net"]: r for r in self.plan["routes"]}
+
+    def _pdn_endpoint(self, net):
+        return next(e for e in self.routes[net]["endpoints"] if e["region"] == "digital")
+
+    def test_digital_sits_above_the_analog_strip(self):
+        origins = _composition()["placement"]["origins_um"]
+        blocks = {b["id"]: b["bbox_um"]
+                  for b in json.loads(COMPOSE_REPORT.read_text())["response"]["blocks"]}
+        strip_top = max(blocks[r]["y1"] + origins[r]["y"]
+                        for r in ("ring1", "ring2", "combiner_sampler"))
+        self.assertGreaterEqual(
+            origins["digital"]["y"] - strip_top, floorplan.ISOLATION_CHANNEL_UM - 1e-6)
+
+    def test_pdn_risers_are_east_of_the_whole_strip_and_every_wrap_column(self):
+        wraps = [
+            e["legs"] for r in self.routes.values() for e in r["endpoints"]
+            if e["region"] == "digital" and e.get("legs")
+        ]
+        self.assertTrue(wraps)
+        last_wrap = max(
+            e["riser_x_um"] for r in self.routes.values() for e in r["endpoints"]
+            if e["region"] == "digital" and e["anchor"] == "digital_pin_top"
+        )
+        for net in ("vddd", "vss"):
+            x = self._pdn_endpoint(net)["riser_x_um"]
+            self.assertGreater(x, self.cs_east, f"{net} PDN riser is not east of the strip")
+            self.assertGreaterEqual(
+                x - interregion.PDN_RISER_W_UM / 2 - (last_wrap + interregion.WIRE_W / 2),
+                interregion.MIN_SPACE, f"{net} PDN riser is too close to a wrap column")
+
+    def test_pdn_risers_are_wide_and_multi_cut(self):
+        for net in ("vddd", "vss"):
+            shapes = [sh for sh in self.plan["shapes"] if sh["_net"] == net]
+            risers = [sh for sh in shapes
+                      if tuple(sh["layer"]) == tuple(interregion.METAL3)
+                      and sh["rect_um"][2] - sh["rect_um"][0] > 1.0]
+            self.assertEqual(len(risers), 1, net)
+            tagged = {}
+            for sh in shapes:
+                if "_array" in sh:
+                    tagged.setdefault(sh["_array"], []).append(sh)
+            counts = {k: len(v) for k, v in tagged.items()}
+            self.assertEqual(counts, {
+                "pdn-via3-trunk": interregion.PDN_VIA_COLS,
+                "pdn-via3-top": interregion.PDN_VIA_COLS ** 2,
+                "pdn-via4-top": interregion.PDN_VIA_COLS ** 2,
+            }, net)
+
+    def test_no_pdn_conductor_enters_a_ring_isolation_channel(self):
+        """The argument recorded in layout/floorplan/README.md: nothing the
+        PDN ties draw lies west of the strip's east edge, so none of it is in
+        the `ring1 | ring2` or `ring2 | combiner_sampler` channels."""
+        for net in ("vddd", "vss"):
+            for sh in self.plan["shapes"]:
+                if sh["_net"] != net:
+                    continue
+                x0, y0, x1, y1 = sh["rect_um"]
+                wide = max(x1 - x0, y1 - y0) >= interregion.PDN_RISER_W_UM - 1e-6
+                if "_array" not in sh and not (wide and min(x1 - x0, y1 - y0) >= 1.0):
+                    continue                       # the net's own analog legs / trunk
+                if tuple(sh["layer"]) == tuple(interregion.METAL5):
+                    continue                       # the dock reaches into digital's own strap
+                self.assertGreater(sh["rect_um"][0], self.cs_east, (net, sh))
+
+    def test_clk_and_rst_n_stay_east_of_the_strip(self):
+        """DR-0012-clock's rationale for the row-ordering guard, restated for the
+        stack: the sample clock and reset reach the samplers from the digital
+        side, east of every region of the strip, never over a ring channel."""
+        for net in ("clk", "rst_n"):
+            self.assertGreater(
+                min(e["riser_x_um"] for e in self.routes[net]["endpoints"]
+                    if e["region"] == "digital"), self.cs_east)
+
+    def test_derived_east_edge_clears_the_combiner_sampler_columns(self):
+        east = interregion.stack_digital_east_um(self.cs_east)
+        first_wrap = east + interregion.EAST_RISER_CLEAR_UM
+        last_cs = self.cs_east + max(interregion.CS_CHANNEL_RISER_X.values())
+        self.assertGreaterEqual(first_wrap - last_cs - interregion.WIRE_W,
+                                interregion.MIN_SPACE)
 
 
 # Metal stack the connectivity check below walks: a via layer joins the two
