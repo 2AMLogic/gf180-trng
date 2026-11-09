@@ -401,6 +401,60 @@ power has none in evidence. A decision on the active row is requested on #700.
   FIFO and run state meets the row's "register state retained" wording is the
   ruling already requested on #700; the row and its tag are unchanged.
 
+### 2026-11-09 — ranked active-power levers and scoped follow-ups (#809)
+
+Evidence only; the Power row, its `missed` tag, [DR-0017] (`Proposed`) and
+[DR-0023] are unchanged. This follows the #790 breakdown above. Every figure is
+the output of `python3 sim/tools/active_power_breakdown.py --reconcile` (exit 0
+on this tree) or arithmetic on the committed ring records named in the table.
+Each is a model figure, none is a silicon measurement. The 1 MHz and 2 kHz
+columns are never mixed in one row.
+
+**Open spec question (not resolved here): which digital clock rate is the row
+judged at?** The 749.4 µW figure (149.9 %, missed) is the 1 MHz-clock model.
+The same model at the 2 kHz ratified raw rate gives 418.3 µW (83.7 %, 81.7 µW
+under the bound), before the liveness samplers (below). Which one the row means
+is a ruling, already requested on #700, not a lever.
+
+Ranked by power recovered. "Basis" is the 749.4 µW whole-block figure unless
+stated. Corner: array and sampler terms at `ff` / −40 °C / 3.63 V, digital at
+`ff_125C_3v60` / `rc-max`.
+
+| # | lever | recovered | source record | disposition |
+|---|---|---|---|---|
+| 1 | Digital clock 1 MHz → 2 kHz (whole digital section 339.4 → 8.3 µW) | **331.1 µW** (749.4 → 418.3) | `2026-11-09-digital-power-by-block-01` via `active_power_breakdown.py` | Open spec question above; not a design change. Sub-block returns in the next table. |
+| 2 | Array supply 3.63 → 3.30 V (rings 273.1 → 201.3, buffers + XOR 120.0 → 86.2 µW) | 105.6 µW (71.8 rings + 33.8 buffers/XOR), array only | `2026-08-02-ro-array-core-pvt-q-{39,38}`, `ff` / −40 °C | Touches the entropy source (ring-1 frequency 249.0 → 229.6 MHz, −7.8 %; entropy rate not measured here) and the Operating envelope row. Follow-up #813. |
+| 3 | Ring buffers + XOR (120.0 µW, 16.0 % of 749.4) | up to 120.0 µW, an upper bound | same pair as row 2 | The records report only the `vdd`-rail remainder, so buffers and XOR cannot be separated. A split probe would. Follow-up #811. |
+| 4 | Clock gating / trimming inside the digital section at the 1 MHz clock | up to the sub-block figure, before any gating | `digital-power-by-block-01` | The model assumes one uniform declared activity, so what gating would return is not quantifiable from the records. Toggle-based activity would. Follow-up #812. At 2 kHz the whole section is 8.3 µW (1.7 % of the row): no lever. |
+| 5 | Sampler (xsb, xsv), 16.9 µW | none | `2026-08-02-sampler-dff-active-current-12` | No lever: 2.3 % of the block and set by the ring transition rate. |
+| 6 | Rings themselves, 273.1 µW (36.4 %) | none apart from row 2 | `ro-array-core-pvt-q-39` | No lever: the rings are the entropy source; drive or size changes trade against entropy and are outside this record. |
+| — | Liveness samplers (xsr1/xsr2) | adds power, recovers none | none at the binding corner | Gap. Nearest measured corner (`tt` / 27 °C / 3.30 V) shows about 25.3 µW, in neither total above. Follow-up #810. |
+
+Digital clock-rate return by sub-block (row 1, 1 MHz → 2 kHz):
+
+| digital sub-block | 1 MHz | 2 kHz | returned |
+|---|---|---|---|
+| interface | 139.8 µW | 3.2 µW | 136.5 µW |
+| clock tree | 73.5 µW | 0.4 µW | 73.1 µW |
+| conditioner | 58.5 µW | 1.1 µW | 57.4 µW |
+| health tests | 43.4 µW | 0.9 µW | 42.6 µW |
+| ring-liveness logic | 18.5 µW | 0.4 µW | 18.1 µW |
+| other (buffers, tap/fill) | 5.6 µW | 2.3 µW | 3.3 µW |
+| **total** | **339.4 µW** | **8.3 µW** | **331.1 µW** |
+
+Measurement gap: the digital figures are liberty power at a declared activity
+(DR-0021 §3), not supply current, and the array and sampler terms are from
+different corners than the digital term (`power_rollup.py`'s convention). Row 2
+is arithmetic on two records at one process/temperature; the supply sweep is
+2.97 / 3.30 / 3.63 V only. Adding the nearest-corner liveness figure to the
+2 kHz total would give about 443.6 µW, but that mixes corners and is indicative
+only; the real value needs #810.
+
+Follow-ups, each at `loom:triage`: #810 (liveness-sampler record at the binding
+corner), #811 (buffer versus XOR split), #812 (toggle-based digital activity),
+#813 (entropy cost of a reduced ring supply). Rows 5 and 6 are recorded as "no
+lever". No klayout-tools gap was met, so none is filed.
+
 
 ## Area
 
