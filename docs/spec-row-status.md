@@ -353,6 +353,37 @@ and asks for power gating plus FIFO and inventory reductions.
 Idle therefore has a credible path (gating plus a retention answer); active
 power has none in evidence. A decision on the active row is requested on #700.
 
+- **Active power by sub-block (#790).** `python3 sim/tools/active_power_breakdown.py`
+  splits the whole-block figure from committed records only (rings, buffers +
+  XOR, sampler from the array and sampler families at `ff` / −40 °C / 3.63 V;
+  digital from `sim/records/2026-11-09-digital-power-by-block-01.md`, OpenSTA
+  per-instance power at `ff_125C_3v60` / `rc-max`, MEASURED-at-gate-level).
+  `--reconcile` reconciles the rows with `power_rollup.py`.
+
+  | sub-block | 1 MHz clock (the 749.4 µW figure) | 2 kHz (ratified raw rate) |
+  |---|---|---|
+  | ring 1 / ring 2 | 132.5 / 140.6 µW | same |
+  | ring buffers + XOR | 120.0 µW | same |
+  | sampler (xsb, xsv) | 16.9 µW | 16.8 µW |
+  | digital: interface | 139.8 µW | 3.2 µW |
+  | digital: clock tree | 73.5 µW | 0.4 µW |
+  | digital: conditioner | 58.5 µW | 1.1 µW |
+  | digital: health tests | 43.4 µW | 0.9 µW |
+  | digital: ring-liveness logic | 18.5 µW | 0.4 µW |
+  | digital: other (buffers, tap/fill) | 5.6 µW | 2.3 µW |
+  | **total (liveness samplers excluded)** | **749.4 µW (149.9 %)** | **418.3 µW (83.7 %)** |
+
+  Largest lever by arithmetic: the digital section's power is linear in its
+  clock, so the 749.4 µW figure is a 1 MHz-clock figure; at the 2 kHz clock
+  `power_rollup.py` already uses by default the same model gives 418.3 µW,
+  returning 331 µW. The liveness samplers (xsr1/xsr2) have no record at the
+  binding corner and are not in either total; the nearest measured corner adds
+  about 25 µW. This is a liberty-power model at a declared activity, not a
+  measured supply current, and it changes neither the row nor its `missed` tag;
+  which clock rate the row is judged at is a spec question left to #700.
+  Ring power (273 µW) is the entropy source itself. Ring buffers and the XOR
+  are one row because the records do not separate them.
+
 
 ## Area
 
