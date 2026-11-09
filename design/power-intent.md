@@ -93,6 +93,15 @@ latency the tool prints. The `check` output reports the figure; it is
 claim the README time-to-first-valid row is met or missed on wake; the row is
 not edited.
 
+## Measured leakage of this scheme (#790)
+
+The always-on set above (five retained flops, the retention clock gate, 66 isolation ANDs) was built from real
+cells and simulated beside the #707 header across all 45 PVT points: `sim/tb/power-retention/`,
+`sim/records/2026-11-09-power-retention-NN.md`, summarised in `sim/characterization-power-switch.md` section 7.
+The retained bits survive a power cycle in the declared sequence, a free-running retention clock loses them, and the
+set leaks 15.85 nA at `ff` / +10 % / +125 degC (idle 90.28 nA with the switch, its load and the analog block). The rail
+is forced in that bench, so decay stays a placeholder.
+
 ## Does idle-with-state-retained still hold?
 
 The README `Power` row defines idle as "register state retained". With this

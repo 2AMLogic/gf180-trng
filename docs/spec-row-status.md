@@ -384,6 +384,23 @@ power has none in evidence. A decision on the active row is requested on #700.
   Ring power (273 µW) is the entropy source itself. Ring buffers and the XOR
   are one row because the records do not separate them.
 
+- **Idle with state retained, measured (#790).** `design/power-intent.md`'s
+  always-on set (five plain retained flops, the retention clock gate and 66
+  isolation ANDs, real library cells) beside the #707 header was simulated at
+  all 45 PVT points (`sim/records/2026-11-09-power-retention-{01..45}.md`,
+  `python3 sim/tools/power_retention.py summarize`). The pattern written into
+  the five retained flops survives a power cycle at every corner, a
+  free-running-clock control loses it at every corner, and the isolation clamp
+  holds. At `ff` / +10 % / +125 °C the always-on set draws 15.85 nA, the
+  switch with its load 41.67 nA and the analog block 32.77 nA: **90.28 nA**,
+  against the modelled 74.44 nA without retention (9.0 % of the `< 1 µA`
+  row). That is a pre-layout simulation with the gated logic as ideal sources,
+  a forced rail and the leakage-equivalent load, so it is a measurement of
+  this scheme's leakage, not of the shipped chip; rail decay and input-side
+  protection stay open items. Whether a power-cycled section with discarded
+  FIFO and run state meets the row's "register state retained" wording is the
+  ruling already requested on #700; the row and its tag are unchanged.
+
 
 ## Area
 
