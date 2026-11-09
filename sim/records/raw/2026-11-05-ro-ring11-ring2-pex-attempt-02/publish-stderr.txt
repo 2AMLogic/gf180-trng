@@ -1,0 +1,21 @@
+publish_item7_analog: uvx --from klayout-tools==0.9.0 --with klayout==0.30.10 klt pex layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds sim/tb/ro-ring11-ring2-pex/request.json --deck gf180mcu --pdk gf180mcuD --top ro_ring11_ring2 -o signoff/evidence/post-layout/ring2/ro_ring11_ring2.extracted.spice --outdir sim/.work/ro-ring11-ring2-pex --format json --backend batch
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt sim: warning: batch job bound 16320s (options.timeout_s 600s x 27 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 6 to run one job per shard of at most 5 units, each within the ceiling
+klt: batch job klt-sim-e1ff14c3076d submitting to s3://<bucket>/jobs/klt-sim-e1ff14c3076d
+klt sim: batch job klt-sim-e1ff14c3076d: submitted
+klt sim: batch job klt-sim-e1ff14c3076d launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-e1ff14c3076d`
+klt sim: batch job klt-sim-e1ff14c3076d state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-e1ff14c3076d: running
+klt sim: batch job klt-sim-e1ff14c3076d state=running elapsed=31s
+klt sim: batch job klt-sim-e1ff14c3076d: done
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt sim: warning: batch job bound 16320s (options.timeout_s 600s x 27 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 6 to run one job per shard of at most 5 units, each within the ceiling
+klt: batch job klt-sim-95ebbc6f1444 submitting to s3://<bucket>/jobs/klt-sim-95ebbc6f1444
+klt sim: batch job klt-sim-95ebbc6f1444: submitted
+klt sim: batch job klt-sim-95ebbc6f1444 launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-95ebbc6f1444`
+klt sim: batch job klt-sim-95ebbc6f1444 state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-95ebbc6f1444: running
+klt sim: batch job klt-sim-95ebbc6f1444 state=running elapsed=31s
+klt sim: batch job klt-sim-95ebbc6f1444: done
+publish_item7_analog: refusing to publish ring2
+  - response is from klt '0.9.0', not the producer pin 0.6.0
