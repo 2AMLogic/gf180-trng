@@ -318,6 +318,48 @@ def report_corner(a_value: float, a_label: str, rate_bps: float,
 
 
 # --------------------------------------------------------------------------
+# 2b. ring-supply sweep: power returned vs modelled Q (read-only report)
+# --------------------------------------------------------------------------
+
+def report_supply_sweep(rate_bps: float) -> None:
+    """Per process/temperature corner, the three covered supplies side by side.
+
+    Read-only: every figure is derived from the committed ``pvt-q`` records
+    through ``ArrayPoint``; nothing is simulated. ``Q_array`` is the modelled
+    entropy metric, NOT a measured min-entropy, and ``a`` is held fixed
+    across supply because no record measures it at a reduced supply.
+    """
+    _, a_asym = starved_cell_constants()
+    by_corner = {p.rec.corner: p for p in shipped_points(PVT_Q_GLOB, a_asym)}
+    need = MARGIN_M * Q_H0
+    print(f"\n== ring-supply sweep at {rate_bps:g} bps, a = {a_asym:.3f} held fixed "
+          f"across supply ==")
+    print("  simulation-derived design estimate; not an SP 800-90B entropy assessment")
+    header = (f"{'proc/temp':<10} {'Vdd':>5} {'P_rings(uW)':>12} {'P_array(uW)':>12} "
+              f"{'ret_rings':>10} {'ret_array':>10} {'T0_r1(ns)':>10} "
+              f"{'Q_array':>10} {'margin':>7} {'R_max(bps)':>11}")
+    print(header)
+    print("-" * len(header))
+    for proc in GRID_PROCESSES:
+        for temp in GRID_TEMPS_C:
+            ref = by_corner.get(f"{proc}/{temp:g}/{max(GRID_SUPPLIES_V):.2f}")
+            for vdd in sorted(GRID_SUPPLIES_V, reverse=True):
+                p = by_corner.get(f"{proc}/{temp:g}/{vdd:.2f}")
+                if p is None or ref is None:
+                    print(f"{proc}/{temp:g}".ljust(10) + f" {vdd:5.2f}  (no record)")
+                    continue
+                q = p.q_array(rate_bps)
+                print(f"{proc + '/' + format(temp, 'g'):<10} {vdd:5.2f} "
+                      f"{p.p_rings * 1e6:12.1f} {p.p_total * 1e6:12.1f} "
+                      f"{(ref.p_rings - p.p_rings) * 1e6:10.1f} "
+                      f"{(ref.p_total - p.p_total) * 1e6:10.1f} "
+                      f"{p.periods[0] * 1e9:10.3f} {q:10.3e} {q / need:6.2f}x "
+                      f"{p.max_rate_bps():11.4g}")
+    print("  ret_* = power returned relative to the same process/temperature at "
+          "3.63 V (uW).")
+
+
+# --------------------------------------------------------------------------
 # 3. Monte Carlo mismatch
 # --------------------------------------------------------------------------
 
@@ -707,6 +749,11 @@ def main(argv: list[str] | None = None) -> int:
         help="print every grid row of every Q table, not just the extremes",
     )
     parser.add_argument(
+        "--supply-sweep", action="store_true",
+        help="also print the per-corner ring-supply sweep (power returned vs "
+             "modelled Q_array at 3.63/3.30/2.97 V, a held fixed); read-only",
+    )
+    parser.add_argument(
         "--check", action="store_true",
         help="exit non-zero unless the records still support the stated "
              f"entropy-binding corner ({MEASURED_MIN_Q_CORNER}), the covered grid is "
@@ -775,6 +822,9 @@ def main(argv: list[str] | None = None) -> int:
                   f"the higher kT and the lower ring power. DR-0015 records this; "
                   f"DR-0012-sampler-fixed-external-clock's own 'Revisit if' clause "
                   f"names this exact outcome as its trigger.")
+
+    if args.supply_sweep:
+        report_supply_sweep(args.rate)
 
     report_mc_ro_freq()
     report_mc_sampler_offset(args.rate)
