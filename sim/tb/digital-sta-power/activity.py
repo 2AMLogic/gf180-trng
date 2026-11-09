@@ -77,6 +77,14 @@ STA_SCOPE = "/".join(DUT_SCOPE)
 #: below 100 % is reported as unannotated (fallback) pins in the record.
 MIN_ANNOTATED_FRACTION = 0.99
 
+#: Clock periods a capture may be run at, ns: DR-0003's ratified 1 MHz raw rate
+#: (the default, `wl.SIM_CLOCK_NS`) and the 2 kHz raw rate (#812), which needs
+#: its own trace at a 500 us period -- OpenSTA turns toggles per trace-second
+#: into power, so a 1 MHz trace cannot stand in for it. A manifest naming any
+#: other period is rejected.
+PERIOD_2KHZ_NS = 500_000.0
+ALLOWED_PERIODS_NS = (wl.SIM_CLOCK_NS, PERIOD_2KHZ_NS)
+
 #: The VCD time unit the capture is run in (picoseconds, from `activity_tb.v`'s
 #: `timescale 1ns/1ps` -- Icarus dumps in the precision unit).
 VCD_TICKS_PER_NS = 1000
@@ -412,34 +420,46 @@ def compile_bench(pdk, work: Path) -> Path:
     return vvp
 
 
-def capture_workload(name: str, vvp: Path, work: Path) -> dict:
+def _check_period(period_ns: float) -> float:
+    if period_ns not in ALLOWED_PERIODS_NS:
+        raise ActivityError(
+            f"clock period {period_ns!r} ns is not a declared capture period "
+            f"{ALLOWED_PERIODS_NS}"
+        )
+    return period_ns
+
+
+def capture_workload(name: str, vvp: Path, work: Path,
+                     period_ns: float = wl.SIM_CLOCK_NS) -> dict:
+    _check_period(period_ns)
     rows, windows = wl.build(name)
     stim = work / f"{name}.stim.hex"
     stim.write_text(wl.stimulus_hex(rows))
     vcd = work / f"{name}.vcd"
     done = subprocess.run(
         ["vvp", str(vvp), f"+STIM={stim}", f"+CYCLES={len(rows)}",
-         f"+VCD={vcd}", f"+PERIOD_NS={wl.SIM_CLOCK_NS}"],
+         f"+VCD={vcd}", f"+PERIOD_NS={period_ns}"],
         capture_output=True, text=True, check=False,
     )
     if done.returncode != 0 or not vcd.is_file():
         raise ActivityError(f"vvp failed for {name}: {done.stdout[-500:]}{done.stderr[-500:]}")
     normalize_vcd(vcd)
     insts = netlist_instances()
-    summary = summarize_vcd(vcd, windows_to_ticks(windows, wl.SIM_CLOCK_NS))
+    summary = summarize_vcd(vcd, windows_to_ticks(windows, period_ns))
     coverage = validate_trace(summary, netlist_insts=insts, windows=windows,
-                              period_ns=wl.SIM_CLOCK_NS, total_cycles=len(rows))
+                              period_ns=period_ns, total_cycles=len(rows))
     w = wl.WORKLOADS[name]
     return {
         "workload": name,
         "why": w.why,
         "seed": w.seed,
         "base_seed": wl.BASE_SEED,
-        "clock": w.clock,
-        "clock_period_ns": wl.SIM_CLOCK_NS,
+        "clock": w.clock if period_ns == wl.SIM_CLOCK_NS
+        else f"running, 50 % duty, {1e6 / period_ns:g} kHz",
+        "clock_period_ns": period_ns,
         "cycles": len(rows),
         "windows_cycles": {k: list(v) for k, v in windows.items()},
-        "windows_ps": {k: [a * int(wl.SIM_CLOCK_NS * 1000), b * int(wl.SIM_CLOCK_NS * 1000)]
+        "windows_ps": {k: [a * int(period_ns * 1000), b * int(period_ns * 1000)]
                        for k, (a, b) in windows.items()},
         "stimulus_sha256": wl.stimulus_sha256(rows),
         "vcd_path": _rel(vcd),
@@ -485,13 +505,13 @@ def identities(pdk) -> dict:
     }
 
 
-def capture(names: list[str], work: Path) -> dict:
+def capture(names: list[str], work: Path, period_ns: float = wl.SIM_CLOCK_NS) -> dict:
     pdk = _pdk()
     work.mkdir(parents=True, exist_ok=True)
     vvp = compile_bench(pdk, work)
     traces = {}
     for name in names:
-        traces[name] = capture_workload(name, vvp, work)
+        traces[name] = capture_workload(name, vvp, work, period_ns)
         t = traces[name]
         print(f"{name:26s} {t['cycles']:5d} cycles  {t['vcd_bytes'] / 1e6:6.2f} MB  "
               f"vcd sha256:{t['vcd_sha256'][:16]}  stim sha256:{t['stimulus_sha256'][:16]}")
@@ -520,18 +540,18 @@ def _field(obj, path: str, where: str, kind):
     return cur
 
 
-def expected_trace_semantics(name: str) -> dict:
+def expected_trace_semantics(name: str, period_ns: float = wl.SIM_CLOCK_NS) -> dict:
     """What the capture program generates for `name` today: the semantic
     contract (cycle count, clock period, seeds, windows, stimulus bytes)."""
     rows, windows = wl.build(name)
     w = wl.WORKLOADS[name]
     return {
         "cycles": len(rows),
-        "clock_period_ns": wl.SIM_CLOCK_NS,
+        "clock_period_ns": period_ns,
         "seed": w.seed,
         "base_seed": wl.BASE_SEED,
         "windows_cycles": {k: list(v) for k, v in windows.items()},
-        "windows_ps": {k: [a * int(wl.SIM_CLOCK_NS * 1000), b * int(wl.SIM_CLOCK_NS * 1000)]
+        "windows_ps": {k: [a * int(period_ns * 1000), b * int(period_ns * 1000)]
                        for k, (a, b) in windows.items()},
         "stimulus_sha256": wl.stimulus_sha256(rows),
     }
@@ -566,7 +586,13 @@ def verify_capture_source(manifest: dict, label: str = "manifest") -> None:
         where = f"{label} trace {name}"
         if name not in wl.WORKLOADS:
             raise ActivityError(f"{where}: workload no longer exists")
-        exp = expected_trace_semantics(name)
+        declared = _field(t, "clock_period_ns", where, (int, float))
+        if declared not in ALLOWED_PERIODS_NS:
+            raise ActivityError(
+                f"{where}: `clock_period_ns` is {declared!r}, not a declared capture "
+                f"period {ALLOWED_PERIODS_NS}"
+            )
+        exp = expected_trace_semantics(name, declared)
         for fld, kind in (("cycles", int), ("clock_period_ns", (int, float)), ("seed", int),
                           ("base_seed", int), ("windows_cycles", dict), ("windows_ps", dict),
                           ("stimulus_sha256", str)):
@@ -610,6 +636,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("command", nargs="?", choices=("capture", "validate"))
     ap.add_argument("--workload", action="append", help="workload(s); default all")
     ap.add_argument("--out", type=Path, default=WORK_DIR)
+    ap.add_argument("--period-ns", type=float, default=wl.SIM_CLOCK_NS,
+                    help=f"clock period to simulate at; one of {ALLOWED_PERIODS_NS} "
+                         "(default 1 MHz; 500000 = the 2 kHz raw rate)")
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args(argv)
     if args.list or not args.command:
@@ -624,7 +653,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
     try:
         if args.command == "capture":
-            capture(names, args.out)
+            capture(names, args.out, args.period_ns)
         else:
             load_manifest(args.out / MANIFEST_NAME)
             print(f"manifest {args.out / MANIFEST_NAME} verifies")
