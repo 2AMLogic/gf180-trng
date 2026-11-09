@@ -30,14 +30,14 @@ xcore rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss
 xr1 en1 dro1 vddr1 vss vsubs ro_ring11_routed_extracted
 xr2 en2 dro2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted
 cdelta1a dro1 vsubs 4.258439e-15
-rdelta1 dro1 rn1 57.548200
+rdelta1 dro1 rn1 42.810000
 cdelta1b rn1 vsubs 4.258439e-15
 cdelta2a dro2 vsubs 1.594116e-15
-rdelta2 dro2 rn2 30.223600
+rdelta2 dro2 rn2 15.486000
 cdelta2b rn2 vsubs 1.594116e-15
 xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs combiner_sampler_routed_extracted
-cload_raw_bit raw_bit vsubs 1.156398e-13
-cload_raw_valid raw_valid vsubs 1.194021e-13
-cload_ring_bit1 ring_bit1 vsubs 7.263067e-14
-cload_ring_bit2 ring_bit2 vsubs 8.233621e-14
+cload_raw_bit raw_bit vsubs 9.233527e-14
+cload_raw_valid raw_valid vsubs 1.034767e-13
+cload_ring_bit1 ring_bit1 vsubs 5.369744e-14
+cload_ring_bit2 ring_bit2 vsubs 4.853636e-14
 .ends
