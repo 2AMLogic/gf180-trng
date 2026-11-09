@@ -1081,7 +1081,7 @@
       "files": [
         {
           "path": "sim/tb/ro-ring11-ring2-pex/README.md",
-          "sha256": "sha256:f61bfafc16cf005024c008c1d8f38f08ad9efff0c151ecb60a1882d69e1d835b"
+          "sha256": "sha256:d480d4493695b79918be9a74300ceae4aa549cb68b396d660699a9fc28fe18c5"
         },
         {
           "path": "sim/tb/ro-ring11-ring2-pex/request.json",
@@ -1560,7 +1560,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:21469cda9eb46e891c15dbd8cf6eea9288f035f5e38ff525d3d2d67606623356"
+      "sha256": "sha256:a1e488192bf28d33b5721c46760bb06d0bb64f69acfb82825b307c077328e993"
     },
     {
       "path": "sim/README.md",
