@@ -11,7 +11,7 @@ which says what each report answers and whether it is complete.
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** What exists today is an evidence-record convention,
-[thirty-two decision records](spec/decision-records/), an entropy-source
+[thirty-three decision records](spec/decision-records/), an entropy-source
 architecture survey, a PVT corner simulation harness and a gate-level
 static-timing and power flow, together producing twenty-one characterization
 summaries (`sim/characterization-*.md`) resting on 1224 append-only evidence
@@ -93,6 +93,8 @@ tag summarises that record; it never overrides it.
 | Area | < 0.05 mm² | — | **missed** — the regenerated floorplan misses by 3.5×: 175 789.9 µm² including isolation channels, 351.6 % of the row ([DR-0019]) — [evidence](docs/spec-row-status.md#area) |
 | Operating envelope | −40 … +125 °C, 3.3 V ± 10 % (2.97–3.63 V). Every entropy, rate and health-test claim above holds **over this envelope and only over it**; the envelope is the security boundary, since an attacker chooses the operating point. Outside it, behavior is health-test-detected, not specified | — | specified — [evidence](docs/spec-row-status.md#operating-envelope) |
 | Interface | streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013]) | — | specified ([DR-0001], [DR-0013]) — [evidence](docs/spec-row-status.md#interface) |
+| Ring period under mismatch (`period_r1`) | **≤ 9.151 ns** at `tt` / 27 °C / 3.30 V and **≤ 11.28 ns** at `ss` / +125 °C / 3.63 V, over the mismatch Monte Carlo draw. Each is the mismatch-free ring-1 period lengthened by the factor at which DR-0007 §2's `Q_array ≥ 1.5 × 4.0×10⁻³` still holds at 2 kbps, a = 7.32 (`√(Q_array / 6×10⁻³)`, whole array scaled together). Upper bound only ([DR-0033]) | — | specified ([DR-0033]) — [evidence](docs/spec-row-status.md#mismatch-monte-carlo-limits) |
+| Sampler threshold under mismatch (`dtrip_v`) | **0 V < `dtrip_v` < VDD** at `tt` / 27 °C / 3.30 V and at `ss` / +125 °C / 3.63 V, over the mismatch Monte Carlo draw. The conditioner and health-test margins tolerate ±11.6 V of threshold offset (APT binding), wider than the supply, so the rails are the operative bound; not a bias budget ([DR-0033]) | — | specified ([DR-0033]) — [evidence](docs/spec-row-status.md#mismatch-monte-carlo-limits) |
 
 **Scope**: this block is an **entropy source only** — positioned as a
 **low-rate DRBG seed source**, not a bulk-rate TRNG (the 2026-10-13 two-key
@@ -150,6 +152,7 @@ Raw rate row's ceiling voids the entropy bound.
 [DR-0020]: spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0023]: spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
+[DR-0033]: spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md
 
 Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**

@@ -554,6 +554,19 @@ The README row carried no evidence narrative beyond its own target text, which s
 
 **Target cell:** streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013])
 
+## Mismatch Monte Carlo limits
+
+### 2026-11-09 — limits ratified on `period_r1` and `dtrip_v` ([DR-0033], #656)
+
+Two rows were added to the README table so that `klt yield` has a limit to
+grade the mismatch campaign against (operator ruling on #656, option (a)). They
+are new limits, not changes to an existing row. The derivation, with every
+input cited, is in [DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md).
+The `dtrip_v` window is the supply rails because the consequence check in
+`sim/characterization-worst-corner-and-mc-mismatch.md` §4 tolerates ±11.6 V of
+threshold offset; the limit is therefore not tight. The graded report and its
+verdict are in `signoff/README.md` ("Item 6").
+
 ## Binding corners and the rate row
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -670,3 +683,4 @@ placeholders*, and the table labels which.
 [DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
+[DR-0033]: ../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md
