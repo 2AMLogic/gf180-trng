@@ -392,6 +392,7 @@ def build_network(net: str, plan: dict, origin: dict, pdn: Pdn, variant: str,
 
     conductors: list[_Conductor] = []
     cuts: list[tuple[str, str, str, int, tuple[int, int], str]] = []
+    arrays: dict[tuple, list[tuple[int, int]]] = {}
 
     for s in plan["shapes"]:
         if s.get("_net") != net or (drop_shapes and drop_shapes(s)):
@@ -408,8 +409,20 @@ def build_network(net: str, plan: dict, origin: dict, pdn: Pdn, variant: str,
             size = interregion.VIA_SZ
             if abs((x1 - x0) - _nm(size)) > 1 or abs((y1 - y0) - _nm(size)) > 1:
                 raise ConnectivityError(f"`{net}` {cut} shape is not one {size} um cut")
-            cuts.append((cut, bottom, top, 1, ((x0 + x1) // 2, (y0 + y1) // 2),
-                         f"{cut.lower()} single cut"))
+            centre = ((x0 + x1) // 2, (y0 + y1) // 2)
+            array = s.get("_array")
+            if array is None:
+                cuts.append((cut, bottom, top, 1, centre, f"{cut.lower()} single cut"))
+            else:
+                # A multi-cut landing: every cut the plan tags with the same
+                # `_array` id is one n-cut array, priced as n parallel cuts
+                # at the array's centroid.
+                arrays.setdefault((cut, bottom, top, array), []).append(centre)
+
+    for (cut, bottom, top, _id), centres in arrays.items():
+        n = len(centres)
+        centroid = (sum(c[0] for c in centres) // n, sum(c[1] for c in centres) // n)
+        cuts.append((cut, bottom, top, n, centroid, f"{cut.lower()} array x{n}"))
 
     # The DEF grid, moved into the composed frame (nm). Exact: 2000 DEF
     # units/um and an origin on the 10 nm grid.
