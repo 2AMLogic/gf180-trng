@@ -32,7 +32,7 @@ throwaway virtual environment at that pin, not the host `klt` (a dev build,
 `0.9.2.dev385`, which does not reproduce the committed stream: it measures a
 932.3 um wide bbox against the committed 931.145 um and reports composed DRC
 violations on the unmodified tree). `signoff/check.py` was run under
-`klayout-tools==0.8.0`, the grader pin in `.github/workflows/ci.yml`. No host
+`klayout-tools==0.8.0`, the grader pin in `.github/workflows/ci.yml`. <!-- klt-pin: grader --> No host
 tool was installed or changed.
 
 ## 1. Before and after (`klt economy`, klt 0.6.0, same build both rows)
