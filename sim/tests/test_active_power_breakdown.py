@@ -16,6 +16,7 @@ the committed records. Properties held:
 
 from __future__ import annotations
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -31,6 +32,10 @@ import active_power_breakdown as apb  # noqa: E402
 import power_rollup as pr  # noqa: E402
 import run_by_block as rbb  # noqa: E402
 import run_sta  # noqa: E402
+
+REPO_ROOT = SIM_DIR.parent
+SPLIT_DECK = SIM_DIR / "tb" / "ro-array-core-power-split" / "tb_ro_array_core_power_split.sp"
+SHIPPED = REPO_ROOT / "design" / "ro_array_core.spice"
 
 SYNTHETIC = """
 junk before
@@ -177,6 +182,67 @@ class BreakdownTests(unittest.TestCase):
         rec = pr.load(apb.BY_BLOCK_GLOB)[-1]
         parts = sum(rec.values[f"p_{k}_total_w"] for _, k in apb.DIGITAL_ROWS)
         self.assertAlmostEqual(parts, rec.values["p_total_1mhz_w"], delta=rbb.SUM_TOLERANCE * parts)
+
+
+def _array_instances(text: str, *, top_only: bool) -> dict[str, tuple]:
+    """``{name: (model, params, nodes)}`` for the ring/buffer/XOR instances.
+
+    ``top_only`` reads just the ``ro_array_core`` subcircuit body of the shipped
+    netlist; otherwise every x-line of the deck. Supply-pin nodes are folded:
+    ``en*`` -> ``en``, ground -> ``0``, and the three split buffer/XOR rails ->
+    ``vdd`` (the one pin they were split from), which is the only electrical
+    difference the deck is allowed.
+    """
+    if top_only:
+        text = text.split(".subckt ro_array_core", 1)[1].split(".ends", 1)[0]
+    fold = {"en1": "en", "en2": "en", "vss": "0", "vddb1": "vdd", "vddb2": "vdd", "vddx": "vdd"}
+    out = {}
+    for line in text.splitlines():
+        if not re.match(r"x(r|b|a)\d", line):
+            continue
+        tok = line.split()
+        model = next(i for i, t in enumerate(tok) if t.startswith("ro_") or t == "xor2")
+        out[tok[0]] = (tok[model], tuple(tok[model + 1:]),
+                       tuple(fold.get(n, n) for n in tok[1:model]))
+    return out
+
+
+class SplitTests(unittest.TestCase):
+    def test_deck_instances_equal_the_shipped_array(self):
+        deck = _array_instances(SPLIT_DECK.read_text(), top_only=False)
+        shipped = _array_instances(SHIPPED.read_text(), top_only=True)
+        self.assertEqual(sorted(shipped), ["xa1", "xb1", "xb2", "xr1", "xr2"])
+        self.assertEqual(deck, shipped)
+
+    def test_deck_splits_the_vdd_rail_three_ways(self):
+        deck = SPLIT_DECK.read_text()
+        for src in ("vb1 vsup vddb1", "vb2 vsup vddb2", "vx vsup vddx"):
+            self.assertIn(src, deck)
+        self.assertNotIn("vsup vdd dc", deck)
+
+    def test_split_rows_sum_to_the_remainder_and_keep_the_totals(self):
+        split = pr.load(apb.SPLIT_GLOB)
+        self.assertTrue(split, "no ro-array-core-power-split record")
+        for rate in apb.DEFAULT_RATES:
+            with_split = apb.breakdown(rate)
+            self.assertEqual(with_split["split_record"], split[-1].stem)
+            merged = apb.breakdown(rate, split=False)
+            rows = {label: w for label, w, _ in with_split["rows"]}
+            self.assertAlmostEqual(rows["ring buffers"] + rows["XOR combiner"],
+                                   dict((l, w) for l, w, _ in merged["rows"])[apb.MERGED_ROW],
+                                   delta=1e-12)
+            self.assertAlmostEqual(with_split["total"], merged["total"], delta=1e-12)
+
+    def test_split_record_is_within_tolerance_of_the_array_record(self):
+        bd = apb.breakdown(1e6)
+        self.assertLessEqual(abs(bd["split_gap"]), apb.SPLIT_RECONCILE_TOL)
+
+    def test_reconcile_flags_a_split_that_disagrees(self):
+        arrays = pr.by_corner(pr.load(pr.ARRAY_GLOBS), prefer="pvt-q")
+        split = pr.load(apb.SPLIT_GLOB)[-1]
+        split.values = dict(split.values, p_xor_w=split.values["p_xor_w"] * 2)
+        self.assertGreater(abs(apb.split_gap(arrays[apb.ARRAY_CORNER], split)),
+                           apb.SPLIT_RECONCILE_TOL)
 
 
 if __name__ == "__main__":

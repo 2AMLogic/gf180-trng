@@ -53,17 +53,17 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import json
 import platform
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from harness import klt_request as _kreq  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from harness.corners import CORNERS  # noqa: E402
-from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
+import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "sampler-core-liveness-active"
@@ -179,8 +179,7 @@ def _build_full_request() -> dict:
     }
 
 
-def render(req: dict) -> str:
-    return json.dumps(req, indent=1) + "\n"
+render = _pc.render
 
 
 def request_path() -> Path:
@@ -293,8 +292,7 @@ def checks(d: dict) -> list[str]:
 # --------------------------------------------------------------------------
 
 
-def _vals(corner: dict) -> dict[str, float]:
-    return {x["name"]: x["value"] for x in corner.get("measurements", []) if x.get("value") is not None}
+_vals = _pc.vals
 
 
 def analyse_report(report: dict, q_clk_by_corner: dict[str, float] | None = None) -> list[dict]:
@@ -356,16 +354,11 @@ def plan_text() -> str:
 
 
 def cmd_emit(check: bool) -> int:
-    path, text = request_path(), render(build_request())
-    return _kreq.emit_requests(
-        [(path, text)], check, repo_root=REPO_ROOT,
-        ok=lambda: print(f"ok: {path.relative_to(REPO_ROOT)} matches the declared grid ({n_units()} units)"))
+    return _pc.cmd_emit(check, path=request_path(), text=render(build_request()), repo_root=REPO_ROOT, n_units=n_units())
 
 
 def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) -> int:
-    return _kreq.run_probe_or_grid(
-        outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR,
-        render_probe=lambda point: render(build_request(point)), probe_hint="--only PROCESS/TEMP/VDD")
+    return _pc.cmd_run(outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR, build_request=build_request)
 
 
 SLUG = "sampler-core-liveness-active"
@@ -500,23 +493,12 @@ def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list
 
 
 def cmd_record(paths: list[str], note: str, records_dir: Path | None = None) -> int:
-    return _mint.mint_records(
-        paths, note, records_dir, repo_root=REPO_ROOT, slug=SLUG, slug_attempt=SLUG_ATTEMPT,
-        analyse_report=analyse_report, render_measured=render_measured, render_unmeasured=render_unmeasured)
+    return _pc.cmd_record(paths, note, records_dir, repo_root=REPO_ROOT, slug=SLUG, analyse_report=analyse_report,
+                          render_measured=render_measured, render_unmeasured=render_unmeasured)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
-    rows: list[dict] = []
-    for p in paths:
-        rows += analyse_report(json.loads(Path(p).read_text()))
-    if as_json:
-        print(json.dumps(rows, indent=1))
-    else:
-        print(table(rows))
-        bad = [r for r in rows if r["verdict"] != "OK"]
-        print(f"\n{len(rows) - len(bad)}/{len(rows)} units usable"
-              + ("" if not bad else "; not usable: " + ", ".join(f"{r['corner']} ({r['verdict']})" for r in bad)))
-    return 0
+    return _pc.cmd_analyze(paths, as_json, analyse_report=analyse_report, table=table)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -40,6 +40,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
 from harness.corners import CORNERS  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "sampler-array-fs-sf"
@@ -231,8 +233,7 @@ def build_request(name: str) -> dict:
     }
 
 
-def render(req: dict) -> str:
-    return json.dumps(req, indent=1) + "\n"
+render = _pc.render
 
 
 def request_path(name: str) -> Path:
@@ -287,8 +288,7 @@ def plan_text() -> str:
 # --------------------------------------------------------------------------
 
 
-def _vals(corner: dict) -> dict[str, float]:
-    return {x["name"]: x["value"] for x in corner.get("measurements", []) if x.get("value") is not None}
+_vals = _pc.vals
 
 
 def pulse_widths(rises: list[float], falls: list[float]) -> tuple[list[float], list[float]]:

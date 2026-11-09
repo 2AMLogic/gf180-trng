@@ -43,6 +43,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from harness import klt_request as _kreq  # noqa: E402
 from harness import report as _rep  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TB_DIR = REPO_ROOT / "sim" / "tb" / "ro-ring5-starved-jitter-long-batch"
@@ -141,8 +143,7 @@ def build_request() -> dict:
     }
 
 
-def render(req: dict) -> str:
-    return json.dumps(req, indent=1) + "\n"
+render = _pc.render
 
 
 def request_path() -> Path:
