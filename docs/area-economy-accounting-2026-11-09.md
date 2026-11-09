@@ -238,6 +238,89 @@ and repair group), and sum (cell bbox width from the `trng_top` `klt economy`
 `cells` list - 0.86 um) x 5.04 um per instance. The total is 59 264.8 um^2
 over 1 423 instances.
 
+## Addendum: dense placement and die-to-core margin (issue #798)
+
+Measured at `044f0219` on `main`, 2026-11-09. Two scratch `klt
+place-and-route` runs at `ss_125C_3v00` with the seed and constraints of
+`layout/digital/build.py`. Only `FLOORPLAN["utilization_pct"]` and
+`FLOORPLAN["core_margin_um"]` were overridden in memory; nothing committed
+under `layout/digital/` was changed (each check that reads the committed
+paths was run with the point's files copied over them, then restored with
+`git checkout`). Wall-clock per P&R point was about 10 to 15 minutes.
+
+| | Committed | 85 % / 10 um | 85 % / 2 um |
+|---|---:|---:|---:|
+| Requested utilization, core margin | 40 %, 10 um | 85 %, 10 um | 85 %, 2 um |
+| Achieved utilization | 43.4 % (`place_and_route.json`) | 90.41 % | 92.49 % |
+| Die, um^2 | 156 590 | 77 139.5 | 68 507.8 |
+| Route-DRC / antenna violations | 0 / 0 | 0 / 0 | 0 / 0 |
+| Setup / hold violations at `ss_125C_3v00` | 0 / 0 | 0 / 0 | 0 / 0 |
+| Worst slack at `ss_125C_3v00`, ns | 32.864 | 33.146 | 32.110 |
+| Worst setup / hold over all shipped `.lib` corners, ns | -5.546 / +0.503 | -4.834 / +0.509 | -8.372 / +0.507 |
+| `layout/digital/lvs.py` (vs the point's own `.pnr.v`) | match | match, 2 notes | match, 2 notes |
+| Composed digital LVS (`floorplan.py`) | match, 0 | match, 0 | match, 0 |
+| Composed floorplan, um^2 (% of the 50 000 um^2 row) | 173 589 (347.2 %) | 91 232 (182.5 %) | 82 512 (165.0 %) |
+| LU.3 / LU.4 max distance, um (limit 15) | 49.691 / 49.727 | 49.691 / 49.727 | 49.691 / 49.727 |
+
+The 85 %/10 um point reproduces the die area (77 139.5 vs 77 140) and the
+composed floorplan area (91 232) that the earlier sweep quoted. The margin
+term is the difference between the die and the core: with the margin cut from
+10 um to 2 um the die falls by 8 631.7 um^2 (11.2 %).
+
+### The 7 composed-LVS mismatches are a harness artefact
+
+The earlier sweep copied only `trng_top.def` and `trng_top.gds` over the
+committed files. `floorplan.py` compares the composed digital region against
+`layout/digital/trng_top.lvs_reference.spice`, which is derived from
+`trng_top.pnr.v`, and that file was still the committed 40 % build's. The
+dense placement has a different set of CTS and repair buffers and different
+instance names, so layout and reference described different netlists.
+
+Reproduced both ways at the 85 %/10 um point: with only the DEF and GDS
+swapped, `floorplan.py` prints `lvs mismatch (7 mismatches, unexpected
+categories: none)` for the digital region. With the point's `trng_top.pnr.v`
+and the `trng_top.lvs_reference.spice` that `layout/digital/lvs.py` generates
+from it also swapped in, the same composed request gives `lvs match (0
+mismatches, unexpected categories: none)`, and `klt lvs` on that request
+reports `status: match, mismatch_count: 0`. The 2 um point also gives 0.
+The 6 mismatches at 70 % were not re-run; the same cause is expected but not
+shown. A dense placement is therefore not shown to have a connectivity defect.
+
+### LU.3 / LU.4
+
+`layout/digital/tap_distance.py` on both dense layouts fails LU.3 (max
+49.691 um) and LU.4 (max 49.727 um) against the 15 um limit, identical to the
+committed layout, because the tapcell pitch does not change with density or
+margin. #717 (tapcell pitch) and #487 are still open, so this is their
+outcome to cite once they land, not something this addendum resolves.
+
+### Outcome: negative finding for refreshing the artefacts
+
+Both points route cleanly and meet setup/hold at `ss_125C_3v00`, and the LVS
+question is closed. The committed `layout/digital/` artefacts are **not**
+refreshed, because the criterion requires every check to pass and LU.3/LU.4
+fail. Neither point is a signed-off implementation. Not done here:
+
+- The fifteen-corner STA/area/power characterisation
+  (`sim/characterization-digital-sta-area-power.md`) was not re-run on the dense
+  DEFs; the swept worst setup figure above is the P&R tool's own, and it moves
+  with the point without a trend (-4.8 ns at 85 %/10 um, -8.4 ns at 85 %/2 um,
+  -5.5 ns committed). `max_transition_violation_count` was 658 and 692
+  against 660 for the committed run.
+- A tighter tapcell pitch was not run, so the area cost of meeting LU.3/LU.4
+  is still unmeasured.
+- Placed cell area stays near 60 k um^2, above the 50 000 um^2 row on its own;
+  no point here changes the ratified Area row.
+- The committed-column 40 % figures are from the committed
+  `reports/place_and_route.json`; the committed LVS and floorplan columns
+  come from the earlier sweep's fresh composition, not a re-run.
+
+Reproduce a point: set `FLOORPLAN["utilization_pct"]` and
+`FLOORPLAN["core_margin_um"]` in memory, call `build.place_and_route()` on a
+scratch directory under `layout/.work/`, then run `lvs.py`, `floorplan.py` and
+`tap_distance.py` with that point's DEF, GDS, `.pnr.v` and generated
+reference in place of the committed files.
+
 ## 7. Addendum (2026-11-09, issue #800): why one sampler flip-flop is 573 um^2
 
 Appended; sections 1-6 are unchanged. Measured on `main` at `044f0219` with
