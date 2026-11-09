@@ -1,0 +1,42 @@
+* klt sim -- generated corner deck, do not edit
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice sf
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.include /var/tmp/eda-job-klt-sim-55172570b9f0/inputs/netlist.cir
+.temp -40
+.meas tran qg_pre_1 find v(qg1) at=4.5u
+.meas tran qg_post_1 find v(qg1) at=29u
+.meas tran qb_post_1 find v(qb1) at=29u
+.meas tran qi_1 find v(qi1) at=13u
+.meas tran qg_pre_2 find v(qg2) at=4.5u
+.meas tran qg_post_2 find v(qg2) at=29u
+.meas tran qb_post_2 find v(qb2) at=29u
+.meas tran qi_2 find v(qi2) at=13u
+.meas tran qg_pre_3 find v(qg3) at=4.5u
+.meas tran qg_post_3 find v(qg3) at=29u
+.meas tran qb_post_3 find v(qb3) at=29u
+.meas tran qi_3 find v(qi3) at=13u
+.meas tran qg_pre_4 find v(qg4) at=4.5u
+.meas tran qg_post_4 find v(qg4) at=29u
+.meas tran qb_post_4 find v(qb4) at=29u
+.meas tran qi_4 find v(qi4) at=13u
+.meas tran qg_pre_5 find v(qg5) at=4.5u
+.meas tran qg_post_5 find v(qg5) at=29u
+.meas tran qb_post_5 find v(qb5) at=29u
+.meas tran qi_5 find v(qi5) at=13u
+.meas tran z_off max v(zf) from=6.5u to=19.5u
+.meas tran z_on find v(zf) at=29u
+.meas tran i_ao_static avg i(vwai) from=10u to=14u
+.meas tran i_ao_clk avg i(vwai) from=16u to=20u
+.meas tran i_sw avg i(vwsi) from=10u to=14u
+.meas tran v_rail avg v(vsti) from=10u to=14u
+.control
+save all
+alter vsup=3.3
+tran 1n 30u
+quit
+.endc
+.end

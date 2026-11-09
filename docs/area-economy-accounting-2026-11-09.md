@@ -320,3 +320,84 @@ Reproduce a point: set `FLOORPLAN["utilization_pct"]` and
 scratch directory under `layout/.work/`, then run `lvs.py`, `floorplan.py` and
 `tap_distance.py` with that point's DEF, GDS, `.pnr.v` and generated
 reference in place of the committed files.
+
+## 7. Addendum (2026-11-09, issue #800): why one sampler flip-flop is 573 um^2
+
+Appended; sections 1-6 are unchanged. Measured on `main` at `044f0219` with
+klt `0.9.2.dev385` (klayout 0.30.13). No layout, spec or inventory change was
+made, and the ratified Area row is untouched.
+
+### Re-measurement
+
+```sh
+klt economy layout/cells/sampler_dff/sampler_dff.gds --attribute --format json
+klt economy layout/blocks/combiner_sampler/combiner_sampler.gds --attribute --format json
+```
+
+- `sampler_dff`: bbox 54.89 x 10.44 um = 573.05 um^2, drawn area 245.72 um^2
+  (utilization 0.429), 22 `comp` islands (11 NMOS + 11 PMOS), tightness 1.0
+  (no dead margin). Section 4's 573 um^2 reproduces.
+- `klt economy --attribute` on this cell returns no children and one
+  `margin` gap equal to the whole bbox, so it cannot split the area itself
+  (filed generically as klayout-tools#5189). The split below uses per-layer
+  extents read with the klayout module in the klt environment.
+
+### Where the 573 um^2 goes
+
+Per-layer extents (merged): `comp` x -0.22..54.42, y 0.78..1.22; `nwell`
+x 28.13..54.67, y 0.53..1.47; `poly2` y 0.58..1.92; `metal1` y 0.80..1.92;
+`metal2` and `metal3` y up to 10.97. Fourteen horizontal Metal2 trunks (one per
+net), the first at y 2.22..2.52 and the last at 10.67..10.97.
+
+| Band (Y) | Height, um | Area at 54.89 um wide, um^2 | Share |
+|---|---:|---:|---:|
+| Nwell margin, diffusion row, gate landing pads (0.53..1.92) | 1.39 | 76.30 | 13.3 % |
+| Clearance to the first trunk (1.92..2.22) | 0.30 | 16.47 | 2.9 % |
+| Net-trunk channel, 14 trunks at 0.65 um pitch (2.22..10.97) | 8.75 | 480.29 | 83.8 % |
+| **Total** | **10.44** | **573.05** | **100 %** |
+
+The trunk channel is 8.75 um = 13 x 0.65 + 0.30. Removing it entirely would
+leave 92.76 um^2 (the first two rows), which is 1.24x the 74.64 um^2 priced
+for `dffrnq_1`.
+
+Width: 54.89 = 26.04 (NMOS row, `comp` x -0.22..25.82: 11 devices x 2.4 um
+pitch - 0.8 um trailing slot + 0.44 um pad) + 2.56 (NMOS-to-PMOS `comp` gap:
+`BLOCK_GAP` 3.0 um - 0.44 um pad) + 26.04 (PMOS row, 28.38..54.42) + 0.25
+(Nwell margin past the last PMOS pad). The curator's 55.8 um estimate counted
+a trailing slot (0.8 um) per row that the engine does not draw.
+
+### Cause
+
+- **Cell engine topology, not block spacing.** `layout/cells/_mos_row.py`
+  gives every device its own diffusion island (no shared source/drain), puts
+  NMOS and PMOS side by side, and routes each net on its own Metal2 trunk at
+  `TRUNK_PITCH` 0.65 um. The cell's own whitespace is 327.33 um^2 per
+  instance (57 %).
+- **Dominant term is Y, not X:** the trunk channel (83.8 % of the box), not
+  the 2.4 um device pitch. The candidate "generator spacing in X" is
+  refuted as the main cause; the diffusion rows occupy 26.04 um of 54.89 um
+  in X but only 1.39 um of 10.44 um in Y.
+- **Block term is separate and smaller.** In `combiner_sampler`, six
+  `ROW_GAP_UM` gaps of 6.0 um across the 16.25 um box are at most
+  6 x 6.0 x 16.25 = 585 um^2 (upper bound, the buffers and XOR are
+  shorter) against 4 x 327.33 = 1 309.3 um^2 of whitespace inside the four
+  `sampler_dff` instances. Cell-internal whitespace is about 2.2x the
+  inter-cell gap term.
+- **Why the 7.7x ratio to the inventory price is not a defect to recover by
+  itself:** the inventory prices `dffrnq_1`, a library cell, while this is a
+  22-device transistor-level verification cell drawn by the independent-device
+  engine (its docstring says so). The two are different objects.
+
+### Decision
+
+Negative finding, no change justified here. The measurement does not support a
+cheap fix: the dominant term would need a router or channel-sharing change in
+`_mos_row.py`, which is outside this issue (it affects `xor2` too) and would
+need DRC, LVS and the sampler `sim/` evidence re-run with PVT corners.
+Estimates only, not drawn or verified: tightening `TRUNK_PITCH` from 0.65 to
+the 0.56 um rule floor (0.28 width + 0.28 space) would save about 1.2 um of
+height, roughly 65 um^2 per instance (11 %); sharing trunks between
+non-overlapping nets would save more.
+
+Limits: figures are derived from one stream at one commit; the estimates in
+the Decision paragraph were not drawn, extracted or DRC-checked.
