@@ -1,0 +1,103 @@
+{
+  "identities": {
+    "cell_models": [
+      {
+        "path": "<pdk>/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/gf180mcu_fd_sc_mcu9t5v0.v",
+        "sha256": "7dc2d6578c3580b0716c6a883a1b33c6cc7172f29c74ac1b148b0b20f981fe16"
+      },
+      {
+        "path": "<pdk>/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/primitives.v",
+        "sha256": "fc47cb4d4e50feb06847eba4bb1d67bec09a648fe2ab7aeab30248cb75d3609c"
+      }
+    ],
+    "clock_activity": "clk is simulated at the stated period, 50 % duty, and its toggle count is checked against the window length; OpenSTA derives clock-network activity from the propagated clock",
+    "def_git_blob_sha": "87b3dedca82354ea1c6b17e7e2867c806f9625f5",
+    "netlist": {
+      "git_blob_sha": "edd5900119f431c7d68f1f67eb3dcdf6b44ec32c",
+      "instances": 1423,
+      "path": "layout/digital/trng_top.pnr.v"
+    },
+    "simulator": "Icarus Verilog version 13.0 (stable) (v13_0)",
+    "simulator_flags": "-g2012 -gno-specify (zero delay; specify blocks ignored)",
+    "testbench": {
+      "git_blob_sha": "3625a86ad31f107ce0bcf2795f1a1ea04e5aef7c",
+      "path": "sim/tb/digital-sta-power/activity_tb.v"
+    },
+    "workloads_module_git_blob_sha": "8e72ab3c3fed2c91d225a21330821ef9fb2e43bb",
+    "x_z_handling": "x/z values are kept verbatim in the VCD and counted in `validation.xz_events`/`xz_vars` (FIFO memory flops without a reset port hold x until written); how OpenSTA's VCD reader treats a transition through x/z is that tool's behaviour and is not independently verified here"
+  },
+  "schema": 1,
+  "traces": {
+    "conditioned-streaming": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2072,
+      "seed": 453,
+      "stimulus_sha256": "3f94423435f333ad70adb1de7018f8cf88c455e242804222ef2df6acf29cc13e",
+      "validation": {
+        "instances_matched": 1423,
+        "netlist_instances": 1423,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1423,
+        "trace_vars": 17981,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 688,
+            "value_changes": 10320
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 4984,
+            "value_changes": 2037332
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 4974,
+            "value_changes": 2347333
+          }
+        },
+        "xz_events": 4971,
+        "xz_vars": 2326
+      },
+      "vcd_bytes": 19148535,
+      "vcd_path": "layout/.work/digital-power-by-block-activity/1mhz/conditioned-streaming.vcd",
+      "vcd_sha256": "4f8de9215f6b9e43309280a614e7f84fa92be1c5d899956043c44e3c29bb0aaf",
+      "vcd_time_unit_ps": 1,
+      "why": "Default conditioned output, consumer always ready: the nominal streaming regime.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1048,
+          2072
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1048000000,
+          2072000000
+        ]
+      },
+      "workload": "conditioned-streaming"
+    }
+  }
+}

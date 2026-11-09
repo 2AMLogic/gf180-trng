@@ -26,4 +26,29 @@ PVT choice, so `sim/run_corners.py` must not sweep it across the analog grid.
 `sim/tools/active_power_breakdown.py` assembles these records with the array
 and sampler records into the whole-block breakdown.
 
+## VCD-activity mode (`--activity`, #812)
+
+Replaces the uniform activity with the toggle activity of a gate-level
+simulation of the as-built netlist and tabulates VCD-derived against uniform
+power per sub-block, at 1 MHz and at the 2 kHz raw rate. A 2 kHz trace needs
+its own VCD at the 500 us period (OpenSTA reads toggles per trace-second), so
+there are two captures, each reusing `sim/tb/digital-sta-power/activity.py`:
+
+```sh
+W=layout/.work/digital-power-by-block-activity
+python3 sim/tb/digital-sta-power/activity.py capture --workload conditioned-streaming --out $W/1mhz
+python3 sim/tb/digital-sta-power/activity.py capture --workload conditioned-streaming \
+    --period-ns 500000 --out $W/2khz
+python3 sim/tb/digital-power-by-block/run_by_block.py --activity --no-write   # print only
+python3 sim/tb/digital-power-by-block/run_by_block.py --activity              # mint one record
+```
+
+Needs `iverilog` and `vvp` as well; ~25 s. Each rate runs a uniform session and
+a VCD session over one SPEF. The same 0.1 % instance-sum check applies, and the
+`activity.validate_annotation` rejection (under 99 % of pins bound to the VCD)
+stays in force. The record slug is `digital-power-by-block-activity`, outside
+`active_power_breakdown.BY_BLOCK_GLOB`, so the ratified breakdown and
+`power_rollup.py` still read only the uniform records. One declared stimulus,
+not a worst case; no entropy claim.
+
 [DR-0021]: ../../../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md

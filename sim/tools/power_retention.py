@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import json
 import platform
 import sys
 from pathlib import Path
@@ -34,6 +33,7 @@ from harness import klt_request as _kreq  # noqa: E402
 from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
 import _record_parsing as _rp  # noqa: E402
+import _power_cli as _pc  # noqa: E402
 import power_switch as _ps  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -41,7 +41,6 @@ TB_DIR = REPO_ROOT / "sim" / "tb" / "power-retention"
 DECK = "tb_power_retention.sp"
 REQUEST_NAME = "request-grid.json"
 SLUG = "power-retention"
-SLUG_ATTEMPT = "power-retention-attempt"
 
 PROCESSES, TEMPS_C, SUPPLIES_V = _ps.PROCESSES, _ps.TEMPS_C, _ps.SUPPLIES_V
 PROCESS_SECTIONS = _ps.PROCESS_SECTIONS
@@ -125,8 +124,7 @@ def build_request(only: str | None = None) -> dict:
     return req
 
 
-def render(req: dict) -> str:
-    return json.dumps(req, indent=1) + "\n"
+render = _pc.render
 
 
 def request_path() -> Path:
@@ -186,26 +184,11 @@ def checks(row: dict) -> list[str]:
     return bad
 
 
-def _vals(corner: dict) -> dict[str, float]:
-    return {x["name"]: x["value"] for x in corner.get("measurements", []) if x.get("value") is not None}
+_vals = _pc.vals
 
 
 def analyse_report(report: dict) -> list[dict]:
-    rows = []
-    for c in report.get("corners", []):
-        v = _vals(c)
-        vdd = float(c.get("supply_v", {}).get("vsup", 3.3))
-        row = {"corner": f"{c.get('process')}/{c.get('temperature_c')}/{vdd:.2f}", "process": c.get("process"),
-               "temperature_c": c.get("temperature_c"), "vdd": vdd, "status": c.get("status")}
-        try:
-            row.update(derive(v, vdd))
-            row["problems"] = checks(row)
-            row["verdict"] = "OK" if not row["problems"] else "SUSPECT"
-        except DerivationError as exc:
-            row["problems"] = [str(exc)]
-            row["verdict"] = "UNMEASURED"
-        rows.append(row)
-    return rows
+    return _pc.analyse_report(report, derive, checks, DerivationError)
 
 
 def table(rows: list[dict]) -> str:
@@ -232,18 +215,11 @@ MODEL_IDLE_A = 74.44e-9  # sim/characterization-power-switch.md section 3 (model
 
 
 def load_records(records_dir: Path) -> list[dict]:
-    out = []
-    for path in _rp.current_records(records_dir, f"*-{SLUG}-[0-9]*.md"):
-        text = path.read_text()
-        proc, temp, vdd = _rp.parse_corner(text, label=path.stem)
-        out.append({"stem": path.stem, "corner": (proc, temp, vdd),
-                    "values": _rp.parse_values(_rp.result_section(text, label=path.stem), label=path.stem)})
-    return out
+    """The current measurement records for this tool's slug: corner plus Result bullets."""
+    return _pc.load_records(records_dir, SLUG)
 
 
-def _label(rec: dict) -> str:
-    proc, temp, vdd = rec["corner"]
-    return f"{proc}/{temp:g}C/{vdd:.2f}V"
+_label = _pc.label
 
 
 def summary_text(recs: list[dict], analog_a: float, analog_stem: str) -> str:
@@ -304,20 +280,14 @@ def plan_text() -> str:
 
 
 def cmd_emit(check: bool) -> int:
-    path, text = request_path(), render(build_request())
-    return _kreq.emit_requests(
-        [(path, text)], check, repo_root=REPO_ROOT,
-        ok=lambda: print(f"ok: {path.relative_to(REPO_ROOT)} matches the declared grid ({n_units()} units)"))
+    return _pc.cmd_emit(check, path=request_path(), text=render(build_request()), repo_root=REPO_ROOT, n_units=n_units())
 
 
 def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) -> int:
-    return _kreq.run_probe_or_grid(
-        outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR,
-        render_probe=lambda point: render(build_request(point)), probe_hint="--only PROCESS/TEMP/VDD")
+    return _pc.cmd_run(outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR, build_request=build_request)
 
 
-def _fmt(x: float) -> str:
-    return f"{x:.6e}"
+_fmt = _pc.fmt
 
 
 def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: list[tuple[str, str]],
@@ -410,23 +380,13 @@ def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list
 
 
 def cmd_record(paths: list[str], note: str, records_dir: Path | None = None) -> int:
-    return _mint.mint_records(
-        paths, note, records_dir, repo_root=REPO_ROOT, slug=SLUG, slug_attempt=SLUG_ATTEMPT,
-        analyse_report=analyse_report, render_measured=render_measured, render_unmeasured=render_unmeasured)
+    return _pc.cmd_record(
+        paths, note, records_dir, repo_root=REPO_ROOT, slug=SLUG, analyse_report=analyse_report,
+        render_measured=render_measured, render_unmeasured=render_unmeasured)
 
 
 def cmd_analyze(paths: list[str], as_json: bool) -> int:
-    rows: list[dict] = []
-    for p in paths:
-        rows += analyse_report(json.loads(Path(p).read_text()))
-    if as_json:
-        print(json.dumps(rows, indent=1))
-    else:
-        print(table(rows))
-        bad = [r for r in rows if r["verdict"] != "OK"]
-        print(f"\n{len(rows) - len(bad)}/{len(rows)} units usable"
-              + ("" if not bad else "; not usable: " + ", ".join(f"{r['corner']} ({r['verdict']})" for r in bad)))
-    return 0
+    return _pc.cmd_analyze(paths, as_json, analyse_report=analyse_report, table=table)
 
 
 def main(argv: list[str] | None = None) -> int:
