@@ -1,13 +1,54 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-09.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-10.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
+
+## Archives
+
+- [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-10
+
+- **Issue #823** (closed): Remove 8 unused imports left by the _power_cli refactor (ruff F401)
+- **PR #824**: refactor: remove unused imports from power retention/switch tools
 
 ### 2026-11-09
 
 - **PR #785**: docs: record Power and Area gap accounting after the power-gating and floorplan work
 - **PR #772**: docs(sim): record measured ring2 paired PEX grid under klt 0.9.0, unpublished pending pin decision
+- **Issue #808** (closed): Re-run extracted full-chip PEX simulations and the digital STA interface-load sweep on the stacked floorplan
+- **PR #819**: pex+sim: refresh full-chip parasitics and post-layout evidence on the stacked floorplan
+- **Issue #811** (closed): Power: separate ring-buffer power from XOR-combiner power in the array record
+- **PR #818**: sim: split the array's buffer and XOR power with a split-rail probe
+- **Issue #821** (closed): Dedupe liveness_sampler_power's adapter layer onto sim/tools/_power_cli.py
+- **PR #822**: refactor(sim): route liveness_sampler_power and siblings through _power_cli
+- **Issue #812** (closed): Power: replace the uniform-activity digital power model with toggle-based (VCD) activity for the active-power breakdown
+- **PR #820**: feat(power): per-sub-block VCD-activity power at 1 MHz and 2 kHz
+- **Issue #813** (closed): Power: quantify the entropy-rate cost of a reduced ring supply against the active power it returns
+- **PR #817**: docs: quantify ring-supply power returned against modelled entropy cost
+- **Issue #805** (closed): Consolidate copy-pasted CLI/record scaffolding across the power_switch, power_switch_decay and power_retention tools
+- **PR #815**: refactor(sim): share power-switch tools' adapter layer in _power_cli
+- **Issue #809** (closed): Power: rank active-power levers and scope follow-ups (no spec change)
+- **PR #814**: docs: rank active-power levers and scope follow-ups
+- **Issue #803** (closed): Floorplan: redesign the digital PDN tie so a stacked arrangement can land (reclaims ~39% of the composed bbox)
+- **PR #807**: feat(floorplan): stack digital above the analog strip with a wide multi-cut PDN tie
+- **Issue #793** (closed): Area recovery: ranked follow-up proposals from the area accounting
+- **Issue #798** (closed): Digital P&R: evaluate higher placement density and smaller die-to-core margin
+- **PR #806**: docs: record dense-placement and die-margin P&R evidence, composed LVS cause
+- **Issue #797** (closed): Floorplan arrangement: reclaim the empty area beside the analog row (up to 211 884 um^2)
+- **PR #804**: docs: record stacked-floorplan trial measurements and blockers
+- **Issue #790** (closed): Power: design retention for the gated domain so idle is measured, and break active power down by sub-block
+- **PR #796**: sim: measure gated-domain idle with the retained set held across 45 PVT points
+- **Issue #799** (closed): Digital cell area: quantify candidate RTL reductions toward the 50 000 um^2 budget
+- **PR #802**: docs: rank digital cell-area reduction candidates against the area gap
+- **Issue #800** (closed): Sampler geometry: isolate why each sampler flip-flop occupies 573 um^2 of bbox
+- **PR #801**: docs: record cause of the 573 um^2 sampler flip-flop box (negative finding)
+- **Issue #789** (closed): Area: measure each sub-block against a lower bound with klt economy and name the overruns
+- **PR #795**: docs: area economy accounting record for the committed layout
+- **Issue #656** (closed): T1 item 6: produce a klt yield report over the existing mismatch Monte Carlo campaign
+- **PR #791**: feat(signoff): ratify mismatch MC limits and cite klt yield as item 6 analog
+- **PR #794**: sim: break whole-block active power down by sub-block at the binding corner
 
 ### 2026-11-07
 
@@ -597,11 +638,3 @@ not independent verification of the claims in issue or PR titles.
 - **PR #218**: layout(pex): routing-level post-layout extraction of assembled rings and combiner/sampler block
 - **Issue #217** (closed): Routing-level post-layout extraction of the assembled rings and combiner/sampler block (closes #17's device-level caveat, now that klayout-tools#1540 is fixed)
 
-### 2026-09-07
-
-- **PR #216**: layout: consolidate duplicated _rect/_pad/_narrow geometry helpers
-- **Issue #215** (closed): Consolidate duplicated _rect/_pad/_narrow geometry helpers across layout build.py scripts
-- **PR #214**: spec: ratify DR-0019, DR-0020, and DR-0023 via the two-key mechanism
-- **Issue #213** (closed): File the ratification PR for DR-0019, DR-0020, and DR-0023 via the two-key mechanism
-- **PR #212**: sim(post-layout): re-run entropy/worst-corner/startup-power against the extracted netlist
-- **Issue #17** (closed): Post-layout extracted re-run of the verification suite
