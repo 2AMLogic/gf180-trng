@@ -1,6 +1,6 @@
 # Digital power switch: sizing, leakage and wake
 
-Status: complete for issue [#707] (child of [#700]); section 6 adds the rail decay of [#782]. This document sizes a PMOS header for the digital
+Status: complete for issue [#707] (child of [#700]); section 6 adds the rail decay of [#782]; section 7 the retained-state idle of [#790]. This document sizes a PMOS header for the digital
 section's supply and reports what it costs and what it saves at the `< 1 uA` idle row's binding corner. It
 is an ordinary summary, not evidence: every number below comes from the 45 records
 `sim/records/2026-10-28-power-switch-01..45.md`, through `python3 sim/tools/power_switch.py summarize`
@@ -163,6 +163,51 @@ both meaningful and covers every corner. `t_rail_decay_cycles` therefore stays a
 reason. It needs either a defined discharge mechanism (a bleeder, or a rule that wake does not depend on the rail
 having decayed) or an extracted rail, which are design decisions outside this issue.
 
+## 7. Idle with the state retained (issue #790)
+
+`design/power-intent.md` fixes what survives power-down: the `CTRL` flops and the three `fail_*` alarm latches,
+as plain flops on the always-on rail, with a gated retention clock and AND isolation on the 66 output bits.
+`sim/tb/power-retention/tb_power_retention.sp` builds exactly that from real library cells
+(`sim/tb/power-retention/retention_cells.spice`: `dffrnq_1`, `icgtp_1`, `and2_1`) beside the section-3 switch and
+leakage-equivalent load. 45 PVT points as one `klt sim` request on the batch fleet, records
+`sim/records/2026-11-09-power-retention-01..45.md`, tables from `python3 sim/tools/power_retention.py summarize`.
+
+- **Function.** A 1,0,1,0,1 pattern is written, the retention clock is stopped, isolation asserted and the rail
+  collapsed (forced, 1 us) and restored, following the power-intent sequence. The five bits read back unchanged at all 45
+  corners. A control with a free-running clock loses them at all 45, so the bench does discriminate. An isolation
+  AND whose gated-side input is held at vdd reads 0 while isolated and vdd after release.
+- **Idle.** The 400 um switch is off, the leakage-equivalent load is on its rail and the pattern is held.
+
+Source: 45 records `sim/records/*-power-retention-NN.md` (current, status valid).
+
+| quantity (ff / +10 % / +125 C, `2026-11-09-power-retention-18`) | value |
+|---|---|
+| always-on set, clock parked low | 15.85 nA |
+| 400 um switch off with the load behind it | 41.67 nA |
+| analog block idle | 32.77 nA |
+| **idle, measured with state retained** | **90.28 nA** |
+| modelled idle without retention (section 3) | 74.44 nA |
+| cost of retention | 15.84 nA |
+| `< 1 uA` row, share used | 9.0 % |
+| always-on set with a 1 MHz clock toggling into the closed gate | 255.35 nA |
+
+The last row is dynamic power in the gate's clock input at the 1 MHz implementation clock; it scales with the
+clock and is about 0.5 nA at the ratified 2 kHz sample rate (arithmetic, not run).
+
+**What this does not establish.**
+
+- **The function check forces the rail.** Decay is leakage-limited and unbounded at many corners (section 6), so the
+  collapse is an ideal 1 us ramp; `t_rail_decay` stays a placeholder.
+- **The gated domain is ideal sources.** Pattern, hold feedback and the isolation inputs are behavioural; the load behind
+  the switch is the section-3 leakage-equivalent NFET, not the cells. The figure measures this scheme's leakage, not the
+  shipped section. The idle figure is only as good as that model.
+- **Plain flops stand in for retention flops.** The library has none, so there is no balloon latch, no retention
+  supply and no retention-specific leakage to measure.
+- **Input-side protection and `ht_alarm` while off** are still open items of `design/power-intent.md`.
+- **Pre-layout**; no wiring, no well taps. Whether a section that discards FIFO and run state satisfies the row's
+  "register state retained" wording is the ruling requested on #700, not decided here.
+
 [#707]: https://github.com/2AMLogic/gf180-trng/issues/707
 [#782]: https://github.com/2AMLogic/gf180-trng/issues/782
 [#700]: https://github.com/2AMLogic/gf180-trng/issues/700
+[#790]: https://github.com/2AMLogic/gf180-trng/issues/790

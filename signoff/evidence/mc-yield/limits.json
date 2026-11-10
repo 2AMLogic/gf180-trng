@@ -1,0 +1,9 @@
+{
+  "_comment": "Limits ratified by DR-0033 (derivation there). No target_yield is ratified.",
+  "measurements": {
+    "period_r1@tt_27c_3.30v": {"max": 9.151e-9},
+    "period_r1@ss_125c_3.63v": {"max": 11.28e-9},
+    "dtrip_v@tt_27c_3.30v": {"min": 0.0, "max": 3.30, "exclusive_min": true, "exclusive_max": true},
+    "dtrip_v@ss_125c_3.63v": {"min": 0.0, "max": 3.63, "exclusive_min": true, "exclusive_max": true}
+  }
+}

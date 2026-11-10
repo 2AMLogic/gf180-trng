@@ -85,8 +85,11 @@ practice here; it is the specific consequence of DR-0012-clock's choice.
 
 ## The regions
 
-Four guarded regions, placed in this order, with a **20 µm isolation channel**
-between neighbours:
+Four guarded regions, in this order, with a **20 µm isolation channel**
+between neighbours. The three analog regions are one left-to-right strip;
+since [#803] the `digital` region is stacked **above** the strip, one 20 µm
+channel over the tallest analog region, rather than at the strip's east end
+(see [the stacked arrangement](#the-stacked-arrangement-and-the-digital-supply-tie--issue-803)):
 
 | region | contents | own supply | role |
 |---|---|---|---|
@@ -97,9 +100,13 @@ between neighbours:
 
 The ordering is the argument: the **only** region that touches both the
 entropy nodes and the sample clock is `combiner_sampler`, and it sits between
-the rings and the digital section rather than beside them. Nothing in the
-digital section is adjacent to a ring, and `clk` reaches the samplers from the
-digital side without crossing either ring's guarded area.
+the rings and the digital section rather than beside them. In the strip it
+is the eastmost region, and the stacked `digital` region's east edge is
+derived to sit east of it, so `clk` still reaches the samplers from the
+digital side without crossing either ring's guarded area or isolation channel.
+Part of `digital` now lies above the rings (a 20 µm vertical channel apart,
+the same width as every other channel); no digital conductor enters a
+`ring1 | ring2` channel (see the isolation argument below).
 
 Each region is enclosed by a p-substrate tap guard ring, 1.0 µm thick with tap
 contacts every 2 µm, tied to that region's own `vss` return. The rings are
@@ -1321,8 +1328,8 @@ the extraction and LVS verdicts below.
 
 ### What crosses, on which layer
 
-Every region in the composed row sits at `y ≥ 0`, so the half-plane *below*
-the row is empty at every `x` across the whole block. That is where the
+Every region in the composed floorplan sits at `y ≥ 0`, so the half-plane
+*below* the analog strip is empty at every `x` across the whole block. That is where the
 routing goes:
 
 | | layer | runs |
@@ -1415,12 +1422,12 @@ for the re-run report). `design/floorplan_netlist.py` declares both as
 ordinary `endpoints` of `digital` — the `implicit_regions` field is gone
 entirely, because there is no longer a connection this module cannot
 mechanically check against a real `.SUBCKT` pin. `layout/floorplan/
-interregion.py` draws both ties: a Metal3 riser inside the
-`combiner_sampler | digital` isolation channel, transitioning to Metal4/
-Via4/Metal5 only once it is past `digital`'s own boundary, docking against
-the lowest of that net's own PDN-strap bands (`digital_pdn_strap_bands`) —
-see that module's own "The `digital` PDN tie" docstring section for why
-Metal5 specifically (it is the one layer nothing else this floorplan draws
+interregion.py` draws both ties (as first landed: a Metal3 riser inside the
+`combiner_sampler | digital` isolation channel; redesigned for the stacked
+arrangement by [#803], see [below](#the-stacked-arrangement-and-the-digital-supply-tie--issue-803)),
+docking against the lowest of that net's own PDN-strap bands
+(`digital_pdn_strap_bands`) — see that module's own "The `digital` PDN tie"
+docstring section for why Metal5 specifically (it is the one layer nothing else this floorplan draws
 uses, so the hop cannot collide with any other net's geometry). The
 rejected alternative — leaving the tie undrawn and documenting it as
 permanent — was judged defensible only for as long as this stays a
@@ -1436,6 +1443,57 @@ now empty). All four supply branches (`vddr1`/`vddr2`/`vdd`/`vddd`) stay
 electrically separate up to their own not-yet-drawn star point — verified by
 the same composed LVS run below finding no `net.merged` between any two of
 them.
+
+### The stacked arrangement and the `digital` supply tie — issue #803
+
+`digital` is stacked above the analog strip: its guard ring starts one
+`ISOLATION_CHANNEL_UM` above the tallest analog region (`_stack_origins` in
+[`floorplan.py`](floorplan.py)), and its east edge is **derived**, not a
+constant. `interregion.stack_digital_east_um` takes the least east edge at
+which the first top-pin wrap column (`EAST_RISER_CLEAR_UM` east of
+`digital`'s content) clears the eastmost `combiner_sampler` riser column
+(`CS_CHANNEL_RISER_X`) by `metal3.space.1` plus a margin, so the two column
+sets are separated by construction and changing either table re-derives it.
+[`docs/area-floorplan-arrangement-2026-11-09.md`](../../docs/area-floorplan-arrangement-2026-11-09.md)
+measured that the same placement with a hand-picked overhang composes; here
+the overhang is an output.
+
+**The tie.** The single 0.30 µm Metal3 riser with one Via3 at each end was the
+dominant term of the digital supply IR drop and lengthened with the stack. It
+is replaced by one **2 µm wide Metal3 riser per net on the stack's east
+flank**, east of every top-pin wrap column (`pdn_riser_x_local`), landing
+through a four-cut Via3 row on the Metal4 trunk and a 16-cut Via3 + 16-cut Via4
+array on a Metal4 pad, and docking onto the **east end** of the net's lowest
+Metal5 PDN strap with a Metal5 rectangle as tall as the strap. The digital
+supply IR-drop bound ([`sim/characterization-digital-supply-ir-drop.md`](../../sim/characterization-digital-supply-ir-drop.md))
+falls from 23.18 mV (side-by-side row, single cuts) to 6.38 mV against the
+unchanged 33 mV yardstick; the stacked arrangement with the old single-cut
+riser measured 69.0 mV.
+
+**Isolation argument.** The risers run on the east flank, outside every
+isolation channel: they cross no `ring1 | ring2` or
+`ring2 | combiner_sampler` channel and pass no ring. Their nearest neighbours
+are `combiner_sampler`'s own `vdd`/`vss` risers (on a different net but the
+same side of the entropy rings) and `digital`'s own guard ring. The only
+digital conductor above the analog strip is `digital` itself, 20 µm over it
+behind its own tap ring; the Metal5 dock crosses only that guard ring, the
+same layer-and-crossing the top-pin tracks already use. DRC and LVS do not see
+isolation, so this is an argument, not a measurement: **no substrate-coupling
+attenuation is claimed** for the vertical channel, any more than for the
+horizontal ones.
+
+**`clk`/`rst_n` and DR-0012-clock.** The rationale
+`test_clk_and_rst_n_never_run_west_of_the_combiner_sampler_region` encodes is
+that the sample clock reaches the samplers from the `digital` side, never
+across a ring's isolation channel. It still holds: both trunks' west ends are
+the first wrap column, east of the strip (`test_interregion.py` also asserts
+this with the strip's east edge, not only `combiner_sampler`'s west edge). The
+test was not loosened; its helper no longer derives `combiner_sampler`'s east
+edge from the neighbouring region, which is no longer the neighbour.
+
+Consumers made stale by the new stream: the extracted full-chip PEX inputs
+and the `sim/tb/*-extracted-fullchip` testbenches (not re-simulated; see
+[`docs/area-floorplan-stacked-pdn-2026-11-09.md`](../../docs/area-floorplan-stacked-pdn-2026-11-09.md)).
 
 ### The shared `vss` return's IR-drop cost, measured — issue #234
 
@@ -2076,6 +2134,7 @@ would not block that separate question.
 [klayout-tools#306]: https://github.com/2AMLogic/klayout-tools/issues/306
 
 [#75]: https://github.com/2AMLogic/gf180-trng/issues/75
+[#803]: https://github.com/2AMLogic/gf180-trng/issues/803
 [#76]: https://github.com/2AMLogic/gf180-trng/issues/76
 [#78]: https://github.com/2AMLogic/gf180-trng/issues/78
 [#82]: https://github.com/2AMLogic/gf180-trng/pull/82

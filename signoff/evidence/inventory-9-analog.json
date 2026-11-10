@@ -121,11 +121,11 @@
       "files": [
         {
           "path": "sim/tb/combiner-sampler-pex/README.md",
-          "sha256": "sha256:2151f8df65ffcfeef2195599dfff6b613b694a5b00393cfd5a12e33ef17513db"
+          "sha256": "sha256:8f1715ff995b962173925e71b41745dc5065ed13d0f4fc75d108a353a224dcfa"
         },
         {
           "path": "sim/tb/combiner-sampler-pex/build_dut.py",
-          "sha256": "sha256:a2f35d330f78b6d7f948acec9c9ea4faf42bdd694ac2a5a2c9949f07e875e6cf"
+          "sha256": "sha256:cc207125bf2a56eff6b7ebe6b77a8121e627d9283a1cd8d251b406b496c5418f"
         },
         {
           "path": "sim/tb/combiner-sampler-pex/combiner_sampler_schematic.spice",
@@ -254,6 +254,30 @@
         {
           "path": "sim/tb/noise-floor-resistor/tb_rdiv.sp",
           "sha256": "sha256:6e3474fed82decbe9f3c0f98a296d293dfdf29b4a891c6515a4122e5e544083d"
+        }
+      ]
+    },
+    "power-retention": {
+      "invocation": {
+        "command": "python3 sim/tools/power_retention.py emit --check",
+        "documented_in": "sim/tb/power-retention/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/power-retention/README.md",
+          "sha256": "sha256:0c81c3851abc1d2f30685a7404ae3510039201152ff4b861672650c6fa60ea48"
+        },
+        {
+          "path": "sim/tb/power-retention/request-grid.json",
+          "sha256": "sha256:a15f6a6e5e8dfeeb8127b2e39a3e06ff552a4810ca74e39739c8d7fe525681cd"
+        },
+        {
+          "path": "sim/tb/power-retention/retention_cells.spice",
+          "sha256": "sha256:d9aac549fc59c164ca347708eac3ad6566e2dad3324f3fa34b6068b644b23c9b"
+        },
+        {
+          "path": "sim/tb/power-retention/tb_power_retention.sp",
+          "sha256": "sha256:47a623370f47f2bba445af5f8d7767d3269d42fe8984fc0880525a383c4446be"
         }
       ]
     },
@@ -554,6 +578,22 @@
         {
           "path": "sim/tb/ro-array-core-power-extracted-routed/tb_ro_array_core_power_extracted_routed.sp",
           "sha256": "sha256:2db35a9ba96ecac88d53db4859c52eb4fcea57a8866ac0f2857549f4a523d0d6"
+        }
+      ]
+    },
+    "ro-array-core-power-split": {
+      "invocation": {
+        "command": "python3 sim/run_corners.py ro-array-core-power-split",
+        "documented_in": "README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/ro-array-core-power-split/tb.json",
+          "sha256": "sha256:7907dce4a68807157e035e03b67300567da3106d9cdf2a5d50f350088cfbce6e"
+        },
+        {
+          "path": "sim/tb/ro-array-core-power-split/tb_ro_array_core_power_split.sp",
+          "sha256": "sha256:fcfd0d1406280b8aaacf03666e0100d91ff5ea3b9ac0aa069ded5dc586a06322"
         }
       ]
     },
@@ -1053,7 +1093,7 @@
       "files": [
         {
           "path": "sim/tb/ro-ring11-pex/README.md",
-          "sha256": "sha256:1eb6aaa1127436432eeb19449bc6eead325eb12dcdc67c53ff9136c704505743"
+          "sha256": "sha256:685850a73f8984938b109827f68488f5772d4120252343e6dcd6d836437cd655"
         },
         {
           "path": "sim/tb/ro-ring11-pex/build_dut.py",
@@ -1081,7 +1121,7 @@
       "files": [
         {
           "path": "sim/tb/ro-ring11-ring2-pex/README.md",
-          "sha256": "sha256:0d45a9a462a790530dfad98a74f1109d9e30353e32a2627fd8342d81da9121d5"
+          "sha256": "sha256:d480d4493695b79918be9a74300ceae4aa549cb68b396d660699a9fc28fe18c5"
         },
         {
           "path": "sim/tb/ro-ring11-ring2-pex/request.json",
@@ -1560,7 +1600,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:21469cda9eb46e891c15dbd8cf6eea9288f035f5e38ff525d3d2d67606623356"
+      "sha256": "sha256:57f4dc2da131a7b9245f6b3d89ffb9079134eedfa8390ce984b19248a3173f31"
     },
     {
       "path": "sim/README.md",

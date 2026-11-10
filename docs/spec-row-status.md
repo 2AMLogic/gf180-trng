@@ -325,6 +325,137 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
   more active power than this row allows — was resolved by [DR-0010]
   shrinking the array to N = 2, which is the 415 µW measured above.
 
+### 2026-11-06 — gap accounting after the #700 child issues (#700)
+
+Evidence only; the row, its `missed` tag, [DR-0017] (`Proposed`) and [DR-0023]
+are unchanged. Operator ruling on #700 (2026-10-28, option c) keeps both bounds
+and asks for power gating plus FIFO and inventory reductions.
+
+- **Switch (#707, PR #713; `sim/characterization-power-switch.md`).** One
+  400 µm PMOS header, DRC clean and LVS match, 589 µm². Off leakage at most
+  41.91 nA at ff / +10 % / +125 °C. Modelled gated-domain idle there:
+  **74.44 nA** (gated digital 41.67 nA + analog 32.77 nA) against 2 212.5 nA
+  ungated, 7.4 % of the `< 1 µA` row. The load behind the switch is a
+  leakage-equivalent NFET, not the library cells.
+- **Caveat that keeps idle `missed`.** That figure is with the domain *off*.
+  The ratified idle keeps register state, and no retention exists in the
+  library or in this design (power-intent work, #708, PRs #712, #776;
+  `design/power-intent.md`). Input-side protection is still an open item there
+  and the `t_rail_decay` placeholder is tracked as #782. Until retention or a
+  state-save scheme is designed and measured, the gated figure is not a
+  measurement of the ratified idle condition.
+- **Active power.** Gating does not lower it: active stays 749.4 µW (1.5×).
+  The header's I²R loss is 58.6 µW at the informational 20 MHz bound and
+  negligible at the ratified rate. FIFO/inventory work (#709) did not close it.
+- **Wake (#707).** Peak inrush 104 mA (10 ns edge) or 8.6 mA (1 µs edge) on
+  an assumed 200 pF rail.
+
+Idle therefore has a credible path (gating plus a retention answer); active
+power has none in evidence. A decision on the active row is requested on #700.
+
+- **Active power by sub-block (#790).** `python3 sim/tools/active_power_breakdown.py`
+  splits the whole-block figure from committed records only (rings, buffers +
+  XOR, sampler from the array and sampler families at `ff` / −40 °C / 3.63 V;
+  digital from `sim/records/2026-11-09-digital-power-by-block-01.md`, OpenSTA
+  per-instance power at `ff_125C_3v60` / `rc-max`, MEASURED-at-gate-level).
+  `--reconcile` reconciles the rows with `power_rollup.py`.
+
+  | sub-block | 1 MHz clock (the 749.4 µW figure) | 2 kHz (ratified raw rate) |
+  |---|---|---|
+  | ring 1 / ring 2 | 132.5 / 140.6 µW | same |
+  | ring buffers + XOR | 120.0 µW | same |
+  | sampler (xsb, xsv) | 16.9 µW | 16.8 µW |
+  | digital: interface | 139.8 µW | 3.2 µW |
+  | digital: clock tree | 73.5 µW | 0.4 µW |
+  | digital: conditioner | 58.5 µW | 1.1 µW |
+  | digital: health tests | 43.4 µW | 0.9 µW |
+  | digital: ring-liveness logic | 18.5 µW | 0.4 µW |
+  | digital: other (buffers, tap/fill) | 5.6 µW | 2.3 µW |
+  | **total (liveness samplers excluded)** | **749.4 µW (149.9 %)** | **418.3 µW (83.7 %)** |
+
+  Largest lever by arithmetic: the digital section's power is linear in its
+  clock, so the 749.4 µW figure is a 1 MHz-clock figure; at the 2 kHz clock
+  `power_rollup.py` already uses by default the same model gives 418.3 µW,
+  returning 331 µW. The liveness samplers (xsr1/xsr2) have no record at the
+  binding corner and are not in either total; the nearest measured corner adds
+  about 25 µW. This is a liberty-power model at a declared activity, not a
+  measured supply current, and it changes neither the row nor its `missed` tag;
+  which clock rate the row is judged at is a spec question left to #700.
+  Ring power (273 µW) is the entropy source itself. Ring buffers and the XOR
+  are one row because the records do not separate them.
+
+- **Idle with state retained, measured (#790).** `design/power-intent.md`'s
+  always-on set (five plain retained flops, the retention clock gate and 66
+  isolation ANDs, real library cells) beside the #707 header was simulated at
+  all 45 PVT points (`sim/records/2026-11-09-power-retention-{01..45}.md`,
+  `python3 sim/tools/power_retention.py summarize`). The pattern written into
+  the five retained flops survives a power cycle at every corner, a
+  free-running-clock control loses it at every corner, and the isolation clamp
+  holds. At `ff` / +10 % / +125 °C the always-on set draws 15.85 nA, the
+  switch with its load 41.67 nA and the analog block 32.77 nA: **90.28 nA**,
+  against the modelled 74.44 nA without retention (9.0 % of the `< 1 µA`
+  row). That is a pre-layout simulation with the gated logic as ideal sources,
+  a forced rail and the leakage-equivalent load, so it is a measurement of
+  this scheme's leakage, not of the shipped chip; rail decay and input-side
+  protection stay open items. Whether a power-cycled section with discarded
+  FIFO and run state meets the row's "register state retained" wording is the
+  ruling already requested on #700; the row and its tag are unchanged.
+
+### 2026-11-09 — ranked active-power levers and scoped follow-ups (#809)
+
+Evidence only; the Power row, its `missed` tag, [DR-0017] (`Proposed`) and
+[DR-0023] are unchanged. This follows the #790 breakdown above. Every figure is
+the output of `python3 sim/tools/active_power_breakdown.py --reconcile` (exit 0
+on this tree) or arithmetic on the committed ring records named in the table.
+Each is a model figure, none is a silicon measurement. The 1 MHz and 2 kHz
+columns are never mixed in one row.
+
+**Open spec question (not resolved here): which digital clock rate is the row
+judged at?** The 749.4 µW figure (149.9 %, missed) is the 1 MHz-clock model.
+The same model at the 2 kHz ratified raw rate gives 418.3 µW (83.7 %, 81.7 µW
+under the bound), before the liveness samplers (below). Which one the row means
+is a ruling, already requested on #700, not a lever.
+
+Ranked by power recovered. "Basis" is the 749.4 µW whole-block figure unless
+stated. Corner: array and sampler terms at `ff` / −40 °C / 3.63 V, digital at
+`ff_125C_3v60` / `rc-max`.
+
+| # | lever | recovered | source record | disposition |
+|---|---|---|---|---|
+| 1 | Digital clock 1 MHz → 2 kHz (whole digital section 339.4 → 8.3 µW) | **331.1 µW** (749.4 → 418.3) | `2026-11-09-digital-power-by-block-01` via `active_power_breakdown.py` | Open spec question above; not a design change. Sub-block returns in the next table. |
+| 2 | Array supply 3.63 → 3.30 V (rings 273.1 → 201.3, buffers + XOR 120.0 → 86.2 µW) | 105.6 µW (71.8 rings + 33.8 buffers/XOR), array only | `2026-08-02-ro-array-core-pvt-q-{39,38}`, `ff` / −40 °C | Touches the entropy source (ring-1 frequency 249.0 → 229.6 MHz, −7.8 %; entropy rate not measured here) and the Operating envelope row. Follow-up #813. |
+| 3 | Ring buffers + XOR (120.0 µW, 16.0 % of 749.4) | up to 120.0 µW, an upper bound | same pair as row 2 | The records report only the `vdd`-rail remainder, so buffers and XOR cannot be separated. A split probe would. Follow-up #811. |
+| 4 | Clock gating / trimming inside the digital section at the 1 MHz clock | up to the sub-block figure, before any gating | `digital-power-by-block-01` | The model assumes one uniform declared activity, so what gating would return is not quantifiable from the records. Toggle-based activity would. Follow-up #812. At 2 kHz the whole section is 8.3 µW (1.7 % of the row): no lever. |
+| 5 | Sampler (xsb, xsv), 16.9 µW | none | `2026-08-02-sampler-dff-active-current-12` | No lever: 2.3 % of the block and set by the ring transition rate. |
+| 6 | Rings themselves, 273.1 µW (36.4 %) | none apart from row 2 | `ro-array-core-pvt-q-39` | No lever: the rings are the entropy source; drive or size changes trade against entropy and are outside this record. |
+| — | Liveness samplers (xsr1/xsr2) | adds power, recovers none | none at the binding corner | Gap. Nearest measured corner (`tt` / 27 °C / 3.30 V) shows about 25.3 µW, in neither total above. Follow-up #810. |
+
+Digital clock-rate return by sub-block (row 1, 1 MHz → 2 kHz):
+
+| digital sub-block | 1 MHz | 2 kHz | returned |
+|---|---|---|---|
+| interface | 139.8 µW | 3.2 µW | 136.5 µW |
+| clock tree | 73.5 µW | 0.4 µW | 73.1 µW |
+| conditioner | 58.5 µW | 1.1 µW | 57.4 µW |
+| health tests | 43.4 µW | 0.9 µW | 42.6 µW |
+| ring-liveness logic | 18.5 µW | 0.4 µW | 18.1 µW |
+| other (buffers, tap/fill) | 5.6 µW | 2.3 µW | 3.3 µW |
+| **total** | **339.4 µW** | **8.3 µW** | **331.1 µW** |
+
+Measurement gap: the digital figures are liberty power at a declared activity
+(DR-0021 §3), not supply current, and the array and sampler terms are from
+different corners than the digital term (`power_rollup.py`'s convention). Row 2
+is arithmetic on two records at one process/temperature; the supply sweep is
+2.97 / 3.30 / 3.63 V only. Adding the nearest-corner liveness figure to the
+2 kHz total would give about 443.6 µW, but that mixes corners and is indicative
+only; the real value needs #810.
+
+Follow-ups, each at `loom:triage`: #810 (liveness-sampler record at the binding
+corner), #811 (buffer versus XOR split), #812 (toggle-based digital activity),
+#813 (entropy cost of a reduced ring supply). Rows 5 and 6 are recorded as "no
+lever". No klayout-tools gap was met, so none is filed.
+
+
 ## Area
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -437,6 +568,30 @@ or router has been run" wording; they are generated or code-side text outside
 this docs-only change and describe the estimate method only, not the footprint
 sizing above.
 
+### 2026-11-06 — gap accounting after the #700 child issues (#700)
+
+Evidence only; the row, its `missed` tag and [DR-0019] are unchanged. Operator
+ruling on #700 (2026-10-28, option c) keeps the `< 0.05 mm²` bound and asks for
+design changes. Both area levers it named have now been run:
+
+- **Floorplan (#710, PRs #714, #768).** On the post-#709 inventory the best
+  point is 91 232 µm² = **182.5 %** of the row at 85 % requested utilisation
+  (347.2 % at 40 %), routed with 0 DRC and 0 antenna violations. Placed cell
+  area is ≈ 59.9–60.7 k µm² at every point, already above the 50 000 µm²
+  budget before die margin, guard rings, isolation channels or the
+  7 196.8 µm² analog side. No floorplan lever reaches the row.
+- **Inventory (#709).** Moved the best point only from 185.0 % to 182.5 %.
+  Reaching the row needs placed digital area roughly halved (derived, not run).
+- **Not measured:** the area cost of tap pitch for LU.3/LU.4 (#449, #487;
+  49.7 µm vs 15 µm today), and the combined case. Composed digital LVS shows
+  6 / 7 mismatches at 70 / 85 % utilisation (undiagnosed).
+- **Power switch (#707).** The header costs 589 µm² (1.2 % of the row), so it
+  does not change this picture.
+
+The ruling says to bring such evidence back as a new decision rather than
+supersede; that decision is requested on #700. This entry supersedes nothing.
+
+
 ## Operating envelope
 
 ### 2026-10-10 — relocated from `README.md` (#481)
@@ -452,6 +607,19 @@ The README row carried no evidence narrative beyond its own target text, which s
 The README row carried no evidence narrative beyond its own target text, which stays in the README table unchanged. Row text as it stood on relocation:
 
 **Target cell:** streaming, mode-selectable raw / conditioned (`OUT_MODE`), + register read (`DATA` conditioned, `RAW_DATA` raw); raw access always available and never gated ([DR-0001]). Instantiated as four word-addressed registers — `CTRL`, `STATUS`, `DATA`, `RAW_DATA` — plus a 32-bit valid/ready streaming port, with a health-test gate that flushes the conditioned path and **never** the raw one ([DR-0013])
+
+## Mismatch Monte Carlo limits
+
+### 2026-11-09 — limits ratified on `period_r1` and `dtrip_v` ([DR-0033], #656)
+
+Two rows were added to the README table so that `klt yield` has a limit to
+grade the mismatch campaign against (operator ruling on #656, option (a)). They
+are new limits, not changes to an existing row. The derivation, with every
+input cited, is in [DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md).
+The `dtrip_v` window is the supply rails because the consequence check in
+`sim/characterization-worst-corner-and-mc-mismatch.md` §4 tolerates ±11.6 V of
+threshold offset; the limit is therefore not tight. The graded report and its
+verdict are in `signoff/README.md` ("Item 6").
 
 ## Binding corners and the rate row
 
@@ -569,3 +737,4 @@ placeholders*, and the table labels which.
 [DR-0020]: ../spec/decision-records/DR-0020-fifo-depth-set-to-two-against-power-area-and-streaming.md
 [DR-0021]: ../spec/decision-records/DR-0021-gate-level-timing-and-power-records.md
 [DR-0023]: ../spec/decision-records/DR-0023-power-rollup-digital-term-becomes-measured-gate-level-power.md
+[DR-0033]: ../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md

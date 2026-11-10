@@ -435,6 +435,52 @@ corners, `max_transition` is clean, and the worst-slack corner for it is
 
 ---
 
+## 0d. Re-run after the stacked-`digital` floorplan (#803, [DR-0034]; issue #808)
+
+`layout/floorplan/` now stacks `digital` above the analog strip with a wide
+multi-cut PDN tie (#803), which changes the as-built inter-region geometry
+that `run_sta.py` reads at run time from
+`layout/floorplan/reports/interregion.json` (§2a). The routed digital DEF
+`layout/digital/trng_top.def` is **unchanged**, so the sweep was re-run as is
+(no code change), minting `sim/records/2026-11-09-digital-sta-power-01..15`
+and, because `sim/tools/activity_power_characterization.py --check` ties the
+activity family's uniform baseline to the default flow, the matching
+`2026-11-09-digital-sta-activity-01..15` (traces re-captured with
+`activity.py capture`). The `2026-10-29-*` families are untouched
+append-only history.
+
+Result: **every verdict is unchanged and the numbers barely move.** Setup
+binding slack is +30.841 ns (`ss_125C_3v00`/`max`) before and after; hold
+binding slack is +0.6958 ns (`ff_n40C_3v60`/`min`) before and after, moving
+by at most 1 fs at any corner. Total power at 1 MHz moves by at most
+0.03 µW out of 208–339 µW. Total negative slack is 0 ns on both sides at all
+fifteen corners. The stack's effect on the six digital-facing trunks is below
+what this sweep resolves; the floorplan geometry itself is #803's and #807's
+evidence, not this section's.
+
+| corner | setup slack (20 MHz) | **hold slack** | Fmax | power @ 1 MHz |
+|---|---:|---:|---:|---:|
+| `ss_125C_3v00` / `min` | +31.563 ns | +2.372 ns | 54.24 MHz | 0.209 mW |
+| `ss_125C_3v00` / `nom` | +31.238 ns | +2.379 ns | 53.30 MHz | 0.211 mW |
+| **`ss_125C_3v00` / `max`** — setup binds | **+30.841 ns** | +2.388 ns | **52.19 MHz** | 0.214 mW |
+| `ss_n40C_3v00` / `min` | +37.306 ns | +1.651 ns | 78.77 MHz | 0.195 mW |
+| `ss_n40C_3v00` / `nom` | +37.075 ns | +1.654 ns | 77.36 MHz | 0.197 mW |
+| `ss_n40C_3v00` / `max` | +36.789 ns | +1.661 ns | 75.69 MHz | 0.200 mW |
+| `tt_025C_3v30` / `min` | +40.616 ns | +1.199 ns | 106.56 MHz | 0.248 mW |
+| `tt_025C_3v30` / `nom` | +40.450 ns | +1.203 ns | 104.71 MHz | 0.251 mW |
+| `tt_025C_3v30` / `max` | +40.246 ns | +1.207 ns | 102.52 MHz | 0.255 mW |
+| `ff_125C_3v60` / `min` | +42.057 ns | +1.001 ns | 125.89 MHz | 0.330 mW |
+| `ff_125C_3v60` / `nom` | +41.917 ns | +1.004 ns | 123.70 MHz | 0.334 mW |
+| `ff_125C_3v60` / `max` | +41.747 ns | +1.008 ns | 121.16 MHz | 0.339 mW |
+| **`ff_n40C_3v60` / `min`** — hold binds | +44.505 ns | **+0.696 ns** | 181.97 MHz | 0.302 mW |
+| `ff_n40C_3v60` / `nom` | +44.405 ns | +0.698 ns | 178.73 MHz | 0.306 mW |
+| `ff_n40C_3v60` / `max` | +44.284 ns | +0.701 ns | 174.94 MHz | 0.310 mW |
+
+Hold slack is positive at every one of the 15 corners. Each figure is read
+from the corresponding `2026-11-09-digital-sta-power-NN` record.
+
+---
+
 ## 1. What ran
 
 | | |
@@ -1515,3 +1561,4 @@ but no longer describe `layout/digital/`'s current artefacts (§1, [#183]).
 [#456]: https://github.com/2AMLogic/gf180-trng/issues/456
 [DR-0027]: ../spec/decision-records/DR-0027-digital-facing-trunk-estimates-follow-the-regenerated-geometry.md
 [DR-0028]: ../spec/decision-records/DR-0028-top-edge-legs-are-priced-in-the-sta-interface-load.md
+[DR-0034]: ../spec/decision-records/DR-0034-digital-facing-trunk-estimates-follow-the-stacked-floorplan.md

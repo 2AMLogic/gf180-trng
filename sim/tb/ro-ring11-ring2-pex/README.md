@@ -7,7 +7,7 @@ oscillator (`xr2`, `wstv=0.240u`, versus ring1's `wstv=0.220u` in
 `design/ro_array_core.spice`). This is the same comparison, paired, over
 `layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds`.
 
-**Status: unrun fixture.** The fixture is committed and freshness-checked
+**Status: measured under a probe build, not published.** The fixture is committed and freshness-checked
 offline; no ring2 `klt pex` result is committed. The one attempt to submit the
 27-corner grid to the batch backend (two tries, `klayout-tools==0.6.0`; klt-pin: historical) was
 refused by the fleet for capacity (`8 instance(s) already running + 1
@@ -26,8 +26,13 @@ simulates) are in
 [`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`](../../records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md).
 The campaign stays blocked until the fleet runner and a producer pin that
 stages `.include` dependencies are compatible (upstream
-2AMLogic/klayout-tools#2485, #2882). No ring2 schematic-versus-extracted
-comparison result exists in this repository.
+2AMLogic/klayout-tools#2485, #2882). A third attempt (2026-11-05, klt 0.9.0 client against the klt 0.9.0 fleet
+runner) measured the whole 27-corner grid on both sides (81 delta rows, none
+errored). It is **measured but not published**: the publisher accepts only the
+0.6.0 pin, and which pin covers a ring2 result is an open operator decision
+(DR-0026). The record is
+[`sim/records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md`](../../records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md).
+No ring2 comparison is committed under `signoff/evidence/`.
 
 | File | Role |
 |---|---|

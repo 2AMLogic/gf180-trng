@@ -122,9 +122,13 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
         change to the total resistance from the (moved) pin to `ring1`, the
         farthest node, independent of `SCOPED_OUT_REGIONS` excluding
         `digital` itself (excluding an intermediate node from an itemised
-        chain does not change the chain's own total span)."""
+        chain does not change the chain's own total span).
+
+        gf180-trng#803 moved the pin again: the wide `vss` riser sits on the
+        stack's east flank, so the pin-to-`combiner_sampler` segment is about
+        0.56 ohm shorter (131.559 -> 131.0); the tolerance is unchanged."""
         total = sum(node["seg_r_ohm"] for node in self.model["chain"])
-        self.assertAlmostEqual(total, 131.559, delta=0.5)
+        self.assertAlmostEqual(total, 131.0, delta=0.5)
 
 
 class ReportAndCheckRunCleanly(unittest.TestCase):

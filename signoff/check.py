@@ -158,6 +158,10 @@ CLEAN_EXITS = (0, 3)
 #: committed file, so the generic envelope-vs-input step cannot check it. Like
 #: ITEM7_ENVELOPE it is exempt from that step and carries no manifest pin.
 PNR_ENVELOPE = "layout/digital/reports/place_and_route.json"
+#: Item 6 analog: the native `klt yield` response of publish_item6.py. Like
+#: ITEM7_ENVELOPE it carries no provenance block, so it is exempt from the
+#: input-digest step and its freshness is publish_item6.publication_problems().
+ITEM6_ENVELOPE = "signoff/evidence/mc-yield/klt_yield_response.json"
 
 ITEM7_DIR = "signoff/evidence/post-route"
 ITEM7_ENVELOPE = f"{ITEM7_DIR}/gate_klt_response.json"
@@ -953,7 +957,7 @@ def freshness_gate(manifest: dict) -> int:
     cited: list[Path] = []
     for _key, part in manifest_entries(manifest):
         named = part.get("file")
-        if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE):
+        if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE, ITEM6_ENVELOPE):
             cited.append(REPO_ROOT / named)
     # The item 1/2/9/10 inventories are not envelopes (they name no input);
     # their freshness is the member-by-member re-derivation in step 1e.
@@ -991,6 +995,15 @@ def freshness_gate(manifest: dict) -> int:
     failures += [f"7.digital: {p}" for p in item7]
     if (manifest.get("evidence") or {}).get("7.digital") and not item7:
         verified += 1
+
+    # Step 1b': the item-6 citation (no provenance block; see ITEM6_ENVELOPE).
+    if (manifest.get("evidence") or {}).get("6.analog"):
+        import publish_item6  # noqa: PLC0415 -- imports this module; avoid a cycle
+
+        item6 = publish_item6.publication_problems()
+        failures += [f"6.analog: {p}" for p in item6]
+        if not item6:
+            verified += 1
 
     # Step 1c: the 7.analog citation's testbench-side pins (see ITEM7A_*). Its
     # layout pin is already covered by steps 1 and 2 above.

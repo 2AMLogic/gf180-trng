@@ -1061,6 +1061,21 @@ the six `digital`-facing trunks stays unpriced.
 
 > **Superseded evidence (issue #739).** The `layout/pex/sampler_core.fullchip.extracted.spice` netlist was refreshed after the `2026-09-12-*extracted-fullchip*` records below were simulated (the `cload_*` values changed; netlist sha `9c992f58...` -> `9928e2c5...`). Those eight records are stale: do not cite the figures in this section as current. Each is superseded by the same-named `2026-10-30-*extracted-fullchip*-01` record at the same PVT point (for example `records/2026-10-30-ro-array-core-pvt-q-extracted-fullchip-01.md`). The prose below is left as written for history.
 
+> **Re-run on the stacked floorplan (issue #808, after #803).** `layout/pex/reports/fullchip_parasitics.json` was regenerated with `python3 layout/pex/build.py --fullchip-extract` against the stacked `layout/floorplan/trng_floorplan.gds`, `layout/pex/build.py` recomposed every `layout/pex/*.extracted.spice`, and the four `*-extracted-fullchip` testbenches were re-simulated at their original single PVT points, minting `records/2026-11-09-*-extracted-fullchip-01.md` (each `supersedes` its `2026-10-30-*` predecessor; the old records are append-only history). The figures in §8.1-§8.6 below are the older generation; this note carries the current ones. The `-control` siblings were **not** re-run, so a fullchip-minus-control subtraction against them mixes generations and must not be done with the new records.
+>
+> | Quantity | 2026-10-30 | **2026-11-09** |
+> |---|---:|---:|
+> | `ro1` trunk delta (R / C) | 57.55 Ω / 8.52 fF | **42.81 Ω / 8.52 fF** |
+> | `ro2` trunk delta (R / C) | 30.22 Ω / 3.19 fF | **15.49 Ω / 3.19 fF** |
+> | `raw_bit` / `raw_valid` driver-side load | 115.6 / 119.4 fF | **92.3 / 103.5 fF** |
+> | `ring_bit1` / `ring_bit2` driver-side load | 72.6 / 82.3 fF | **53.7 / 48.5 fF** |
+> | pvt-q `ss`/125 °C/3.63 V: `f_r1` / `f_r2` | 50.41 / 57.26 MHz | **51.14 / 58.03 MHz** |
+> | active power `ff`/-40 °C/3.63 V: `f_r1` / `p_total_w` | 125.61 MHz / -9.643e-4 W | **125.66 MHz / -9.641e-4 W** |
+> | idle `ff`/125 °C/3.63 V: `i_idle_worst_a` | 128.83 nA | **127.70 nA** |
+> | startup `ss`/125 °C/2.97 V: ring-1 10th edge | 262.43 ns | **261.93 ns** |
+>
+> (`p_total_w` is negative because it is a supply-current-sense sign convention, unchanged from the earlier records.) The ring periods move by about 1.4 % at the slow corner and the idle current by about 0.9 %, so no ratified-row verdict in §8.6 changes. **Caveat on attribution:** the regenerated leaf-cell and intra-region extractions (`ro_buf`, `xor2`, the routed ring and `combiner_sampler` netlists, which the stacking does not touch) also changed, e.g. `ro_buf`'s per-terminal `Ra_*` 44.06 Ω to 30.77 Ω, and the new netlists carry a `substrate tie` header line the old ones lack. The installed `klt` (0.9.2.dev) differs from the one that produced the old files, so part of the movement is extractor drift rather than the stack, and these records cannot separate the two. Single PVT point per testbench, as before; nothing here is a corner sweep.
+
 ### 8.0 What changed, what did not, and why every number below has a control
 
 §7.7 wrote down, from committed geometry and the deck's own published

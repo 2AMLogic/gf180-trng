@@ -71,6 +71,22 @@
         }
       ]
     },
+    "digital-power-by-block": {
+      "invocation": {
+        "command": "python3 sim/tb/digital-power-by-block/run_by_block.py --no-write",
+        "documented_in": "sim/tb/digital-power-by-block/README.md"
+      },
+      "files": [
+        {
+          "path": "sim/tb/digital-power-by-block/README.md",
+          "sha256": "sha256:658f74d994d64e655502b539e97a8c74571c01ddb32d2c641a1d39a6f2a35917"
+        },
+        {
+          "path": "sim/tb/digital-power-by-block/run_by_block.py",
+          "sha256": "sha256:9069050fab057bf615e821892da08f64de41f3f661214d54f6393a2beb356eca"
+        }
+      ]
+    },
     "digital-sta-power": {
       "invocation": {
         "command": "python3 sim/tb/digital-sta-power/run_sta.py --list",
@@ -83,7 +99,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/activity.py",
-          "sha256": "sha256:fb4c797d896d12a79a92a48049e0a99bcaaada4fb46469100f1b752e8faa9520"
+          "sha256": "sha256:9bdac94ecb909b0b2d7f7d9692de4f70e6165c9f63ed07da8a159ec7a69c7659"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_power.py",
@@ -270,7 +286,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:21469cda9eb46e891c15dbd8cf6eea9288f035f5e38ff525d3d2d67606623356"
+      "sha256": "sha256:57f4dc2da131a7b9245f6b3d89ffb9079134eedfa8390ce984b19248a3173f31"
     },
     {
       "path": "sim/README.md",

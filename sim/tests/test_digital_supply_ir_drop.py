@@ -50,8 +50,8 @@ class ExternalFeed(_Shared):
             b = self.built(net)
             kinds = [d.split(",")[0] for d, _ in b.external_path]
             self.assertEqual(kinds, [
-                "metal4 wiring-plan rect", "via3 single cut", "metal3 wiring-plan rect",
-                "via3 single cut", "via4 single cut", "metal5 wiring-plan rect"], net)
+                "metal4 wiring-plan rect", "via3 array x4", "metal3 wiring-plan rect",
+                "via3 array x16", "via4 array x16", "metal5 wiring-plan rect"], net)
             resp = ir.grid_response(b, self.pdn[net], self.origin)
             # Every amp of the grid's load crosses the feed: its potential at
             # the join is exactly the series sum.
@@ -59,10 +59,11 @@ class ExternalFeed(_Shared):
 
     def test_riser_length_matches_the_route(self):
         # vss: trunk at y = -11.0, lowest vss band centred 54.88 um local,
-        # digital content origin y = 1.0 -> 66.88 um of 0.30 um Metal3.
+        # digital content origin y = 39.25 (stacked above the strip, #803)
+        # -> 105.13 um of the 2.00 um wide Metal3 riser.
         b = self.built("vss")
         riser = [r for d, r in b.external_path if d.startswith("metal3")][0]
-        self.assertAlmostEqual(riser, 0.09 * 66.88 / 0.30, places=6)
+        self.assertAlmostEqual(riser, 0.09 * 105.13 / 2.0, places=6)
 
     def test_vss_shares_the_trunk_with_the_analog_taps(self):
         b = self.built("vss")
@@ -104,15 +105,17 @@ class RemovedJoinIsRejected(_Shared):
 
 
 class ResistanceRaisesDrop(_Shared):
-    def test_doubling_via3_adds_exactly_two_cuts_worth(self):
+    def test_doubling_via3_adds_exactly_the_feeds_cut_arrays_worth(self):
         base = ir.grid_response(self.built("vddd"), self.pdn["vddd"], self.origin)
         patched = copy.deepcopy(ir.RESISTANCE_VARIANTS)
         patched["nominal"]["via_ohm_per_cut"]["Via3"] *= 2
         with mock.patch.object(ir, "RESISTANCE_VARIANTS", patched):
             more = ir.grid_response(self.built("vddd"), self.pdn["vddd"], self.origin)
-        # Two single Via3 cuts on the feed, 4.5 ohm more each. Inside the
-        # grid the Via3 arrays (x16) get more resistive too.
-        self.assertAlmostEqual(more["external_ohm"] - base["external_ohm"], 9.0, places=6)
+        # The feed has a four-cut Via3 row (4.5 / 4 ohm more) and a 16-cut
+        # Via3 array (4.5 / 16 ohm more). Inside the grid the Via3 arrays
+        # (x16) get more resistive too.
+        self.assertAlmostEqual(more["external_ohm"] - base["external_ohm"],
+                               4.5 / 4 + 4.5 / 16, places=6)
         self.assertGreater(more["internal_bound_ohm"], base["internal_bound_ohm"])
 
     def test_high_variant_exceeds_nominal_everywhere(self):

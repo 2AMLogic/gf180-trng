@@ -117,44 +117,37 @@ one deliberately shared return (phase 1's own net table), and it is the one
 trunk that does span the row -- and, since gf180-trng#224, it is also the
 one whose trunk now reaches all the way into `digital`.
 
-The `digital` PDN tie (gf180-trng#224)
----------------------------------------
+The `digital` PDN tie (gf180-trng#224, redesigned in gf180-trng#803)
+---------------------------------------------------------------------
 `vddd`'s and `vss`'s own endpoint into `digital` is not another Metal3
-riser onto a Metal4 pin the way `clk`/`rst_n` are: those two pins sit right
-at `digital`'s own bottom edge (local y in roughly 0 .. 1.3 um) when that
-was written, reachable by a short riser from below the row; since
-gf180-trng#315 the stub follows the pin's DEF-placed edge instead. `trng_top.
-def`'s own PDN straps for `vddd`/`vss` are Metal5, and they run the width of
-the block at several Y heights spread across nearly the block's *entire*
-549 um height (`digital_pdn_strap_bands`) -- a Metal3 riser reaching one of
-the higher bands would have to cross `digital`'s own dense internal
-Metal1-3 routing for however far short of the target it started, which is
-exactly the "never put a riser inside a cell's own footprint" failure mode
-`combiner_sampler`'s own anchors (`cs_anchors`) already avoid for a similar
-reason.
+riser onto a Metal4 pin the way `clk`/`rst_n` are. `trng_top.def`'s own PDN
+straps for `vddd`/`vss` are Metal5, and they run the width of the block at
+several Y heights across nearly its entire height
+(`digital_pdn_strap_bands`) -- a Metal3 riser reaching one of the higher bands
+would have to cross `digital`'s own dense internal Metal1-3 routing, which is
+the "never put a riser inside a cell's own footprint" failure mode
+`combiner_sampler`'s own anchors (`cs_anchors`) already avoid. Metal5 is drawn
+nowhere else in the composed floorplan except these two nets' own straps, so
+the hop onto a strap touches nothing below Metal5.
 
-The fix is a layer, not a workaround: every PDN strap band spans local x
-=~ 10.08 .. 538.72 um, i.e. its own **west edge sits barely inside
-`digital`'s own boundary**, immediately next to the `combiner_sampler |
-digital` isolation channel -- and Metal5 is drawn *nowhere else* in the
-composed floorplan except these two nets' own straps (verified directly:
-neither the rings, `combiner_sampler`, nor `digital`'s own standard-cell
-routing/PDN below Metal5 uses it). So each tie runs Metal3 only inside the
-channel (empty at every Y, the same property every other net's riser
-already depends on), transitions up through Via4 to Metal5 at the channel's
-own east edge -- still outside `digital`'s footprint -- and only then
-crosses into `digital`, entirely on Metal5, to dock against the **lowest**
-of that net's own bands (shortest reach, and `digital_pdn_strap_bands`
-returns them sorted so "lowest" is just `[0]`). Nothing on this path ever
-touches a layer `digital`'s own interior actually uses for anything else.
+`digital` is stacked above the analog strip (`floorplan.py`'s
+`_stack_origins`), so the tie runs on the stack's **east flank**, which is the
+one corridor that reaches the strip's trunks without crossing a ring's
+isolation channel. Each net gets one wide Metal3 riser (`PDN_RISER_W_UM`),
+east of every top-pin wrap column and `PDN_RISER_GAP_UM` of air from it
+(`pdn_riser_x_local`), landing on the Metal4 trunk through a row of
+`PDN_VIA_COLS` Via3 cuts and on a Metal4 pad through a `PDN_VIA_COLS` squared
+Via3 + Via4 array, then docking onto the *east end* of the lowest strap with a
+Metal5 rectangle as tall as the strap. Single 0.30 um risers with one cut per
+end priced at about 85 ohm (high-resistance variant) and lengthened with the
+stack; the wide, multi-cut tie is about 15 ohm
+(`sim/characterization-digital-supply-ir-drop.md`).
 
-`VSS_PDN_RISER_X_LOCAL`/`VDDD_PDN_RISER_X_LOCAL` place the two risers 1 um
-apart inside the channel -- clearing `metal3.space.1` by more than 3x --
-and well clear of both `combiner_sampler`'s own channel risers
-(`CS_CHANNEL_RISER_X`, which land within about 4.4 um of *that* region's
-edge) and `digital`'s own 1 um guard ring band. `PDN_STRAP_DOCK_REACH_UM`
-is how far past each strap's own west edge the docking rectangle reaches --
-comfortably inside real drawn strap metal, nowhere near its own east edge.
+The cuts of one landing carry a shared `_array` annotation so a consumer
+(`sim/tools/digital_supply_ir_drop.py`) prices them as n parallel cuts rather
+than n single ones. `stack_digital_east_um` derives `digital`'s east edge so the
+first wrap column clears `combiner_sampler`'s own east-edge riser columns by
+construction.
 
 Geometry legality
 -----------------
@@ -334,67 +327,82 @@ assert TOP_TRACK_CLEAR_UM > 1.0 and EAST_RISER_CLEAR_UM > 1.0, \
 #: own `metal3.space.1`. Used by the gap-slot picker below.
 MIN_SPACE = 0.28
 
-#: The `digital` PDN tie (gf180-trng#224) -- see the module docstring's own
-#: section. Local X bounds (digital's own content-origin frame) of the
-#: `combiner_sampler | digital` isolation channel, verified directly against
-#: the committed composed placement (`reports/compose.json`'s own
-#: `origins_um`): `combiner_sampler`'s own guarded region ends at absolute
-#: x = 499.58, `digital`'s own guard ring starts at x = 519.58 (the 20 um
-#: `ISOLATION_CHANNEL_UM` gap `floorplan.py`'s own `_row_offsets` leaves),
-#: and `digital`'s own *content* origin -- what every `origin["digital"]`
-#: this module receives actually is -- sits one more `GUARD_RING_WIDTH_UM`
-#: (1 um) east of that, at x = 520.58. So in `digital`'s own local frame the
-#: channel runs from 499.58 - 520.58 = -21.0 to 519.58 - 520.58 = -1.0.
-_DIGITAL_CHANNEL_X_LOCAL = (-21.0, -1.0)
-
-#: Where the two PDN-tie risers cross that channel, one micron apart --
-#: clearing `metal3.space.1` more than 3x over -- and clear of both
-#: `combiner_sampler`'s own channel risers (`CS_CHANNEL_RISER_X`, which land
-#: within about 4.4 um of *that* region's own edge, i.e. near this channel's
-#: own west bound) and `digital`'s own 1 um guard ring band at this
-#: channel's own east bound.
-VSS_PDN_RISER_X_LOCAL = -9.0
-VDDD_PDN_RISER_X_LOCAL = -8.0
-
-#: How far past each PDN strap's own drawn west edge (`digital_pdn_strap_
-#: bands` reads it from `trng_top.def`, ~10.08 um local for both `vddd` and
-#: `vss`) this module's own docking rectangle reaches -- enough for a real
-#: overlap, nowhere near that strap's own east edge (~538.7 um), which
-#: nothing this module draws ever comes close to.
-PDN_STRAP_DOCK_REACH_UM = 2.0
-
-#: How far west of the PDN riser's own X the Metal5 docking rectangle's own
-#: west edge extends, so the Via4 landing at that riser X (`_via(VIA4, x,
-#: y_mid)`) sits *inside* the Metal5 rectangle rather than exactly on its
-#: edge. Without this, the rectangle drawn as `_hrect(METAL5, x, x_dock,
-#: ...)` starts exactly at the via's own centre X, giving zero overlap on
-#: the via's west half -- `metal5.enclosing.via4.1` (minimum metal5 overlap
-#: of via4, threshold 0.01 um in this deck) then fails on exactly that
-#: sliver (verified directly: `klt drc` on the composed stream reported two
-#: `metal5.enclosing.via4.1` violations, one per net, before this margin was
-#: added). 0.15 um clears that threshold by 15x and costs nothing -- the
-#: channel is 20 um wide and nothing else this module draws is anywhere
-#: near this riser's own west side.
+#: The `digital` PDN tie (gf180-trng#224, redesigned for the stacked
+#: arrangement in gf180-trng#803) -- see the module docstring's section.
+#:
+#: `digital` sits above the analog strip, so its supply risers cannot use the
+#: `combiner_sampler | digital` channel the side-by-side row had: the only
+#: vertical corridor that reaches the strip's trunks without crossing a ring's
+#: isolation channel is the stack's own **east flank**. There each tie is one
+#: wide Metal3 riser, placed east of every top-pin wrap column
+#: (`EAST_RISER_*`), that docks onto the *east end* of the lowest Metal5 PDN
+#: strap -- Metal5 is drawn nowhere else, so the hop onto the strap crosses
+#: only `digital`'s own guard ring and touches nothing below Metal5.
+#:
+#: How far west of a Via4 landing the Metal5 rectangle's own west edge
+#: extends, so the via sits *inside* the rectangle rather than on its edge
+#: (`metal5.enclosing.via4.1`, threshold 0.01 um in this deck, failed on
+#: exactly that sliver before this margin; verified with `klt drc` on the
+#: composed stream). 0.15 um clears it 15x.
 METAL5_VIA4_ENCLOSE_UM = 0.15
 
-assert (
-    _DIGITAL_CHANNEL_X_LOCAL[0] + 4.4 + MIN_SPACE
-    < VSS_PDN_RISER_X_LOCAL
-    < _DIGITAL_CHANNEL_X_LOCAL[1] - 1.0
-), "vss PDN riser must clear combiner_sampler's own channel risers and digital's own guard band"
-assert (
-    _DIGITAL_CHANNEL_X_LOCAL[0] + 4.4 + MIN_SPACE
-    < VDDD_PDN_RISER_X_LOCAL
-    < _DIGITAL_CHANNEL_X_LOCAL[1] - 1.0
-), "vddd PDN riser must clear combiner_sampler's own channel risers and digital's own guard band"
-assert abs(VSS_PDN_RISER_X_LOCAL - VDDD_PDN_RISER_X_LOCAL) >= MIN_SPACE + WIRE_W, \
-    "the two PDN risers must clear metal3.space.1 from each other"
+#: `PDN_RISER_W_UM` is the riser's drawn Metal3 width, which sets both its
+#: sheet-resistance squares and how many cuts fit across it. Both ends land
+#: through a Via array rather than the single 0.26 um cut the signal risers
+#: use: the row of `PDN_VIA_COLS` Via3 cuts across the Metal4 trunk, and a
+#: `PDN_VIA_COLS` x `PDN_VIA_COLS` Via3 + Via4 array on the Metal4 pad under
+#: the strap dock. `PDN_VIA_PITCH_UM` leaves 0.30 um between cuts (the deck's
+#: via3/via4 spacing floor is 0.28 um).
+PDN_RISER_W_UM = 2.0
+PDN_VIA_COLS = 4
+PDN_VIA_PITCH_UM = 0.56
+#: Edge-to-edge air between the last top-pin wrap column and the first PDN
+#: riser, and between the two PDN risers.
+PDN_RISER_GAP_UM = 1.0
+#: How far the Metal5 dock reaches *into* the strap from its east end.
+PDN_STRAP_DOCK_REACH_UM = 2.0
+#: Clearance, beyond the deck's own `metal3.space.1`, kept between the
+#: eastmost `combiner_sampler` riser column and the first wrap column.
+STACK_EAST_MARGIN_UM = 0.5
 
-#: `{pin name -> its own PDN riser's local X}` -- `wiring_plan`'s own
-#: `anchor_for` uses this to recognise a `digital` endpoint that needs the
-#: `"digital_pdn_strap"` anchor kind instead of the generic per-pin
-#: `digital_pin_positions()` lookup every other `digital` endpoint uses.
-_DIGITAL_PDN_RISER_X_LOCAL = {"vss": VSS_PDN_RISER_X_LOCAL, "vddd": VDDD_PDN_RISER_X_LOCAL}
+assert PDN_VIA_PITCH_UM - VIA_SZ >= 0.28, "via3/via4 cut-to-cut spacing floor"
+assert (PDN_VIA_COLS - 1) * PDN_VIA_PITCH_UM + VIA_SZ <= PDN_RISER_W_UM - 0.02, \
+    "the cut array must sit inside the riser/pad with >= 0.01 um enclosure per side"
+assert PDN_RISER_GAP_UM >= MIN_SPACE, "metal3.space.1 between wrap and PDN risers"
+
+#: `{pin name -> its position among the PDN risers, west to east}` --
+#: `wiring_plan`'s own `anchor_for` uses this to recognise a `digital`
+#: endpoint that needs the `"digital_pdn_strap"` anchor kind instead of the
+#: generic per-pin `digital_pin_positions()` lookup.
+_DIGITAL_PDN_RISER_SLOT = {"vss": 0, "vddd": 1}
+
+
+def stack_digital_east_um(cs_east_abs: float) -> float:
+    """The least composed-frame x at which `digital`'s content east edge can
+    sit in the stacked arrangement (gf180-trng#803).
+
+    `combiner_sampler`'s own block-level tracks leave its east edge on
+    Metal3 risers at `cs_east_abs + CS_CHANNEL_RISER_X[net]`; the stack's
+    first top-pin wrap column is `EAST_RISER_CLEAR_UM` east of `digital`'s own
+    content edge. Both run vertically on Metal3 over the same y range, so the
+    first wrap column must clear the eastmost CS column by `metal3.space.1`
+    (`MIN_SPACE`) plus `STACK_EAST_MARGIN_UM`. Derived from the two tables
+    rather than set as an overhang constant, so changing either re-derives
+    it."""
+    cs_last = cs_east_abs + max(CS_CHANNEL_RISER_X.values())
+    first_wrap = cs_last + WIRE_W + MIN_SPACE + STACK_EAST_MARGIN_UM
+    return round(first_wrap - EAST_RISER_CLEAR_UM, 3)
+
+
+def pdn_riser_x_local(pin: str, digital_east_local: float, top_slots: int) -> float:
+    """Local x (digital's content-origin frame) of `pin`'s PDN riser centre:
+    east of the `top_slots` wrap columns, `PDN_RISER_GAP_UM` of air from the
+    last one, the two risers `PDN_RISER_GAP_UM` apart."""
+    last_wrap_edge = (digital_east_local + EAST_RISER_CLEAR_UM
+                      + max(top_slots - 1, 0) * EAST_RISER_PITCH_UM + WIRE_W / 2)
+    first_centre = last_wrap_edge + PDN_RISER_GAP_UM + PDN_RISER_W_UM / 2
+    return round(first_centre + _DIGITAL_PDN_RISER_SLOT[pin]
+                 * (PDN_RISER_W_UM + PDN_RISER_GAP_UM), 4)
 
 
 # --------------------------------------------------------------------------- #
@@ -867,9 +875,11 @@ def top_edge_legs(anchor: tuple, origin: dict[str, float], trunk_y: float
 
 
 def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
-                       ) -> tuple[list[dict], float]:
+                       ) -> tuple[list[dict], float, float]:
     """Draw one endpoint's own via stack and its Metal3 riser down to
-    `trunk_y`; return `(shapes, riser x)` in the composed frame."""
+    `trunk_y`; return `(shapes, riser x, half extent)` in the composed
+    frame. The half extent is how far the Metal4 trunk must reach past the
+    riser centre: the via runout, or half the riser for a wide PDN riser."""
     kind = anchor[0]
     shapes: list[dict] = []
 
@@ -918,34 +928,39 @@ def _endpoint_geometry(anchor: tuple, origin: dict[str, float], trunk_y: float
         shapes.append(_via(VIA3, x_east, track_y))       # Metal4 landing -> Metal3 riser
         riser_x, riser_top = x_east, track_y
     elif kind == "digital_pdn_strap":
-        # gf180-trng#224 -- see the module docstring's "The `digital` PDN
-        # tie" section. `lx_riser` is one of VSS_PDN_RISER_X_LOCAL/
-        # VDDD_PDN_RISER_X_LOCAL (inside the isolation channel, west of
-        # `digital`'s own boundary); `(ly0, ly1)` is the lowest PDN strap
-        # band `digital_pdn_strap_bands` found; `lx_dock` is that band's own
-        # west edge plus PDN_STRAP_DOCK_REACH_UM (east of `lx_riser`, inside
-        # `digital`'s own footprint, overlapping real strap metal). The
-        # riser stays Metal3 the whole way up from the trunk (drawn by the
-        # generic code below); only the final, purely-in-channel-then-onto-
-        # the-strap hop is this net's own Metal4/Via4/Metal5.
+        # gf180-trng#224/#803 -- see the module docstring's "The `digital`
+        # PDN tie". `lx_riser` is the riser centre on the stack's east flank
+        # (`pdn_riser_x_local`); `(ly0, ly1)` is the lowest PDN strap band;
+        # `lx_dock` is that band's east end minus `PDN_STRAP_DOCK_REACH_UM`.
+        # One wide Metal3 riser climbs from the trunk to the strap's height,
+        # lands through a Via3 + Via4 array on a Metal4 pad, and a Metal5 dock
+        # as tall as the strap runs west onto it.
         _, lx_riser, ly0, ly1, lx_dock = anchor
         x = lx_riser + origin["x"]
         y0 = ly0 + origin["y"]
         y1 = ly1 + origin["y"]
         y_mid = (y0 + y1) / 2
         x_dock = lx_dock + origin["x"]
-        shapes.append(_hrect(METAL5, x - METAL5_VIA4_ENCLOSE_UM, x_dock, y_mid,
-                             h=(y1 - y0)))
-        shapes.append(_via(VIA4, x, y_mid))          # Metal4 landing -> Metal5
-        shapes.append(_pad(METAL4, x, y_mid))
-        shapes.append(_via(VIA3, x, y_mid))          # Metal3 riser  -> Metal4
-        riser_x, riser_top = x, y_mid
+        half = PDN_RISER_W_UM / 2
+        offs = [(i - (PDN_VIA_COLS - 1) / 2) * PDN_VIA_PITCH_UM
+                for i in range(PDN_VIA_COLS)]
+        shapes.append(_hrect(METAL5, x_dock, x + half, y_mid, h=(y1 - y0)))
+        shapes.append(_rect(METAL4, x - half, y_mid - half, x + half, y_mid + half))
+        for dx in offs:
+            for dy in offs:
+                shapes.append(dict(_via(VIA4, x + dx, y_mid + dy), _array="pdn-via4-top"))
+                shapes.append(dict(_via(VIA3, x + dx, y_mid + dy), _array="pdn-via3-top"))
+        shapes.append(_vrect(METAL3, x, trunk_y - VIA_RUNOUT, y_mid + half, w=PDN_RISER_W_UM))
+        shapes.append(_hrect(METAL4, x - half, x + half, trunk_y))
+        for dx in offs:
+            shapes.append(dict(_via(VIA3, x + dx, trunk_y), _array="pdn-via3-trunk"))
+        return shapes, x, half
     else:  # pragma: no cover - guarded by wiring_plan's own validation
         raise WiringError(f"unknown endpoint anchor kind {kind!r}")
 
     shapes.append(_vrect(METAL3, riser_x, trunk_y - VIA_RUNOUT, riser_top + VIA_RUNOUT))
     shapes.append(_via(VIA3, riser_x, trunk_y))  # Metal3 riser -> Metal4 trunk
-    return shapes, riser_x
+    return shapes, riser_x, VIA_RUNOUT
 
 
 def wiring_plan(origins: dict[str, dict[str, float]],
@@ -966,6 +981,13 @@ def wiring_plan(origins: dict[str, dict[str, float]],
     digital_pins = digital_pin_positions()
     digital_bbox = content_bboxes.get("digital") or digital_die_bbox()
     top_slots = {"next": 0}
+    top_slot_count = sum(
+        1
+        for net in drawn_nets()
+        for rid, pin in net["endpoints"]
+        if rid == "digital" and pin not in _DIGITAL_PDN_RISER_SLOT
+        and digital_pin_edge(digital_pins[pin][1], digital_bbox) != "bottom"
+    )
 
     def anchor_for(rid: str, pin: str) -> tuple:
         if rid in ring_anchor_tables:
@@ -987,15 +1009,15 @@ def wiring_plan(origins: dict[str, dict[str, float]],
                 )
             return cs_table[pin]
         if rid == "digital":
-            riser_x = _DIGITAL_PDN_RISER_X_LOCAL.get(pin)
-            if riser_x is not None:
-                # gf180-trng#224 -- `vddd`/`vss` dock against a real PDN
-                # strap, not the small per-pin Metal4 stub every other
-                # `digital` endpoint uses; see `digital_pdn_strap_bands` and
-                # the module docstring's "The `digital` PDN tie" section.
-                band_x0, band_y0, _band_x1, band_y1 = digital_pdn_strap_bands(pin)[0]
-                dock_x = band_x0 + PDN_STRAP_DOCK_REACH_UM
-                return ("digital_pdn_strap", riser_x, band_y0, band_y1, dock_x)
+            if pin in _DIGITAL_PDN_RISER_SLOT:
+                # gf180-trng#224/#803 -- `vddd`/`vss` dock against the east
+                # end of a real PDN strap, not the small per-pin Metal4 stub
+                # every other `digital` endpoint uses; see
+                # `digital_pdn_strap_bands` and the module docstring.
+                _bx0, band_y0, band_x1, band_y1 = digital_pdn_strap_bands(pin)[0]
+                riser_x = pdn_riser_x_local(pin, digital_bbox["x1"], top_slot_count)
+                return ("digital_pdn_strap", riser_x, band_y0, band_y1,
+                        band_x1 - PDN_STRAP_DOCK_REACH_UM)
             if pin not in digital_pins:
                 raise WiringError(
                     f"region 'digital' pin {pin!r} is declared by "
@@ -1022,13 +1044,15 @@ def wiring_plan(origins: dict[str, dict[str, float]],
         trunk_y = round(TRUNK_Y0 - index * TRUNK_PITCH_UM, 4)
         net_shape_start = len(shapes)
         riser_xs: list[float] = []
+        reaches: list[float] = []
         endpoints: list[dict] = []
         for rid, pin in net["endpoints"]:
             anchor = anchor_for(rid, pin)
             origin = origins[rid]
-            geometry, riser_x = _endpoint_geometry(anchor, origin, trunk_y)
+            geometry, riser_x, reach = _endpoint_geometry(anchor, origin, trunk_y)
             shapes.extend(geometry)
             riser_xs.append(riser_x)
+            reaches.append(reach)
             endpoint = {
                 "region": rid, "pin": pin, "anchor": anchor[0],
                 "riser_x_um": round(riser_x, 4),
@@ -1046,8 +1070,10 @@ def wiring_plan(origins: dict[str, dict[str, float]],
             base = min(riser_xs) if side == "west" else max(riser_xs)
             chip_pin_x = round(base + offset, 4)
 
-        xs = riser_xs + ([chip_pin_x] if chip_pin_x is not None else [])
-        x0, x1 = min(xs) - VIA_RUNOUT, max(xs) + VIA_RUNOUT
+        x0 = min(min(r - w for r, w in zip(riser_xs, reaches)),
+                 (chip_pin_x - VIA_RUNOUT) if chip_pin_x is not None else float("inf"))
+        x1 = max(max(r + w for r, w in zip(riser_xs, reaches)),
+                 (chip_pin_x + VIA_RUNOUT) if chip_pin_x is not None else float("-inf"))
         shapes.append(_hrect(METAL4, x0, x1, trunk_y))
 
         # Every drawn net gets a label on its own trunk, not just the ones
