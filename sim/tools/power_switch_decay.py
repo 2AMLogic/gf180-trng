@@ -33,10 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import power_switch as _ps  # noqa: E402
-from harness import klt_request as _kreq  # noqa: E402
-from harness import record_mint as _mint  # noqa: E402
 from harness import report as _report  # noqa: E402
-import _record_parsing as _rp  # noqa: E402
 import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = _ps.REPO_ROOT
