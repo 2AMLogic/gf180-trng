@@ -1,16 +1,17 @@
 {
   "schema": "gf180-trng/item7-analog-publication/1",
   "producer": "klt pex layout/rings/ro_ring11/ro_ring11.gds sim/tb/ro-ring11-pex/request.json --deck gf180mcu --pdk gf180mcuD --top ro_ring11 -o signoff/evidence/post-layout/ro_ring11.extracted.spice --outdir sim/.work/ro-ring11-pex --format json",
-  "producer_build": "0.6.0",
-  "layout_content_hash": "sha256:f204887a0a8bd41ee571acde05be227e6588940176ab41e303ca28b8c5daccbb",
+  "producer_build": "0.9.0",
+  "layout_content_hash": "sha256:27e6fdba1a3c2c56ee67c7b474f830f268ac8403467c3f4ec6b33599b3d8de75",
+  "source_sha256": "sha256:24e9e420cb01642dd70852ee53838aeab443e6db10ce4ebe329ba0fc8ed3276c",
   "inputs_sha256": {
-    "sim/tb/ro-ring11-pex/request.json": "sha256:b87d0357ef7680061725a62704568ba87c3c01c4fb9f8035b0c1c2e477c8ae2c",
-    "sim/tb/ro-ring11-pex/tb_ro_ring11_pex.sp": "sha256:b17054c889c886fbe821627e7d41ae82d2a06c87a1e5c0b6ac279e3354ea052a",
-    "sim/tb/ro-ring11-pex/ro_ring11_schematic.spice": "sha256:3ac8760678e0576b50756888464794a7aa8eca629abfdafecf8d07d0b241e5ca"
+    "sim/tb/ro-ring11-pex/request.json": "sha256:f1f585cb7774ffb333ba4a3325ffe7a9d16799b04b60150ee57c268f48fae980",
+    "sim/tb/ro-ring11-pex/tb_ro_ring11_pex.sp": "sha256:30cbbda9d340695edd4afdf4897f32afb24cca60627de842e79eb76f5f6f195c",
+    "sim/tb/ro-ring11-pex/ro_ring11_schematic.spice": "sha256:3ccc7e99c22f71c6954ffc8b44a0c4b60513764ed99d789a6ea8ecc7546ceb4c"
   },
-  "body_bias_status": "unbiased",
+  "body_bias_status": "biased",
   "envelope": {
     "file": "signoff/evidence/post-layout/ro_ring11.pex.json",
-    "sha256": "sha256:64142305833931f0ae97cc25dc1b2132bcdd2331d28a6194c8cfa7f2134f45ec"
+    "sha256": "sha256:40bf6e7ee1c2125abd4da04ecc7fa18a5d1a80d3825c55eeb6103c363110b57d"
   }
 }

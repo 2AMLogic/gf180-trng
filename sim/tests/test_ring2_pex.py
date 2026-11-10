@@ -24,7 +24,7 @@ bd = _load("ring_build_dut", "sim/tb/ro-ring11-pex/build_dut.py")
 check = _load("signoff_check", "signoff/check.py")
 
 DESIGN = bd.DESIGN.read_text()
-HEADER2 = ["ro"] + [f"n{i}" for i in range(1, 11)] + ["en", "vddr", "vss", "vsubs"]
+HEADER2 = ["ro"] + [f"n{i}" for i in range(1, 11)] + ["en", "vddr", "vss"]
 
 
 class Ring2Sizing(unittest.TestCase):
@@ -91,7 +91,7 @@ def netlist(header, top="ro_ring11_ring2", order=None):
 
 class Ring2Ports(unittest.TestCase):
     RING = [f"a|y{'' if i == 0 else '$' + str(i)}" for i in range(11)]
-    NAMED = ["en", "vddr", "vss", "vsubs"]
+    NAMED = ["en", "vddr", "vss"]
 
     def test_ring2_ports_resolve_by_geometry_not_ring1_order(self):
         order = [3, 0, 10, 5, 1, 9, 2, 8, 4, 7, 6]

@@ -137,9 +137,9 @@ at the entropy-binding corner.
 | Rate | `N` [L] | Ring power at power-binding corner [L] | `(★)` floor at entropy-binding corner [L] | XOR-tree power at power-binding corner [A] | Array area [A] | Mean interval between XOR-root transitions, entropy-binding corner [L] |
 |---|---|---|---|---|---|---|
 | (shipped) | 2 | 273 µW | — | 120 µW [M] | 1 389 µm² | 2.3 ns |
-| 100 kbps | 73 | 9 969 µW | 4 093 µW | 27 119 µW | 51 620 µm² | 63.3 ps |
-| 1 Mbps | 722 | 98 598 µW | 40 926 µW | 411 473 µW | 510 776 µm² | 6.40 ps |
-| 4 Mbps | 2 885 | 393 983 µW | 163 706 µW | 1 990 219 µW | 2 041 059 µm² | 1.60 ps |
+| 100 kbps | 73 | 9 969 µW | 4 093 µW | 27 119 µW | 61 182 µm² | 63.3 ps |
+| 1 Mbps | 722 | 98 598 µW | 40 926 µW | 411 473 µW | 605 350 µm² | 6.40 ps |
+| 4 Mbps | 2 885 | 393 983 µW | 163 706 µW | 1 990 219 µW | 2 418 965 µm² | 1.60 ps |
 
 How each column is made:
 
@@ -190,9 +190,9 @@ the tree is replaced by per-ring flops:
 
 | Rate | `N` [L] | Ring power at power-binding corner [L] | Per-ring sampler data power at power-binding corner [A] | Array area [A] |
 |---|---|---|---|---|
-| 100 kbps | 73 | 9 969 µW | 1 275 µW | 57 068 µm² |
-| 1 Mbps | 722 | 98 598 µW | 12 608 µW | 564 664 µm² |
-| 4 Mbps | 2 885 | 393 983 µW | 50 380 µW | 2 256 387 µm² |
+| 100 kbps | 73 | 9 969 µW | 1 275 µW | 66 631 µm² |
+| 1 Mbps | 722 | 98 598 µW | 12 608 µW | 659 238 µm² |
+| 4 Mbps | 2 885 | 393 983 µW | 50 380 µW | 2 634 293 µm² |
 
 - **Sampler data power [A]** — the charge a sampler flop's D input draws per
   ring transition, 9.36 fC (mean of the two flops in
@@ -284,14 +284,14 @@ tap); none include the digital section, which is unchanged by any option.
 
 | Rate | Option | Count | Area | Active power | Corner |
 |---|---|---|---|---|---|
-| 100 kbps | A (XOR tree) | 73 rings | 51 620 µm² [A] | 37 088 µW: rings 9 969 [L] + tree 27 119 [A]; **tree not viable** | `N`: `ss`/125/3.63; power: `ff`/−40/3.63 |
-| 100 kbps | A-post | 73 rings + 73 flops | 57 068 µm² [A] | 11 244 µW: rings 9 969 [L] + samplers 1 275 [A] | same |
+| 100 kbps | A (XOR tree) | 73 rings | 61 182 µm² [A] | 37 088 µW: rings 9 969 [L] + tree 27 119 [A]; **tree not viable** | `N`: `ss`/125/3.63; power: `ff`/−40/3.63 |
+| 100 kbps | A-post | 73 rings + 73 flops | 66 631 µm² [A] | 11 244 µW: rings 9 969 [L] + samplers 1 275 [A] | same |
 | 100 kbps | B | 1 tap | 74.6 µm² [A] | 0.019 µW gated [A]; 187.0 µW as built [M] | strobe bound: `ss`/125/2.97; power: `ff`/−40/3.63 |
-| 1 Mbps | A (XOR tree) | 722 rings | 510 776 µm² [A] | 510 071 µW: 98 598 [L] + 411 473 [A]; **tree not viable** | as above |
-| 1 Mbps | A-post | 722 + 722 | 564 664 µm² [A] | 111 206 µW: 98 598 [L] + 12 608 [A] | as above |
+| 1 Mbps | A (XOR tree) | 722 rings | 605 350 µm² [A] | 510 071 µW: 98 598 [L] + 411 473 [A]; **tree not viable** | as above |
+| 1 Mbps | A-post | 722 + 722 | 659 238 µm² [A] | 111 206 µW: 98 598 [L] + 12 608 [A] | as above |
 | 1 Mbps | B | 1 tap | 74.6 µm² [A] | 0.195 µW gated [A]; 187.0 µW as built [M] | as above |
-| 4 Mbps | A (XOR tree) | 2 885 rings | 2 041 059 µm² [A] | 2 384 202 µW: 393 983 [L] + 1 990 219 [A]; **tree not viable** | as above |
-| 4 Mbps | A-post | 2 885 + 2 885 | 2 256 387 µm² [A] | 444 363 µW: 393 983 [L] + 50 380 [A] | as above |
+| 4 Mbps | A (XOR tree) | 2 885 rings | 2 418 965 µm² [A] | 2 384 202 µW: 393 983 [L] + 1 990 219 [A]; **tree not viable** | as above |
+| 4 Mbps | A-post | 2 885 + 2 885 | 2 634 293 µm² [A] | 444 363 µW: 393 983 [L] + 50 380 [A] | as above |
 | 4 Mbps | B | 1 tap | 74.6 µm² [A] | 0.779 µW gated [A]; 187.0 µW as built [M] | as above |
 
 **Option B's row is not comparable with option A's** in the way the table's
@@ -337,9 +337,9 @@ at all.
   into rings), and the XOR root would have to pass transitions faster than one
   inverter delay of this process.
 - **Option A-post is plausible as a circuit, at a cost the block cannot
-  absorb.** At 100 kbps it needs ~11 mW and ~0.057 mm² for the entropy source
+  absorb.** At 100 kbps it needs ~11 mW and ~0.067 mm² for the entropy source
   alone (22× the power row, 1.1× the area row); at 1 Mbps, ~0.11 W and
-  ~0.56 mm². Five-stage rings would cut ring power ~4.9× if they hold swing at
+  ~0.66 mm². Five-stage rings would cut ring power ~4.9× if they hold swing at
   the binding corners, which is unmeasured. It is also an architecture change
   needing its own decision record.
 - **Option B is the only route whose cost does not grow with rate**: one tap

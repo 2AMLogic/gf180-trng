@@ -110,7 +110,7 @@ check:all` runs the demanding form.
 
 | | |
 |---|---|
-| `klt` | [klayout-tools][klt] on `PATH`, pinned to the release CI installs: `pip install "klayout-tools==0.6.0" "klayout==0.30.10"` — see ["Pinning the tool"](#pinning-the-tool) below. Brings its own KLayout Python module — no GUI, no Qt, no standalone `klayout` binary. |
+| `klt` | [klayout-tools][klt] on `PATH`, the release the fleet carries (CI installs the latest tagged release; the repo does not pin one, DR-0026 amendment of 2026-11-09): `pip install klayout-tools "klayout==0.30.10"` — see ["Pinning the tool"](#pinning-the-tool) below. Brings its own KLayout Python module — no GUI, no Qt, no standalone `klayout` binary. |
 | PDK | A gf180mcu install, found through **`sim/harness/pdk.py`** — the same resolver the simulations use, so a DRC run and a SPICE run cannot silently disagree about which PDK is installed. Run `python3 sim/run_corners.py --check-env` for install instructions. |
 
 The PDK variant is whatever `sim/pdk.json` pins (`gf180mcuD` today).
@@ -194,7 +194,7 @@ To reproduce a committed report exactly, install the build
 `environment.json` names. Today that is a release:
 
 ```sh
-pip install "klayout-tools==0.6.0" "klayout==0.30.10"   # klt_origin.tag v0.6.0
+pip install "klayout-tools==X.Y.Z" "klayout==0.30.10"   # X.Y.Z = klt_origin.tag in environment.json (v0.9.0 today)
 ```
 
 For a report written by a git build (`klt_origin.url` set), install that

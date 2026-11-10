@@ -9,7 +9,7 @@
                                                                 # hold a klt-pex-written netlist to the DUT
 
 `--check` and the default mode run `klt extract`; set `KLT` to choose the
-binary (for example `KLT="uvx --from klayout-tools==0.6.0 --with
+binary (for example `KLT="uvx --from klayout-tools --with
 klayout==0.30.10 klt"` for DR-0026's producer build). The other two modes
 need no klt, ngspice or PDK.
 
@@ -22,9 +22,10 @@ re-pointed at the netlist it extracted from the layout. The testbench's
 headers must agree position by position.
 
 `klt extract` over `layout/blocks/combiner_sampler/combiner_sampler.gds`
-promotes fourteen ports, named after whatever labels sit on each net inside
+promotes thirteen ports, named after whatever labels sit on each net inside
 the instanced cells: `a a$1 a|d|y b|d|y clk d|vdd d|y q q$1 q$2 q$3 rst_n
-vss vsubs` as of klt 0.6.0. Five of those (`a`, `a$1`, `q` .. `q$3`) say
+vss` as of klt 0.9.0 (klt 0.6.0 also listed a fourteenth, `vsubs`, before the
+layout carried well and substrate taps). Five of those (`a`, `a$1`, `q` .. `q$3`) say
 nothing about which schematic net they are, and three more are merged-label
 names. The layout's own LVS reference (`combiner_sampler.spice`) uses a
 different port list again. This script writes a schematic `combiner_sampler`
@@ -44,10 +45,8 @@ Both netlists are reduced to a bipartite graph of MOSFETs and nets:
 * schematic side: the rendered DUT, flattened through its subcircuits;
 * each device is labelled by (model, W, L); each net by which devices touch
   it as gate or as source/drain (source and drain are interchangeable).
-  Bulk terminals are ignored -- the extraction puts every PMOS body on an
-  anonymous floating well net and every NMOS body on `vsubs`, the schematic
-  ties them to `vdd`/`vss`; that difference is the documented `body_bias`
-  limitation, not a connectivity difference to resolve here.
+  Bulk terminals are ignored -- the tapped layout ties them to `vdd`/`vss`
+  as the schematic does, and they carry no connectivity evidence here.
 
 Colour refinement (1-dimensional Weisfeiler-Leman) runs over both graphs
 jointly until the partition stops splitting. Every colour class must hold
@@ -58,8 +57,9 @@ net; a class with two or more nets is an ambiguity (a symmetry refinement
 cannot break) and is refused rather than guessed. Finally, any extracted port
 whose label set names a schematic top-level net (`clk`, `rst_n`, `vss`,
 `vdd`) must resolve to that net, so the labels can veto but never decide.
-`vsubs` has no schematic counterpart and is passed through by name; it must
-touch no gate, source or drain.
+`PASSTHROUGH_PORTS` is empty since the tapped layout: the extraction no
+longer promotes a `vsubs` port. The mechanism stays for an extracted port with
+no schematic counterpart, which must touch no gate, source or drain.
 
 `--verify-netlist` runs the same derivation over the netlist a `klt pex` run
 actually extracted and simulated and fails unless it reproduces the committed
@@ -125,7 +125,7 @@ MIRRORED_IN_SAMPLER = ("ro_buf", "xor2")
 #: Schematic top-level nets an extracted label may name (labels veto only).
 LABEL_VETO_NETS = ("clk", "rst_n", "vss", "vdd")
 #: Extracted ports with no schematic counterpart, passed through by name.
-PASSTHROUGH_PORTS = ("vsubs",)
+PASSTHROUGH_PORTS: tuple[str, ...] = ()
 MOS_MODELS = ("nfet_03v3", "pfet_03v3")
 
 _PARAM = re.compile(r"^([A-Za-z_]\w*)=(.*)$")
@@ -227,8 +227,7 @@ def render_dut(port_names: list[str], sources: dict[Path, str] | None = None) ->
         "* schematic net that sits there in the layout (identified by connectivity;",
         "* see build_dut.py). The instance lines are design/ro_array_core.spice's",
         "* xb1/xb2/xa1 and design/sampler_core.spice's xsb/xsv/xsr1/xsr2; the leaf",
-        "* subcircuits are transcribed unchanged. vsubs is declared and unused: the",
-        "* schematic has no substrate-tap net.",
+        "* subcircuits are transcribed unchanged.",
         "",
         f".subckt {TOP} {' '.join(port_names)}",
     ]

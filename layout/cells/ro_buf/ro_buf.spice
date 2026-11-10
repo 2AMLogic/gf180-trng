@@ -28,19 +28,14 @@
 * Device sizes must agree with layout/cells/ro_buf/build.py's W_P/W_N/
 * L_GATE -- `klt lvs` compares W and L as device properties.
 *
-* Bulk terminals follow the gf180mcu curated extraction deck's documented
-* behaviour (see layout/README.md, "What the curated decks do and do not
-* check" -- the same approximation every other cell here already documents):
-*   - NMOS bulk is the deck's substrate global, `vsubs` -- not the `vss`
-*     design/xschem/ro_buf.sch itself wires XMn's bulk to.
-*   - PMOS bulk is a floating net: the curated deck does not tie an Nwell to
-*     the tap inside it, so the well is an unnamed net picking up whatever
-*     Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is that net --
-*     not the `vdd` design/xschem/ro_buf.sch wires XMp's bulk to -- and it is
-*     deliberately connected to nothing else. This cell draws no well tap and
-*     no well split, so its one PMOS is the well's only occupant.
+* Bulk terminals: every cell, ring and block draws an Nwell tap tied to
+* `vdd` and a substrate tap tied to `vss` (layout/testcells/gdsii.py's
+* `add_taps`; klt >= 0.8.0's `comp.tap_distance.*` requires them), so the
+* extractor reports every PMOS bulk as `vdd` and every NMOS bulk as
+* `vss` -- the same bulk connections design/xschem/ wires. There is no
+* `vsubs` pin and no floating-well net any more.
 
-.SUBCKT ro_buf a y vdd vss vsubs
-MP y a vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MN y a vss vsubs nfet L=0.28U W=0.22U
+.SUBCKT ro_buf a y vdd vss
+MP y a vdd vdd pfet L=0.28U W=0.44U
+MN y a vss vss nfet L=0.28U W=0.22U
 .ENDS ro_buf

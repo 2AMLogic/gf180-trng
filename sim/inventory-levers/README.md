@@ -32,7 +32,7 @@ Every figure below is tool output, before and after:
 | placed logical instances | 1490 | 1423 |
 | placed cell area um^2 (`run_sta.py` records) | 62 081.5 | 60 743.7 |
 | routed digital die um^2 (`place_and_route.json`) | 159 145 | 156 590 |
-| floorplan area um^2 (`area.json`) | 175 789.86 | 173 157.92 |
+| floorplan area um^2 (`area.json`) | 175 789.86 | 174 030.17 |
 | worst idle uA (`power_rollup.py`) | 2.211 | 2.148 |
 | worst active uW (`power_rollup.py`) | 418.5 | 418.3 |
 

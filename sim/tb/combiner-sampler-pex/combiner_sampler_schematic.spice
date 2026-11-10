@@ -6,10 +6,9 @@
 * schematic net that sits there in the layout (identified by connectivity;
 * see build_dut.py). The instance lines are design/ro_array_core.spice's
 * xb1/xb2/xa1 and design/sampler_core.spice's xsb/xsv/xsr1/xsr2; the leaf
-* subcircuits are transcribed unchanged. vsubs is declared and unused: the
-* schematic has no substrate-tap net.
+* subcircuits are transcribed unchanged.
 
-.subckt combiner_sampler rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss vsubs
+.subckt combiner_sampler rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss
 xb1 rn1 ro1 vdd vss ro_buf
 xb2 rn2 ro2 vdd vss ro_buf
 xa1 ro1 ro2 xo vdd vss xor2

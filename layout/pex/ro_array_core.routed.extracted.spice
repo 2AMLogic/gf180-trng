@@ -13,18 +13,18 @@
 .include "ro_buf.extracted.spice"
 .include "xor2.extracted.spice"
 
-.subckt ro_ring11_routed_extracted en ro vddr vss vsubs
-xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss vsubs ro_ring11
+.subckt ro_ring11_routed_extracted en ro vddr vss
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss ro_ring11
 .ends
 
-.subckt ro_ring11_ring2_routed_extracted en ro vddr vss vsubs
-xcore ro n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 en vddr vss vsubs ro_ring11_ring2
+.subckt ro_ring11_ring2_routed_extracted en ro vddr vss
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss ro_ring11_ring2
 .ends
 
-.subckt ro_array_core_routed_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 vsubs
-xr1 en1 rn1 vddr1 vss vsubs ro_ring11_routed_extracted
-xr2 en2 rn2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted
-xb1 rn1 vdd vss vsubs ro1 ro_buf
-xb2 rn2 vdd vss vsubs ro2 ro_buf
-xa1 ro1 ro2 vdd vss vsubs xo xor2
+.subckt ro_array_core_routed_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2
+xr1 en1 rn1 vddr1 vss ro_ring11_routed_extracted
+xr2 en2 rn2 vddr2 vss ro_ring11_ring2_routed_extracted
+xb1 rn1 vdd vss ro1 ro_buf
+xb2 rn2 vdd vss ro2 ro_buf
+xa1 ro1 ro2 vdd vss xo xor2
 .ends

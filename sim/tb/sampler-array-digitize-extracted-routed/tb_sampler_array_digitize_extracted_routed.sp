@@ -216,7 +216,7 @@ vtr vsup vdd dc 0
 * belonged to. That is immaterial here -- all eleven sources are identical,
 * and each sits between one net's driver side and that same net's receiver
 * side whichever stage it turns out to be.
-xr1 en ro1 vddr1 0 0 n11 g11 n12 g12 n13 g13 n14 g14 n15 g15 n16 g16 n17 g17 n18 g18 n19 g19 n1a g1a g10 ro_ring11_routed_ntap
+xr1 en ro1 vddr1 0 n11 g11 n12 g12 n13 g13 n14 g14 n15 g15 n16 g16 n17 g17 n18 g18 n19 g19 n1a g1a g10 ro_ring11_routed_ntap
 vn10 ro1 g10 dc 0 trnoise( vn_rms vn_dt 0 0)
 vn11 n11 g11 dc 0 trnoise( vn_rms vn_dt 0 0)
 vn12 n12 g12 dc 0 trnoise( vn_rms vn_dt 0 0)
@@ -235,7 +235,7 @@ vn1a n1a g1a dc 0 trnoise( vn_rms vn_dt 0 0)
 * in its own extracted header -- which is exactly the positional fact
 * klayout-tools#1543 disclosed and layout/pex/build.py resolves. For THIS ring:
 *   ro__rx n1 n1__rx n2 n2__rx ... n10 n10__rx
-xr2 en ro2 vddr2 0 0 g20 n21 g21 n22 g22 n23 g23 n24 g24 n25 g25 n26 g26 n27 g27 n28 g28 n29 g29 n2a g2a ro_ring11_ring2_routed_ntap
+xr2 en ro2 vddr2 0 n21 g21 n22 g22 n23 g23 n24 g24 n25 g25 n26 g26 n27 g27 n28 g28 n29 g29 n2a g2a g20 ro_ring11_ring2_routed_ntap
 vn20 ro2 g20 dc 0 trnoise( vn_rms vn_dt 0 0)
 vn21 n21 g21 dc 0 trnoise( vn_rms vn_dt 0 0)
 vn22 n22 g22 dc 0 trnoise( vn_rms vn_dt 0 0)

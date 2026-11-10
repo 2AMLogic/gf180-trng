@@ -25,6 +25,6 @@ ven en 0 dc 0 pulse(0 vdd_val 5n 1p 1p 10u 20u)
 vclk clk 0 dc 0
 vrst rst_n 0 dc vdd_val
 
-xdut en en vsup vsup vsup 0 clk rst_n rb rv rbit1 rbit2 0 sampler_core_fullchip_extracted
+xdut en en vsup vsup vsup 0 clk rst_n rb rv rbit1 rbit2 sampler_core_fullchip_extracted
 
 bvth vth 0 v = 0.5*vdd_val

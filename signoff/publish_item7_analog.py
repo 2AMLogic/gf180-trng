@@ -13,7 +13,7 @@ layout/rings/ro_ring11/ro_ring11.gds with parasitics, run
 sim/tb/ro-ring11-pex/request.json against the schematic DUT and against the
 extracted netlist at every corner of DR-0006's 27-point grid, and report the
 per-corner, per-row delta. Use the DR-0026 producer build
-(`pip install "klayout-tools==0.6.0" "klayout==0.30.10"`). A 27-corner grid
+(`pip install "klayout-tools" "klayout==0.30.10"`). A 27-corner grid
 on each side is a SPICE grid: on a host that exports `KLT_SIM_BACKEND=batch`
 it goes to the batch fleet; elsewhere it runs on the local backend.
 `--envelope` publishes a run already made with exactly these arguments (its
@@ -50,8 +50,8 @@ What it does, and refuses to do:
   explicitly unrun fixture (see sim/tb/ro-ring11-ring2-pex/README.md).
 * `body_bias` is **not** a refusal condition. It is reported, never graded,
   by both `klt pex` and `klt signoff`; this repository states it in
-  signoff/README.md instead. Every PMOS body in this layout is untapped, so
-  the status is expected to read "unbiased".
+  signoff/README.md instead. Every hand-drawn cell carries well and
+  substrate taps (#705), so the status is expected to read "biased".
 """
 
 from __future__ import annotations
@@ -91,9 +91,10 @@ RING2_COVERAGE_EXCLUSIONS = [
     "array-level records",
     "determinism: noiseless transient, no device noise or mismatch; nothing here estimates "
     "entropy, bias or jitter",
-    "bodies: every PMOS body in the extraction is an untapped floating n-well (body_bias "
-    "below); the schematic side ties PMOS bulk to vddr. The extracted-side result is a "
-    "diagnosis under that limitation (#339/#411), not a prediction of fabricated silicon",
+    "bodies: the layout ties every bulk to a supply through drawn well and substrate taps "
+    "(body_bias below), as the schematic side does; the testbench holds the substrate "
+    "reference vsubs at 0 V. The extracted-side result is not a prediction of fabricated "
+    "silicon",
     "timing and silicon: no full-chip timing or silicon-performance claim",
 ]
 

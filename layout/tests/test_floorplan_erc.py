@@ -13,7 +13,7 @@ Two groups:
   run, so the controls mutate a tiny stand-in in a temp dir (never a
   committed file). They skip unless the `klt` on PATH reports exactly the
   pinned version; on a host with a different klt, put a pinned shim first:
-  `uvx --from "klayout-tools==0.6.0" klt`.
+  `uvx --from "klayout-tools" klt`.
 """
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ def _pinned_klt_available() -> bool:
                               text=True, timeout=60)
     except (OSError, subprocess.SubprocessError):
         return False
-    return re.fullmatch(r"klt\s+0\.6\.0(\+\S+)?", (done.stdout or done.stderr).strip()) is not None
+    return re.fullmatch(r"klt\s+\d+\.\d+\.\d+", (done.stdout or done.stderr).strip()) is not None
 
 
 def run_erc_on(gds: str) -> dict:
@@ -101,10 +101,10 @@ class SpecShapeTests(unittest.TestCase):
     def setUp(self):
         self.spec = json.loads(erc_supply.SPEC.read_text())
 
-    def test_pin_matches_signoff(self):
-        text = (REPO_ROOT / "signoff" / "check.py").read_text()
-        pin = re.search(r'^KLT_PIN = "([^"]+)"', text, re.MULTILINE).group(1)
-        self.assertEqual(erc_supply.KLT_PIN, pin)
+    def test_release_version_form(self):
+        self.assertTrue(erc_supply._RELEASE_RE.match("0.9.0"))
+        self.assertFalse(erc_supply._RELEASE_RE.match("0.9.1.dev3+gabc"))
+        self.assertFalse(erc_supply._RELEASE_RE.match("None"))
 
     def test_one_supply_net_per_physical_supply(self):
         nets = self.spec["nets"]
@@ -173,7 +173,7 @@ class FreshnessTests(unittest.TestCase):
 
     def test_wrong_klt_version_fails(self):
         bad = copy.deepcopy(self.report)
-        bad["provenance"]["klt_version"] = "0.7.0"
+        bad["provenance"]["klt_version"] = "0.9.1.dev3+gabc1234"  # not a tagged release
         self.assertTrue(any("klt_version" in p for p in erc_supply.report_problems(bad)))
 
     def test_dropped_disclosure_fails(self):
@@ -222,7 +222,7 @@ class FreshnessTests(unittest.TestCase):
 
 
 @unittest.skipUnless(_pinned_klt_available(),
-                     "needs the pinned klt (0.6.0) first on PATH")
+                     "needs a release klt first on PATH")
 class KltControlTests(unittest.TestCase):
     def _run(self, **kw) -> dict:
         with tempfile.TemporaryDirectory() as tmp:

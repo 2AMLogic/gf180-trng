@@ -34,10 +34,7 @@
 * xor2.spice nor sampler_dff.spice exposes its own internal nodes as a pin)
 * suffixed by instance name (`an_XA1`, `m_XSB`, ...) so seven separately-
 * drawn cells' internal nodes are never accidentally tied together by a
-* shared name; same for each instance's own floating Nwell net
-* (`NWELL_FLOAT_XA1`, ... -- see xor2.spice's/sampler_dff.spice's/
-* ro_buf.spice's own headers for why that net is deliberately
-* unnamed-and-per-instance, not `vdd`).
+* shared name.
 *
 * `ro1`/`ro2` are `xb1`/`xb2`'s own buffered outputs, now internal to this
 * block (each has exactly two other terminals inside this SUBCKT: `xa1`'s
@@ -58,115 +55,116 @@
 * own W/L constants -- `klt lvs` compares W and L as device properties, the
 * same rule every other reference in this repository follows.
 *
-* Bulk terminals follow the gf180mcu curated extraction deck's documented
-* approximation (see layout/README.md, "What the curated decks do and do
-* not check", and layout/cells/ro_stage/ro_stage.spice's own header for
-* the full account): NMOS bulk is the deck's `vsubs` substrate global;
-* PMOS bulk is each instance's own anonymous floating-well net.
+* Bulk terminals: every cell, ring and block draws an Nwell tap tied to
+* `vdd` and a substrate tap tied to `vss` (layout/testcells/gdsii.py's
+* `add_taps`; klt >= 0.8.0's `comp.tap_distance.*` requires them), so the
+* extractor reports every PMOS bulk as `vdd` and every NMOS bulk as
+* `vss` -- the same bulk connections design/xschem/ wires. There is no
+* `vsubs` pin and no floating-well net any more.
 
-.SUBCKT combiner_sampler rn1 rn2 clk rst_n vdd vss raw_bit raw_valid ring_bit1 ring_bit2 vsubs
-MP_XB1 ro1 rn1 vdd NWELL_FLOAT_XB1 pfet L=0.28U W=0.44U
-MN_XB1 ro1 rn1 vss vsubs nfet L=0.28U W=0.22U
-MP_XB2 ro2 rn2 vdd NWELL_FLOAT_XB2 pfet L=0.28U W=0.44U
-MN_XB2 ro2 rn2 vss vsubs nfet L=0.28U W=0.22U
-MNIA_XA1 an_XA1 ro1 vss vsubs nfet L=0.28U W=0.22U
-MNIB_XA1 bn_XA1 ro2 vss vsubs nfet L=0.28U W=0.22U
-MN1_XA1 xo ro1 s1_XA1 vsubs nfet L=0.28U W=0.44U
-MN2_XA1 s1_XA1 ro2 vss vsubs nfet L=0.28U W=0.44U
-MN3_XA1 xo an_XA1 s2_XA1 vsubs nfet L=0.28U W=0.44U
-MN4_XA1 s2_XA1 bn_XA1 vss vsubs nfet L=0.28U W=0.44U
-MPIA_XA1 an_XA1 ro1 vdd NWELL_FLOAT_XA1 pfet L=0.28U W=0.44U
-MPIB_XA1 bn_XA1 ro2 vdd NWELL_FLOAT_XA1 pfet L=0.28U W=0.44U
-MP1_XA1 mid_XA1 ro1 vdd NWELL_FLOAT_XA1 pfet L=0.28U W=0.88U
-MP2_XA1 mid_XA1 ro2 vdd NWELL_FLOAT_XA1 pfet L=0.28U W=0.88U
-MP3_XA1 xo an_XA1 mid_XA1 NWELL_FLOAT_XA1 pfet L=0.28U W=0.88U
-MP4_XA1 xo bn_XA1 mid_XA1 NWELL_FLOAT_XA1 pfet L=0.28U W=0.88U
-MNC_XSB clkb_XSB clk vss vsubs nfet L=0.28U W=0.22U
-MTDN_XSB xo clkb_XSB m_XSB vsubs nfet L=0.28U W=0.22U
-MIM2N_XSB mc_XSB mb_XSB vss vsubs nfet L=0.28U W=0.22U
-MFMN_XSB mc_XSB clk m_XSB vsubs nfet L=0.28U W=0.22U
-MTSN_XSB mb_XSB clk s_XSB vsubs nfet L=0.28U W=0.22U
-MISN_XSB raw_bit s_XSB vss vsubs nfet L=0.28U W=0.22U
-MFSN_XSB qb_XSB clkb_XSB s_XSB vsubs nfet L=0.28U W=0.22U
-MIMNA_XSB mb_XSB m_XSB mmid_XSB vsubs nfet L=0.28U W=0.44U
-MIMNB_XSB mmid_XSB rst_n vss vsubs nfet L=0.28U W=0.44U
-MIS2NA_XSB qb_XSB raw_bit s2mid_XSB vsubs nfet L=0.28U W=0.44U
-MIS2NB_XSB s2mid_XSB rst_n vss vsubs nfet L=0.28U W=0.44U
-MPC_XSB clkb_XSB clk vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MTDP_XSB xo clk m_XSB NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MIMPA_XSB mb_XSB m_XSB vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MIMPB_XSB mb_XSB rst_n vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MIM2P_XSB mc_XSB mb_XSB vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MFMP_XSB mc_XSB clkb_XSB m_XSB NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MTSP_XSB mb_XSB clkb_XSB s_XSB NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MISP_XSB raw_bit s_XSB vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MIS2PA_XSB qb_XSB raw_bit vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MIS2PB_XSB qb_XSB rst_n vdd NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MFSP_XSB qb_XSB clk s_XSB NWELL_FLOAT_XSB pfet L=0.28U W=0.44U
-MNC_XSV clkb_XSV clk vss vsubs nfet L=0.28U W=0.22U
-MTDN_XSV vdd clkb_XSV m_XSV vsubs nfet L=0.28U W=0.22U
-MIM2N_XSV mc_XSV mb_XSV vss vsubs nfet L=0.28U W=0.22U
-MFMN_XSV mc_XSV clk m_XSV vsubs nfet L=0.28U W=0.22U
-MTSN_XSV mb_XSV clk s_XSV vsubs nfet L=0.28U W=0.22U
-MISN_XSV raw_valid s_XSV vss vsubs nfet L=0.28U W=0.22U
-MFSN_XSV qb_XSV clkb_XSV s_XSV vsubs nfet L=0.28U W=0.22U
-MIMNA_XSV mb_XSV m_XSV mmid_XSV vsubs nfet L=0.28U W=0.44U
-MIMNB_XSV mmid_XSV rst_n vss vsubs nfet L=0.28U W=0.44U
-MIS2NA_XSV qb_XSV raw_valid s2mid_XSV vsubs nfet L=0.28U W=0.44U
-MIS2NB_XSV s2mid_XSV rst_n vss vsubs nfet L=0.28U W=0.44U
-MPC_XSV clkb_XSV clk vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MTDP_XSV vdd clk m_XSV NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MIMPA_XSV mb_XSV m_XSV vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MIMPB_XSV mb_XSV rst_n vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MIM2P_XSV mc_XSV mb_XSV vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MFMP_XSV mc_XSV clkb_XSV m_XSV NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MTSP_XSV mb_XSV clkb_XSV s_XSV NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MISP_XSV raw_valid s_XSV vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MIS2PA_XSV qb_XSV raw_valid vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MIS2PB_XSV qb_XSV rst_n vdd NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MFSP_XSV qb_XSV clk s_XSV NWELL_FLOAT_XSV pfet L=0.28U W=0.44U
-MNC_XSR1 clkb_XSR1 clk vss vsubs nfet L=0.28U W=0.22U
-MTDN_XSR1 ro1 clkb_XSR1 m_XSR1 vsubs nfet L=0.28U W=0.22U
-MIM2N_XSR1 mc_XSR1 mb_XSR1 vss vsubs nfet L=0.28U W=0.22U
-MFMN_XSR1 mc_XSR1 clk m_XSR1 vsubs nfet L=0.28U W=0.22U
-MTSN_XSR1 mb_XSR1 clk s_XSR1 vsubs nfet L=0.28U W=0.22U
-MISN_XSR1 ring_bit1 s_XSR1 vss vsubs nfet L=0.28U W=0.22U
-MFSN_XSR1 qb_XSR1 clkb_XSR1 s_XSR1 vsubs nfet L=0.28U W=0.22U
-MIMNA_XSR1 mb_XSR1 m_XSR1 mmid_XSR1 vsubs nfet L=0.28U W=0.44U
-MIMNB_XSR1 mmid_XSR1 rst_n vss vsubs nfet L=0.28U W=0.44U
-MIS2NA_XSR1 qb_XSR1 ring_bit1 s2mid_XSR1 vsubs nfet L=0.28U W=0.44U
-MIS2NB_XSR1 s2mid_XSR1 rst_n vss vsubs nfet L=0.28U W=0.44U
-MPC_XSR1 clkb_XSR1 clk vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MTDP_XSR1 ro1 clk m_XSR1 NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MIMPA_XSR1 mb_XSR1 m_XSR1 vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MIMPB_XSR1 mb_XSR1 rst_n vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MIM2P_XSR1 mc_XSR1 mb_XSR1 vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MFMP_XSR1 mc_XSR1 clkb_XSR1 m_XSR1 NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MTSP_XSR1 mb_XSR1 clkb_XSR1 s_XSR1 NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MISP_XSR1 ring_bit1 s_XSR1 vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MIS2PA_XSR1 qb_XSR1 ring_bit1 vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MIS2PB_XSR1 qb_XSR1 rst_n vdd NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MFSP_XSR1 qb_XSR1 clk s_XSR1 NWELL_FLOAT_XSR1 pfet L=0.28U W=0.44U
-MNC_XSR2 clkb_XSR2 clk vss vsubs nfet L=0.28U W=0.22U
-MTDN_XSR2 ro2 clkb_XSR2 m_XSR2 vsubs nfet L=0.28U W=0.22U
-MIM2N_XSR2 mc_XSR2 mb_XSR2 vss vsubs nfet L=0.28U W=0.22U
-MFMN_XSR2 mc_XSR2 clk m_XSR2 vsubs nfet L=0.28U W=0.22U
-MTSN_XSR2 mb_XSR2 clk s_XSR2 vsubs nfet L=0.28U W=0.22U
-MISN_XSR2 ring_bit2 s_XSR2 vss vsubs nfet L=0.28U W=0.22U
-MFSN_XSR2 qb_XSR2 clkb_XSR2 s_XSR2 vsubs nfet L=0.28U W=0.22U
-MIMNA_XSR2 mb_XSR2 m_XSR2 mmid_XSR2 vsubs nfet L=0.28U W=0.44U
-MIMNB_XSR2 mmid_XSR2 rst_n vss vsubs nfet L=0.28U W=0.44U
-MIS2NA_XSR2 qb_XSR2 ring_bit2 s2mid_XSR2 vsubs nfet L=0.28U W=0.44U
-MIS2NB_XSR2 s2mid_XSR2 rst_n vss vsubs nfet L=0.28U W=0.44U
-MPC_XSR2 clkb_XSR2 clk vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MTDP_XSR2 ro2 clk m_XSR2 NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MIMPA_XSR2 mb_XSR2 m_XSR2 vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MIMPB_XSR2 mb_XSR2 rst_n vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MIM2P_XSR2 mc_XSR2 mb_XSR2 vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MFMP_XSR2 mc_XSR2 clkb_XSR2 m_XSR2 NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MTSP_XSR2 mb_XSR2 clkb_XSR2 s_XSR2 NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MISP_XSR2 ring_bit2 s_XSR2 vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MIS2PA_XSR2 qb_XSR2 ring_bit2 vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MIS2PB_XSR2 qb_XSR2 rst_n vdd NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
-MFSP_XSR2 qb_XSR2 clk s_XSR2 NWELL_FLOAT_XSR2 pfet L=0.28U W=0.44U
+.SUBCKT combiner_sampler rn1 rn2 clk rst_n vdd vss raw_bit raw_valid ring_bit1 ring_bit2
+MP_XB1 ro1 rn1 vdd vdd pfet L=0.28U W=0.44U
+MN_XB1 ro1 rn1 vss vss nfet L=0.28U W=0.22U
+MP_XB2 ro2 rn2 vdd vdd pfet L=0.28U W=0.44U
+MN_XB2 ro2 rn2 vss vss nfet L=0.28U W=0.22U
+MNIA_XA1 an_XA1 ro1 vss vss nfet L=0.28U W=0.22U
+MNIB_XA1 bn_XA1 ro2 vss vss nfet L=0.28U W=0.22U
+MN1_XA1 xo ro1 s1_XA1 vss nfet L=0.28U W=0.44U
+MN2_XA1 s1_XA1 ro2 vss vss nfet L=0.28U W=0.44U
+MN3_XA1 xo an_XA1 s2_XA1 vss nfet L=0.28U W=0.44U
+MN4_XA1 s2_XA1 bn_XA1 vss vss nfet L=0.28U W=0.44U
+MPIA_XA1 an_XA1 ro1 vdd vdd pfet L=0.28U W=0.44U
+MPIB_XA1 bn_XA1 ro2 vdd vdd pfet L=0.28U W=0.44U
+MP1_XA1 mid_XA1 ro1 vdd vdd pfet L=0.28U W=0.88U
+MP2_XA1 mid_XA1 ro2 vdd vdd pfet L=0.28U W=0.88U
+MP3_XA1 xo an_XA1 mid_XA1 vdd pfet L=0.28U W=0.88U
+MP4_XA1 xo bn_XA1 mid_XA1 vdd pfet L=0.28U W=0.88U
+MNC_XSB clkb_XSB clk vss vss nfet L=0.28U W=0.22U
+MTDN_XSB xo clkb_XSB m_XSB vss nfet L=0.28U W=0.22U
+MIM2N_XSB mc_XSB mb_XSB vss vss nfet L=0.28U W=0.22U
+MFMN_XSB mc_XSB clk m_XSB vss nfet L=0.28U W=0.22U
+MTSN_XSB mb_XSB clk s_XSB vss nfet L=0.28U W=0.22U
+MISN_XSB raw_bit s_XSB vss vss nfet L=0.28U W=0.22U
+MFSN_XSB qb_XSB clkb_XSB s_XSB vss nfet L=0.28U W=0.22U
+MIMNA_XSB mb_XSB m_XSB mmid_XSB vss nfet L=0.28U W=0.44U
+MIMNB_XSB mmid_XSB rst_n vss vss nfet L=0.28U W=0.44U
+MIS2NA_XSB qb_XSB raw_bit s2mid_XSB vss nfet L=0.28U W=0.44U
+MIS2NB_XSB s2mid_XSB rst_n vss vss nfet L=0.28U W=0.44U
+MPC_XSB clkb_XSB clk vdd vdd pfet L=0.28U W=0.44U
+MTDP_XSB xo clk m_XSB vdd pfet L=0.28U W=0.44U
+MIMPA_XSB mb_XSB m_XSB vdd vdd pfet L=0.28U W=0.44U
+MIMPB_XSB mb_XSB rst_n vdd vdd pfet L=0.28U W=0.44U
+MIM2P_XSB mc_XSB mb_XSB vdd vdd pfet L=0.28U W=0.44U
+MFMP_XSB mc_XSB clkb_XSB m_XSB vdd pfet L=0.28U W=0.44U
+MTSP_XSB mb_XSB clkb_XSB s_XSB vdd pfet L=0.28U W=0.44U
+MISP_XSB raw_bit s_XSB vdd vdd pfet L=0.28U W=0.44U
+MIS2PA_XSB qb_XSB raw_bit vdd vdd pfet L=0.28U W=0.44U
+MIS2PB_XSB qb_XSB rst_n vdd vdd pfet L=0.28U W=0.44U
+MFSP_XSB qb_XSB clk s_XSB vdd pfet L=0.28U W=0.44U
+MNC_XSV clkb_XSV clk vss vss nfet L=0.28U W=0.22U
+MTDN_XSV vdd clkb_XSV m_XSV vss nfet L=0.28U W=0.22U
+MIM2N_XSV mc_XSV mb_XSV vss vss nfet L=0.28U W=0.22U
+MFMN_XSV mc_XSV clk m_XSV vss nfet L=0.28U W=0.22U
+MTSN_XSV mb_XSV clk s_XSV vss nfet L=0.28U W=0.22U
+MISN_XSV raw_valid s_XSV vss vss nfet L=0.28U W=0.22U
+MFSN_XSV qb_XSV clkb_XSV s_XSV vss nfet L=0.28U W=0.22U
+MIMNA_XSV mb_XSV m_XSV mmid_XSV vss nfet L=0.28U W=0.44U
+MIMNB_XSV mmid_XSV rst_n vss vss nfet L=0.28U W=0.44U
+MIS2NA_XSV qb_XSV raw_valid s2mid_XSV vss nfet L=0.28U W=0.44U
+MIS2NB_XSV s2mid_XSV rst_n vss vss nfet L=0.28U W=0.44U
+MPC_XSV clkb_XSV clk vdd vdd pfet L=0.28U W=0.44U
+MTDP_XSV vdd clk m_XSV vdd pfet L=0.28U W=0.44U
+MIMPA_XSV mb_XSV m_XSV vdd vdd pfet L=0.28U W=0.44U
+MIMPB_XSV mb_XSV rst_n vdd vdd pfet L=0.28U W=0.44U
+MIM2P_XSV mc_XSV mb_XSV vdd vdd pfet L=0.28U W=0.44U
+MFMP_XSV mc_XSV clkb_XSV m_XSV vdd pfet L=0.28U W=0.44U
+MTSP_XSV mb_XSV clkb_XSV s_XSV vdd pfet L=0.28U W=0.44U
+MISP_XSV raw_valid s_XSV vdd vdd pfet L=0.28U W=0.44U
+MIS2PA_XSV qb_XSV raw_valid vdd vdd pfet L=0.28U W=0.44U
+MIS2PB_XSV qb_XSV rst_n vdd vdd pfet L=0.28U W=0.44U
+MFSP_XSV qb_XSV clk s_XSV vdd pfet L=0.28U W=0.44U
+MNC_XSR1 clkb_XSR1 clk vss vss nfet L=0.28U W=0.22U
+MTDN_XSR1 ro1 clkb_XSR1 m_XSR1 vss nfet L=0.28U W=0.22U
+MIM2N_XSR1 mc_XSR1 mb_XSR1 vss vss nfet L=0.28U W=0.22U
+MFMN_XSR1 mc_XSR1 clk m_XSR1 vss nfet L=0.28U W=0.22U
+MTSN_XSR1 mb_XSR1 clk s_XSR1 vss nfet L=0.28U W=0.22U
+MISN_XSR1 ring_bit1 s_XSR1 vss vss nfet L=0.28U W=0.22U
+MFSN_XSR1 qb_XSR1 clkb_XSR1 s_XSR1 vss nfet L=0.28U W=0.22U
+MIMNA_XSR1 mb_XSR1 m_XSR1 mmid_XSR1 vss nfet L=0.28U W=0.44U
+MIMNB_XSR1 mmid_XSR1 rst_n vss vss nfet L=0.28U W=0.44U
+MIS2NA_XSR1 qb_XSR1 ring_bit1 s2mid_XSR1 vss nfet L=0.28U W=0.44U
+MIS2NB_XSR1 s2mid_XSR1 rst_n vss vss nfet L=0.28U W=0.44U
+MPC_XSR1 clkb_XSR1 clk vdd vdd pfet L=0.28U W=0.44U
+MTDP_XSR1 ro1 clk m_XSR1 vdd pfet L=0.28U W=0.44U
+MIMPA_XSR1 mb_XSR1 m_XSR1 vdd vdd pfet L=0.28U W=0.44U
+MIMPB_XSR1 mb_XSR1 rst_n vdd vdd pfet L=0.28U W=0.44U
+MIM2P_XSR1 mc_XSR1 mb_XSR1 vdd vdd pfet L=0.28U W=0.44U
+MFMP_XSR1 mc_XSR1 clkb_XSR1 m_XSR1 vdd pfet L=0.28U W=0.44U
+MTSP_XSR1 mb_XSR1 clkb_XSR1 s_XSR1 vdd pfet L=0.28U W=0.44U
+MISP_XSR1 ring_bit1 s_XSR1 vdd vdd pfet L=0.28U W=0.44U
+MIS2PA_XSR1 qb_XSR1 ring_bit1 vdd vdd pfet L=0.28U W=0.44U
+MIS2PB_XSR1 qb_XSR1 rst_n vdd vdd pfet L=0.28U W=0.44U
+MFSP_XSR1 qb_XSR1 clk s_XSR1 vdd pfet L=0.28U W=0.44U
+MNC_XSR2 clkb_XSR2 clk vss vss nfet L=0.28U W=0.22U
+MTDN_XSR2 ro2 clkb_XSR2 m_XSR2 vss nfet L=0.28U W=0.22U
+MIM2N_XSR2 mc_XSR2 mb_XSR2 vss vss nfet L=0.28U W=0.22U
+MFMN_XSR2 mc_XSR2 clk m_XSR2 vss nfet L=0.28U W=0.22U
+MTSN_XSR2 mb_XSR2 clk s_XSR2 vss nfet L=0.28U W=0.22U
+MISN_XSR2 ring_bit2 s_XSR2 vss vss nfet L=0.28U W=0.22U
+MFSN_XSR2 qb_XSR2 clkb_XSR2 s_XSR2 vss nfet L=0.28U W=0.22U
+MIMNA_XSR2 mb_XSR2 m_XSR2 mmid_XSR2 vss nfet L=0.28U W=0.44U
+MIMNB_XSR2 mmid_XSR2 rst_n vss vss nfet L=0.28U W=0.44U
+MIS2NA_XSR2 qb_XSR2 ring_bit2 s2mid_XSR2 vss nfet L=0.28U W=0.44U
+MIS2NB_XSR2 s2mid_XSR2 rst_n vss vss nfet L=0.28U W=0.44U
+MPC_XSR2 clkb_XSR2 clk vdd vdd pfet L=0.28U W=0.44U
+MTDP_XSR2 ro2 clk m_XSR2 vdd pfet L=0.28U W=0.44U
+MIMPA_XSR2 mb_XSR2 m_XSR2 vdd vdd pfet L=0.28U W=0.44U
+MIMPB_XSR2 mb_XSR2 rst_n vdd vdd pfet L=0.28U W=0.44U
+MIM2P_XSR2 mc_XSR2 mb_XSR2 vdd vdd pfet L=0.28U W=0.44U
+MFMP_XSR2 mc_XSR2 clkb_XSR2 m_XSR2 vdd pfet L=0.28U W=0.44U
+MTSP_XSR2 mb_XSR2 clkb_XSR2 s_XSR2 vdd pfet L=0.28U W=0.44U
+MISP_XSR2 ring_bit2 s_XSR2 vdd vdd pfet L=0.28U W=0.44U
+MIS2PA_XSR2 qb_XSR2 ring_bit2 vdd vdd pfet L=0.28U W=0.44U
+MIS2PB_XSR2 qb_XSR2 rst_n vdd vdd pfet L=0.28U W=0.44U
+MFSP_XSR2 qb_XSR2 clk s_XSR2 vdd pfet L=0.28U W=0.44U
 .ENDS combiner_sampler

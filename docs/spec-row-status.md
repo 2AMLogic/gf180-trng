@@ -469,8 +469,8 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
 - **Area: the regenerated floorplan misses by 3.5×.** The row is
   `< 0.05 mm²`. The current figure is the regenerated depth-2 floorplan
   rollup in `layout/floorplan/reports/area.json` (#256, via #454):
-  **173 157.9 µm² including isolation channels, 346.3 % of the row** (175 789.9 µm²,
-  351.6 %, before #709's interface change; a
+  **174 030.2 µm² including isolation channels, 348.1 % of the row** (173 157.9 µm²,
+  346.3 %, before #705 tapped the hand-drawn cells; 175 789.9 µm² before #709's interface change; a
   floorplan-area sum; the row bounding box, 934.4 × 416.7 µm, is reported
   separately). The rest of this bullet is historical context from before
   that regeneration. #16's floorplan work had priced the block bottom-up
@@ -482,7 +482,7 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
   breakdown under *Area against the `< 0.05 mm²` row* in
   [`layout/floorplan/README.md`](../layout/floorplan/README.md)).
   The split matters — the isolated entropy source, samplers, guard rings and
-  isolation channels together are **14.05 %** of the row (the 4.7 % this line
+  isolation channels together are **15.28 %** of the row (the 4.7 % this line
   used to quote predates #135/#209/#210's analog-region resizes; the figure
   here is what the same re-run prints), and the whole miss is
   the digital section at **251 %**, of which the two 8 × 32-bit output FIFOs
@@ -537,8 +537,8 @@ not that inventory.
 
 **What the 351.6 % is.** In `area.json` the rollup's `floorplan_area_um2` is
 the sum of the guarded-region areas plus the declared 20 µm isolation channels:
-173 157.9 µm² = 164 703.6 µm² guarded regions + 8 454.3 µm² channels (after #709; was
-175 789.9 µm² = 167 271.3 + 8 518.6), against
+174 030.2 µm² = 165 544.1 µm² guarded regions + 8 486.1 µm² channels (after #705; was
+173 157.9 µm² = 164 703.6 + 8 454.3 after #709, and 175 789.9 µm² = 167 271.3 + 8 518.6 before it), against
 the 50 000 µm² budget. Each of the four regions is sized from the bounding box
 of its committed, DRC-checked assembled GDS, not from a cell-area estimate:
 the digital region from `layout/digital/trng_top.gds` (398.93 × 398.93 µm, the

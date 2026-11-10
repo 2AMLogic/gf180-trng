@@ -26,10 +26,8 @@ rectangles, so that the LVS reference (`power_switch.spice` next door) is transc
 independently of the geometry and `klt lvs` compares two separate statements.
 
 What is NOT drawn, stated so nobody reads the cell as more than it is:
-  - no n-well tap and no implant layers (the curated extraction deck used by every
-    cell under `layout/cells/` takes a PFET's well as a floating net, so the well bias
-    to `vdd` is not checked here, and a tapeout cell would need a well tap ring);
-  - no guard ring and no substrate tap;
+  - no guard ring and no substrate tap (the cell has no NMOS; its only diffusion is
+    the PMOS strip, so the substrate-tap distance rule has nothing to measure);
   - no sizing for electromigration: the Metal1 buses are 1.0um wide and carry the
     cell's DC current (a few mA at most), which is well inside the PDK's limit, but
     this is a statement about the numbers and not a check.
@@ -54,7 +52,7 @@ _CELLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.abspath(_CELLS_DIR))
 
 from _build_cli import gds_file, make_check, make_main  # noqa: E402
-from gdsii import Label, Rect, write_gds  # noqa: E402
+from gdsii import Label, Rect, add_implants, tap_rects, write_gds  # noqa: E402
 
 NWELL = (21, 0)
 COMP = (22, 0)
@@ -85,6 +83,10 @@ BUS_H = 1.0  # Metal1 bar height
 BAR_GAP = 0.60  # Metal1 gap between a bar and the stripe ends that must not touch it
 GATE_BUS_Y = (-2.60, -2.10)  # poly bus, below the vvdd bar
 NWELL_MARGIN = 0.50
+
+TAP_SIZE = 0.44  # tap Comp square
+TAP_RISE = 1.00  # strip top edge to tap Comp bottom edge
+N_TAPS = 4  # evenly spread along the strip; keeps every finger well inside the tap-distance reach
 
 N_PADS = NFING + 1
 X_RIGHT = N_PADS * PAD_W + NFING * L_GATE
@@ -128,6 +130,13 @@ def build_shapes() -> tuple[list[Rect], list[Label]]:
     rect(COMP, 0.0, Y0, X_RIGHT, Y1)
     rect(NWELL, -NWELL_MARGIN, Y0 - NWELL_MARGIN, X_RIGHT + NWELL_MARGIN, Y1 + NWELL_MARGIN)
 
+    # N-well taps (Nplus Comp in the Nwell, contacted to the vdd bar): klt >= 0.8.0's
+    # comp.tap_distance.nwell.* forbids PMOS diffusion far from a tap, and the strip is
+    # ~40 um long. The Nwell grows up to enclose the tap row; the contacts land directly
+    # under the vdd bar drawn below, which spans the whole cell.
+    tap_y0 = Y1 + TAP_RISE
+    rect(NWELL, -NWELL_MARGIN, Y1, X_RIGHT + NWELL_MARGIN, tap_y0 + TAP_SIZE + NWELL_MARGIN / 2)
+
     # Gate fingers, each running down from over the strip to the poly bus.
     for i in range(NFING):
         gx0, gx1 = gate_x(i)
@@ -170,12 +179,23 @@ def gds_path() -> str:
     return gds_file(CELL_DIR, TOP_CELL)
 
 
+def with_taps(rects: list[Rect]) -> list[Rect]:
+    """Add the Nplus tap Comps (own implant, contact) after `add_implants`, which
+    would otherwise draw Pplus over them (they sit in the Nwell)."""
+    cy = Y1 + TAP_RISE + TAP_SIZE / 2
+    out = list(rects)
+    for k in range(N_TAPS):
+        cx = round(X_RIGHT * (k + 0.5) / N_TAPS, 2)  # on the 10 nm grid
+        out.extend(tap_rects("n", cx, round(cy, 2), size=TAP_SIZE))
+    return out
+
+
 def build(path: str | None = None) -> bytes:
     rects, labels = build_shapes()
     return write_gds(
         path or gds_path(),
         library_name=TOP_CELL,
-        structures=[(TOP_CELL, rects, labels)],
+        structures=[(TOP_CELL, with_taps(add_implants(rects)), labels)],
     )
 
 

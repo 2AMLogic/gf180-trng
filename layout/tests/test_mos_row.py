@@ -36,6 +36,8 @@ Device = mos_row.Device
 # Layer numbers, restated independently of the module under test.
 NWELL = (21, 0)
 COMP = (22, 0)
+PPLUS = (31, 0)
+NPLUS = (32, 0)
 POLY2 = (30, 0)
 CONTACT = (33, 0)
 METAL1 = (34, 0)
@@ -430,11 +432,31 @@ class BuildCellTests(GeometryCase):
         rects = self.structure(call)[1]
         nwells = on_layer(rects, NWELL)
         # PMOS row starts at 1.6 + 3.0 = 4.6 and ends at 6.2; comp is 0.56..1.44.
-        self.assertRects(nwells, [(4.13, 0.31, 6.67, 1.69)])
+        # The second Nwell rectangle is the one enclosing the Nwell tap drawn
+        # below the row (see test_mixed_cell_taps); it overlaps the first.
+        self.assertRects(nwells, [(4.13, 0.31, 6.67, 1.69), (4.13, -0.93, 5.07, 0.41)])
         pmos_comp = on_layer(rects, COMP)[3]  # NMOS draws three comp rects first
         self.assertTrue(encloses(nwells[0], pmos_comp, 0.12))
         for comp in on_layer(rects, COMP)[:3]:  # NMOS diffusion stays outside the well
             self.assertLess(comp[2], nwells[0][0])
+
+    def test_mixed_cell_taps(self):
+        _, _, call = self.build(self.NMOS, self.PMOS)
+        rects = self.structure(call)[1]
+        comps = on_layer(rects, COMP)
+        # Three NMOS rects and one PMOS rect, then one substrate tap (under the
+        # NMOS `vss` terminal) and one Nwell tap (under the PMOS `vdd` one).
+        self.assertEqual(len(comps), 6)
+        p_tap, n_tap = comps[4], comps[5]
+        nwells = on_layer(rects, NWELL)
+        self.assertTrue(encloses(nwells[1], n_tap, 0.12))
+        self.assertFalse(any(encloses(w, p_tap, 0.0) for w in nwells))
+        # Each tap carries the implant of its own polarity: the Pplus tap is
+        # the substrate one, the Nplus tap sits in the Nwell.
+        pplus = on_layer(rects, PPLUS)
+        nplus = on_layer(rects, NPLUS)
+        self.assertTrue(any(encloses(r, p_tap, 0.15) for r in pplus))
+        self.assertTrue(any(encloses(r, n_tap, 0.15) for r in nplus))
 
     def test_mixed_cell_labels_and_trunks(self):
         _, _, call = self.build(self.NMOS, self.PMOS)
@@ -470,7 +492,8 @@ class BuildCellTests(GeometryCase):
         self.assertEqual(data, written)
         _, rects, labels = self.structure(call)
         self.assertEqual(on_layer(rects, NWELL), [])
-        self.assertEqual(len(on_layer(rects, COMP)), 3)
+        # Three diffusion rects plus the substrate tap under the `vss` terminal.
+        self.assertEqual(len(on_layer(rects, COMP)), 4)
         # Only NMOS landing pads count: tops out at 1.92, so channel at 2.37.
         first_trunk = on_layer(rects, METAL2)[-3]  # trunk of "a", the first pin
         self.assertAlmostEqual((first_trunk[1] + first_trunk[3]) / 2, 2.37, delta=TOL)

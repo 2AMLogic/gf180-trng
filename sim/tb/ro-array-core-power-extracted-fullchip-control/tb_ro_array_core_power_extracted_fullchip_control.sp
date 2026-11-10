@@ -29,7 +29,7 @@ vr1 vsup vddr1 dc 0
 vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 
-xdut en en vddr1 vddr2 vdd 0 clk rst_n rb rv rbit1 rbit2 0 sampler_core_routed_extracted
+xdut en en vddr1 vddr2 vdd 0 clk rst_n rb rv rbit1 rbit2 sampler_core_routed_extracted
 
 fq1 q1 0 vr1 1
 cq1 q1 0 1n

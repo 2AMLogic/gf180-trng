@@ -29,5 +29,6 @@
       "unit": "V"
     }
   ],
+  "batch": { "capacity_wait_s": 600 },
   "options": { "timeout_s": 600, "keep_artifacts": false, "waveforms": false }
 }

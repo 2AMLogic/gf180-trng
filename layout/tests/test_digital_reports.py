@@ -234,15 +234,20 @@ class CommittedEnvelopeTests(unittest.TestCase):
             ("lvs.json", self.lvs, "layout"),
         ):
             with self.subTest(report=name):
-                artifact = REPO_ROOT / report[field]
+                # klt 0.9.0 (envelope schema 3) reports the input as
+                # {"path": ..., "scope": ...}; earlier releases as a string.
+                named = report[field]
+                if isinstance(named, dict):
+                    named = named["path"]
+                artifact = REPO_ROOT / named
                 self.assertTrue(
                     artifact.is_file(),
-                    f"{name} names {report[field]!r}, which is not in this tree",
+                    f"{name} names {named!r}, which is not in this tree",
                 )
                 self.assertEqual(
                     _sha256(artifact),
                     report["provenance"]["input"]["content_hash"],
-                    f"{name}'s pin does not describe {report[field]} as committed",
+                    f"{name}'s pin does not describe {named} as committed",
                 )
 
     def test_lvs_keeps_the_reference_generation_disclosure(self):
@@ -322,6 +327,45 @@ class InputNetlistGuardTests(unittest.TestCase):
             stale.write_bytes(build.NETLIST_PATH.read_bytes() + b"// stale\n")
             with mock.patch.object(build, "NETLIST_PATH", stale):
                 self.assertEqual(build.check_input(), 1)
+
+
+#: The only DRC rules the digital partition may report, and only because the
+#: placed tap cells sit further apart than the curated deck's reach: a real
+#: latch-up finding, tracked by #717 (with #449) and recorded in
+#: `layout/digital/reports/tap-distance.json`. klayout-tools 0.9.0 reports it
+#: through the deck; 0.6.0 had no such rule and called the stream clean.
+KNOWN_DIGITAL_DRC_RULES = {
+    "comp.tap_distance.nwell.mv.1",
+    "comp.tap_distance.psub.mv.1",
+}
+
+
+class KnownDigitalDrcViolationTests(unittest.TestCase):
+    """The tap-distance hits are *recorded*, not hidden and not exempted.
+
+    The region stays in the graded DRC reports; this pins that nothing but
+    the tracked rules is in there, so a new rule firing on the digital
+    partition (or the floorplan) still turns a test red instead of hiding
+    behind the known ones.
+    """
+
+    def test_digital_drc_reports_only_the_known_tap_rules(self):
+        drc = json.loads(DRC_REPORT.read_text())
+        self.assertEqual(drc["status"], "violations")
+        self.assertEqual(drc["violation_count"], sum(drc["rule_counts"].values()))
+        self.assertLessEqual(set(drc["rule_counts"]), KNOWN_DIGITAL_DRC_RULES)
+        self.assertEqual(len(drc["violations"]), drc["violation_count"])
+
+    def test_floorplan_drc_adds_nothing_to_the_digital_baseline(self):
+        fp = json.loads((LAYOUT_DIR / "floorplan" / "reports" / "floorplan.drc.json").read_text())
+        self.assertLessEqual(set(fp["drc"]["rule_counts"]), KNOWN_DIGITAL_DRC_RULES)
+        new = fp["new_violations_from_composition"]
+        self.assertEqual(new["count"], 0)
+        self.assertEqual(new["rule_counts"], {})
+
+    def test_digital_tap_distance_report_still_fails_and_is_tracked(self):
+        tap = json.loads((REPORTS_DIR / "tap-distance.json").read_text())
+        self.assertEqual(tap["verdict"], "fail")
 
 
 if __name__ == "__main__":

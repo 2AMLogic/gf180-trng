@@ -9,10 +9,10 @@
 .include "ro_array_core.extracted.spice"
 .include "sampler_dff.extracted.spice"
 
-.subckt sampler_core_extracted en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs
-xdut en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 vsubs ro_array_core_extracted
-xsb clk xo raw_bit rst_n vdd vss vsubs sampler_dff
-xsv clk vdd raw_valid rst_n vdd vss vsubs sampler_dff
-xsr1 clk ro1 ring_bit1 rst_n vdd vss vsubs sampler_dff
-xsr2 clk ro2 ring_bit2 rst_n vdd vss vsubs sampler_dff
+.subckt sampler_core_extracted en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2
+xdut en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 ro_array_core_extracted
+xsb clk xo raw_bit rst_n vdd vss sampler_dff
+xsv clk vdd raw_valid rst_n vdd vss sampler_dff
+xsr1 clk ro1 ring_bit1 rst_n vdd vss sampler_dff
+xsr2 clk ro2 ring_bit2 rst_n vdd vss sampler_dff
 .ends

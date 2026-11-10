@@ -18,7 +18,7 @@ per-corner, per-row delta.
 | `stimulus.py` | the schedule and the block's contract; renders `tb_combiner_sampler_pex.sp` and `request.json`, `--check`s them, `--table` prints every scenario |
 | `tb_combiner_sampler_pex.sp` | generated circuit body: supply, `rn1`/`rn2`/`clk`/`rst_n` stimulus, the DUT, supply-normalised monitors; its one `.include` is what `klt pex` re-points |
 | `request.json` | generated `klt sim` request: DR-0006's 27 corners, `tran 10p 370n`, 66 rows |
-| `combiner_sampler_schematic.spice` | generated schematic DUT under the extraction's 14-port header |
+| `combiner_sampler_schematic.spice` | generated schematic DUT under the extraction's 13-port header |
 | `build_dut.py` | renders the DUT, resolves the extraction's ports by connectivity, `--check-source`s and `--verify-netlist`s |
 
 The publisher is `signoff/publish_combiner_sampler_pex.py`; its evidence goes
@@ -27,8 +27,8 @@ to `signoff/evidence/post-layout/combiner_sampler/`.
 ## Cold start
 
 ```bash
-export KLT="uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"  # DR-0026's producer build
-# (or: pip install "klayout-tools==0.6.0" "klayout==0.30.10" and leave KLT unset)
+export KLT="uvx --from klayout-tools --with klayout==0.30.10 klt"  # DR-0026's producer build
+# (or: pip install "klayout-tools" "klayout==0.30.10" and leave KLT unset)
 python3 sim/tb/combiner-sampler-pex/stimulus.py --check
 python3 sim/tb/combiner-sampler-pex/build_dut.py --check-source      # offline
 python3 sim/tb/combiner-sampler-pex/build_dut.py --check             # runs klt extract
@@ -49,7 +49,7 @@ batch fleet (`KLT_BATCH_PROVISION_SCRIPT` and a job bucket; see klt's
 
 `klt pex` reuses the testbench's `xdut` line on both sides, so the schematic
 DUT carries the extraction's own port list, position for position. klt 0.6.0
-promotes fourteen ports named after labels inside the instanced cells:
+promotes thirteen ports named after labels inside the instanced cells:
 
 | extracted | schematic | how it is known |
 |---|---|---|
@@ -59,7 +59,6 @@ promotes fourteen ports named after labels inside the instanced cells:
 | `d|vdd` | `vdd` | also `raw_valid`'s D input |
 | `q`, `q$1`, `q$2`, `q$3` | `raw_bit`, `raw_valid`, `ring_bit1`, `ring_bit2` | each by its flip-flop's D input |
 | `clk`, `rst_n`, `vss` | same | by connectivity; the label must agree |
-| `vsubs` | `vsubs` | passed through; NMOS bulk only, unused in the schematic |
 
 `build_dut.py` derives the right-hand column from connectivity alone: joint
 colour refinement over both netlists' MOSFET/net graphs (device type, W, L;

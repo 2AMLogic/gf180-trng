@@ -49,7 +49,7 @@ PEX_DIR = LAYOUT_DIR / "pex"
 #: change to how many nets are tapped, pass unnoticed here.
 TAP_PREFIX = "rx"
 TAP_COUNT = 11
-BASE_PORTS = ["en", "ro", "vddr", "vss", "vsubs"]
+BASE_PORTS = ["en", "ro", "vddr", "vss"]
 
 RINGS = ["ro_ring11", "ro_ring11_ring2"]
 
@@ -218,9 +218,9 @@ class NoiseTapIsElectricallyTransparentTests(unittest.TestCase):
         for wrapper, tail in advertised.items():
             with self.subTest(wrapper=wrapper):
                 tokens = _header_tokens(bundle, wrapper)
-                self.assertEqual(tokens[:5], BASE_PORTS)
+                self.assertEqual(tokens[:len(BASE_PORTS)], BASE_PORTS)
                 self.assertEqual(
-                    tokens[5:], tail,
+                    tokens[len(BASE_PORTS):], tail,
                     "the wrapper's actual tapped port order disagrees with the "
                     "order its own banner tells a testbench to bind",
                 )

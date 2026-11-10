@@ -34,7 +34,7 @@ class Item7AnalogPublication(unittest.TestCase):
 
     def test_body_bias_must_be_stated_as_the_envelope_says(self):
         pub = copy.deepcopy(self.pub)
-        pub["body_bias_status"] = "biased"
+        pub["body_bias_status"] = "unbiased"
         self.assertTrue(any("body_bias" in p for p in check.item7_analog_problems(pub, self.env)))
 
     def test_failed_partial_or_one_sided_run_rejected(self):

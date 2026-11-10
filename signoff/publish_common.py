@@ -21,6 +21,7 @@ source of truth for where it writes.
 from __future__ import annotations
 
 import json
+import re
 import os
 import shlex
 import subprocess
@@ -66,8 +67,11 @@ def load_envelope(path: Path | None, run: Callable[[], Path], tag: str) -> tuple
 def envelope_refusals(root: Path, envelope: dict, netlist_rel: str) -> list[str]:
     refusals: list[str] = []
     build = (envelope.get("provenance") or {}).get("klt_version")
-    if build != check.KLT_PIN:
-        refusals.append(f"response is from klt {build!r}, not the producer pin {check.KLT_PIN}")
+    # No single producer pin (DR-0026, 2026-11-09 amendment): the record names
+    # the release that produced it (`producer_build`); refuse only a response
+    # that names no tagged release.
+    if not re.match(r"^\d+\.\d+\.\d+$", str(build)):
+        refusals.append(f"response is from klt {build!r}, not a tagged release build")
     for key in ("pin_count_mismatch", "flat_dut_mismatch"):
         if envelope.get(key) is not None:
             refusals.append(f"klt pex reports {key}: {envelope[key]!r}")

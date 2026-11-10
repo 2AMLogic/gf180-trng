@@ -131,7 +131,7 @@ disambiguation still fails" below.
   corresponding leaf cell's already-extracted unambiguous local label
   position plus that block's own `row_offsets()` X offset) and matches
   them positionally -- it does not rely on the "wrap link" structural
-  argument alone, though the two agree. `en`, `vddr`, `vss`, `vsubs` are
+  argument alone, though the two agree. `en`, `vddr`, `vss` are
   each already uniquely named (only one physical net carries that name in
   this block) and need no positional resolution.
 - **`combiner_sampler`** (`_resolve_combiner_sampler_ports`): two nets
@@ -141,8 +141,8 @@ disambiguation still fails" below.
   `ring_bit1`/`ring_bit2`). Each is resolved the same way: that instance's
   own row offset (`combiner_sampler/build.py`'s `ROW_ORDER`/`row_offsets()`)
   plus the leaf cell's (`ro_buf`'s `a`, `sampler_dff`'s `q`) already-
-  extracted unambiguous local label position. `clk`, `rst_n`, `vss`,
-  `vsubs` are each already uniquely named; `vdd` is uniquely named `d|vdd`
+  extracted unambiguous local label position. `clk`, `rst_n`, `vss`
+  are each already uniquely named; `vdd` is uniquely named `d|vdd`
   (merged with `xsv`'s own `d` pin, tied straight to `vdd` by the schematic
   -- `combiner_sampler/build.py`'s own `INSTANCE_NETS["xsv"]`). `ro1`,
   `ro2`, `xo` (each a genuine 2-3-terminal internal net inside this block)
@@ -158,8 +158,10 @@ per-block wrapper `.subckt` (`_ring_routed_subckt`/
 those names to that one instance automatically, so two ring instances (or
 two chip copies) never collide even though both wrappers reuse `n1..n10`.
 The wrapper's own *exposed* ports are exactly the block's true I/O
-(`en ro vddr vss vsubs` for a ring; `rn1 rn2 vdd vss clk rst_n raw_bit
-raw_valid ring_bit1 ring_bit2 vsubs` for `combiner_sampler`) -- everything
+(`en ro vddr vss` for a ring; `rn1 rn2 vdd vss clk rst_n raw_bit
+raw_valid ring_bit1 ring_bit2` for `combiner_sampler`; `vsubs` is no longer
+a port since the layout carries well and substrate taps (#705) -- it survives
+only as the extracted netlists' `.GLOBAL` substrate reference) -- everything
 downstream (`ro_array_core.routed.extracted.spice`, `sampler_core.
 routed.extracted.spice`) instantiates the wrapper, never the raw `klt
 extract` output directly, and is unaffected by whatever arbitrary names the
@@ -486,6 +488,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
+# design/floorplan_netlist.py (imported below) imports `spice_text` bare, the
+# way layout/floorplan/floorplan.py arranges for it.
+sys.path.insert(0, str(REPO_ROOT / "design"))
 
 from layout._klt import FlowError, _run_klt, klt_version, resolve_pdk  # noqa: E402
 import layout.blocks.combiner_sampler.build as _cs_mod  # noqa: E402
@@ -1123,14 +1128,14 @@ def _sampler_core_fullchip_subckt(report: dict) -> str:
 
     lines = [
         ".subckt sampler_core_fullchip_extracted en1 en2 vddr1 vddr2 vdd vss "
-        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs"
+        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2"
     ]
-    lines.append("xr1 en1 dro1 vddr1 vss vsubs ro_ring11_routed_extracted")
-    lines.append("xr2 en2 dro2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted")
+    lines.append("xr1 en1 dro1 vddr1 vss ro_ring11_routed_extracted")
+    lines.append("xr2 en2 dro2 vddr2 vss ro_ring11_ring2_routed_extracted")
     lines += _pi_delta_lines("delta1", "dro1", "rn1", entropy[ro1["name"]]["delta"])
     lines += _pi_delta_lines("delta2", "dro2", "rn2", entropy[ro2["name"]]["delta"])
     lines.append(
-        "xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs "
+        "xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 "
         "combiner_sampler_routed_extracted"
     )
     for name, port in (
@@ -1191,47 +1196,47 @@ def _ring_subckt(name: str, nand_cell: str, stage_cell: str) -> str:
     """`ro_ring11`/`ro_ring11_ring2`'s own topology (design/ro_array_core.spice),
     transcribed with each leaf's own extracted pin order:
 
-        ro_nand2:  a en vddr vss vsubs y
-        ro_stage:  a    vddr vss vsubs y
+        ro_nand2:  a en vddr vss y
+        ro_stage:  a    vddr vss y
     """
-    lines = [f".subckt {name} en ro vddr vss vsubs"]
-    lines.append(f"xg ro en vddr vss vsubs n1 {nand_cell}")
+    lines = [f".subckt {name} en ro vddr vss"]
+    lines.append(f"xg ro en vddr vss n1 {nand_cell}")
     for i in range(1, 10):
-        lines.append(f"x{i} n{i} vddr vss vsubs n{i + 1} {stage_cell}")
-    lines.append(f"x10 n10 vddr vss vsubs ro {stage_cell}")
+        lines.append(f"x{i} n{i} vddr vss n{i + 1} {stage_cell}")
+    lines.append(f"x10 n10 vddr vss ro {stage_cell}")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
 
 
 def _ro_array_core_subckt() -> str:
     """`design/ro_array_core.spice`'s own topology, with each leaf's own
-    extracted pin order (`ro_buf`: a vdd vss vsubs y; `xor2`: a b vdd vss
-    vsubs y; rings declared above: en ro vddr vss vsubs).
+    extracted pin order (`ro_buf`: a vdd vss y; `xor2`: a b vdd vss
+    y; rings declared above: en ro vddr vss).
     """
-    lines = [".subckt ro_array_core_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 vsubs"]
-    lines.append("xr1 en1 rn1 vddr1 vss vsubs ro_ring11_extracted")
-    lines.append("xr2 en2 rn2 vddr2 vss vsubs ro_ring11_ring2_extracted")
-    lines.append("xb1 rn1 vdd vss vsubs ro1 ro_buf")
-    lines.append("xb2 rn2 vdd vss vsubs ro2 ro_buf")
-    lines.append("xa1 ro1 ro2 vdd vss vsubs xo xor2")
+    lines = [".subckt ro_array_core_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2"]
+    lines.append("xr1 en1 rn1 vddr1 vss ro_ring11_extracted")
+    lines.append("xr2 en2 rn2 vddr2 vss ro_ring11_ring2_extracted")
+    lines.append("xb1 rn1 vdd vss ro1 ro_buf")
+    lines.append("xb2 rn2 vdd vss ro2 ro_buf")
+    lines.append("xa1 ro1 ro2 vdd vss xo xor2")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
 
 
 def _sampler_core_subckt() -> str:
     """`design/sampler_core.spice`'s own topology, with `sampler_dff`'s own
-    extracted pin order (clk d q rst_n vdd vss vsubs) and
+    extracted pin order (clk d q rst_n vdd vss) and
     `ro_array_core_extracted`'s pin order declared above.
     """
     lines = [
         ".subckt sampler_core_extracted en1 en2 vddr1 vddr2 vdd vss "
-        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs"
+        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2"
     ]
-    lines.append("xdut en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 vsubs ro_array_core_extracted")
-    lines.append("xsb clk xo raw_bit rst_n vdd vss vsubs sampler_dff")
-    lines.append("xsv clk vdd raw_valid rst_n vdd vss vsubs sampler_dff")
-    lines.append("xsr1 clk ro1 ring_bit1 rst_n vdd vss vsubs sampler_dff")
-    lines.append("xsr2 clk ro2 ring_bit2 rst_n vdd vss vsubs sampler_dff")
+    lines.append("xdut en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 ro_array_core_extracted")
+    lines.append("xsb clk xo raw_bit rst_n vdd vss sampler_dff")
+    lines.append("xsv clk vdd raw_valid rst_n vdd vss sampler_dff")
+    lines.append("xsr1 clk ro1 ring_bit1 rst_n vdd vss sampler_dff")
+    lines.append("xsr2 clk ro2 ring_bit2 rst_n vdd vss sampler_dff")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
 
@@ -1343,7 +1348,7 @@ def _match_positional(
 
 def _resolve_ring_ports(payload: dict, nand_payload: dict, stage_payload: dict, mod) -> dict[int, str]:
     """Positively identify `ro_ring11`/`ro_ring11_ring2`'s five true
-    external ports (`en`, `ro`, `vddr`, `vss`, `vsubs`) among the assembled
+    external ports (`en`, `ro`, `vddr`, `vss`) among the assembled
     ring's `nets[]`, returning `{pin_index: port_name}`. See the module
     docstring, "Routing-level composition"."""
     groups = _nets_by_name(payload)
@@ -1361,7 +1366,6 @@ def _resolve_ring_ports(payload: dict, nand_payload: dict, stage_payload: dict, 
         _unique_pin_index(groups, "en"): "en",
         _unique_pin_index(groups, "vddr"): "vddr",
         _unique_pin_index(groups, "vss"): "vss",
-        _unique_pin_index(groups, "vsubs"): "vsubs",
     }
 
 
@@ -1399,7 +1403,6 @@ def _resolve_combiner_sampler_ports(
         _unique_pin_index(groups, "clk"): "clk",
         _unique_pin_index(groups, "rst_n"): "rst_n",
         _unique_pin_index(groups, "vss"): "vss",
-        _unique_pin_index(groups, "vsubs"): "vsubs",
         _unique_pin_index(groups, "d|vdd"): "vdd",
         # Internal-only, not exposed as wrapper ports -- see docstring above.
         _unique_pin_index(groups, "a|d|y"): "ro1",
@@ -1439,7 +1442,7 @@ _TAP_PREFIX = "rx"
 #: The four `.SUBCKT` ports of an assembled ring that are NOT ring nets.
 #: Everything else in the header is one of the eleven inter-stage nets a
 #: per-stage noise source has to sit on.
-_RING_NON_SIGNAL_PORTS = ("en", "vddr", "vss", "vsubs")
+_RING_NON_SIGNAL_PORTS = ("en", "vddr", "vss")
 
 #: An 11-stage ring has exactly eleven tappable nets (the NAND output, nine
 #: stage outputs, and the ring output `ro` that closes the loop back into
@@ -1600,7 +1603,7 @@ def _ring_routed_ntap_subckt(
             tail.append(label)
         tail.append(f"{label}__rx")
         tap_args.append(f"{label}__rx")
-    lines = [f".subckt {name} en ro vddr vss vsubs " + " ".join(tail)]
+    lines = [f".subckt {name} en ro vddr vss " + " ".join(tail)]
     lines.append(f"xcore {' '.join(args + tap_args)} {raw_subckt}_ntap")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
@@ -1650,7 +1653,7 @@ NTAP_BUNDLE_HEADER = """* GENERATED by layout/pex/build.py -- do not edit by han
 * `combiner_sampler_routed_extracted` would also have changed the TOPOLOGY
 * (it carries two `ro_buf` instances and the two ring-liveness samplers that
 * this deck's pre-layout ancestor does not instantiate).
-* Each ring wrapper's tapped ports follow its base `en ro vddr vss vsubs`
+* Each ring wrapper's tapped ports follow its base `en ro vddr vss`
 * interface in this order -- the contract with that testbench's own
 * positional instantiation line:
 *   ro_ring11_routed_ntap:       {order1}
@@ -1679,7 +1682,7 @@ def _positional_args(pin_count: int, port_map: dict[int, str], prefix: str) -> l
 
 def _ring_routed_subckt(name: str, raw_subckt: str, pin_count: int, port_map: dict[int, str]) -> str:
     args = _positional_args(pin_count, port_map, "n")
-    lines = [f".subckt {name} en ro vddr vss vsubs"]
+    lines = [f".subckt {name} en ro vddr vss"]
     lines.append(f"xcore {' '.join(args)} {raw_subckt}")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
@@ -1689,7 +1692,7 @@ def _combiner_sampler_routed_subckt(pin_count: int, port_map: dict[int, str]) ->
     args = _positional_args(pin_count, port_map, "c")
     lines = [
         ".subckt combiner_sampler_routed_extracted rn1 rn2 vdd vss clk rst_n "
-        "raw_bit raw_valid ring_bit1 ring_bit2 vsubs"
+        "raw_bit raw_valid ring_bit1 ring_bit2"
     ]
     lines.append(f"xcore {' '.join(args)} combiner_sampler")
     lines.append(".ends")
@@ -1700,12 +1703,12 @@ def _ro_array_core_routed_subckt() -> str:
     """`design/ro_array_core.spice`'s own topology: two routing-level ring
     wrappers, plus the buffer/XOR stage at leaf level -- see the module
     docstring, "Two composed drop-ins, different scope", for why."""
-    lines = [".subckt ro_array_core_routed_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2 vsubs"]
-    lines.append("xr1 en1 rn1 vddr1 vss vsubs ro_ring11_routed_extracted")
-    lines.append("xr2 en2 rn2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted")
-    lines.append("xb1 rn1 vdd vss vsubs ro1 ro_buf")
-    lines.append("xb2 rn2 vdd vss vsubs ro2 ro_buf")
-    lines.append("xa1 ro1 ro2 vdd vss vsubs xo xor2")
+    lines = [".subckt ro_array_core_routed_extracted en1 en2 vddr1 vddr2 vdd vss xo ro1 ro2"]
+    lines.append("xr1 en1 rn1 vddr1 vss ro_ring11_routed_extracted")
+    lines.append("xr2 en2 rn2 vddr2 vss ro_ring11_ring2_routed_extracted")
+    lines.append("xb1 rn1 vdd vss ro1 ro_buf")
+    lines.append("xb2 rn2 vdd vss ro2 ro_buf")
+    lines.append("xa1 ro1 ro2 vdd vss xo xor2")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
 
@@ -1718,12 +1721,12 @@ def _sampler_core_routed_subckt() -> str:
     composed drop-ins, different scope")."""
     lines = [
         ".subckt sampler_core_routed_extracted en1 en2 vddr1 vddr2 vdd vss "
-        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs"
+        "clk rst_n raw_bit raw_valid ring_bit1 ring_bit2"
     ]
-    lines.append("xr1 en1 rn1 vddr1 vss vsubs ro_ring11_routed_extracted")
-    lines.append("xr2 en2 rn2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted")
+    lines.append("xr1 en1 rn1 vddr1 vss ro_ring11_routed_extracted")
+    lines.append("xr2 en2 rn2 vddr2 vss ro_ring11_ring2_routed_extracted")
     lines.append(
-        "xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs "
+        "xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 "
         "combiner_sampler_routed_extracted"
     )
     lines.append(".ends")

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Hold sim/tools/klt_pin_sites.py to both halves of its contract (#344).
 
-The guard keeps every restated ``klayout-tools==`` / ``klayout==`` pin in
-step with signoff/check.py's KLT_PIN and KLAYOUT_PIN. Each case runs over a
+The guard keeps every restated ``klayout==`` pin in step with
+signoff/check.py's KLAYOUT_PIN and every ``klayout-tools==`` line that
+restates the grader in step with KLT_GRADER_PIN. The producer klayout-tools is
+deliberately unpinned (DR-0026, 2026-11-09 amendment): an unmarked
+``klayout-tools==X.Y.Z`` mention fails. Each case runs over a
 synthetic git repository in a temporary directory, so nothing here depends
 on where the real tree happens to restate the pin. Matching pins must pass;
-a mismatching pin must fail unless its own line carries the historical
-marker, and a marker that exempts nothing must fail too.
+a mismatching or producer pin must fail unless its own line carries the
+historical marker, and a marker that exempts nothing must fail too.
 
 The pin strings in this file are assembled at run time (``pin()``) because
 this file is itself tracked *.py and therefore scanned by the real guard.
@@ -27,9 +30,10 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import klt_pin_sites as kps  # noqa: E402
 
-KLT = "1.2.3"
+GRADER = "2.0.0"
 ENGINE = "0.30.9"
 MARK = kps.MARKER
+GMARK = kps.GRADER_MARKER
 
 
 def pin(package: str, version: str) -> str:
@@ -37,9 +41,8 @@ def pin(package: str, version: str) -> str:
 
 
 CHECK_PY = f'''\
-KLT_PIN = "{KLT}"
 KLAYOUT_PIN = "{ENGINE}"
-KLT_INSTALL_HINT = f'pip install "klayout-tools=={{KLT_PIN}}"'
+KLT_GRADER_PIN = "{GRADER}"
 '''
 
 
@@ -57,12 +60,11 @@ def build_repo(root: Path, files: dict[str, str],
 
 GOOD = {
     ".github/workflows/ci.yml":
-        f'      run: pip install "{pin("klayout-tools", KLT)}"\n',
+        f'      run: pip install "{pin("klayout-tools", GRADER)}"  # {GMARK}\n',
     "layout/README.md":
-        f'pip install "{pin("klayout-tools", KLT)}" '
-        f'"{pin("klayout", ENGINE)}"\n',
+        f'pip install klayout-tools "{pin("klayout", ENGINE)}"\n',
     "layout/_klt.py":
-        f'"""(`pip install "{pin("klayout-tools", KLT)}"`)."""\n',
+        '"""(`pip install klayout-tools`)."""\n',
 }
 
 
@@ -78,27 +80,26 @@ class KltPinSitesTest(unittest.TestCase):
     def test_matching_pins_pass(self):
         self.assertEqual(self.run_tree(GOOD), [])
 
-    def test_mentions_are_found_in_every_scanned_kind(self):
+    def test_producer_is_unpinned_and_only_engine_and_grader_are_constants(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             build_repo(root, GOOD)
             pins, mentions, _ = kps.check_tree(root)
-        self.assertEqual(pins, {"klayout-tools": KLT, "klayout": ENGINE})
+        self.assertEqual(
+            pins, {"klayout-tools": None, "klayout": ENGINE, kps.GRADER_KEY: GRADER})
         self.assertEqual(
             sorted((m.path, m.package) for m in mentions),
             [(".github/workflows/ci.yml", "klayout-tools"),
-             ("layout/README.md", "klayout"),
-             ("layout/README.md", "klayout-tools"),
-             ("layout/_klt.py", "klayout-tools")])
+             ("layout/README.md", "klayout")])
 
-    def test_stale_klt_pin_in_workflow_fails(self):
+    def test_producer_pin_in_workflow_fails(self):
         files = dict(GOOD)
-        files[".github/workflows/ci.yml"] = \
+        files[".github/workflows/nightly.yml"] = \
             f'      run: pip install "{pin("klayout-tools", "1.2.2")}"\n'
         problems = self.run_tree(files)
         self.assertEqual(len(problems), 1)
-        self.assertIn(".github/workflows/ci.yml:1:", problems[0])
-        self.assertIn(pin("klayout-tools", "1.2.2"), problems[0])
+        self.assertIn(".github/workflows/nightly.yml:1:", problems[0])
+        self.assertIn("not pinned here", problems[0])
 
     def test_stale_engine_pin_in_markdown_fails(self):
         files = dict(GOOD)
@@ -107,10 +108,10 @@ class KltPinSitesTest(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("sim/tb/x/README.md:2:", problems[0])
 
-    def test_constant_change_alone_fails_every_restated_site(self):
-        bumped = CHECK_PY.replace(f'"{KLT}"', '"1.3.0"')
+    def test_engine_constant_change_alone_fails_every_restated_site(self):
+        bumped = CHECK_PY.replace(f'"{ENGINE}"', '"0.30.10"')
         problems = self.run_tree(GOOD, check_py=bumped)
-        self.assertEqual(len(problems), 3)
+        self.assertEqual(len(problems), 1)
 
     def test_historical_marker_exempts_its_own_line_only(self):
         files = dict(GOOD)
@@ -129,7 +130,7 @@ class KltPinSitesTest(unittest.TestCase):
         self.assertEqual(self.run_tree(files), [])
 
     def test_marker_on_a_current_or_pinless_line_fails(self):
-        for line in (f"`{pin('klayout-tools', KLT)}` <!-- {MARK} -->",
+        for line in (f"`{pin('klayout', ENGINE)}` <!-- {MARK} -->",
                      f"no pin here # {MARK}"):
             with self.subTest(line=line):
                 files = dict(GOOD)
@@ -140,31 +141,24 @@ class KltPinSitesTest(unittest.TestCase):
                 self.assertIn("exempts no mismatching pin", problems[0])
 
     def test_grader_marker_holds_a_line_to_the_grader_pin(self):
-        grader = "2.0.0"
-        check_py = CHECK_PY + f'KLT_GRADER_PIN = "{grader}"\n'
         files = dict(GOOD)
-        files["ci.yml.md"] = f"`{pin('klayout-tools', grader)}` # {kps.GRADER_MARKER}\n"
-        self.assertEqual(self.run_tree(files, check_py=check_py), [])
-        # The producer pin on a grader line, and the grader pin on an
+        files["ci.yml.md"] = f"`{pin('klayout-tools', GRADER)}` # {GMARK}\n"
+        self.assertEqual(self.run_tree(files), [])
+        # A wrong version on a grader line, and the grader pin on an
         # unmarked line, both fail.
-        files["ci.yml.md"] = f"`{pin('klayout-tools', KLT)}` # {kps.GRADER_MARKER}\n"
-        files["other.md"] = f"`{pin('klayout-tools', grader)}`\n"
-        problems = self.run_tree(files, check_py=check_py)
+        files["ci.yml.md"] = f"`{pin('klayout-tools', '1.0.0')}` # {GMARK}\n"
+        files["other.md"] = f"`{pin('klayout-tools', GRADER)}`\n"
+        problems = self.run_tree(files)
         self.assertEqual(len(problems), 2)
-        self.assertIn(f"pins klayout-tools=={grader}", problems[0])
-        self.assertIn(kps.GRADER_MARKER, problems[1])
+        self.assertIn(f"pins klayout-tools=={GRADER}", problems[0])
+        self.assertIn("not pinned here", problems[1])
 
     def test_grader_marker_without_a_pin_fails(self):
         files = dict(GOOD)
-        files["doc.md"] = f"no pin here # {kps.GRADER_MARKER}\n"
+        files["doc.md"] = f"no pin here # {GMARK}\n"
         problems = self.run_tree(files)
         self.assertEqual(len(problems), 1)
         self.assertIn("no klayout-tools== mention", problems[0])
-
-    def test_grader_pin_is_optional_and_defaults_to_the_producer_pin(self):
-        files = dict(GOOD)
-        files["doc.md"] = f"`{pin('klayout-tools', KLT)}` # {kps.GRADER_MARKER}\n"
-        self.assertEqual(self.run_tree(files), [])
 
     def test_append_only_evidence_and_untracked_files_are_not_scanned(self):
         stale = f"`{pin('klayout-tools', '0.1.0')}`\n"
@@ -189,8 +183,8 @@ class KltPinSitesTest(unittest.TestCase):
                          [("klayout", ENGINE)])
 
     def test_missing_or_non_literal_constant_is_an_error(self):
-        for check_py in (f'KLT_PIN = "{KLT}"\n',
-                         f'KLT_PIN = "{KLT}"\nKLAYOUT_PIN = str(1)\n'):
+        for check_py in ('KLT_GRADER_PIN = "1.0.0"\n',
+                         f'KLAYOUT_PIN = str(1)\nKLT_GRADER_PIN = "{GRADER}"\n'):
             with self.subTest(check_py=check_py):
                 with tempfile.TemporaryDirectory() as tmp:
                     root = Path(tmp)

@@ -97,7 +97,7 @@ Largest gated-domain leakage over all 45 corners: 41.67 nA (ff/125C/3.63V).
 `layout/cells/power_switch/build.py` draws one shared-diffusion strip (41 pads, 40 gates), Metal1 stripes
 alternating `vdd` / `vvdd` into two buses and a poly bus for `sleep`. `layout/verify.py` runs `klt drc` (clean,
 no rule counts) and `klt lvs` against a hand-written 40-device reference (match, 0 errors) under the pinned
-`klayout-tools==0.6.0` / `klayout==0.30.10` of DR-0026; `layout/reports/power_switch.*` are the committed
+`klayout-tools==0.6.0` / `klayout==0.30.10` of DR-0026; `layout/reports/power_switch.*` are the committed <!-- klt-pin: historical -->
 reports. Not drawn, and so not verified: an n-well tap and implants (the curated deck's usual disclosure,
 `device.body_unverified`), a guard ring, and any metal sized for electromigration.
 

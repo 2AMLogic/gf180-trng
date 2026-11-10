@@ -162,43 +162,19 @@ EXIT_FAIL = 1
 #
 # `lvs.error_count` is how many of the reported mismatches carry
 # `severity: "error"`. It exists because `category_counts` alone cannot say
-# whether a category is a finding or a disclosure, and this table has to
-# carry two `severity: "warning"` categories on *every* fixture:
+# whether a category is a finding or a disclosure. Every fixture carries one
+# `severity: "warning"` category, `topology` x1 (below). Until the taps were
+# drawn (#705) it carried a second,
+# `device.body_unverified` x2 (one entry per MOS class: nfet bodies compared
+# against the deck's synthesized `vsubs`, pfet bodies against an anonymous
+# well net, because no cell drew a substrate or well tap -- the deck
+# limitation layout/README.md documents under "Bulk terminals are
+# approximated"). Every cell, ring and block now draws an Nwell tap tied to
+# its supply and a substrate tap tied to its ground, `klt lvs` reports
+# `body_verification.status: verified`, and the warning is gone. The
+# per-class `body_unverified` key below is therefore `{}` on every fixture,
+# and the check that reads it fails if a body ever stops reaching a tap.
 #
-#   device.body_unverified x2   one entry per MOS device class, each
-#                               counting that class's devices whose body
-#                               terminal reached no real net:
-#                               - nfet: compared against `vsubs`, a net the
-#                                 deck synthesized, because no fixture here
-#                                 draws a substrate tap;
-#                               - pfet: compared against an anonymous,
-#                                 KLayout-synthesized well net, because no
-#                                 fixture here draws a well tap either.
-#                               This is the deck limitation layout/README.md
-#                               documents in prose under "Bulk terminals are
-#                               approximated"; klayout-tools #281 made the
-#                               tool state it per run. History of the count,
-#                               none of which changed what is verified:
-#                               x2 before #170; x1 from #170's re-pin
-#                               (klayout-tools#1113: the PMOS arm became
-#                               deck-structural, silent whenever the deck
-#                               merely *declared* a well-tap mechanism);
-#                               x2 again from #281's re-pin to the 0.6.0
-#                               release (klayout-tools#2048: the PMOS arm is
-#                               per-device again, so a PMOS whose body landed
-#                               on an anonymous net is disclosed). The NMOS
-#                               entry's per-fixture device count did not move
-#                               across that re-pin on any fixture; the PMOS
-#                               entry's equals it on every fixture (each is
-#                               complementary CMOS), and nfet + pfet equals
-#                               the extracted device count -- i.e. no MOS
-#                               body in any fixture here is verified, which
-#                               is what the README already said. Each
-#                               fixture's `body_unverified` key below pins
-#                               the per-class counts from the report's own
-#                               `body_verification.findings`, so the next
-#                               time this disclosure moves it fails by class
-#                               and by count, not just as "2 != 1".
 #   topology x1                 a device class the deck declares (bjt,
 #                               cap_mim, resistor -- klayout-tools #219/#227)
 #                               has no counterpart on the reference side, and
@@ -237,10 +213,10 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "trng_tc_inv.spice",
             "status": "match",
-            # One inverter: 1 NMOS + 1 PMOS, neither body tied to a drawn
-            # tap, so one disclosure per class (see the comment above).
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 1, "pfet": 1},
+            # One inverter: 1 NMOS + 1 PMOS, both bodies tied to the drawn
+            # taps, so `body_verification` is `verified` (see above).
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             # Nothing the tool calls an error. That, not `status: match`
             # alone, is what "the flow accepts a correct cell" means now.
@@ -265,19 +241,17 @@ EXPECTATIONS: dict[str, dict] = {
             "status": "mismatch",
             # The two `severity: "error"` categories below are the defect
             # this fixture exists to catch, and they are what `error_count`
-            # counts. The two warning categories are the same deck
-            # disclosures the known-good fixture carries -- present here
-            # because they describe the deck, not the defect. The cut strap
-            # does not touch either body, so the per-class body counts are
-            # the known-good cell's: 1 NMOS + 1 PMOS. The two errors -- the
-            # defect -- are unchanged by the 0.6.0 re-pin.
+            # counts. The warning category is the same deck disclosure the
+            # known-good fixture carries -- present here because it
+            # describes the deck, not the defect. The cut strap does not
+            # touch either tap, so the bodies are verified exactly as in the
+            # known-good cell.
             "category_counts": {
                 "net.unmatched": 1,
                 "device.unmatched": 1,
-                "device.body_unverified": 2,
                 "topology": 1,
             },
-            "body_unverified": {"nfet": 1, "pfet": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 2,
         },
@@ -300,13 +274,13 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_stage.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
-            # Starved inverter: 2 NMOS + 2 PMOS, no drawn taps, so all four
-            # bodies are disclosed (2 per class).
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 2, "pfet": 2},
+            # Starved inverter: 2 NMOS + 2 PMOS, all four bodies tied to the
+            # drawn taps.
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -330,13 +304,13 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_stage_ring2.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
             # Same topology as ro_stage at a different starve width: 2 NMOS
             # + 2 PMOS, all four bodies untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 2, "pfet": 2},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -358,12 +332,12 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_nand2.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
             # Starved NAND2: 3 NMOS + 3 PMOS as extracted, all untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 3, "pfet": 3},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -388,13 +362,13 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_nand2_ring2.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
             # Same topology as ro_nand2 at ring2's starve width: 3 NMOS + 3
             # PMOS, all untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 3, "pfet": 3},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -421,12 +395,12 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_buf.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's two devices are both MOS, so nothing else is declared.
             # One inverter stage: 1 NMOS + 1 PMOS, both untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 1, "pfet": 1},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -434,7 +408,7 @@ EXPECTATIONS: dict[str, dict] = {
     "power_switch": {
         # A real design cell (issue #707): the PMOS header for the gated digital
         # supply -- see layout/cells/power_switch/build.py for the geometry and
-        # what it deliberately does not draw (no well tap, no implants).
+        # what it deliberately does not draw (no guard ring, no substrate tap).
         "why": (
             "design/power_switch.spice's power_switch (the PMOS header that "
             "gates the digital section's supply, 40 x 10um fingers) must be "
@@ -446,11 +420,12 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "power_switch.spice",
             "status": "match",
-            # 40 PMOS fingers, none with a drawn well tap. klt reports ONE
-            # body_unverified disclosure for the whole parallel group (the 40
-            # fingers share every terminal) and two topology warnings.
-            "category_counts": {"device.body_unverified": 1, "topology": 2},
-            "body_unverified": {"pfet": 40},
+            # 40 PMOS fingers over a well tapped to vdd (four Nplus taps), so
+            # the body connection is verified; klt reports two topology
+            # warnings for the parallel group (the 40 fingers share every
+            # terminal).
+            "category_counts": {"topology": 2},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -472,12 +447,12 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "xor2.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twelve devices are all MOS, so nothing else is
             # declared. 6 NMOS + 6 PMOS, all untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 6, "pfet": 6},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -501,13 +476,13 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "sampler_dff.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twenty-two devices are all MOS, so nothing else is
             # declared. 11 NMOS + 11 PMOS (transmission gates count one of
             # each), all untapped.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 11, "pfet": 11},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -532,14 +507,14 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_ring11.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # forty-six devices here are MOS, so nothing else is declared.
             # 10 x ro_stage (2+2) + 1 x ro_nand2 (3+3) = 23 NMOS + 23 PMOS:
             # exactly the leaf cells' counts summed -- the assembly adds no
             # tap, so it resolves no body the leaves left unresolved.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 23, "pfet": 23},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -565,13 +540,13 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "ro_ring11_ring2.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # forty-six devices here are MOS, so nothing else is declared.
             # 10 x ro_stage_ring2 (2+2) + 1 x ro_nand2_ring2 (3+3) = 23
             # NMOS + 23 PMOS, the leaf counts summed, as for ro_ring11.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 23, "pfet": 23},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -603,7 +578,7 @@ EXPECTATIONS: dict[str, dict] = {
         "lvs": {
             "reference": "combiner_sampler.spice",
             "status": "match",
-            # Same two deck-level disclosures every fixture above carries
+            # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- all
             # one hundred and four devices here are MOS, so nothing else is
             # declared. 2 x ro_buf (1+1) + 1 x xor2 (6+6) + 4 x sampler_dff
@@ -611,8 +586,8 @@ EXPECTATIONS: dict[str, dict] = {
             # the envelope signoff/block-manifest.json cites for T1 item 4
             # (analog), so its `body_verification` and `power_connectivity`
             # verdicts are quoted in signoff/README.md.
-            "category_counts": {"device.body_unverified": 2, "topology": 1},
-            "body_unverified": {"nfet": 52, "pfet": 52},
+            "category_counts": {"topology": 1},
+            "body_unverified": {},
             "power_connectivity": "unchecked",
             "error_count": 0,
         },
@@ -890,7 +865,7 @@ def write_reports(stem: str, spec: dict, results: dict) -> list[Path]:
 def _stable(payload: dict) -> dict:
     """Strip the fields that legitimately move between machines.
 
-    Four fields are dropped, each because it records *where this machine
+    Six fields are dropped, each because it records *where this machine
     happened to find something* or *how this run happened to number
     something*, not *what was verified*. Every field beside these four --
     including every content hash, every verdict, every count, and the PDK's
@@ -954,6 +929,18 @@ def _stable(payload: dict) -> dict:
       break the one thing `layout/pex/build.py`'s routing-level composition
       path actually depends on it for, and this gate must still catch that.
 
+    - `provenance.pdk.ambiguous_sources` (`klt extract` reports from
+      klayout-tools 0.9.0): the other PDK search roots on *this* machine that
+      also held a copy of the PDK (a host with both `~/.ciel` and `~/.volare`
+      lists the one it did not use). Like `provenance.pdk.source`, it
+      describes the machine, not the PDK that was verified against.
+
+    - `timing` (`klt extract` reports from klayout-tools 0.9.0): per-stage
+      and total wall-clock seconds of this run. They differ between two runs
+      of the same command on the same machine, so a committed copy could
+      never match a fresh run; they record how long the run took, not what
+      it verified.
+
     Verified empirically (issue #148): running `klt extract` twice over the
     same `.gds`, identical in every argument except `--pdk-root` pointed at
     two different filesystem locations for the same PDK release, produced
@@ -976,6 +963,7 @@ def _stable(payload: dict) -> dict:
     the "no-op gate" this fix exists to avoid.
     """
     trimmed = dict(payload)
+    trimmed.pop("timing", None)
 
     environment = trimmed.get("environment")
     if isinstance(environment, dict):
@@ -996,6 +984,7 @@ def _stable(payload: dict) -> dict:
         if isinstance(provenance_pdk, dict):
             provenance_pdk = dict(provenance_pdk)
             provenance_pdk.pop("source", None)
+            provenance_pdk.pop("ambiguous_sources", None)
             provenance["pdk"] = provenance_pdk
         trimmed["provenance"] = provenance
 

@@ -1,14 +1,18 @@
 {
-  "schema_version": 3,
-  "file": "layout/cells/power_switch/power_switch.gds",
+  "schema_version": 4,
+  "file": {
+    "path": "layout/cells/power_switch/power_switch.gds",
+    "scope": "repo"
+  },
   "deck": "gf180mcu",
   "top": "power_switch",
   "dbu_um": 0.001,
   "netlist_path": "layout/reports/power_switch.extracted.spice",
-  "netlist_sha256": "83aa39fa4a5ab15064ca7a277e78ef7af86e99675864b9571126ff2d664662e4",
+  "netlist_sha256": "f9d31254b971eb84d6e65dd23f0d2a3a3fb294ec4665abb4bea178d7715460d5",
+  "netlist_normalized_sha256": "46b6547b8c9ce13b340424b2d6854beeaab68a5f7e61a622181cccf8c5c9629e",
   "status": "extracted",
   "device_count": 40,
-  "net_count": 4,
+  "net_count": 3,
   "pin_count": 3,
   "device_counts": {
     "pfet": 40
@@ -21,6 +25,18 @@
     "pfet",
     "bjt",
     "cap_mim_2f0_m4m5_noshield",
+    "cap_nmos_03v3",
+    "cap_nmos_03v3_dn",
+    "cap_pmos_03v3",
+    "cap_pmos_03v3_dn",
+    "cap_nmos_06v0",
+    "cap_nmos_06v0_dn",
+    "cap_pmos_06v0",
+    "cap_pmos_06v0_dn",
+    "cap_nmos_03v3_b",
+    "cap_pmos_03v3_b",
+    "cap_nmos_06v0_b",
+    "cap_pmos_06v0_b",
     "resistor",
     "diode_nd2ps_06v0",
     "diode_pd2nw_06v0"
@@ -33,7 +49,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -52,7 +68,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -71,7 +87,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -90,7 +106,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -109,7 +125,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -128,7 +144,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -147,7 +163,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -166,7 +182,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -185,7 +201,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -204,7 +220,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -223,7 +239,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -242,7 +258,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -261,7 +277,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -280,7 +296,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -299,7 +315,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -318,7 +334,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -337,7 +353,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -356,7 +372,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -375,7 +391,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -394,7 +410,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -413,7 +429,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -432,7 +448,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -451,7 +467,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -470,7 +486,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -489,7 +505,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -508,7 +524,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -527,7 +543,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -546,7 +562,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -565,7 +581,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -584,7 +600,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -603,7 +619,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -622,7 +638,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -641,7 +657,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -660,7 +676,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -679,7 +695,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -698,7 +714,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -717,7 +733,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -736,7 +752,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -755,7 +771,7 @@
         "s": "vvdd",
         "g": "sleep",
         "d": "vdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -774,7 +790,7 @@
         "s": "vdd",
         "g": "sleep",
         "d": "vvdd",
-        "b": "\\$4"
+        "b": "vdd"
       },
       "params": {
         "l_um": 0.28,
@@ -788,14 +804,6 @@
     }
   ],
   "nets": [
-    {
-      "name": "\\$4",
-      "pin": false,
-      "device_count": 40,
-      "net_id": 4,
-      "pin_index": null,
-      "label_positions_um": []
-    },
     {
       "name": "sleep",
       "pin": true,
@@ -813,7 +821,7 @@
     {
       "name": "vdd",
       "pin": true,
-      "device_count": 40,
+      "device_count": 80,
       "net_id": 3,
       "pin_index": 1,
       "label_positions_um": [
@@ -840,178 +848,34 @@
     }
   ],
   "warnings": [
-    "40 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or derivable) well tie connects this PMOS body to a real supply rail on this layout, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section."
+    "deck 'gf180mcu' declares MOS flavour '06v0' scoped by marker layer 55/0, but that layer has no shapes in the layout; every MOS device binds to the deck's default flavour"
   ],
   "black_box_regions": [],
   "abstracted_cells": [],
   "unmodelled_poly": [],
   "merged_net_labels": [],
+  "split_net_labels": [],
   "voltage_domain_warnings": [],
-  "unbiased_pmos_body_nets": [
+  "missing_flavour_markers": [
     {
-      "device": "$1",
-      "net": "\\$4"
-    },
-    {
-      "device": "$10",
-      "net": "\\$4"
-    },
-    {
-      "device": "$11",
-      "net": "\\$4"
-    },
-    {
-      "device": "$12",
-      "net": "\\$4"
-    },
-    {
-      "device": "$13",
-      "net": "\\$4"
-    },
-    {
-      "device": "$14",
-      "net": "\\$4"
-    },
-    {
-      "device": "$15",
-      "net": "\\$4"
-    },
-    {
-      "device": "$16",
-      "net": "\\$4"
-    },
-    {
-      "device": "$17",
-      "net": "\\$4"
-    },
-    {
-      "device": "$18",
-      "net": "\\$4"
-    },
-    {
-      "device": "$19",
-      "net": "\\$4"
-    },
-    {
-      "device": "$2",
-      "net": "\\$4"
-    },
-    {
-      "device": "$20",
-      "net": "\\$4"
-    },
-    {
-      "device": "$21",
-      "net": "\\$4"
-    },
-    {
-      "device": "$22",
-      "net": "\\$4"
-    },
-    {
-      "device": "$23",
-      "net": "\\$4"
-    },
-    {
-      "device": "$24",
-      "net": "\\$4"
-    },
-    {
-      "device": "$25",
-      "net": "\\$4"
-    },
-    {
-      "device": "$26",
-      "net": "\\$4"
-    },
-    {
-      "device": "$27",
-      "net": "\\$4"
-    },
-    {
-      "device": "$28",
-      "net": "\\$4"
-    },
-    {
-      "device": "$29",
-      "net": "\\$4"
-    },
-    {
-      "device": "$3",
-      "net": "\\$4"
-    },
-    {
-      "device": "$30",
-      "net": "\\$4"
-    },
-    {
-      "device": "$31",
-      "net": "\\$4"
-    },
-    {
-      "device": "$32",
-      "net": "\\$4"
-    },
-    {
-      "device": "$33",
-      "net": "\\$4"
-    },
-    {
-      "device": "$34",
-      "net": "\\$4"
-    },
-    {
-      "device": "$35",
-      "net": "\\$4"
-    },
-    {
-      "device": "$36",
-      "net": "\\$4"
-    },
-    {
-      "device": "$37",
-      "net": "\\$4"
-    },
-    {
-      "device": "$38",
-      "net": "\\$4"
-    },
-    {
-      "device": "$39",
-      "net": "\\$4"
-    },
-    {
-      "device": "$4",
-      "net": "\\$4"
-    },
-    {
-      "device": "$40",
-      "net": "\\$4"
-    },
-    {
-      "device": "$5",
-      "net": "\\$4"
-    },
-    {
-      "device": "$6",
-      "net": "\\$4"
-    },
-    {
-      "device": "$7",
-      "net": "\\$4"
-    },
-    {
-      "device": "$8",
-      "net": "\\$4"
-    },
-    {
-      "device": "$9",
-      "net": "\\$4"
+      "deck": "gf180mcu",
+      "flavour": "06v0",
+      "marker": "55/0"
     }
   ],
+  "unsupported_devices": [],
+  "unbiased_pmos_body_nets": [],
   "single_terminal_nets": [],
   "dead_metal": [],
   "matched_device_groups": [],
+  "def_pin_promotion": null,
+  "pin_renames": null,
+  "rename_declared_pins": false,
+  "declared_pins": null,
+  "def_pins": null,
+  "label_layers": null,
+  "device_models": null,
+  "probes": [],
   "pdk": {
     "variant": "gf180mcuD",
     "root": {
@@ -1021,20 +885,37 @@
     "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
   },
   "provenance": {
-    "klt_version": "0.6.0",
-    "klayout_version": "0.30.10",
+    "klt_version": "0.9.0",
+    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+    "klt_reinstall_spec": "klayout-tools==0.9.0",
+    "klayout_version": "0.30.13",
     "pdk": {
       "name": "gf180mcuD",
       "source": "PDK_ROOT environment variable",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.ciel",
+        "search root: ~/.volare"
+      ]
     },
     "deck": {
       "name": "gf180mcu",
-      "content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637",
-      "released": false
+      "content_hash": "sha256:cf44de63f0a5b01c1d09c4d58e0535e990aa4b070bcaae17fd3a94a67a1d97e1",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
     },
     "input": {
-      "content_hash": "sha256:616850f8ced68a0ba8b59f6964a74c52b0a934183aabf6b2389b4200979b42e2",
+      "content_hash": "sha256:8ebf7e31521b79b05e2665d4163bc5d5e62ce49d48ebb0cf4f0cd45be10dedc2",
       "role": "layout"
     }
   },
@@ -1043,7 +924,19 @@
   "subcircuit": null,
   "metrics": {
     "extract__device__count": 40,
-    "extract__net__count": 4,
+    "extract__net__count": 3,
     "extract__pin__count": 3
+  },
+  "timing": {
+    "stages": {
+      "read_layout": 0.0,
+      "device_extraction": 0.012,
+      "diagnostics": 0.0,
+      "netlist_write": 0.001,
+      "netlist_hash": 0.0,
+      "netlist_normalized_hash": 0.0
+    },
+    "total_seconds": 0.115,
+    "unattributed_seconds": 0.101
   }
 }

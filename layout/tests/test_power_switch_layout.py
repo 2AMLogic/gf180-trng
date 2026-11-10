@@ -103,8 +103,11 @@ class PowerSwitchGeometry(unittest.TestCase):
         self.assertEqual(sorted(l.text for l in self.labels), ["sleep", "vdd", "vvdd"])
 
     def test_nwell_encloses_the_strip(self) -> None:
-        (nwell,) = self.on(NWELL)
+        # Two rectangles: the well around the strip, and the extension up over
+        # the tap row (the Nwell taps tie it to vdd).
+        nwell, tap_ext = self.on(NWELL)
         strip = self.on(COMP)[0]
+        self.assertGreater(tap_ext.y1, nwell.y1)
         for lo, hi in ((nwell.x0, strip.x0), (strip.x1, nwell.x1), (nwell.y0, strip.y0), (strip.y1, nwell.y1)):
             self.assertGreaterEqual(abs(hi - lo), 0.12 - 1e-9)  # nwell.enclosing.comp.1
         self.assertLess(nwell.x0, strip.x0)

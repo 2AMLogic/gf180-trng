@@ -84,7 +84,7 @@ vr1 vsup vddr1 dc 0
 vr2 vsup vddr2 dc 0
 vtr vsup vdd dc 0
 
-xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 0 ro_array_core_extracted
+xdut en en vddr1 vddr2 vdd 0 xo ro1 ro2 ro_array_core_extracted
 
 fq1 q1 0 vr1 1
 cq1 q1 0 1n

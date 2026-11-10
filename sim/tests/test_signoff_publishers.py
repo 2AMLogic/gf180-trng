@@ -29,9 +29,16 @@ common = item7.common
 VERDICT = {"verdict": "pass", "counts": {"unmeasured": 0}}
 
 
+#: The repo pins no producer klt (DR-0026, 2026-11-09 amendment): a response
+#: from any tagged release is accepted and recorded as `producer_build`; a git
+#: build (a `.devN+g<sha>` version) is refused.
+RELEASE_BUILD = "0.9.0"
+DEV_BUILD = "0.9.1.dev3+gabc1234"
+
+
 def _envelope(build=None, **extra):
     env = {
-        "provenance": {"klt_version": build or check.KLT_PIN, "klayout_version": "0.30.10",
+        "provenance": {"klt_version": build or RELEASE_BUILD, "klayout_version": "0.30.10",
                        "pdk": "gf180mcuD", "deck": "gf180mcu",
                        "input": {"content_hash": "sha256:" + "ab" * 32}},
         "body_bias": {"status": "unbiased", "unbiased_device_count": 7},
@@ -72,10 +79,10 @@ class CommonSteps(Scratch):
     mod = item7  # Scratch needs a module with REPO_ROOT/SCRATCH; common takes `root` explicitly
 
     def test_envelope_refusals_lists_every_gate(self):
-        env = _envelope("0.0.1", pin_count_mismatch={"d": 1}, flat_dut_mismatch={"d": 2})
+        env = _envelope(DEV_BUILD, pin_count_mismatch={"d": 1}, flat_dut_mismatch={"d": 2})
         got = common.envelope_refusals(self.root, env, "n.spice")
         self.assertEqual(len(got), 4)
-        for text, line in zip(("not the producer pin", "pin_count_mismatch", "flat_dut_mismatch", "n.spice is missing"), got):
+        for text, line in zip(("not a tagged release build", "pin_count_mismatch", "flat_dut_mismatch", "n.spice is missing"), got):
             self.assertIn(text, line)
 
     def test_envelope_refusals_clean(self):
@@ -128,8 +135,8 @@ class Item7RunPex(Scratch):
         self.assertNotIn("--backend", argv)
 
     def test_multi_word_klt_is_split(self):
-        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.6.0 klt"}, "ring1", "local")
-        self.assertEqual(argv[:5], ["uvx", "--from", "klayout-tools==0.6.0", "klt", "pex"])
+        argv, _ = self.argv({"KLT": "uvx --from klayout-tools klt"}, "ring1", "local")
+        self.assertEqual(argv[:5], ["uvx", "--from", "klayout-tools", "klt", "pex"])
         self.assertEqual(argv[-2:], ["--backend", "local"])
 
     def test_ring2_uses_its_own_args_and_scratch(self):
@@ -193,7 +200,7 @@ class Item7Refusals(Scratch):
 
     def test_ring2_refuses_wrong_klt_build_mismatch_and_missing_netlist(self):
         for env, netlist, text in (
-            (_envelope("0.0.1"), True, "not the producer pin"),
+            (_envelope(DEV_BUILD), True, "not a tagged release build"),
             (_envelope(pin_count_mismatch={"d": 1}), True, "pin_count_mismatch"),
             (_envelope(flat_dut_mismatch={"d": 1}), True, "flat_dut_mismatch"),
             (_envelope(), False, "is missing"),
@@ -266,7 +273,7 @@ class Item7Publication(Scratch):
         bd.source_identity.assert_called_once_with(ring="r2")
         self.assertEqual(pub["schema"], check.RING2_PUBLICATION_SCHEMA)
         self.assertEqual(pub["producer"], "klt " + " ".join(item7.RING2_KLT_PEX_ARGS))
-        self.assertEqual(pub["producer_build"], check.KLT_PIN)
+        self.assertEqual(pub["producer_build"], RELEASE_BUILD)
         self.assertEqual(pub["backend_requested"], "batch")
         self.assertEqual(pub["layout_content_hash"], "sha256:" + "ab" * 32)
         self.assertEqual(set(pub["inputs_sha256"]), set(check.RING2_INPUTS))
@@ -307,8 +314,8 @@ class CombinerSamplerRunPex(Scratch):
         self.assertTrue(kw["check"])
 
     def test_multi_word_klt_is_split(self):
-        argv, _ = self.argv({"KLT": "uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"}, "batch")
-        self.assertEqual(argv[:7], ["uvx", "--from", "klayout-tools==0.6.0", "--with", "klayout==0.30.10",
+        argv, _ = self.argv({"KLT": "uvx --from klayout-tools --with klayout==0.30.10 klt"}, "batch")
+        self.assertEqual(argv[:7], ["uvx", "--from", "klayout-tools", "--with", "klayout==0.30.10",
                                     "klt", "pex"])
         self.assertEqual(argv[-2:], ["--backend", "batch"])
 
@@ -368,7 +375,7 @@ class CombinerSamplerMain(Scratch):
 
     def test_refusals_leave_destination_unwritten(self):
         for env, netlist, text in (
-            (_envelope("0.0.1"), True, "not the producer pin"),
+            (_envelope(DEV_BUILD), True, "not a tagged release build"),
             (_envelope(pin_count_mismatch={"d": 1}), True, "pin_count_mismatch"),
             (_envelope(flat_dut_mismatch={"d": 1}), True, "flat_dut_mismatch"),
             (_envelope(), False, "is missing"),
@@ -443,7 +450,7 @@ class CombinerSamplerPublication(Scratch):
         bd.extraction_port_map.assert_called_once_with("netlist", "dut")
         self.assertEqual(pub["schema"], check.CS_PUBLICATION_SCHEMA)
         self.assertEqual(pub["producer"], "klt " + " ".join(cs.KLT_PEX_ARGS))
-        self.assertEqual(pub["producer_build"], check.KLT_PIN)
+        self.assertEqual(pub["producer_build"], RELEASE_BUILD)
         self.assertEqual(pub["backend_requested"], "batch")
         self.assertEqual(pub["layout_content_hash"], "sha256:" + "ab" * 32)
         self.assertEqual(set(pub["inputs_sha256"]), set(check.CS_INPUTS))

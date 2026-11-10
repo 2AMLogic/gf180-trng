@@ -32,45 +32,34 @@
 * NMOS/PMOS device lists -- `klt lvs` compares W and L as device
 * properties, not just topology.
 *
-* Bulk terminals follow the gf180mcu curated extraction deck's documented
-* behaviour (see layout/README.md, "What the curated decks do and do not
-* check", and layout/cells/ro_stage/ro_stage.spice's own header for the
-* full account):
-*   - Every NMOS bulk is the deck's substrate global, `vsubs` -- not the
-*     `vss` design/xschem/sampler_dff.sch itself wires every NMOS's bulk
-*     to.
-*   - Every PMOS bulk is a floating net: the curated deck does not tie an
-*     Nwell to the tap inside it, so the well is an unnamed net picking up
-*     whatever Comp sits inside the Nwell polygon. `NWELL_FLOAT` below is
-*     that net -- not the `vdd` design/xschem/sampler_dff.sch itself wires
-*     every PMOS's bulk to. All eleven PMOS devices here sit inside the
-*     *same* drawn Nwell (layout/cells/_mos_row.py's `build_cell` draws
-*     one Nwell rectangle for the whole PMOS row), so they share the one
-*     floating net rather than each getting its own -- `klt extract`
-*     confirms this (every pfet's `b` terminal lands on the same anonymous
-*     net).
+* Bulk terminals: every cell, ring and block draws an Nwell tap tied to
+* `vdd` and a substrate tap tied to `vss` (layout/testcells/gdsii.py's
+* `add_taps`; klt >= 0.8.0's `comp.tap_distance.*` requires them), so the
+* extractor reports every PMOS bulk as `vdd` and every NMOS bulk as
+* `vss` -- the same bulk connections design/xschem/ wires. There is no
+* `vsubs` pin and no floating-well net any more.
 
-.SUBCKT sampler_dff d clk rst_n q vdd vss vsubs
-MNC clkb clk vss vsubs nfet L=0.28U W=0.22U
-MTDN d clkb m vsubs nfet L=0.28U W=0.22U
-MIM2N mc mb vss vsubs nfet L=0.28U W=0.22U
-MFMN mc clk m vsubs nfet L=0.28U W=0.22U
-MTSN mb clk s vsubs nfet L=0.28U W=0.22U
-MISN q s vss vsubs nfet L=0.28U W=0.22U
-MFSN qb clkb s vsubs nfet L=0.28U W=0.22U
-MIMNA mb m mmid vsubs nfet L=0.28U W=0.44U
-MIMNB mmid rst_n vss vsubs nfet L=0.28U W=0.44U
-MIS2NA qb q s2mid vsubs nfet L=0.28U W=0.44U
-MIS2NB s2mid rst_n vss vsubs nfet L=0.28U W=0.44U
-MPC clkb clk vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MTDP d clk m NWELL_FLOAT pfet L=0.28U W=0.44U
-MIMPA mb m vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MIMPB mb rst_n vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MIM2P mc mb vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MFMP mc clkb m NWELL_FLOAT pfet L=0.28U W=0.44U
-MTSP mb clkb s NWELL_FLOAT pfet L=0.28U W=0.44U
-MISP q s vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MIS2PA qb q vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MIS2PB qb rst_n vdd NWELL_FLOAT pfet L=0.28U W=0.44U
-MFSP qb clk s NWELL_FLOAT pfet L=0.28U W=0.44U
+.SUBCKT sampler_dff d clk rst_n q vdd vss
+MNC clkb clk vss vss nfet L=0.28U W=0.22U
+MTDN d clkb m vss nfet L=0.28U W=0.22U
+MIM2N mc mb vss vss nfet L=0.28U W=0.22U
+MFMN mc clk m vss nfet L=0.28U W=0.22U
+MTSN mb clk s vss nfet L=0.28U W=0.22U
+MISN q s vss vss nfet L=0.28U W=0.22U
+MFSN qb clkb s vss nfet L=0.28U W=0.22U
+MIMNA mb m mmid vss nfet L=0.28U W=0.44U
+MIMNB mmid rst_n vss vss nfet L=0.28U W=0.44U
+MIS2NA qb q s2mid vss nfet L=0.28U W=0.44U
+MIS2NB s2mid rst_n vss vss nfet L=0.28U W=0.44U
+MPC clkb clk vdd vdd pfet L=0.28U W=0.44U
+MTDP d clk m vdd pfet L=0.28U W=0.44U
+MIMPA mb m vdd vdd pfet L=0.28U W=0.44U
+MIMPB mb rst_n vdd vdd pfet L=0.28U W=0.44U
+MIM2P mc mb vdd vdd pfet L=0.28U W=0.44U
+MFMP mc clkb m vdd pfet L=0.28U W=0.44U
+MTSP mb clkb s vdd pfet L=0.28U W=0.44U
+MISP q s vdd vdd pfet L=0.28U W=0.44U
+MIS2PA qb q vdd vdd pfet L=0.28U W=0.44U
+MIS2PB qb rst_n vdd vdd pfet L=0.28U W=0.44U
+MFSP qb clk s vdd pfet L=0.28U W=0.44U
 .ENDS sampler_dff

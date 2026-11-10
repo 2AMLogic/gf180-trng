@@ -32,7 +32,7 @@ brn2 rn2 0 v='v(vdd)*v(lrn2)'
 bclk clk 0 v='v(vdd)*v(lclk)'
 brst rst_n 0 v='v(vdd)*v(lrst)'
 
-xdut rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss vsubs combiner_sampler
+xdut rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss combiner_sampler
 
 bclkn clkn 0 v='v(clk)/v(vdd)'
 brst_nn rst_nn 0 v='v(rst_n)/v(vdd)'

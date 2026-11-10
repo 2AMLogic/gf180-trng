@@ -8,12 +8,12 @@
       },
       "cs_pin": "raw_bit",
       "delta": {
-        "capacitance_ff": 92.335273,
-        "resistance_ohm": 411.0439
+        "capacitance_ff": 92.416176,
+        "resistance_ohm": 411.4219
       },
       "fullchip": {
-        "capacitance_ff": 96.565807,
-        "resistance_ohm": 486.1268
+        "capacitance_ff": 96.64671,
+        "resistance_ohm": 486.5048
       },
       "fullchip_coupling_capacitance_ff": 3.227682,
       "fullchip_net_name": "raw_bit"
@@ -25,12 +25,12 @@
       },
       "cs_pin": "raw_valid",
       "delta": {
-        "capacitance_ff": 103.476676,
-        "resistance_ohm": 458.9271
+        "capacitance_ff": 103.55758,
+        "resistance_ohm": 459.3051
       },
       "fullchip": {
-        "capacitance_ff": 107.70721,
-        "resistance_ohm": 534.01
+        "capacitance_ff": 107.788114,
+        "resistance_ohm": 534.388
       },
       "fullchip_coupling_capacitance_ff": 3.552563,
       "fullchip_net_name": "raw_valid"
@@ -42,12 +42,12 @@
       },
       "cs_pin": "ring_bit1",
       "delta": {
-        "capacitance_ff": 53.697435,
-        "resistance_ohm": 229.8726
+        "capacitance_ff": 53.778339,
+        "resistance_ohm": 230.2506
       },
       "fullchip": {
-        "capacitance_ff": 57.927969,
-        "resistance_ohm": 304.9555
+        "capacitance_ff": 58.008873,
+        "resistance_ohm": 305.3335
       },
       "fullchip_coupling_capacitance_ff": 0.589427,
       "fullchip_net_name": "ring_bit[0]"
@@ -59,12 +59,12 @@
       },
       "cs_pin": "ring_bit2",
       "delta": {
-        "capacitance_ff": 48.536356,
-        "resistance_ohm": 204.4254
+        "capacitance_ff": 48.61726,
+        "resistance_ohm": 204.8034
       },
       "fullchip": {
-        "capacitance_ff": 52.76689,
-        "resistance_ohm": 279.5083
+        "capacitance_ff": 52.847794,
+        "resistance_ohm": 279.8863
       },
       "fullchip_coupling_capacitance_ff": 0.564941,
       "fullchip_net_name": "ring_bit[1]"
@@ -78,18 +78,18 @@
       },
       "cs_pin": "rn1",
       "delta": {
-        "capacitance_ff": 8.516878,
-        "resistance_ohm": 42.81
+        "capacitance_ff": 9.467245,
+        "resistance_ohm": 47.655
       },
       "fullchip": {
-        "capacitance_ff": 16.991853,
-        "resistance_ohm": 178.2319
+        "capacitance_ff": 19.031709,
+        "resistance_ohm": 186.7968
       },
-      "fullchip_coupling_capacitance_ff": 0.077295,
+      "fullchip_coupling_capacitance_ff": 0.06667,
       "fullchip_net_name": "a|ro1|y",
       "ring_intra_region": {
-        "capacitance_ff": 7.889961,
-        "resistance_ohm": 73.8871
+        "capacitance_ff": 8.97945,
+        "resistance_ohm": 77.607
       },
       "ring_pin": "ro",
       "ring_region": "ring1"
@@ -101,18 +101,18 @@
       },
       "cs_pin": "rn2",
       "delta": {
-        "capacitance_ff": 3.188232,
-        "resistance_ohm": 15.486
+        "capacitance_ff": 3.393377,
+        "resistance_ohm": 16.515
       },
       "fullchip": {
-        "capacitance_ff": 11.663207,
-        "resistance_ohm": 150.9079
+        "capacitance_ff": 12.957841,
+        "resistance_ohm": 155.6568
       },
-      "fullchip_coupling_capacitance_ff": 0.06667,
+      "fullchip_coupling_capacitance_ff": 0.056046,
       "fullchip_net_name": "a|ro2|y",
       "ring_intra_region": {
-        "capacitance_ff": 7.889961,
-        "resistance_ohm": 73.8871
+        "capacitance_ff": 8.97945,
+        "resistance_ohm": 77.607
       },
       "ring_pin": "ro",
       "ring_region": "ring2"
@@ -122,9 +122,9 @@
     "command": "klt extract layout/floorplan/trng_floorplan.gds --deck gf180mcu --top trng_floorplan --parasitics --pdk gf180mcuD --abstract-cells gf180mcu_fd_sc_mcu9t5v0__* --pins clk,en1,en2,ht_alarm,reg_addr[0],reg_addr[1],reg_rdata[0],reg_rdata[10],reg_rdata[11],reg_rdata[12],reg_rdata[13],reg_rdata[14],reg_rdata[15],reg_rdata[16],reg_rdata[17],reg_rdata[18],reg_rdata[19],reg_rdata[1],reg_rdata[20],reg_rdata[21],reg_rdata[22],reg_rdata[23],reg_rdata[24],reg_rdata[25],reg_rdata[26],reg_rdata[27],reg_rdata[28],reg_rdata[29],reg_rdata[2],reg_rdata[30],reg_rdata[31],reg_rdata[3],reg_rdata[4],reg_rdata[5],reg_rdata[6],reg_rdata[7],reg_rdata[8],reg_rdata[9],reg_sel,reg_wdata[0],reg_wdata[10],reg_wdata[11],reg_wdata[12],reg_wdata[13],reg_wdata[14],reg_wdata[15],reg_wdata[16],reg_wdata[17],reg_wdata[18],reg_wdata[19],reg_wdata[1],reg_wdata[20],reg_wdata[21],reg_wdata[22],reg_wdata[23],reg_wdata[24],reg_wdata[25],reg_wdata[26],reg_wdata[27],reg_wdata[28],reg_wdata[29],reg_wdata[2],reg_wdata[30],reg_wdata[31],reg_wdata[3],reg_wdata[4],reg_wdata[5],reg_wdata[6],reg_wdata[7],reg_wdata[8],reg_wdata[9],reg_write,rst_n,str_data[0],str_data[10],str_data[11],str_data[12],str_data[13],str_data[14],str_data[15],str_data[16],str_data[17],str_data[18],str_data[19],str_data[1],str_data[20],str_data[21],str_data[22],str_data[23],str_data[24],str_data[25],str_data[26],str_data[27],str_data[28],str_data[29],str_data[2],str_data[30],str_data[31],str_data[3],str_data[4],str_data[5],str_data[6],str_data[7],str_data[8],str_data[9],str_ready,str_valid,vdd,vddd,vddr1,vddr2,vss --def-net-names -o layout/.work/pex-fullchip/trng_floorplan.fullchip.extracted.spice",
     "cpu_count": 16,
     "from_cache": false,
-    "host_load_average_1min": 4.44,
-    "klt_version": "klt 0.9.2.dev397+gd8fa2907890e",
+    "host_load_average_1min": 3.5,
+    "klt_version": "klt 0.9.0",
     "pdk_variant": "gf180mcuD",
-    "runtime_s": 121.8
+    "runtime_s": 111.2
   }
 }

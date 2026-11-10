@@ -100,16 +100,16 @@ QUOTE_TOLERANCE = 0.01
 QUOTED = {
     ("A", 100e3): {"n": 73, "p_rings_uw": 9969.0, "p_tree_uw": 27119.0,
                    "p_floor_bind_uw": 4093.0, "p_floor_5stage_uw": 838.0,
-                   "area_um2": 51620.0, "xo_interval_ps": 63.30},
+                   "area_um2": 61182.0, "xo_interval_ps": 63.30},
     ("A", 1e6): {"n": 722, "p_rings_uw": 98598.0, "p_tree_uw": 411473.0,
                  "p_floor_bind_uw": 40926.0, "p_floor_5stage_uw": 8380.0,
-                 "area_um2": 510776.0, "xo_interval_ps": 6.40},
+                 "area_um2": 605350.0, "xo_interval_ps": 6.40},
     ("A", 4e6): {"n": 2885, "p_rings_uw": 393983.0, "p_tree_uw": 1990219.0,
                  "p_floor_bind_uw": 163706.0, "p_floor_5stage_uw": 33518.0,
-                 "area_um2": 2041059.0, "xo_interval_ps": 1.60},
-    ("A-post", 100e3): {"n": 73, "p_samplers_uw": 1275.0, "area_um2": 57068.0},
-    ("A-post", 1e6): {"n": 722, "p_samplers_uw": 12608.0, "area_um2": 564664.0},
-    ("A-post", 4e6): {"n": 2885, "p_samplers_uw": 50380.0, "area_um2": 2256387.0},
+                 "area_um2": 2418965.0, "xo_interval_ps": 1.60},
+    ("A-post", 100e3): {"n": 73, "p_samplers_uw": 1275.0, "area_um2": 66631.0},
+    ("A-post", 1e6): {"n": 722, "p_samplers_uw": 12608.0, "area_um2": 659238.0},
+    ("A-post", 4e6): {"n": 2885, "p_samplers_uw": 50380.0, "area_um2": 2634293.0},
 }
 QUOTED_SCALARS = {
     "rate_shipped_bps": 2774.0,         # shipped array's highest passing rate

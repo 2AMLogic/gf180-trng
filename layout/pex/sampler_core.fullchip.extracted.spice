@@ -14,30 +14,30 @@
 .include "ro_ring11_ring2.routed.extracted.spice"
 .include "combiner_sampler.routed.extracted.spice"
 
-.subckt ro_ring11_routed_extracted en ro vddr vss vsubs
-xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss vsubs ro_ring11
+.subckt ro_ring11_routed_extracted en ro vddr vss
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss ro_ring11
 .ends
 
-.subckt ro_ring11_ring2_routed_extracted en ro vddr vss vsubs
-xcore ro n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 en vddr vss vsubs ro_ring11_ring2
+.subckt ro_ring11_ring2_routed_extracted en ro vddr vss
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss ro_ring11_ring2
 .ends
 
-.subckt combiner_sampler_routed_extracted rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs
-xcore rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss vsubs combiner_sampler
+.subckt combiner_sampler_routed_extracted rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2
+xcore rn1 rn2 ro1 ro2 clk vdd xo raw_bit raw_valid ring_bit1 ring_bit2 rst_n vss combiner_sampler
 .ends
 
-.subckt sampler_core_fullchip_extracted en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs
-xr1 en1 dro1 vddr1 vss vsubs ro_ring11_routed_extracted
-xr2 en2 dro2 vddr2 vss vsubs ro_ring11_ring2_routed_extracted
-cdelta1a dro1 vsubs 4.258439e-15
-rdelta1 dro1 rn1 42.810000
-cdelta1b rn1 vsubs 4.258439e-15
-cdelta2a dro2 vsubs 1.594116e-15
-rdelta2 dro2 rn2 15.486000
-cdelta2b rn2 vsubs 1.594116e-15
-xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 vsubs combiner_sampler_routed_extracted
-cload_raw_bit raw_bit vsubs 9.233527e-14
-cload_raw_valid raw_valid vsubs 1.034767e-13
-cload_ring_bit1 ring_bit1 vsubs 5.369744e-14
-cload_ring_bit2 ring_bit2 vsubs 4.853636e-14
+.subckt sampler_core_fullchip_extracted en1 en2 vddr1 vddr2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2
+xr1 en1 dro1 vddr1 vss ro_ring11_routed_extracted
+xr2 en2 dro2 vddr2 vss ro_ring11_ring2_routed_extracted
+cdelta1a dro1 vsubs 4.733623e-15
+rdelta1 dro1 rn1 47.655000
+cdelta1b rn1 vsubs 4.733623e-15
+cdelta2a dro2 vsubs 1.696689e-15
+rdelta2 dro2 rn2 16.515000
+cdelta2b rn2 vsubs 1.696689e-15
+xcs rn1 rn2 vdd vss clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 combiner_sampler_routed_extracted
+cload_raw_bit raw_bit vsubs 9.241618e-14
+cload_raw_valid raw_valid vsubs 1.035576e-13
+cload_ring_bit1 ring_bit1 vsubs 5.377834e-14
+cload_ring_bit2 ring_bit2 vsubs 4.861726e-14
 .ends

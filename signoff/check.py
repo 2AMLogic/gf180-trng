@@ -120,22 +120,23 @@ MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 RECORD = REPO_ROOT / "signoff" / "records" / "t1-tier-report.json"
 EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence"
 
-#: The klayout-tools release that PRODUCES this block's layout reports
-#: (DR-0026): publish_*.py and layout/floorplan/erc_supply.py refuse a response
-#: from any other build. It is not the grader; see KLT_GRADER_PIN.
-KLT_PIN = "0.6.0"
+#: There is no producer pin (DR-0026, 2026-11-09 amendment): the
+#: repo tracks the fleet's klayout-tools version. Each committed record names
+#: the release that produced it (`provenance.klt_version`, or a publisher's
+#: `producer_build`); records produced by older releases stay valid as written.
+#:
 #: The klayout-tools release that GRADES this block (`klt signoff`). Since
-#: #653 it is newer than the producer: 0.7.0 is the first release that grades
+#: #653 it has been newer than the producer was: 0.7.0 is the first release that grades
 #: the artifact-anchored generic envelopes for T1 items 1, 2, 9 and 10
 #: (klayout-tools#2718/#2843), and moving it re-renders the verdict but does
 #: not re-produce any report. sim/tools/klt_pin_sites.py holds every
 #: restatement of the grader pin (see that tool's "Grader mentions") to this constant.
 KLT_GRADER_PIN = "0.8.0"
-#: The KLayout engine release KLT_PIN is installed with (DR-0026): the engine
+#: The KLayout engine release klt is installed with (DR-0026): the engine
 #: the release records it was tested against. Not checked by this script --
 #: `klt signoff` does not depend on it -- but it is half of the normative
-#: build, so it is defined here next to KLT_PIN. Every `klayout-tools==` /
-#: `klayout==` pin restated in workflows, READMEs and docstrings is held to
+#: build, so it is defined here next to the grader pin. Every `klayout==` /
+#: grader `klayout-tools==` pin restated in workflows, READMEs and docstrings is held to
 #: these two constants by sim/tools/klt_pin_sites.py --check (npm run
 #: check:spec); a pin bump edits them here first, then the sites it lists.
 KLAYOUT_PIN = "0.30.10"

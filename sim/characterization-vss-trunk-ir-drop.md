@@ -9,10 +9,10 @@ drop is a static supply analysis with its own methodology and needs a current
 profile a PEX re-run does not produce. This is that analysis.
 
 **Verdict: not material.** The largest computed local-`vss` offset is
-**16.07 mV** (`ring1`, the active-power binding corner `ff`/−40 °C/3.63 V),
+**16.91 mV** (`ring1`, the active-power binding corner `ff`/−40 °C/3.63 V),
 and a deliberately unphysical conservative bound — all of that corner's
 active current forced through `ring1` alone — still only reaches
-**21.94 mV**. Both are well under the **33 mV** (10 % of the ±10 %/330 mV
+**23.31 mV**. Both are well under the **33 mV** (10 % of the ±10 %/330 mV
 supply-corner spread this design's own PVT sweep already runs) yardstick this
 document checks against. At the idle corner the offsets are three orders of
 magnitude smaller (tens of µV). No ratified or Proposed row is affected — see
@@ -52,12 +52,13 @@ The resulting network (chip pin at `x = 514.58 µm`, nearest tap first):
 
 | Region | Segment to previous node (ohm) | Riser (ohm) | Riser length (µm) |
 |---|---:|---:|---:|
-| `combiner_sampler` | 3.480 | 8.520 | 28.40 |
-| `ring2` | 97.806 | 3.906 | 13.02 |
-| `ring1` | 30.273 | 3.906 | 13.02 |
+| `combiner_sampler` | 2.825 | 8.709 | 29.03 |
+| `ring2` | 102.738 | 3.906 | 13.02 |
+| `ring1` | 34.461 | 3.906 | 13.02 |
 
-Segment resistances alone sum to 131.56 ohm — 2.58 ohm above DR-0025's own
-lumped ~129 ohm. Before [#224], that sum matched DR-0025 exactly (same
+Segment resistances alone sum to 140.02 ohm — 11.02 ohm above DR-0025's own
+lumped ~129 ohm (the tapped cells of #705 widen the placed row, and the
+`vss` chip pin moves east with it). Before [#224], that sum matched DR-0025 exactly (same
 geometry, same sheet resistance table); #224 moved the `vss` chip pin
 (`CHIP_PIN_PLACEMENT["vss"]` in `layout/floorplan/interregion.py`) east by
 that same 2.58 ohm's worth of Metal4 length, to clear a new riser for
@@ -140,7 +141,7 @@ where that frequency (and therefore current) is highest across the covered
 PVT grid. In particular it is *not* the same corner as the **entropy-binding**
 corner (`ss`/+125 °C/3.63 V, [DR-0015]) that [DR-0007]'s jitter-energy margin
 is evaluated at — that corner is the *slowest* in the grid, hence draws less
-active current than the one analysed here. So the 16.07 mV / 21.94 mV
+active current than the one analysed here. So the 16.91 mV / 23.31 mV
 figures in this document upper-bound the offset at the entropy-binding corner
 too, without needing a separate run at it.
 
@@ -162,7 +163,7 @@ structural, not just "the number is small":
   claim — a `vss` offset perturbs it only by shifting the starving device's
   own `vddr`–`vss` bias, since `vddr` is delivered by its own low-resistance
   star branch (~1 ohm, DR-0025's own table) essentially unaffected by this
-  trunk. §3 shows this trunk's own worst-case offset (21.94 mV) is bounded
+  trunk. §3 shows this trunk's own worst-case offset (23.31 mV) is bounded
   above the entropy-binding corner's *actual* offset (which draws less
   current still), and both are under 6.5 % of the ±10 % supply-corner spread
   this design's period is already characterised across. A period-vs-`vss`

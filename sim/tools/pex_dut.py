@@ -8,7 +8,7 @@ call are the same job in both, so they live here; the port-mapping rules,
 rendering and CLI stay in the generators.
 
 `extract` honours the `KLT` environment variable (a shell-quoted command, for
-example `KLT="uvx --from klayout-tools==0.6.0 --with klayout==0.30.10 klt"`)
+example `KLT="uvx --from klayout-tools --with klayout==0.30.10 klt"`)
 so a `--check` run can pin a klt version.
 
 Standard library only.

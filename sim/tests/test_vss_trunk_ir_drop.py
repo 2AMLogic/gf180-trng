@@ -126,9 +126,13 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
 
         gf180-trng#803 moved the pin again: the wide `vss` riser sits on the
         stack's east flank, so the pin-to-`combiner_sampler` segment is about
-        0.56 ohm shorter (131.559 -> 131.0); the tolerance is unchanged."""
+        0.56 ohm shorter (131.559 -> 131.0); the tolerance is unchanged.
+
+        gf180-trng#705 tapped every hand-drawn cell, which widens the placed
+        row, so the chip pin and the pin-to-ring chain move east again
+        (131.0 -> 140.0 ohm); the tolerance is unchanged."""
         total = sum(node["seg_r_ohm"] for node in self.model["chain"])
-        self.assertAlmostEqual(total, 131.0, delta=0.5)
+        self.assertAlmostEqual(total, 140.0, delta=0.5)
 
 
 class ReportAndCheckRunCleanly(unittest.TestCase):

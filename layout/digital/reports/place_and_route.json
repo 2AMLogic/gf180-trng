@@ -1291,9 +1291,12 @@
     }
   },
   "drc": {
-    "status": "clean",
+    "status": "violations",
     "deck": "gf180mcu",
-    "violation_count": 0,
-    "rule_counts": {}
+    "violation_count": 2769,
+    "rule_counts": {
+      "comp.tap_distance.nwell.mv.1": 1441,
+      "comp.tap_distance.psub.mv.1": 1328
+    }
   }
 }

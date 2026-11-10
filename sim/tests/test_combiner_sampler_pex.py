@@ -31,7 +31,7 @@ check = _load("cs_check", ROOT / "signoff" / "check.py")
 
 REPORT = (ROOT / "layout" / "reports" / "combiner_sampler.extracted.spice").read_text()
 WANT = ["rn1", "rn2", "ro1", "ro2", "clk", "vdd", "xo", "raw_bit", "raw_valid",
-        "ring_bit1", "ring_bit2", "rst_n", "vss", "vsubs"]
+        "ring_bit1", "ring_bit2", "rst_n", "vss"]
 
 
 def _sources():
@@ -48,8 +48,8 @@ class PortMap(unittest.TestCase):
     def test_header_order_follows_the_extraction(self):
         # Moving ports in the extracted header moves them in the result.
         text = REPORT.replace(
-            ".SUBCKT combiner_sampler a a$1 a|d|y b|d|y clk d|vdd d|y q q$1 q$2 q$3 rst_n\n+ vss vsubs",
-            ".SUBCKT combiner_sampler q$3 a$1 a|d|y b|d|y clk d|vdd d|y q q$1 q$2 a rst_n\n+ vss vsubs",
+            ".SUBCKT combiner_sampler a a$1 a|d|y b|d|y clk d|vdd d|y q q$1 q$2 q$3 rst_n vss",
+            ".SUBCKT combiner_sampler q$3 a$1 a|d|y b|d|y clk d|vdd d|y q q$1 q$2 a rst_n vss",
         )
         got = bd.extraction_port_map(text)
         self.assertEqual(got[0], "ring_bit2")
@@ -69,22 +69,22 @@ class PortMap(unittest.TestCase):
         dut = bd.render_dut(WANT, _sources())
         dut = dut.replace("XMn2 s1 b vss vss", "XMn2 y b s1 vss").replace(
             "XMn4 s2 bn vss vss", "XMn4 y bn s2 vss")
-        ext = REPORT.replace("X$4 \\$6 b|d|y vss vsubs", "X$4 d|y b|d|y \\$6 vsubs").replace(
-            "X$6 \\$8 \\$5 vss vsubs", "X$6 d|y \\$5 \\$8 vsubs")
+        ext = REPORT.replace("X$4 \\$7 b|d|y vss vss", "X$4 d|y b|d|y \\$7 vss").replace(
+            "X$6 \\$9 \\$6 vss vss", "X$6 d|y \\$6 \\$9 vss")
         self.assertNotEqual(ext, REPORT)
         self.assertRefuses(ext, "ambiguous", dut)
 
     def test_symmetric_toy_circuit_is_ambiguous(self):
         dut = (
-            ".subckt combiner_sampler rn1 rn2 ro1 ro2 vdd vss vsubs\n"
+            ".subckt combiner_sampler rn1 rn2 ro1 ro2 vdd vss\n"
             "xb1 rn1 ro1 vdd vss ro_buf\nxb2 rn2 ro2 vdd vss ro_buf\n.ends\n"
             ".subckt ro_buf a y vdd vss\n"
             "XMp y a vdd vdd pfet_03v3 L=0.28u W=0.44u\nXMn y a vss vss nfet_03v3 L=0.28u W=0.22u\n.ends\n"
         )
         ext = (
-            ".SUBCKT combiner_sampler a a$1 y y$1 vdd vss vsubs\n"
-            "X$1 y a vdd \\$9 pfet_03v3 L=0.28U W=0.44U\nX$2 y a vss vsubs nfet_03v3 L=0.28U W=0.22U\n"
-            "X$3 y$1 a$1 vdd \\$8 pfet_03v3 L=0.28U W=0.44U\nX$4 y$1 a$1 vss vsubs nfet_03v3 L=0.28U W=0.22U\n"
+            ".SUBCKT combiner_sampler a a$1 y y$1 vdd vss\n"
+            "X$1 y a vdd \\$9 pfet_03v3 L=0.28U W=0.44U\nX$2 y a vss vss nfet_03v3 L=0.28U W=0.22U\n"
+            "X$3 y$1 a$1 vdd \\$8 pfet_03v3 L=0.28U W=0.44U\nX$4 y$1 a$1 vss vss nfet_03v3 L=0.28U W=0.22U\n"
             ".ENDS\n"
         )
         self.assertRefuses(ext, "ambiguous", dut)
@@ -96,8 +96,8 @@ class PortMap(unittest.TestCase):
         self.assertRefuses(ext, "not the same circuit")
 
     def test_wrong_device_size_is_refused(self):
-        ext = REPORT.replace("X$1 vss a a|d|y vsubs nfet_03v3 L=0.28U W=0.22U",
-                             "X$1 vss a a|d|y vsubs nfet_03v3 L=0.28U W=0.44U")
+        ext = REPORT.replace("X$1 vss a a|d|y vss nfet_03v3 L=0.28U W=0.22U",
+                             "X$1 vss a a|d|y vss nfet_03v3 L=0.28U W=0.44U")
         self.assertRefuses(ext, "not the same circuit")
 
     def test_label_vetoes_a_contradicting_map(self):
@@ -107,12 +107,8 @@ class PortMap(unittest.TestCase):
         self.assertRefuses(ext, "carries label")
 
     def test_repeated_header_port_is_refused(self):
-        ext = REPORT.replace("q$3 rst_n\n+ vss vsubs", "q$3 rst_n\n+ vss vsubs q")
+        ext = REPORT.replace("q$3 rst_n vss", "q$3 rst_n\n+ vss vsubs q")
         self.assertRefuses(ext, "repeats a port")
-
-    def test_missing_vsubs_is_refused(self):
-        ext = REPORT.replace("+ vss vsubs\n", "+ vss\n", 1)
-        self.assertRefuses(ext, "'vsubs' 0 times")
 
     def test_ground_tie_resistor_is_not_a_wire(self):
         ext = REPORT.replace(".ENDS", "Rtie vss 0 1e12\nRtie2 vdd|x 0 1e12\n.ENDS")
@@ -120,7 +116,7 @@ class PortMap(unittest.TestCase):
 
     def test_parasitic_star_is_merged(self):
         # Re-point a device terminal at a star node tied to its net by an R.
-        ext = REPORT.replace("X$1 vss a a|d|y vsubs", "X$1 vss__t0 a__t0 a|d|y vsubs")
+        ext = REPORT.replace("X$1 vss a a|d|y vss", "X$1 vss__t0 a__t0 a|d|y vss")
         ext = ext.replace(".ENDS", "R1 vss__t0 vss 10\nR2 a a__t0 12\n.ENDS")
         self.assertEqual(bd.extraction_port_map(ext), WANT)
 
