@@ -50,7 +50,7 @@ from layout.pex.build import (  # noqa: E402
 #: constants would let a change to them pass unnoticed here.
 POS_TOL_UM = 0.02
 TAP_COUNT = 11
-NON_SIGNAL_PORTS = ("en", "vddr", "vss", "vsubs")
+NON_SIGNAL_PORTS = ("en", "vddr", "vss")
 
 
 def _net(pin_index: int, name: str, **labels: tuple[float, float]) -> dict:
@@ -133,24 +133,24 @@ class MatchPositionalTests(unittest.TestCase):
             _match_positional(groups, "a|y", {"a": (1.0, 2.0), "y": (30.0, 2.0)})
 
 
-def _ring_port_map(pin_count: int = 15) -> dict[int, str]:
-    """A resolved ring port map with the four non-signal ports and `ro`
+def _ring_port_map(pin_count: int = 14) -> dict[int, str]:
+    """A resolved ring port map with the three non-signal ports and `ro`
     scattered through the header, the way flat extraction orders them."""
-    return {0: "en", 3: "ro", 6: "vddr", 10: "vss", pin_count - 1: "vsubs"}
+    return {0: "en", 3: "ro", 6: "vddr", 10: "vss"}
 
 
 class TapPositionsTests(unittest.TestCase):
     """`_tap_positions`: eleven ring nets, non-signal ports skipped."""
 
-    def test_fifteen_pins_yield_eleven_positions(self):
-        port_map = _ring_port_map(15)
-        positions = _tap_positions(15, port_map)
+    def test_fourteen_pins_yield_eleven_positions(self):
+        port_map = _ring_port_map(14)
+        positions = _tap_positions(14, port_map)
         self.assertEqual(len(positions), TAP_COUNT)
         self.assertEqual(positions, [1, 2, 3, 4, 5, 7, 8, 9, 11, 12, 13])
 
     def test_non_signal_ports_are_skipped_and_ro_is_kept(self):
-        port_map = _ring_port_map(15)
-        positions = _tap_positions(15, port_map)
+        port_map = _ring_port_map(14)
+        positions = _tap_positions(14, port_map)
         for idx, name in port_map.items():
             with self.subTest(name=name):
                 if name in NON_SIGNAL_PORTS:
@@ -159,7 +159,7 @@ class TapPositionsTests(unittest.TestCase):
                     self.assertIn(idx, positions)
 
     def test_wrong_pin_count_raises(self):
-        for pin_count in (14, 16):
+        for pin_count in (13, 15):
             with self.subTest(pin_count=pin_count), self.assertRaises(FlowError):
                 _tap_positions(pin_count, _ring_port_map(pin_count))
 
@@ -170,10 +170,10 @@ class GateNodesTests(unittest.TestCase):
     NETLIST = "\n".join(
         [
             "* extracted by klt extract",
-            ".SUBCKT ring en ro vddr vss vsubs",
-            "X0 n1 en vss vsubs nfet_03v3 L=0.28U W=1U",
+            ".SUBCKT ring en ro vddr vss",
+            "X0 n1 en vss vss nfet_03v3 L=0.28U W=1U",
             "X1 n1 ro vddr vddr pfet_03v3 L=0.28U W=2U",
-            "x2 n2 n1 vss vsubs nfet_03v3 L=0.28U W=1U",
+            "x2 n2 n1 vss vss nfet_03v3 L=0.28U W=1U",
             "R0 n1 n1_1 12.5",
             "C0 n1 vss 1.5f",
             ".ENDS ring",
@@ -189,7 +189,7 @@ class GateNodesTests(unittest.TestCase):
             _gate_nodes(text, "ring")
 
     def test_foreign_model_raises(self):
-        text = self.NETLIST + "\nX3 n2 n1 vss vsubs nfet_06v0 L=0.7U W=1U\n"
+        text = self.NETLIST + "\nX3 n2 n1 vss vss nfet_06v0 L=0.7U W=1U\n"
         with self.assertRaises(FlowError):
             _gate_nodes(text, "ring")
 
@@ -215,11 +215,11 @@ class PortOrderTests(unittest.TestCase):
         self.assertEqual(_positional_args(3, {}, "n"), ["n1", "n2", "n3"])
 
     def test_ntap_port_order_lists_ro_once(self):
-        port_map = _ring_port_map(15)
-        positions = _tap_positions(15, port_map)
-        order = _ntap_port_order(15, port_map, positions).split()
+        port_map = _ring_port_map(14)
+        positions = _tap_positions(14, port_map)
+        order = _ntap_port_order(14, port_map, positions).split()
 
-        # Header: en n1 n2 ro n3 n4 vddr n5 n6 n7 vss n8 n9 n10 vsubs
+        # Header: en n1 n2 ro n3 n4 vddr n5 n6 n7 vss n8 n9 n10
         expected = []
         for label in ["n1", "n2", "ro", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"]:
             if label != "ro":
@@ -228,7 +228,7 @@ class PortOrderTests(unittest.TestCase):
         self.assertEqual(order, expected)
 
         self.assertEqual(order.count("ro__rx"), 1)
-        self.assertNotIn("ro", order)  # already in the base `en ro vddr vss vsubs`
+        self.assertNotIn("ro", order)  # already in the base `en ro vddr vss`
         for k in range(1, 11):
             with self.subTest(net=f"n{k}"):
                 self.assertEqual(order.count(f"n{k}"), 1)

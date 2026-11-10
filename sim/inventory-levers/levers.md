@@ -7,12 +7,12 @@ candidate rows and are each independent of one another.
 
 | step | cells | flops | cell area um^2 | d area | digital idle nA (est.) | d idle nA | digital active uW (est.) | projected idle uA | projected floorplan um^2 |
 |---|---|---|---|---|---|---|---|---|---|
-| baseline (shipped inventory) | 862 | 269 | 33228.7 | +0.0 | 2009.8 | +0.0 | 0.177 | 2.1480 | 173157.9 |
-| + storage priced as `dffq_1` | 862 | 269 | 31823.8 | -1404.9 | 1953.3 | -56.5 | 0.166 | 2.0915 | 170816.4 |
-| alt: FIFO storage as `latq_1` | 862 | 141 | 29294.9 | -3933.8 | 1812.0 | -197.9 | 0.159 | 1.9501 | 166601.6 |
-| alt: `reg_rdata` mux as `mux4_1` | 798 | 269 | 31332.1 | -1896.7 | 1918.5 | -91.3 | 0.165 | 2.0567 | 169996.8 |
+| baseline (shipped inventory) | 862 | 269 | 33228.7 | +0.0 | 2009.8 | +0.0 | 0.177 | 2.1480 | 174030.2 |
+| + storage priced as `dffq_1` | 862 | 269 | 31823.8 | -1404.9 | 1953.3 | -56.5 | 0.166 | 2.0915 | 171688.6 |
+| alt: FIFO storage as `latq_1` | 862 | 141 | 29294.9 | -3933.8 | 1812.0 | -197.9 | 0.159 | 1.9501 | 167473.8 |
+| alt: `reg_rdata` mux as `mux4_1` | 798 | 269 | 31332.1 | -1896.7 | 1918.5 | -91.3 | 0.165 | 2.0567 | 170869.1 |
 
-Figures of record this table is projected from: idle 2.148 uA (worst corner, `sim/tools/power_rollup.py`), floorplan 173157.9 um^2 (`layout/floorplan/reports/area.json`, geometry utilisation 0.6). Rows are projections, not measurements: the committed digital footprint is the routed GDS bounding box and only moves when synthesis and place-and-route are re-run.
+Figures of record this table is projected from: idle 2.148 uA (worst corner, `sim/tools/power_rollup.py`), floorplan 174030.2 um^2 (`layout/floorplan/reports/area.json`, geometry utilisation 0.6). Rows are projections, not measurements: the committed digital footprint is the routed GDS bounding box and only moves when synthesis and place-and-route are re-run.
 
 Rows and why:
 
@@ -20,4 +20,4 @@ Rows and why:
 - alt: FIFO storage as `latq_1`: NOT adopted: needs latch timing under STA/CTS and a restructured write strobe; changes the sequential style of ratified storage
 - alt: `reg_rdata` mux as `mux4_1`: NOT adopted: inventory arithmetic only. The inventory prices reg_rdata as 96 full mux2 although most data bits have constant-zero CTRL/STATUS inputs; synthesis was not run on this variant, so the figure is not credible as a saving
 
-Cumulative candidate set (`+ storage priced as `dffq_1``): projected idle 2.091 uA against `< 1 uA` (still missed); projected floorplan 170816 um^2 against `< 50000 um^2` (still missed).
+Cumulative candidate set (`+ storage priced as `dffq_1``): projected idle 2.091 uA against `< 1 uA` (still missed); projected floorplan 171689 um^2 against `< 50000 um^2` (still missed).

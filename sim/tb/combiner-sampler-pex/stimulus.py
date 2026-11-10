@@ -69,7 +69,7 @@ LOW_MAX = 0.1
 #: Port order of the extraction's header, as the DUT renders it. build_dut.py
 #: checks the testbench's xdut line against the committed DUT.
 XDUT_PORTS = ["rn1", "rn2", "ro1", "ro2", "clk", "vdd", "xo", "raw_bit", "raw_valid",
-              "ring_bit1", "ring_bit2", "rst_n", "vss", "vsubs"]
+              "ring_bit1", "ring_bit2", "rst_n", "vss"]
 
 #: (time ns, rn1, rn2) -- input levels from that time on (changes at falling edges).
 INPUTS = [

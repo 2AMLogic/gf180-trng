@@ -19,7 +19,7 @@ bd = load_module_from_path(
 )
 
 RING = [f"a|y{'' if i == 0 else '$' + str(i)}" for i in range(11)]
-NAMED = ["en", "vddr", "vss", "vsubs"]
+NAMED = ["en", "vddr", "vss"]
 
 
 def gate_line(name, gate, x):
@@ -53,15 +53,15 @@ class WellFormed(unittest.TestCase):
         got = bd.extraction_port_map(netlist(gates=ring_gates(order)))
         want = [bd.RING_NODES[pos] for pos in order] + NAMED
         self.assertEqual(got, want)
-        self.assertEqual(len(got), 15)
+        self.assertEqual(len(got), 14)
 
     def test_named_ports_unchanged_wherever_they_sit(self):
-        header = ["vss", RING[0], "en", *RING[1:6], "vsubs", *RING[6:], "vddr"]
+        header = ["vss", RING[0], "en", *RING[1:6], *RING[6:], "vddr"]
         gates = [(RING[k], 100.0 * k) for k in range(11)]
         got = bd.extraction_port_map(netlist(header=header, gates=gates))
         self.assertEqual(
             got,
-            ["vss", "ro", "en", "n1", "n2", "n3", "n4", "n5", "vsubs",
+            ["vss", "ro", "en", "n1", "n2", "n3", "n4", "n5",
              "n6", "n7", "n8", "n9", "n10", "vddr"],
         )
 
@@ -100,10 +100,10 @@ class Refusals(unittest.TestCase):
         )
 
     def test_named_port_missing(self):
-        header = RING + ["en", "vddr", "vss"]
+        header = RING + ["en", "vddr"]
         self.assertRefuses(
             netlist(header=header, gates=ring_gates(range(11))),
-            "names 'vsubs' 0 times",
+            "names 'vss' 0 times",
         )
 
     def test_named_port_repeated(self):

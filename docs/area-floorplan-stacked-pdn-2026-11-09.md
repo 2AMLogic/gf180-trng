@@ -30,7 +30,7 @@ own corners.
   `combiner_sampler`'s east neighbour, and new tests pin the properties below.
 
 Tool build. As in #797, the committed floorplan artefacts are normative under
-`klayout-tools==0.6.0` with `klayout==0.30.10` (DR-0026 as amended), so the
+`klayout-tools==0.6.0` with `klayout==0.30.10` (DR-0026 as amended), so the <!-- klt-pin: historical -->
 floorplan flow ran from a throwaway virtual environment at that pin, not the
 host `klt`; `signoff/check.py` ran under `klayout-tools==0.8.0`, the grader <!-- klt-pin: grader -->
 pin in `.github/workflows/ci.yml`. No host tool was installed or changed.
@@ -145,7 +145,7 @@ arrangement.
 
 ```sh
 uv venv .venv-klt && uv pip install --python .venv-klt/bin/python \
-  "klayout-tools==0.6.0" "klayout==0.30.10"
+  "klayout-tools==0.6.0" "klayout==0.30.10" # klt-pin: historical
 PATH=$PWD/.venv-klt/bin:$PATH python3 layout/floorplan/floorplan.py
 PATH=$PWD/.venv-klt/bin:$PATH klt economy layout/floorplan/trng_floorplan.gds
 python3 sim/tools/digital_supply_ir_drop.py --check

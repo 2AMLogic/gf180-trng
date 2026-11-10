@@ -60,10 +60,10 @@ class ExternalFeed(_Shared):
     def test_riser_length_matches_the_route(self):
         # vss: trunk at y = -11.0, lowest vss band centred 54.88 um local,
         # digital content origin y = 39.25 (stacked above the strip, #803)
-        # -> 105.13 um of the 2.00 um wide Metal3 riser.
+        # -> 106.08 um of the 2.00 um wide Metal3 riser (tapped cells, #705).
         b = self.built("vss")
         riser = [r for d, r in b.external_path if d.startswith("metal3")][0]
-        self.assertAlmostEqual(riser, 0.09 * 105.13 / 2.0, places=6)
+        self.assertAlmostEqual(riser, 0.09 * 106.08 / 2.0, places=6)
 
     def test_vss_shares_the_trunk_with_the_analog_taps(self):
         b = self.built("vss")

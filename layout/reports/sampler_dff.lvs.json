@@ -102,7 +102,7 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.10",
+    "engine_version": "0.30.13",
     "netgen_binary": null,
     "layout_sha256": "7f7e3fc487b068bca6202e2feb09fe35d169a9d177c587b826355228c5ef8c30",
     "reference_sha256": "124caebfb7e7becc8ab32b960e5e68cdb8275bf5496b3780838042e7271f38a3",
@@ -112,7 +112,7 @@
     "klt_version": "0.9.0",
     "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
     "klt_reinstall_spec": "klayout-tools==0.9.0",
-    "klayout_version": "0.30.10",
+    "klayout_version": "0.30.13",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",

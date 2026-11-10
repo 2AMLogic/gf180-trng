@@ -13,21 +13,21 @@
 * `combiner_sampler_routed_extracted` would also have changed the TOPOLOGY
 * (it carries two `ro_buf` instances and the two ring-liveness samplers that
 * this deck's pre-layout ancestor does not instantiate).
-* Each ring wrapper's tapped ports follow its base `en ro vddr vss vsubs`
+* Each ring wrapper's tapped ports follow its base `en ro vddr vss`
 * interface in this order -- the contract with that testbench's own
 * positional instantiation line:
 *   ro_ring11_routed_ntap:       n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx ro__rx
-*   ro_ring11_ring2_routed_ntap: ro__rx n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx
+*   ro_ring11_ring2_routed_ntap: n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx ro__rx
 * Regenerate with: python3 layout/pex/build.py
 .include "ro_ring11.routed.ntap.extracted.spice"
 .include "ro_ring11_ring2.routed.ntap.extracted.spice"
 .include "xor2.extracted.spice"
 .include "sampler_dff.extracted.spice"
 
-.subckt ro_ring11_routed_ntap en ro vddr vss vsubs n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx ro__rx
-xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss vsubs n1__rx n2__rx n3__rx n4__rx n5__rx n6__rx n7__rx n8__rx n9__rx n10__rx ro__rx ro_ring11_ntap
+.subckt ro_ring11_routed_ntap en ro vddr vss n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx ro__rx
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss n1__rx n2__rx n3__rx n4__rx n5__rx n6__rx n7__rx n8__rx n9__rx n10__rx ro__rx ro_ring11_ntap
 .ends
 
-.subckt ro_ring11_ring2_routed_ntap en ro vddr vss vsubs ro__rx n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx
-xcore ro n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 en vddr vss vsubs ro__rx n1__rx n2__rx n3__rx n4__rx n5__rx n6__rx n7__rx n8__rx n9__rx n10__rx ro_ring11_ring2_ntap
+.subckt ro_ring11_ring2_routed_ntap en ro vddr vss n1 n1__rx n2 n2__rx n3 n3__rx n4 n4__rx n5 n5__rx n6 n6__rx n7 n7__rx n8 n8__rx n9 n9__rx n10 n10__rx ro__rx
+xcore n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss n1__rx n2__rx n3__rx n4__rx n5__rx n6__rx n7__rx n8__rx n9__rx n10__rx ro__rx ro_ring11_ring2_ntap
 .ends

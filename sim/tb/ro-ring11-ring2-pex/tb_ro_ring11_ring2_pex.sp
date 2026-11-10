@@ -7,14 +7,13 @@
 * extracts from layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds for the extracted-side
 * run, and reuses everything else here byte for byte on both sides.
 *
-* The xdut line follows klt extract's fifteen-port order for that layout (ring2's own,
-* which is NOT ring1's: here the ring output is the first port)
-* (ring nodes first, as positioned in the layout, then en vddr vss vsubs);
+* The xdut line follows klt extract's fourteen-port order for that layout
+* (ring nodes first, as positioned in the layout, then en vddr vss);
 * build_dut.py generates the schematic header to match and fails if this
 * line drifts from it.
 *
 * Stimulus: the ring's own supply `vddr` swept by the request's supply axis,
-* `en` held at that same supply (ring enabled from t=0), vss and vsubs at
+* `en` held at that same supply (ring enabled from t=0), vss at
 * 0 V. One .ic kick breaks the all-equal operating point so the ring starts.
 * Nothing loads any ring node: `ron` is a behavioural, supply-normalised copy
 * of `ro` for the 50 % crossings, and draws no current from the ring.
@@ -29,7 +28,7 @@ een en 0 vddr 0 1
 vvss vss 0 dc 0
 vvsubs vsubs 0 dc 0
 
-xdut ro n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 en vddr vss vsubs ro_ring11_ring2
+xdut n1 n2 n3 n4 n5 n6 n7 n8 n9 n10 ro en vddr vss ro_ring11_ring2
 
 bron ron 0 v='v(ro)/v(vddr)'
 

@@ -84,10 +84,8 @@ the envelope and request on every run and checks ring2 independently of ring1.
   supply current, output swing) carry no limits; a row's `pass` means "measured
   on both sides". Nothing here estimates entropy, bias or jitter, and nothing is a
   full-chip timing or silicon-performance claim.
-- **Bodies.** Ring2's layout has no n-well taps either: every PMOS body in the
-  extraction is an anonymous floating well, and the schematic side ties PMOS bulk to
-  `vddr`. Whether to draw ties is the open decision in #339/#411, not made here. Any
-  result from this fixture on the current layout is a diagnosis under that
-  limitation, and its envelope's `body_bias.status` is recorded in
-  `publication.json`. A silicon-predictive reading depends on resolving #411 and
-  rerunning against the applicable layout.
+- **Bodies.** Since #705 ring2's layout carries the same well and substrate taps
+  as ring1's, so every bulk in the extraction ties to a supply (`vddr`/`vss`), as the
+  schematic side does, and the extraction promotes no `vsubs` port. The envelope's
+  `body_bias.status` is recorded in `publication.json`. The testbench holds the
+  netlist's `.GLOBAL` substrate reference `vsubs` at 0 V.

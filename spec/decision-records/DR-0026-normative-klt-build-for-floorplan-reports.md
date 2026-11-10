@@ -317,13 +317,20 @@ environments, nothing installed on the host.
 - **Report shapes.** The digital DRC envelope is schema 3 (`file` is
   `{path, scope}`, with a `source_cell_rollup`); the test that resolves the
   report's pin accepts both forms.
-- **Not re-measured here:** `layout/pex/` (the post-layout composition still
-  assumes a `vsubs` pin that tapped cells no longer have; it is not run by
-  any CI check) and the `sim/tb/*-pex` testbenches built on it. Their
-  committed records describe the layout as it was and stay valid as
-  written; re-deriving them is a follow-up. `design/synth.py --check` is
-  stale on this host under 0.6.0 and 0.9.0 alike (the host's Yosys is not
-  the nightly's), so it is not attributable to this change.
+- **PEX re-derived under the operator's 2026-11-10 ruling.** `layout/pex/build.py`
+  and the `sim/tb/*-pex` fixtures no longer assume a `vsubs` port (the tapped
+  extraction has none; `vsubs` is only the extracted netlists' `.GLOBAL`
+  substrate reference). The composed netlists and the full-chip delta report
+  were regenerated under 0.9.0 (`layout/pex/build.py --fullchip-extract`), and
+  `ring2`'s tapped port order now matches ring1's. T1 item 7 analog was
+  re-published from a fresh 27-corner two-sided `klt pex` run over ring1
+  (`signoff/publish_item7_analog.py`, batch backend); its `body_bias.status`
+  is now `"biased"` where it read `"unbiased"`. Quoted area, trunk-resistance and
+  IR-drop figures that moved with the larger cells were updated in the study
+  documents. Older `sim/records/` stay as written.
+- **Not re-measured here:** `design/synth.py --check` is stale on this host
+  under 0.6.0 and 0.9.0 alike (the host's Yosys is not the nightly's), so it is
+  not attributable to this change.
 
 ### Revisit if
 

@@ -11,14 +11,13 @@
 * pin a
 * pin vdd
 * pin vss
-* pin vsubs
 * pin y
-.SUBCKT ro_buf a vdd vss vsubs y
+.SUBCKT ro_buf a vdd vss y
 * device instance $1 r0 *1 0.84,0.22 nfet
-X$1 vss__t0 a__t0 y__t0 vsubs nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.308P
+X$1 vss__t0 a__t0 y__t0 vss__t1 nfet_03v3 L=0.28U W=0.22U AS=0.308P AD=0.308P
 + PS=2.28U PD=2.28U
 * device instance $2 r0 *1 0.84,1.86 pfet
-X$2 vdd__t0 a__t1 y__t1 \$5 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.308P
+X$2 vdd__t0 a__t1 y__t1 vdd__t1 pfet_03v3 L=0.28U W=0.44U AS=0.308P AD=0.308P
 + PS=2.28U PD=2.28U
 * device instance a_t0 r0 *1 0,0 
 Ra_t0 a__t0 a 30.7674
@@ -27,13 +26,17 @@ Ra_t1 a__t1 a 30.7674
 * device instance a r0 *1 0,0 
 Ca a vsubs 5.85014e-16
 * device instance vdd_t0 r0 *1 0,0 
-Rvdd_t0 vdd__t0 vdd 0.09
+Rvdd_t0 vdd__t0 vdd 0.27835
+* device instance vdd_t1 r0 *1 0,0 
+Rvdd_t1 vdd__t1 vdd 0.27835
 * device instance vdd r0 *1 0,0 
-Cvdd vdd vsubs 7.1536e-17
+Cvdd vdd vsubs 1.92786e-16
 * device instance vss_t0 r0 *1 0,0 
-Rvss_t0 vss__t0 vss 0.09
+Rvss_t0 vss__t0 vss 0.27835
+* device instance vss_t1 r0 *1 0,0 
+Rvss_t1 vss__t1 vss 0.27835
 * device instance vss r0 *1 0,0 
-Cvss vss vsubs 7.1536e-17
+Cvss vss vsubs 1.92786e-16
 * device instance y_t0 r0 *1 0,0 
 Ry_t0 y__t0 y 0.327
 * device instance y_t1 r0 *1 0,0 

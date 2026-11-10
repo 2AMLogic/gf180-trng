@@ -16,6 +16,6 @@
 vsup vsup 0 dc vdd_val
 ven en 0 dc 0 pulse(0 vdd_val 5n 1p 1p 10u 20u)
 
-xdut en en vsup vsup vsup 0 xo ro1 ro2 0 ro_array_core_routed_extracted
+xdut en en vsup vsup vsup 0 xo ro1 ro2 ro_array_core_routed_extracted
 
 bvth vth 0 v = 0.5*vdd_val

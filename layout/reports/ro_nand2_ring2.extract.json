@@ -295,7 +295,7 @@
     "klt_version": "0.9.0",
     "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
     "klt_reinstall_spec": "klayout-tools==0.9.0",
-    "klayout_version": "0.30.10",
+    "klayout_version": "0.30.13",
     "pdk": {
       "name": "gf180mcuD",
       "source": "PDK_ROOT environment variable",
@@ -337,13 +337,13 @@
   "timing": {
     "stages": {
       "read_layout": 0.0,
-      "device_extraction": 0.007,
+      "device_extraction": 0.006,
       "diagnostics": 0.0,
       "netlist_write": 0.0,
       "netlist_hash": 0.0,
       "netlist_normalized_hash": 0.0
     },
-    "total_seconds": 0.11,
-    "unattributed_seconds": 0.101
+    "total_seconds": 0.115,
+    "unattributed_seconds": 0.108
   }
 }
