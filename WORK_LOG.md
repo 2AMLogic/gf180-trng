@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-10
 
+- **Issue #705** (closed): Bump klayout-tools pin 0.6.0 → 0.8.0
+- **PR #826**: layout: tap every cell, track klayout-tools 0.9.0, and re-derive the vsubs-free PEX and item 7 citation
 - **Issue #823** (closed): Remove 8 unused imports left by the _power_cli refactor (ruff F401)
 - **PR #824**: refactor: remove unused imports from power retention/switch tools
 
