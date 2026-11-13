@@ -44,7 +44,7 @@ FULLCHIP_NETLIST = PEX_DIR / "sampler_core.fullchip.extracted.spice"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout.pex.build import (  # noqa: E402
+from layout.pex.fullchip import (  # noqa: E402
     FlowError,
     _coupling_total_ff,
     _fullchip_cache_key,
