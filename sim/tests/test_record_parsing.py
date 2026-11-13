@@ -14,8 +14,9 @@ parts a reader might not expect:
 
 - ``parse_values`` converts the numeric prefix of a bullet value and ignores
   any unit suffix -- ``2.5ns`` parses to ``2.5``, with no SI scaling.
-- ``field`` returns the raw capture string and raises only when the pattern
-  does not match; numeric validation is the caller's job.
+- ``parse_frontmatter_field`` returns the raw frontmatter value string and
+  raises only when the key is missing or duplicated; shape validation is the
+  caller's job.
 - ``parse_corner`` and ``parse_status`` read only the leading frontmatter
   block, require exactly one of each field, parse temperature and supply as
   complete finite scalars, and raise the caller's ``error_cls`` naming the
@@ -39,12 +40,12 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 from _record_parsing import (  # noqa: E402
-    field,
     format_corner,
     frontmatter,
     iter_result_seed_summaries,
     iter_seed_summaries,
     parse_corner,
+    parse_frontmatter_field,
     parse_result_values,
     parse_values,
     result_section,
@@ -270,57 +271,64 @@ class SeedSummaryTests(unittest.TestCase):
         self.assertIn("`dtrip_v`", str(cm.exception))
 
 
-class FieldTests(unittest.TestCase):
-    TEXT = "header\nvalue: abc\n"
+class ParseFrontmatterFieldTests(unittest.TestCase):
+    TEXT = "---\nrecord: fixture\nseeds: [1, 2]\n---\n\nseeds: [99]\n"
 
-    def test_returns_capture_with_multiline_anchors(self) -> None:
-        # ^/$ match at line boundaries: "value:" is not at the start of TEXT.
-        result = field(self.TEXT, r"^value:\s*(\w+)$")
+    def test_returns_the_frontmatter_value(self) -> None:
+        result = parse_frontmatter_field(self.TEXT, "seeds")
         self.assertIsInstance(result, str)
-        self.assertEqual(result, "abc")
+        self.assertEqual(result, "[1, 2]")
 
-    def test_capture_is_returned_unvalidated(self) -> None:
-        # Numeric validation belongs to callers, not to field().
-        result = field(self.TEXT, r"^value:\s*(\S+)$")
-        self.assertIsInstance(result, str)
-        self.assertEqual(result, "abc")
-
-    def test_numeric_capture_is_still_a_string(self) -> None:
-        self.assertEqual(field("n: 12\n", r"^n:\s*(\d+)$"), "12")
-
-    def test_missing_match_raises_runtime_error_by_default(self) -> None:
-        pattern = r"^value:\s*(\d+)$"
+    def test_body_line_cannot_supply_the_value(self) -> None:
+        # The whole point of going through frontmatter(): a `seeds:` line in
+        # the record's prose is not the record's metadata.
+        text = "---\nrecord: fixture\n---\n\nseeds: [99]\n"
         with self.assertRaises(RuntimeError) as ctx:
-            field(self.TEXT, pattern)
-        message = str(ctx.exception)
-        self.assertIn(repr(pattern), message)
-        self.assertFalse(message.startswith(": "))
+            parse_frontmatter_field(text, "seeds")
+        self.assertIn("`seeds:`", str(ctx.exception))
 
-    def test_missing_match_message_includes_label(self) -> None:
-        pattern = r"^value:\s*(\d+)$"
+    def test_value_is_returned_unvalidated(self) -> None:
+        # Shape validation belongs to callers, not to this reader.
+        self.assertEqual(
+            parse_frontmatter_field("---\nseeds: n/a\n---\n", "seeds"), "n/a"
+        )
+
+    def test_surrounding_whitespace_is_stripped(self) -> None:
+        self.assertEqual(
+            parse_frontmatter_field("---\nseeds: [1]  \n---\n", "seeds"), "[1]"
+        )
+
+    def test_indented_key_is_not_read(self) -> None:
+        # Only a column-0 key is the record's own field, exactly as
+        # parse_status reads `status:`.
+        with self.assertRaises(RuntimeError):
+            parse_frontmatter_field("---\ncorner:\n  seeds: [1]\n---\n", "seeds")
+
+    def test_duplicate_field_is_rejected(self) -> None:
         with self.assertRaises(RuntimeError) as ctx:
-            field(self.TEXT, pattern, label="some-record")
+            parse_frontmatter_field("---\nseeds: [1]\nseeds: [2]\n---\n", "seeds")
+        self.assertIn("2 `seeds:` fields", str(ctx.exception))
+
+    def test_missing_field_message_includes_label(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            parse_frontmatter_field(
+                "---\nrecord: fixture\n---\n", "seeds", label="some-record"
+            )
         message = str(ctx.exception)
         self.assertTrue(message.startswith("some-record: "), message)
-        self.assertIn(repr(pattern), message)
+        self.assertIn("`seeds:`", message)
 
-    def test_missing_match_raises_caller_error_cls(self) -> None:
-        pattern = r"^value:\s*(\d+)$"
+    def test_missing_frontmatter_raises_caller_error_cls(self) -> None:
         with self.assertRaises(CustomRecordErrorSubclass) as ctx:
-            field(
-                self.TEXT,
-                pattern,
+            parse_frontmatter_field(
+                "seeds: [1]\n",
+                "seeds",
                 label="some-record",
                 error_cls=CustomRecordErrorSubclass,
             )
         self.assertIs(type(ctx.exception), CustomRecordErrorSubclass)
         self.assertNotIsInstance(ctx.exception, RuntimeError)
-        message = str(ctx.exception)
-        self.assertTrue(message.startswith("some-record: "), message)
-        self.assertIn(repr(pattern), message)
-
-    def test_first_match_wins(self) -> None:
-        self.assertEqual(field("k: one\nk: two\n", r"^k:\s*(\w+)$"), "one")
+        self.assertTrue(str(ctx.exception).startswith("some-record: "))
 
 
 class ParseCornerTests(unittest.TestCase):

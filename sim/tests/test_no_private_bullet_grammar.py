@@ -43,7 +43,7 @@ class NoPrivateBulletGrammarTest(unittest.TestCase):
             offenders,
             {},
             "result-bullet regex re-typed outside _record_parsing.py; use "
-            "VALUE_RE / SEED_SUMMARY_RE / NUMBER_PATTERN from there instead",
+            "VALUE_RE / SEED_SUMMARY_RE from there instead",
         )
 
     def test_shared_module_still_defines_it(self) -> None:
