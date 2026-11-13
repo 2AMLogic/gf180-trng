@@ -10,6 +10,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-13
 
+- **PR #851**: refactor(pex): move the full-chip delta path into layout/pex/fullchip.py
+- **PR #849**: chore: drop package.json worktree:return script entry pointing at a deleted file
+- **Issue #848** (closed): Split layout/pex/build.py: move the full-chip delta path into a sibling module
+- **Issue #846** (closed): Remove broken worktree:return npm script: its target script no longer exists
 - **PR #844**: refactor: delete seven unread module-level constants, three with comments describing absent behaviour
 - **PR #845**: refactor(sim): build the power tools' klt requests from one shared skeleton
 - **PR #843**: sim: hold the study's sizing constant to the shared derivation, not a private copy
