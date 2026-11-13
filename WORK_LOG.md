@@ -1,6 +1,6 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-12.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-13.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-13
 
+- **PR #833**: sim: measure starved-ring jitter at 3.30 V and 2.97 V ring supply
+- **Issue #831** (closed): Measure starved-ring jitter at reduced ring supply (3.30 V, 2.97 V) against a = 10.932
 - **Issue #816** (closed): Operator decision: reduced ring supply against the Operating envelope row
 
 ### 2026-11-12
