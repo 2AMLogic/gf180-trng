@@ -3,7 +3,6 @@
   "description": "Loom-managed workspace. There is no JavaScript in this repo; these scripts are named entry points for the stdlib-only Python/shell self-checks, so agents, contributors and CI all invoke the same commands. See .github/workflows/ci.yml for what each script checks and why.",
   "private": true,
   "scripts": {
-    "worktree:return": "./.loom/scripts/worktree-return.sh",
     "lint": "python3 -m compileall -q sim design layout signoff && bash -n sim/selftest.sh && python3 design/netlist.py --lint && python3 -m sim.tools.unused_names --check && python3 -m sim.tools.pathload_guard --check && python3 -m sim.tools.verify_markdown_links --check",
     "lint:shell": "python3 -m sim.tools.lint_shell",
     "check:lint-shell": "python3 -m sim.tools.lint_shell",
