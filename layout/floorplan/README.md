@@ -1231,9 +1231,9 @@ stdlib-only, no `klt`/PDK needed (`npm run check:floorplan-netlist`, run on
 every push/PR); `--write` regenerates the composed reference at
 [`trng_floorplan.lvs_reference.spice`](trng_floorplan.lvs_reference.spice).
 
-**The sixteen declared nets**, condensed from the module's own table
-(supply/ground first, since they are the constraint most likely to be
-gotten wrong):
+**The declared nets** (`npm run check:floorplan-netlist` prints how many),
+condensed from the module's own table (supply/ground first, since they are
+the constraint most likely to be gotten wrong):
 
 | net | crosses | layer role | why |
 |---|---|---|---|
