@@ -105,6 +105,17 @@ RECORDS = REPO_ROOT / "sim" / "records"
 
 #: The long-window starved-cell family this script reads.
 JITTER_GLOB = "*-ro-ring5-starved-jitter-long-*.md"
+#: The reduced-supply family (issue #831): the same bench at 3.30 / 2.97 V. It is a
+#: DISTINCT family -- ``JITTER_GLOB`` does not match it -- so the corner mean above
+#: (the published 10.932 / 23.255) and :func:`sizing_constant` never see these records.
+REDSUP_GLOB = "*-ro-ring5-starved-jitter-redsup-*.md"
+#: Same-corner comparator for each reduced-supply point: the committed record at the
+#: nearest higher supply the long-window family measures there.
+REDSUP_COMPARATOR = {
+    "ss/125/3.30": "ss/125/3.63", "ss/125/2.97": "ss/125/3.63",
+    "ff/-40/3.30": "ff/-40/3.63", "ff/-40/2.97": "ff/-40/3.63",
+    "tt/27/2.97": "tt/27/3.30",
+}
 #: The per-corner device-noise record that scales the fixed injection to a
 #: physical one, exactly as jitter_energy_law.py does for the plain cell.
 NOISE_GLOB = "*-rostage-noise-*.md"
@@ -528,6 +539,42 @@ def load_points(*, include_superseded: bool = False) -> tuple[list[Point], list[
     return points, skipped
 
 
+def load_reduced_supply_points(*, include_superseded: bool = False) -> list[Point]:
+    """One Point per reduced-supply record (issue #831), scaled with the device-noise
+    record at the same corner exactly as :func:`load_points` does. Raises
+    :class:`RecordError` for a record without a same-corner noise record."""
+    noise = {r.corner: r for r in load_family(NOISE_GLOB, include_superseded=include_superseded)}
+    discarded, n_periods = window_geometry()
+    points = []
+    for rec in load_family(REDSUP_GLOB, include_superseded=include_superseded):
+        n = noise.get(rec.corner)
+        if n is None:
+            raise RecordError(f"{rec.stem}: no {NOISE_GLOB} record at {rec.corner}")
+        points.append(Point(rec, n, discarded, n_periods))
+    return points
+
+
+def report_reduced_supply(points: list[Point], reduced: list[Point], ref_1: float) -> None:
+    """Print each reduced-supply ``a`` beside the stated mean and the same-corner comparator."""
+    stated_asym = sum(p.a(p.kappa2_asym) for p in points) / len(points)
+    stated_lag1 = sum(p.a(p.kappa2_lag1) for p in points) / len(points)
+    by_corner = {p.rec.corner: p for p in points}
+    print(f"\nreduced-supply records (issue #831; NOT in the corner mean): stated "
+          f"a_asym {stated_asym:.3f}, a_lag1 {stated_lag1:.3f}")
+    hdr = (f"  {'corner':<12} {'a_asym':>8} {'a_lag1':>8} {'/stated':>8} {'comparator':<12} "
+           f"{'cmp a_asym':>10} {'ratio':>6} {'spread_1':>9} {'ref':>7} {'drift win':>10}")
+    print(hdr)
+    for r in reduced:
+        cmp_corner = REDSUP_COMPARATOR.get(r.rec.corner)
+        c = by_corner.get(cmp_corner) if cmp_corner else None
+        a_as, a_l1 = r.a(r.kappa2_asym), r.a(r.kappa2_lag1)
+        got = r.measured_spread_1
+        print(f"  {r.rec.corner:<12} {a_as:8.3f} {a_l1:8.3f} {a_as / stated_asym:8.3f} "
+              f"{(cmp_corner or 'n/a'):<12} "
+              + (f"{c.a(c.kappa2_asym):10.3f} {a_as / c.a(c.kappa2_asym):6.3f}" if c else f"{'n/a':>10} {'n/a':>6}")
+              + f" {100 * (got or 0):8.2f}% {100 * ref_1:6.2f}% {r.drift_window_ppm:9.0f}p")
+
+
 class SizingConstant:
     """The array-sizing jitter-energy constant, with its provenance.
 
@@ -627,6 +674,12 @@ def main(argv: list[str] | None = None) -> int:
         help="exit non-zero if any record's seed spread is inconsistent with its "
         "window length (the settling-drift signature this family exists to avoid)",
     )
+    parser.add_argument(
+        "--reduced-supply",
+        action="store_true",
+        help="also print the reduced-supply records (issue #831) beside the stated "
+        "constant and the same-corner comparator; with --check they are gated too",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -701,6 +754,20 @@ def main(argv: list[str] | None = None) -> int:
         "  '16-per' columns are the SAME run measured the way the sanity run measured\n"
         "  it: 16 periods, window opened at the second edge."
     )
+
+    reduced: list[Point] = []
+    if args.reduced_supply:
+        try:
+            reduced = load_reduced_supply_points()
+        except RecordError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        report_reduced_supply(points, reduced, ref_1)
+        for p in reduced:
+            got = p.measured_spread_1
+            ratio = (got / ref_1) if got else float("nan")
+            if got is None or not (1 / SPREAD_TOLERANCE <= ratio <= SPREAD_TOLERANCE):
+                ok = False
 
     mean_lag1 = sum(p.a(p.kappa2_lag1) for p in points) / len(points)
     mean_asym = sum(p.a(p.kappa2_asym) for p in points) / len(points)
