@@ -106,7 +106,12 @@ from starved_cell_jitter_energy import (  # noqa: E402
     load_points as load_starved_points,
     load_reduced_supply_points,
 )
-from _record_parsing import current_records, iter_result_seed_summaries  # noqa: E402
+from _record_parsing import (  # noqa: E402
+    current_records,
+    iter_result_seed_summaries,
+    latest_current_record,
+    parse_corner,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -509,13 +514,16 @@ def _sampler_offset(
     corner) PVT point, more than one *valid* ``sim/tb/sampler-dff-mc-offset/``
     record can exist at once -- "the last one sorted by filename" (this
     function's pre-#146 selection rule) is no longer reliably the nominal
-    one, so this filters explicitly by corner (and by ``status: valid``,
-    skipping superseded records) instead.
+    one, so this filters explicitly by corner as well.
 
-    The lifecycle is read by ``parse_status`` from the frontmatter only
-    (issue #427), so a ``status:`` line quoted in a record's body cannot
-    decide it, and a missing or unknown value raises ``RuntimeError`` naming
-    the record. ``include_superseded=True`` is the explicit historical read.
+    Both the corner filter and the ``status: valid`` lifecycle filter are
+    ``latest_current_record``'s, the shared selector (issue #554) every other
+    ``sim/tools/`` call site uses: corner and lifecycle are read from the
+    leading frontmatter block only (issues #443, #427), so neither a
+    ``status:`` nor a ``voltage:`` line quoted in a record's body can decide
+    them, and a record whose corner or lifecycle cannot be parsed raises
+    ``RuntimeError`` naming that record rather than being skipped.
+    ``include_superseded=True`` is the explicit historical read.
     """
     # `-[0-9]` and not `-`: the sequence number must follow the slug directly
     # (same convention as array_sizing.py's ARRAY_RECORD_GLOBS), so records
@@ -524,24 +532,11 @@ def _sampler_offset(
     # extends this one's as a substring -- are never picked up here as if
     # they were mismatch-enabled MC data.
     glob = "*-sampler-dff-mc-offset-[0-9]*.md"
-    if not current_records(RECORDS, glob, include_superseded=True):
-        raise RuntimeError(f"no sim/records/{glob} record committed yet")
-    candidates = []
-    for rec_path in current_records(RECORDS, glob, include_superseded=include_superseded):
-        text = rec_path.read_text()
-        process_m = re.search(r"process:\s*(\w+)", text)
-        temp_m = re.search(r"temperature:\s*(-?[\d.]+)", text)
-        vdd_m = re.search(r"voltage:\s*([\d.]+)", text)
-        if not (process_m and temp_m and vdd_m):
-            continue
-        rec_corner = f"{process_m.group(1)}/{float(temp_m.group(1)):.0f}/{float(vdd_m.group(1)):.2f}"
-        if rec_corner == corner:
-            candidates.append((rec_path, text, float(vdd_m.group(1))))
-    if not candidates:
-        raise RuntimeError(
-            f"no valid sim/records/*-sampler-dff-mc-offset-[0-9]*.md record at corner {corner!r}"
-        )
-    rec_path, text, vdd = candidates[-1]
+    rec_path = latest_current_record(
+        RECORDS, glob, corner=corner, include_superseded=include_superseded
+    )
+    text = rec_path.read_text()
+    vdd = parse_corner(text, label=rec_path.stem)[2]
     dtrip = [
         s
         for key, s in iter_result_seed_summaries(
