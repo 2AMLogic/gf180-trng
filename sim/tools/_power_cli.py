@@ -1,13 +1,16 @@
 """Adapter helpers shared by the power tools (``power_switch``, ``power_switch_decay``,
 ``power_retention``, ``liveness_sampler_power``; ``fs_sf_capture``, ``supply_ripple`` and
 ``starved_hot_corner`` use only ``render``/``vals``): the "emit request / run / record /
-analyze" layer that was identical in each. Per-script pieces (``build_request``, ``derive``, ``checks``, ``render_*``) stay in the
+analyze" layer that was identical in each, plus the ``plan | emit | run | record [| summarize] |
+analyze`` CLI front end (``build_parser``/``main``) that was copy-pasted with it. Per-script pieces
+(``build_request``, ``derive``, ``checks``, ``render_*``) stay in the
 tools; they differ for real. Everything here either is pure or takes the per-script pieces as
 arguments, so each tool's emitted requests and minted records are unchanged.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -100,3 +103,57 @@ def cmd_analyze(paths: list[str], as_json: bool, *, analyse_report: Callable, ta
         print(f"\n{len(rows) - len(bad)}/{len(rows)} units usable"
               + ("" if not bad else "; not usable: " + ", ".join(f"{r['corner']} ({r['verdict']})" for r in bad)))
     return 0
+
+
+def build_parser(doc: str | None, *, only_example: str, has_summarize: bool = True) -> argparse.ArgumentParser:
+    """The power tools' CLI: ``plan | emit | run | record [| summarize] | analyze``.
+
+    The subparser set was identical in every tool bar the ``--only`` example and whether the
+    tool has a ``summarize`` subcommand, so those are the only arguments: help text that had
+    drifted between the copies (a missing ``--note`` / ``summarize`` help, "table" vs
+    "tables") is unified here rather than carried per tool.
+    """
+    ap = argparse.ArgumentParser(description=(doc or "").split("\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("plan")
+    e = sub.add_parser("emit")
+    e.add_argument("--check", action="store_true")
+    r = sub.add_parser("run")
+    r.add_argument("--outdir", required=True)
+    r.add_argument("--only", help=f"ONE grid point PROCESS/TEMP_C/VDD (e.g. {only_example}): a local debug probe")
+    r.add_argument("--backend", default="batch", choices=("batch", "local"))
+    r.add_argument("--klt", default="klt", dest="klt_cmd",
+                   help="klt command; e.g. 'uvx --from klayout-tools==X.Y.Z klt'")
+    rec = sub.add_parser("record", help="mint append-only records from klt reports")
+    rec.add_argument("reports", nargs="+")
+    rec.add_argument("--note", default="", help="prose appended to an UNMEASURED record")
+    if has_summarize:
+        sub.add_parser("summarize", help="tables over the committed records, for the characterization report")
+    a = sub.add_parser("analyze")
+    a.add_argument("reports", nargs="+")
+    a.add_argument("--json", action="store_true")
+    return ap
+
+
+def main(argv: list[str] | None, *, doc: str | None, only_example: str, plan_text: Callable[[], str],
+         cmd_emit: Callable[..., int], cmd_run: Callable[..., int], cmd_record: Callable[..., int],
+         cmd_analyze: Callable[..., int], cmd_summarize: Callable[..., int] | None = None) -> int:
+    """Parse ``argv`` and dispatch to the tool's own command functions.
+
+    ``cmd_summarize=None`` is a tool without a ``summarize`` subcommand (the parser then does
+    not offer one), not a tool whose ``summarize`` does nothing.
+    """
+    ap = build_parser(doc, only_example=only_example, has_summarize=cmd_summarize is not None)
+    args = ap.parse_args(argv)
+    if args.cmd == "plan":
+        print(plan_text())
+        return 0
+    if args.cmd == "emit":
+        return cmd_emit(args.check)
+    if args.cmd == "run":
+        return cmd_run(args.outdir, args.backend, args.klt_cmd, args.only)
+    if args.cmd == "record":
+        return cmd_record(args.reports, args.note)
+    if args.cmd == "summarize" and cmd_summarize is not None:
+        return cmd_summarize()
+    return cmd_analyze(args.reports, args.json)
