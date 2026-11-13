@@ -103,25 +103,17 @@ def _gap(a: list[float], b: list[float]) -> float:
 
 
 class DrawnNetsMatchTheDeclaration(unittest.TestCase):
-    def test_every_declared_net_with_endpoints_is_drawn(self):
-        declared = {
-            net["name"] for net in floorplan_netlist.INTER_REGION_NETS
-            if net.get("endpoints") and net["layer_role"] != "guard_ring_tap"
-        }
+    def test_every_declared_net_is_drawn(self):
+        """No declared net is silently dropped. `drawn_nets()` filters
+        nothing, so the two name sets match by construction; what this
+        guards is that they keep matching -- the equality fails if a filter
+        is ever reintroduced there, and a net phase 1 declares but this
+        module cannot wire (no `endpoints`, or an endpoint with no anchor)
+        makes `wiring_plan()` raise here instead of quietly shipping a
+        floorplan missing that net."""
+        declared = {net["name"] for net in floorplan_netlist.INTER_REGION_NETS}
         drawn = {route["net"] for route in _plan()["routes"]}
         self.assertEqual(declared, drawn)
-
-    def test_vsubs_is_not_drawn(self):
-        """`vsubs` is declared by phase 1 but deliberately carries no drawn
-        wire: it is the guard rings' own substrate tap, not a metal route at
-        all. `vddd` used to be excluded here too (its only connection was
-        into `digital`'s SPECIALNETS-only PDN, which the phase-1 reference
-        this layout was LVS'd against could not express) -- gf180-trng#224
-        promoted `vddd`/`vss` to real `.SUBCKT trng_top` pins on `digital`'s
-        own reference, so both are ordinary drawn endpoints now (see
-        `test_every_declared_net_with_endpoints_is_drawn` above)."""
-        drawn = {route["net"] for route in _plan()["routes"]}
-        self.assertNotIn("vsubs", drawn)
 
     def test_every_declared_endpoint_gets_a_riser(self):
         for route in _plan()["routes"]:
