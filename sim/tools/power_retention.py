@@ -20,7 +20,6 @@ it can be unit-tested.
 
 from __future__ import annotations
 
-import argparse
 import datetime as _dt
 import sys
 from pathlib import Path
@@ -353,36 +352,9 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("plan")
-    e = sub.add_parser("emit")
-    e.add_argument("--check", action="store_true")
-    r = sub.add_parser("run")
-    r.add_argument("--outdir", required=True)
-    r.add_argument("--only", help="ONE grid point PROCESS/TEMP_C/VDD (e.g. ff/125/3.63): a local debug probe")
-    r.add_argument("--backend", default="batch", choices=("batch", "local"))
-    r.add_argument("--klt", default="klt", dest="klt_cmd")
-    rc_ = sub.add_parser("record", help="mint append-only records from klt reports")
-    rc_.add_argument("reports", nargs="+")
-    rc_.add_argument("--note", default="")
-    sub.add_parser("summarize")
-    a = sub.add_parser("analyze")
-    a.add_argument("reports", nargs="+")
-    a.add_argument("--json", action="store_true")
-    args = ap.parse_args(argv)
-    if args.cmd == "plan":
-        print(plan_text())
-        return 0
-    if args.cmd == "emit":
-        return cmd_emit(args.check)
-    if args.cmd == "run":
-        return cmd_run(args.outdir, args.backend, args.klt_cmd, args.only)
-    if args.cmd == "record":
-        return cmd_record(args.reports, args.note)
-    if args.cmd == "summarize":
-        return cmd_summarize()
-    return cmd_analyze(args.reports, args.json)
+    return _pc.main(argv, doc=__doc__, only_example="ff/125/3.63", plan_text=plan_text,
+                    cmd_emit=cmd_emit, cmd_run=cmd_run, cmd_record=cmd_record,
+                    cmd_analyze=cmd_analyze, cmd_summarize=cmd_summarize)
 
 
 if __name__ == "__main__":
