@@ -49,6 +49,7 @@ What it does, and refuses to do:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -142,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     if loaded is None:
         return 1
     raw, envelope = loaded
+    raw = common.redact_client_paths(raw)
+    envelope = json.loads(raw)
     refusals = common.envelope_refusals(REPO_ROOT, envelope, check.CS_NETLIST)
     if refusals:
         return common.fail(f"{TAG}: refusing to publish", refusals)

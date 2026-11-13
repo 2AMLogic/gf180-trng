@@ -347,7 +347,9 @@ missing corner or a missing value as `unmeasured`, never `pass`. The testbench
 README has the scenarios, settling windows and exclusions.
 
 When the run is published, `publish_combiner_sampler_pex.py` writes the
-native envelope byte for byte to `evidence/post-layout/combiner_sampler/`,
+native envelope to `evidence/post-layout/combiner_sampler/` (byte for byte, except that
+`environment.client_ngspice_binary` loses its home-directory prefix and keeps the
+binary's name, so the tree passes `check:no-host-paths`),
 with a `publication.json`. That file pins the request, testbench, DUT, source
 identity, port map, PDK/deck provenance and `body_bias`, and records the
 verdict. `check.py` re-verifies all of it on every run (step 1d) and
@@ -365,7 +367,7 @@ held on both sides, 108 measure-only rows, 0 unmeasured). The first submission
 left two of the nine extracted-side shards unlaunched after
 `batch_no_capacity`; `publish_combiner_sampler_pex.py --resume` (klt's
 `--resume`, same outdir, still batch) launched them. The committed envelope is
-byte-identical to the resumed response. The grid was not run locally. Evidence
+the resumed response with that one path reduced to `ngspice`. The grid was not run locally. Evidence
 is in `evidence/post-layout/combiner_sampler/`.
 
 What the pass does and does not mean: `body_bias.status` is `"biased"` (0

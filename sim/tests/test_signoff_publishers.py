@@ -353,10 +353,15 @@ class CombinerSamplerMain(Scratch):
             with self.subTest(env=env):
                 run_pex = mock.Mock(side_effect=boom)
                 self.main([], env, run_pex=run_pex)
-                run_pex.assert_called_once_with(want)
+                run_pex.assert_called_once_with(want, False)
         run_pex = mock.Mock(side_effect=boom)
         self.main(["--backend", "x"], {"KLT_SIM_BACKEND": "batch"}, run_pex=run_pex)
-        run_pex.assert_called_once_with("x")
+        run_pex.assert_called_once_with("x", False)
+
+    def test_resume_flag_is_passed_to_run_pex(self):
+        run_pex = mock.Mock(side_effect=subprocess.CalledProcessError(2, ["klt"]))
+        self.main(["--backend", "batch", "--resume"], {}, run_pex=run_pex)
+        run_pex.assert_called_once_with("batch", True)
 
     def test_pex_failure_publishes_nothing(self):
         run_pex = mock.Mock(side_effect=subprocess.CalledProcessError(4, ["klt"]))
@@ -432,6 +437,16 @@ class CombinerSamplerMain(Scratch):
         self.assertTrue((self.root / check.CS_PUBLICATION).is_file())
 
 
+class RedactClientPaths(unittest.TestCase):
+    def test_home_directory_dropped_other_text_untouched(self):
+        for home in ("/home/alice/.local/bin/", "/Users/bob/bin/"):
+            raw = ('{"client_ngspice_binary": "%sngspice", "x": "/usr/bin/ngspice"}' % home).encode()
+            out = common.redact_client_paths(raw)
+            self.assertEqual(json.loads(out), {"client_ngspice_binary": "ngspice", "x": "/usr/bin/ngspice"})
+        raw = b'{"client_ngspice_binary": "/tmp/p/ngspice"}'
+        self.assertEqual(common.redact_client_paths(raw), raw)
+
+
 class CombinerSamplerPublication(Scratch):
     mod = cs
 
@@ -449,7 +464,7 @@ class CombinerSamplerPublication(Scratch):
             pub = cs.build_publication(_envelope(), "sha256:feed", "batch")
         bd.extraction_port_map.assert_called_once_with("netlist", "dut")
         self.assertEqual(pub["schema"], check.CS_PUBLICATION_SCHEMA)
-        self.assertEqual(pub["producer"], "klt " + " ".join(cs.KLT_PEX_ARGS))
+        self.assertEqual(pub["producer"], "klt " + " ".join(cs.pex_args("batch")))
         self.assertEqual(pub["producer_build"], RELEASE_BUILD)
         self.assertEqual(pub["backend_requested"], "batch")
         self.assertEqual(pub["layout_content_hash"], "sha256:" + "ab" * 32)

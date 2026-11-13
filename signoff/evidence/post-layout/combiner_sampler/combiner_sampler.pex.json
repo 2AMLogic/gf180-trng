@@ -2614,7 +2614,7 @@
             "engine_version": "47",
             "ngspice_binary": "/usr/local/bin/ngspice",
             "engine_host": "worker",
-            "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+            "client_ngspice_binary": "ngspice",
             "remote": {
               "fleet": [
                 {
@@ -3295,7 +3295,7 @@
             "engine_version": "47",
             "ngspice_binary": "/usr/local/bin/ngspice",
             "engine_host": "worker",
-            "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+            "client_ngspice_binary": "ngspice",
             "remote": {
               "fleet": [
                 {
