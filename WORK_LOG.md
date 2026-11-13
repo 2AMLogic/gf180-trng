@@ -10,11 +10,13 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-13
 
+- **PR #870**: layout: regenerate 45 reports under the pinned KLayout engine and guard the recorded engine
 - **PR #864**: docs(floorplan): drop the hand-maintained net count above the inter-region table
 - **PR #862**: docs(floorplan): retire the pre-#224 framing from the vddd and vss net rows
 - **PR #860**: refactor(floorplan): split build() into per-stage functions
 - **PR #857**: refactor(floorplan): drop the vsubs filter, its vacuous test and its prose
 - **PR #856**: refactor(sim): read a record's seeds: from its frontmatter, drop field() and NUMBER_PATTERN
+- **Issue #858** (closed): Committed layout and floorplan reports record KLayout 0.30.13, not the pinned 0.30.10: regenerate under the pin and guard the recorded engine
 - **Issue #863** (closed): layout/floorplan/README.md calls the inter-region net table sixteen nets; the declaration has fifteen
 - **Issue #859** (closed): layout/floorplan/README.md: the vddd row of the net table still describes the pre-#224 SPECIALNETS-only state
 - **Issue #854** (closed): Split floorplan.py's 493-line build() into per-stage functions along its own numbered banners
