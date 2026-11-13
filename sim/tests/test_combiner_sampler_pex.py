@@ -299,7 +299,8 @@ class Publication(unittest.TestCase):
 
     def test_body_bias_must_be_stated_verbatim(self):
         pub = copy.deepcopy(self.pub)
-        pub["body_bias_status"] = "biased"
+        # State the opposite of what the envelope reports, whichever that is.
+        pub["body_bias_status"] = "unbiased" if self.env["body_bias"]["status"] == "biased" else "biased"
         self.assertTrue(any("body_bias_status" in p for p in check.combiner_sampler_problems(pub, self.env)))
 
 

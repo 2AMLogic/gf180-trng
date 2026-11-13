@@ -123,14 +123,13 @@ never a pass). The run is `incomplete` if anything is unmeasured, else
 - **Randomness.** Deterministic stimulus; nothing here estimates entropy,
   bias or jitter.
 - **Boundary timing.** See "Settling windows" above.
-- **Bodies.** The layout draws no n-well taps: every PMOS body in the
-  extraction is an anonymous floating well (`body_bias.status` is expected
-  to read `"unbiased"`), while the schematic ties PMOS bulk to `vdd` and
-  NMOS bulk to `vss`. `klt`'s own documentation calls a re-simulation of
-  such a netlist physically wrong, not merely imprecise; #339 measured the
-  error at 10–18 % on ring1's period. The extracted-side numbers are a
-  diagnosis under that limitation (#411, #412), not a prediction of
-  silicon.
+- **Bodies.** The layout draws well and substrate taps (#705), so the
+  extraction's `body_bias.status` reads `"biased"` with no unbiased devices
+  (check `publication.json` for the run's actual value), matching the
+  schematic's PMOS-to-`vdd` and NMOS-to-`vss` ties. The testbench holds the
+  substrate reference at 0 V and models no substrate network. This does not
+  revisit the earlier floating-well findings (#339, #411, #412), which were
+  measured on a netlist whose wells floated.
 - **Loads, noise, mismatch, full chip.** Outputs unloaded; no device noise
   or mismatch; block-level extraction only, no top-level routing or supply
   network.

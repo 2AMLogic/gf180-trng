@@ -265,6 +265,9 @@ def render_request() -> dict:
         "analysis": {"kind": "tran", "args": f"10p {STOP:g}n"},
         "measurements": measurements,
         "options": {"timeout_s": 900, "keep_artifacts": False, "waveforms": False},
+        # Batch only (ignored by other backends): wait for fleet vCPU budget
+        # rather than failing a burst with batch_no_capacity.
+        "batch": {"capacity_wait_s": 600},
     }
 
 

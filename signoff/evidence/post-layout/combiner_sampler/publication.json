@@ -1,0 +1,84 @@
+{
+  "schema": "gf180-trng/combiner-sampler-pex-publication/1",
+  "scope": "additional post-layout coverage of combiner_sampler; not a manifest citation",
+  "producer": "klt pex layout/blocks/combiner_sampler/combiner_sampler.gds sim/tb/combiner-sampler-pex/request.json --deck gf180mcu --pdk gf180mcuD --top combiner_sampler -o signoff/evidence/post-layout/combiner_sampler/combiner_sampler.extracted.spice --outdir sim/.work/combiner-sampler-pex --format json --hosts 9",
+  "producer_build": "0.9.0",
+  "klayout_build": "0.30.10",
+  "pdk": {
+    "name": "gf180mcuD",
+    "source": "search root: ~/.ciel",
+    "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+    "ambiguous_sources": [
+      "search root: ~/.volare"
+    ]
+  },
+  "deck": {
+    "name": "gf180mcu",
+    "content_hash": "sha256:cf44de63f0a5b01c1d09c4d58e0535e990aa4b070bcaae17fd3a94a67a1d97e1",
+    "released": true,
+    "options": {
+      "metal_top": "9K",
+      "mim_cap": "cap_mim_2f0_m4m5_noshield",
+      "poly_res": "1k"
+    },
+    "options_explicit": {
+      "metal_top": false,
+      "mim_cap": false,
+      "poly_res": false
+    },
+    "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
+  },
+  "backend_requested": "batch",
+  "layout_content_hash": "sha256:c00cf8143b8fd4f76cb986d2f0daf014ea51d1ec643999a14ad625e099939d7f",
+  "source_sha256": "sha256:4a12cb75bc6559e4771569ff6c52b190fda4be31465a3da52e1a035fab2b0f21",
+  "inputs_sha256": {
+    "sim/tb/combiner-sampler-pex/request.json": "sha256:4455bb9f517cd6e800b6d8ce0f769bc9f9c52cbcba819e19f99e752b94fc448f",
+    "sim/tb/combiner-sampler-pex/tb_combiner_sampler_pex.sp": "sha256:1b61069e9a367bd9a4beb7bb5dcbe18d8099f1abb5c7fb7bd57657412ddb7cde",
+    "sim/tb/combiner-sampler-pex/combiner_sampler_schematic.spice": "sha256:e5a9a3941582bb2555baed65f702151876a5aa03a8650031f9fa548f27c88b4c"
+  },
+  "port_map": {
+    "a": "rn1",
+    "a$1": "rn2",
+    "a|d|y": "ro1",
+    "b|d|y": "ro2",
+    "clk": "clk",
+    "d|vdd": "vdd",
+    "d|y": "xo",
+    "q": "raw_bit",
+    "q$1": "raw_valid",
+    "q$2": "ring_bit1",
+    "q$3": "ring_bit2",
+    "rst_n": "rst_n",
+    "vss": "vss"
+  },
+  "body_bias_status": "biased",
+  "body_bias_unbiased_device_count": 0,
+  "coverage_exclusions": [
+    "rings: rn1/rn2 are driven by deterministic logic steps at vdd level, not by the oscillators; ring layout, ring supplies (vddr1/vddr2) and the ring-to-buffer inter-region nets are outside this layout and this run",
+    "randomness: deterministic stimuli; nothing here estimates entropy, bias or jitter",
+    "boundary timing: data and reset change only far from clock edges (see stimulus.py settling windows); setup/hold, recovery/removal and metastability are not exercised",
+    "bodies: the layout's well and substrate taps make the extraction report body_bias 'biased' (see body_bias_status; no floating wells), matching the schematic side's PMOS-to-vdd and NMOS-to-vss ties; the testbench holds the substrate reference at 0 V rather than modelling a substrate network, and this result does not revisit the earlier floating-well findings (#339/#411/#412)",
+    "loads: the four flip-flop outputs and xo/ro1/ro2 are unloaded (the downstream digital block is not included); the *n monitors draw no current",
+    "noise and mismatch: transient without device noise or Monte Carlo mismatch",
+    "full chip: block-level extraction of combiner_sampler.gds only; no top-level routing, supply network or neighbouring blocks"
+  ],
+  "verdict": {
+    "verdict": "pass",
+    "declared_corners": 27,
+    "declared_rows_per_corner": 66,
+    "limited_rows_per_corner": 62,
+    "counts": {
+      "pass": 1674,
+      "fail": 0,
+      "measured": 108,
+      "unmeasured": 0
+    },
+    "failures": [],
+    "unmeasured": [],
+    "consistency_problems": []
+  },
+  "envelope": {
+    "file": "signoff/evidence/post-layout/combiner_sampler/combiner_sampler.pex.json",
+    "sha256": "sha256:2e5d3d15b0efdd137d0d43c242a5f3a97d17992bab4e5c80a0fabb8f009dd648"
+  }
+}
