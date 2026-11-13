@@ -63,11 +63,14 @@ It is the value DR-0011-raw-rate §2 adopts, for the reasons given there: only
 the accumulating component survives extrapolation to millisecond-scale sample
 periods, and the corner that binds should supply its own constant.
 
-The plain-cell `a = 1.79` that `sim/tools/array_sizing.py` still carries as its
-stated constant is **not** used anywhere in this study: it was fitted to an
-unstarved inverter ring this project does not ship. `higher_rate_options.py
---check` fails if the 7.322 it uses drifts from the live derivation by more
-than 1 %.
+`sim/tools/array_sizing.py` states this same starved-cell constant, rounded to
+three significant figures as `A_JITTER_ENERGY = 7.32`, and carries the
+plain-cell `a = 1.79` only as `A_PLAIN_CELL`, so that historical tables quoted
+at it stay reproducible. The plain-cell value is **not** used anywhere in this
+study: it was fitted to an unstarved inverter ring this project does not ship.
+`higher_rate_options.py --check` fails if the 7.322 it uses drifts by more than
+1 % from `starved_cell_jitter_energy.sizing_constant()` — the one derivation
+`array_sizing.py --check` holds its own stated 7.32 to.
 
 ### Array evidence and binding corners
 

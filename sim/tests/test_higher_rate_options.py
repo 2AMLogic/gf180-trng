@@ -23,8 +23,15 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import array_sizing as sizing  # noqa: E402
 import higher_rate_options as hro  # noqa: E402
+import starved_cell_jitter_energy as sce  # noqa: E402
 
 NEED = sizing.MARGIN_M * sizing.Q_H0  # 6e-3
+
+
+def _drifted_constant(value: float) -> sce.SizingConstant:
+    """A ``SizingConstant`` standing in for a drifted live derivation."""
+    corner = sce.SIZING_CONSTANT_CORNER
+    return sce.SizingConstant(value, corner, "drifted-stand-in", {corner: value})
 
 
 class ArithmeticTests(unittest.TestCase):
@@ -74,7 +81,11 @@ class CorpusTests(unittest.TestCase):
 
     def test_uses_the_starved_cell_constant_not_the_plain_one(self) -> None:
         self.assertEqual(self.s["a"], hro.A_STARVED)
-        self.assertNotEqual(hro.A_STARVED, sizing.A_JITTER_ENERGY)
+        self.assertNotEqual(hro.A_STARVED, sizing.A_PLAIN_CELL)
+        # array_sizing.py states the same starved-cell constant to three
+        # significant figures; the two stated values must stay together.
+        self.assertAlmostEqual(hro.A_STARVED, sizing.A_JITTER_ENERGY,
+                               delta=sizing.A_TOLERANCE * sizing.A_JITTER_ENERGY)
         for p in hro.array_points():
             self.assertEqual(p.a, hro.A_STARVED)
 
@@ -107,14 +118,16 @@ class CorpusTests(unittest.TestCase):
         self.assertTrue(any("rate_shipped_bps" in e for e in errors), errors)
 
     def test_check_fails_when_the_constant_drifts(self) -> None:
-        with mock.patch.object(hro, "derived_a", return_value=11.77):
+        with mock.patch.object(hro.sce, "sizing_constant",
+                               return_value=_drifted_constant(11.77)):
             errors = hro.check(self.s)
         self.assertTrue(any("A_STARVED" in e for e in errors), errors)
 
     def test_main_check_exit_codes(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(hro.main(["--check"]), 0)
-            with mock.patch.object(hro, "derived_a", return_value=1.79), \
+            with mock.patch.object(hro.sce, "sizing_constant",
+                                   return_value=_drifted_constant(1.79)), \
                     contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(hro.main(["--check"]), 1)
 
