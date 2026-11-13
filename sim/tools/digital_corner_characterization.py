@@ -157,18 +157,18 @@ def estimate_fifo_depth() -> int:
 RECORDED = {
     "corner_count": 15,
     "setup_binding_corner": "ss_125C_3v00/rc-max",
-    "setup_binding_slack_ns": 30.84113,
+    "setup_binding_slack_ns": 31.90722,
     "hold_binding_corner": "ff_n40C_3v60/rc-min",
-    "hold_binding_slack_ns": 0.69456,
-    "fmax_floor_mhz": 52.19495,
+    "hold_binding_slack_ns": 0.69529,
+    "fmax_floor_mhz": 55.27010,
     "fmax_floor_corner": "ss_125C_3v00/rc-max",
-    "cell_area_um2": 60_743.69,
-    "area_ratio_vs_inventory": 1.82805,
-    "power_1mhz_max_w": 3.39350e-4,
+    "cell_area_um2": 60_323.15,
+    "area_ratio_vs_inventory": 1.81539,
+    "power_1mhz_max_w": 3.38115e-4,
     "power_1mhz_max_corner": "ff_125C_3v60/rc-max",
-    "leakage_max_w": 7.61659e-6,
+    "leakage_max_w": 7.57916e-6,
     "leakage_max_corner": "ff_125C_3v60",
-    "leakage_max_current_a": 2.11572e-6,
+    "leakage_max_current_a": 2.10532e-6,
     # [#255] re-synthesized and re-placed-and-routed at DR-0020's ratified
     # `FIFO_DEPTH = 2`, reusing `layout/digital/build.py`'s existing
     # `CONSTRAINTS` (`max_transition_ns`/`max_capacitance_pf`, [#240]) --
@@ -216,7 +216,7 @@ RECORDED = {
     # to the OpenROAD build rather than to the netlist -- see the document's
     # section 0b for the three-way table.
     "max_transition_violating_corners": 0,
-    "max_transition_worst_slack_ns": 3.107105,
+    "max_transition_worst_slack_ns": 3.065044,
     "max_transition_worst_corner": "ff_n40C_3v60/rc-max",
     "max_transition_worst_violating_pins": 0,
     # No violating pin is on one of the six #233 trunk nets, at any corner --
@@ -229,6 +229,16 @@ RECORDED = {
     # OpenROAD build (26Q3-1510) was used; every figure above moved by < 3 %
     # except the leakage pair (-2.9 %), and the max_transition count stays 0;
     # the worst-slack corner moved back to `ff_n40C_3v60/rc-max`.
+    #
+    # [#866] re-synthesized and re-placed-and-routed under the toolchain
+    # `.github/workflows/pdk-nightly.yml` actually installs -- Yosys 0.69
+    # (`yowasp-yosys==0.69.0.0.post1233`) instead of the 0.67+post local
+    # source build #709 used, and klayout-tools 0.9.1 instead of 0.6.0 --
+    # because the committed netlist was off that pin and the nightly's
+    # synthesis staleness guard had been red since 2026-11-04. Same OpenROAD
+    # build (26Q3-1510), same instance count (1395), different cell mix;
+    # every figure above moved by < 6 % (Fmax floor +5.9 %, the largest), the
+    # binding corners are unchanged, and the max_transition count stays 0.
 }
 
 #: Fractional tolerance for the numeric gates above. The analysis is

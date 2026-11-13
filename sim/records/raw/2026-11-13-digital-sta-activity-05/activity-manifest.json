@@ -1,0 +1,387 @@
+{
+  "identities": {
+    "cell_models": [
+      {
+        "path": "<pdk>/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/gf180mcu_fd_sc_mcu9t5v0.v",
+        "sha256": "7dc2d6578c3580b0716c6a883a1b33c6cc7172f29c74ac1b148b0b20f981fe16"
+      },
+      {
+        "path": "<pdk>/libs.ref/gf180mcu_fd_sc_mcu9t5v0/verilog/primitives.v",
+        "sha256": "fc47cb4d4e50feb06847eba4bb1d67bec09a648fe2ab7aeab30248cb75d3609c"
+      }
+    ],
+    "clock_activity": "clk is simulated at the stated period, 50 % duty, and its toggle count is checked against the window length; OpenSTA derives clock-network activity from the propagated clock",
+    "def_git_blob_sha": "89e8f60a83222b44213d3c89a059db389405b475",
+    "netlist": {
+      "git_blob_sha": "49a084e95789ff1acbd953235cf0612b7701ef36",
+      "instances": 1424,
+      "path": "layout/digital/trng_top.pnr.v"
+    },
+    "simulator": "Icarus Verilog version 13.0 (stable) (v13_0)",
+    "simulator_flags": "-g2012 -gno-specify (zero delay; specify blocks ignored)",
+    "testbench": {
+      "git_blob_sha": "3625a86ad31f107ce0bcf2795f1a1ea04e5aef7c",
+      "path": "sim/tb/digital-sta-power/activity_tb.v"
+    },
+    "workloads_module_git_blob_sha": "8e72ab3c3fed2c91d225a21330821ef9fb2e43bb",
+    "x_z_handling": "x/z values are kept verbatim in the VCD and counted in `validation.xz_events`/`xz_vars` (FIFO memory flops without a reset port hold x until written); how OpenSTA's VCD reader treats a transition through x/z is that tool's behaviour and is not independently verified here"
+  },
+  "schema": 1,
+  "traces": {
+    "alarm-gated": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2169,
+      "seed": 456,
+      "stimulus_sha256": "8a293fe403af802995b4389bcb70b24d39896f62106bb0546573f661b33ad76f",
+      "validation": {
+        "instances_matched": 1424,
+        "netlist_instances": 1424,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1424,
+        "trace_vars": 17986,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 690,
+            "value_changes": 10350
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 4998,
+            "value_changes": 2024479
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 2163,
+            "value_changes": 1869210
+          }
+        },
+        "xz_events": 4931,
+        "xz_vars": 2254
+      },
+      "vcd_bytes": 17698640,
+      "vcd_path": "layout/.work/digital-sta-activity/alarm-gated.vcd",
+      "vcd_sha256": "0afb5fb92799a03d3444e0f27eb960c2ee5ea62fff79b5a3a5094558e2df1b4b",
+      "vcd_time_unit_ps": 1,
+      "why": "Ring 1 stuck after start-up: DR-0016 latches ht_alarm and gates the conditioned path while the raw tap keeps running; steady window is post-latch.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1145,
+          2169
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1145000000,
+          2169000000
+        ]
+      },
+      "workload": "alarm-gated"
+    },
+    "backpressure": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2072,
+      "seed": 455,
+      "stimulus_sha256": "5ba36ddddb2b14957eb3d643f1eb68dae1749e72a1dab195b060d82b51234276",
+      "validation": {
+        "instances_matched": 1424,
+        "netlist_instances": 1424,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1424,
+        "trace_vars": 17986,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 690,
+            "value_changes": 10350
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 4980,
+            "value_changes": 2034130
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 4804,
+            "value_changes": 2350566
+          }
+        },
+        "xz_events": 5074,
+        "xz_vars": 2294
+      },
+      "vcd_bytes": 19126901,
+      "vcd_path": "layout/.work/digital-sta-activity/backpressure.vcd",
+      "vcd_sha256": "a4094cb39c49b436bd01e672cded18bb2da8efe3791a0abfc0fe57e9ea40ebe6",
+      "vcd_time_unit_ps": 1,
+      "why": "Conditioned output with a stalled consumer (str_ready never asserts): the output FIFO fills and later words overflow.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1048,
+          2072
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1048000000,
+          2072000000
+        ]
+      },
+      "workload": "backpressure"
+    },
+    "conditioned-streaming": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2072,
+      "seed": 453,
+      "stimulus_sha256": "3f94423435f333ad70adb1de7018f8cf88c455e242804222ef2df6acf29cc13e",
+      "validation": {
+        "instances_matched": 1424,
+        "netlist_instances": 1424,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1424,
+        "trace_vars": 17986,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 690,
+            "value_changes": 10350
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 4979,
+            "value_changes": 2042397
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 4976,
+            "value_changes": 2352293
+          }
+        },
+        "xz_events": 4809,
+        "xz_vars": 2325
+      },
+      "vcd_bytes": 19173873,
+      "vcd_path": "layout/.work/digital-sta-activity/conditioned-streaming.vcd",
+      "vcd_sha256": "a0eb1a5723562558fb1acfcf8d8c0701c6e1cfe4e7270ce8aebbb72dd962965d",
+      "vcd_time_unit_ps": 1,
+      "why": "Default conditioned output, consumer always ready: the nominal streaming regime.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1048,
+          2072
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1048000000,
+          2072000000
+        ]
+      },
+      "workload": "conditioned-streaming"
+    },
+    "disabled-clock-running": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2072,
+      "seed": 457,
+      "stimulus_sha256": "75fcbcde1260c88b1d185a0f21a23c138292d86e1e94ed71855d367eba330f13",
+      "validation": {
+        "instances_matched": 1424,
+        "netlist_instances": 1424,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1424,
+        "trace_vars": 17986,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 690,
+            "value_changes": 10350
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 1622,
+            "value_changes": 1585823
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 990,
+            "value_changes": 1558245
+          }
+        },
+        "xz_events": 2222,
+        "xz_vars": 2222
+      },
+      "vcd_bytes": 13485290,
+      "vcd_path": "layout/.work/digital-sta-activity/disabled-clock-running.vcd",
+      "vcd_sha256": "ea20e05c09b17231d8eeee57c82747b30afe2abf409e7db8ff7f17a08e0cabfc",
+      "vcd_time_unit_ps": 1,
+      "why": "CTRL.EN = 0, raw tap idle, clock running: disabled operation with a running clock, not a stopped clock.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1048,
+          2072
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1048000000,
+          2072000000
+        ]
+      },
+      "workload": "disabled-clock-running"
+    },
+    "raw-streaming": {
+      "base_seed": 453,
+      "clock": "running, 50 % duty, 1 MHz",
+      "clock_period_ns": 1000.0,
+      "cycles": 2072,
+      "seed": 454,
+      "stimulus_sha256": "d864523e1f3610d64b87a2cbaab8fd4eaf3a169b139b9ffc04c2da2aec1d94ab",
+      "validation": {
+        "instances_matched": 1424,
+        "netlist_instances": 1424,
+        "same_timestamp_extra_changes": 0,
+        "trace_instances": 1424,
+        "trace_vars": 17986,
+        "windows": {
+          "reset": {
+            "clk_toggles": 15,
+            "cycles": 8,
+            "toggling_vars": 690,
+            "value_changes": 10350
+          },
+          "startup": {
+            "clk_toggles": 2080,
+            "cycles": 1040,
+            "toggling_vars": 5406,
+            "value_changes": 2048416
+          },
+          "steady": {
+            "clk_toggles": 2048,
+            "cycles": 1024,
+            "toggling_vars": 6049,
+            "value_changes": 2363842
+          }
+        },
+        "xz_events": 5153,
+        "xz_vars": 2350
+      },
+      "vcd_bytes": 19322913,
+      "vcd_path": "layout/.work/digital-sta-activity/raw-streaming.vcd",
+      "vcd_sha256": "700215612e809607908e9865420a657acd559ed311b8ef2c862483deac89df1b",
+      "vcd_time_unit_ps": 1,
+      "why": "CTRL.OUT_MODE = raw with the consumer always ready: the raw tap streamed straight out.",
+      "windows_cycles": {
+        "reset": [
+          0,
+          8
+        ],
+        "startup": [
+          8,
+          1048
+        ],
+        "steady": [
+          1048,
+          2072
+        ]
+      },
+      "windows_ps": {
+        "reset": [
+          0,
+          8000000
+        ],
+        "startup": [
+          8000000,
+          1048000000
+        ],
+        "steady": [
+          1048000000,
+          2072000000
+        ]
+      },
+      "workload": "raw-streaming"
+    }
+  }
+}

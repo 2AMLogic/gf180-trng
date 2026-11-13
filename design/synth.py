@@ -318,14 +318,33 @@ def _committed_view(payload: dict) -> dict:
     report -- see the module docstring's "Determinism" section for why
     `netlist_path`/`script_path` are restated, and adds `rtl_sources`.
 
-    One more field is restated here that the module docstring does not cover:
-    `provenance.pdk.source`, `klayout_tools.pdk.find_pdk`'s own record of
+    Three more fields are restated here that the module docstring does not
+    cover.
+
+    `provenance.pdk.source` is `klayout_tools.pdk.find_pdk`'s own record of
     *how* it found the PDK on this machine (a search root, an env var, an
     explicit `--pdk-root`) -- machine-local, not part of what was verified.
     `layout/verify.py`'s own `_stable()` drops the identical field from its
     committed reports for the same reason and with the same justification
     (issue #148); `provenance.pdk.name`/`.version` (which PDK, which
     open_pdks commit) stay, because those *are* what was verified against.
+
+    `provenance.pdk.ambiguous_sources` (klt >= 0.9.0) is the same idea for
+    the search roots klt did *not* use: a host carrying both `~/.ciel` and
+    `~/.volare` lists the loser, a host carrying one lists nothing, and the
+    key is absent entirely on the latter. That is a property of the machine,
+    not of the PDK the run was verified against, so a report generated on a
+    two-install workstation could never match a fresh run on CI's
+    single-install runner. `layout/verify.py`'s `_stable()` drops this field
+    too, and for the same reason (#866).
+
+    `memory_mapping.script_path` (klt >= 0.9.0) names the memory-evidence
+    `.ys` script inside the per-invocation `.klt/synthesize/<run_id>/`
+    directory, so -- exactly like the top-level `script_path` and the
+    `_RUN_BOOKKEEPING_KEYS` below -- two runs of the identical request
+    disagree on it by construction. It is restated to `null`; every
+    verdict-bearing field beside it (`status`, `reason`, `modules`) is still
+    compared.
     """
     restated = dict(payload)
     restated["netlist_path"] = f"design/trng_top/{TOP}.synth.v"
@@ -342,11 +361,17 @@ def _committed_view(payload: dict) -> dict:
     for key in _RUN_BOOKKEEPING_KEYS:
         if key in restated:
             restated[key] = None
+    memory_mapping = restated.get("memory_mapping")
+    if isinstance(memory_mapping, dict) and "script_path" in memory_mapping:
+        memory_mapping = dict(memory_mapping)
+        memory_mapping["script_path"] = None
+        restated["memory_mapping"] = memory_mapping
     provenance = dict(restated.get("provenance") or {})
     pdk = provenance.get("pdk")
     if isinstance(pdk, dict):
         pdk = dict(pdk)
         pdk.pop("source", None)
+        pdk.pop("ambiguous_sources", None)
         provenance["pdk"] = pdk
     restated["provenance"] = provenance
     restated["rtl_sources"] = _rtl_sources()

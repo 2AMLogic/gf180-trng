@@ -66,7 +66,7 @@
           "y": 0.0
         },
         "digital": {
-          "x": 135.43,
+          "x": 136.91,
           "y": 39.2
         },
         "ring1_ring": {
@@ -82,7 +82,7 @@
           "y": 1.93
         },
         "digital_ring": {
-          "x": 136.43,
+          "x": 137.91,
           "y": 40.2
         },
         "trng_interregion": {
@@ -112,8 +112,8 @@
     "bbox_um": {
       "x0": -0.16,
       "y0": -11.15,
-      "x1": 546.995,
-      "y1": 441.565
+      "x1": 543.53,
+      "y1": 435.6
     },
     "ports": [],
     "blocks": [
@@ -186,16 +186,16 @@
         "generator": "guard_ring",
         "cell_name": "fp_guard_digital",
         "source_path": "layout/.work/fp_guard_digital.gds",
-        "source_digest": "sha256:5e44b8094b7b5aef9f38120506cb30ea47aa5a9f89898569b7c0f4f2adb5953a",
+        "source_digest": "sha256:3562859ee9784a1d6b5f08aba3f5d5baff2ae30658562fecce034afe89d7d90a",
         "offset_um": {
-          "x": 135.43,
+          "x": 136.91,
           "y": 39.2
         },
         "bbox_um": {
-          "x0": 135.27,
+          "x0": 136.75,
           "y0": 39.040000000000006,
-          "x1": 533.3050000000001,
-          "y1": 437.075
+          "x1": 533.3100000000001,
+          "y1": 435.6
         },
         "orientation": "none",
         "placed_cell_name": "digital__fp_guard_digital",
@@ -270,16 +270,16 @@
         "generator": "committed_ring_geometry",
         "cell_name": "trng_top",
         "source_path": "layout/digital/trng_top.gds",
-        "source_digest": "sha256:c99329a3871c4343cdb8b7a06d79cd8539afbe86b4584891438bc084e856acc8",
+        "source_digest": "sha256:60c01b657fb4497e69711c9803f4a5c0b1cef22150c1d777582100a1be4b6e77",
         "offset_um": {
-          "x": 136.43,
+          "x": 137.91,
           "y": 40.2
         },
         "bbox_um": {
-          "x0": 136.43,
+          "x0": 137.91,
           "y0": 40.2,
-          "x1": 532.145,
-          "y1": 435.915
+          "x1": 532.15,
+          "y1": 434.44
         },
         "orientation": "none",
         "placed_cell_name": "digital_ring__trng_top",
@@ -291,7 +291,7 @@
         "generator": "layout.floorplan.interregion",
         "cell_name": "trng_interregion",
         "source_path": "layout/.work/trng_interregion.gds",
-        "source_digest": "sha256:9427ac87264f463faa7e72968d266ac39adb2d860326fd318afca7a11ea3e968",
+        "source_digest": "sha256:58f9dfa3930a448670847601040889f9ac7f3a9574ac0fe966a2fea003ca5e7c",
         "offset_um": {
           "x": 0.0,
           "y": 0.0
@@ -299,8 +299,8 @@
         "bbox_um": {
           "x0": 4.16,
           "y0": -11.15,
-          "x1": 546.995,
-          "y1": 441.565
+          "x1": 543.53,
+          "y1": 142.12
         },
         "orientation": "none",
         "placed_cell_name": "trng_interregion__trng_interregion",
@@ -335,10 +335,9 @@
       "klayout_version": "0.30.10",
       "pdk": {
         "name": "gf180mcuD",
-        "source": "PDK_ROOT environment variable",
+        "source": "search root: ~/.ciel",
         "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
         "ambiguous_sources": [
-          "search root: ~/.ciel",
           "search root: ~/.volare"
         ]
       },
@@ -346,5 +345,5 @@
       "input": null
     }
   },
-  "gds_sha256_timestamp_normalised": "f2f080704ac245bb55534f474f8bf586c50a4ff054930f502215f9233cead025"
+  "gds_sha256_timestamp_normalised": "faa782a8ec4f8c17c04cb2f32cf2bf19c7ec89cddcc1bb1ca29da8c71a991ff3"
 }

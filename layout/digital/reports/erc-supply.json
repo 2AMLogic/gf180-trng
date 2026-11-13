@@ -1,11 +1,37 @@
 {
-  "schema_version": 1,
-  "file": "layout/digital/trng_top.gds",
+  "schema_version": 2,
+  "file": {
+    "path": "layout/digital/trng_top.gds",
+    "scope": "repo"
+  },
   "spec": "layout/digital/erc-supply-spec.json",
   "pdk": null,
-  "findings_only": false,
+  "findings_only": true,
   "gate_role": "poly2",
-  "gate_count": 3971,
+  "gate_count": 3969,
+  "antenna_tables_omitted": false,
+  "nets": [
+    {
+      "name": "VDD",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VSS",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    }
+  ],
   "erc_findings": [],
   "erc_finding_count": 0,
   "erc_status": "clean",
@@ -21,28 +47,59 @@
       "erc.net_connectivity:[\"VSS\"]"
     ],
     "skipped": [],
-    "inapplicable": [],
+    "inapplicable": [
+      {
+        "id": "erc.supply_short",
+        "reason": "substrate_continuity_not_modelled"
+      }
+    ],
     "unknown": [],
     "nothing_checked": false,
     "nothing_checked_reasons": [],
+    "missing_tie_checked": true,
     "checked_by_assertion": [],
     "checked_by_well_assertion": [],
-    "floating_gate_checked_count": 3971
+    "layers_in_stream_without_declaration": [
+      "0/0",
+      "21/10",
+      "46/10",
+      "55/0",
+      "63/63",
+      "112/1",
+      "204/10"
+    ],
+    "well_assertion_coverage": [],
+    "floating_gate_checked_count": 3969
   },
   "ties_disclosure": null,
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.9.1",
+    "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+    "klt_reinstall_spec": "klayout-tools==0.9.1",
     "klayout_version": "0.30.10",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3",
+      "content_hash": "sha256:338a16684ecd4381bb9ea898c9b98e234c4f5c33700b6eac106d80f157b711a6",
       "role": "layout"
     },
     "spec": {
       "content_hash": "sha256:f1c5b31140552fa41a36eaaf716548292895a99047ba024cc487f5ef1be81808"
     },
-    "devices": []
+    "devices": [],
+    "net_exclusions": [],
+    "label_layers": [
+      {
+        "name": "Metal1",
+        "label_layer": "34/10",
+        "label_text_count": 14668
+      },
+      {
+        "name": "Metal5",
+        "label_layer": "81/10",
+        "label_text_count": 2
+      }
+    ]
   },
   "gates": [],
   "trimmed": {

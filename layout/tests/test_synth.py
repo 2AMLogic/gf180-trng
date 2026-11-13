@@ -41,6 +41,8 @@ raises `SynthError` naming the shape, rather than being silently coerced.
 
 from __future__ import annotations
 
+import json
+import re
 import sys
 import tempfile
 import unittest
@@ -238,6 +240,173 @@ class RunBookkeepingTests(unittest.TestCase):
         a = self._view(run_id="run-aaaa", instance_count=1)
         b = self._view(run_id="run-bbbb", instance_count=2)
         self.assertNotEqual(a, b)
+
+
+class MachineLocalAndRunScopedFieldTests(unittest.TestCase):
+    """Fields klt >= 0.9.0 added that describe the *machine* or the *run*
+    rather than the synthesis, and that `--check` would otherwise trip on
+    forever (#866).
+    """
+
+    def _view(self, **extra):
+        payload = _payload({"path": COMMITTED_NETLIST_REL, "scope": "repo"})
+        payload.update(extra)
+        with mock.patch.object(synth, "_rtl_sources", return_value=[]):
+            return synth._committed_view(payload)
+
+    def _provenance(self, pdk):
+        provenance = dict(BASE_PAYLOAD["provenance"])
+        provenance["pdk"] = pdk
+        return provenance
+
+    def test_ambiguous_pdk_sources_are_dropped(self):
+        """A host with two PDK search roots must commit what a host with
+        one commits -- otherwise a workstation-generated report can never
+        match CI's fresh run."""
+        two_roots = self._view(provenance=self._provenance({
+            "name": "gf180mcuD",
+            "version": "open_pdks-1.0.0",
+            "source": "search root: ~/.ciel",
+            "ambiguous_sources": ["search root: ~/.volare"],
+        }))
+        one_root = self._view(provenance=self._provenance({
+            "name": "gf180mcuD",
+            "version": "open_pdks-1.0.0",
+            "source": "search root: ~/.ciel",
+        }))
+        self.assertEqual(two_roots, one_root)
+        self.assertNotIn("ambiguous_sources", two_roots["provenance"]["pdk"])
+
+    def test_the_pdk_identity_still_differs(self):
+        """Dropping the search roots must not collapse *which* PDK."""
+        a = self._view(provenance=self._provenance(
+            {"name": "gf180mcuD", "version": "open_pdks-1.0.0"}))
+        b = self._view(provenance=self._provenance(
+            {"name": "gf180mcuD", "version": "open_pdks-2.0.0"}))
+        self.assertNotEqual(a, b)
+
+    def test_memory_mapping_script_path_is_restated(self):
+        """`memory_mapping.script_path` names a file inside the
+        per-invocation `.klt/synthesize/<run_id>/` directory, so two runs of
+        one request disagree on it by construction."""
+        a = self._view(memory_mapping={
+            "status": "none_detected",
+            "reason": None,
+            "modules": [],
+            "script_path": {
+                "path": "design/.work/.klt/synthesize/run-aaaa/mem.ys",
+                "scope": "repo",
+            },
+        })
+        b = self._view(memory_mapping={
+            "status": "none_detected",
+            "reason": None,
+            "modules": [],
+            "script_path": {
+                "path": "design/.work/.klt/synthesize/run-bbbb/mem.ys",
+                "scope": "repo",
+            },
+        })
+        self.assertEqual(a, b)
+        self.assertIsNone(a["memory_mapping"]["script_path"])
+
+    def test_memory_mapping_verdict_still_differs(self):
+        """Restating the script path must not hide a real memory mapping."""
+        a = self._view(memory_mapping={"status": "none_detected", "modules": []})
+        b = self._view(memory_mapping={"status": "mapped", "modules": ["fifo"]})
+        self.assertNotEqual(a, b)
+
+    def test_absent_blocks_commit_no_new_keys(self):
+        """A klt that emits neither must not grow either."""
+        view = self._view()
+        self.assertNotIn("memory_mapping", view)
+        self.assertNotIn("ambiguous_sources", view["provenance"]["pdk"])
+
+
+class CommittedEngineVersionMatchesTheNightlyPinTests(unittest.TestCase):
+    """The committed synthesis report must name the Yosys the nightly pins.
+
+    This is the alarm for the failure #866 is: PR #729 regenerated
+    `design/trng_top/trng_top.synth.{v,json}` on a workstation whose `yosys`
+    was a local 0.67+post source build, while
+    `.github/workflows/pdk-nightly.yml` installs
+    `yowasp-yosys==0.69.0.0.post1233`. Nothing on the pull-request path could
+    see it: `design/synth.py --check` needs Yosys, the PDK and the
+    standard-cell library, so it only runs in the nightly -- which then went
+    red at that guard for nine consecutive scheduled runs, skipping every
+    later step (the layout and floorplan freshness checks) with it.
+
+    So this test asks the cheap half of the same question with no tool at
+    all: does the committed report *claim* to come from the pinned engine?
+    It cannot tell whether re-synthesizing would reproduce the netlist --
+    only the nightly's guard can -- but a regeneration outside the pin now
+    fails on the pull request that commits it, instead of on the next
+    nightly.
+
+    The pin is read from the workflow, never restated here: one pin, one
+    place (the same discipline `sim/tools/klt_pin_sites.py` applies to the
+    klt and KLayout pins).
+    """
+
+    WORKFLOW = REPO_ROOT / ".github" / "workflows" / "pdk-nightly.yml"
+    REPORT = REPO_ROOT / "design" / "trng_top" / "trng_top.synth.json"
+
+    #: `yowasp-yosys` versions its wheels `<yosys release>.<yowasp
+    #: revision>[.postN]` -- `0.69.0.0.post1233` is Yosys 0.69 -- and that
+    #: leading release is what `yosys -V` prints and what `klt synthesize`
+    #: records as `engine_version`.
+    PIN_RE = re.compile(r"yowasp-yosys==(\d+\.\d+)(?:[.0-9a-z+]*)")
+
+    def pinned_engine_version(self) -> str:
+        text = self.WORKFLOW.read_text()
+        matches = self.PIN_RE.findall(text)
+        self.assertTrue(
+            matches,
+            f"{self.WORKFLOW.name} installs no `yowasp-yosys==<version>` -- "
+            "this test reads the pin from the workflow and must be updated "
+            "with it, not given a second copy of the version",
+        )
+        self.assertEqual(
+            len(set(matches)), 1,
+            f"{self.WORKFLOW.name} pins more than one yowasp-yosys version: "
+            f"{sorted(set(matches))}",
+        )
+        return matches[0]
+
+    def test_the_workflow_pin_is_readable(self):
+        self.assertRegex(self.pinned_engine_version(), r"^\d+\.\d+$")
+
+    def test_committed_report_names_the_pinned_engine(self):
+        want = self.pinned_engine_version()
+        report = json.loads(self.REPORT.read_text())
+        got = report.get("engine_version")
+        self.assertEqual(
+            got, want,
+            f"design/trng_top/trng_top.synth.json records engine_version "
+            f"{got!r}, but .github/workflows/pdk-nightly.yml installs Yosys "
+            f"{want}. The nightly's `python3 design/synth.py --check` "
+            f"re-synthesizes with {want} and will report the committed "
+            f"netlist STALE. Regenerate from a toolchain built out of the "
+            f"nightly's own install lines (pip install "
+            f'"yowasp-yosys==..." and a tagged "klayout-tools" release), '
+            f"or move the pin with a decision record.",
+        )
+
+    def test_a_report_off_the_pin_fails(self):
+        """The guard's own alarm: the exact condition #866 reports -- a
+        committed report naming the 0.67+post local build -- must fail."""
+        report = json.loads(self.REPORT.read_text())
+        report["engine_version"] = "0.67+post"
+        with tempfile.TemporaryDirectory() as tmp:
+            stand_in = Path(tmp) / "trng_top.synth.json"
+            stand_in.write_text(json.dumps(report))
+            with mock.patch.object(
+                CommittedEngineVersionMatchesTheNightlyPinTests,
+                "REPORT", stand_in,
+            ):
+                with self.assertRaises(AssertionError) as ctx:
+                    self.test_committed_report_names_the_pinned_engine()
+        self.assertIn("0.67+post", str(ctx.exception))
 
 
 if __name__ == "__main__":
