@@ -1,11 +1,14 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "engine": "klayout",
   "layout": {
     "path": "layout/cells/ro_stage_ring2/ro_stage_ring2.gds",
     "scope": "repo"
   },
-  "reference": "../cells/ro_stage_ring2/ro_stage_ring2.spice",
+  "reference": {
+    "path": "layout/cells/ro_stage_ring2/ro_stage_ring2.spice",
+    "scope": "repo"
+  },
   "top": "ro_stage_ring2",
   "reference_top": "RO_STAGE_RING2",
   "parameter_tolerance": null,
@@ -102,17 +105,17 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.13",
+    "engine_version": "0.30.10",
     "netgen_binary": null,
     "layout_sha256": "66f936e6985803e040f0247330f19f86342bedf6716108f1dcd1733b4b7feb59",
     "reference_sha256": "de29831c343fddf1b725730b2655be84f9f179228b99e9e14e3bc9467e4de02a",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.9.0",
-    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
-    "klt_reinstall_spec": "klayout-tools==0.9.0",
-    "klayout_version": "0.30.13",
+    "klt_version": "0.9.1",
+    "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+    "klt_reinstall_spec": "klayout-tools==0.9.1",
+    "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",

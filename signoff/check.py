@@ -139,6 +139,11 @@ KLT_GRADER_PIN = "0.8.0"
 #: grader `klayout-tools==` pin restated in workflows, READMEs and docstrings is held to
 #: these two constants by sim/tools/klt_pin_sites.py --check (npm run
 #: check:spec); a pin bump edits them here first, then the sites it lists.
+#: That tool also holds the engine every committed JSON report under
+#: `layout/` *records* (`klayout_version`, and `engine_version` beside an
+#: `engine: "klayout"` sibling) to KLAYOUT_PIN, so an off-pin engine cannot
+#: reach `main` through a report the PDK-dependent freshness checks only
+#: compare on a host that has klt and the PDK (#858).
 KLAYOUT_PIN = "0.30.10"
 KLT_INSTALL_HINT = f'pip install "klayout-tools=={KLT_GRADER_PIN}"'
 

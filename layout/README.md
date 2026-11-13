@@ -194,7 +194,7 @@ To reproduce a committed report exactly, install the build
 `environment.json` names. Today that is a release:
 
 ```sh
-pip install "klayout-tools==X.Y.Z" "klayout==0.30.10"   # X.Y.Z = klt_origin.tag in environment.json (v0.9.0 today)
+pip install "klayout-tools==X.Y.Z" "klayout==0.30.10"   # X.Y.Z = klt_origin.tag in environment.json (v0.9.1 today)
 ```
 
 For a report written by a git build (`klt_origin.url` set), install that

@@ -329,15 +329,16 @@
       "block 'combiner_sampler_ring' gds 'layout/blocks/combiner_sampler/combiner_sampler.gds' was rescaled from its own dbu=0.001 onto the composed cell's dbu=0.0005 (exact integer ratio 2)"
     ],
     "provenance": {
-      "klt_version": "0.9.0",
-      "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
-      "klt_reinstall_spec": "klayout-tools==0.9.0",
-      "klayout_version": "0.30.13",
+      "klt_version": "0.9.1",
+      "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+      "klt_reinstall_spec": "klayout-tools==0.9.1",
+      "klayout_version": "0.30.10",
       "pdk": {
         "name": "gf180mcuD",
-        "source": "search root: ~/.ciel",
+        "source": "PDK_ROOT environment variable",
         "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
         "ambiguous_sources": [
+          "search root: ~/.ciel",
           "search root: ~/.volare"
         ]
       },
