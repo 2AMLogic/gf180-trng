@@ -10,6 +10,19 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-13
 
+- **PR #844**: refactor: delete seven unread module-level constants, three with comments describing absent behaviour
+- **PR #845**: refactor(sim): build the power tools' klt requests from one shared skeleton
+- **PR #843**: sim: hold the study's sizing constant to the shared derivation, not a private copy
+- **PR #842**: sim: render the power record front matter from one shared skeleton
+- **PR #838**: refactor(sim): move the power tools' argparse front end into _power_cli
+- **PR #836**: sim: publish combiner/sampler 27-corner schematic-vs-extracted evidence
+- **Issue #366** (closed): Guard telemetry: process substitution misclassified as worktree write
+- **Issue #839** (closed): Remove 7 unused module-level constants (dead bindings, two with misleading comments)
+- **Issue #840** (closed): Share the power tools' request-builder slice through _power_cli
+- **Issue #841** (closed): Simplify higher_rate_options.py: drop its private copy of the sizing-constant check and the stale 'array_sizing still carries 1.79' claim
+- **Issue #834** (closed): Consolidate duplicated record renderers in power tools into _power_cli
+- **Issue #837** (closed): Consolidate duplicated power-tool main() and cmd_* wrappers into _power_cli
+- **Issue #418** (closed): Verify assembled combiner/sampler reset and capture with native post-layout comparison
 - **PR #833**: sim: measure starved-ring jitter at 3.30 V and 2.97 V ring supply
 - **Issue #831** (closed): Measure starved-ring jitter at reduced ring supply (3.30 V, 2.97 V) against a = 10.932
 - **Issue #816** (closed): Operator decision: reduced ring supply against the Operating envelope row
@@ -615,38 +628,4 @@ not independent verification of the claims in issue or PR titles.
 ### 2026-09-14
 
 - **Issue #247** (closed): Point digital_corner_characterization.py at the shared record-parsing helper (#104 follow-up)
-
-### 2026-09-12
-
-- **PR #246**: refactor: deduplicate load_variants() across sim/tools variant scripts
-- **Issue #245** (closed): Deduplicate load_variants() across sim/tools variant-comparison scripts
-- **PR #244**: docs: disclose the post-route STA interface load as a floor, not the measured value
-- **PR #243**: analysis: decide the post-route max-transition question and gate the accepted residual
-- **Issue #242** (closed): post-route STA inter-region interface load is a floor: trunk-only arithmetic undercounts C ~14 % and R ~48 %
-- **PR #241**: pex: build the scoped full-chip inter-region delta path (#232, DR-0025)
-- **PR #239**: layout: promote digital's vddd/vss to real LVS pins and draw the composed PDN tie (#224)
-- **PR #238**: sim: carry the six digital-facing inter-region trunks into the post-route STA (#233)
-- **Issue #237** (closed): Post-route max-transition violations inside u_interface at 9 of 15 corners (pre-existing, found by #233)
-- **PR #236**: analysis: bound the shared vss return trunk's IR drop per region (#234)
-- **PR #235**: ci: gate floorplan provenance on the pdk-nightly job (#227)
-- **Issue #234** (closed): IR drop on the shared 430 um vss return trunk: no region's local ground reference has ever been checked
-- **Issue #233** (closed): Load the six digital-facing inter-region trunks into the post-route STA as an interface capacitance
-- **Issue #232** (closed): Build the scoped full-chip PEX path: price the ro1/ro2 inter-region trunks and re-run the entropy-binding corner
-- **PR #231**: spec: scope the full-chip PEX path before building it (DR-0025)
-- **PR #229**: fix: remove unused sys import from floorplan_netlist.py
-- **Issue #228** (closed): Remove unused import: sys in design/floorplan_netlist.py
-- **Issue #227** (closed): Floorplan reports record an unreleased deck, and the build they were written against is not the pinned nightly ref
-- **PR #226**: feat: route the inter-region nets across the isolation channels (#222)
-- **Issue #225** (closed): Follow-up: a full-chip PEX path is now possible (the composed floorplan is wired) -- decide what it would measure
-- **Issue #224** (closed): Phase 3: reconcile digital's vddd/vss PDN tie with the composed LVS reference (the one inter-region connection #222 could not draw)
-- **Issue #222** (closed): [Parent #219] Phase 2: physically route the inter-region nets in compose() and verify DRC/LVS/pin-count
-- **Issue #219** (closed): Floorplan: the four guarded regions are not electrically joined, so inter-region (full-chip) extraction is still impossible
-
-### 2026-09-11
-
-- **PR #223**: Declare the trng_floorplan inter-region net list and its LVS reference netlist
-- **Issue #221** (closed): [Parent #219] Phase 1: declare the trng_floorplan inter-region net list and its LVS reference netlist
-- **PR #220**: Routing-level re-run of the sixth testbench family: noise-tapped ring variant, closing #217's §7.5 residual
-- **PR #218**: layout(pex): routing-level post-layout extraction of assembled rings and combiner/sampler block
-- **Issue #217** (closed): Routing-level post-layout extraction of the assembled rings and combiner/sampler block (closes #17's device-level caveat, now that klayout-tools#1540 is fixed)
 

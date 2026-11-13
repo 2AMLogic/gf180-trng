@@ -53,8 +53,6 @@ Issues carrying `loom:curated`.
 
 - **#200**: Champion: Merge-Risk Hold Digest *(curated)*
 - **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
-- **#366**: Guard telemetry: process substitution misclassified as worktree write *(curated)*
-- **#418**: Verify assembled combiner/sampler reset and capture with native post-layout comparison *(curated)*
 - **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
 - **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path *(curated)*
 - **#476**: Complete the unrun 27-corner ring2 paired PEX diagnostic campaign *(curated)*
@@ -66,7 +64,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#846**: Remove broken worktree:return npm script: its target script no longer exists *(hermit)*
 
 ## Epics
 
@@ -83,7 +81,7 @@ _None._
 | In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 12 |
-| Architect / Hermit proposals | 0 |
+| Curated | 10 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
