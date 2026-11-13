@@ -10,6 +10,16 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-13
 
+- **PR #864**: docs(floorplan): drop the hand-maintained net count above the inter-region table
+- **PR #862**: docs(floorplan): retire the pre-#224 framing from the vddd and vss net rows
+- **PR #860**: refactor(floorplan): split build() into per-stage functions
+- **PR #857**: refactor(floorplan): drop the vsubs filter, its vacuous test and its prose
+- **PR #856**: refactor(sim): read a record's seeds: from its frontmatter, drop field() and NUMBER_PATTERN
+- **Issue #863** (closed): layout/floorplan/README.md calls the inter-region net table sixteen nets; the declaration has fifteen
+- **Issue #859** (closed): layout/floorplan/README.md: the vddd row of the net table still describes the pre-#224 SPECIALNETS-only state
+- **Issue #854** (closed): Split floorplan.py's 493-line build() into per-stage functions along its own numbered banners
+- **Issue #852** (closed): Remove vsubs/guard_ring_tap leftovers: a vacuous test and an always-true filter in the inter-region router
+- **Issue #853** (closed): Remove the one-caller field() helper and the unused NUMBER_PATTERN from sim/tools/_record_parsing.py
 - **PR #851**: refactor(pex): move the full-chip delta path into layout/pex/fullchip.py
 - **PR #849**: chore: drop package.json worktree:return script entry pointing at a deleted file
 - **Issue #848** (closed): Split layout/pex/build.py: move the full-chip delta path into a sibling module
