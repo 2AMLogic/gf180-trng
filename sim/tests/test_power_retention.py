@@ -23,6 +23,7 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import power_retention as pr  # noqa: E402
+import _record_golden as rg  # noqa: E402
 
 DECK = pr.TB_DIR / pr.DECK
 VDD = 3.3
@@ -128,3 +129,114 @@ class CommittedRecords(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RecordFrontMatter(unittest.TestCase):
+    """The record front matter this tool renders, pinned line for line (issue #834).
+
+    The four power tools render their front matter through one skeleton,
+    ``_power_cli.render_header``, so a header edit meant for one of them that reaches the
+    others -- or a consolidation that quietly reorders a field -- fails here. Only the git
+    blob SHAs, the ``repo_commit`` and ``platform.platform()`` are masked
+    (``_record_golden.front_matter``); they are facts about the host and the checkout, not
+    about the renderer. Records already committed under ``sim/records/`` are written in this
+    format and are append-only, so it may not drift silently.
+    """
+
+    MEASURED = """\
+---
+record: 2026-01-02-power_retention-1
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/power-retention/tb_power_retention.sp
+  sha: <BLOB>
+netlist:
+  path: sim/tb/power-retention/retention_cells.spice
+  sha: <BLOB>
+  also: design/power_switch.spice sha <BLOB>
+repo_commit: <COMMIT>
+
+pdk: gf180mcuD @ 1.0.test
+pdk.models:
+  - libs.tech/ngspice/sm141064.ngspice (sections: typical bjt_typical diode_typical res_typical moscap_typical mimcap_typical)
+
+tool:
+  klt: 9.9.9 (client; batch backend)
+  ngspice: "ngspice-99 test build (batch fleet)"
+  platform: <PLATFORM>
+
+corner:
+  process: tt
+  voltage: 3.300 V (nominal 3.3 V)
+  temperature: 27
+
+analysis:
+  type: tran (deterministic)
+  tstop: 30u
+  tstep: 1n (print step)
+  tmax: n/a
+  noise_params: n/a
+  runs: 1
+seeds: n/a (deterministic; no noise sources)
+
+raw:
+  path: sim/records/raw/2026-01-02-power_retention-1/
+  files:
+    - probe.sp  sha256:<SHA256>
+    - probe.log  sha256:<SHA256>
+wall_time: 12.5s
+---
+"""
+
+    ATTEMPT = """\
+---
+record: 2026-01-02-power_retention-attempt-1
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/power-retention/tb_power_retention.sp
+  sha: <BLOB>
+netlist:
+  path: sim/tb/power-retention/retention_cells.spice
+  sha: <BLOB>
+repo_commit: <COMMIT>
+
+tool:
+  klt: 9.9.9
+
+raw:
+  path: sim/records/raw/2026-01-02-power_retention-attempt-1/
+  files:
+    - probe.sp  sha256:<SHA256>
+    - probe.log  sha256:<SHA256>
+---
+"""
+
+    def _rendered(self) -> tuple[str, str]:
+        unit = rg.unit(synthetic_readings())
+        rep = rg.report(unit)
+        row = pr.analyse_report(rep)[0]
+        self.assertEqual(row["verdict"], "OK", row.get("problems"))
+        return (pr.render_measured("2026-01-02-power_retention-1", row, unit, rep, rg.RAW_FILES,
+                                 rg.NOW, rg.GIT),
+                pr.render_unmeasured("2026-01-02-power_retention-attempt-1", [unit], rep, rg.RAW_FILES,
+                                   rg.NOW, rg.GIT, rg.NOTE))
+
+    def test_measured_front_matter_is_unchanged(self) -> None:
+        self.assertEqual(rg.front_matter(self._rendered()[0]), self.MEASURED)
+
+    def test_attempt_front_matter_is_unchanged(self) -> None:
+        self.assertEqual(rg.front_matter(self._rendered()[1]), self.ATTEMPT)
+
+    def test_the_per_tool_prose_outlives_the_shared_header(self) -> None:
+        measured, attempt = self._rendered()
+        for section in ("## Result", "## How to reproduce", "## Caveats"):
+            self.assertIn(section, measured)
+        for section in ('## Result',):
+            self.assertIn(section, attempt)
+        for text in (measured, attempt):
+            self.assertIn("Written by `sim/tools/power_retention.py record`", text)
+            self.assertTrue(text.endswith("\n"))

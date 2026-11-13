@@ -22,14 +22,12 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import platform
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from harness import report as _report  # noqa: E402
 import _power_cli as _pc  # noqa: E402
 import power_switch as _ps  # noqa: E402
 
@@ -289,33 +287,16 @@ _fmt = _pc.fmt
 
 def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: list[tuple[str, str]],
                     now: _dt.datetime, git: dict) -> str:
-    prov = rep.get("provenance", {})
-    tb = TB_DIR / DECK
-    fp = _report.fleet_provenance(rep)
-    jobs = ", ".join(fp["jobs"])
-    where = f"batch fleet through klt sim (jobs {jobs})" if jobs else "local ngspice (single-point debug probe)"
-    cells = TB_DIR / "retention_cells.spice"
-    sw = REPO_ROOT / "design" / "power_switch.spice"
-    lines = [
-        "---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}", "status: valid", "",
-        "testbench:", f"  path: {tb.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, tb)}",
-        "netlist:", f"  path: {cells.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, cells)}",
-        f"  also: {sw.relative_to(REPO_ROOT)} sha {_report.blob_sha(REPO_ROOT, sw)}",
-        f"repo_commit: {_report.repo_commit_field(git)}", "",
-        f"pdk: gf180mcuD @ {fp['pdk_ver']}",
-        "pdk.models:",
-        f"  - libs.tech/ngspice/sm141064.ngspice (sections: {' '.join(PROCESS_SECTIONS[row['process']])})",
-        "", "tool:", f"  klt: {prov.get('klt_version', 'unknown')} (client; batch backend)",
-        f"  ngspice: \"{fp['ngspice']} (batch fleet)\"",
-        f"  platform: \"{platform.platform()} (submitting host)\"", "",
-        "corner:", f"  process: {row['process']}", f"  voltage: {_report._voltage_label(row['vdd'], 3.3)}",
-        f"  temperature: {row['temperature_c']}", "",
-        "analysis:", "  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e6:g}u",
-        f"  tstep: {TSTEP_S * 1e9:g}n (print step)", "  tmax: n/a", "  noise_params: n/a", "  runs: 1",
-        "seeds: n/a (deterministic; no noise sources)", "",
-        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
-        *[f"    - {n}  sha256:{h}" for n, h in raw_files],
-        f"wall_time: {corner.get('runtime_s', 'n/a')}s", "---", "",
+    where = _pc.fleet_where(rep)
+    lines = _pc.fleet_header(
+        stem=stem, row=row, unit=corner, rep=rep, raw_files=raw_files, now=now, git=git,
+        repo_root=REPO_ROOT, testbench=TB_DIR / DECK, netlist=TB_DIR / "retention_cells.spice",
+        netlist_also=REPO_ROOT / "design" / "power_switch.spice",
+        sections=PROCESS_SECTIONS[row["process"]],
+        analysis=["  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e6:g}u",
+                  f"  tstep: {TSTEP_S * 1e9:g}n (print step)", "  tmax: n/a", "  noise_params: n/a",
+                  "  runs: 1"])
+    lines += [
         "## Result", "",
         f"Executed by {where}. Retained bits are read as 1 above half the supply, in the order "
         f"{', '.join(RETAINED)}; the pattern written is {''.join(str(b) for b in PATTERN)}. "
@@ -347,33 +328,18 @@ def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: li
         "- The rail is forced in the function group; rail decay is an open item (`design/power-intent.md`).",
         "- The retained flops are plain `dffrnq_1` on the always-on rail: the library has no retention flop.",
         "- The raw deck and log have this host's absolute paths replaced by `<repo>` and `~` before hashing.",
-        "", "---", "",
-        "Written by `sim/tools/power_retention.py record`. Append-only: never edit or delete this file.",
         "",
+        *_pc.record_footer("power_retention"),
     ]
     return "\n".join(lines)
 
 
 def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list[tuple[str, str]],
                       now: _dt.datetime, git: dict, note: str) -> str:
-    prov = rep.get("provenance", {})
-    tb = TB_DIR / DECK
-    lines = [
-        "---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}", "status: valid", "",
-        "testbench:", f"  path: {tb.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, tb)}",
-        "netlist:", "  path: sim/tb/power-retention/retention_cells.spice",
-        f"  sha: {_report.blob_sha(REPO_ROOT, TB_DIR / 'retention_cells.spice')}",
-        f"repo_commit: {_report.repo_commit_field(git)}", "",
-        "tool:", f"  klt: {prov.get('klt_version', 'unknown')}", "",
-        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
-        *[f"    - {n}  sha256:{h}" for n, h in raw_files],
-        "---", "", "## Result", "",
-        f"UNMEASURED: {len(corners)} unit(s) produced no usable readings; no number is claimed.", "",
-    ]
-    if note:
-        lines += [note, ""]
-    lines += ["---", "", "Written by `sim/tools/power_retention.py record`. Append-only.", ""]
-    return "\n".join(lines)
+    return _pc.render_attempt(
+        stem=stem, corners=corners, rep=rep, raw_files=raw_files, now=now, git=git, note=note,
+        repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
+        netlist=TB_DIR / "retention_cells.spice", tool_name="power_retention")
 
 
 def cmd_record(paths: list[str], note: str, records_dir: Path | None = None) -> int:

@@ -62,7 +62,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from harness.corners import CORNERS  # noqa: E402
-from harness import report as _report  # noqa: E402
 import _power_cli as _pc  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -381,37 +380,33 @@ def _fmt(x: float) -> str:
     return f"{x:.6e}"
 
 
-def _voltage_label(vdd: float) -> str:
-    return _report._voltage_label(vdd, 3.3)
+def _pdk_label(prov: dict, default_name: str = "gf180mcuD") -> str:
+    """The ``pdk:`` value: the report's PDK name and version, ``open_pdks`` prefix dropped."""
+    pdk = prov.get("pdk", {})
+    return (f"{pdk.get('name', default_name)} @ "
+            f"{str(pdk.get('version', 'unknown')).replace('open_pdks ', '')}")
 
 
 def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: list[tuple[str, str]],
                     now: _dt.datetime, git: dict) -> str:
     env, prov = rep.get("environment", {}), rep.get("provenance", {})
-    tb = TB_DIR / DECK
-    netlist = REPO_ROOT / "design" / "sampler_core.spice"
     remote = env.get("remote")
     where = (f"fleet job {remote['job_id']}" if remote else "local ngspice (single-point debug probe)")
-    lines = [
-        "---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}", "status: valid", "",
-        "testbench:", f"  path: {tb.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, tb)}",
-        "netlist:", f"  path: {netlist.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, netlist)}",
-        f"repo_commit: {_report.repo_commit_field(git)}", "",
-        f"pdk: {prov.get('pdk', {}).get('name', 'gf180mcuD')} @ "
-        f"{str(prov.get('pdk', {}).get('version', 'unknown')).replace('open_pdks ', '')}",
-        "pdk.models:",
-        f"  - ~/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice (sha256:{env.get('models_lib_sha256')})",
-        "", "tool:", f"  klt: {prov.get('klt_version', 'unknown')}",
-        f"  ngspice: ngspice-{env.get('engine_version', 'unknown')}",
-        f"  platform: {platform.platform()}", "",
-        "corner:", f"  process: {row['process']}", f"  voltage: {_voltage_label(row['vdd'])}",
-        f"  temperature: {row['temperature_c']}", "",
-        "analysis:", "  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e9:g}n",
-        f"  tstep: {TSTEP_S * 1e12:g}p (print step)", "  tmax: n/a", "  noise_params: n/a", "  runs: 1",
-        "seeds: n/a (deterministic; no noise sources)", "",
-        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
-        *[f"    - {n}  sha256:{h}" for n, h in raw_files],
-        f"wall_time: {corner.get('runtime_s', 'n/a')}s", "---", "",
+    lines = _pc.render_header(
+        stem=stem, now=now, repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
+        netlist=REPO_ROOT / "design" / "sampler_core.spice", git=git, raw_files=raw_files,
+        pdk=_pdk_label(prov),
+        pdk_models=[f"  - ~/.volare/gf180mcuD/{_pc.MODELS_LIB} "
+                    f"(sha256:{env.get('models_lib_sha256')})"],
+        tool=[f"  klt: {prov.get('klt_version', 'unknown')}",
+              f"  ngspice: ngspice-{env.get('engine_version', 'unknown')}",
+              f"  platform: {platform.platform()}"],
+        corner=_pc.corner_lines(row),
+        analysis=["  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e9:g}n",
+                  f"  tstep: {TSTEP_S * 1e12:g}p (print step)", "  tmax: n/a", "  noise_params: n/a",
+                  "  runs: 1"],
+        wall_time=f"{corner.get('runtime_s', 'n/a')}s")
+    lines += [
         "## Result", "",
         f"Executed by {where}. Raw branch charges are read at the 2nd and 6th rising ring crossings "
         "(four ring periods); the derived terms below are `sim/tools/liveness_sampler_power.py`'s "
@@ -439,9 +434,8 @@ def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: li
         "direction.",
         "- Pre-layout, schematic-level; one window of four ring periods; no mismatch or noise.",
         "- The raw deck and log have this host's absolute paths replaced by `<repo>` and `~` before hashing.",
-        "", "---", "",
-        "Written by `sim/tools/liveness_sampler_power.py record`. Append-only: never edit or delete this file.",
         "",
+        *_pc.record_footer("liveness_sampler_power"),
     ]
     return "\n".join(lines)
 
@@ -449,28 +443,22 @@ def render_measured(stem: str, row: dict, corner: dict, rep: dict, raw_files: li
 def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list[tuple[str, str]],
                       now: _dt.datetime, git: dict, note: str) -> str:
     env, prov = rep.get("environment", {}), rep.get("provenance", {})
-    tb = TB_DIR / DECK
-    netlist = REPO_ROOT / "design" / "sampler_core.spice"
     remote = env.get("remote") or {}
     codes = sorted({d.get("code", "?") for c in corners for d in c.get("diagnostics", [])})
     runner = sorted({d.get("runner_code") for c in corners for d in c.get("diagnostics", []) if d.get("runner_code")})
-    lines = [
-        "---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}", "status: valid", "",
-        "testbench:", f"  path: {tb.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, tb)}",
-        "netlist:", f"  path: {netlist.relative_to(REPO_ROOT)}", f"  sha: {_report.blob_sha(REPO_ROOT, netlist)}",
-        f"repo_commit: {_report.repo_commit_field(git)}", "",
-        f"pdk: gf180mcuD @ {str(prov.get('pdk', {}).get('version', 'unknown')).replace('open_pdks ', '')}",
-        "tool:", f"  klt: {prov.get('klt_version', 'unknown')} (client)",
-        f"  platform: {platform.platform()}", "",
-        "corner:", f"  process: {', '.join(PROCESSES)} -- NOT SIMULATED",
-        f"  voltage: {' / '.join(f'{v:.2f}' for v in SUPPLIES_V)} V -- NOT SIMULATED",
-        f"  temperature: {' / '.join(str(x) for x in TEMPS_C)} -- NOT SIMULATED", "",
-        "analysis:", "  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e9:g}n",
-        f"  tstep: {TSTEP_S * 1e12:g}p (print step)", "  runs: 0 (nothing executed)",
-        "seeds: n/a (deterministic; no noise sources)", "",
-        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
-        *[f"    - {n}  sha256:{h}" for n, h in raw_files],
-        "wall_time: n/a (batch submission failed)", "---", "",
+    lines = _pc.render_header(
+        stem=stem, now=now, repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
+        netlist=REPO_ROOT / "design" / "sampler_core.spice", git=git, raw_files=raw_files,
+        pdk=_pdk_label({"pdk": {"version": prov.get("pdk", {}).get("version", "unknown")}}),
+        tool=[f"  klt: {prov.get('klt_version', 'unknown')} (client)",
+              f"  platform: {platform.platform()}"],
+        corner=[f"  process: {', '.join(PROCESSES)} -- NOT SIMULATED",
+                f"  voltage: {' / '.join(f'{v:.2f}' for v in SUPPLIES_V)} V -- NOT SIMULATED",
+                f"  temperature: {' / '.join(str(x) for x in TEMPS_C)} -- NOT SIMULATED"],
+        analysis=["  type: tran (deterministic)", f"  tstop: {TSTOP_S * 1e9:g}n",
+                  f"  tstep: {TSTEP_S * 1e12:g}p (print step)", "  runs: 0 (nothing executed)"],
+        wall_time="n/a (batch submission failed)")
+    lines += [
         "## Result", "",
         f"**Outcome: UNMEASURED.** {len(corners)} of {n_units()} grid units were submitted to the batch "
         "fleet and none produced a measurement, so this record carries no measurement and no pass.", "",
@@ -485,9 +473,7 @@ def render_unmeasured(stem: str, corners: list[dict], rep: dict, raw_files: list
         "## How to reproduce", "", "```sh",
         "python3 sim/tools/liveness_sampler_power.py emit --check",
         "python3 sim/tools/liveness_sampler_power.py run --outdir DIR --backend batch", "```", "",
-        "---", "",
-        "Written by `sim/tools/liveness_sampler_power.py record`. Append-only: never edit or delete this file.",
-        "",
+        *_pc.record_footer("liveness_sampler_power"),
     ]
     return "\n".join(lines)
 
