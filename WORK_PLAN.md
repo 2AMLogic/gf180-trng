@@ -34,12 +34,14 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
+- **#846**: Remove broken worktree:return npm script: its target script no longer exists
+- **#848**: Split layout/pex/build.py: move the full-chip delta path into a sibling module
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#849**: chore: drop package.json worktree:return script entry pointing at a deleted file
 
 ## Approved (Awaiting Merge)
 
@@ -64,7 +66,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#846**: Remove broken worktree:return npm script: its target script no longer exists *(hermit)*
+_None._
 
 ## Epics
 
@@ -78,10 +80,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 10 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
