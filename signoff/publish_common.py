@@ -64,6 +64,17 @@ def load_envelope(path: Path | None, run: Callable[[], Path], tag: str) -> tuple
     return raw, json.loads(raw)
 
 
+# The client's ngspice path is the only host path in a `klt pex` response
+# (`environment.client_ngspice_binary`); it is informational, so the publisher
+# keeps the binary's name and drops the directory.
+_CLIENT_BINARY = re.compile(rb'("client_ngspice_binary":\s*")/(?:home|Users)/[^"]*/([^"/]*)(")')
+
+
+def redact_client_paths(raw: bytes) -> bytes:
+    """`raw` with each home-directory `client_ngspice_binary` reduced to its basename."""
+    return _CLIENT_BINARY.sub(rb"\1\2\3", raw)
+
+
 def envelope_refusals(root: Path, envelope: dict, netlist_rel: str) -> list[str]:
     refusals: list[str] = []
     build = (envelope.get("provenance") or {}).get("klt_version")

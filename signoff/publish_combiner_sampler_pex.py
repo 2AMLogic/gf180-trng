@@ -49,6 +49,7 @@ What it does, and refuses to do:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -67,6 +68,17 @@ KLT_PEX_ARGS = [
     "-o", check.CS_NETLIST, "--outdir", "sim/.work/combiner-sampler-pex", "--format", "json",
 ]
 
+# The 27-unit-per-side job bound (24420 s) exceeds the batch fleet's 3600 s
+# ceiling, so a batch run shards each side across 9 hosts (3 units each)
+# (the capacity wait is `batch.capacity_wait_s` in request.json: klt 0.9.0's
+# `pex` has no --wait-for-capacity flag).
+BATCH_ARGS = ["--hosts", "9"]
+
+
+def pex_args(backend: str | None) -> list[str]:
+    return [*KLT_PEX_ARGS, *(BATCH_ARGS if backend == "batch" else [])]
+
+
 COVERAGE_EXCLUSIONS = [
     "rings: rn1/rn2 are driven by deterministic logic steps at vdd level, not by the "
     "oscillators; ring layout, ring supplies (vddr1/vddr2) and the ring-to-buffer "
@@ -74,10 +86,12 @@ COVERAGE_EXCLUSIONS = [
     "randomness: deterministic stimuli; nothing here estimates entropy, bias or jitter",
     "boundary timing: data and reset change only far from clock edges (see stimulus.py "
     "settling windows); setup/hold, recovery/removal and metastability are not exercised",
-    "bodies: every PMOS body in the extraction is an untapped floating n-well "
-    "(body_bias below); the schematic side ties PMOS bulk to vdd and NMOS bulk to vss. "
-    "The extracted-side result is a diagnosis under that limitation (#339/#411/#412), "
-    "not a prediction of fabricated silicon",
+    "bodies: the layout's well and substrate taps make the extraction report "
+    "body_bias 'biased' (see body_bias_status; no floating wells), matching the "
+    "schematic side's PMOS-to-vdd and NMOS-to-vss ties; the testbench holds the "
+    "substrate reference at 0 V rather than modelling a substrate network, and "
+    "this result does not revisit the earlier floating-well findings "
+    "(#339/#411/#412)",
     "loads: the four flip-flop outputs and xo/ro1/ro2 are unloaded (the downstream "
     "digital block is not included); the *n monitors draw no current",
     "noise and mismatch: transient without device noise or Monte Carlo mismatch",
@@ -86,8 +100,9 @@ COVERAGE_EXCLUSIONS = [
 ]
 
 
-def run_pex(backend: str) -> Path:
-    return common.run_pex(REPO_ROOT, SCRATCH, KLT_PEX_ARGS, backend, TAG)
+def run_pex(backend: str, resume: bool = False) -> Path:
+    args = [*pex_args(backend), *(["--resume"] if resume else [])]
+    return common.run_pex(REPO_ROOT, SCRATCH, args, backend, TAG)
 
 
 def build_publication(envelope: dict, raw_envelope_sha: str, backend: str | None) -> dict:
@@ -99,7 +114,7 @@ def build_publication(envelope: dict, raw_envelope_sha: str, backend: str | None
         REPO_ROOT, envelope, raw_envelope_sha, backend,
         schema=check.CS_PUBLICATION_SCHEMA,
         scope="additional post-layout coverage of combiner_sampler; not a manifest citation",
-        pex_args=KLT_PEX_ARGS,
+        pex_args=pex_args(backend),
         source_sha256=bd.source_identity(),
         inputs=check.CS_INPUTS,
         port_map=dict(zip(header, ports)),
@@ -114,6 +129,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--envelope", type=Path, help="an existing `klt pex` stdout to publish")
     ap.add_argument("--backend", default=os.environ.get("KLT_SIM_BACKEND", "local"),
                     help="klt sim backend for both sides (default: $KLT_SIM_BACKEND or local)")
+    ap.add_argument("--resume", action="store_true",
+                    help="re-attach to an interrupted batch run in the same outdir and launch "
+                         "the shards that never launched (klt pex --resume)")
     ap.add_argument("--allow-incomplete", action="store_true",
                     help="publish even if some declared corner/row was not measured")
     args = ap.parse_args(argv)
@@ -121,10 +139,12 @@ def main(argv: list[str] | None = None) -> int:
     stale = check.combiner_sampler_dut_source_problems()
     if stale:
         return common.fail(f"{TAG}: fixture is stale -- nothing run", stale)
-    loaded = common.load_envelope(args.envelope, lambda: run_pex(args.backend), TAG)
+    loaded = common.load_envelope(args.envelope, lambda: run_pex(args.backend, args.resume), TAG)
     if loaded is None:
         return 1
     raw, envelope = loaded
+    raw = common.redact_client_paths(raw)
+    envelope = json.loads(raw)
     refusals = common.envelope_refusals(REPO_ROOT, envelope, check.CS_NETLIST)
     if refusals:
         return common.fail(f"{TAG}: refusing to publish", refusals)

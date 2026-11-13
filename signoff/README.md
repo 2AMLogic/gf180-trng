@@ -347,14 +347,39 @@ missing corner or a missing value as `unmeasured`, never `pass`. The testbench
 README has the scenarios, settling windows and exclusions.
 
 When the run is published, `publish_combiner_sampler_pex.py` writes the
-native envelope byte for byte to `evidence/post-layout/combiner_sampler/`,
+native envelope to `evidence/post-layout/combiner_sampler/` (byte for byte, except that
+`environment.client_ngspice_binary` loses its home-directory prefix and keeps the
+binary's name, so the tree passes `check:no-host-paths`),
 with a `publication.json`. That file pins the request, testbench, DUT, source
 identity, port map, PDK/deck provenance and `body_bias`, and records the
 verdict. `check.py` re-verifies all of it on every run (step 1d) and
 recomputes the verdict, so neither can go stale or be hand-edited. A `fail`
 verdict is published and kept as evidence.
 
-**Status (2026-10-09): fixture built, grid not yet run.** Two submissions
+**Status (2026-11-13): the grid ran and is published.** The sections below
+that record earlier refused attempts are kept as history. `klt pex`
+(klayout-tools 0.9.0, klayout 0.30.10; DR-0026 no longer pins a single producer
+build) ran `--backend batch --hosts 9`, with `batch.capacity_wait_s: 600` in the
+request (0.9.0's `pex` has no `--wait-for-capacity` flag). All 27 corners x 66
+rows were measured on both sides: native `status: pass`, 1782 passed, 0
+failed, 0 errored; the recomputed two-sided verdict is `pass` (1674 limit rows
+held on both sides, 108 measure-only rows, 0 unmeasured). The first submission
+left two of the nine extracted-side shards unlaunched after
+`batch_no_capacity`; `publish_combiner_sampler_pex.py --resume` (klt's
+`--resume`, same outdir, still batch) launched them. The committed envelope is
+the resumed response with that one path reduced to `ngspice`. The grid was not run locally. Evidence
+is in `evidence/post-layout/combiner_sampler/`.
+
+What the pass does and does not mean: `body_bias.status` is `"biased"` (0
+unbiased devices) because the layout now draws well and substrate taps, so
+this run is not under ring1's old floating-well limitation; the substrate
+reference is still an ideal 0 V. The stimuli are deterministic logic steps
+away from clock edges, so nothing here measures entropy, bias, jitter,
+boundary timing or the real oscillator-to-buffer path (see the exclusions in
+`publication.json`). This is additional coverage; item 7's analog citation
+stays ring1's and #412's findings are unchanged.
+
+**Earlier status (2026-10-09): fixture built, grid not yet run.** Two submissions
 of the 27-corner grid to the batch backend both failed with the fleet's
 capacity refusal ("no capacity in any of the 30 pools after 3 attempt(s)").
 The first failed on the extracted side after the schematic side had

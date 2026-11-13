@@ -580,5 +580,8 @@
     "timeout_s": 900,
     "keep_artifacts": false,
     "waveforms": false
+  },
+  "batch": {
+    "capacity_wait_s": 600
   }
 }
