@@ -149,11 +149,19 @@ class ArraySizingTests(_Fixture):
         self.assertEqual(len(hist), 2)
 
 
-def frontmatter(status: str | None, temp: float = 27) -> str:
+def frontmatter(status: str | None, temp: float = 27, extra: str = "") -> str:
+    """A leading frontmatter block plus the ``## Result`` heading.
+
+    ``extra`` is an additional unindented frontmatter line (e.g. the
+    ``seeds:`` field a bitstream record carries), placed inside the block so
+    it is visible to the frontmatter-scoped readers in ``_record_parsing``.
+    """
     lines = ["---", "record: fixture"]
     if status is not None:
         lines.append(f"status: {status}")
     lines += ["corner:", "  process: tt", f"  temperature: {temp}", "  voltage: 3.30 V"]
+    if extra:
+        lines.append(extra)
     return "\n".join(lines + ["---", "", "## Result"]) + "\n\n"
 
 
@@ -167,7 +175,7 @@ class RawMinEntropyTests(_Fixture):
 
     def write_bits(self, name: str, status: str | None, bits: list[int],
                    temp: float = 27) -> None:
-        text = frontmatter(status, temp) + "seeds: [1, 2]\n\n"
+        text = frontmatter(status, temp, extra="seeds: [1, 2]")
         for i, b in enumerate(bits):
             text += mean_bullet(f"b{i}_v", 3.3 if b else 0.0)
         (self.dir / name).write_text(text)

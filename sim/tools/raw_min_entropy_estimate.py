@@ -62,16 +62,21 @@ import array_sizing as asiz  # noqa: E402
 import starved_cell_jitter_energy as scje  # noqa: E402
 from _record_parsing import (  # noqa: E402
     current_records,
-    field,
     format_corner,
     iter_result_seed_summaries,
     parse_corner,
+    parse_frontmatter_field,
     parse_status,
 )
 
 SLUG = "sampler-array-digitize"
 
 _BIT_KEY = re.compile(r"^b(\d+)_v$")
+
+#: The bracketed list of noise seeds a tran-noise record's frontmatter
+#: carries, e.g. ``[1001, 1002, 1003]``. Reported verbatim, so only the
+#: shape is checked here.
+_SEEDS_LIST = re.compile(r"\[[^\]]*\]")
 
 
 # The corners this analysis is required to report: nominal, DR-0012's
@@ -108,7 +113,15 @@ class BitstreamRecord:
             text, label=self.stem, error_cls=RecordError
         )
         self.status = parse_status(text, label=self.stem, error_cls=RecordError)
-        self.seeds = field(text, r"^seeds:\s*(\[[^\]]*\])", label=self.stem, error_cls=RecordError)
+        seeds = parse_frontmatter_field(
+            text, "seeds", label=self.stem, error_cls=RecordError
+        )
+        if _SEEDS_LIST.fullmatch(seeds) is None:
+            raise RecordError(
+                f"{self.stem}: malformed `seeds: {seeds}` in the frontmatter "
+                "(expected a bracketed list)"
+            )
+        self.seeds = seeds
 
         bit_indices = sorted(
             int(m.group(1)) for k in self.values if (m := _BIT_KEY.fullmatch(k))

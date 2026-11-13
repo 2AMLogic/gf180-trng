@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -69,6 +70,81 @@ class SamplePeriodTests(unittest.TestCase):
         manifest = json.loads(est.TB_MANIFEST.read_text())
         expected = float(manifest["params"]["tclk"])
         self.assertEqual(est.sample_period_s(), expected)
+
+
+def _bitstream_record(*, front_seeds: str | None = "seeds: [1, 2]", body: str = "") -> str:
+    """A minimal sampler-array-digitize record ``BitstreamRecord`` can read.
+
+    ``front_seeds`` is the ``seeds:`` line placed inside the frontmatter
+    block (``None`` omits it); ``body`` is prose inserted into the
+    ``## Result`` section ahead of the bit bullets.
+    """
+    lines = [
+        "---",
+        "record: fixture",
+        "status: valid",
+        "corner:",
+        "  process: tt",
+        "  temperature: 27",
+        "  voltage: 3.30 V",
+    ]
+    if front_seeds is not None:
+        lines.append(front_seeds)
+    lines += ["---", "", "## Result", ""]
+    return (
+        "\n".join(lines)
+        + "\n"
+        + body
+        + "- `b0_v`: mean 3.3 over 2 seeds (sd 0.0)\n"
+        + "- `b1_v`: mean 0.0 over 2 seeds (sd 0.0)\n"
+    )
+
+
+class BitstreamRecordSeedsTests(unittest.TestCase):
+    """``seeds:`` is read from the frontmatter, exactly once (issue #853).
+
+    The same rule ``parse_corner`` / ``parse_status`` apply to the fields two
+    lines above it: metadata comes from the frontmatter block, never from the
+    record's prose, and a duplicated key is an error rather than a silent
+    first-match-wins.
+    """
+
+    def _record(self, **kw: object) -> est.BitstreamRecord:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-01-01-sampler-array-digitize-01.md"
+            path.write_text(_bitstream_record(**kw))  # type: ignore[arg-type]
+            return est.BitstreamRecord(path)
+
+    def test_reads_the_frontmatter_value(self):
+        self.assertEqual(self._record(front_seeds="seeds: [7, 8]").seeds, "[7, 8]")
+
+    def test_frontmatter_wins_over_a_body_line(self):
+        rec = self._record(front_seeds="seeds: [7, 8]", body="seeds: [99]\n\n")
+        self.assertEqual(rec.seeds, "[7, 8]")
+
+    def test_body_line_cannot_supply_the_value(self):
+        with self.assertRaises(est.RecordError) as ctx:
+            self._record(front_seeds=None, body="seeds: [99]\n\n")
+        message = str(ctx.exception)
+        self.assertIn("2026-01-01-sampler-array-digitize-01", message)
+        self.assertIn("`seeds:`", message)
+
+    def test_duplicate_frontmatter_seeds_is_rejected(self):
+        with self.assertRaises(est.RecordError) as ctx:
+            self._record(front_seeds="seeds: [1, 2]\nseeds: [3, 4]")
+        self.assertIn("2 `seeds:` fields", str(ctx.exception))
+
+    def test_malformed_value_names_the_record_and_the_value(self):
+        with self.assertRaises(est.RecordError) as ctx:
+            self._record(front_seeds="seeds: n/a")
+        message = str(ctx.exception)
+        self.assertIn("2026-01-01-sampler-array-digitize-01", message)
+        self.assertIn("n/a", message)
+
+    def test_missing_seeds_names_the_record(self):
+        with self.assertRaises(est.RecordError) as ctx:
+            self._record(front_seeds=None)
+        self.assertIn("2026-01-01-sampler-array-digitize-01", str(ctx.exception))
 
 
 @unittest.skipUnless(

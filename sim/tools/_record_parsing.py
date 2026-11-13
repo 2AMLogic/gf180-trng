@@ -8,11 +8,8 @@ the ``- `key`: value`` bullet lines, and the ``process:``/``temperature:``/
 (``array_sizing.py``, ``time_to_first_valid.py``, ``power_rollup.py``,
 ``starved_cell_jitter_energy.py``, ``raw_min_entropy_estimate.py``,
 ``jitter_energy_law.py``) each carried their own copy of the bullet regex
-and/or the corner triplet, plus their own "``re.search``, raise if
-``None``, return ``group(1)``" helper -- four different call conventions
-(``@staticmethod``, instance method, module function, closure) for the same
-shape. ``jitter_estimator_calibration_check.py`` duplicated the bullet
-regex too, without the corner triplet.
+and/or the corner triplet. ``jitter_estimator_calibration_check.py``
+duplicated the bullet regex too, without the corner triplet.
 
 This module is that one place. It is deliberately NOT a ``Record`` base
 class: the seven callers' record shapes differ too much for that (plain
@@ -33,11 +30,6 @@ import re
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
-
-#: The numeric token of a result bullet: the one definition of "what a number
-#: may look like" among the sim tools. Embed it (unparenthesised) in a larger
-#: pattern; do not re-type it.
-NUMBER_PATTERN = r"-?[\d.]+(?:e[-+]?\d+)?"
 
 #: A bullet line of the form "- `key`: [mean ]value", exactly as every
 #: sim/records/*.md result section writes one. ``(?:mean\s+)?`` skips past
@@ -314,39 +306,6 @@ def iter_result_seed_summaries(
     return list(iter_seed_summaries(region, label=label, error_cls=error_cls))
 
 
-def field(
-    text: str,
-    pattern: str,
-    *,
-    label: str = "",
-    error_cls: type[Exception] = RuntimeError,
-) -> str:
-    """The first capture group of ``pattern`` in ``text``, or raise.
-
-    This is the "``re.search``, raise if ``None``, return ``group(1)``"
-    helper all seven ``sim/tools/*.py`` record parsers used to reimplement
-    independently. ``label`` (typically the record's stem or path) is
-    folded into the error message so a failure names which record was
-    unparsable. ``error_cls`` lets a caller raise its own module's
-    ``RecordError`` instead of a bare ``RuntimeError``, so a caller's
-    existing ``except RecordError`` handling (its own, or a downstream
-    script's, e.g. ``array_coupling_buffer_variant.py`` importing
-    ``RecordError`` from ``starved_cell_jitter_energy``) keeps catching the
-    same exception type it always did.
-
-    ``re.MULTILINE`` is used for the search: none of the patterns the seven
-    callers pass rely on ``^``/``$`` matching only the absolute start/end of
-    ``text`` (only ``raw_min_entropy_estimate.py``'s ``seeds:`` field
-    anchors on ``^`` at all, and it needs line-start semantics), so this is
-    safe for every existing caller.
-    """
-    m = re.search(pattern, text, re.M)
-    if m is None:
-        prefix = f"{label}: " if label else ""
-        raise error_cls(f"{prefix}cannot find {pattern!r} in the frontmatter")
-    return m.group(1)
-
-
 def frontmatter(
     text: str,
     *,
@@ -389,6 +348,30 @@ def _unique_field(
             "(exactly one is required)"
         )
     return values[0]
+
+
+def parse_frontmatter_field(
+    text: str,
+    key: str,
+    *,
+    label: str = "",
+    error_cls: type[Exception] = RuntimeError,
+) -> str:
+    """The record's frontmatter ``key:`` value, as a raw string.
+
+    ``text`` is the complete record. Only the leading frontmatter block is
+    read -- so a ``key:`` line in the record's prose can never supply
+    metadata -- and the key must occur exactly once there, unindented: the
+    same rule :func:`parse_corner` and :func:`parse_status` apply, rather
+    than a silent first-match-wins. A missing or duplicated key, and a
+    missing frontmatter block, raise ``error_cls`` naming ``label``
+    (typically the record's stem).
+
+    The value is returned unvalidated, with surrounding whitespace stripped;
+    checking its shape is the caller's job.
+    """
+    fm = frontmatter(text, label=label, error_cls=error_cls)
+    return _unique_field(fm, key, indented=False, label=label, error_cls=error_cls)
 
 
 def _scalar(
