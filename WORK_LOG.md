@@ -8,6 +8,10 @@ not independent verification of the claims in issue or PR titles.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-13
+
+- **Issue #816** (closed): Operator decision: reduced ring supply against the Operating envelope row
+
 ### 2026-11-12
 
 - **PR #829**: Bump Repo Skills 0.25.10 -> 0.26.1
