@@ -24,9 +24,12 @@ starved cell at its entropy-binding measured corner, ss/-40/3.63, from
 ``sim/tools/starved_cell_jitter_energy.py`` over
 ``sim/records/2026-08-01-ro-ring5-starved-jitter-long-{01,02,03}.md``. It is
 the value DR-0011-raw-rate-at-the-measured-starved-cell-jitter-energy §2
-chooses, and the one that reproduces the shipped array's ~2.77 kbps edge. The
-plain-cell 1.79 that ``array_sizing.py`` still carries as its stated constant
-is *not* used: it was fitted to a cell this project does not ship.
+chooses, and the one that reproduces the shipped array's ~2.77 kbps edge.
+``array_sizing.py`` states that same starved-cell constant, rounded to 7.32
+(``A_JITTER_ENERGY``), and carries the plain-cell 1.79 only as
+``A_PLAIN_CELL``, for historical tables; it was fitted to a cell this project
+does not ship and sizes nothing here. Both stated values are held to the one
+derivation, ``starved_cell_jitter_energy.sizing_constant()``.
 
 Where the inputs come from
 --------------------------
@@ -46,7 +49,9 @@ Where the inputs come from
 
 What ``--check`` enforces
 -------------------------
-* ``A_STARVED`` agrees with the live derivation to within ``A_TOLERANCE``.
+* ``A_STARVED`` agrees with ``starved_cell_jitter_energy.sizing_constant()``
+  -- the same derivation ``array_sizing.py --check`` holds its own stated
+  constant to -- within ``array_sizing.A_TOLERANCE``.
 * The law, applied to the shipped array, still asks for exactly the shipped
   ring count at the shipped array's own highest passing rate -- the
   arithmetic here and ``array_sizing.py``'s cannot have drifted apart.
@@ -73,17 +78,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import array_sizing as sizing  # noqa: E402
+import starved_cell_jitter_energy as sce  # noqa: E402
 from _record_parsing import current_records  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 AREA_JSON = REPO_ROOT / "layout" / "floorplan" / "reports" / "area.json"
 
-#: Starved-cell jitter-energy constant (asymptotic, ss/-40/3.63). See module
-#: docstring; held to its derivation by --check.
+#: Starved-cell jitter-energy constant (asymptotic, at
+#: ``sce.SIZING_CONSTANT_CORNER``). See module docstring. Stated to four
+#: significant figures because the study quotes it so; held to
+#: ``sce.sizing_constant()`` under ``sizing.A_TOLERANCE`` by --check, the same
+#: derivation and the same tolerance array_sizing.py states its 7.32 against.
 A_STARVED = 7.322
-A_TOLERANCE = 0.01
-#: The measured corner A_STARVED is taken at.
-A_CORNER = "ss/-40/3.63"
 
 #: Raw-rate targets considered, bits per second. 100 kbps is an intermediate
 #: point; 1 Mbps and 4 Mbps are DR-0003's original row and stretch values.
@@ -222,16 +228,6 @@ def skew_points() -> list:
     return [r for r in recs if "dt_per_ff_s" in r.values]
 
 
-def derived_a() -> float:
-    import starved_cell_jitter_energy as sce  # noqa: PLC0415
-
-    points, _ = sce.load_points()
-    for p in points:
-        if p.rec.corner == A_CORNER:
-            return p.a(p.kappa2_asym)
-    raise RuntimeError(f"no starved-cell record at {A_CORNER}")
-
-
 # --------------------------------------------------------------------- the study
 
 def study(a: float = A_STARVED) -> dict:
@@ -326,7 +322,8 @@ def _fmt_rate(r: float) -> str:
 
 def report(s: dict) -> None:
     bind, hot, area = s["bind"], s["hot"], s["area"]
-    print(f"jitter-energy constant a = {s['a']:g} (starved cell, asymptotic, {A_CORNER})")
+    print(f"jitter-energy constant a = {s['a']:g} (starved cell, asymptotic, "
+          f"{sce.SIZING_CONSTANT_CORNER})")
     print(f"entropy-binding corner (min Q): {bind.rec.corner}  [{bind.rec.stem}]")
     print(f"power-binding corner (max P):   {hot.rec.corner}  [{hot.rec.stem}]")
     print(f"shipped array: N = {s['n_shipped']}, highest rate meeting DR-0007 §2 at the "
@@ -374,13 +371,13 @@ def report(s: dict) -> None:
 def check(s: dict) -> list[str]:
     errors = []
     try:
-        a_live = derived_a()
+        sel = sce.sizing_constant()
     except Exception as exc:  # noqa: BLE001 - reported, never swallowed
         errors.append(f"A_STARVED could not be re-derived: {exc}")
     else:
-        if abs(a_live - A_STARVED) / A_STARVED > A_TOLERANCE:
+        if abs(sel.value - A_STARVED) / A_STARVED > sizing.A_TOLERANCE:
             errors.append(f"A_STARVED = {A_STARVED} but starved_cell_jitter_energy.py derives "
-                          f"{a_live:.4f} at {A_CORNER}")
+                          f"{sel.value:.4f} at {sel.corner}")
     n_edge = rings_needed(s["rate_shipped_bps"] * (1 - 1e-6), s["g_per_ring"])
     if n_edge != s["n_shipped"]:
         errors.append(f"the law asks for N = {n_edge} at the shipped array's own edge "
