@@ -103,11 +103,11 @@
     },
     "9.analog": {
       "file": "signoff/evidence/t1-item-9-analog.json",
-      "content_hash": "sha256:28d1090d60deb39d115eb0340f2f37b4f72ddaffc2571289fd19474e1ae3e491"
+      "content_hash": "sha256:04e516eb9358fc66fc65453148554e544dd45452ae0a6a51e181e6a058dca6aa"
     },
     "9.digital": {
       "file": "signoff/evidence/t1-item-9-digital.json",
-      "content_hash": "sha256:047535f1165f6946266e754cf3a1d9d8b2d578bdec49a0e8f7430e61856fd43b"
+      "content_hash": "sha256:44deecec8e671db8b43f976c9beafa60fe9d781a0088afae48e554c97c33dcdd"
     }
   }
 }

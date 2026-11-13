@@ -100,7 +100,6 @@ CHARGES = (
     ("cq1i", "c1"), ("cqt", "c1"), ("cqsb", "c1"), ("cqsv", "c1"),
     ("cq2i", "c2"),
 )
-CROSSINGS = (("t1", "ro1", "1"), ("t2", "ro2", "2"), ("ct1", "cro1", "c1"), ("ct2", "cro2", "c2"))
 
 
 def measurements() -> list[dict]:
@@ -335,11 +334,12 @@ def cmd_run(outdir: str, backend: str, klt_cmd: str, only: str | None = None) ->
     return _pc.cmd_run(outdir, backend, klt_cmd, only, request=request_path(), tb_dir=TB_DIR, build_request=build_request)
 
 
+#: The measured-record slug. Attempt records (batch refused, runner skew, ...)
+#: carry no measurement; `_power_cli.cmd_record` derives their slug as
+#: `f"{SLUG}-attempt"`, which deliberately does not match
+#: power_rollup.LIVENESS_GLOB's `-[0-9]` rule, so a record without numbers can
+#: never be read as a measured corner.
 SLUG = "sampler-core-liveness-active"
-#: Attempt records (batch refused, runner skew, ...) carry no measurement. Their
-#: slug deliberately does not match power_rollup.LIVENESS_GLOB's `-[0-9]` rule, so
-#: a record without numbers can never be read as a measured corner.
-SLUG_ATTEMPT = "sampler-core-liveness-active-attempt"
 
 #: Result bullets a measured record carries (the ledger and the tests read these).
 RECORD_FIELDS = (

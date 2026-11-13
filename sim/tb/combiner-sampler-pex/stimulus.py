@@ -57,7 +57,6 @@ TESTBENCH = HERE / "tb_combiner_sampler_pex.sp"
 REQUEST = HERE / "request.json"
 DUT_FILE = "combiner_sampler_schematic.spice"
 
-NS = 1e-9
 PERIOD = 40.0  # ns
 EDGE = 0.1  # ns, every stimulus transition
 STOP = 370.0  # ns
