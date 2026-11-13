@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import subprocess
 import sys
 import unittest
@@ -17,6 +19,7 @@ sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import characterize  # noqa: E402
+import liveness_sampler_power  # noqa: E402
 import power_rollup  # noqa: E402
 
 
@@ -155,10 +158,26 @@ class RowDReproductionTests(unittest.TestCase):
         self.assertEqual(self._by_term()["liveness"].flow, "separate")
 
     def test_liveness_commands_are_real_subcommands(self):
-        text = (SIM_DIR / "tools" / "liveness_sampler_power.py").read_text()
+        """Each documented command parses. The tool's parser lives in
+        ``sim/tools/_power_cli.py`` (issue #837), so ask argparse rather than
+        grep the tool's source: ``<sub> --help`` exits 0 only for a real
+        subcommand, and 2 for one this tool does not offer."""
         for cmd, _ in characterize.LIVENESS_COMMANDS:
             sub = cmd.split("liveness_sampler_power.py ")[1].split()[0]
-            self.assertIn(f'add_parser("{sub}"', text)
+            self.assertEqual(self._help_exit(sub), 0, f"{sub} is not a subcommand")
+        # The guard itself: `summarize` is a sibling tool's subcommand, not this one's.
+        self.assertEqual(self._help_exit("summarize"), 2)
+
+    @staticmethod
+    def _help_exit(sub: str) -> object:
+        """``liveness_sampler_power.py <sub> --help``'s exit status, help text swallowed."""
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                liveness_sampler_power.main([sub, "--help"])
+        except SystemExit as exc:
+            return exc.code
+        return "no exit"
 
     def test_dry_run_enumerates_all_row_d_evidence(self):
         for rows in ([], ["--rows", "D"]):

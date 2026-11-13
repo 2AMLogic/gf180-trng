@@ -3,8 +3,10 @@
 
 ``check:spec`` in package.json is a hand-maintained chain of ``--check`` tools;
 a tool left out of it silently stops being enforced (issues #400, #405, #432).
-This test enumerates ``sim/tools/*.py``, finds the scripts that define a
-``--check`` argparse option, and requires each to be either
+This test enumerates the entry-point scripts in ``sim/tools/`` (``_``-prefixed
+modules are shared helpers, not tools), finds the ones that offer a ``--check``
+option -- declared in the script, or reached through the shared power-tool CLI
+in ``_power_cli.py`` (issue #837) -- and requires each to be either
 
 (a) invoked by a ``check:*`` script in package.json, or
 (b) listed in ``UNWIRED_ALLOWLIST`` below with a one-line reason.
@@ -79,14 +81,20 @@ UNWIRED_ALLOWLIST = {
 # `add_argument("--check"` / `add_argument(\n "--check"`; prose mentions of
 # --check (docstrings, --check-env subprocess calls) do not match.
 CHECK_ARG = re.compile(r"""add_argument\(\s*["']--check["']""")
+# A power tool whose parser lives in _power_cli.py still has `emit --check`.
+CHECK_DELEGATED = re.compile(r"""_(?:pc|power_cli)\.main\(""")
 
 
 def defines_check(source: str) -> bool:
-    return bool(CHECK_ARG.search(source))
+    return bool(CHECK_ARG.search(source) or CHECK_DELEGATED.search(source))
 
 
 def check_tools(tools_dir: Path = TOOLS_DIR) -> set[str]:
-    return {p.name for p in tools_dir.glob("*.py") if defines_check(p.read_text())}
+    """Entry-point scripts offering --check. `_`-prefixed modules are shared
+    helper layers imported by the tools, never run directly, so the --check
+    they declare is attributed to the tools that delegate to them."""
+    return {p.name for p in tools_dir.glob("*.py")
+            if not p.name.startswith("_") and defines_check(p.read_text())}
 
 
 def wired_tools(scripts: dict[str, str]) -> set[str]:
@@ -110,7 +118,9 @@ class CheckModeWiring(unittest.TestCase):
         tools = check_tools()
         self.assertIn("power_rollup.py", tools)  # wired
         self.assertIn("supply_ripple.py", tools)  # subcommand option
+        self.assertIn("power_switch.py", tools)  # `emit --check` via _power_cli.py
         self.assertNotIn("corner_sanity_check.py", tools)  # only mentions --check-env
+        self.assertNotIn("_power_cli.py", tools)  # a shared helper, not a tool
 
     def test_every_check_tool_is_wired_or_allowlisted(self) -> None:
         missing = unaccounted(check_tools(), wired_tools(self.scripts), UNWIRED_ALLOWLIST)
@@ -125,6 +135,8 @@ class CheckModeWiring(unittest.TestCase):
         # The guard itself: a hypothetical new --check tool must be reported.
         src = 'p.add_argument(\n    "--check", action="store_true")\n'
         self.assertTrue(defines_check(src))
+        self.assertTrue(defines_check("return _pc.main(argv, doc=__doc__)\n"))
+        self.assertFalse(defines_check("# mentions --check in prose only\n"))
         self.assertEqual(unaccounted({"new_tool.py"}, wired_tools(self.scripts), UNWIRED_ALLOWLIST), ["new_tool.py"])
 
     def test_allowlist_is_not_stale(self) -> None:
