@@ -40,7 +40,7 @@ What is declared, per net (`INTER_REGION_NETS`)
 --------------------------------------------------
 - `name` -- the net's own name at the composed `trng_floorplan` level.
 - `role` -- one of `control` / `clock` / `reset` / `entropy_tap` /
-  `raw_tap` / `liveness_tap` / `supply` / `ground` / `substrate`.
+  `raw_tap` / `liveness_tap` / `supply` / `ground`.
 - `chip_pin` -- whether this net is also a top-level `trng_floorplan` pin
   (an actual chip I/O), as opposed to a net that is wholly absorbed between
   two regions and never reaches the outside world.

@@ -1249,7 +1249,6 @@ gotten wrong):
 | `rst_n` | chip pin → `digital.rst_n` → `combiner_sampler.rst_n` | Metal4 transition | same topology as `clk` |
 | `raw_bit` / `raw_valid` | `combiner_sampler` → `digital` | Metal4 transition | raw sampler tap |
 | `ring_bit1` / `ring_bit2` | `combiner_sampler` → `digital` (`ring_bit[0]` / `ring_bit[1]` on the digital side — the two committed references spell this pin differently, resolved here rather than by renaming either) | Metal4 transition | DR-0016 per-ring liveness taps |
-| `vsubs` | `ring1`/`ring2`/`combiner_sampler`'s own substrate-global pins | guard-ring tap (no metal route) | not in the design's own schematic at all — a layout-LVS-reference-only artifact of the extraction deck's synthesized substrate handle (`layout/verify.py`'s own `device.body_unverified` disclosure); declared purely so the composed reference has a complete pin list for these three regions |
 
 **The four supply branches must never merge before a star point.**
 `vddr1`, `vddr2`, `vdd` and `vddd` are declared as four separate, disjoint
@@ -1358,12 +1357,11 @@ share, or that broke a guard ring. Neither happens here:
 
 - **Every crossing is on Metal3/Metal4, never on Metal1** — the guard rings'
   own layer. Each tap loop stays geometrically and electrically continuous;
-  no guard ring is cut, bridged, or tied to any drawn net. (`vsubs`, the
-  substrate global, is declared by phase 1 with `layer_role:
-  "guard_ring_tap"` and is deliberately **not** drawn as metal — tying a
-  guard ring to a region's `vss` would merge the extraction deck's own
-  synthesized substrate handle into `vss`, which is precisely the kind of
-  merge the composed LVS exists to catch.)
+  no guard ring is cut, bridged, or tied to any drawn net. (Tying one to a
+  region's `vss` would merge the extraction deck's own synthesized substrate
+  handle into `vss`, which is precisely the kind of merge the composed LVS
+  exists to catch. Since #705 there is no substrate net declared to route
+  either: every cell draws its own tap.)
 - **`ro1` never passes over `ring2` at all.** Phase 1 flagged it as the one
   long-haul route (`spans_regions: ["ring2"]`) and asked for Metal2 so it
   would not share Metal1 with `ring2`'s own chain wiring. It is routed under

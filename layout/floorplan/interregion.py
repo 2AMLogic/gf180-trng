@@ -18,18 +18,17 @@ geometry moves, this module follows it; if the net list grows an endpoint
 this module has no anchor for, `wiring_plan()` raises rather than silently
 skipping the wire.
 
-What is drawn, and what deliberately is not
--------------------------------------------
-Exactly the endpoints phase 1 declares in a net's own `endpoints` list. One
-declared thing is deliberately **not** drawn, and that is phase-1's own
-distinction, not a shortcut taken here:
+What is drawn
+-------------
+Exactly the endpoints phase 1 declares in a net's own `endpoints` list --
+every net it declares, with nothing deliberately left undrawn, since #705
+removed the substrate net that was the one declaration carrying no drawn
+wire.
 
-* `vsubs` (`layer_role: "guard_ring_tap"`) -- phase 1 says in as many words
-  that "no metal route is implied; physically this is the guard rings' own
-  p-substrate taps, not a drawn wire". Drawing a metal tie from a guard ring
-  to any region's `vss` would also merge the extraction deck's synthesized
-  substrate handle into `vss`, which is exactly the `net.merged` failure the
-  composed LVS exists to catch.
+Nothing here ties a guard ring to any drawn net, and that is deliberate: a
+metal tie from a guard ring to a region's `vss` would merge the extraction
+deck's synthesized substrate handle into `vss`, which is exactly the
+`net.merged` failure the composed LVS exists to catch.
 
 `vddd`'s and `vss`'s connection into `digital`, resolved by gf180-trng#224
 ----------------------------------------------------------------------------
@@ -772,16 +771,12 @@ def digital_pdn_strap_bands(pin_name: str) -> list[tuple[float, float, float, fl
 
 
 def drawn_nets() -> list[dict]:
-    """Every phase-1 net with at least one mechanically-checkable endpoint,
-    in declaration order. A net whose `endpoints` list is empty or whose
-    `layer_role` says it is not a drawn wire at all (`vsubs`) is not
-    returned -- see the module docstring for why each is deliberate. As of
-    gf180-trng#224, `vddd` and `vss` both have real `endpoints` into
-    `digital` (previously `vddd` had none at all and was excluded here)."""
-    return [
-        net for net in floorplan_netlist.INTER_REGION_NETS
-        if net.get("endpoints") and net["layer_role"] != "guard_ring_tap"
-    ]
+    """Every net phase 1 declares, in declaration order -- this module draws
+    all of them, and filters none out. Since #705 removed the substrate net,
+    every declared net has `endpoints`, and `wiring_plan()` requires them: it
+    reads `net["endpoints"]` directly, so a net declared without any fails
+    loudly instead of being silently dropped from the floorplan."""
+    return list(floorplan_netlist.INTER_REGION_NETS)
 
 
 #: Where each drawn chip-pin net's own top-level pin lands, as an X offset
