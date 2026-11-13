@@ -11,6 +11,13 @@ on where the real tree happens to restate the pin. Matching pins must pass;
 a mismatching or producer pin must fail unless its own line carries the
 historical marker, and a marker that exempts nothing must fail too.
 
+The guard's second half (#858) reads the engine a committed report under
+`layout/` *records*, not the one an install line names, and holds it to
+KLAYOUT_PIN as well. The cases below cover both fields it reads
+(``klayout_version`` always, ``engine_version`` only beside an
+``engine: "klayout"`` sibling), the non-KLayout engines it must leave
+alone, and that nothing outside `layout/` is scanned.
+
 The pin strings in this file are assembled at run time (``pin()``) because
 this file is itself tracked *.py and therefore scanned by the real guard.
 Stdlib only (plus git); no klt, no PDK.
@@ -18,6 +25,7 @@ Stdlib only (plus git); no klt, no PDK.
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -68,13 +76,26 @@ GOOD = {
 }
 
 
+def report(engine: str = ENGINE, **extra) -> str:
+    """A minimal `klt lvs`-shaped report recording ``engine``."""
+    payload = {
+        "schema_version": 3,
+        "engine": "klayout",
+        "status": "match",
+        "environment": {"engine": "klayout", "engine_version": engine},
+        "provenance": {"klayout_version": engine},
+    }
+    payload.update(extra)
+    return json.dumps(payload, indent=2) + "\n"
+
+
 class KltPinSitesTest(unittest.TestCase):
 
     def run_tree(self, files: dict[str, str], **kw) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             build_repo(root, files, **kw)
-            _, _, problems = kps.check_tree(root)
+            _, _, _, problems = kps.check_tree(root)
             return problems
 
     def test_matching_pins_pass(self):
@@ -84,7 +105,7 @@ class KltPinSitesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             build_repo(root, GOOD)
-            pins, mentions, _ = kps.check_tree(root)
+            pins, mentions, _, _ = kps.check_tree(root)
         self.assertEqual(
             pins, {"klayout-tools": None, "klayout": ENGINE, kps.GRADER_KEY: GRADER})
         self.assertEqual(
@@ -173,7 +194,7 @@ class KltPinSitesTest(unittest.TestCase):
             root = Path(tmp)
             build_repo(root, GOOD)
             (root / "untracked.md").write_text(stale, encoding="utf-8")
-            self.assertEqual(kps.check_tree(root)[2], [])
+            self.assertEqual(kps.check_tree(root)[3], [])
 
     def test_name_boundaries(self):
         text = (f"{pin('foo-klayout', '9.9')} {pin('klayout-toolsx', '9.9')} "
@@ -208,10 +229,114 @@ class KltPinSitesTest(unittest.TestCase):
             self.assertEqual(bad.returncode, 1)
             self.assertIn("FAIL: layout/README.md:1:", bad.stderr)
 
+    # ---- recorded engines in committed layout reports (#858) ----------
+
+    def test_on_pin_report_passes_and_off_pin_report_fails(self):
+        files = dict(GOOD)
+        files["layout/reports/xor2.lvs.json"] = report()
+        self.assertEqual(self.run_tree(files), [])
+
+        files["layout/reports/xor2.lvs.json"] = report("0.30.13")
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 2)
+        for got, field in zip(problems, ("$.environment.engine_version",
+                                         "$.provenance.klayout_version")):
+            self.assertIn("layout/reports/xor2.lvs.json:", got)
+            self.assertIn(field, got)
+            self.assertIn("records the KLayout engine as 0.30.13", got)
+            self.assertIn(f"pins klayout=={ENGINE}", got)
+
+    def test_nested_klayout_version_is_found(self):
+        # floorplan.drc.json carries its provenance one level down.
+        files = dict(GOOD)
+        files["layout/floorplan/reports/floorplan.drc.json"] = json.dumps(
+            {"drc": {"provenance": {"klayout_version": "0.30.13"}}}) + "\n"
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("$.drc.provenance.klayout_version", problems[0])
+
+    def test_engine_version_of_another_engine_is_left_alone(self):
+        # place_and_route.json / sdf_export.json record an OpenROAD or
+        # OpenSTA build in the same field name; KLAYOUT_PIN says nothing
+        # about those, and a sibling klayout_version is still held.
+        files = dict(GOOD)
+        files["layout/digital/reports/place_and_route.json"] = json.dumps({
+            "engine": "openroad",
+            "engine_version": "26Q3-1510-g6cb3f2b704",
+            "provenance": {"klayout_version": ENGINE},
+        }) + "\n"
+        self.assertEqual(self.run_tree(files), [])
+
+    def test_engine_version_with_no_engine_sibling_is_left_alone(self):
+        files = dict(GOOD)
+        files["layout/reports/x.json"] = json.dumps(
+            {"environment": {"engine_version": "26Q3-1510"}}) + "\n"
+        self.assertEqual(self.run_tree(files), [])
+
+    def test_reports_inside_lists_are_scanned(self):
+        files = dict(GOOD)
+        files["layout/reports/runs.json"] = json.dumps(
+            {"runs": [{"provenance": {"klayout_version": "0.30.13"}}]}) + "\n"
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("$.runs[0].provenance.klayout_version", problems[0])
+
+    def test_only_tracked_json_under_layout_is_scanned(self):
+        off_pin = report("0.30.13")
+        files = dict(GOOD)
+        # Outside layout/: append-only evidence naming its own producer.
+        files["signoff/evidence/post-layout/ro_ring11.pex.json"] = off_pin
+        files["sim/records/2026-01-01-x.json"] = off_pin
+        # Under layout/, but not JSON.
+        files["layout/notes.md"] = "klayout_version 0.30.13\n"
+        self.assertEqual(self.run_tree(files), [])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_repo(root, GOOD)
+            (root / "layout" / "reports").mkdir(parents=True, exist_ok=True)
+            (root / "layout/reports/untracked.json").write_text(
+                off_pin, encoding="utf-8")
+            self.assertEqual(kps.check_tree(root)[3], [])
+
+    def test_null_engine_field_does_not_pass(self):
+        files = dict(GOOD)
+        files["layout/reports/x.json"] = json.dumps(
+            {"provenance": {"klayout_version": None}}) + "\n"
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("records the KLayout engine as null", problems[0])
+
+    def test_malformed_report_is_reported_not_skipped(self):
+        files = dict(GOOD)
+        files["layout/reports/broken.json"] = "{not json\n"
+        problems = self.run_tree(files)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("layout/reports/broken.json: not valid JSON", problems[0])
+
+    def test_engine_constant_change_alone_fails_every_recorded_engine(self):
+        files = dict(GOOD)
+        files["layout/reports/xor2.lvs.json"] = report()
+        bumped = CHECK_PY.replace(f'"{ENGINE}"', '"0.30.10"')
+        # The README's restated pin, plus both recorded engine fields.
+        self.assertEqual(len(self.run_tree(files, check_py=bumped)), 3)
+
+    def test_cli_fails_on_an_off_pin_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = dict(GOOD)
+            files["layout/reports/xor2.lvs.json"] = report("0.30.13")
+            build_repo(root, files)
+            done = subprocess.run(
+                [sys.executable, str(TOOL), "--check", "--root", str(root)],
+                capture_output=True, text=True)
+            self.assertEqual(done.returncode, 1)
+            self.assertIn("FAIL: layout/reports/xor2.lvs.json:", done.stderr)
+
     def test_real_tree_agrees(self):
-        _, mentions, problems = kps.check_tree(kps.REPO_ROOT)
+        _, mentions, recordings, problems = kps.check_tree(kps.REPO_ROOT)
         self.assertEqual(problems, [])
         self.assertTrue(mentions)
+        self.assertTrue(recordings)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,14 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "engine": "klayout",
   "layout": {
     "path": "layout/testcells/trng_tc_inv_lvsbad.gds",
     "scope": "repo"
   },
-  "reference": "../testcells/trng_tc_inv.spice",
+  "reference": {
+    "path": "layout/testcells/trng_tc_inv.spice",
+    "scope": "repo"
+  },
   "top": "trng_tc_inv",
   "reference_top": "TRNG_TC_INV",
   "parameter_tolerance": null,
@@ -107,17 +110,17 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.13",
+    "engine_version": "0.30.10",
     "netgen_binary": null,
     "layout_sha256": "7923606e6b0fcbd797f978fc9670c4d6992f9e522cde04b5870966e8fda3636c",
     "reference_sha256": "a326ea7c9376fa4cb289f2aac69a19677a33f54290e39ad812333e1e196c8a5b",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.9.0",
-    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
-    "klt_reinstall_spec": "klayout-tools==0.9.0",
-    "klayout_version": "0.30.13",
+    "klt_version": "0.9.1",
+    "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+    "klt_reinstall_spec": "klayout-tools==0.9.1",
+    "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",

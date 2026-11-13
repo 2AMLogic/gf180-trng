@@ -1,11 +1,14 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "engine": "klayout",
   "layout": {
     "path": "layout/cells/power_switch/power_switch.gds",
     "scope": "repo"
   },
-  "reference": "../cells/power_switch/power_switch.spice",
+  "reference": {
+    "path": "layout/cells/power_switch/power_switch.spice",
+    "scope": "repo"
+  },
   "top": "power_switch",
   "reference_top": "POWER_SWITCH",
   "parameter_tolerance": null,
@@ -102,17 +105,17 @@
   ],
   "environment": {
     "engine": "klayout",
-    "engine_version": "0.30.13",
+    "engine_version": "0.30.10",
     "netgen_binary": null,
     "layout_sha256": "8ebf7e31521b79b05e2665d4163bc5d5e62ce49d48ebb0cf4f0cd45be10dedc2",
     "reference_sha256": "f37dd80d6a2a1fd86ab090b899abdd1a56e110b8f92241aa88628cd7a70800ca",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.9.0",
-    "klt_git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
-    "klt_reinstall_spec": "klayout-tools==0.9.0",
-    "klayout_version": "0.30.13",
+    "klt_version": "0.9.1",
+    "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+    "klt_reinstall_spec": "klayout-tools==0.9.1",
+    "klayout_version": "0.30.10",
     "pdk": null,
     "deck": {
       "name": "gf180mcu",
