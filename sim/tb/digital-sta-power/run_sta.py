@@ -1591,11 +1591,11 @@ def write_record(point: Point, values: dict, pdk, git: dict, openroad: str,
 #: the Markdown records are committed (T1 item 5, digital column).
 KLT_STA_EVIDENCE_DIR = REPO_ROOT / "signoff" / "evidence" / "digital-sta"
 
-#: The producer: `klayout-tools` 0.8.0 is the first release whose `klt sta`
-#: takes per-port `input_transitions` (klayout-tools#3227) and a `spef` map
-#: keyed by interconnect corner (#3228); `constraints.propagated_clock` is
-#: #2739. Override with `TRNG_STA_KLT` (e.g. a `uvx` venv's binary).
-KLT_STA_MIN_VERSION = "0.8.0"
+# The producer: `klayout-tools` 0.8.0 is the first release whose `klt sta` takes
+# per-port `input_transitions` (klayout-tools#3227) and a `spef` map keyed by
+# interconnect corner (#3228); `constraints.propagated_clock` is #2739. Nothing
+# here enforces that floor -- the `klt` on PATH is run as found, overridable
+# with `TRNG_STA_KLT` (e.g. a `uvx` venv's binary).
 
 #: A klt-vs-record disagreement larger than this, on any of the 15 points'
 #: worst setup or worst hold slack, means the two are not the same analysis.

@@ -52,11 +52,6 @@ CONTACT = (33, 0)
 METAL1 = (34, 0)
 METAL1_LABEL = (34, 10)  # pin/label purpose the extraction deck reads
 
-#: Drawn device dimensions, echoed into the reference netlist. `W` is the
-#: Comp height crossed by the gate stripe; `L` is the gate stripe width.
-DEVICE_W_UM = 0.80
-DEVICE_L_UM = 0.28
-
 TESTCELL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 

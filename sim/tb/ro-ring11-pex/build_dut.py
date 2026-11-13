@@ -212,8 +212,6 @@ def extraction_port_map(netlist_text: str, ring: Ring = RING1) -> list[str]:
 CONSUMED_SUBCKTS = ("ro_ring11", "ro_nand2", "ro_stage")
 #: The schematic cell every ring instance (xr1, xr2) instantiates.
 SCHEMATIC_CELL = "ro_ring11"
-#: The canonical instance whose sizing RING1_PARAMS restates.
-RING1_INSTANCE = RING1.instance
 
 
 def ring_instance_params(design: str, ring: Ring = RING1) -> str:

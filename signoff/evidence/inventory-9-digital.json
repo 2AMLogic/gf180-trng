@@ -115,7 +115,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/run_sta.py",
-          "sha256": "sha256:f01bc3932bb55d3a7aa9e59be91dc5b041d7e5d6d487106b6b11c292b65ea3c2"
+          "sha256": "sha256:3636059f3f5aa285f344f5ddddfc251eefc60b07ba983737ebcc21538c2bc8d7"
         },
         {
           "path": "sim/tb/digital-sta-power/sdc_treatment_probe.py",
