@@ -1,0 +1,32 @@
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt: batch job klt-sim-865f4da8f50d submitting to s3://<bucket>/jobs/klt-sim-865f4da8f50d
+klt: batch job klt-sim-76b7c2a29061 submitting to s3://<bucket>/jobs/klt-sim-76b7c2a29061
+klt: batch job klt-sim-038d8496fd70 submitting to s3://<bucket>/jobs/klt-sim-038d8496fd70
+klt: batch job klt-sim-66540e705788 submitting to s3://<bucket>/jobs/klt-sim-66540e705788
+klt sim: batch job klt-sim-865f4da8f50d: submitted
+klt sim: shards 0/4 launched, 1 launching, 3 pending, 0 collected; launch rate unknown, ETA unknown
+klt sim: batch job klt-sim-038d8496fd70: submitted
+klt sim: batch job klt-sim-76b7c2a29061: submitted
+klt sim: batch job klt-sim-66540e705788: submitted
+klt sim: batch job klt-sim-038d8496fd70 launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-038d8496fd70`
+klt sim: batch job klt-sim-76b7c2a29061 launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-76b7c2a29061`
+klt sim: batch job klt-sim-865f4da8f50d launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-865f4da8f50d`
+klt sim: shards 4/4 launched, 0 launching, 0 pending, 0 collected; launch rate 361.2/min, ETA 0m
+klt sim: batch job klt-sim-66540e705788 launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-66540e705788`
+klt sim: batch job klt-sim-038d8496fd70 state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-76b7c2a29061 state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-865f4da8f50d state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-66540e705788 state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-038d8496fd70: running
+klt sim: batch job klt-sim-038d8496fd70 state=running elapsed=63s
+klt sim: batch job klt-sim-865f4da8f50d: running
+klt sim: batch job klt-sim-865f4da8f50d state=running elapsed=62s
+klt sim: batch job klt-sim-76b7c2a29061: running
+klt sim: batch job klt-sim-76b7c2a29061 state=running elapsed=63s
+klt sim: batch job klt-sim-66540e705788: running
+klt sim: batch job klt-sim-66540e705788 state=running elapsed=62s
+klt sim: batch job klt-sim-66540e705788: done
+klt sim: batch job klt-sim-038d8496fd70: done
+klt sim: batch job klt-sim-865f4da8f50d: done
+klt sim: batch job klt-sim-76b7c2a29061: done
+klt sim: shards 4/4 launched, 0 launching, 0 pending, 2 collected; launch rate 0.6/min, ETA 0m

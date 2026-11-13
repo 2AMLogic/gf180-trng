@@ -1163,6 +1163,18 @@
           "sha256": "sha256:ac2eeec9f33d93d2482c52bf869ecebb5f9419bdb397dd84ec59db8ab675cad7"
         },
         {
+          "path": "sim/tb/ro-ring5-starved-jitter-long-batch/request-ring5-redsup-ff-40.json",
+          "sha256": "sha256:190e7b6e08aefa3859ef64a79eb52cd5ab0f410c4a1b77238de335502a6e99c8"
+        },
+        {
+          "path": "sim/tb/ro-ring5-starved-jitter-long-batch/request-ring5-redsup-ss125.json",
+          "sha256": "sha256:77ff980dcd70e641f50fb61cdfa641bd49f7241e8a6de994acfdb5dc7d6acb89"
+        },
+        {
+          "path": "sim/tb/ro-ring5-starved-jitter-long-batch/request-ring5-redsup-tt27.json",
+          "sha256": "sha256:d78eac3480d2e00a57701f3703cf59b2eceaeab670ef29a31f0128a670c9bb68"
+        },
+        {
           "path": "sim/tb/ro-ring5-starved-jitter-long-batch/tb_ro_ring5_starved_jitter_long_batch.sp",
           "sha256": "sha256:47ec68095cd5d51a7afa1dd37c4bb5017a0b4b334f48ed3f829ba5e30ace93c6"
         }
@@ -1600,7 +1612,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:74828bf0bcb0c0f1c5f6a0aafad430b3280c16c98f166bde84957696be8d41f2"
+      "sha256": "sha256:5ada6ab1b0809bb84d8eacfc3fcf4ca36425523b1c44935ba6025b554d4fce9a"
     },
     {
       "path": "sim/README.md",

@@ -1,0 +1,17 @@
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt: batch job klt-sim-c3776b087d22 submitting to s3://<bucket>/jobs/klt-sim-c3776b087d22
+klt: batch job klt-sim-0e64941d1fba submitting to s3://<bucket>/jobs/klt-sim-0e64941d1fba
+klt sim: batch job klt-sim-c3776b087d22: submitted
+klt sim: shards 0/2 launched, 1 launching, 1 pending, 0 collected; launch rate unknown, ETA unknown
+klt sim: batch job klt-sim-0e64941d1fba: submitted
+klt sim: batch job klt-sim-c3776b087d22 launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-c3776b087d22`
+klt sim: shards 2/2 launched, 0 launching, 0 pending, 0 collected; launch rate 120.8/min, ETA 0m
+klt sim: batch job klt-sim-0e64941d1fba launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-0e64941d1fba`
+klt sim: batch job klt-sim-c3776b087d22 state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-0e64941d1fba state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-c3776b087d22: running
+klt sim: batch job klt-sim-c3776b087d22 state=running elapsed=63s
+klt sim: batch job klt-sim-0e64941d1fba: running
+klt sim: batch job klt-sim-0e64941d1fba state=running elapsed=62s
+klt sim: batch job klt-sim-c3776b087d22: done
+klt sim: batch job klt-sim-0e64941d1fba: done

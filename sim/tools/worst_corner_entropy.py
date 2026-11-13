@@ -102,7 +102,10 @@ from array_sizing import (  # noqa: E402
     load,
     shipped_ring_count,
 )
-from starved_cell_jitter_energy import load_points as load_starved_points  # noqa: E402
+from starved_cell_jitter_energy import (  # noqa: E402
+    load_points as load_starved_points,
+    load_reduced_supply_points,
+)
 from _record_parsing import current_records, iter_result_seed_summaries  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -357,6 +360,51 @@ def report_supply_sweep(rate_bps: float) -> None:
                       f"{p.max_rate_bps():11.4g}")
     print("  ret_* = power returned relative to the same process/temperature at "
           "3.63 V (uW).")
+
+
+#: Process/temperature pairs whose measured ``a`` replaces the fixed constant in
+#: the measured-``a`` supply sweep (issue #831): the two corners that bound the
+#: entropy-margin question at reduced supply.
+MEASURED_A_CORNERS = (("ss", 125.0), ("ff", -40.0))
+
+
+def measured_a_by_corner() -> dict[str, float]:
+    """Asymptotic ``a`` per ``proc/temp/supply`` label at ``MEASURED_A_CORNERS``: the
+    long-window 3.63 V records plus the reduced-supply family. Read-only."""
+    wanted = {f"{p}/{t:g}" for p, t in MEASURED_A_CORNERS}
+    points, _ = load_starved_points()
+    out = {}
+    for pt in [*points, *load_reduced_supply_points()]:
+        if pt.rec.corner.rsplit("/", 1)[0] in wanted:
+            out[pt.rec.corner] = pt.a(pt.kappa2_asym)   # chronological: newest wins
+    return out
+
+
+def report_measured_a_sweep(rate_bps: float) -> None:
+    """The ring-supply sweep at ``MEASURED_A_CORNERS`` with the measured per-corner ``a``
+    substituted for the fixed constant, beside the fixed-``a`` margin. Read-only."""
+    _, a_fixed = starved_cell_constants()
+    meas = measured_a_by_corner()
+    fixed = {p.rec.corner: p for p in shipped_points(PVT_Q_GLOB, a_fixed)}
+    need = MARGIN_M * Q_H0
+    print(f"\n== measured-a ring-supply sweep at {rate_bps:g} bps (issue #831) ==")
+    print("  simulation-derived design estimate; not an SP 800-90B entropy assessment (DR-0004)")
+    print(f"  fixed a = {a_fixed:.3f}; measured a = asymptotic a of the same corner/supply record")
+    header = (f"{'corner':<12} {'a_fixed':>8} {'a_meas':>8} {'margin_fixed':>13} "
+              f"{'margin_meas':>12} {'meas/fixed':>10}")
+    print(header)
+    print("-" * len(header))
+    for proc, temp in MEASURED_A_CORNERS:
+        for vdd in sorted(GRID_SUPPLIES_V, reverse=True):
+            label = f"{proc}/{temp:g}/{vdd:.2f}"
+            p, a_m = fixed.get(label), meas.get(label)
+            if p is None or a_m is None:
+                print(f"{label:<12}  (no record)")
+                continue
+            q_f = p.q_array(rate_bps)
+            q_m = ArrayPoint(p.rec, a=a_m).q_array(rate_bps)
+            print(f"{label:<12} {a_fixed:8.3f} {a_m:8.3f} {q_f / need:12.2f}x "
+                  f"{q_m / need:11.2f}x {a_m / a_fixed:10.3f}")
 
 
 # --------------------------------------------------------------------------
@@ -754,6 +802,11 @@ def main(argv: list[str] | None = None) -> int:
              "modelled Q_array at 3.63/3.30/2.97 V, a held fixed); read-only",
     )
     parser.add_argument(
+        "--measured-a", action="store_true",
+        help="with --supply-sweep, also print the sweep at ss/125 and ff/-40 with the "
+             "measured per-corner a (issue #831) substituted for the fixed constant; read-only",
+    )
+    parser.add_argument(
         "--check", action="store_true",
         help="exit non-zero unless the records still support the stated "
              f"entropy-binding corner ({MEASURED_MIN_Q_CORNER}), the covered grid is "
@@ -825,6 +878,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.supply_sweep:
         report_supply_sweep(args.rate)
+        if args.measured_a:
+            report_measured_a_sweep(args.rate)
 
     report_mc_ro_freq()
     report_mc_sampler_offset(args.rate)
