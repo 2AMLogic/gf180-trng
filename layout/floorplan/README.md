@@ -1240,8 +1240,8 @@ gotten wrong):
 | `vddr1` | chip pin → `ring1.vddr` | Metal2 | own star branch (Mechanism 2) |
 | `vddr2` | chip pin → `ring2.vddr` | Metal2 | own star branch |
 | `vdd` | chip pin → `combiner_sampler.vdd` | Metal2 | own star branch, also feeds the two DR-0018 `ro_buf` instances |
-| `vddd` | chip pin → `digital`'s own implicit PDN net | Metal4/Metal5 transition | own star branch; `digital`'s committed reference has no `.SUBCKT` `vddd` pin to wire against (SPECIALNETS-only, see `layout/digital/README.md#power`) |
-| `vss` | shared return: `ring1`/`ring2`/`combiner_sampler`'s own `vss` pins, plus `digital`'s implicit ground | Metal2 + PDN transition | the one deliberately shared net (Mechanism 2) |
+| `vddd` | chip pin → `digital.vddd`, a real `.SUBCKT trng_top` pin since [#224](https://github.com/2AMLogic/gf180-trng/issues/224) | Metal5 PDN strap | own star branch; the tie docks onto the east end of the lowest of `digital`'s own Metal5 PDN straps (`digital_pdn_strap_bands`) — see `interregion.py`'s own "The `digital` PDN tie" docstring section |
+| `vss` | shared return: `ring1`/`ring2`/`combiner_sampler`/`digital`'s own `vss` pins — all four real `.SUBCKT` pins since #224 | Metal5 PDN strap | the one deliberately shared net (Mechanism 2); its `digital` end docks onto a PDN strap the same way `vddd`'s does |
 | `en1` / `en2` | chip pin → `ring1.en` / `ring2.en` | Metal1 | ring enable, no fan-out |
 | `ro1` | `ring1.ro` → `combiner_sampler.rn1`, **spans `ring2`'s own region** | Metal2 | entropy tap; the one long-haul route in this table — see below |
 | `ro2` | `ring2.ro` → `combiner_sampler.rn2` | Metal1 | entropy tap, single adjacent channel |
