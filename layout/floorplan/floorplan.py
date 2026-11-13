@@ -1528,19 +1528,24 @@ def digital_inventory() -> tuple[Counter, list[tuple[str, Counter, bool]]]:
 
 
 # --------------------------------------------------------------------------- #
-# The flow
+# The flow, stage by stage
+#
+# `build()` at the end of this section is the sequence of these, and nothing
+# else. Each function below is one of the numbered stages that function used
+# to carry inline, taking and returning exactly the values the later stages
+# read. Stages 1 and 5 -- the inventories and the area rollup -- shell out to
+# no tool, so they are exercised on every push by
+# `layout/tests/test_floorplan_stages.py`; every other stage needs `klt` and
+# an installed PDK and is covered by the whole-report comparison this script
+# performs in its default mode.
 # --------------------------------------------------------------------------- #
 
 
-def build(pdk) -> dict:
-    """Run every stage and return the report that gets committed/compared."""
-    variant = pdk.variant
-    stdcells, lef = load_stdcell_areas(pdk)
-
-    core = read_subckts(REPO_ROOT / "design" / "ro_array_core.spice")
-    sampler = read_subckts(REPO_ROOT / "design" / "sampler_core.spice")
-
-    # --- 1. per-region cell inventories -----------------------------------
+def region_inventories(
+    core: dict[str, list[str]], sampler: dict[str, list[str]]
+) -> dict[str, Counter]:
+    """Stage 1: each isolation region's cell inventory, expanded from the
+    committed netlists rather than typed in here. Tool-free."""
     inventories: dict[str, Counter] = {
         "ring1": instance_counts(core, "ro_array_core", "xr1"),
         "ring2": instance_counts(core, "ro_array_core", "xr2"),
@@ -1556,14 +1561,22 @@ def build(pdk) -> dict:
             + all_instances_of(sampler, "sampler_core", "sampler_dff")
         ),
     }
-    digital_cells, digital_blocks = digital_inventory()
+    return inventories
 
-    starve = {
+
+def starve_geometries(core: dict[str, list[str]]) -> dict[str, dict]:
+    """Stage 1: the two rings' series starve-device geometry, from the same
+    netlist. Tool-free -- stage 2 is what measures a footprint for it."""
+    return {
         "ring1": starve_geometry(core, "ro_array_core", "xr1"),
         "ring2": starve_geometry(core, "ro_array_core", "xr2"),
     }
 
-    # --- 2. starve-device footprints, measured ----------------------------
+
+def measure_starve_devices(starve: dict[str, dict], variant: str) -> dict[str, dict]:
+    """Stage 2: generate and DRC each distinct starve device once, keyed by
+    flavour and drawn geometry, and return its measured footprint. No
+    standard cell represents these, so they are priced from real geometry."""
     print("== starve devices ==")
     device_footprints: dict[str, dict] = {}
     for region_id, geometry in starve.items():
@@ -1591,13 +1604,32 @@ def build(pdk) -> dict:
                 f" -> {area:8.3f} um^2   drc {drc.get('status')}"
             )
     print()
+    return device_footprints
 
-    def starve_area(region_id: str, flavor: str) -> float:
-        geometry = starve[region_id]
-        key = f"{flavor}_w{geometry['w_um']:.3f}_l{geometry['l_um']:.3f}"
-        return device_footprints[key]["footprint_um2"]
 
-    # --- 3. per-region cell area ------------------------------------------
+def starve_area(
+    starve: dict[str, dict],
+    device_footprints: dict[str, dict],
+    region_id: str,
+    flavor: str,
+) -> float:
+    """One starve device's measured footprint, as stage 3 prices it."""
+    geometry = starve[region_id]
+    key = f"{flavor}_w{geometry['w_um']:.3f}_l{geometry['l_um']:.3f}"
+    return device_footprints[key]["footprint_um2"]
+
+
+def build_regions(
+    inventories: dict[str, Counter],
+    digital_cells: Counter,
+    digital_blocks: list[tuple[str, Counter, bool]],
+    stdcells: dict[str, float],
+    starve: dict[str, dict],
+    device_footprints: dict[str, dict],
+) -> list[dict]:
+    """Stage 3: per-region cell area, placed area and the guarded footprint
+    each region's guard ring will be sized to -- real assembled geometry
+    where it exists, the area/utilisation estimate's square elsewhere."""
     regions: list[dict] = []
     for spec in REGIONS:
         rid = spec["id"]
@@ -1623,7 +1655,12 @@ def build(pdk) -> dict:
                 model = CELL_MODEL[cell]
                 unit = stdcell_area(stdcells, model["stdcell"])
                 for flavor in model["starve"]:
-                    unit += starve_area(rid if rid.startswith("ring") else "ring1", flavor)
+                    unit += starve_area(
+                        starve,
+                        device_footprints,
+                        rid if rid.startswith("ring") else "ring1",
+                        flavor,
+                    )
                 cell_area += unit * count
                 breakdown.append({
                     "cell": cell,
@@ -1718,8 +1755,14 @@ def build(pdk) -> dict:
             "inner_w_um": inner_w_um,
             "inner_h_um": inner_h_um,
         })
+    return regions
 
-    # --- 4. guard rings, composition, DRC ---------------------------------
+
+def generate_guard_rings(regions: list[dict], variant: str) -> float | None:
+    """Stage 4: one `klt gen guard_ring` per region, sized to that region's
+    footprint. Fills each region's guarded dimensions in place and returns
+    the database unit `klt gen` resolved from this PDK, which the composition
+    below reuses rather than restating."""
     print("== guard rings ==")
     #: The database unit `klt gen` resolved from this PDK for the guard
     #: rings -- reused for the hand-drawn inter-region wiring below rather
@@ -1790,17 +1833,23 @@ def build(pdk) -> dict:
             f"{region['guarded_h_um']:8.2f} um ({region['guard_taps']} taps)"
         )
     print()
+    return guard_dbu_um
 
-    # --- 4b. ring fit -- does the real geometry fit where it's reserved,
-    # DRC- and LVS-clean? The area/utilisation estimate never checked that
-    # the geometry it priced actually fits where the floorplan reserves it
-    # for -- that gap is what issue #119 opened (DRC only); issue #110 (the
-    # actual placement) extends the same check to `klt lvs`, since a
-    # DRC-clean fit turned out not to be a connectivity-clean one at zero
-    # clearance (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring). For every
-    # region whose guarded footprint above came from a real assembled GDS
-    # (`ASSEMBLED_RING_GDS`), compose that region's own guard ring with the
-    # real ring geometry and run both (`check_ring_fit`).
+
+def measure_ring_fit(regions: list[dict], variant: str) -> dict[str, dict]:
+    """Stage 4b: does the real geometry fit where it's reserved, DRC- and
+    LVS-clean?
+
+    The area/utilisation estimate never checked that
+    the geometry it priced actually fits where the floorplan reserves it
+    for -- that gap is what issue #119 opened (DRC only); issue #110 (the
+    actual placement) extends the same check to `klt lvs`, since a
+    DRC-clean fit turned out not to be a connectivity-clean one at zero
+    clearance (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring). For every
+    region whose guarded footprint above came from a real assembled GDS
+    (`ASSEMBLED_RING_GDS`), compose that region's own guard ring with the
+    real ring geometry and run both (`check_ring_fit`).
+    """
     print("== ring fit (issue #119, DRC; issue #110, + LVS) ==")
     ring_fit: dict[str, dict] = {}
     for region in regions:
@@ -1820,12 +1869,21 @@ def build(pdk) -> dict:
             f"unexpected categories: {fit['lvs_unexpected_categories'] or 'none'})"
         )
     print()
+    return ring_fit
 
-    # --- 4c. composition -- place every region's guard ring, and (for
-    # ring1/ring2) its own real assembled content, into one stream
-    # (issue #110: the "place ... inside the guarded regions" half of this
-    # block's own scope; issue #16's floorplan abstract only ever placed
-    # empty guard rings before this).
+
+def compose_and_check(
+    regions: list[dict],
+    variant: str,
+    guard_dbu_um: float | None,
+    ring_fit: dict[str, dict],
+) -> dict:
+    """Stage 4c: place every region's guard ring, and (for a region with one)
+    its own real assembled content, into one stream (issue #110: the
+    "place ... inside the guarded regions" half of that issue's own scope;
+    issue #16's floorplan abstract only ever placed empty guard rings before
+    it), then DRC the result against each assembled region's own standalone
+    baseline."""
     print("== composition ==")
     request, composed, wiring = compose(regions, variant, guard_dbu_um)
     box = composed["bbox_um"]
@@ -1861,6 +1919,13 @@ def build(pdk) -> dict:
     # violations only" principle issue #119's own `check_ring_fit` already
     # established for the pairwise fit, applied here to the full
     # multi-region composition.
+    #
+    # `drc_new_violations_from_composition.note` in the committed report
+    # says "the comment above where this is computed in build()" -- this
+    # comment, which moved out of `build()` into this stage function with
+    # the code it explains. That sentence is a committed report *value*,
+    # compared field-for-field against `reports/area.json`, so it is left
+    # exactly as it was rather than reworded here.
     baseline_rules: Counter = Counter()
     for rid in ASSEMBLED_RING_GDS:
         baseline_rules.update(Counter(ring_fit[rid]["ring_standalone"]["rule_counts"] or {}))
@@ -1875,11 +1940,21 @@ def build(pdk) -> dict:
         "assembled region's own standalone DRC)"
     )
     print()
+    return {
+        "request": request,
+        "composed": composed,
+        "wiring": wiring,
+        "drc": drc,
+        "baseline_rules": baseline_rules,
+        "new_from_composition": new_from_composition,
+    }
 
-    # --- 4d. inter-region connectivity (issue #222): extract the composed,
-    # routed stream and hold it to phase 1's own declaration -- the declared
-    # nets joined, the four supply branches not, the top-level interface the
-    # composed reference declares, and `klt lvs` against that reference.
+
+def report_interregion(wiring: dict) -> dict:
+    """Stage 4d: inter-region connectivity (issue #222). Extract the composed,
+    routed stream and hold it to phase 1's own declaration -- the declared
+    nets joined, the four supply branches not, the top-level interface the
+    composed reference declares, and `klt lvs` against that reference."""
     print("== inter-region connectivity (issue #222) ==")
     interregion_check = check_interregion(wiring)
     print(
@@ -1895,13 +1970,18 @@ def build(pdk) -> dict:
         f"{interregion_check['lvs_unexpected_categories'] or 'none'})"
     )
     print()
+    return interregion_check
 
-    # --- 5. the rollup ----------------------------------------------------
-    # A channel is charged at its declared width times the height of the
-    # taller of the two regions it separates. Charging every channel the full
-    # row height instead would bill the two 17 um rings for the digital
-    # block's 354 um -- an artefact of the 1-D row the composer supports, not
-    # a property of the floorplan.
+
+def isolation_channels(regions: list[dict]) -> list[dict]:
+    """Stage 5: the isolation channel between each pair of neighbours.
+
+    A channel is charged at its declared width times the height of the taller
+    of the two regions it separates. Charging every channel the full row
+    height instead would bill the two 17 um rings for the digital block's
+    354 um -- an artefact of the 1-D row the composer supports, not a
+    property of the floorplan. Tool-free.
+    """
     channels = []
     for left, right in zip(regions, regions[1:]):
         span = max(left["guarded_h_um"], right["guarded_h_um"])
@@ -1911,25 +1991,39 @@ def build(pdk) -> dict:
             "span_um": span,
             "area_um2": round(ISOLATION_CHANNEL_UM * span, 2),
         })
+    return channels
 
-    def _subtotal(predicate) -> dict:
-        picked = [r for r in regions if predicate(r)]
-        ids = {r["id"] for r in picked}
-        channel_area = sum(
-            c["area_um2"] for c in channels if set(c["between"]) <= ids
-        )
-        guarded = sum(r["guarded_area_um2"] for r in picked)
-        return {
-            "regions": sorted(ids),
-            "cell_area_um2": round(sum(r["cell_area_um2"] for r in picked), 2),
-            "guarded_area_um2": round(guarded, 2),
-            "isolation_channel_area_um2": round(channel_area, 2),
-            "area_um2": round(guarded + channel_area, 2),
-            "share_of_budget_pct": round(
-                100.0 * (guarded + channel_area) / AREA_BUDGET_UM2, 2
-            ),
-        }
 
+def _subtotal(regions: list[dict], channels: list[dict], predicate) -> dict:
+    """One `rollup.subtotals` entry: the regions `predicate` picks, plus only
+    the channels that lie wholly between two of them."""
+    picked = [r for r in regions if predicate(r)]
+    ids = {r["id"] for r in picked}
+    channel_area = sum(
+        c["area_um2"] for c in channels if set(c["between"]) <= ids
+    )
+    guarded = sum(r["guarded_area_um2"] for r in picked)
+    return {
+        "regions": sorted(ids),
+        "cell_area_um2": round(sum(r["cell_area_um2"] for r in picked), 2),
+        "guarded_area_um2": round(guarded, 2),
+        "isolation_channel_area_um2": round(channel_area, 2),
+        "area_um2": round(guarded + channel_area, 2),
+        "share_of_budget_pct": round(
+            100.0 * (guarded + channel_area) / AREA_BUDGET_UM2, 2
+        ),
+    }
+
+
+def build_rollup(
+    regions: list[dict],
+    channels: list[dict],
+    row_bbox: dict,
+    digital_blocks: list[tuple[str, Counter, bool]],
+    stdcells: dict[str, float],
+) -> dict:
+    """Stage 5: the area rollup against the README `Area` row. Tool-free --
+    every input is already measured by the stages above."""
     guarded_total = sum(region["guarded_area_um2"] for region in regions)
     channel_total = sum(channel["area_um2"] for channel in channels)
     cell_total = sum(region["cell_area_um2"] for region in regions)
@@ -1943,16 +2037,16 @@ def build(pdk) -> dict:
         "isolation_channel_area_um2": round(channel_total, 2),
         "floorplan_area_um2": round(guarded_total + channel_total, 2),
         "row_bbox_um": {
-            "w": round(box["x1"] - box["x0"], 3),
-            "h": round(box["y1"] - box["y0"], 3),
+            "w": round(row_bbox["x1"] - row_bbox["x0"], 3),
+            "h": round(row_bbox["y1"] - row_bbox["y0"], 3),
         },
         "placed_area_um2": {
             f"{int(u * 100)}pct": round(sum(r["placed_area_um2"][f"{int(u*100)}pct"] for r in regions), 2)
             for u in UTILISATION
         },
         "subtotals": {
-            "analog": _subtotal(lambda r: r["role"] in ("entropy", "boundary")),
-            "digital": _subtotal(lambda r: r["role"] == "deterministic"),
+            "analog": _subtotal(regions, channels, lambda r: r["role"] in ("entropy", "boundary")),
+            "digital": _subtotal(regions, channels, lambda r: r["role"] == "deterministic"),
         },
     }
     rollup["share_of_budget_pct"] = round(
@@ -1979,9 +2073,51 @@ def build(pdk) -> dict:
             ),
         }
     }
+    return rollup
 
+
+def write_normalised_gds() -> str:
+    """Timestamp-normalise the composed stream, keep the normalised copy
+    beside it, and return the sha256 the report commits."""
     gds = normalise_gds((WORK_DIR / "trng_floorplan.gds").read_bytes())
     (WORK_DIR / "trng_floorplan.norm.gds").write_bytes(gds)
+    return hashlib.sha256(gds).hexdigest()
+
+
+def build(pdk) -> dict:
+    """Run every stage, in order, and return the report that gets
+    committed/compared. Each stage is one function above, named for the
+    numbered banner it used to be introduced by."""
+    variant = pdk.variant
+    stdcells, lef = load_stdcell_areas(pdk)
+
+    core = read_subckts(REPO_ROOT / "design" / "ro_array_core.spice")
+    sampler = read_subckts(REPO_ROOT / "design" / "sampler_core.spice")
+
+    inventories = region_inventories(core, sampler)
+    digital_cells, digital_blocks = digital_inventory()
+    starve = starve_geometries(core)
+
+    device_footprints = measure_starve_devices(starve, variant)
+    regions = build_regions(
+        inventories, digital_cells, digital_blocks, stdcells, starve, device_footprints
+    )
+    guard_dbu_um = generate_guard_rings(regions, variant)
+    ring_fit = measure_ring_fit(regions, variant)
+    composition = compose_and_check(regions, variant, guard_dbu_um, ring_fit)
+    wiring = composition["wiring"]
+    interregion_check = report_interregion(wiring)
+
+    channels = isolation_channels(regions)
+    rollup = build_rollup(
+        regions,
+        channels,
+        composition["composed"]["bbox_um"],
+        digital_blocks,
+        stdcells,
+    )
+
+    gds_sha256 = write_normalised_gds()
 
     return {
         "_comment": (
@@ -1999,15 +2135,15 @@ def build(pdk) -> dict:
         "regions": regions,
         "rollup": rollup,
         "composition": {
-            "request": request,
-            "response": composed,
-            "gds_sha256_timestamp_normalised": hashlib.sha256(gds).hexdigest(),
+            "request": composition["request"],
+            "response": composition["composed"],
+            "gds_sha256_timestamp_normalised": gds_sha256,
         },
-        "drc": drc,
+        "drc": composition["drc"],
         "drc_new_violations_from_composition": {
-            "rule_counts": new_from_composition,
-            "count": sum(new_from_composition.values()),
-            "baseline_rule_counts": dict(baseline_rules),
+            "rule_counts": composition["new_from_composition"],
+            "count": sum(composition["new_from_composition"].values()),
+            "baseline_rule_counts": dict(composition["baseline_rules"]),
             "note": (
                 "the composed abstract's own DRC minus each assembled "
                 "ring's own standalone DRC (issue #110) -- see the comment "
