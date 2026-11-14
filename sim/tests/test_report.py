@@ -1286,6 +1286,71 @@ class ManifestSnapshotTests(unittest.TestCase):
         self.assertEqual(report.verify_record_file(path, self.root), [])
 
 
+class FrontmatterBlockReaderTests(unittest.TestCase):
+    """The top-level block readers agree on how a block is delimited (#868).
+
+    Characterisation tests: each case held before the readers were collapsed
+    onto one scanner, and must keep holding afterwards. Their value is that a
+    correction to a delimiter rule now has one place to be made -- these
+    assert it takes effect for every reader, not just the one it was made in.
+    """
+
+    READERS = {
+        "manifest": report.parse_manifest_section,
+        "inputs": report.parse_inputs_section,
+        "pdk_content": report.parse_pdk_content_section,
+    }
+
+    def _for_each(self, body, expected):
+        for name, read in self.READERS.items():
+            with self.subTest(block=name):
+                self.assertEqual(read(body.format(name=name)), expected)
+
+    def test_every_reader_reads_its_own_block(self):
+        self._for_each("---\n{name}:\n  a: 1\n  b: two\n---\n", {"a": "1", "b": "two"})
+
+    def test_every_reader_ignores_a_foreign_block(self):
+        self._for_each("---\nother:\n  a: 1\n---\n", {})
+
+    def test_every_reader_treats_an_absent_block_as_empty(self):
+        self._for_each("---\nrecord: x\n---\n", {})
+
+    def test_every_reader_requires_closed_frontmatter(self):
+        self._for_each("{name}:\n  a: 1\n", {})
+        self._for_each("---\n{name}:\n  a: 1\n", {})
+
+    def test_every_reader_tolerates_trailing_space_after_the_header(self):
+        self._for_each("---\n{name}:  \n  a: 1\n---\n", {"a": "1"})
+
+    def test_every_reader_ends_the_block_at_the_first_unindented_line(self):
+        self._for_each("---\n{name}:\n  a: 1\nnext: 2\n  b: 3\n---\n", {"a": "1"})
+
+    def test_every_reader_strips_padding_and_keeps_colons_in_a_value(self):
+        self._for_each("---\n{name}:\n  a:   x: y   \n---\n", {"a": "x: y"})
+
+    def test_startup_reader_filters_by_prefix_and_strips_quotes(self):
+        text = (
+            "---\ntool:\n"
+            '  ngspice_startup_spinit_sha256: "abc"\n'
+            "  ngspice_startup_spinit_snapshot: spinit\n"
+            "  version: 44\n"
+            "---\n"
+        )
+        self.assertEqual(
+            report.parse_startup_section(text),
+            {"spinit_sha256": "abc", "spinit_snapshot": "spinit"},
+        )
+
+    def test_startup_reader_shares_the_block_delimiting_rules(self):
+        self.assertEqual(report.parse_startup_section("tool:\n  ngspice_startup_a: 1\n"), {})
+        self.assertEqual(
+            report.parse_startup_section(
+                "---\ntool:\n  ngspice_startup_a: 1\nx: 2\n  ngspice_startup_b: 3\n---\n"
+            ),
+            {"a": "1"},
+        )
+
+
 class ManifestWriteIdempotenceTests(unittest.TestCase):
     """Manifest writers accept identical existing bytes and refuse others."""
 
