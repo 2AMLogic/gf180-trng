@@ -531,7 +531,7 @@ of rules passed on a specific stream, under the specific tool build recorded
 as `klt_origin` in `layout/reports/environment.json`. The
 `body_verification` block reading `"verified"` with `device_count: 0` says
 the taps put every body on a real net — it is not a claim that the curated
-deck sign-offs device bodies against PDK body rules.
+deck signs off device bodies against PDK body rules.
 
 ---
 
