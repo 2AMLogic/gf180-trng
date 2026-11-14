@@ -158,11 +158,21 @@ Maturity ladder: simulation-complete → layout DRC/LVS-clean → shuttle
 seat → measured silicon over temperature. **The block is on the first rung.**
 Layout work has started on both halves — the entropy source and sampler are
 placed, DRC-clean and LVS-matching, and the digital section has a
-standalone placed-and-routed, DRC-clean GDS (#170), and, since #187, a
+standalone placed-and-routed GDS (#170) and, since #187, a
 clean LVS (`status: match`, zero mismatches after #306). Since
 #209/#210 the two are composed into one whole-block layout too
-(`layout/floorplan/trng_floorplan.gds`, DRC-clean and LVS-matching for all
-four regions) — see
+(`layout/floorplan/trng_floorplan.gds`, LVS-matching for all
+four regions). **Neither the digital GDS nor the composed stream is
+DRC-clean.** `layout/digital/reports/drc.json` reads `status: violations`,
+`violation_count: 2769`, and `layout/floorplan/reports/floorplan.drc.json`'s
+`.drc` reads `status: violations`, `violation_count: 2750`. Every violation
+in both is the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance
+class that [#449](https://github.com/2AMLogic/gf180-trng/issues/449) and
+[#717](https://github.com/2AMLogic/gf180-trng/issues/717) track — no other
+rule class fires — and they are recorded as known violations tracked by
+#717, not exempted. Composition introduced none of them
+(`new_violations_from_composition.count` is `0`); the composed stream
+inherits the digital region's baseline. See
 [`layout/floorplan/README.md`](layout/floorplan/README.md#tool-friction)
 for exactly what that composed check does and does not establish before
 reading it as more than the first rung.
@@ -230,13 +240,21 @@ regions — `ring1`, `ring2`, `combiner_sampler`, and, since #209/#210,
 `digital` — are no longer an abstract: they all carry real, placed,
 guard-ringed geometry assembled from the drawn cells above (or, for
 `digital`, from its own standalone placed-and-routed GDS,
-[`layout/digital/`](layout/digital/), #170/#187), DRC-clean and
-LVS-matching per `layout/floorplan/reports/ring_fit.json`
+[`layout/digital/`](layout/digital/), #170/#187), LVS-matching per
+`layout/floorplan/reports/ring_fit.json`
 (#110, #135, #209/#210). Since #222 they are also **wired to each other**:
 real routing geometry crosses the isolation channels for every net
 `design/floorplan_netlist.py` declares (#221), and the composed, routed
-stream is DRC-clean and LVS-matches that declaration's own composed
-reference — `layout/floorplan/reports/interregion.json`. That is a composed
+stream LVS-matches that declaration's own composed
+reference — `layout/floorplan/reports/interregion.json`. The composed
+stream is **not** DRC-clean: `layout/floorplan/reports/floorplan.drc.json`
+reads `status: violations`, `violation_count: 2750`, all of them the
+`comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class inherited
+from the `digital` region and tracked by
+[#449](https://github.com/2AMLogic/gf180-trng/issues/449) /
+[#717](https://github.com/2AMLogic/gf180-trng/issues/717), not exempted.
+The fit itself introduced none of them
+(`new_violations_from_composition.count` is `0`). That is a composed
 whole-block *floorplan*, not a tapeout sign-off — see
 [`layout/floorplan/README.md`](layout/floorplan/README.md#tool-friction)
 for exactly what its DRC/LVS checks do and do not establish. Nothing under

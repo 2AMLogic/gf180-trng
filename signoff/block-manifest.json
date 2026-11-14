@@ -16,11 +16,11 @@
     },
     "10.analog": {
       "file": "signoff/evidence/t1-item-10-analog.json",
-      "content_hash": "sha256:354740b2da214c9bcce1b54f3c5f8d2cdc9f1841486726d972a9e11b53a78038"
+      "content_hash": "sha256:5be47bbd7a510fb482bedd245ff2e84539b519e83e4aad3adb2ffc12370510b7"
     },
     "10.digital": {
       "file": "signoff/evidence/t1-item-10-digital.json",
-      "content_hash": "sha256:aaa0df1ff41fd8a318ce57e48920cba0b0a5c3656ed23ccea43fa3e38c09802a"
+      "content_hash": "sha256:de10ead6899e0a8e960623f1fbf428400f50c3f35228d11237a62797eaabafb3"
     },
     "11.analog": [
       {
@@ -103,11 +103,11 @@
     },
     "9.analog": {
       "file": "signoff/evidence/t1-item-9-analog.json",
-      "content_hash": "sha256:190bcf809a2bde8d0ea6d0f2012bcf6b8bea15b43e97a6d192e008e1f00f8f94"
+      "content_hash": "sha256:efe8adaded3280b56dc027a098a1ed3caadf300f9b6b360519eb8544dc0fa57a"
     },
     "9.digital": {
       "file": "signoff/evidence/t1-item-9-digital.json",
-      "content_hash": "sha256:0a7db9498d740a57a5e0d284e8be3da1a504c7fcb7feac934f493154f957b4a1"
+      "content_hash": "sha256:8bd3391a0fea2488c2e571c76b5af884a55c758333a4ec1f6a295ea19c074955"
     }
   }
 }

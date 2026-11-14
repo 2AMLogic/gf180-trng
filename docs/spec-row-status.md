@@ -702,15 +702,15 @@ DRC-clean and LVS-matching per [`layout/reports/`](../layout/reports/), with
 `ring1`, `ring2` and `combiner_sampler` placed inside the entropy source's
 own guarded regions in the floorplan. Since #170, the digital section
 (conditioner, health tests, interface) also has its own standalone layout —
-[`layout/digital/trng_top.gds`](../layout/digital/), a placed-and-routed,
-DRC-clean gate-level GDS, and its LVS now reports `status: match`
+[`layout/digital/trng_top.gds`](../layout/digital/), a placed-and-routed
+gate-level GDS, and its LVS now reports `status: match`
 (`mismatch_count: 0`, `error_count: 0` after the rebuild in #306 — see
 [`layout/digital/README.md`'s LVS section](../layout/digital/README.md#lvs)
 and #306). Since #209/#210, that digital section is composed into the same
 floorplan too: [`layout/floorplan/trng_floorplan.gds`](../layout/floorplan/)
 now places `layout/digital/trng_top.gds` inside its own guarded `digital`
-region alongside `ring1`/`ring2`/`combiner_sampler`, DRC-clean (0
-violations introduced by the fit) and LVS-matching against the digital
+region alongside `ring1`/`ring2`/`combiner_sampler`, with 0
+violations introduced by the fit and LVS-matching against the digital
 section's own reference netlist (`status: match`, `mismatch_count: 0`
 after the depth-2 floorplan regeneration in #454, which closed #256) — a single whole-block GDS with the
 entropy source and the digital section placed together, per
@@ -720,9 +720,21 @@ inter-region net list is declared as reviewable data
 ([`design/floorplan_netlist.py`](../design/floorplan_netlist.py)) and drawn as
 real routing geometry across the isolation channels
 ([`layout/floorplan/interregion.py`](../layout/floorplan/interregion.py)), with
-the composed, routed stream DRC-clean and LVS-matching that declaration's
+the composed, routed stream LVS-matching that declaration's
 own composed reference
 ([`layout/floorplan/reports/interregion.json`](../layout/floorplan/reports/interregion.json)).
+**Neither the standalone digital GDS nor the composed stream is DRC-clean.**
+[`layout/digital/reports/drc.json`](../layout/digital/reports/drc.json) reads
+`status: violations`, `violation_count: 2769`, and
+[`layout/floorplan/reports/floorplan.drc.json`](../layout/floorplan/reports/floorplan.drc.json)'s
+`.drc` reads `status: violations`, `violation_count: 2750` — every violation
+in both the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class
+that [#449](https://github.com/2AMLogic/gf180-trng/issues/449) and
+[#717](https://github.com/2AMLogic/gf180-trng/issues/717) track, recorded as
+known violations rather than exempted, and no other rule class fires. The
+"0 violations introduced by the fit" above is the composed fit's own result
+and is unaffected: the composed stream inherits the digital region's
+baseline (`new_violations_from_composition.count` is `0`).
 See [`layout/cells/README.md`](../layout/cells/README.md) for the cell-by-cell
 inventory and what is explicitly still deferred. The specification table
 below was

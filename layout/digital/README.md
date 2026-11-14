@@ -31,6 +31,12 @@ it is solved — [#111][gf111].
 > | Swept worst setup / hold, all 15 shipped `.lib` corners | −22.7 / +0.52 ns | −25.0 / +0.50 ns |
 > | `klt drc` | clean, 0 violations | clean, 0 violations |
 >
+> **Every `klt drc` row in this and the two update notes below predates the
+> klayout-tools 0.9.0 re-target and is a record of what that deck reported
+> then, not the current verdict.** The committed stream now reports 2769
+> `comp.tap_distance.{nwell,psub}.mv.1` violations against the deck pinned
+> today — see [DRC](#drc) and [#449][gf449]/[#717][gf717].
+>
 > The corner-swept, extraction-based STA/area/power figures this directory's
 > own Timing/Area/Power sections point to
 > (`sim/characterization-digital-sta-area-power.md`) are likewise re-run at
@@ -427,7 +433,11 @@ not reproduced — its `Metal4` stripe's `-spacing 0.56`, and the
 calls, which are the platform's own answer to a via-array DRC question.
 Filed generically upstream as [klayout-tools#1133][klt1133], per this
 repository's friction protocol. The resulting geometry is checked rather than
-assumed: `klt drc` over the merged GDS is **clean** (see [DRC](#drc)) — but
+assumed: `klt drc` over the merged GDS reported no via-array or spacing
+violations from this PDN (see [DRC](#drc); the deck pinned now reports 2769
+violations over the stream, every one of them the
+`comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class of
+[#449][gf449]/[#717][gf717], none of them a PDN geometry rule) — but
 "DRC-clean on this design" is standing in for "built the way the platform
 says", and that substitution is the reason the issue was filed.
 
@@ -600,11 +610,26 @@ geometrically valid stream for the first time.
 
 ### DRC
 
-`klt drc trng_top.gds --deck gf180mcu`: **clean, 0 violations**
-([`reports/drc.json`](reports/drc.json)).
+`klt drc trng_top.gds --deck gf180mcu`: **2769 violations**, every one of
+them the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class
+(`nwell` 1441, `psub` 1328) that [#449][gf449]/[#717][gf717] track — recorded
+as known violations, not exempted
+([`reports/drc.json`](reports/drc.json), `status: violations`).
 
-That verdict is [#171][gf171]'s, and it is the interesting part of this
-section. #170's run over the same design reported **149 violations, every
+**That is a deck change, not a layout regression.** The stream graded
+`clean, 0 violations` from [#171][gf171] until the klayout-tools 0.9.0
+re-target, when the pinned `gf180mcu` deck gained the MV latch-up
+tie-distance rules; the geometry is byte-for-byte the one that graded clean,
+and the tie-pitch gap the new rules find is the long-known one
+[Tap distance](#tap-distance) measures and #449/#717 own. The fix is a
+tapcell re-place (#717), not a deck or threshold change. T1 item 3 reads
+`unmet` for the digital partition accordingly — see
+[`signoff/README.md`](../../signoff/README.md).
+
+The #170 → #171 filler result below is [#171][gf171]'s, and it is still the
+interesting part of this section: the `nwell.space.1` class it closed
+remains at zero under the newer deck. #170's run over the same design
+reported **149 violations, every
 one of them `nwell.space.1`** (DRM 7.4 Nwell, `NW.2a` — minimum
 equipotential Nwell-to-Nwell spacing, 0.6 µm), and traced them by hand to a
 single cause: this flow inserted no filler cells, so every gap detailed
@@ -619,7 +644,8 @@ cell's outer edge, so two non-abutting cells' wells fall short of each other
 by a constant.
 
 #171 inserts 5663 filler cells (plus 265 tapcells and 208 endcaps) into
-exactly those gaps, and the count goes to zero. Nothing was waived, no rule
+exactly those gaps, and the `nwell.space.1` count goes to zero — where it
+has stayed, including under the 0.9.0 deck. Nothing was waived, no rule
 was scoped away, and the deck is the same `gf180mcu` deck every other cell
 in this repository is checked against — `layout/README.md`'s
 ["Baseline-relative, not absolute"](../README.md) conventions apply here as
@@ -629,22 +655,34 @@ everywhere else.
 envelope**, per-violation `violations` array included. Until [#273][gf273]
 it committed a four-field digest instead (verdict, deck, violation count,
 rule counts), on the reasoning that the per-violation dump "runs to megabytes
-over a design this size". That reasoning only holds for a *dirty* run: this
-one is clean, so `violations` is an empty array and the whole envelope is
-5.4 KB. What the digest cost, meanwhile, was real — with no
+over a design this size". That reasoning only holds for a *dirty* run, and
+when #273 landed this run was clean, so `violations` was an empty array and
+the whole envelope 5.4 KB. **The klayout-tools 0.9.0 re-target made the run
+dirty and the prediction correct**: `violations` now carries 2769 entries and
+the envelope is 2.8 MB. Committing it whole is still the right trade — the
+per-violation geometry is what makes [#449][gf449]/[#717][gf717] auditable by
+a third party — but the size claim above is no longer the current one. What
+the digest cost, meanwhile, was real — with no
 `schema_version`, no `violations` array and no `provenance` block, `klt
-signoff` could not classify the file as DRC evidence at all, so this clean
+signoff` could not classify the file as DRC evidence at all, so that clean
 run graded `unmet`/`no_evidence` on T1 item 3 (see
 [`signoff/README.md`](../../signoff/README.md)). Re-emit it at any time with
 `python3 layout/digital/build.py --drc-only`, which re-runs `klt drc` over
 the *committed* `trng_top.gds` without re-deriving it through a fresh
 (stochastic, hours-long) place-and-route.
 
-**What a clean verdict here does not mean.** It is a *deck-relative*
+**What a clean verdict here does not mean**, and why this one is no longer
+clean. Any verdict from this flow is a *deck-relative*
 statement: the gf180mcu deck this repository pins does not model every rule
 in the DRM (its own `coverage` block names what it checks and what it
-skips), and this run's clean result is bounded by that, exactly as
-`layout/README.md` says for every other cell here. In particular the
+skips), and the clean result this section recorded before the 0.9.0
+re-target was bounded by that, exactly as
+`layout/README.md` says for every other cell here. The re-target is that
+bound moving: the newer deck codes the MV latch-up tie-distance rules, and
+the same stream that graded clean under the old deck now reports 2769
+`comp.tap_distance.{nwell,psub}.mv.1` violations — the geometry did not
+change, the deck's coverage did. They are recorded as known violations
+tracked by [#449][gf449]/[#717][gf717], not exempted. In particular the
 tapcell spacing is OpenROAD's `tapcell -distance 100` — ORFS's own gf180
 platform value, not a latch-up rule this deck independently enforces. The
 tie *distance* is measured separately, on the committed stream, by
@@ -1046,9 +1084,14 @@ moved with it:
   boundary;
 - 265 well/substrate tapcells, 208 endcaps and 5663 fillers, closing every
   row gap;
-- **DRC clean** over the merged GDS — the 149 `nwell.space.1` violations
-  #170 recorded were all the missing fillers, and inserting them closed
-  every one;
+- **DRC clean** over the merged GDS *as of [#171][gf171], against the deck
+  pinned then* — the 149 `nwell.space.1` violations #170 recorded were all
+  the missing fillers, and inserting them closed every one. **That verdict
+  did not survive the klayout-tools 0.9.0 re-target**: `reports/drc.json`
+  now reads `status: violations`, `violation_count: 2769`, every one of them
+  the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class the
+  newer deck codes and [#449][gf449]/[#717][gf717] track — recorded as known
+  violations, not exempted. See [Tap distance](#tap-distance);
 - `klt lvs` down from 7694 mismatches to **9**, with power connectivity now
   *inside* the comparison rather than excluded from it, and the whole
   `net.split`/`net.merged` cascade gone;
@@ -1153,3 +1196,4 @@ boundary.
 [gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
 [gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html
 [gf449]: https://github.com/2AMLogic/gf180-trng/issues/449
+[gf717]: https://github.com/2AMLogic/gf180-trng/issues/717
