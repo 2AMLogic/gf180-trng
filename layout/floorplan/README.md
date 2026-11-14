@@ -1714,9 +1714,18 @@ itself change this count).
 
 ### DRC and LVS over the routed result
 
-- `klt drc` over the composed, routed stream: **clean, 0 violations**, and
-  0 beyond each assembled region's own standalone baseline
-  ([`reports/floorplan.drc.json`](reports/floorplan.drc.json)).
+- `klt drc` over the composed, routed stream: **not clean**, and **0 beyond
+  each assembled region's own standalone baseline** — the second clause is
+  what this check establishes, and it is the one that still holds.
+  [`reports/floorplan.drc.json`](reports/floorplan.drc.json) reads
+  `status: violations`, `violation_count: 2750`, all of them the
+  `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class (1441
+  `nwell` + 1309 `psub`), inherited from the assembled regions' own
+  standalone DRC — overwhelmingly the `digital` region's — and recorded as
+  known violations tracked by [#449]/[#717], not exempted. Composing the
+  regions together introduced none of them:
+  `new_violations_from_composition.count` is `0`, against the baseline of
+  1441 `nwell` + 1328 `psub` those regions already carry on their own.
 - `klt lvs` of the extracted netlist against phase 1's own
   [`trng_floorplan.lvs_reference.spice`](trng_floorplan.lvs_reference.spice),
   both sides flattened: **match**
@@ -2164,3 +2173,5 @@ would not block that separate question.
 [#255]: https://github.com/2AMLogic/gf180-trng/issues/255
 [#256]: https://github.com/2AMLogic/gf180-trng/issues/256
 [#315]: https://github.com/2AMLogic/gf180-trng/issues/315
+[#449]: https://github.com/2AMLogic/gf180-trng/issues/449
+[#717]: https://github.com/2AMLogic/gf180-trng/issues/717
