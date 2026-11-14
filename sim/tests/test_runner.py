@@ -597,10 +597,6 @@ class TimeoutTests(unittest.TestCase):
         return Path(self.tmp.name) / name
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TimeoutBoundValidationTests(unittest.TestCase):
     """A zero timeout makes coreutils ``timeout(1)`` disable its bound, so
     nonpositive (and non-integer) bounds are refused by the runner itself
@@ -939,3 +935,7 @@ class StartupPolicyTests(unittest.TestCase):
                 out = run(cmd, env, cwd)
                 self.assertNotIn("SENTINEL", out)
                 self.assertIn("Circuit:", out)
+
+
+if __name__ == "__main__":
+    unittest.main()
