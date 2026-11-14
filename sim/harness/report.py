@@ -1333,8 +1333,15 @@ def verify_record_file(path: Path, repo_root: Path, *, check_unlisted: bool = Tr
     return problems
 
 
-def parse_manifest_section(text: str) -> dict[str, str]:
-    """Read the optional top-level ``manifest:`` block (empty if absent)."""
+def _frontmatter_block(text: str, name: str) -> dict[str, str]:
+    """Read the optional top-level ``<name>:`` frontmatter block.
+
+    The one line scanner every top-level block reader below shares, in the
+    same deliberately stdlib-only shape as ``parse_raw_section``: the block
+    runs from its ``<name>:`` header to the first line that is not indented,
+    and each ``key: value`` inside it is returned with the value stripped.
+    A text without frontmatter, or without the block, yields ``{}``.
+    """
     lines = text.splitlines()
     if not lines or lines[0] != "---" or "---" not in lines[1:]:
         return {}
@@ -1342,7 +1349,7 @@ def parse_manifest_section(text: str) -> dict[str, str]:
     out: dict[str, str] = {}
     in_block = False
     for line in front:
-        if line.rstrip() == "manifest:":
+        if line.rstrip() == f"{name}:":
             in_block = True
             continue
         if in_block:
@@ -1351,6 +1358,11 @@ def parse_manifest_section(text: str) -> dict[str, str]:
             key, _, value = line.strip().partition(":")
             out[key] = value.strip()
     return out
+
+
+def parse_manifest_section(text: str) -> dict[str, str]:
+    """Read the optional top-level ``manifest:`` block (empty if absent)."""
+    return _frontmatter_block(text, "manifest")
 
 
 def verify_manifest_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
@@ -1373,22 +1385,7 @@ def verify_manifest_reference(text: str, raw_files: list[tuple[str, str]]) -> li
 
 def parse_inputs_section(text: str) -> dict[str, str]:
     """Read the optional top-level ``inputs:`` block (empty if absent)."""
-    lines = text.splitlines()
-    if not lines or lines[0] != "---" or "---" not in lines[1:]:
-        return {}
-    front = lines[1:lines.index("---", 1)]
-    out: dict[str, str] = {}
-    in_block = False
-    for line in front:
-        if line.rstrip() == "inputs:":
-            in_block = True
-            continue
-        if in_block:
-            if line[:1] not in (" ", "\t"):
-                break
-            key, _, value = line.strip().partition(":")
-            out[key] = value.strip()
-    return out
+    return _frontmatter_block(text, "inputs")
 
 
 def verify_inputs_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
@@ -1418,22 +1415,7 @@ def verify_inputs_reference(text: str, raw_files: list[tuple[str, str]]) -> list
 
 def parse_pdk_content_section(text: str) -> dict[str, str]:
     """Read the optional top-level ``pdk_content:`` block (empty if absent)."""
-    lines = text.splitlines()
-    if not lines or lines[0] != "---" or "---" not in lines[1:]:
-        return {}
-    front = lines[1:lines.index("---", 1)]
-    out: dict[str, str] = {}
-    in_block = False
-    for line in front:
-        if line.rstrip() == "pdk_content:":
-            in_block = True
-            continue
-        if in_block:
-            if line[:1] not in (" ", "\t"):
-                break
-            key, _, value = line.strip().partition(":")
-            out[key] = value.strip()
-    return out
+    return _frontmatter_block(text, "pdk_content")
 
 
 def verify_pdk_content_reference(
@@ -1495,23 +1477,11 @@ def parse_startup_section(text: str) -> dict[str, str]:
     Keys are returned without the prefix (``spinit_sha256``,
     ``spinit_snapshot``, ...). Empty for records without the lines.
     """
-    lines = text.splitlines()
-    if not lines or lines[0] != "---" or "---" not in lines[1:]:
-        return {}
-    front = lines[1:lines.index("---", 1)]
-    out: dict[str, str] = {}
-    in_block = False
-    for line in front:
-        if line.rstrip() == "tool:":
-            in_block = True
-            continue
-        if in_block:
-            if line[:1] not in (" ", "\t"):
-                break
-            key, _, value = line.strip().partition(":")
-            if key.startswith(_STARTUP_KEY_PREFIX):
-                out[key[len(_STARTUP_KEY_PREFIX):]] = value.strip().strip('"')
-    return out
+    return {
+        key[len(_STARTUP_KEY_PREFIX):]: value.strip('"')
+        for key, value in _frontmatter_block(text, "tool").items()
+        if key.startswith(_STARTUP_KEY_PREFIX)
+    }
 
 
 def verify_startup_reference(text: str, raw_files: list[tuple[str, str]]) -> list[str]:
