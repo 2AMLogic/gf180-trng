@@ -32,6 +32,21 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 import supply_ripple as sr  # noqa: E402
 
 
+def tone_above_sigma_floor(fit: dict, k_sigma: float = 5.0) -> bool:
+    """Is the fitted tone above ``k_sigma`` standard errors of the residual?
+
+    A floor for telling an injected tone apart from a stochastic residual,
+    used to exercise ``fit_tone``'s ``sigma_amp``. It lives here, with the
+    tests, rather than in ``supply_ripple.py``: the analysis report prints the
+    raw ``amp / sigma_amp`` ratio and leaves the judgement to the reader, so a
+    thresholding predicate in the tool would read as a gate while gating
+    nothing (issue #877). Deterministic residual structure (a start-up
+    remnant, solver-step steps) is not white, so passing this floor is not
+    proof that anything beneath it is noise.
+    """
+    return fit["sigma_amp"] > 0 and fit["amp"] > k_sigma * fit["sigma_amp"]
+
+
 def sine_series(f, n, span, amp, phase=0.0, drift=(0.0, 0.0, 0.0), t0=100e-9, noise=0.0, seed=1):
     rnd = random.Random(seed)
     t = [t0 + span * i / (n - 1) for i in range(n)]
@@ -73,7 +88,7 @@ class ToneFitTests(unittest.TestCase):
         t, y = sine_series(f, 400, 4 / f, amp=0.0, drift=(5e-9, 3e-12, -2e-12))
         fit = sr.fit_tone(t, y, f)
         self.assertLess(fit["amp"], 1e-18)
-        self.assertFalse(sr.tone_detected(fit) and fit["amp"] > 1e-15)
+        self.assertFalse(tone_above_sigma_floor(fit) and fit["amp"] > 1e-15)
 
     def test_wrong_frequency_does_not_alias_into_the_tone(self):
         # A tone at 5 MHz, looked for at 4 MHz over a whole number of 4 MHz
@@ -88,7 +103,7 @@ class ToneFitTests(unittest.TestCase):
         fit = sr.fit_tone(t, y, f)
         # The injected tone is recovered to within a few standard errors ...
         self.assertAlmostEqual(fit["amp"], 1e-12, delta=4 * fit["sigma_amp"])
-        self.assertTrue(sr.tone_detected(fit))
+        self.assertTrue(tone_above_sigma_floor(fit))
         # ... and the residual is the stochastic part, close to the noise sigma.
         self.assertAlmostEqual(fit["resid_rms"], 0.3e-12, delta=0.03e-12)
         self.assertLess(fit["frac_explained"], 0.9)
@@ -97,7 +112,7 @@ class ToneFitTests(unittest.TestCase):
         f = 4e6
         t, y = sine_series(f, 600, 4 / f, amp=0.0, noise=0.3e-12, seed=5)
         fit = sr.fit_tone(t, y, f)
-        self.assertFalse(sr.tone_detected(fit))
+        self.assertFalse(tone_above_sigma_floor(fit))
         self.assertLess(fit["amp"], 4 * fit["sigma_amp"])
 
     def test_noise_free_variation_is_entirely_deterministic(self):
