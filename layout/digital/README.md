@@ -122,6 +122,51 @@ it is solved — [#111][gf111].
 > `provenance.input.content_hash`, so no pin moves. The file shrank from
 > about 10.5 MB to 1.5 KB.
 
+> **Update — rebuilt under the toolchain the nightly installs (issue
+> [gf866]).** The committed `design/trng_top/trng_top.synth.{v,json}` had been
+> regenerated on a host whose `yosys` was a local **0.67+post** source build,
+> while `.github/workflows/pdk-nightly.yml` installs
+> `yowasp-yosys==0.69.0.0.post1233`; the nightly's **Digital synthesis
+> staleness guard** was therefore red from 2026-11-04 on, and every later step
+> in that job — including the two report-freshness steps — was skipped with
+> it. The whole chain was re-run from a throwaway virtual environment built
+> out of that workflow's own install lines: Yosys **0.69** and the latest
+> tagged **klayout-tools 0.9.1** release with `klayout==0.30.10`. The RTL did
+> not change; OpenROAD is the same 26Q3-1510 build as [gf293].
+>
+> | | [gf709] (Yosys 0.67+post, klt 0.6.0) | **[gf866] (Yosys 0.69, klt 0.9.1)** |
+> |---|---:|---:|
+> | Synthesized instances / area | 1395 / 56 464.93 µm² | **1395 / 56 021.82 µm²** |
+> | DEF `COMPONENTS` (incl. tapcell/endcap/filler) | 4788 | **4816** |
+> | Placed logical instances | 1423 | **1424** |
+> | Die (40 % utilization target) | 395.715 × 395.715 µm = 156 590 µm² | **394.24 × 394.24 µm = 155 425 µm²** |
+> | Worst slack, `ss_125C_3v00`, 50 ns period (this directory's own pre-signoff STA) | +32.9 ns | **+33.2 ns** |
+> | Swept worst setup / hold, all 15 shipped `.lib` corners | −5.5 / +0.50 ns | **−5.2 / +0.51 ns** |
+> | `klt drc` | 2769 violations, all `comp.tap_distance.*` ([gf717]) | **2737 violations, all `comp.tap_distance.*`** |
+> | `klt lvs` against `trng_top.pnr.v` | match, 1 warning | **match, 2 warnings** |
+> | `klt erc` supply spec | `erc_status: clean`, 0 findings | **`erc_status: clean`, 0 findings** |
+>
+> Yosys 0.69 maps the same design to the same instance count with a different
+> cell mix, which is where the −443 µm² of synthesized area comes from. No
+> verdict moved: DRC's only violations are the pre-existing well/substrate
+> tap-distance ones [gf717] tracks, LVS still reports `status: match` with
+> both entries `severity: warning` (klt 0.9.1 adds
+> `topology.top_level_pins_anchored` beside the existing
+> `topology.power_only_pruned`), and the supply ERC is still clean.
+>
+> One placement detail moved and the composed floorplan reads it: OpenROAD's
+> `place_pins` put the six inter-region signal pins (`clk`, `rst_n`,
+> `raw_bit`, `raw_valid`, `ring_bit[0..1]`) on the block's **bottom** edge,
+> where the previous DEF had them on the top edge. Nothing here asks for an
+> edge — `build.py` sends no `io.pin_constraints` — so this is a property of
+> the run, which is why `layout/floorplan/interregion.py` has routed both
+> edges since [gf315]. The composed stream is still DRC-clean against each
+> region's own standalone DRC and still LVS-matches, and the measured
+> interface load on those six trunks falls (`clk` 37.4 → 15.9 fF), because a
+> bottom-edge pin drops into the `combiner_sampler | digital` isolation
+> channel instead of wrapping the east flank on a Metal5 track and a 442 µm
+> Metal3 riser.
+
 ## The one command
 
 ```sh
@@ -1127,6 +1172,10 @@ boundary.
 [gf293]: https://github.com/2AMLogic/gf180-trng/issues/293
 [gf273]: https://github.com/2AMLogic/gf180-trng/issues/273
 [gf662]: https://github.com/2AMLogic/gf180-trng/issues/662
+[gf315]: https://github.com/2AMLogic/gf180-trng/issues/315
+[gf709]: https://github.com/2AMLogic/gf180-trng/issues/709
+[gf717]: https://github.com/2AMLogic/gf180-trng/issues/717
+[gf866]: https://github.com/2AMLogic/gf180-trng/issues/866
 [klt1090]: https://github.com/2AMLogic/klayout-tools/issues/1090
 [klt1091]: https://github.com/2AMLogic/klayout-tools/issues/1091
 [klt1092]: https://github.com/2AMLogic/klayout-tools/issues/1092

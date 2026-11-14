@@ -1,0 +1,89 @@
+{
+  "coverage": null,
+  "engine": "icarus",
+  "environment": {
+    "build_log": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cocotb_version": "2.0.1",
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "env": {},
+    "initial_state": null,
+    "random_seed": 1,
+    "results_xml": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:d27f7f5aad4aac5e64036c45569d14524870defe0dc69e1d7097b91543c7ea33"
+    },
+    "sdf": null,
+    "source_defines": {},
+    "test_log": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:fe7c022df91b9d8be5512c70ac76b7509c1b3ab444876795d002aea8861bbfaf"
+    },
+    "tools": []
+  },
+  "failed_count": 0,
+  "hdl_toplevel": "trng_top",
+  "passed_count": 8,
+  "schema_version": 2,
+  "skipped_count": 0,
+  "status": "pass",
+  "test_count": 8,
+  "testbench": "post_route_tb",
+  "tests": [
+    {
+      "name": "smoke",
+      "real_time_s": 0.008280038833618164,
+      "sim_time_ns": 695.0,
+      "status": "passed"
+    },
+    {
+      "name": "startup_and_regfile",
+      "real_time_s": 0.1896812915802002,
+      "sim_time_ns": 53645.0,
+      "status": "passed"
+    },
+    {
+      "name": "conditioner_blocks",
+      "real_time_s": 0.27312636375427246,
+      "sim_time_ns": 77745.0,
+      "status": "passed"
+    },
+    {
+      "name": "rct_stuck_output",
+      "real_time_s": 0.06076836585998535,
+      "sim_time_ns": 16245.0,
+      "status": "passed"
+    },
+    {
+      "name": "ring1_stuck",
+      "real_time_s": 0.047615766525268555,
+      "sim_time_ns": 12245.0,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk",
+      "real_time_s": 0.02260613441467285,
+      "sim_time_ns": 4945.0,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk_early_sample",
+      "real_time_s": 0.023839235305786133,
+      "sim_time_ns": 4905.100000000006,
+      "status": "passed"
+    },
+    {
+      "name": "reg_read_walk_settle_sweep",
+      "real_time_s": 0.2235703468322754,
+      "sim_time_ns": 49549.0,
+      "status": "passed"
+    }
+  ],
+  "trace": null
+}
