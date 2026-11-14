@@ -317,8 +317,9 @@ class SamplerOffsetLifecycleTests(LifecycleTestCase):
     CORNER = "tt/27/3.30"
 
     def write_offset(self, stem: str, status: str | None, mean: float, *,
-                     body: str = "") -> None:
-        corner = "corner:\n  process: tt\n  temperature: 27\n  voltage: 3.30\n"
+                     body: str = "", temperature: str = "27") -> None:
+        corner = ("corner:\n  process: tt\n"
+                  f"  temperature: {temperature}\n  voltage: 3.30\n")
         text = (_frontmatter(status, extra=corner) + body
                 + f"- `dtrip_v`: mean {mean!r} over 30 seeds (sd 0.01, 1% of mean)\n")
         (self.records / f"{stem}.md").write_text(text)
@@ -339,7 +340,30 @@ class SamplerOffsetLifecycleTests(LifecycleTestCase):
 
     def test_superseded_only_corner_is_missing_evidence(self) -> None:
         self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "superseded", 1.70)
-        with self.assertRaisesRegex(RuntimeError, "no valid .* at corner"):
+        with self.assertRaisesRegex(
+            RuntimeError, r"no valid record matches .*\(every match is superseded\)"
+        ):
+            wce._sampler_offset(self.CORNER)
+
+    def test_record_at_another_corner_is_not_selected(self) -> None:
+        # Valid and current, but `tt/125/3.30` -- not the requested corner.
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "valid", 1.70,
+                          temperature="125")
+        with self.assertRaisesRegex(RuntimeError, f"no valid .* record at {self.CORNER}"):
+            wce._sampler_offset(self.CORNER)
+
+    def test_malformed_corner_on_newest_record_names_it(self) -> None:
+        # The pre-#861 hand-rolled selection skipped a record whose corner it
+        # could not parse, silently falling back to the OLDER record and
+        # reporting its number as if it were current. The shared reader's
+        # frontmatter-only `parse_corner` raises instead, naming the record.
+        self.write_offset("2026-01-01-sampler-dff-mc-offset-01", "valid", 1.70)
+        self.write_offset("2026-01-02-sampler-dff-mc-offset-01", "valid", 1.80,
+                          temperature="twenty-seven")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"2026-01-02-sampler-dff-mc-offset-01: malformed `temperature: twenty-seven`",
+        ):
             wce._sampler_offset(self.CORNER)
 
     def test_body_status_line_does_not_override_frontmatter(self) -> None:

@@ -193,18 +193,24 @@ CURRENT_PROFILE_UW = {
 IDLE_TOTAL_NA = 136.8
 
 
-def resistance_model() -> dict:
-    """The segmented resistor network for `NET`, derived from committed
-    geometry -- never a hand-transcribed length.
+def committed_wiring_plan() -> tuple[dict, dict[str, dict]]:
+    """`interregion.wiring_plan()` over the committed reports, plus the
+    content origins it was given.
 
     Calls the real `interregion.wiring_plan()` (the function
-    `floorplan.py`'s own `compose()` calls to draw this net) with the
+    `floorplan.py`'s own `compose()` calls to draw these nets) with the
     origins and content bboxes `layout/floorplan/reports/compose.json` and
     `area.json` already committed, exactly as `layout/tests/
     test_interregion.py` does for its own from-committed-artefacts check.
     If issue #222's routing changes, these reports change with it and this
     function's output changes too -- nothing here is a snapshot of today's
     numbers.
+
+    This is the one place in `sim/tools/` that turns those two reports into
+    a plan: `resistance_model()` below and
+    `digital_supply_ir_drop.committed_wiring_plan()` both read it from here,
+    so a single `derive()` run cannot build two differently-loaded plans.
+    Returns `(plan, {region id: content origin in the composed frame})`.
     """
     compose = json.loads(COMPOSE_REPORT.read_text())
     origins_um = compose["request"]["placement"]["origins_um"]
@@ -220,15 +226,27 @@ def resistance_model() -> dict:
         content_origins[rid] = origins_um[content_id]
         content_bboxes[rid] = region["ring_content_bbox_um"]
 
-    # `area.json`'s `digital` bbox is a stale measurement until #256
-    # regenerates the reports, while `wiring_plan()` checks the DEF's pin
-    # placement against it. Take the block's bbox from the same DEF the pins
-    # come from. `digital` is in `SCOPED_OUT_REGIONS`, so this does not change
-    # the `vss` chain.
+    # `digital` is a placed hard macro, not a guard-ringed content block, and
+    # `wiring_plan()` checks its DEF pin placement against whatever bbox it is
+    # handed. Take that bbox from the same DEF the pins come from, so the
+    # check cannot be fed a separately-measured frame. (`area.json`'s own
+    # `digital` entry agrees with the DEF today; this keeps the rule in one
+    # place rather than depending on the two staying in step.) `digital` is in
+    # `SCOPED_OUT_REGIONS`, so this does not change the `vss` chain.
     if "digital" in content_bboxes:
         content_bboxes["digital"] = interregion.digital_die_bbox()
 
-    plan = interregion.wiring_plan(content_origins, content_bboxes)
+    return interregion.wiring_plan(content_origins, content_bboxes), content_origins
+
+
+def resistance_model() -> dict:
+    """The segmented resistor network for `NET`, derived from committed
+    geometry -- never a hand-transcribed length.
+
+    The plan comes from `committed_wiring_plan()` above; everything below is
+    this module's own reading of the `NET` route out of it.
+    """
+    plan, _ = committed_wiring_plan()
 
     route = next(r for r in plan["routes"] if r["net"] == NET)
     if not route["chip_pin"]:

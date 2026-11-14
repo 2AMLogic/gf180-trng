@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 """Unit tests for ``run_sta``'s `klt sta` envelope comparison (#699).
 
-Stdlib only: synthetic records and a synthetic response, no PDK, no openroad,
-no klt. The committed comparison against the real records is re-run by
-``run_sta.py --klt-sta``.
+Stdlib only: a synthetic response, no PDK, no openroad, no klt. The committed
+comparison against the real records is re-run by ``run_sta.py --klt-sta``.
+
+``record_slacks`` no longer parses records itself (#867) -- it maps
+``sim/tools/digital_corner_characterization.load()``, the one reader of the
+``digital-sta-power`` family, onto the pairs ``compare_envelope`` wants. The
+selection rules it inherits (record lifecycle, DUT identity, a complete
+fifteen-corner family) are tested against that reader in
+``test_digital_corner_characterization.py``; what is tested here is the
+mapping, and that the reader's refusal reaches ``run_sta``'s own error path
+instead of being swallowed.
 """
 
 from __future__ import annotations
@@ -15,32 +23,51 @@ from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
+sys.path.insert(0, str(SIM_DIR / "tools"))
 sys.path.insert(0, str(SIM_DIR / "tb" / "digital-sta-power"))
 
+import digital_corner_characterization as dcc  # noqa: E402
 import run_sta  # noqa: E402
 
 
-def _record(lib: str, rc: str, setup: str, hold: str) -> str:
-    return (
-        f"  liberty: gf180mcu_fd_sc_mcu9t5v0__{lib}\n"
-        f"  interconnect: {rc} (OpenRCX rule deck)\n"
-        f"- `worst_setup_slack_ns`: {setup}\n"
-        f"- `worst_hold_slack_ns`: {hold}\n"
-    )
-
-
 class RecordSlacksTest(unittest.TestCase):
-    def test_newest_record_per_point_wins(self):
+    def test_the_pairs_are_the_one_readers_current_layout_family(self):
+        self.assertEqual(
+            run_sta.record_slacks(SIM_DIR / "records"),
+            {(r.liberty, r.rc): (r.v("worst_setup_slack_ns"), r.v("worst_hold_slack_ns"))
+             for r in dcc.load()},
+        )
+
+    def test_every_envelope_corner_has_a_pair(self):
+        slacks = run_sta.record_slacks(SIM_DIR / "records")
+        self.assertEqual(
+            sorted(f"{lib}/rc-{rc}" for lib, rc in slacks),
+            sorted(dcc.EXPECTED_CORNERS),
+        )
+
+    def test_no_records_at_all_is_an_error(self):
+        # The pre-#867 reader globbed the directory itself, so it returned an
+        # empty map here and the comparison failed later, on a KeyError.
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(run_sta.StaError) as caught:
+                run_sta.record_slacks(Path(tmp))
+        self.assertIn("digital-sta-power", str(caught.exception))
+
+    def test_an_incomplete_family_is_refused_rather_than_compared(self):
+        # The behaviour #867 is after: fourteen of the fifteen points is not a
+        # fifteen-point envelope, and saying so names the missing corner. The
+        # pre-#867 reader handed back the fourteen without complaint.
+        family = sorted(dcc.load(), key=lambda r: r.path.name)
+        dropped = family[-1]
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
-            (d / "2026-09-01-digital-sta-power-01.md").write_text(
-                _record("ss_125C_3v00", "min", "1.0e+00", "2.0e+00"))
-            (d / "2026-10-01-digital-sta-power-01.md").write_text(
-                _record("ss_125C_3v00", "min", "3.0e+01", "4.0e-01"))
-            (d / "2026-10-01-other-01.md").write_text(
-                _record("ss_125C_3v00", "min", "9", "9"))
-            self.assertEqual(
-                run_sta.record_slacks(d), {("ss_125C_3v00", "min"): (30.0, 0.4)})
+            for rec in family[:-1]:
+                (d / rec.path.name).write_bytes(rec.path.read_bytes())
+            with self.assertRaises(run_sta.StaError) as caught:
+                run_sta.record_slacks(d)
+        message = str(caught.exception)
+        self.assertIn("14 of 15 corners recorded", message)
+        self.assertIn(dropped.corner, message)
 
 
 class CompareEnvelopeTest(unittest.TestCase):
