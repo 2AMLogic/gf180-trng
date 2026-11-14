@@ -82,10 +82,15 @@ specific to this design's netlist; see `layout/digital/README.md`'s "SDF
 export" section for the friction-protocol issue this filed upstream (the
 gf180-trng-specific write-up lives there, not in this docstring).
 
-OpenROAD provisioning is the same story as `build.py`'s own: `openroad` has
-no Homebrew formula, so `_ensure_openroad_reachable` falls back to
-`../openroad_docker.sh` (the pinned `openroad/orfs` image) when no native
-binary is on `$PATH`.
+OpenROAD provisioning is shared with `build.py` rather than duplicated:
+`openroad` has no Homebrew formula, so `layout/_klt.py`'s
+`_ensure_openroad_reachable` -- imported here, the single copy both this
+script and `build.py` call (#892) -- falls back to `../openroad_docker.sh`
+(the pinned `openroad/orfs` image) when no native binary is on `$PATH`.
+Importing it is *not* the `import build` this file still avoids (see
+"Corner and clock" below): `layout._klt` is reached as a package-qualified
+name that is unique in the tree, so it cannot shadow a sibling script's
+bare `build` module.
 
 Corner and clock
 -----------------
@@ -107,12 +112,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -121,7 +124,11 @@ REPORTS_DIR = DIGITAL_DIR / "reports"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import klt_version, resolve_pdk  # noqa: E402
+from layout._klt import (  # noqa: E402
+    _ensure_openroad_reachable,
+    klt_version,
+    resolve_pdk,
+)
 
 HDL_TOPLEVEL = "trng_top"
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
@@ -206,32 +213,6 @@ _ICARUS_UNSUPPORTED_ARCS: frozenset[tuple[str, str, str]] = frozenset(
 class SdfError(RuntimeError):
     """An SDF generation run could not even be attempted, or produced no
     usable artefact."""
-
-
-# --------------------------------------------------------------------------- #
-# OpenROAD provisioning (same fallback build.py's own `_ensure_openroad_reachable`
-# implements; duplicated rather than imported -- see the module docstring's
-# "Corner and clock" note on why this file does not `import build`).
-# --------------------------------------------------------------------------- #
-
-
-def _openroad_on_path() -> bool:
-    return shutil.which("openroad") is not None
-
-
-def _ensure_openroad_reachable() -> list[str]:
-    if _openroad_on_path():
-        return []
-    if shutil.which("docker") is None:
-        return [
-            "openroad is not on PATH and docker is not on PATH either -- "
-            "see layout/digital/README.md's 'OpenROAD' section"
-        ]
-    shim_dir = Path(tempfile.mkdtemp(prefix="klt-openroad-shim-"))
-    shim = shim_dir / "openroad"
-    shim.symlink_to(REPO_ROOT / "layout" / "openroad_docker.sh")
-    os.environ["PATH"] = f"{shim_dir}{os.pathsep}{os.environ.get('PATH', '')}"
-    return []
 
 
 def _check_environment() -> list[str]:
