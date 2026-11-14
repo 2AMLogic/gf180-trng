@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Unit tests for the row-placement and wiring geometry helpers in
-`layout/blocks/combiner_sampler/build.py` and `layout/rings/ro_ring11/build.py`.
+`layout/blocks/combiner_sampler/build.py` and, for the rings, in
+`layout/rings/_ring_common.py` as driven by `layout/rings/ro_ring11/build.py`'s
+own constants (its `SPEC`).
 
 Both generators compute the placement and routing geometry that the committed
 GDS and the post-layout extraction are built from. Their only other
@@ -21,6 +23,7 @@ LAYOUT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAYOUT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+from layout.rings import _ring_common  # noqa: E402
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 
@@ -161,7 +164,7 @@ class RingWiring(unittest.TestCase):
         x1 = max(self.bboxes[i]["x1"] + self.offsets[i] for i in ring.ROW_ORDER)
         y_lo = min(b["y0"] for b in self.bboxes.values())
         y_hi = max(ring.WRAP_TRACK[1], max(b["y1"] for b in self.bboxes.values()), ring.NAND_Y_WAYPOINTS[-1][1])
-        shapes = ring._wiring_shapes(self.offsets, self.locals_)
+        shapes = _ring_common.wiring_shapes(ring.SPEC, self.offsets, self.locals_)
         self.assertTrue(shapes)
         rail_margin = 1.0  # the vddr/vss Metal2 rails overhang the row by 1um
         for s in shapes:
@@ -174,7 +177,7 @@ class RingWiring(unittest.TestCase):
             self.assertLessEqual(sy1, y_hi + ring.STUB_W + EPS, s)
 
     def test_every_ring_link_has_a_horizontal_jog_on_its_track(self):
-        shapes = ring._wiring_shapes(self.offsets, self.locals_)
+        shapes = _ring_common.wiring_shapes(ring.SPEC, self.offsets, self.locals_)
         tracks = [(s["rect_um"][1], s["rect_um"][3]) for s in shapes if s["layer"] == ring.METAL1]
         n = len(ring.ROW_ORDER)
         for track, want in ((ring.SHORT_TRACK, n - 1), (ring.WRAP_TRACK, 1)):

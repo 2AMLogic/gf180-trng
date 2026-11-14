@@ -55,7 +55,7 @@
     ],
     "2.analog": {
       "file": "signoff/evidence/t1-item-2-analog.json",
-      "content_hash": "sha256:5626541bfa7ccbb81c70eb1c62a49fdcbf980bd0ac0ada8d981f270ed31cff5a"
+      "content_hash": "sha256:2e5e1455612d7bb15a6083b05a493b00dd113bcb1ebee22133b98e6269381e1a"
     },
     "2.digital": {
       "file": "signoff/evidence/t1-item-2-digital.json",
