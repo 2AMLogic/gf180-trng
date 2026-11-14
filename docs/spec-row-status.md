@@ -236,7 +236,7 @@ still quotes it at that rate.
 
 Row text as it stood on relocation (the README keeps the two targets and their binding corners; the measurement history moved here):
 
-**Target cell:** < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, #264/#277's re-tune of that depth-2 build's `max_transition_ns` (8.0 → 4.0) and rebuild, and #293's re-run of the same place-and-route on #292's re-baselined netlist, with #145's fifteen-corner `level: gate` sweep re-run against each rebuild — the current family is `sim/records/2026-10-07-digital-sta-power-{01..15}.md`): active 749.4 µW — missed by 1.5×, at 149.9 % of the row (#709 and #729 re-measured the whole-block figure). Idle 2.21 µA — missed by ~2.2×**, and the cause on both halves is still the synthesized-and-placed digital section (339.4 µW active / 7.842 µW — 2.178 µA — leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md), §0a/§0b of [`sim/characterization-digital-sta-area-power.md`](../sim/characterization-digital-sta-area-power.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run, #264/#277's re-tuned rebuild and #293's re-run update the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below
+**Target cell:** < 500 µW active, binding at `ff` / +10 % supply (fastest RO — max measured `f_osc` 2.30 GHz at −40 °C); < 1 µA idle, binding at `ff` / +10 % / +125 °C (max leakage). **Now evidenced (#14, re-measured after #78's buffer adoption, #174/[DR-0023]'s substitution of #145's measured gate-level digital figure for the pre-synthesis estimate, #255/#266's re-synthesis and re-place-and-route of the digital section at [DR-0020]'s ratified `FIFO_DEPTH = 2`, #264/#277's re-tune of that depth-2 build's `max_transition_ns` (8.0 → 4.0) and rebuild, and #293's re-run of the same place-and-route on #292's re-baselined netlist, with #145's fifteen-corner `level: gate` sweep re-run against each rebuild — the current family is `sim/records/2026-11-13-digital-sta-power-{01..15}.md`, re-run by #866 under the toolchain `.github/workflows/pdk-nightly.yml` installs): active 748.2 µW — missed by 1.5×, at 149.6 % of the row (#709/#729 and then #866 re-measured the whole-block figure). Idle 2.138 µA — missed by ~2.1×**, and the cause on both halves is still the synthesized-and-placed digital section (338.1 µW active / 7.579 µW — 2.105 µA — leakage, MEASURED-at-gate-level, down from 712.4 µW / 4.062 µA at the depth-8 build #174/[DR-0023] first measured), not the analog block (393.2 + 16.9 µW active / 32.8 nA idle, measured, unchanged by the digital section's depth). Neither miss is absorbed: see [`sim/characterization-startup-and-power-budget.md`](../sim/characterization-startup-and-power-budget.md), §0a/§0b of [`sim/characterization-digital-sta-area-power.md`](../sim/characterization-digital-sta-area-power.md), [DR-0023] (`Accepted` 2026-09-07 via the two-key ratification mechanism, #213 — the active miss and the idle figure's revision, both stated there against the depth-8 build; `sim/tools/power_rollup.py` reads the digital term live from the committed record family, so #255/#266's depth-2 re-run, #264/#277's re-tuned rebuild and #293's re-run update the tool's own verdict without a new decision record) and [DR-0017] (`Proposed`, the idle row's own diagnosis and options, unsuperseded — not part of the #213 ratification batch), and the note below
 
 From the ratification note ("Ratified, with four rows explicitly unmeasured"; "the note below" in the row text above is this one):
 
@@ -268,10 +268,12 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
   **Both halves are still missed, by a materially narrower active margin
   than at depth 8 — and, on the idle half, by a slightly wider one than the
   violating depth-2 build showed**:
-  - **Active: missed, by 1.5×** (was 2.2×). 749.4 µW at `ff`/−40 °C/3.63 V —
+  - **Active: missed, by 1.5×** (was 2.2×). 748.2 µW at `ff`/−40 °C/3.63 V —
     entropy source 393 µW (measured), sampler 16.9 µW (measured), digital
-    section 339.4 µW (**MEASURED-at-gate-level** at its own worst corner,
-    `ff_125C_3v60`/`rc-max`, [DR-0021]; 345.6 µW at #264/#277's build
+    section 338.1 µW (**MEASURED-at-gate-level** at its own worst corner,
+    `ff_125C_3v60`/`rc-max`, [DR-0021]; 339.4 µW before #866 re-ran the
+    chain under the nightly's own Yosys 0.69 / klayout-tools 0.9.1
+    toolchain; 345.6 µW at #264/#277's build
     before #293's re-run, down from 358.5 µW at #255/#266's
     violating depth-2 build, from 712.4 µW at the depth-8 build, and from a
     [DR-0004] Tier 2 pre-synthesis estimate of 23 µW before any netlist
@@ -291,13 +293,16 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"; "t
     entropy source's own share (393 + 17 µW) is unchanged by any of these
     substitutions — the digital section's own build is the only thing that
     moved.
-  - **Idle: missed, by ~2.1×** (2.148 µA after #709's interface
-    `raw_shift` / `raw_bit_count` change, measured by `power_rollup.py`
-    with digital leakage 2.116 µA / 7.617 µW; 2.211 µA before it; 2.12 µA at #264/#277's build before #293's
+  - **Idle: missed, by ~2.1×** (2.138 µA after #866 re-ran the digital
+    chain under the toolchain `.github/workflows/pdk-nightly.yml` installs
+    — Yosys 0.69, klayout-tools 0.9.1 — measured by `power_rollup.py` with
+    digital leakage 2.105 µA / 7.579 µW; 2.148 µA with digital leakage
+    2.116 µA / 7.617 µW after #709's interface
+    `raw_shift` / `raw_bit_count` change; 2.211 µA before it; 2.12 µA at #264/#277's build before #293's
     re-run, ~2.0× at the violating depth-2 build, ~4.1× at depth 8, 4.5×
-    estimated). 2.21 µA at
+    estimated). 2.138 µA at
     `ff`/+125 °C/3.63 V — analog block 32.8 nA (3.3 % of the row, measured
-    across 45 corners, unchanged), digital leakage 2.178 µA / 7.842 µW
+    across 45 corners, unchanged), digital leakage 2.105 µA / 7.579 µW
     (**MEASURED-at-gate-level**; 2.087 µA at #264/#277's build, and §0b of
     the characterization's control run splits the +0.091 µA since then into
     +0.087 µA from the OpenROAD build #293 re-ran on and +0.004 µA from
@@ -344,7 +349,7 @@ and asks for power gating plus FIFO and inventory reductions.
   and the `t_rail_decay` placeholder is tracked as #782. Until retention or a
   state-save scheme is designed and measured, the gated figure is not a
   measurement of the ratified idle condition.
-- **Active power.** Gating does not lower it: active stays 749.4 µW (1.5×).
+- **Active power.** Gating does not lower it: active stays 748.2 µW (1.5×).
   The header's I²R loss is 58.6 µW at the informational 20 MHz bound and
   negligible at the ratified rate. FIFO/inventory work (#709) did not close it.
 - **Wake (#707).** Peak inrush 104 mA (10 ns edge) or 8.6 mA (1 µs edge) on
@@ -356,27 +361,27 @@ power has none in evidence. A decision on the active row is requested on #700.
 - **Active power by sub-block (#790).** `python3 sim/tools/active_power_breakdown.py`
   splits the whole-block figure from committed records only (rings, buffers +
   XOR, sampler from the array and sampler families at `ff` / −40 °C / 3.63 V;
-  digital from `sim/records/2026-11-09-digital-power-by-block-01.md`, OpenSTA
+  digital from `sim/records/2026-11-13-digital-power-by-block-01.md`, OpenSTA
   per-instance power at `ff_125C_3v60` / `rc-max`, MEASURED-at-gate-level).
   `--reconcile` reconciles the rows with `power_rollup.py`.
 
-  | sub-block | 1 MHz clock (the 749.4 µW figure) | 2 kHz (ratified raw rate) |
+  | sub-block | 1 MHz clock (the 748.2 µW figure) | 2 kHz (ratified raw rate) |
   |---|---|---|
   | ring 1 / ring 2 | 132.5 / 140.6 µW | same |
   | ring buffers + XOR | 120.0 µW | same |
   | sampler (xsb, xsv) | 16.9 µW | 16.8 µW |
-  | digital: interface | 139.8 µW | 3.2 µW |
-  | digital: clock tree | 73.5 µW | 0.4 µW |
+  | digital: interface | 138.6 µW | 3.2 µW |
+  | digital: clock tree | 74.5 µW | 0.4 µW |
   | digital: conditioner | 58.5 µW | 1.1 µW |
-  | digital: health tests | 43.4 µW | 0.9 µW |
-  | digital: ring-liveness logic | 18.5 µW | 0.4 µW |
-  | digital: other (buffers, tap/fill) | 5.6 µW | 2.3 µW |
-  | **total (liveness samplers excluded)** | **749.4 µW (149.9 %)** | **418.3 µW (83.7 %)** |
+  | digital: health tests | 41.7 µW | 0.8 µW |
+  | digital: ring-liveness logic | 18.1 µW | 0.4 µW |
+  | digital: other (buffers, tap/fill) | 6.7 µW | 2.4 µW |
+  | **total (liveness samplers excluded)** | **748.2 µW (149.6 %)** | **418.2 µW (83.6 %)** |
 
   Largest lever by arithmetic: the digital section's power is linear in its
-  clock, so the 749.4 µW figure is a 1 MHz-clock figure; at the 2 kHz clock
-  `power_rollup.py` already uses by default the same model gives 418.3 µW,
-  returning 331 µW. The liveness samplers (xsr1/xsr2) have no record at the
+  clock, so the 748.2 µW figure is a 1 MHz-clock figure; at the 2 kHz clock
+  `power_rollup.py` already uses by default the same model gives 418.2 µW,
+  returning 330 µW. The liveness samplers (xsr1/xsr2) have no record at the
   binding corner and are not in either total; the nearest measured corner adds
   about 25 µW. This is a liberty-power model at a declared activity, not a
   measured supply current, and it changes neither the row nor its `missed` tag;
@@ -411,21 +416,21 @@ Each is a model figure, none is a silicon measurement. The 1 MHz and 2 kHz
 columns are never mixed in one row.
 
 **Open spec question (not resolved here): which digital clock rate is the row
-judged at?** The 749.4 µW figure (149.9 %, missed) is the 1 MHz-clock model.
-The same model at the 2 kHz ratified raw rate gives 418.3 µW (83.7 %, 81.7 µW
+judged at?** The 748.2 µW figure (149.6 %, missed) is the 1 MHz-clock model.
+The same model at the 2 kHz ratified raw rate gives 418.2 µW (83.6 %, 81.8 µW
 under the bound), before the liveness samplers (below). Which one the row means
 is a ruling, already requested on #700, not a lever.
 
-Ranked by power recovered. "Basis" is the 749.4 µW whole-block figure unless
+Ranked by power recovered. "Basis" is the 748.2 µW whole-block figure unless
 stated. Corner: array and sampler terms at `ff` / −40 °C / 3.63 V, digital at
 `ff_125C_3v60` / `rc-max`.
 
 | # | lever | recovered | source record | disposition |
 |---|---|---|---|---|
-| 1 | Digital clock 1 MHz → 2 kHz (whole digital section 339.4 → 8.3 µW) | **331.1 µW** (749.4 → 418.3) | `2026-11-09-digital-power-by-block-01` via `active_power_breakdown.py` | Open spec question above; not a design change. Sub-block returns in the next table. |
+| 1 | Digital clock 1 MHz → 2 kHz (whole digital section 338.1 → 8.2 µW) | **329.9 µW** (748.2 → 418.2) | `2026-11-13-digital-power-by-block-01` via `active_power_breakdown.py` | Open spec question above; not a design change. Sub-block returns in the next table. |
 | 2 | Array supply 3.63 → 3.30 V (rings 273.1 → 201.3, buffers + XOR 120.0 → 86.2 µW) | 105.6 µW (71.8 rings + 33.8 buffers/XOR), array only | `2026-08-02-ro-array-core-pvt-q-{39,38}`, `ff` / −40 °C | Touches the entropy source (ring-1 frequency 249.0 → 229.6 MHz, −7.8 %; entropy rate not measured here) and the Operating envelope row. Follow-up #813. |
-| 3 | Ring buffers + XOR (120.0 µW, 16.0 % of 749.4) | up to 120.0 µW, an upper bound | same pair as row 2 | The records report only the `vdd`-rail remainder, so buffers and XOR cannot be separated. A split probe would. Follow-up #811. |
-| 4 | Clock gating / trimming inside the digital section at the 1 MHz clock | up to the sub-block figure, before any gating | `digital-power-by-block-01` | The model assumes one uniform declared activity, so what gating would return is not quantifiable from the records. Toggle-based activity would. Follow-up #812. At 2 kHz the whole section is 8.3 µW (1.7 % of the row): no lever. |
+| 3 | Ring buffers + XOR (120.0 µW, 16.0 % of 748.2) | up to 120.0 µW, an upper bound | same pair as row 2 | The records report only the `vdd`-rail remainder, so buffers and XOR cannot be separated. A split probe would. Follow-up #811. |
+| 4 | Clock gating / trimming inside the digital section at the 1 MHz clock | up to the sub-block figure, before any gating | `2026-11-13-digital-power-by-block-01` | The model assumes one uniform declared activity, so what gating would return is not quantifiable from the records. Toggle-based activity would. Follow-up #812. At 2 kHz the whole section is 8.2 µW (1.6 % of the row): no lever. |
 | 5 | Sampler (xsb, xsv), 16.9 µW | none | `2026-08-02-sampler-dff-active-current-12` | No lever: 2.3 % of the block and set by the ring transition rate. |
 | 6 | Rings themselves, 273.1 µW (36.4 %) | none apart from row 2 | `ro-array-core-pvt-q-39` | No lever: the rings are the entropy source; drive or size changes trade against entropy and are outside this record. |
 | — | Liveness samplers (xsr1/xsr2) | adds power, recovers none | none at the binding corner | Gap. Nearest measured corner (`tt` / 27 °C / 3.30 V) shows about 25.3 µW, in neither total above. Follow-up #810. |
@@ -434,13 +439,13 @@ Digital clock-rate return by sub-block (row 1, 1 MHz → 2 kHz):
 
 | digital sub-block | 1 MHz | 2 kHz | returned |
 |---|---|---|---|
-| interface | 139.8 µW | 3.2 µW | 136.5 µW |
-| clock tree | 73.5 µW | 0.4 µW | 73.1 µW |
+| interface | 138.6 µW | 3.2 µW | 135.4 µW |
+| clock tree | 74.5 µW | 0.4 µW | 74.1 µW |
 | conditioner | 58.5 µW | 1.1 µW | 57.4 µW |
-| health tests | 43.4 µW | 0.9 µW | 42.6 µW |
-| ring-liveness logic | 18.5 µW | 0.4 µW | 18.1 µW |
-| other (buffers, tap/fill) | 5.6 µW | 2.3 µW | 3.3 µW |
-| **total** | **339.4 µW** | **8.3 µW** | **331.1 µW** |
+| health tests | 41.7 µW | 0.8 µW | 40.9 µW |
+| ring-liveness logic | 18.1 µW | 0.4 µW | 17.8 µW |
+| other (buffers, tap/fill) | 6.7 µW | 2.4 µW | 4.3 µW |
+| **total** | **338.1 µW** | **8.2 µW** | **329.9 µW** |
 
 Measurement gap: the digital figures are liberty power at a declared activity
 (DR-0021 §3), not supply current, and the array and sampler terms are from
@@ -469,9 +474,12 @@ From the ratification note ("Ratified, with four rows explicitly unmeasured"):
 - **Area: the regenerated floorplan misses by 3.5×.** The row is
   `< 0.05 mm²`. The current figure is the regenerated depth-2 floorplan
   rollup in `layout/floorplan/reports/area.json` (#256, via #454):
-  **174 030.2 µm² including isolation channels, 348.1 % of the row** (173 157.9 µm²,
+  **172 828.6 µm² including isolation channels, 345.7 % of the row**
+  (174 030.2 µm², 348.1 %, before #866 re-ran the digital chain under the
+  nightly's toolchain and recomposed the floorplan on the smaller routed
+  die; 173 157.9 µm²,
   346.3 %, before #705 tapped the hand-drawn cells; 175 789.9 µm² before #709's interface change; a
-  floorplan-area sum; the row bounding box, 934.4 × 416.7 µm, is reported
+  floorplan-area sum; the row bounding box, 543.69 × 446.75 µm, is reported
   separately). The rest of this bullet is historical context from before
   that regeneration. #16's floorplan work had priced the block bottom-up
   against the PDK's own standard-cell LEF:
@@ -537,12 +545,15 @@ not that inventory.
 
 **What the 351.6 % is.** In `area.json` the rollup's `floorplan_area_um2` is
 the sum of the guarded-region areas plus the declared 20 µm isolation channels:
-174 030.2 µm² = 165 544.1 µm² guarded regions + 8 486.1 µm² channels (after #705; was
+172 828.6 µm² = 164 372.0 µm² guarded regions + 8 456.6 µm² channels (after
+#866's rebuild under the nightly's toolchain; was
+174 030.2 µm² = 165 544.1 + 8 486.1 after #705,
 173 157.9 µm² = 164 703.6 + 8 454.3 after #709, and 175 789.9 µm² = 167 271.3 + 8 518.6 before it), against
 the 50 000 µm² budget. Each of the four regions is sized from the bounding box
 of its committed, DRC-checked assembled GDS, not from a cell-area estimate:
-the digital region from `layout/digital/trng_top.gds` (398.93 × 398.93 µm, the
-`FIFO_DEPTH = 2` place-and-route; 160 744.9 µm² guarded, 91 % of the total),
+the digital region from `layout/digital/trng_top.gds` (394.24 × 394.24 µm
+after #866, the
+`FIFO_DEPTH = 2` place-and-route; 157 259.8 µm² guarded, 91 % of the total),
 the analog regions from their ring and `combiner_sampler` assemblies. So the
 figure is a footprint read from real committed layout geometry, composed by the
 floorplan; it is not an inventory estimate. The per-region `cell_area_um2`
@@ -551,7 +562,8 @@ estimates, but they do not enter the 351.6 %.
 
 **What it is not.** It is not a signoff die area. It is a sum of region areas
 (guard rings and channels included), not the area of one placed-and-routed
-die: the row bounding box, 934.4 × 416.7 µm, is reported separately; the
+die: the row bounding box, 543.69 × 446.75 µm after #866, is reported
+separately; the
 digital block's die was sized from a utilisation input rather than minimised
 (see [`layout/digital/README.md`](../layout/digital/README.md#area)); and the
 reported total excludes the ring liveness monitor

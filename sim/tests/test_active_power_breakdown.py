@@ -163,8 +163,17 @@ class BreakdownTests(unittest.TestCase):
             self.assertEqual(apb.reconcile(rate), [], f"rate {rate:g} Hz")
 
     def test_historical_total_is_the_row_figure(self):
+        """The by-block total at DR-0003's original 1 MHz sample clock is
+        the figure the Power row quotes.
+
+        `test_reconciles_with_rollup_at_both_rates` above already ties the
+        rows to `power_rollup.py`'s own terms; this pins the sum itself, so
+        a rebuild that moves it has to move the documents quoting it too.
+        749.4 uW was #293's build; #866 re-ran the digital chain under the
+        toolchain `.github/workflows/pdk-nightly.yml` installs and it is
+        748.2 uW."""
         bd = apb.breakdown(1e6)
-        self.assertAlmostEqual(bd["total"] * 1e6, 749.4, delta=0.1)
+        self.assertAlmostEqual(bd["total"] * 1e6, 748.2, delta=0.1)
 
     def test_digital_scaling_exact_at_measurement_rate(self):
         rec = pr.load(apb.BY_BLOCK_GLOB)[-1]

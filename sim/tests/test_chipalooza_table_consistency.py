@@ -46,8 +46,18 @@ def _rollup() -> str:
 
 
 def _fmax_by_corner() -> dict[tuple[str, str], float]:
+    """`fmax_bisect_mhz` per (liberty, interconnect) corner, from the record
+    family row G names as the current build.
+
+    The family is read out of the row itself rather than hard-coded here, so
+    re-running the sweep (#293 -> #709 -> #803 -> #866) re-points both at
+    once and the row cannot keep citing a superseded family.
+    """
+    stem = re.search(r"`sim/records/(\d{4}-\d{2}-\d{2})-digital-sta-power-"
+                     r"\{01\.\.15\}\.md`", _row("G"))
+    assert stem, "row G no longer names a digital-sta-power record family"
     out = {}
-    for f in sorted(RECORDS.glob("2026-10-07-digital-sta-power-*.md")):
+    for f in sorted(RECORDS.glob(f"{stem.group(1)}-digital-sta-power-*.md")):
         t = f.read_text()
         lib = re.search(r"^  liberty: \S+__(\S+)$", t, re.M).group(1)
         rc = re.search(r"^  interconnect: (\S+)", t, re.M).group(1)
@@ -70,9 +80,9 @@ class ProposalTableAgreesWithEvidence(unittest.TestCase):
         for corner in ("ss/125/2.97", "tt/27/3.30", "ff/-40/3.63"):
             with self.subTest(corner=corner):
                 self.assertIn(self._rollup_total(corner), row)
-        self.assertRegex(self.rollup, r"digital \(MEASURED-at-gate-level\): 339\.4 uW")
-        self.assertIn("339.4 µW", row)
-        self.assertIn("149.9 %", row)
+        self.assertRegex(self.rollup, r"digital \(MEASURED-at-gate-level\): 338\.1 uW")
+        self.assertIn("338.1 µW", row)
+        self.assertIn("149.6 %", row)
 
     def test_row_d_historical_figures_carry_revision_context(self):
         row = _row("D")
@@ -80,8 +90,8 @@ class ProposalTableAgreesWithEvidence(unittest.TestCase):
 
     def test_row_e_worst_corner_is_the_rollup(self):
         row = _row("E")
-        self.assertRegex(self.rollup, r"Worst idle corner: ff/125/3\.63\s*-> 2\.148 uA")
-        self.assertIn("2.148 µA", row)
+        self.assertRegex(self.rollup, r"Worst idle corner: ff/125/3\.63\s*-> 2\.138 uA")
+        self.assertIn("2.138 µA", row)
         self.assertRegex(row, r"Historical, not current: 3\.979 µA[^|]*depth-8 build")
 
     def test_row_g_fmax_matches_current_record_family(self):

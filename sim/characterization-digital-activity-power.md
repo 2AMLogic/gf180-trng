@@ -117,74 +117,74 @@ Digital total power in uW at 1 MHz (`report_power`), identical SPEF in both colu
 
 | corner | uniform 0.25 | alarm-gated | backpressure | conditioned-streaming | disabled-clock-running | raw-streaming | observed max / uniform |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| ss_125C_3v00/rc-min | 208.94 | 140.20 | 156.17 | 156.43 | 130.49 | 157.14 | 0.752 |
-| ss_125C_3v00/rc-nom | 211.24 | 141.40 | 157.57 | 157.84 | 131.57 | 158.56 | 0.751 |
-| ss_125C_3v00/rc-max | 214.08 | 142.89 | 159.30 | 159.57 | 132.91 | 160.32 | 0.749 |
-| ss_n40C_3v00/rc-min | 195.16 | 130.96 | 145.86 | 146.11 | 121.85 | 146.77 | 0.752 |
-| ss_n40C_3v00/rc-nom | 197.35 | 132.07 | 147.16 | 147.41 | 122.84 | 148.10 | 0.750 |
-| ss_n40C_3v00/rc-max | 200.05 | 133.44 | 148.76 | 149.02 | 124.06 | 149.73 | 0.748 |
-| tt_025C_3v30/rc-min | 248.43 | 165.63 | 184.82 | 185.13 | 153.99 | 185.98 | 0.749 |
-| tt_025C_3v30/rc-nom | 251.35 | 167.18 | 186.62 | 186.94 | 155.40 | 187.81 | 0.747 |
-| tt_025C_3v30/rc-max | 254.94 | 169.11 | 188.84 | 189.17 | 157.15 | 190.08 | 0.746 |
-| ff_125C_3v60/rc-min | 330.46 | 221.84 | 247.41 | 247.73 | 206.51 | 248.82 | 0.753 |
-| ff_125C_3v60/rc-nom | 334.44 | 224.11 | 250.00 | 250.33 | 208.60 | 251.46 | 0.752 |
-| ff_125C_3v60/rc-max | 339.35 | 226.92 | 253.20 | 253.55 | 211.19 | 254.71 | 0.751 |
-| ff_n40C_3v60/rc-min | 302.06 | 201.11 | 224.45 | 224.84 | 187.06 | 225.86 | 0.748 |
-| ff_n40C_3v60/rc-nom | 305.80 | 203.17 | 226.82 | 227.22 | 188.95 | 228.27 | 0.746 |
-| ff_n40C_3v60/rc-max | 310.43 | 205.74 | 229.76 | 230.17 | 191.31 | 231.27 | 0.745 |
+| ss_125C_3v00/rc-min | 208.53 | 141.26 | 157.21 | 157.47 | 130.98 | 158.14 | 0.758 |
+| ss_125C_3v00/rc-nom | 210.90 | 142.52 | 158.68 | 158.94 | 132.10 | 159.63 | 0.757 |
+| ss_125C_3v00/rc-max | 213.81 | 144.08 | 160.48 | 160.75 | 133.48 | 161.46 | 0.755 |
+| ss_n40C_3v00/rc-min | 194.91 | 132.00 | 146.89 | 147.13 | 122.36 | 147.76 | 0.758 |
+| ss_n40C_3v00/rc-nom | 197.17 | 133.18 | 148.26 | 148.51 | 123.39 | 149.16 | 0.756 |
+| ss_n40C_3v00/rc-max | 199.95 | 134.62 | 149.94 | 150.20 | 124.66 | 150.87 | 0.755 |
+| tt_025C_3v30/rc-min | 247.79 | 166.82 | 185.98 | 186.29 | 154.49 | 187.09 | 0.755 |
+| tt_025C_3v30/rc-nom | 250.79 | 168.46 | 187.87 | 188.18 | 155.96 | 189.00 | 0.754 |
+| tt_025C_3v30/rc-max | 254.48 | 170.48 | 190.19 | 190.51 | 157.76 | 191.36 | 0.752 |
+| ff_125C_3v60/rc-min | 328.96 | 223.12 | 248.60 | 248.93 | 206.82 | 249.93 | 0.760 |
+| ff_125C_3v60/rc-nom | 333.06 | 225.51 | 251.31 | 251.64 | 208.99 | 252.68 | 0.759 |
+| ff_125C_3v60/rc-max | 338.12 | 228.46 | 254.65 | 254.99 | 211.68 | 256.06 | 0.757 |
+| ff_n40C_3v60/rc-min | 301.02 | 202.45 | 225.75 | 226.13 | 187.54 | 227.09 | 0.754 |
+| ff_n40C_3v60/rc-nom | 304.87 | 204.63 | 228.23 | 228.61 | 189.50 | 229.60 | 0.753 |
+| ff_n40C_3v60/rc-max | 309.60 | 207.31 | 231.28 | 231.68 | 191.92 | 232.70 | 0.752 |
 
 ### Workload-specific maxima over the 15 corners (uW) and where they bind
 
 | workload | window | max total | at corner | internal | switching | leakage | vs uniform at that corner |
 |---|---|---:|---|---:|---:|---:|---:|
-| alarm-gated | reset | 205.85 | ff_125C_3v60/rc-max | 153.41 | 45.39 | 7.051 | 0.607 |
-| alarm-gated | startup | 235.51 | ff_125C_3v60/rc-max | 171.36 | 56.45 | 7.696 | 0.694 |
-| alarm-gated | steady | 226.92 | ff_125C_3v60/rc-max | 166.19 | 53.06 | 7.668 | 0.669 |
-| backpressure | reset | 205.65 | ff_125C_3v60/rc-max | 153.35 | 45.26 | 7.051 | 0.606 |
-| backpressure | startup | 236.04 | ff_125C_3v60/rc-max | 171.73 | 56.64 | 7.665 | 0.696 |
-| backpressure | steady | 253.20 | ff_125C_3v60/rc-max | 182.37 | 62.86 | 7.977 | 0.746 |
-| conditioned-streaming | reset | 205.82 | ff_125C_3v60/rc-max | 153.40 | 45.38 | 7.051 | 0.607 |
-| conditioned-streaming | startup | 236.75 | ff_125C_3v60/rc-max | 172.15 | 56.93 | 7.677 | 0.698 |
-| conditioned-streaming | steady | 253.55 | ff_125C_3v60/rc-max | 182.58 | 63.09 | 7.886 | 0.747 |
-| disabled-clock-running | reset | 204.12 | ff_125C_3v60/rc-max | 152.49 | 44.57 | 7.051 | 0.601 |
-| disabled-clock-running | startup | 211.45 | ff_125C_3v60/rc-max | 156.96 | 47.13 | 7.367 | 0.623 |
-| disabled-clock-running | steady | 211.19 | ff_125C_3v60/rc-max | 156.78 | 47.04 | 7.367 | 0.622 |
-| raw-streaming | reset | 205.90 | ff_125C_3v60/rc-max | 153.27 | 45.57 | 7.051 | 0.607 |
-| raw-streaming | startup | 237.46 | ff_125C_3v60/rc-max | 172.34 | 57.49 | 7.622 | 0.700 |
-| raw-streaming | steady | 254.71 | ff_125C_3v60/rc-max | 183.02 | 63.79 | 7.898 | 0.751 |
+| alarm-gated | reset | 207.06 | ff_125C_3v60/rc-max | 153.04 | 47.02 | 7.002 | 0.612 |
+| alarm-gated | startup | 236.10 | ff_125C_3v60/rc-max | 170.87 | 57.57 | 7.654 | 0.698 |
+| alarm-gated | steady | 228.46 | ff_125C_3v60/rc-max | 166.29 | 54.54 | 7.635 | 0.676 |
+| backpressure | reset | 206.87 | ff_125C_3v60/rc-max | 152.97 | 46.89 | 7.002 | 0.612 |
+| backpressure | startup | 236.65 | ff_125C_3v60/rc-max | 171.26 | 57.77 | 7.623 | 0.700 |
+| backpressure | steady | 254.65 | ff_125C_3v60/rc-max | 182.36 | 64.35 | 7.937 | 0.753 |
+| conditioned-streaming | reset | 207.02 | ff_125C_3v60/rc-max | 153.02 | 46.99 | 7.002 | 0.612 |
+| conditioned-streaming | startup | 237.43 | ff_125C_3v60/rc-max | 171.71 | 58.08 | 7.634 | 0.702 |
+| conditioned-streaming | steady | 254.99 | ff_125C_3v60/rc-max | 182.57 | 64.57 | 7.853 | 0.754 |
+| disabled-clock-running | reset | 205.36 | ff_125C_3v60/rc-max | 152.14 | 46.22 | 7.002 | 0.607 |
+| disabled-clock-running | startup | 211.92 | ff_125C_3v60/rc-max | 156.35 | 48.24 | 7.335 | 0.627 |
+| disabled-clock-running | steady | 211.68 | ff_125C_3v60/rc-max | 156.18 | 48.17 | 7.336 | 0.626 |
+| raw-streaming | reset | 207.06 | ff_125C_3v60/rc-max | 152.89 | 47.17 | 7.002 | 0.612 |
+| raw-streaming | startup | 238.02 | ff_125C_3v60/rc-max | 171.82 | 58.62 | 7.576 | 0.704 |
+| raw-streaming | steady | 256.06 | ff_125C_3v60/rc-max | 182.96 | 65.25 | 7.855 | 0.757 |
 
 ### Term breakdown at the digital-binding corner of the ratified rollup (ff_125C_3v60/rc-max)
 
 | workload / window | clock | sequential | combinational | internal | switching | leakage | total |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| uniform | 75.74 | 171.83 | 91.79 | 234.69 | 97.04 | 7.617 | 339.35 |
-| alarm-gated / reset | 75.74 | 122.60 | 7.51 | 153.41 | 45.39 | 7.051 | 205.85 |
-| alarm-gated / startup | 75.74 | 135.34 | 24.43 | 171.36 | 56.45 | 7.696 | 235.51 |
-| alarm-gated / steady | 75.74 | 132.89 | 18.28 | 166.19 | 53.06 | 7.668 | 226.92 |
-| backpressure / reset | 75.74 | 122.59 | 7.32 | 153.35 | 45.26 | 7.051 | 205.65 |
-| backpressure / startup | 75.74 | 135.48 | 24.82 | 171.73 | 56.64 | 7.665 | 236.04 |
-| backpressure / steady | 75.74 | 144.57 | 32.90 | 182.37 | 62.86 | 7.977 | 253.20 |
-| conditioned-streaming / reset | 75.74 | 122.60 | 7.48 | 153.40 | 45.38 | 7.051 | 205.82 |
-| conditioned-streaming / startup | 75.74 | 135.81 | 25.21 | 172.15 | 56.93 | 7.677 | 236.75 |
-| conditioned-streaming / steady | 75.74 | 144.60 | 33.21 | 182.58 | 63.09 | 7.886 | 253.55 |
-| disabled-clock-running / reset | 75.74 | 122.54 | 5.84 | 152.49 | 44.57 | 7.051 | 204.12 |
-| disabled-clock-running / startup | 75.74 | 124.81 | 10.90 | 156.96 | 47.13 | 7.367 | 211.45 |
-| disabled-clock-running / steady | 75.74 | 124.87 | 10.59 | 156.78 | 47.04 | 7.367 | 211.19 |
-| raw-streaming / reset | 75.74 | 122.60 | 7.56 | 153.27 | 45.57 | 7.051 | 205.90 |
-| raw-streaming / startup | 75.74 | 135.54 | 26.18 | 172.34 | 57.49 | 7.622 | 237.46 |
-| raw-streaming / steady | 75.74 | 144.55 | 34.42 | 183.02 | 63.79 | 7.898 | 254.71 |
+| uniform | 76.73 | 171.89 | 89.49 | 232.49 | 98.04 | 7.579 | 338.12 |
+| alarm-gated / reset | 76.73 | 122.56 | 7.77 | 153.04 | 47.02 | 7.002 | 207.06 |
+| alarm-gated / startup | 76.73 | 135.28 | 24.10 | 170.87 | 57.57 | 7.654 | 236.10 |
+| alarm-gated / steady | 76.73 | 132.90 | 18.84 | 166.29 | 54.54 | 7.635 | 228.46 |
+| backpressure / reset | 76.73 | 122.55 | 7.60 | 152.97 | 46.89 | 7.002 | 206.87 |
+| backpressure / startup | 76.73 | 135.42 | 24.50 | 171.26 | 57.77 | 7.623 | 236.65 |
+| backpressure / steady | 76.73 | 144.56 | 33.36 | 182.36 | 64.35 | 7.937 | 254.65 |
+| conditioned-streaming / reset | 76.73 | 122.56 | 7.73 | 153.02 | 46.99 | 7.002 | 207.02 |
+| conditioned-streaming / startup | 76.73 | 135.75 | 24.95 | 171.71 | 58.08 | 7.634 | 237.43 |
+| conditioned-streaming / steady | 76.73 | 144.59 | 33.67 | 182.57 | 64.57 | 7.853 | 254.99 |
+| disabled-clock-running / reset | 76.73 | 122.50 | 6.14 | 152.14 | 46.22 | 7.002 | 205.36 |
+| disabled-clock-running / startup | 76.73 | 124.75 | 10.44 | 156.35 | 48.24 | 7.335 | 211.92 |
+| disabled-clock-running / steady | 76.73 | 124.81 | 10.15 | 156.18 | 48.17 | 7.336 | 211.68 |
+| raw-streaming / reset | 76.73 | 122.55 | 7.78 | 152.89 | 47.17 | 7.002 | 207.06 |
+| raw-streaming / startup | 76.73 | 135.48 | 25.81 | 171.82 | 58.62 | 7.576 | 238.02 |
+| raw-streaming / steady | 76.73 | 144.54 | 34.79 | 182.96 | 65.25 | 7.855 | 256.06 |
 
 ### Annotation coverage
 
-Pins in the design as OpenSTA sees them: [5143]. Largest unannotated count in any (corner, workload, window): 0. Every window is annotated from the VCD; no pin runs on a fallback activity in any record.
+Pins in the design as OpenSTA sees them: [5145]. Largest unannotated count in any (corner, workload, window): 0. Every window is annotated from the VCD; no pin runs on a fallback activity in any record.
 
 ### Illustration only: whole-block active power if the digital term were the observed maximum
 
 The ratified rollup (`python3 sim/tools/power_rollup.py`) is unchanged and still uses the uniform-activity digital term. Substituting, at the same digital-binding corner, the largest observed steady-window total of any declared workload for that term:
 
-- ratified digital term (uniform, ff_125C_3v60/rc-max): 339.4 uW
-- largest observed steady total at the same corner: 254.7 uW (0.751 of the ratified term)
-- change to the whole-block active total at any analog corner: -84.6 uW
+- ratified digital term (uniform, ff_125C_3v60/rc-max): 338.1 uW
+- largest observed steady total at the same corner: 256.1 uW (0.757 of the ratified term)
+- change to the whole-block active total at any analog corner: -82.1 uW
 <!-- activity-tables:end -->
 
 ## 4. What the table does and does not say
