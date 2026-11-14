@@ -55,7 +55,7 @@
         },
         {
           "path": "sim/tb/conditioner-crc32/run_demo.py",
-          "sha256": "sha256:0b46d87e9378f5fd0eaa1dce7b3e8a9158eefdfd93deee5bbfb63f395b31f7d0"
+          "sha256": "sha256:0bd2daff85774efa6a6cfc0ce089b79f06a35b70e117e998e88b7d8a18e0a83b"
         },
         {
           "path": "sim/tb/conditioner-crc32/source_model.py",
@@ -139,7 +139,7 @@
         },
         {
           "path": "sim/tb/health-test-fault-injection/run_demo.py",
-          "sha256": "sha256:bfe627c54b6dd670e6bf95521903a53741b9fd3a1b6d36598d0755bd6cf79a56"
+          "sha256": "sha256:2ecf6155bccff87abd121a1f6f45c5da238e2fc0f20e6bc9f649625aed8116eb"
         },
         {
           "path": "sim/tb/health-test-fault-injection/tb_rtl_equivalence.v",
@@ -159,7 +159,7 @@
         },
         {
           "path": "sim/tb/interface-regfile/run_demo.py",
-          "sha256": "sha256:c982382a84b2416dfa45c0402f2c53e486b1f84e78ec4f2b2bd88d7ce651c23c"
+          "sha256": "sha256:8c2eceed95832ea7c39e294cde12690dadbc7b1ac61f79a64f911f9825b1ebff"
         },
         {
           "path": "sim/tb/interface-regfile/tb_rtl_equivalence.v",
@@ -203,7 +203,7 @@
         },
         {
           "path": "sim/tb/ring-liveness-fault-injection/run_demo.py",
-          "sha256": "sha256:481baa9f5350a16ddf0a017f111eb5a37b5b83e11a91e56dece11343bfeaf081"
+          "sha256": "sha256:4ec9366d226946affe2f4f5dfb25b9dd8bd27baed19791b31be167837d92278f"
         },
         {
           "path": "sim/tb/ring-liveness-fault-injection/tb_rtl_equivalence.v",

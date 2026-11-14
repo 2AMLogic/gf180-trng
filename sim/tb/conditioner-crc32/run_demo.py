@@ -20,7 +20,6 @@ line so that "re-run the demonstration" means exactly one thing.
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import math
@@ -38,7 +37,7 @@ sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 
-from harness import report  # noqa: E402
+from harness import report, scenario_cli  # noqa: E402
 import crc32_conditioner as cond  # noqa: E402
 import source_model  # noqa: E402
 import sp800_90b  # noqa: E402
@@ -403,52 +402,40 @@ def write_record(result: dict, records_dir: Path, git: dict) -> Path:
     return report.finalize_record(records_dir, date, SLUG, render)
 
 
+def _print_result(result: dict) -> None:
+    print(
+        f"   raw {result['raw_bits']} bits, P(1)={result['raw_p_one_measured']:.6f}, "
+        f"measured H_mcv={result['raw_mcv_min_entropy_measured']:.6f} bit/sample"
+    )
+    print(
+        f"   conditioned {result['cond_words']} words "
+        f"({result['cond_bits']} bits), P(1)={result['cond_p_one_measured']:.6f}, "
+        f"K={result['k_measured']:.4f}"
+    )
+    print(
+        f"   90B non-vetted credit: "
+        f"{result['accounting_h_out_non_vetted']} bit per 32-bit word"
+    )
+    if "flush_tail_independent_of_pre_flush_bits" in result:
+        print(
+            f"   flush: {result['flush_events']} events, "
+            f"{result['bits_discarded_by_flush']} raw bits discarded, "
+            f"post-flush independence "
+            f"{result['flush_tail_independent_of_pre_flush_bits']}"
+        )
+
+
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--scenario",
-        action="append",
-        choices=sorted(SCENARIOS),
-        help="run only this scenario (repeatable); default is all of them",
+    return scenario_cli.run_scenarios(
+        argv,
+        description=__doc__,
+        scenarios=SCENARIOS,
+        run_scenario=run_scenario,
+        write_record=write_record,
+        print_result=_print_result,
+        repo_root=REPO_ROOT,
+        records_dir=SIM_DIR / "records",
     )
-    parser.add_argument(
-        "--no-write",
-        action="store_true",
-        help="print the results without minting evidence records",
-    )
-    args = parser.parse_args(argv)
-
-    names = args.scenario or list(SCENARIOS)
-    git = report.git_provenance(REPO_ROOT)
-    records_dir = SIM_DIR / "records"
-
-    for name in names:
-        result = run_scenario(name)
-        print(f"== {name} ==")
-        print(
-            f"   raw {result['raw_bits']} bits, P(1)={result['raw_p_one_measured']:.6f}, "
-            f"measured H_mcv={result['raw_mcv_min_entropy_measured']:.6f} bit/sample"
-        )
-        print(
-            f"   conditioned {result['cond_words']} words "
-            f"({result['cond_bits']} bits), P(1)={result['cond_p_one_measured']:.6f}, "
-            f"K={result['k_measured']:.4f}"
-        )
-        print(
-            f"   90B non-vetted credit: "
-            f"{result['accounting_h_out_non_vetted']} bit per 32-bit word"
-        )
-        if "flush_tail_independent_of_pre_flush_bits" in result:
-            print(
-                f"   flush: {result['flush_events']} events, "
-                f"{result['bits_discarded_by_flush']} raw bits discarded, "
-                f"post-flush independence "
-                f"{result['flush_tail_independent_of_pre_flush_bits']}"
-            )
-        if not args.no_write:
-            path = write_record(result, records_dir, git)
-            print(f"   record: {path.relative_to(REPO_ROOT)}")
-    return 0
 
 
 if __name__ == "__main__":
