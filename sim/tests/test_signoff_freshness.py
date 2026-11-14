@@ -136,6 +136,51 @@ class CommittedManifest(unittest.TestCase):
         self.assertEqual(len(pnr), 1)
         self.assertNotIn("content_hash", pnr[0])
 
+    def test_item6_yield_envelope_is_cited_unpinned(self):
+        """A committed `klt yield` response must be cited as 6.analog (#885).
+
+        The citation was added by c3ed2b9f and lost in merge 742bb2af's
+        conflict resolution, and nothing failed: step 1b' of freshness_gate()
+        is gated on the manifest carrying the key, and the envelope lives in a
+        subdirectory that step 1's non-recursive EVIDENCE_DIR sweep never
+        reaches. So the evidence stayed committed while the grader rendered
+        the row no_evidence for eight days. This fails if it is dropped again.
+        """
+        manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
+        if not (ROOT / check.ITEM6_ENVELOPE).is_file():
+            self.skipTest(f"{check.ITEM6_ENVELOPE} is not committed in this tree")
+        part = manifest["evidence"].get("6.analog")
+        self.assertIsNotNone(
+            part, f"{check.ITEM6_ENVELOPE} is committed but no 6.analog entry cites it"
+        )
+        self.assertEqual(part.get("file"), check.ITEM6_ENVELOPE)
+        # Unpinned on purpose: the envelope carries no provenance block, so
+        # ITEM6_ENVELOPE is exempt from the envelope-vs-input step and a
+        # content_hash here would be compared against nothing (see check.py).
+        self.assertNotIn("content_hash", part)
+
+    def test_step1_exempt_envelopes_are_cited_when_committed(self):
+        """Every envelope step 1 exempts must still be cited by the manifest.
+
+        check.py skips these three in the envelope-vs-input sweep because they
+        carry no provenance block, and each has its own freshness step keyed
+        on its manifest citation -- so losing the citation silently disables
+        the only check that covers it. Generalizes the item-6 guard above to
+        items 7 and 11, the other two with the same failure mode.
+        """
+        manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
+        cited = {part.get("file") for _key, part in check.manifest_entries(manifest)}
+        for envelope in (check.ITEM6_ENVELOPE, check.ITEM7_ENVELOPE, check.PNR_ENVELOPE):
+            with self.subTest(envelope=envelope):
+                if not (ROOT / envelope).is_file():
+                    self.skipTest(f"{envelope} is not committed in this tree")
+                self.assertIn(
+                    envelope,
+                    cited,
+                    f"{envelope} is committed and exempt from step 1, but no "
+                    f"manifest entry cites it -- its freshness step is disabled",
+                )
+
     def test_stale_pin_on_item_11_lvs_entry_fails(self):
         manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
         for part in manifest["evidence"]["11.analog"]:
