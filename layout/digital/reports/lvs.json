@@ -1,20 +1,31 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
   "engine": "klayout",
   "layout": "layout/digital/trng_top.extracted.spice",
   "reference": "layout/digital/trng_top.pnr.v",
   "top": "TRNG_TOP",
   "reference_top": "TRNG_TOP",
+  "reference_conversion": {
+    "form": "gate-level-verilog",
+    "library": "gf180mcu_fd_sc_mcu9t5v0",
+    "pdk": null,
+    "pdk_root": null,
+    "pin_order_files": null
+  },
   "parameter_tolerance": null,
   "options": {
     "combine_devices": false,
     "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
     "flatten_layout": false,
     "flatten_reference": false,
     "netgen_setup": null,
     "parameter_tolerance": null,
     "compare_parameters": null,
     "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "compare_mos_flavour": false,
     "supply_nets": [
       "GND",
       "VCC",
@@ -22,9 +33,11 @@
       "VGND",
       "VPWR",
       "VSS"
-    ]
+    ],
+    "finfet_bulk": null
   },
   "hints_applied": null,
+  "constant_nets_applied": null,
   "status": "match",
   "power_connectivity": {
     "status": "match",
@@ -37,10 +50,10 @@
       "rule": "declared-by-every-instantiated-master",
       "masters": [
         "GF180MCU_FD_SC_MCU9T5V0__AND2_1",
+        "GF180MCU_FD_SC_MCU9T5V0__AND2_2",
         "GF180MCU_FD_SC_MCU9T5V0__AND2_4",
         "GF180MCU_FD_SC_MCU9T5V0__AND3_1",
         "GF180MCU_FD_SC_MCU9T5V0__AND3_2",
-        "GF180MCU_FD_SC_MCU9T5V0__AND3_4",
         "GF180MCU_FD_SC_MCU9T5V0__AND4_1",
         "GF180MCU_FD_SC_MCU9T5V0__AND4_2",
         "GF180MCU_FD_SC_MCU9T5V0__AND4_4",
@@ -59,10 +72,11 @@
         "GF180MCU_FD_SC_MCU9T5V0__BUF_8",
         "GF180MCU_FD_SC_MCU9T5V0__CLKBUF_1",
         "GF180MCU_FD_SC_MCU9T5V0__CLKBUF_12",
+        "GF180MCU_FD_SC_MCU9T5V0__CLKBUF_16",
+        "GF180MCU_FD_SC_MCU9T5V0__CLKBUF_8",
         "GF180MCU_FD_SC_MCU9T5V0__CLKINV_1",
         "GF180MCU_FD_SC_MCU9T5V0__CLKINV_2",
         "GF180MCU_FD_SC_MCU9T5V0__CLKINV_3",
-        "GF180MCU_FD_SC_MCU9T5V0__CLKINV_8",
         "GF180MCU_FD_SC_MCU9T5V0__DFFQ_1",
         "GF180MCU_FD_SC_MCU9T5V0__DFFRNQ_1",
         "GF180MCU_FD_SC_MCU9T5V0__DFFSNQ_1",
@@ -70,14 +84,12 @@
         "GF180MCU_FD_SC_MCU9T5V0__INV_2",
         "GF180MCU_FD_SC_MCU9T5V0__INV_3",
         "GF180MCU_FD_SC_MCU9T5V0__INV_4",
-        "GF180MCU_FD_SC_MCU9T5V0__INV_8",
         "GF180MCU_FD_SC_MCU9T5V0__MUX2_1",
         "GF180MCU_FD_SC_MCU9T5V0__MUX2_2",
         "GF180MCU_FD_SC_MCU9T5V0__NAND2_1",
         "GF180MCU_FD_SC_MCU9T5V0__NAND2_2",
         "GF180MCU_FD_SC_MCU9T5V0__NAND3_1",
         "GF180MCU_FD_SC_MCU9T5V0__NAND3_2",
-        "GF180MCU_FD_SC_MCU9T5V0__NAND3_4",
         "GF180MCU_FD_SC_MCU9T5V0__NAND4_1",
         "GF180MCU_FD_SC_MCU9T5V0__NAND4_2",
         "GF180MCU_FD_SC_MCU9T5V0__NAND4_4",
@@ -96,7 +108,6 @@
         "GF180MCU_FD_SC_MCU9T5V0__OAI21_4",
         "GF180MCU_FD_SC_MCU9T5V0__OAI221_1",
         "GF180MCU_FD_SC_MCU9T5V0__OAI22_1",
-        "GF180MCU_FD_SC_MCU9T5V0__OAI22_2",
         "GF180MCU_FD_SC_MCU9T5V0__OAI31_1",
         "GF180MCU_FD_SC_MCU9T5V0__OAI31_2",
         "GF180MCU_FD_SC_MCU9T5V0__OAI31_4",
@@ -116,13 +127,14 @@
         "GF180MCU_FD_SC_MCU9T5V0__XOR2_1",
         "GF180MCU_FD_SC_MCU9T5V0__XOR2_2"
       ],
-      "master_count": 79,
+      "master_count": 77,
       "corroborated": true,
       "reason": null
     },
-    "instance_count": 4788,
+    "instance_count": 4816,
     "expected_nets": null,
     "unchecked_expected_pins": [],
+    "excluded_pins": [],
     "findings": [],
     "finding_count": 0
   },
@@ -134,17 +146,19 @@
     "findings": [],
     "finding_count": 0
   },
-  "mismatch_count": 1,
+  "device_parameter_coverage": [],
+  "mismatch_count": 2,
   "error_count": 0,
   "category_counts": {
-    "topology.power_only_pruned": 1
+    "topology.power_only_pruned": 1,
+    "topology.top_level_pins_anchored": 1
   },
   "category_error_counts": {},
   "counts": {
     "nets": {
-      "layout": 1468,
-      "reference": 1454,
-      "matched": 1923
+      "layout": 1469,
+      "reference": 1448,
+      "matched": 1903
     },
     "devices": {
       "layout": 0,
@@ -154,31 +168,44 @@
     "pins": {
       "layout": 111,
       "reference": 109,
-      "matched": 578
+      "matched": 564
     }
   },
   "device_classes": null,
   "environment": {
     "engine": "klayout",
     "engine_version": "0.30.10",
-    "layout_sha256": "0a17953d23a8eaa824056d0dfeb86a82ce9fa449f590c0e4fd2079333aec416d",
-    "reference_sha256": "78f626f23b7f72c8585be6236e1d56046ab2954f3041b01533e4f0024d230ec4",
+    "netgen_binary": null,
+    "layout_sha256": "c2628ee974023309f1099737b3876d3f8b1633645c8bf056c5cc2e6896005548",
+    "reference_sha256": "b14039c4100a1db5e85b1f9f98c255c2dd44febf0298512944d4d8cd49219ed4",
     "extracted_netlist": null
   },
   "provenance": {
-    "klt_version": "0.6.0",
+    "klt_version": "0.9.1",
+    "klt_git_commit": "4d0d29be4fd991f499d59e783a908082d5e24c56",
+    "klt_reinstall_spec": "klayout-tools==0.9.1",
     "klayout_version": "0.30.10",
     "pdk": {
       "name": "gf180mcuA",
       "source": "search root: ~/.ciel",
-      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
     },
     "deck": null,
     "input": {
-      "content_hash": "sha256:0a17953d23a8eaa824056d0dfeb86a82ce9fa449f590c0e4fd2079333aec416d",
+      "content_hash": "sha256:c2628ee974023309f1099737b3876d3f8b1633645c8bf056c5cc2e6896005548",
       "role": "netlist"
     },
-    "klayout_version_mismatch": false
+    "klayout_version_mismatch": true,
+    "pin_order_sources": [
+      {
+        "library": "gf180mcu_fd_sc_mcu9t5v0",
+        "path": "~/.ciel/gf180mcuA/libs.ref/gf180mcu_fd_sc_mcu9t5v0/spice/gf180mcu_fd_sc_mcu9t5v0.spice",
+        "cells": 229
+      }
+    ]
   },
   "mismatches": [
     {
@@ -193,21 +220,47 @@
       "circuit": null,
       "instance": null,
       "subcircuit": null
+    },
+    {
+      "category": "topology.top_level_pins_anchored",
+      "severity": "warning",
+      "description": "109 top-level pin name(s) declared on both sides were anchored by name before comparing (options.anchor_top_level_pins): each one's layout net is asserted to match the reference net of the same-named pin, which the comparer's own topology-only net pairing does not otherwise require. Without it, two boundary nets with identical topology (e.g. two bits of a black-box macro's bus) are interchangeable and a swap between them compares clean -- see docs/cli/lvs.md, \"Top-level pin anchoring\"",
+      "side": "both",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "pins": [
+          "CLK",
+          "HT_ALARM",
+          "RAW_BIT",
+          "RAW_VALID",
+          "REG_ADDR[0]",
+          "REG_ADDR[1]",
+          "REG_RDATA[0]",
+          "REG_RDATA[10]",
+          "REG_RDATA[11]",
+          "REG_RDATA[12]",
+          "REG_RDATA[13]",
+          "REG_RDATA[14]",
+          "REG_RDATA[15]",
+          "REG_RDATA[16]",
+          "REG_RDATA[17]",
+          "REG_RDATA[18]",
+          "REG_RDATA[19]",
+          "REG_RDATA[1]",
+          "REG_RDATA[20]",
+          "REG_RDATA[21]"
+        ],
+        "pin_count": 109,
+        "pins_truncated": true
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
     }
   ],
   "net_correspondence": [
-    {
-      "layout": "VDD",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
-    {
-      "layout": "VDD",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
     {
       "layout": "VDD",
       "reference": null,
@@ -1145,18 +1198,6 @@
       "heuristic": true
     },
     {
-      "layout": "VSS",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
-    {
-      "layout": "VSS",
-      "reference": null,
-      "pin": true,
-      "heuristic": true
-    },
-    {
       "layout": "ZN",
       "reference": null,
       "pin": true,
@@ -1181,30 +1222,6 @@
       "heuristic": false
     },
     {
-      "layout": "ZN",
-      "reference": null,
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "ZN",
-      "reference": null,
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A1",
-      "reference": "A1",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A1",
-      "reference": "A1",
-      "pin": true,
-      "heuristic": false
-    },
-    {
       "layout": "A1",
       "reference": "A1",
       "pin": true,
@@ -1885,30 +1902,6 @@
     {
       "layout": "A2",
       "reference": "A2",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A2",
-      "reference": "A2",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A2",
-      "reference": "A2",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A3",
-      "reference": "A3",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "A3",
-      "reference": "A3",
       "pin": true,
       "heuristic": false
     },
@@ -2269,18 +2262,6 @@
     {
       "layout": "B1",
       "reference": "B1",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "B1",
-      "reference": "B1",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "B2",
-      "reference": "B2",
       "pin": true,
       "heuristic": false
     },
@@ -2533,6 +2514,12 @@
     {
       "layout": "CLKNET_LEAF_22_CLK",
       "reference": "CLKNET_LEAF_22_CLK",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "CLKNET_LEAF_23_CLK",
+      "reference": "CLKNET_LEAF_23_CLK",
       "pin": false,
       "heuristic": false
     },
@@ -2959,6 +2946,18 @@
     {
       "layout": "NET34",
       "reference": "NET34",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "NET35",
+      "reference": "NET35",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "NET36",
+      "reference": "NET36",
       "pin": false,
       "heuristic": false
     },
@@ -3731,12 +3730,6 @@
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET38",
-      "reference": "U_CONDITIONER/NET38",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_CONDITIONER/NET40",
       "reference": "U_CONDITIONER/NET40",
       "pin": false,
@@ -3749,20 +3742,26 @@
       "heuristic": false
     },
     {
-      "layout": "U_CONDITIONER/NET42",
-      "reference": "U_CONDITIONER/NET42",
+      "layout": "U_CONDITIONER/NET43",
+      "reference": "U_CONDITIONER/NET43",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_CONDITIONER/NET44",
+      "reference": "U_CONDITIONER/NET44",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_CONDITIONER/NET45",
+      "reference": "U_CONDITIONER/NET45",
       "pin": false,
       "heuristic": false
     },
     {
       "layout": "U_CONDITIONER/NET56",
       "reference": "U_CONDITIONER/NET56",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_CONDITIONER/NET62",
-      "reference": "U_CONDITIONER/NET62",
       "pin": false,
       "heuristic": false
     },
@@ -5123,26 +5122,26 @@
       "heuristic": false
     },
     {
-      "layout": "U_HEALTH_TEST/NET43",
-      "reference": "U_HEALTH_TEST/NET43",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_HEALTH_TEST/NET45",
-      "reference": "U_HEALTH_TEST/NET45",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_HEALTH_TEST/NET46",
-      "reference": "U_HEALTH_TEST/NET46",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_HEALTH_TEST/NET47",
       "reference": "U_HEALTH_TEST/NET47",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_HEALTH_TEST/NET48",
+      "reference": "U_HEALTH_TEST/NET48",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_HEALTH_TEST/NET49",
+      "reference": "U_HEALTH_TEST/NET49",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_HEALTH_TEST/NET55",
+      "reference": "U_HEALTH_TEST/NET55",
       "pin": false,
       "heuristic": false
     },
@@ -6113,6 +6112,12 @@
       "heuristic": false
     },
     {
+      "layout": "U_HEALTH_TEST/_144_",
+      "reference": "U_HEALTH_TEST/_144_",
+      "pin": false,
+      "heuristic": false
+    },
+    {
       "layout": "U_HEALTH_TEST/_145_",
       "reference": "U_HEALTH_TEST/_145_",
       "pin": false,
@@ -6157,12 +6162,6 @@
     {
       "layout": "U_HEALTH_TEST/_152_",
       "reference": "U_HEALTH_TEST/_152_",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_HEALTH_TEST/_153_",
-      "reference": "U_HEALTH_TEST/_153_",
       "pin": false,
       "heuristic": false
     },
@@ -6875,6 +6874,12 @@
       "heuristic": false
     },
     {
+      "layout": "U_INTERFACE/COND_READY",
+      "reference": "U_INTERFACE/COND_READY",
+      "pin": false,
+      "heuristic": false
+    },
+    {
       "layout": "U_INTERFACE/CTRL_EN",
       "reference": "U_INTERFACE/CTRL_EN",
       "pin": false,
@@ -6935,20 +6940,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET35",
-      "reference": "U_INTERFACE/NET35",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_INTERFACE/NET36",
-      "reference": "U_INTERFACE/NET36",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_INTERFACE/NET37",
       "reference": "U_INTERFACE/NET37",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_INTERFACE/NET38",
+      "reference": "U_INTERFACE/NET38",
       "pin": false,
       "heuristic": false
     },
@@ -6959,20 +6958,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET44",
-      "reference": "U_INTERFACE/NET44",
+      "layout": "U_INTERFACE/NET42",
+      "reference": "U_INTERFACE/NET42",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET48",
-      "reference": "U_INTERFACE/NET48",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_INTERFACE/NET49",
-      "reference": "U_INTERFACE/NET49",
+      "layout": "U_INTERFACE/NET46",
+      "reference": "U_INTERFACE/NET46",
       "pin": false,
       "heuristic": false
     },
@@ -7037,14 +7030,14 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET63",
-      "reference": "U_INTERFACE/NET63",
+      "layout": "U_INTERFACE/NET62",
+      "reference": "U_INTERFACE/NET62",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/NET64",
-      "reference": "U_INTERFACE/NET64",
+      "layout": "U_INTERFACE/NET63",
+      "reference": "U_INTERFACE/NET63",
       "pin": false,
       "heuristic": false
     },
@@ -7705,12 +7698,6 @@
     {
       "layout": "U_INTERFACE/STATE[0]",
       "reference": "U_INTERFACE/STATE[0]",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "U_INTERFACE/STATE[2]",
-      "reference": "U_INTERFACE/STATE[2]",
       "pin": false,
       "heuristic": false
     },
@@ -9587,12 +9574,6 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/_0341_",
-      "reference": "U_INTERFACE/_0341_",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_INTERFACE/_0342_",
       "reference": "U_INTERFACE/_0342_",
       "pin": false,
@@ -9647,8 +9628,8 @@
       "heuristic": false
     },
     {
-      "layout": "U_INTERFACE/_0352_",
-      "reference": "U_INTERFACE/_0352_",
+      "layout": "U_INTERFACE/_0351_",
+      "reference": "U_INTERFACE/_0351_",
       "pin": false,
       "heuristic": false
     },
@@ -9679,6 +9660,12 @@
     {
       "layout": "U_INTERFACE/_0357_",
       "reference": "U_INTERFACE/_0357_",
+      "pin": false,
+      "heuristic": false
+    },
+    {
+      "layout": "U_INTERFACE/_0358_",
+      "reference": "U_INTERFACE/_0358_",
       "pin": false,
       "heuristic": false
     },
@@ -10679,12 +10666,6 @@
       "heuristic": false
     },
     {
-      "layout": "U_RING_LIVENESS/NET55",
-      "reference": "U_RING_LIVENESS/NET55",
-      "pin": false,
-      "heuristic": false
-    },
-    {
       "layout": "U_RING_LIVENESS/RING_LAST_BIT[0]",
       "reference": "U_RING_LIVENESS/RING_LAST_BIT[0]",
       "pin": false,
@@ -11405,8 +11386,14 @@
       "heuristic": false
     },
     {
-      "layout": "ZN",
-      "reference": "ZN",
+      "layout": "Z",
+      "reference": "Z",
+      "pin": true,
+      "heuristic": false
+    },
+    {
+      "layout": "Z",
+      "reference": "Z",
       "pin": true,
       "heuristic": false
     },
@@ -11675,62 +11662,20 @@
       "heuristic": false
     },
     {
-      "layout": "ZN",
-      "reference": "ZN",
-      "pin": true,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$4644",
-      "reference": "__NC_CLKLOAD12_ZN__",
+      "layout": "\\$2125",
+      "reference": "__NC_CLKLOAD0_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$4294",
-      "reference": "__NC_CLKLOAD13_Z__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$2893",
-      "reference": "__NC_CLKLOAD14_ZN__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$2955",
-      "reference": "__NC_CLKLOAD15_Z__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$1936",
-      "reference": "__NC_CLKLOAD16_ZN__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$2230",
+      "layout": "\\$2345",
       "reference": "__NC_CLKLOAD17_ZN__",
       "pin": false,
       "heuristic": false
     },
     {
-      "layout": "\\$1145",
-      "reference": "__NC_CLKLOAD20_ZN__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$2938",
-      "reference": "__NC_CLKLOAD2_ZN__",
-      "pin": false,
-      "heuristic": false
-    },
-    {
-      "layout": "\\$3312",
-      "reference": "__NC_CLKLOAD3_ZN__",
+      "layout": "\\$819",
+      "reference": "__NC_CLKLOAD9_ZN__",
       "pin": false,
       "heuristic": false
     }
@@ -11855,9 +11800,9 @@
       "vss"
     ],
     "top_pin_count": 111,
-    "instance_count": 1423,
-    "distinct_cell_types": 79,
-    "physical_only_instance_count": 3365,
+    "instance_count": 1424,
+    "distinct_cell_types": 77,
+    "physical_only_instance_count": 3392,
     "physical_only_cell_types": [
       "gf180mcu_fd_sc_mcu9t5v0__endcap",
       "gf180mcu_fd_sc_mcu9t5v0__fill_1",

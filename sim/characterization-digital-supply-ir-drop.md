@@ -171,99 +171,99 @@ prices the cuts of one id as n parallel cuts at their centroid.
   "records": [
    {
     "corner": "ff_125C_3v60/rc-max",
-    "record": "2026-11-09-digital-sta-power-12",
-    "sha256": "efa092fc819b38b3246f65f16ed36e41aa408277fae9b4378aa2d2381b740dba"
+    "record": "2026-11-13-digital-sta-power-12",
+    "sha256": "ef834e747c5f37c94560be864343f612f7782334bee18cf393ed681c0f2ae52c"
    },
    {
     "corner": "ff_125C_3v60/rc-min",
-    "record": "2026-11-09-digital-sta-power-10",
-    "sha256": "0e467e40f8c0e217a905239fee0f094e826a518734a305ce26ed620c6fefbad3"
+    "record": "2026-11-13-digital-sta-power-10",
+    "sha256": "27030c06df93b006354d9a39da36b05eca525fe00ff6653cc0132f7b2cd3d055"
    },
    {
     "corner": "ff_125C_3v60/rc-nom",
-    "record": "2026-11-09-digital-sta-power-11",
-    "sha256": "9ffe22c76e8f45c0af0cd8a36d66e51e4f95035971e66bd89c42d6cd8711830f"
+    "record": "2026-11-13-digital-sta-power-11",
+    "sha256": "85795e4f818fb8ba0fedfb99f3744071c5df4376758dc8859bb2e87a2e4e7c5b"
    },
    {
     "corner": "ff_n40C_3v60/rc-max",
-    "record": "2026-11-09-digital-sta-power-15",
-    "sha256": "d07126ec4c15dc118d7cfc15e7e0e14fdf9dda67f145b389b4e16012e0d71ca4"
+    "record": "2026-11-13-digital-sta-power-15",
+    "sha256": "d2159a3feb41a24917aed18a1bfbde38f76be93ef45e67b1e188e871000b9728"
    },
    {
     "corner": "ff_n40C_3v60/rc-min",
-    "record": "2026-11-09-digital-sta-power-13",
-    "sha256": "4f1ebdce2737dff432422db37ced0bb9e44c84c2a9a58a3eda28ae38cd79d688"
+    "record": "2026-11-13-digital-sta-power-13",
+    "sha256": "73765575705712ab64415cc9746d47ff9551591100bb5950ab47a0433e51b3c5"
    },
    {
     "corner": "ff_n40C_3v60/rc-nom",
-    "record": "2026-11-09-digital-sta-power-14",
-    "sha256": "c573feb76b821db171ae6cd41de1cfa924bbc003f8745ce52b94884f3fad2a7f"
+    "record": "2026-11-13-digital-sta-power-14",
+    "sha256": "52636bf05976a5118f1471d21ecbd7834ecfcdd9dc0398b0bce64406e35aaa22"
    },
    {
     "corner": "ss_125C_3v00/rc-max",
-    "record": "2026-11-09-digital-sta-power-03",
-    "sha256": "f539d580cb351bacc026b1e27a1598a042242bc0b3cafe99de202fff35c461a4"
+    "record": "2026-11-13-digital-sta-power-03",
+    "sha256": "26fddedfa19970e277dce57ae1a84d435ba7a111a8e0161a6b3279e58963ccd9"
    },
    {
     "corner": "ss_125C_3v00/rc-min",
-    "record": "2026-11-09-digital-sta-power-01",
-    "sha256": "5f32dfb5e0ac2d06e766f433228ec123ac8260c5ea35581bd19809b9f2b71d9f"
+    "record": "2026-11-13-digital-sta-power-01",
+    "sha256": "61570688cb6ece59b6771e24714d6d53c9ea96bca23292a29005e455200a8c80"
    },
    {
     "corner": "ss_125C_3v00/rc-nom",
-    "record": "2026-11-09-digital-sta-power-02",
-    "sha256": "682fc4f4393fd5165aaf89b5c3e113cd3189568a4fda39cb8b02a629597d5d38"
+    "record": "2026-11-13-digital-sta-power-02",
+    "sha256": "0aecd237595163f2aa7cb9759d74e56f1219d9a88d6f2e9f2eb0aff5d622c983"
    },
    {
     "corner": "ss_n40C_3v00/rc-max",
-    "record": "2026-11-09-digital-sta-power-06",
-    "sha256": "b3050f79b04c959e3859adc0debc313f8a86f44bf8290cd96f24d56104d0aba1"
+    "record": "2026-11-13-digital-sta-power-06",
+    "sha256": "f19c374ba3549a0982aaef3e089fac0cda10d2894a8029d5fca4d8c6909f979e"
    },
    {
     "corner": "ss_n40C_3v00/rc-min",
-    "record": "2026-11-09-digital-sta-power-04",
-    "sha256": "84b39cf17bc48bf7657f06c67b8db62fe0d01a40f4e98c34c6b40152346d2901"
+    "record": "2026-11-13-digital-sta-power-04",
+    "sha256": "e5bb1e4625bd97a1c7e3bf0a19fb1438c74d267081574bfdd76a732c2f8bb41c"
    },
    {
     "corner": "ss_n40C_3v00/rc-nom",
-    "record": "2026-11-09-digital-sta-power-05",
-    "sha256": "acacae3e1a7ea10eb35798b433606508745d83eef45d1ec35d3c40569ed5d7b5"
+    "record": "2026-11-13-digital-sta-power-05",
+    "sha256": "4a2ea2545e81154224d6ed5b9de79e421a8425b787aff43af3f382f1d4eeb3cd"
    },
    {
     "corner": "tt_025C_3v30/rc-max",
-    "record": "2026-11-09-digital-sta-power-09",
-    "sha256": "b14ae85db965bad3d5e66081977fba3afdad1cb0d20160baad4bb95540369b1a"
+    "record": "2026-11-13-digital-sta-power-09",
+    "sha256": "f22cbb8c356d7ca4817c9b2a02cfc49435bd99500a0a85be27f208ed8ffab47b"
    },
    {
     "corner": "tt_025C_3v30/rc-min",
-    "record": "2026-11-09-digital-sta-power-07",
-    "sha256": "cf3cb0a0ba913d802a8aa41dff553291a8ab99b190eccc8f422481559fd6df1e"
+    "record": "2026-11-13-digital-sta-power-07",
+    "sha256": "7e13fe56c010d4f8116461a8156230833c6cbc897ca8410e7fbb5df9fb1167f9"
    },
    {
     "corner": "tt_025C_3v30/rc-nom",
-    "record": "2026-11-09-digital-sta-power-08",
-    "sha256": "efcd6f1dd4dc10591926a52eedc8e9a5434b2e2218d83ae6f543a2d193690771"
+    "record": "2026-11-13-digital-sta-power-08",
+    "sha256": "423917d7ea88356d6e0fdb3f797de40ef587656cda30f7f7288e0b9a4622441f"
    }
   ]
  },
  "geometry": {
   "layout/digital/trng_top.def": {
-   "git_blob_sha": "87b3dedca82354ea1c6b17e7e2867c806f9625f5"
+   "git_blob_sha": "89e8f60a83222b44213d3c89a059db389405b475"
   },
   "layout/floorplan/reports/area.json": {
-   "sha256": "70949c8e523db4f9a853fc2a27a399701e1d5a6d14062269d0d2237d35dcf6de"
+   "sha256": "ce595d39ddbe154a66d704c1253c78882a89f51917028ec93b1d3bfd320524c8"
   },
   "layout/floorplan/reports/compose.json": {
-   "sha256": "9dd97d6ea0a26a65b5519bd236770e7aa8ad46f7fabad40ab2a579a3a758dd85"
+   "sha256": "0a245017499223852498cdd6b1d31f4f1f5cc24d5ba7b6df6b7e6cb26c90e553"
   },
   "layout/floorplan/reports/interregion.json": {
-   "sha256": "c3346ad9296624833514caf87841325a14855ea51e2c69ddf1cde39209d206b1"
+   "sha256": "0895fc227155b66342207ff0d9548e2b341cebcf749c01aa1c578cd80c7ba37d"
   },
   "layout/floorplan/trng_floorplan.gds": {
-   "sha256": "f2f080704ac245bb55534f474f8bf586c50a4ff054930f502215f9233cead025"
+   "sha256": "faa782a8ec4f8c17c04cb2f32cf2bf19c7ec89cddcc1bb1ca29da8c71a991ff3"
   },
   "wiring_plan(vddd, vss) shapes+routes": {
-   "sha256": "dd6ca55ad02576bb30887230023a2ecb987eea87ba242b753eab0b2fad7a773a"
+   "sha256": "f09b5218335bf2ee8c8a95660f61e7b388e94a33c7645a4cef01324d3e4984e5"
   }
  },
  "resistance": {
@@ -316,10 +316,10 @@ prices the cuts of one id as n parallel cuts at their centroid.
 
 | net | resistance variant | external feed (ohm) | internal, uniform (ohm) | internal, allocation-free bound (ohm) | rails | Metal4 / Metal5 straps | DEF via arrays | nodes |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| `vddd` | nominal | 9.641 | 1.051 | 7.309 | 37 | 8 / 4 | 920 | 1255 |
-| `vddd` | high | 14.819 | 1.426 | 9.688 | 37 | 8 / 4 | 920 | 1255 |
-| `vss` | nominal | 7.617 | 1.439 | 7.303 | 38 | 8 / 4 | 944 | 1293 |
-| `vss` | high | 12.479 | 1.871 | 9.661 | 38 | 8 / 4 | 944 | 1293 |
+| `vddd` | nominal | 9.590 | 1.036 | 7.294 | 37 | 8 / 4 | 920 | 1255 |
+| `vddd` | high | 14.759 | 1.409 | 9.670 | 37 | 8 / 4 | 920 | 1255 |
+| `vss` | nominal | 7.565 | 1.425 | 7.176 | 38 | 8 / 4 | 944 | 1293 |
+| `vss` | high | 12.419 | 1.854 | 9.514 | 38 | 8 / 4 | 944 | 1293 |
 
 External feed, element by element, chip pin first (nominal / high, ohm):
 
@@ -330,15 +330,15 @@ External feed, element by element, chip pin first (nominal / high, ohm):
 | `vddd` | metal3 wiring-plan rect, 150.18 um x 2.00 um | 6.758 | 7.809 |
 | `vddd` | via3 array x16 | 0.281 | 0.938 |
 | `vddd` | via4 array x16 | 0.281 | 0.938 |
-| `vddd` | metal5 wiring-plan rect, 22.09 um x 4.48 um | 0.296 | 0.345 |
+| `vddd` | metal5 wiring-plan rect, 18.23 um x 4.48 um | 0.244 | 0.285 |
 | `vss` | metal4 wiring-plan rect, 3.00 um x 0.30 um | 0.900 | 1.040 |
 | `vss` | via3 array x4 | 1.125 | 3.750 |
 | `vss` | metal3 wiring-plan rect, 106.08 um x 2.00 um | 4.774 | 5.516 |
 | `vss` | via3 array x16 | 0.281 | 0.938 |
 | `vss` | via4 array x16 | 0.281 | 0.938 |
-| `vss` | metal5 wiring-plan rect, 19.09 um x 4.48 um | 0.256 | 0.298 |
+| `vss` | metal5 wiring-plan rect, 15.23 um x 4.48 um | 0.204 | 0.238 |
 
-Worst points (composed frame, um): `vddd` uniform at [146.51, 418.2], bound at [146.51, 418.2]; `vss` uniform at [146.51, 413.16], bound at [521.71, 423.24].
+Worst points (composed frame, um): `vddd` uniform at [147.99, 418.2], bound at [147.99, 418.2]; `vss` uniform at [147.99, 413.16], bound at [522.07, 423.24].
 
 Analog return's own offset at the `digital` dock on the shared `vss` trunk: nominal active 0.146 mV, nominal idle 0.000 mV, high active 0.168 mV, high idle 0.000 mV.
 
@@ -348,25 +348,25 @@ Estimate per corner -- nominal resistance, uniform allocation, derated to the co
 
 | corner | I digital (uA) | vddd ext | vddd int | vss ext | vss int | vss analog share | local collapse | shift at analog taps |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| ff_125C_3v60/rc-max | 94.264 | 1.272 | 0.139 | 1.005 | 0.190 | 0.204 | 2.810 | 0.119 |
-| ff_125C_3v60/rc-min | 91.793 | 1.239 | 0.135 | 0.979 | 0.185 | 0.204 | 2.742 | 0.116 |
-| ff_125C_3v60/rc-nom | 92.900 | 1.254 | 0.137 | 0.991 | 0.187 | 0.204 | 2.772 | 0.117 |
-| ff_n40C_3v60/rc-max | 86.229 | 0.831 | 0.091 | 0.657 | 0.124 | 0.146 | 1.849 | 0.078 |
-| ff_n40C_3v60/rc-min | 83.905 | 0.809 | 0.088 | 0.639 | 0.121 | 0.146 | 1.803 | 0.076 |
-| ff_n40C_3v60/rc-nom | 84.944 | 0.819 | 0.089 | 0.647 | 0.122 | 0.146 | 1.823 | 0.076 |
-| ss_125C_3v00/rc-max | 71.360 | 0.963 | 0.105 | 0.761 | 0.144 | 0.204 | 2.177 | 0.090 |
-| ss_125C_3v00/rc-min | 69.645 | 0.940 | 0.102 | 0.743 | 0.140 | 0.204 | 2.129 | 0.088 |
-| ss_125C_3v00/rc-nom | 70.414 | 0.950 | 0.104 | 0.751 | 0.142 | 0.204 | 2.151 | 0.089 |
-| ss_n40C_3v00/rc-max | 66.684 | 0.643 | 0.070 | 0.508 | 0.096 | 0.146 | 1.463 | 0.060 |
-| ss_n40C_3v00/rc-min | 65.052 | 0.627 | 0.068 | 0.495 | 0.094 | 0.146 | 1.430 | 0.059 |
-| ss_n40C_3v00/rc-nom | 65.784 | 0.634 | 0.069 | 0.501 | 0.095 | 0.146 | 1.445 | 0.059 |
-| tt_025C_3v30/rc-max | 77.254 | 0.745 | 0.081 | 0.588 | 0.111 | 0.146 | 1.671 | 0.070 |
-| tt_025C_3v30/rc-min | 75.282 | 0.726 | 0.079 | 0.573 | 0.108 | 0.146 | 1.632 | 0.068 |
-| tt_025C_3v30/rc-nom | 76.166 | 0.734 | 0.080 | 0.580 | 0.110 | 0.146 | 1.650 | 0.069 |
+| ff_125C_3v60/rc-max | 93.921 | 1.261 | 0.136 | 0.995 | 0.187 | 0.204 | 2.783 | 0.118 |
+| ff_125C_3v60/rc-min | 91.377 | 1.227 | 0.133 | 0.968 | 0.182 | 0.204 | 2.713 | 0.115 |
+| ff_125C_3v60/rc-nom | 92.517 | 1.242 | 0.134 | 0.980 | 0.185 | 0.204 | 2.745 | 0.117 |
+| ff_n40C_3v60/rc-max | 86.000 | 0.825 | 0.089 | 0.651 | 0.123 | 0.146 | 1.833 | 0.077 |
+| ff_n40C_3v60/rc-min | 83.616 | 0.802 | 0.087 | 0.633 | 0.119 | 0.146 | 1.786 | 0.075 |
+| ff_n40C_3v60/rc-nom | 84.685 | 0.812 | 0.088 | 0.641 | 0.121 | 0.146 | 1.807 | 0.076 |
+| ss_125C_3v00/rc-max | 71.270 | 0.957 | 0.103 | 0.755 | 0.142 | 0.204 | 2.161 | 0.090 |
+| ss_125C_3v00/rc-min | 69.509 | 0.933 | 0.101 | 0.736 | 0.139 | 0.204 | 2.113 | 0.088 |
+| ss_125C_3v00/rc-nom | 70.299 | 0.944 | 0.102 | 0.745 | 0.140 | 0.204 | 2.135 | 0.089 |
+| ss_n40C_3v00/rc-max | 66.650 | 0.639 | 0.069 | 0.504 | 0.095 | 0.146 | 1.453 | 0.060 |
+| ss_n40C_3v00/rc-min | 64.969 | 0.623 | 0.067 | 0.491 | 0.093 | 0.146 | 1.420 | 0.058 |
+| ss_n40C_3v00/rc-nom | 65.724 | 0.630 | 0.068 | 0.497 | 0.094 | 0.146 | 1.435 | 0.059 |
+| tt_025C_3v30/rc-max | 77.115 | 0.740 | 0.080 | 0.583 | 0.110 | 0.146 | 1.658 | 0.069 |
+| tt_025C_3v30/rc-min | 75.087 | 0.720 | 0.078 | 0.568 | 0.107 | 0.146 | 1.619 | 0.068 |
+| tt_025C_3v30/rc-nom | 75.998 | 0.729 | 0.079 | 0.575 | 0.108 | 0.146 | 1.636 | 0.068 |
 
-**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 94.264 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 1.956 + internal 1.278, vss external 1.647 + internal 1.275 + analog share 0.236 = **6.392 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 0.137 mV.
+**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 93.921 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 1.941 + internal 1.272, vss external 1.633 + internal 1.251 + analog share 0.236 = **6.332 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 0.137 mV.
 
-Worst per-corner estimate: 2.810 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.9636-3.6286 V. Against the 33.000 mV yardstick: **not material**.
+Worst per-corner estimate: 2.783 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.9637-3.6286 V. Against the 33.000 mV yardstick: **not material**.
 
 ### Scenario: idle, leakage only
 
@@ -374,15 +374,15 @@ Estimate per corner -- nominal resistance, uniform allocation, derated to the co
 
 | corner | I digital (uA) | vddd ext | vddd int | vss ext | vss int | vss analog share | local collapse | shift at analog taps |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| ff_125C_3v60/rc-max | 2.116 | 0.029 | 0.003 | 0.023 | 0.004 | 0.000 | 0.059 | 0.003 |
-| ff_125C_3v60/rc-min | 2.116 | 0.029 | 0.003 | 0.023 | 0.004 | 0.000 | 0.059 | 0.003 |
-| ff_125C_3v60/rc-nom | 2.116 | 0.029 | 0.003 | 0.023 | 0.004 | 0.000 | 0.059 | 0.003 |
+| ff_125C_3v60/rc-max | 2.105 | 0.028 | 0.003 | 0.022 | 0.004 | 0.000 | 0.058 | 0.003 |
+| ff_125C_3v60/rc-min | 2.105 | 0.028 | 0.003 | 0.022 | 0.004 | 0.000 | 0.058 | 0.003 |
+| ff_125C_3v60/rc-nom | 2.105 | 0.028 | 0.003 | 0.022 | 0.004 | 0.000 | 0.058 | 0.003 |
 | ff_n40C_3v60/rc-max | 0.070 | 0.001 | 0.000 | 0.001 | 0.000 | 0.000 | 0.001 | 0.000 |
 | ff_n40C_3v60/rc-min | 0.070 | 0.001 | 0.000 | 0.001 | 0.000 | 0.000 | 0.001 | 0.000 |
 | ff_n40C_3v60/rc-nom | 0.070 | 0.001 | 0.000 | 0.001 | 0.000 | 0.000 | 0.001 | 0.000 |
-| ss_125C_3v00/rc-max | 0.713 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
-| ss_125C_3v00/rc-min | 0.713 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
-| ss_125C_3v00/rc-nom | 0.713 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
+| ss_125C_3v00/rc-max | 0.716 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
+| ss_125C_3v00/rc-min | 0.716 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
+| ss_125C_3v00/rc-nom | 0.716 | 0.010 | 0.001 | 0.008 | 0.001 | 0.000 | 0.020 | 0.001 |
 | ss_n40C_3v00/rc-max | 0.056 | 0.001 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 | 0.000 |
 | ss_n40C_3v00/rc-min | 0.056 | 0.001 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 | 0.000 |
 | ss_n40C_3v00/rc-nom | 0.056 | 0.001 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 | 0.000 |
@@ -390,9 +390,9 @@ Estimate per corner -- nominal resistance, uniform allocation, derated to the co
 | tt_025C_3v30/rc-min | 0.065 | 0.001 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 | 0.000 |
 | tt_025C_3v30/rc-nom | 0.065 | 0.001 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 | 0.000 |
 
-**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 2.116 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 0.044 + internal 0.029, vss external 0.037 + internal 0.029 + analog share 0.000 = **0.138 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 0.003 mV.
+**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 2.105 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 0.044 + internal 0.029, vss external 0.037 + internal 0.028 + analog share 0.000 = **0.137 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 0.003 mV.
 
-Worst per-corner estimate: 0.059 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.9699-3.6300 V. Against the 33.000 mV yardstick: **not material**.
+Worst per-corner estimate: 0.058 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.9699-3.6300 V. Against the 33.000 mV yardstick: **not material**.
 
 ### Scenario: stress, 20 MHz (place-and-route clock constraint; informational)
 
@@ -400,29 +400,29 @@ Estimate per corner -- nominal resistance, uniform allocation, derated to the co
 
 | corner | I digital (uA) | vddd ext | vddd int | vss ext | vss int | vss analog share | local collapse | shift at analog taps |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| ff_125C_3v60/rc-max | 1845.090 | 24.905 | 2.714 | 19.675 | 3.717 | 0.204 | 51.215 | 2.325 |
-| ff_125C_3v60/rc-min | 1795.669 | 24.238 | 2.641 | 19.148 | 3.618 | 0.204 | 49.849 | 2.263 |
-| ff_125C_3v60/rc-nom | 1817.795 | 24.536 | 2.674 | 19.384 | 3.662 | 0.204 | 50.461 | 2.290 |
-| ff_n40C_3v60/rc-max | 1723.263 | 16.615 | 1.810 | 13.126 | 2.480 | 0.146 | 34.176 | 1.551 |
-| ff_n40C_3v60/rc-min | 1676.783 | 16.167 | 1.762 | 12.772 | 2.413 | 0.146 | 33.259 | 1.509 |
-| ff_n40C_3v60/rc-nom | 1697.561 | 16.367 | 1.783 | 12.930 | 2.443 | 0.146 | 33.669 | 1.528 |
-| ss_125C_3v00/rc-max | 1413.644 | 19.081 | 2.079 | 15.074 | 2.848 | 0.204 | 39.287 | 1.781 |
-| ss_125C_3v00/rc-min | 1379.346 | 18.618 | 2.029 | 14.708 | 2.779 | 0.204 | 38.339 | 1.738 |
-| ss_125C_3v00/rc-nom | 1394.722 | 18.826 | 2.051 | 14.872 | 2.810 | 0.204 | 38.764 | 1.757 |
-| ss_n40C_3v00/rc-max | 1332.611 | 12.848 | 1.400 | 10.150 | 1.918 | 0.146 | 26.462 | 1.199 |
-| ss_n40C_3v00/rc-min | 1299.974 | 12.534 | 1.366 | 9.902 | 1.871 | 0.146 | 25.817 | 1.170 |
-| ss_n40C_3v00/rc-nom | 1314.613 | 12.675 | 1.381 | 10.013 | 1.892 | 0.146 | 26.106 | 1.183 |
-| tt_025C_3v30/rc-max | 1543.852 | 14.885 | 1.622 | 11.759 | 2.222 | 0.146 | 30.633 | 1.389 |
-| tt_025C_3v30/rc-min | 1504.407 | 14.505 | 1.581 | 11.459 | 2.165 | 0.146 | 29.855 | 1.354 |
-| tt_025C_3v30/rc-nom | 1522.085 | 14.675 | 1.599 | 11.593 | 2.190 | 0.146 | 30.204 | 1.370 |
+| ff_125C_3v60/rc-max | 1838.416 | 24.682 | 2.667 | 19.471 | 3.667 | 0.204 | 50.691 | 2.316 |
+| ff_125C_3v60/rc-min | 1787.547 | 23.999 | 2.593 | 18.932 | 3.566 | 0.204 | 49.294 | 2.252 |
+| ff_125C_3v60/rc-nom | 1810.330 | 24.305 | 2.627 | 19.173 | 3.611 | 0.204 | 49.920 | 2.281 |
+| ff_n40C_3v60/rc-max | 1718.686 | 16.482 | 1.781 | 13.002 | 2.449 | 0.146 | 33.859 | 1.547 |
+| ff_n40C_3v60/rc-min | 1670.996 | 16.024 | 1.732 | 12.641 | 2.381 | 0.146 | 32.924 | 1.504 |
+| ff_n40C_3v60/rc-nom | 1692.378 | 16.229 | 1.754 | 12.803 | 2.411 | 0.146 | 33.343 | 1.523 |
+| ss_125C_3v00/rc-max | 1411.798 | 18.954 | 2.048 | 14.953 | 2.816 | 0.204 | 38.975 | 1.779 |
+| ss_125C_3v00/rc-min | 1376.575 | 18.481 | 1.997 | 14.579 | 2.746 | 0.204 | 38.008 | 1.734 |
+| ss_125C_3v00/rc-nom | 1392.383 | 18.694 | 2.020 | 14.747 | 2.777 | 0.204 | 38.442 | 1.754 |
+| ss_n40C_3v00/rc-max | 1331.926 | 12.773 | 1.380 | 10.076 | 1.898 | 0.146 | 26.273 | 1.199 |
+| ss_n40C_3v00/rc-min | 1298.314 | 12.451 | 1.345 | 9.822 | 1.850 | 0.146 | 25.613 | 1.168 |
+| ss_n40C_3v00/rc-nom | 1313.407 | 12.595 | 1.361 | 9.936 | 1.871 | 0.146 | 25.909 | 1.182 |
+| tt_025C_3v30/rc-max | 1541.062 | 14.778 | 1.597 | 11.658 | 2.196 | 0.146 | 30.375 | 1.387 |
+| tt_025C_3v30/rc-min | 1500.515 | 14.390 | 1.555 | 11.352 | 2.138 | 0.146 | 29.580 | 1.350 |
+| tt_025C_3v30/rc-nom | 1518.716 | 14.564 | 1.574 | 11.489 | 2.164 | 0.146 | 29.937 | 1.367 |
 
-**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 1845.090 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 38.280 + internal 25.024, vss external 32.236 + internal 24.955 + analog share 0.236 = **120.731 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 2.686 mV.
+**Cross-corner upper bound** (a bound, not a corner: high-resistance variant x 1.40 temperature derating x the family's largest current, 1838.416 uA at ff_125C_3v60/rc-max, allocation-free): vddd external 37.987 + internal 24.889, vss external 31.964 + internal 24.486 + analog share 0.236 = **119.562 mV** local supply collapse; shift the digital load adds at the analog `vss` taps <= 2.677 mV.
 
-Worst per-corner estimate: 51.215 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.8493-3.6042 V. Against the 33.000 mV yardstick: **MATERIAL (informational: not a ratified operating rate)**.
+Worst per-corner estimate: 50.691 mV at ff_125C_3v60/rc-max. Effective local supply over the 2.97-3.63 V pin envelope: 2.8504-3.6044 V. Against the 33.000 mV yardstick: **MATERIAL (informational: not a ratified operating rate)**.
 
 ### The shared `vss` return, analog side
 
-`vss_trunk_ir_drop.py`'s own conservative bound (analog load only, nominal sheet): 23.305 mV. Adding the digital load's active-rate shift bound at the analog taps (0.137 mV): 23.443 mV against 33.000 mV.
+`vss_trunk_ir_drop.py`'s own conservative bound (analog load only, nominal sheet): 23.136 mV. Adding the digital load's active-rate shift bound at the analog taps (0.137 mV): 23.272 mV against 33.000 mV.
 
 <!-- digital-supply-ir-drop:end -->
 
