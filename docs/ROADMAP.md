@@ -64,17 +64,17 @@ Startable today, one pull request each.
   retained 15 µm MV limit, and `layout/digital/reports/drc.json` reports no `comp.tap_distance.*`
   violation. `8939b542` is a starting point (14.857 µm at a 30 µm pitch, per PR #720). Base it on
   the outcome of #866 / PR #878, which regenerates the same digital chain.
-- **Restore the 6.analog citation** (no issue yet). Done when the manifest cites
+- **Restore the 6.analog citation (#885).** Done when the manifest cites
   `signoff/evidence/mc-yield/klt_yield_response.json` as `6.analog`, the regenerated tier report
   reads the reason `signoff/README.md` states, and `python3 signoff/check.py` exits 0.
-- **Bring the body-tie prose in line with the reports** (no issue yet). Done when
+- **Bring the body-tie prose in line with the reports (#886).** Done when
   `layout/README.md`, `layout/analog/README.md` and the item 4 and item 7 rows of
   `signoff/README.md` state what the committed LVS and PEX reports state.
-- **Audit the two conflict merges for other lost content** (no issue yet). Done when a committed
+- **Audit the conflict merges for other lost content (#887).** Done when a committed
   note lists every path where `a395d6e1` or `d870871b` kept one parent's version while the other
   parent had changed it, each marked intended or lost.
 - **Correct the DRC-clean statements (#879).** Done when the three sentences match `drc.json` and
-  `floorplan.drc.json` and `check.py` passes on the re-hashed README. Not yet triaged.
+  `floorplan.drc.json` and `check.py` passes on the re-hashed README.
 
 In flight, not to be duplicated: #866 (nightly red at the synthesis staleness guard, PR #878),
 #865 and #868 (refactors, PRs #873 and #875 approved), #520 (import convention, PR #581 held).
