@@ -475,7 +475,7 @@ requires of the claimant rather than of the tool.
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | **`met`** | **`met`** | Cites `evidence/t1-item-9-{analog,digital}.json`, bound to `evidence/inventory-9-{analog,digital}.json`: every file of the `sim/tb/` testbench directories, split by partition (a directory with an ngspice `.sp` deck is analog; the nine behavioural/RTL/gate-level ones listed in `signoff/inventories.py`'s `DIGITAL_TESTBENCHES` are digital), each with its documented cold-start invocation, and the PDK revision `pdk-nightly.yml` pins (open_pdks `f6eeac7d…`, variant `gf180mcuD`), which `check.py` requires `README.md` to state too. A new `sim/tb/` directory that is neither fails the audit. No testbench is run here. |
 | 10 Repo hygiene | **`met`** | **`met`** | Cites `evidence/t1-item-10-{analog,digital}.json`, bound to `evidence/inventory-10-{analog,digital}.json`: `README.md`, `LICENSE` (Apache-2.0), the ratified spec table, `sim/README.md` and `.github/workflows/ci.yml`, with assertions about each (the README's sections, that it documents how that partition is reproduced, that the workflow runs the named commands). **CI status is not captured**: the workflow file is hashed and its commands named, but whether its last run was green is a property of a run, not of a file, and is not part of what this `met` asserts. |
-| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | **`met`** | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. Since [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the LVS envelope compares against `trng_top.pnr.v` as `reference.form: "gate-level-verilog"`, so `power_connectivity.status` is a computed `"match"` (4788 instances, zero findings) and the row reads `met`. See "Item 11's `ties[]`" below. |
+| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | **`met`** | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. Since [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the LVS envelope compares against `trng_top.pnr.v` as `reference.form: "gate-level-verilog"`, so `power_connectivity.status` is a computed `"match"` (4816 instances, zero findings) and the row reads `met`. See "Item 11's `ties[]`" below. |
 
 ### Item 6: install route and statistical rows
 
@@ -647,7 +647,7 @@ purpose:
 |---|---|---|
 | **Grader** — parses the T1 checklist and renders the verdict | `0.8.0` (released) | `signoff/check.py`'s `KLT_GRADER_PIN`; CI's `signoff` job |
 | **Producer, analog** — `layout/reports/*` | `0.6.0` (released; tag `v0.6.0`, commit `c622e8addb36`), with `klayout==0.30.10` | `.github/workflows/pdk-nightly.yml`, per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md) as amended; `layout/reports/environment.json`'s `klt_origin` |
-| **Producer, digital** — `layout/digital/reports/*` | `0.6.0` for DRC/LVS; `0.5.0+g32f69f811682` for the place-and-route that built the stream | recorded in each envelope's own `provenance.klt_version` |
+| **Producer, digital** — `layout/digital/reports/*` | `0.9.1` (released) for place-and-route, DRC, LVS and ERC since #866 re-ran the chain under the toolchain `.github/workflows/pdk-nightly.yml` installs; `0.6.0` for DRC/LVS and `0.5.0+g32f69f811682` for the place-and-route before it | recorded in each envelope's own `provenance.klt_version` |
 
 The grader pin is deliberately independent of any producer pin — it grades
 committed JSON and needs no PDK, so a third party reproduces the verdict with
@@ -780,13 +780,19 @@ change verdict: DRC clean, LVS match, ERC clean.
   `klt`'s own stated reason in the envelope, and is **not**
   `"verified"`:
   - `power_connectivity` is `match`: `power_pins: ["VDD", "VSS"]` (derived
-    from the 83 instantiated masters' own library pin data),
-    `instance_count: 4788`, `finding_count: 0`. This is what T1 item 11's
+    from the instantiated masters' own library pin data),
+    `instance_count: 4816`, `finding_count: 0` (4788 before #866 re-ran the
+    chain under the nightly's toolchain). This is what T1 item 11's
     Digital column requires, and it moved that row to `met` (see "Item 11's
-    `ties[]`" above). The warning is `topology.power_only_pruned`: the nine
+    `ties[]`" above). One warning is `topology.power_only_pruned`: the nine
     tap/endcap/filler masters the Verilog never carries are removed from the
     layout side before comparing, so their rails are covered by the power
-    check rather than the signal compare. Before #662 the reference was a
+    check rather than the signal compare. Under klt 0.9.1 a second warning,
+    `topology.top_level_pins_anchored`, reports that the 109 top-level pin
+    names declared on both sides were anchored by name before comparing
+    (`options.anchor_top_level_pins`) — a stricter compare than topology-only
+    net pairing, not a defect. Both are `severity: warning` and the envelope's
+    own `status` stays `match`. Before #662 the reference was a
     `plain-element` SPICE transcription and this field read `"unchecked"`.
   - `body_verification` is `unchecked` because the request uses the
     pre-extracted `layout.netlist` form with no `layout.deck`, so nothing
@@ -900,7 +906,8 @@ draws:
   boolean, connected to `Metal1`'s `VSS` rail.
 
 The re-run (`layout/digital/reports/erc-supply.json`, `provenance.klt_version:
-"0.6.0"`) reports both ties in `erc_coverage.checked` (not
+"0.9.1"` since #866; `"0.6.0"` when this was written) reports both ties in
+`erc_coverage.checked` (not
 `erc_coverage.skipped`, so neither is degenerate), `erc.missing_tie`
 computed and zero, `erc_status: "clean"`, and `erc_findings: []` — the same
 zero `erc.unconnected_net`/`erc.supply_short` on `VDD`/`VSS` the spec
@@ -961,11 +968,14 @@ reasons:
   now requests `reference.form: "gate-level-verilog"` with
   `trng_top.pnr.v` as the reference and `gf180mcu_fd_sc_mcu9t5v0` as the
   library, so `klt lvs` computes the check itself: `power_connectivity.status:
-  "match"`, `power_pins: ["VDD", "VSS"]`, `instance_count: 4788`,
-  `finding_count: 0`. The compare's top-level `status` stays `"match"`; its one
-  `mismatch_count` entry is the `topology.power_only_pruned` warning for the
+  "match"`, `power_pins: ["VDD", "VSS"]`, `instance_count: 4816`,
+  `finding_count: 0`. The compare's top-level `status` stays `"match"`; its
+  `mismatch_count` entries are both warnings — the
+  `topology.power_only_pruned` one for the
   nine tap/endcap/filler masters, which the gate-level form removes from the
-  layout side because the Verilog never carries them. This is a verdict
+  layout side because the Verilog never carries them, and, under klt 0.9.1,
+  `topology.top_level_pins_anchored` for the by-name anchoring of the 109
+  top-level pins. This is a verdict
   *computed* by `klt` on the committed layout, not an edit to the report. The
   `4.digital` pin did not move: it is the extracted netlist's hash
   (`sha256:d661d025…`), and the extraction is unchanged; the regenerated
