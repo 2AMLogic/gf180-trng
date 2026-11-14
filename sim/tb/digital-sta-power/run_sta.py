@@ -1654,21 +1654,28 @@ def klt_sta_request(pdk, spef_files: dict[str, str]) -> dict:
 
 
 def record_slacks(records_dir: Path) -> dict[tuple[str, str], tuple[float, float]]:
-    """(liberty, interconnect) -> (worst setup, worst hold) in ns, from the
-    newest committed `digital-sta-power` record of each of the fifteen points."""
-    found: dict[tuple[str, str], tuple[str, float, float]] = {}
-    for path in sorted(records_dir.glob("*-digital-sta-power-[0-9][0-9].md")):
-        text = path.read_text()
-        lib = re.search(r"^\s+liberty: \S+__(\S+)$", text, re.M)
-        rc = re.search(r"^\s+interconnect: (\w+) ", text, re.M)
-        setup = re.search(r"^- `worst_setup_slack_ns`: (\S+)$", text, re.M)
-        hold = re.search(r"^- `worst_hold_slack_ns`: (\S+)$", text, re.M)
-        if not (lib and rc and setup and hold):
-            continue
-        key = (lib.group(1), rc.group(1))
-        if key not in found or path.name > found[key][0]:
-            found[key] = (path.name, float(setup.group(1)), float(hold.group(1)))
-    return {k: (v[1], v[2]) for k, v in found.items()}
+    """(liberty, interconnect) -> (worst setup, worst hold) in ns, for the
+    fifteen points of the *current-layout* `digital-sta-power` family.
+
+    The selection is not done here. `sim/tools/digital_corner_characterization`
+    is the one reader of this family: its `load` goes through
+    `current_records` (so `status: superseded` is honoured), requires every
+    record to carry a `netlist.sha` equal to the committed routed DEF, and
+    raises naming the offending stems rather than substituting an earlier DUT
+    revision's slacks into the comparison below. Imported inside this
+    `klt sta`-only path so `run_sta`'s record-*minting* path, which must run
+    before any of those records exist, gains no dependency on `sim/tools`.
+    """
+    sys.path.insert(0, str(SIM_DIR / "tools"))
+    import digital_corner_characterization as dcc  # noqa: PLC0415
+
+    try:
+        return {
+            (r.liberty, r.rc): (r.v("worst_setup_slack_ns"), r.v("worst_hold_slack_ns"))
+            for r in dcc.load(records_dir)
+        }
+    except dcc.RecordError as exc:
+        raise StaError(str(exc)) from exc
 
 
 def compare_envelope(response: dict, records: dict) -> list[dict]:
