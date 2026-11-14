@@ -351,18 +351,6 @@ def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
     return finite, non_finite
 
 
-def parse_measurements(text: str) -> dict[str, float]:
-    """Finite measurements printed by ngspice; non-finite values are dropped
-    (see :func:`parse_non_finite_measurements`)."""
-    return _scan_measurements(text)[0]
-
-
-def parse_non_finite_measurements(text: str) -> dict[str, str]:
-    """Measurements printed with a non-finite value, mapped to the raw text
-    ngspice printed for them (e.g. ``{"vout": "1e999"}``)."""
-    return _scan_measurements(text)[1]
-
-
 def _timeout_result(
     point: PvtPoint,
     seed: int | None,
