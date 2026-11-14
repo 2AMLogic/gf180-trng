@@ -30,6 +30,20 @@ and already import `_run_klt`/`klt_version`/`normalise_gds`/`resolve_pdk`
 from this module, so it moved in alongside them rather than staying a
 fourth independent copy.
 
+`_openroad_on_path()`/`_ensure_openroad_reachable()` (issue #892) are the
+OpenROAD provisioning fallback: prepend a `$PATH` entry holding an
+`openroad` shim pointed at `layout/openroad_docker.sh` when no native
+`openroad` is installed but `docker` is. `layout/digital/build.py` and
+`layout/digital/gen_sdf.py` each defined a byte-identical copy -- and only
+`build.py`'s carried the contract docstring, so the PATH-mutation contract
+was documented for one caller and not the other -- while both already
+import from this module, so the pair moved in alongside the rest.
+`layout/digital/gen_sdf.py` still does not `import build` (a bare `build`
+module name risks shadowing one of the many sibling
+`layout/{cells,blocks,rings}/<name>/build.py` scripts, see that file's
+"Corner and clock" note); importing `layout._klt` is not that import, so
+that decision stands unchanged.
+
 Not a package member of anything else under `layout/` -- it computes its own
 `REPO_ROOT` from its own location (`layout/_klt.py` sits directly under
 `layout/`, so one `.parent` up is the repo root) rather than importing a
@@ -40,9 +54,11 @@ exactly as before.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import struct
 import subprocess
+import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -253,3 +269,31 @@ def normalise_gds(raw: bytes) -> bytes:
                 out[index] = 0
         offset += length
     return bytes(out)
+
+
+def _openroad_on_path() -> bool:
+    return shutil.which("openroad") is not None
+
+
+def _ensure_openroad_reachable() -> list[str]:
+    """Return human-readable reasons `openroad` cannot be reached, or `[]`.
+
+    Mutates `os.environ["PATH"]` (this process only, inherited by every
+    subprocess it spawns -- including `klt`'s own `openroad` subprocess
+    call) to prepend a directory containing an `openroad` shim pointed at
+    `layout/openroad_docker.sh`, if and only if no native `openroad` is
+    already on `$PATH` and `docker` is available. Never overrides a native
+    `openroad` -- a real local install always wins.
+    """
+    if _openroad_on_path():
+        return []
+    if shutil.which("docker") is None:
+        return [
+            "openroad is not on PATH and docker is not on PATH either -- "
+            "see layout/digital/README.md's 'OpenROAD' section"
+        ]
+    shim_dir = Path(tempfile.mkdtemp(prefix="klt-openroad-shim-"))
+    shim = shim_dir / "openroad"
+    shim.symlink_to(REPO_ROOT / "layout" / "openroad_docker.sh")
+    os.environ["PATH"] = f"{shim_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+    return []

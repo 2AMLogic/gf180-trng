@@ -108,11 +108,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import shutil
 import sys
-import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -134,6 +132,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import (  # noqa: E402
     FlowError,
+    _ensure_openroad_reachable,
     _run_klt,
     klt_origin,
     klt_version,
@@ -370,34 +369,6 @@ EXIT_FLOW_FAILURE = 4
 
 class PrError(RuntimeError):
     """A place-and-route run could not even be attempted."""
-
-
-def _openroad_on_path() -> bool:
-    return shutil.which("openroad") is not None
-
-
-def _ensure_openroad_reachable() -> list[str]:
-    """Return human-readable reasons `openroad` cannot be reached, or `[]`.
-
-    Mutates `os.environ["PATH"]` (this process only, inherited by every
-    subprocess it spawns -- including `klt`'s own `openroad` subprocess
-    call) to prepend a directory containing an `openroad` shim pointed at
-    `layout/openroad_docker.sh`, if and only if no native `openroad` is
-    already on `$PATH` and `docker` is available. Never overrides a native
-    `openroad` -- a real local install always wins.
-    """
-    if _openroad_on_path():
-        return []
-    if shutil.which("docker") is None:
-        return [
-            "openroad is not on PATH and docker is not on PATH either -- "
-            "see layout/digital/README.md's 'OpenROAD' section"
-        ]
-    shim_dir = Path(tempfile.mkdtemp(prefix="klt-openroad-shim-"))
-    shim = shim_dir / "openroad"
-    shim.symlink_to(REPO_ROOT / "layout" / "openroad_docker.sh")
-    os.environ["PATH"] = f"{shim_dir}{os.pathsep}{os.environ.get('PATH', '')}"
-    return []
 
 
 def _check_environment() -> list[str]:
