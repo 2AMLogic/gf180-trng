@@ -22,9 +22,14 @@ routed result does and does not establish (it has a DEF, an as-built
 netlist, a committed GDS, and — as of #171 — a real power delivery network:
 `vddd`/`vss` rails and straps in the DEF's own `SPECIALNETS` section, 265
 tapcells, 208 endcaps and 5663 fillers, with a committed check that the grid
-carries none of the entropy source's supplies. `klt drc` over it is **clean**
-(the 149 `nwell.space.1` violations #170 recorded were all the missing
-fillers), and `klt lvs` against the as-built netlist is down from 7694
+carries none of the entropy source's supplies. `klt drc` over it was
+**clean** as of [#171][gf171] (the 149 `nwell.space.1` violations #170
+recorded were all the missing fillers), but is **not** clean under the deck
+pinned now: `digital/reports/drc.json` reads `status: violations`,
+`violation_count: 2769`, all of them the
+`comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class tracked by
+[#449][gf449]/[#717][gf717] and not exempted. `klt lvs` against the
+as-built netlist is down from 7694
 mismatches to 9 — still `mismatch`, now traced to one CTS clock-load dummy
 cell rather than to absent power. It does not yet have a placement inside
 `floorplan/`'s own guarded `digital` region). `floorplan/` is the entropy source's
@@ -289,7 +294,7 @@ part of what this block ships, whatever else exists for it in `design/`.
 | `xor2`, `sampler_dff` | yes | [`cells/xor2/`](cells/xor2/), [`cells/sampler_dff/`](cells/sampler_dff/) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_buf` (×2, `xb1`/`xb2`) | yes | [`cells/ro_buf/`](cells/ro_buf/) (#144) | [`blocks/combiner_sampler/`](blocks/combiner_sampler/) ([#151][gf151], and see below), placed in `floorplan/`'s `combiner_sampler` region (#135) |
 | `ro_meta_tap`, `meta_arb`, `meta_inv`, `meta_nand2` | **no** | **none — out of scope**, see below | n/a |
-| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed, power-delivered, DRC-clean DEF/GDS + as-built netlist in [`digital/`](digital/) ([#171][gf171]); placed in `floorplan/`'s `digital` region ([#209][gf209]/[#210][gf210]) |
+| the digital section (2505 synthesized standard cells) | yes | none, and none is wanted — a P&R problem, not a hand-drawn-cell one ([#111][gf111]): [`digital/`](digital/) routes it | routed, power-delivered DEF/GDS + as-built netlist in [`digital/`](digital/) ([#171][gf171]); placed in `floorplan/`'s `digital` region ([#209][gf209]/[#210][gf210]). **Not DRC-clean**: `digital/reports/drc.json` reads `status: violations`, `violation_count: 2769`, all of them the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class tracked by [#449][gf449]/[#717][gf717], not exempted |
 
 ### `ro_buf`: drawn, assembled, and placed
 
@@ -657,6 +662,8 @@ gf180mcu DRC deck accepts).
 [gf111]: https://github.com/2AMLogic/gf180-trng/issues/111
 [gf151]: https://github.com/2AMLogic/gf180-trng/issues/151
 [gf171]: https://github.com/2AMLogic/gf180-trng/issues/171
+[gf449]: https://github.com/2AMLogic/gf180-trng/issues/449
+[gf717]: https://github.com/2AMLogic/gf180-trng/issues/717
 [gf170]: https://github.com/2AMLogic/gf180-trng/issues/170
 [gf209]: https://github.com/2AMLogic/gf180-trng/issues/209
 [gf210]: https://github.com/2AMLogic/gf180-trng/issues/210
