@@ -15,23 +15,25 @@ budget, and what does not").
 1. **The uniform 0.25 transitions/net/cycle assumption is conservative for
    every workload tried**, by a margin that is almost corner-independent:
    at the same netlist, SPEF and 1 MHz rate, the largest observed steady-state
-   total is **0.716 to 0.724** of the uniform figure across all 15 corners
+   total is **0.745 to 0.753** of the uniform figure across all 15 corners
    (table below). At the digital-binding corner of the rollup
-   (`ff_125C_3v60`, `max` interconnect) that is 251.3 uW observed against
-   348.2 uW uniform.
+   (`ff_125C_3v60`, `max` interconnect) that is 254.71 uW observed against
+   339.35 uW uniform.
 2. **The workloads differ from each other by far less than either differs from
    the uniform model.** Steady-state conditioned streaming, raw streaming and a
    fully stalled consumer are within about 1 % of each other. Alarm-gated
    operation (conditioned path gated, raw tap still running) is about 11 %
-   lower, and a **disabled block with a running clock still draws 0.60 of the
+   lower, and a **disabled block with a running clock still draws 0.622 of the
    uniform figure**: the clock tree and every flop's clock-pin internal energy
    are paid regardless of whether the block is doing anything. No claim is made
    that any of these five stimuli is a universal worst case.
 3. **Start-up and reset are cheaper than steady state**, not dearer, for the
-   streaming workloads (reset 0.59, start-up 0.67, steady 0.72 of uniform at the
-   binding corner): the conditioner and FIFOs are still gated or empty.
+   streaming workloads: at the binding corner conditioned streaming runs
+   reset 0.607, start-up 0.698, steady 0.747 of uniform, and raw streaming
+   reset 0.607, start-up 0.700, steady 0.751. The conditioner and FIFOs are
+   still gated or empty.
 4. **Annotation is complete.** Every window of every workload of every corner
-   binds all 5371 pins to VCD activity; no pin runs on a fallback activity, so
+   binds all 5143 pins to VCD activity; no pin runs on a fallback activity, so
    nothing in the table is an unannotated number presented as measured.
 5. **The budget verdict does not move.** See section 5.
 
@@ -47,15 +49,26 @@ the whole DUT hierarchy, and pins everything by hash.
 (a) re-runs the default flow's 1 MHz session (uniform activity) and (b) reads
 the same SPEF in a second OpenSTA session and, per (workload, window), runs
 `read_vcd -scope tb/dut -begin_time B -end_time E` followed by
-`report_activity_annotation` and `report_power`. One record per corner,
-`sim/records/2026-10-10-digital-sta-activity-{16..30}.md` (current). The
-first family, `-{01..15}`, was minted before issue #456 priced the top-edge
-legs of the six `digital`-facing nets into the interface load; the family was
+`report_activity_annotation` and `report_power`. One record per corner, under
+`sim/records/` with the `-digital-sta-activity-<nn>.md` slug.
+
+**No family is named here, on purpose.** The rule, not a pointer, is what
+holds: the newest *valid* record per corner is the one read, where valid means
+the record pins the committed `layout/digital/trng_top.def` and
+`layout/digital/trng_top.pnr.v` blobs. `--check` resolves that family itself
+and fails if this document's figures no longer match it, so there is no
+hand-maintained "current" annotation to go stale on the next re-capture — a
+pointer that did go stale, for two re-captures, before issue #883. The dated
+account of which re-run minted which family lives in
+[`characterization-digital-sta-area-power.md`](characterization-digital-sta-area-power.md)
+§0c/§0d and is not duplicated here.
+
+An earlier family of this slug was minted before issue #456 priced the
+top-edge legs of the six `digital`-facing nets into the interface load; it was
 re-captured and re-run so that its uniform baseline again equals the default
-flow's (`--check` compares them). The older records are unchanged, the newest
-valid record per corner is the one read, and the generated tables below follow
-the current family (they differ from the first family by at most 0.01 uW in
-the last printed digit).
+flow's (`--check` compares them). Every record ever minted is unchanged — the
+corpus is append-only evidence — and the superseded ones are simply not
+selected.
 
 | workload | what it is |
 |---|---|
@@ -104,6 +117,12 @@ One bring-up finding that shaped the capture: OpenSTA binds VCD activity to
 **pins** by hierarchical path. A dump of the DUT's nets alone annotated 109 of
 5371 pins (the top-level ports) and nothing else, which `validate_annotation`
 rejects; dumping the cell instances' hierarchy annotates all 5371.
+
+The `5371` in that finding, and the `unannotated=5371` in the transcript
+above, are quoted verbatim from those earlier runs on the DEF of the day. They
+are history, not a current count: the pin total for the netlist read today is
+whatever the generated coverage table in section 3 reports, and the two are
+not expected to agree.
 
 ## 3. Results
 
@@ -197,22 +216,22 @@ The ratified rollup (`python3 sim/tools/power_rollup.py`) is unchanged and still
   less than 0.25 transitions/net/cycle on average, not that the assumption is
   wrong for other stimuli.
 - **Clock-network power is not workload-dependent in this analysis.** The
-  clock group (73.7 uW at the binding corner) is identical in every row,
+  clock group (75.74 uW at the binding corner) is identical in every row,
   because OpenSTA derives clock-network activity from the propagated clock, not
   from the VCD; the VCD's `clk` toggle count is checked against the window
   length instead. This is also why a disabled block with a running clock
   retains most of the power.
 - **Leakage** is a separate column in every row and is state-dependent in the
   library (`when` conditions), so it moves by a few percent between workloads
-  (7.27 to 8.19 uW at the binding corner). It is **not** the stopped-clock idle
+  (7.051 to 7.977 uW at the binding corner). It is **not** the stopped-clock idle
   figure: that state was not simulated and its leakage depends on the flop
-  contents it holds. The default flow's leakage column (7.84 uW at the same
+  contents it holds. The default flow's leakage column (7.617 uW at the same
   corner) is the nearest like-for-like number.
 - **x/z handling.** FIFO memory flops have no reset port and hold x until
   written; the x events are counted per trace (about 0.2 % of events or fewer)
   and kept verbatim. How OpenSTA's reader treats a transition through x is that
   tool's behaviour and is not independently verified here.
-- **Coverage.** 5371 of 5371 pins annotated from the VCD in every window;
+- **Coverage.** 5143 of 5143 pins annotated from the VCD in every window;
   unannotated pins are counted per window in every record and, above 1 %,
   reject the corner.
 - Interconnect, IR drop, I/O timing and extraction caveats are those of the
@@ -221,13 +240,13 @@ The ratified rollup (`python3 sim/tools/power_rollup.py`) is unchanged and still
 ## 5. What changes in the budget, and what does not
 
 Nothing is changed. `python3 sim/tools/power_rollup.py` still prices the digital
-term at its ratified 348.2 uW (uniform activity, `ff_125C_3v60`/`max`) and
-reports the worst active corner at 758.2 uW, 151.6 % of the < 500 uW row. The
+term at its ratified 339.4 uW (uniform activity, `ff_125C_3v60`/`max`) and
+reports the worst active corner at 749.4 uW, 149.9 % of the < 500 uW row. The
 illustration at the end of section 3 shows what a substitution would do: the
-digital term would fall by 96.9 uW, taking that worst-corner total to about
-661 uW, still above the row (about 132 %). The verdict (the active-power row is
+digital term would fall by 84.6 uW, taking that worst-corner total to about
+664.8 uW, still above the row (about 133 %). The verdict (the active-power row is
 not met) is therefore the same under either digital term, which is why this is
-recorded as characterization. The 758.2 uW (and the 661 uW illustration) are a lower bound on the
+recorded as characterization. The 749.4 uW (and the 664.8 uW illustration) are a lower bound on the
 analog side: the ledger now carries the shipped liveness samplers as a required
 term (#463), measured at 1 of 27 corners so far and a gap at this one, so the
 analog term here excludes them. That is independent of the digital choice and
@@ -250,7 +269,26 @@ does not describe the committed DEF and `pnr.v`, if the records disagree about
 trace identities, if a workload no longer generates the stimulus a record was
 captured from, if any record's uniform baseline differs from the default flow's
 `digital-sta-power` 1 MHz total at the same corner, if any window lost pins
-to fallback, or if this document's generated block is stale. Traces
+to fallback, or if this document's generated block is stale.
+
+Two of those failure modes are about this document's **prose**, and are newer
+than the rest (issue #883). `--check` also fails:
+
+- if any figure sections 0, 4 and 5 restate from the generated block — or the
+  ratio bound restated once in
+  [`characterization-digital-supply-ir-drop.md`](characterization-digital-supply-ir-drop.md)
+  — no longer matches what the records generate, naming each figure. The
+  expected text is built from the records, not written down in the tool, so a
+  re-capture moves it and the narrative has to be re-read rather than quietly
+  outdated. Figures are compared at the precision the sentence quotes: quoting
+  fewer digits than the generator prints is fine, inventing one is not;
+- if this document names a dated `YYYY-MM-DD-digital-sta-activity` family in
+  prose instead of stating the selection rule. Section 1 carried such a
+  pointer, annotated `(current)` while naming the oldest of three families,
+  for two re-captures — and nothing failed, because `--check` compared only
+  the text between the generated markers.
+
+Traces
 (16 to 22 MB each) are not committed; their sha256 and stimulus sha256 are in
 every record and regenerate byte-identically (the VCD `$date` header is
 normalised).

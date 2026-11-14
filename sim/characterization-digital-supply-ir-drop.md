@@ -101,7 +101,7 @@ prices the cuts of one id as n parallel cuts at their centroid.
   record's leakage current. *Stress* is the record's 20 MHz total. The
   measured workloads of [#453]
   ([`characterization-digital-activity-power.md`](characterization-digital-activity-power.md))
-  stay at or below 0.72x the uniform baseline at every corner, so the
+  stay at or below 0.753x the uniform baseline at every corner, so the
   uniform figure is the conservative one.
 - **Where the current is drawn** inside the grid is not known at cell
   resolution, so two allocations are reported, and neither is a per-cell
