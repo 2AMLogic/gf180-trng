@@ -20,11 +20,11 @@
     "clock_period_ns": 50.0,
     "propagated_clock": true,
     "input_transitions": {
-      "rst_n": 0.030587,
-      "raw_bit": 0.043251,
-      "raw_valid": 0.040725,
-      "ring_bit[0]": 0.033401,
-      "ring_bit[1]": 0.029814
+      "rst_n": 0.001838,
+      "raw_bit": 2e-06,
+      "raw_valid": 5.9e-05,
+      "ring_bit[0]": 0.000404,
+      "ring_bit[1]": 0.00156
     }
   }
 }

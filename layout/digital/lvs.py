@@ -655,6 +655,45 @@ def run_lvs() -> dict:
     )
 
 
+def _home_relative(path: str) -> str:
+    """`path` with the running user's home directory collapsed to `~`.
+
+    Returned unchanged when it is not under the home directory (including
+    every relative path), so this can only ever shorten a host-specific
+    prefix -- it never rewrites a repo-relative or already-anonymized value.
+    """
+    try:
+        home = Path.home()
+    except (RuntimeError, OSError):  # pragma: no cover - no home directory
+        return path
+    try:
+        return "~/" + str(Path(path).relative_to(home))
+    except ValueError:
+        return path
+
+
+def _anonymise_pin_order_sources(provenance):
+    """`provenance` with every `pin_order_sources[].path` made `~`-relative.
+
+    See `_committed_view`'s docstring for why. Shape-tolerant: a klt that
+    emits no `pin_order_sources`, or entries without a `path`, is returned
+    untouched.
+    """
+    if not isinstance(provenance, dict):
+        return provenance
+    sources = provenance.get("pin_order_sources")
+    if not isinstance(sources, list):
+        return provenance
+    restated = dict(provenance)
+    restated["pin_order_sources"] = [
+        {**s, "path": _home_relative(s["path"])}
+        if isinstance(s, dict) and isinstance(s.get("path"), str)
+        else s
+        for s in sources
+    ]
+    return restated
+
+
 def _committed_view(payload: dict, reference_summary: dict) -> dict:
     """The committed view of a `klt lvs` payload: the **whole envelope**,
     with the two netlist-path fields restated repo-root-relative and this
@@ -693,6 +732,20 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
     `environment.reference_sha256`, `provenance.input.content_hash`) are
     left exactly as `klt` wrote them.
 
+    **One more path field is anonymized: `provenance.pin_order_sources`.**
+    klt 0.9.x records which library SPICE file it read the gate-level
+    reference's pin order from, and writes that path **absolute** --
+    `/home/<user>/.ciel/gf180mcuA/libs.ref/.../gf180mcu_fd_sc_mcu9t5v0.spice`
+    -- while every neighbouring provenance path field is already anonymized
+    (`provenance.pdk.source` is `"search root: ~/.ciel"`). Committed
+    verbatim it fails this repo's own `npm run check:no-host-paths`, and it
+    names the machine rather than what was verified. A path under the
+    current user's home is restated `~`-relative, which is the form klt
+    itself uses next door; anything else is left exactly as klt wrote it.
+    The `library` and `cells` fields beside it, which say *what* was read,
+    are untouched. Filed upstream as a tool gap (CLAUDE.md's friction
+    protocol), 2AMLogic/klayout-tools.
+
     **`reference_generation` is additive, and is not `klt`'s.** The
     envelope's own top-level `reference` field is the reference netlist's
     path, so this script's record of *what that reference is* cannot share
@@ -709,6 +762,9 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
     restated = dict(payload)
     restated["layout"] = str(EXTRACTED_PATH.relative_to(REPO_ROOT))
     restated["reference"] = str(PNR_NETLIST_PATH.relative_to(REPO_ROOT))
+    restated["provenance"] = _anonymise_pin_order_sources(
+        restated.get("provenance")
+    )
     restated["reference_generation"] = {
         "path": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),
         "source": str(PNR_NETLIST_PATH.relative_to(REPO_ROOT)),

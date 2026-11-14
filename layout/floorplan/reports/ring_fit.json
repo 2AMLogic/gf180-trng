@@ -173,12 +173,12 @@
     "ring_bbox_um": {
       "x0": 0.0,
       "y0": 0.0,
-      "x1": 395.71500000000003,
-      "y1": 395.71500000000003
+      "x1": 394.24,
+      "y1": 394.24
     },
     "guard_inner_um": {
-      "w_um": 396.515,
-      "h_um": 396.515
+      "w_um": 395.04,
+      "h_um": 395.04
     },
     "ring_placement_clearance_um": 0.4,
     "fit_offset_um": {
@@ -187,18 +187,18 @@
     },
     "composed": {
       "status": "violations",
-      "violation_count": 2750,
+      "violation_count": 2721,
       "rule_counts": {
-        "comp.tap_distance.nwell.mv.1": 1441,
-        "comp.tap_distance.psub.mv.1": 1309
+        "comp.tap_distance.nwell.mv.1": 1432,
+        "comp.tap_distance.psub.mv.1": 1289
       }
     },
     "ring_standalone": {
       "status": "violations",
-      "violation_count": 2769,
+      "violation_count": 2737,
       "rule_counts": {
-        "comp.tap_distance.nwell.mv.1": 1441,
-        "comp.tap_distance.psub.mv.1": 1328
+        "comp.tap_distance.nwell.mv.1": 1432,
+        "comp.tap_distance.psub.mv.1": 1305
       }
     },
     "new_violation_rule_counts_from_fit": {},
@@ -209,9 +209,9 @@
       "category_counts": {},
       "counts": {
         "nets": {
-          "layout": 1468,
-          "reference": 1468,
-          "matched": 1953
+          "layout": 1469,
+          "reference": 1469,
+          "matched": 1940
         },
         "devices": {
           "layout": 0,
@@ -221,7 +221,7 @@
         "pins": {
           "layout": 111,
           "reference": 111,
-          "matched": 596
+          "matched": 582
         }
       }
     },

@@ -2,13 +2,22 @@
   "coverage": null,
   "engine": "icarus",
   "environment": {
-    "build_log": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/build_icarus.log",
+    "build_log": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:5d245f2acb33676ee5541ef22d37ea07425e9d30ffa1c65844d0f0dc446f0df8"
+    },
     "cocotb_version": "2.0.1",
     "engine": "icarus",
     "engine_version": "13.0",
+    "env": {},
     "initial_state": null,
     "random_seed": 1,
-    "results_xml": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/results_icarus.xml",
+    "results_xml": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:c3ca8ee98550e3033919c12d8eefa35c8165e21749cc6380013f723794546164"
+    },
     "sdf": {
       "annotated": true,
       "corner": "typ",
@@ -19,16 +28,21 @@
         }
       },
       "entries": "all",
-      "file": "/tmp/trng709/layout/digital/trng_top.sdf",
+      "file": "/tmp/trng866/layout/digital/trng_top.sdf",
       "partial": true
     },
     "source_defines": {},
-    "test_log": "/tmp/trng709/sim/.work/trng-top-post-route/gate/.klt/functional-verification/test_icarus.log"
+    "test_log": {
+      "path": null,
+      "scope": "external",
+      "sha256": "sha256:b1959247ef8f53c6af599269a20b470311bd3d70f75965796a34f8413bad6c99"
+    },
+    "tools": []
   },
   "failed_count": 0,
   "hdl_toplevel": "trng_top",
   "passed_count": 8,
-  "schema_version": 1,
+  "schema_version": 2,
   "skipped_count": 0,
   "status": "pass",
   "test_count": 8,
@@ -36,49 +50,49 @@
   "tests": [
     {
       "name": "smoke",
-      "real_time_s": 0.09857392311096191,
+      "real_time_s": 0.09374332427978516,
       "sim_time_ns": 695.0,
       "status": "passed"
     },
     {
       "name": "startup_and_regfile",
-      "real_time_s": 0.8055362701416016,
+      "real_time_s": 0.8236489295959473,
       "sim_time_ns": 53645.0,
       "status": "passed"
     },
     {
       "name": "conditioner_blocks",
-      "real_time_s": 1.2459914684295654,
+      "real_time_s": 1.2684402465820312,
       "sim_time_ns": 77745.0,
       "status": "passed"
     },
     {
       "name": "rct_stuck_output",
-      "real_time_s": 0.23228669166564941,
+      "real_time_s": 0.23569226264953613,
       "sim_time_ns": 16245.0,
       "status": "passed"
     },
     {
       "name": "ring1_stuck",
-      "real_time_s": 0.1785893440246582,
+      "real_time_s": 0.1883704662322998,
       "sim_time_ns": 12245.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk",
-      "real_time_s": 0.07555842399597168,
+      "real_time_s": 0.07678341865539551,
       "sim_time_ns": 4945.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_early_sample",
-      "real_time_s": 0.07587003707885742,
+      "real_time_s": 0.07614278793334961,
       "sim_time_ns": 4905.100000000006,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_settle_sweep",
-      "real_time_s": 0.7319660186767578,
+      "real_time_s": 0.7757987976074219,
       "sim_time_ns": 49549.0,
       "status": "passed"
     }
