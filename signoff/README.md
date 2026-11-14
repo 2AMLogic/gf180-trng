@@ -15,16 +15,22 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-<!-- current-t1-status:begin -->**Today: `tier: null`, T1 17 of 22 items met.**<!-- current-t1-status:end --> A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 17 of 22 items met.**
+Unmet: `3.digital`, `5.analog`, `6.analog`, `6.digital`, `11.analog`.<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
-22 rows. The eighteen met are item 1 (design sources), item 2 (layout), item 3
-(DRC), item 4 (LVS), item 7 (post-layout verification), item 8
-(characterization report), item 9 (testbenches shipped) and item 10 (repo
-hygiene) on **both** partitions, plus item 11 (power delivery)
-([#662](https://github.com/2AMLogic/gf180-trng/issues/662): see "Item 11's
-`ties[]`" below) and item 5 (corner verification,
-[#699](https://github.com/2AMLogic/gf180-trng/issues/699)) on the
-**digital** partition only. Item 5 digital's `met` is evidence-kind coverage
+22 rows. That block is the only composition statement in this file, and it is
+not hand-maintained: `check.py` holds its tier, count **and** unmet-row names
+to [`records/t1-tier-report.json`](records/t1-tier-report.json) on every run,
+so a row changing verdict moves the text even when the count does not. The
+row-by-row reading is the table under "Why each item reads the way it does";
+what follows here is why the rows that read `met` are narrower than their
+names.
+
+Item 11 digital's `met`
+([#662](https://github.com/2AMLogic/gf180-trng/issues/662)) is a computed
+power-connectivity match: see "Item 11's `ties[]`" below. Item 5 digital's
+`met` ([#699](https://github.com/2AMLogic/gf180-trng/issues/699)) is
+evidence-kind coverage
 (a `klt sta` envelope over fifteen corners plus a `klt
 functional-verification` envelope), **not** a statement that the block meets
 its ratified spec: the grader does not read the spec rows, and the area and
@@ -43,8 +49,8 @@ drawn taps, #705) — see "Item 7 analog" below before reading anything into it.
 [#313](https://github.com/2AMLogic/gf180-trng/issues/313): see "Item 8 is
 `met` on both partitions" below. An item-8 `met` means a current aggregate
 exists, not that the rows in it pass.
-That is the honest state of the block; the rest of this file is why each of
-the other four reads the way it does.
+That is the honest state of the block; the rest of this file is why every
+row — `met` and `unmet` alike — reads the way it does.
 
 Items 3 and 4 read `met` on the digital partition as of
 [#273](https://github.com/2AMLogic/gf180-trng/issues/273), which moved the
@@ -547,7 +553,7 @@ campaign's `sw_stat_mismatch=0` control shows the spread collapsing to zero,
 which is a different thing and is not declared as one. Neither is done here, and
 no limit or target was changed to get a different verdict.
 
-### Item 3 is `met` on both partitions — and here are each one's coverage gaps
+### Item 3's deck coverage gaps, each partition from its own citation
 
 `design-evidence-tiers.md` requires item 3's deck coverage gaps to be
 enumerated *in the claim*, and is explicit that this is claimant-enforced:
@@ -877,7 +883,7 @@ Item 8 is also the only T1 item a `generic` envelope may satisfy. Every other
 item rejects `"kind": "generic"` outright, so this hand-rolled wrapper cannot
 be pointed at items 3–7 to make their rows go green.
 
-### Item 11's `ties[]` is now declared and computed, and the item is still unmet
+### Item 11's `ties[]` is now declared and computed, and `11.analog` is still unmet
 
 `layout/digital/erc-supply-spec.json` previously declared no `ties[]` at
 all: klayout-tools#2169 made a declared tie collapse this routed

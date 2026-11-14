@@ -59,8 +59,11 @@ separable conditions, in order, so a red build says which one:
 
 Before the re-grade, the designated current-status blocks of README.md and
 signoff/README.md (fenced by `current-t1-status` marker comments) are compared
-with the committed record's tier, met count and item count (stdlib-only,
-always run, fails on mismatch or a missing/malformed block).
+with the committed record's tier, met count, item count and the names of its
+`unmet` T1 rows (stdlib-only, always run, fails on mismatch or a
+missing/malformed block). The row names are what make the block a unique name
+for the verdict: a count alone is a sum, so two rows changing in opposite
+directions would leave it unmoved.
 
 T1 items 1, 2, 9 and 10 have no `klt` verb behind them, so each of the eight
 (item, partition) citations is an artifact-anchored generic envelope
@@ -894,20 +897,71 @@ CURRENT_STATUS_BEGIN = "<!-- current-t1-status:begin -->"
 CURRENT_STATUS_END = "<!-- current-t1-status:end -->"
 _STATUS_TIER = re.compile(r"`tier:\s*(null|T\d+)`")
 _STATUS_COUNT = re.compile(r"T1\s+(\d+)\s+of\s+(\d+)\s+items\s+met")
+#: The unmet-row composition: the literal `none`, or a comma-separated list of
+#: backticked `<item>.<partition>` row names (a row the report grades without a
+#: partition is named by its item number alone).
+_STATUS_ROW_RE = r"`\d+(?:\.[a-z]+)?`"
+_STATUS_UNMET = re.compile(
+    rf"unmet:\s*(none|{_STATUS_ROW_RE}(?:\s*,\s*{_STATUS_ROW_RE})*)", re.IGNORECASE
+)
+_STATUS_ROW = re.compile(r"`(\d+(?:\.[a-z]+)?)`", re.IGNORECASE)
+
+
+def t1_unmet_rows(report: dict) -> list[str] | None:
+    """Names of every T1 row the report does not grade `met`, (item, partition)-sorted.
+
+    ``None`` means the report carries no readable ``items`` array, which is
+    itself a problem: a record that cannot name its own composition is exactly
+    the blind spot the composition clause exists to close.
+
+    Only ``tier == "T1"`` entries are rows. The record also carries one
+    summary entry per higher tier (T2/T3/T4) with ``id`` and ``partition``
+    null and ``status`` ``unmet``; counting those would invent rows that no
+    checklist has.
+    """
+    items = report.get("items")
+    if not isinstance(items, list):
+        return None
+    rows: list[tuple[int, str, str]] = []
+    for entry in items:
+        if not isinstance(entry, dict) or entry.get("tier") != "T1":
+            continue
+        if entry.get("status") == "met":
+            continue
+        ident, partition = entry.get("id"), entry.get("partition")
+        name = f"{ident}.{partition}" if partition else f"{ident}"
+        rows.append((ident if isinstance(ident, int) else -1, partition or "", name))
+    return [name for _, _, name in sorted(rows)]
+
+
+def format_unmet_rows(rows: list[str]) -> str:
+    """Render row names as the composition clause's block text."""
+    return ", ".join(f"`{name}`" for name in rows) if rows else "none"
 
 
 def current_status_problems(report: dict, docs: dict[str, str]) -> list[str]:
     """Compare designated current-status text with the committed report.
 
     ``docs`` maps a display name to document text. The expected numerator,
-    denominator and tier come from ``report`` (never hard-coded). A document
-    with no block, more than one block, or a block lacking a parseable tier or
-    count is a problem, as is any disagreement.
+    denominator, tier and unmet-row names come from ``report`` (never
+    hard-coded). A document with no block, more than one block, or a block
+    lacking a parseable tier, count or unmet clause is a problem, as is any
+    disagreement.
+
+    The unmet clause must list the rows in the canonical order
+    `format_unmet_rows` renders, so one graded state has exactly one valid
+    block text.
     """
     want_tier = report.get("tier")
     want_met = report.get("t1_met_count")
     want_total = report.get("t1_item_count")
+    want_unmet = t1_unmet_rows(report)
     problems: list[str] = []
+    if want_unmet is None:
+        problems.append(
+            "the report carries no readable items[] array, so no document's "
+            "unmet-row composition can be verified"
+        )
     for name, text in docs.items():
         begins = text.count(CURRENT_STATUS_BEGIN)
         ends = text.count(CURRENT_STATUS_END)
@@ -921,20 +975,30 @@ def current_status_problems(report: dict, docs: dict[str, str]) -> list[str]:
         block, _, _ = rest.partition(CURRENT_STATUS_END)
         tier_m = _STATUS_TIER.findall(block)
         count_m = _STATUS_COUNT.findall(block)
-        if len(tier_m) != 1 or len(count_m) != 1:
+        unmet_m = _STATUS_UNMET.findall(block)
+        if len(tier_m) != 1 or len(count_m) != 1 or len(unmet_m) != 1:
             problems.append(
                 f"{name}: current-status block must state one "
-                f"`tier: <null|Tn>` and one 'T1 N of M items met'"
+                f"`tier: <null|Tn>`, one 'T1 N of M items met' and one "
+                f"'unmet: <row names|none>'"
             )
             continue
         got_tier = None if tier_m[0] == "null" else tier_m[0]
         got_met, got_total = int(count_m[0][0]), int(count_m[0][1])
+        got_unmet = (
+            [] if unmet_m[0].lower() == "none" else _STATUS_ROW.findall(unmet_m[0])
+        )
         if got_tier != want_tier:
             problems.append(f"{name}: tier states {got_tier!r}, report says {want_tier!r}")
         if got_met != want_met:
             problems.append(f"{name}: states {got_met} items met, report says {want_met}")
         if got_total != want_total:
             problems.append(f"{name}: states {got_total} T1 items, report says {want_total}")
+        if want_unmet is not None and got_unmet != want_unmet:
+            problems.append(
+                f"{name}: states unmet rows {format_unmet_rows(got_unmet)}, "
+                f"report says {format_unmet_rows(want_unmet)}"
+            )
     return problems
 
 
