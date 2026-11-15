@@ -22,7 +22,6 @@ line so that "re-run the demonstration" means exactly one thing.
 
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 import time
@@ -38,7 +37,7 @@ sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "health_test"))
 
-from harness import report  # noqa: E402
+from harness import report, scenario_cli  # noqa: E402
 import rct_apt as ht  # noqa: E402
 import fault_injection as source_model  # noqa: E402
 
@@ -493,56 +492,44 @@ def write_record(result: dict, records_dir: Path, git: dict) -> Path:
     return report.finalize_record(records_dir, date, SLUG, render)
 
 
+def _print_result(result: dict) -> None:
+    print(f"   {result['why']}")
+    if result["kind"] == "no-alarm":
+        print(
+            f"   {result['n_bits']} bits, RCT failures={len(result['rct_events'])}, "
+            f"APT failures={len(result['apt_events'])}, no_alarm={result['no_alarm']}"
+        )
+    elif result["kind"] == "false-positive":
+        print(
+            f"   C_APT={result['c_apt']} at alpha={result['alpha']}, "
+            f"observed rate={result['observed_alarm_rate']:.6f}, "
+            f"tail@cutoff={result['tail_probability_at_cutoff']:.3e}"
+        )
+    elif result["kind"] == "onset-fault":
+        print(
+            f"   onset={result['onset']}, detection_latency={result['detection_latency']}, "
+            f"bound={result['latency_bound']}, within_bound={result['detected_within_bound']}"
+        )
+    else:
+        print(
+            f"   clean_pass={result['startup_passed_cleanly']}, "
+            f"failure_resets={result['startup_counter_was_reset_by_failure']}, "
+            f"restart_discards={result['restart_discarded_the_window']}, "
+            f"fresh_after_restart={result['fresh_window_passed_after_restart']}"
+        )
+
+
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--scenario",
-        action="append",
-        choices=sorted(SCENARIOS),
-        help="run only this scenario (repeatable); default is all of them",
+    return scenario_cli.run_scenarios(
+        argv,
+        description=__doc__,
+        scenarios=SCENARIOS,
+        run_scenario=run_scenario,
+        write_record=write_record,
+        print_result=_print_result,
+        repo_root=REPO_ROOT,
+        records_dir=SIM_DIR / "records",
     )
-    parser.add_argument(
-        "--no-write",
-        action="store_true",
-        help="print the results without minting evidence records",
-    )
-    args = parser.parse_args(argv)
-
-    names = args.scenario or list(SCENARIOS)
-    git = report.git_provenance(REPO_ROOT)
-    records_dir = SIM_DIR / "records"
-
-    for name in names:
-        result = run_scenario(name)
-        print(f"== {name} ==")
-        print(f"   {result['why']}")
-        if result["kind"] == "no-alarm":
-            print(
-                f"   {result['n_bits']} bits, RCT failures={len(result['rct_events'])}, "
-                f"APT failures={len(result['apt_events'])}, no_alarm={result['no_alarm']}"
-            )
-        elif result["kind"] == "false-positive":
-            print(
-                f"   C_APT={result['c_apt']} at alpha={result['alpha']}, "
-                f"observed rate={result['observed_alarm_rate']:.6f}, "
-                f"tail@cutoff={result['tail_probability_at_cutoff']:.3e}"
-            )
-        elif result["kind"] == "onset-fault":
-            print(
-                f"   onset={result['onset']}, detection_latency={result['detection_latency']}, "
-                f"bound={result['latency_bound']}, within_bound={result['detected_within_bound']}"
-            )
-        else:
-            print(
-                f"   clean_pass={result['startup_passed_cleanly']}, "
-                f"failure_resets={result['startup_counter_was_reset_by_failure']}, "
-                f"restart_discards={result['restart_discarded_the_window']}, "
-                f"fresh_after_restart={result['fresh_window_passed_after_restart']}"
-            )
-        if not args.no_write:
-            path = write_record(result, records_dir, git)
-            print(f"   record: {path.relative_to(REPO_ROOT)}")
-    return 0
 
 
 if __name__ == "__main__":
