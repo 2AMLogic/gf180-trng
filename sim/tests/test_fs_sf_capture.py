@@ -17,6 +17,7 @@ No ngspice, no PDK, no ``klt``, no network. They cover:
 
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -72,6 +73,10 @@ class TestDeclaredCampaign(unittest.TestCase):
             path = fc.request_path(name)
             self.assertTrue(path.exists(), path)
             self.assertEqual(path.read_text(), fc.render(req), f"{name} drifted: run `emit`")
+            # a request without the capacity wait re-parks the campaign on
+            # batch_no_capacity the way the 2026-10-10 submits were (#472)
+            self.assertEqual(req.get("batch", {}).get("capacity_wait_s"), 600,
+                             f"{name}: the fleet request must carry batch.capacity_wait_s")
 
     def test_grid_is_the_eighteen_asymmetric_points(self):
         req = fc.build_request("grid")
@@ -298,6 +303,11 @@ class RunScaffoldTests(unittest.TestCase):
             "uvx", "--from", "klayout-tools", "klt", "sim",
             str(fc.request_path("control-tt")), "--backend", "batch",
             "-o", str(out / "control-tt"), "--format", "json"])
+        # the request the command submits must ask the fleet to wait for
+        # capacity (#472): a bare submit is refused with batch_no_capacity
+        with open(seen["cmd"][5]) as fh:
+            submitted = json.load(fh)
+        self.assertEqual(submitted.get("batch", {}).get("capacity_wait_s"), 600)
 
 
 if __name__ == "__main__":

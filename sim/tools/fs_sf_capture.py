@@ -224,6 +224,9 @@ def build_request(name: str) -> dict:
             "args": f"{TSTEP_S * 1e12:g}p {TSTOP_S * 1e9:g}n 0 {TSTEP_S * 1e12:g}p",
         },
         "measurements": measurements(),
+        # the fleet is vCPU-budgeted: wait for capacity instead of failing the submit
+        # (the 2026-10-10 submits were refused with batch_no_capacity; issue #472)
+        "batch": {"capacity_wait_s": 600},
         "options": {
             "timeout_s": 7200,
             "keep_artifacts": True,

@@ -854,6 +854,9 @@
    "unit": "V"
   }
  ],
+ "batch": {
+  "capacity_wait_s": 600
+ },
  "options": {
   "timeout_s": 7200,
   "keep_artifacts": true,
