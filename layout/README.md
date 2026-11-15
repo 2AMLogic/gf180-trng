@@ -139,15 +139,18 @@ The git build's extra rules are legitimate; the problem is that
 nothing in the version string says which deck generation ran. Re-filed as
 fresh evidence on [klayout-tools#306][kt306]. **Consequence for anyone
 reproducing this directory's reports:** the build that matters is the one
-`.github/workflows/pdk-nightly.yml` pins. Until [#281][gf281] that was an
-explicit git ref/SHA, because the latest release (`v0.2.0`) predated the
-gf180mcu flow this repository needs (#142). Since #281 it is the `0.6.0`
-PyPI release, with `klayout==0.30.10` — see
-[DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md)
-(as amended) for the decision and the measured diff. A locally-installed
-build from any other commit — including a source build that also calls
-itself `0.6.0` — may resolve a different deck; check
-`provenance.deck.content_hash` before concluding the geometry moved.
+the report's own `klt_origin` records. Nothing pins a producer release —
+per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md)'s
+amendment of 2026-11-09, CI installs the latest tagged release (`v0.9.1`
+today) with the pinned `klayout==0.30.10`, and the repo tracks the fleet's
+klayout-tools release. Until [#281][gf281] that build was an explicit git
+ref/SHA, because the latest release then (`v0.2.0`) predated the gf180mcu
+flow this repository needs (#142); from #281 to the amendment it was the
+`0.6.0` PyPI release. See the DR (as amended) for the decision and the
+measured diff. A locally-installed build from any other commit — including
+a source build that reports the same version string — may resolve a
+different deck; check `provenance.deck.content_hash` before concluding the
+geometry moved.
 
 This is not hypothetical. On 2026-08-02 the reports committed here stopped
 matching a fresh run on the same machine, with `klt --version` and the
