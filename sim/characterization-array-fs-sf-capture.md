@@ -1,10 +1,10 @@
 # Asymmetric fs/sf corners on the integrated ring-array, XOR and sampler path
 
 Issue [#472](https://github.com/2AMLogic/gf180-trng/issues/472). Status: **the
-campaign is defined, committed and unit-tested; the 18-point asymmetric grid and
-the tt control were not run (the batch fleet refused or rejected every submit), so
-this document reports a two-unit local pilot and no coverage-complete verdict.**
-See "Run status".
+campaign ran to completion on the batch fleet on 2026-11-15 (records
+`2026-11-15-sampler-array-fs-sf-05` and `-06`): all 18 asymmetric PVT points and
+the tt control measured; pooled verdicts 7 OK, 9 FLAGGED (informational
+XOR-pulse flags), 2 INSUFFICIENT_COVERAGE, 0 FUNCTIONAL_MISS.** See "Run status".
 
 This is a functional characterization of one named path, not a verdict on the
 design. It changes no spec target, no decision record and no signoff verdict. It
@@ -52,56 +52,101 @@ before any run (`sim/tb/sampler-array-fs-sf/README.md`,
   and is checked for resolution to a rail only;
 - negative controls (tt/27 C/3.30 V): reset never released, and a 20 ps clock
   high time; the checker must return `FUNCTIONAL_MISS` for each;
-- 78 simulation units in 2 `klt sim` requests; about 2 minutes per unit on one
-  worker, about 2.6 CPU-hours, nothing run by CI or `sim/selftest.sh`.
+- 78 simulation units in 2 `klt sim` requests; measured on the 2026-11-15 run:
+  132-154 s per unit, about 2.8 CPU-hours for the grid, nothing run by CI or
+  `sim/selftest.sh`.
+
+Axis encoding: the deck's three time axes (`vph`, `vrel`, `vthw`) are DC sources
+consumed only by its B-sources and are **encoded in nanoseconds** (1 V = 1 ns).
+The seconds encoding is not usable on the fleet: klt derives each unit's
+directory/id from axis values formatted to three decimals, so sub-milli values
+collide and distinct units share one result set
+([2AMLogic/klayout-tools#5870](https://github.com/2AMLogic/klayout-tools/issues/5870),
+observed on the first 2026-11-15 submit, record `-05`). In ns every one of the
+78 unit ids is distinct with stimulus identical to the seconds encoding.
 
 ## Run status
 
-**The coverage-complete verdict is not available: 16 of 18 asymmetric PVT points,
-the tt capture control, and 3 of 4 phases at the other two are unmeasured.**
+**Campaign complete (2026-11-15, records `-05` and `-06`): all 18 asymmetric PVT
+points and the tt control measured on the batch fleet. Pooled verdicts: 7 OK,
+9 FLAGGED, 2 INSUFFICIENT_COVERAGE, 0 FUNCTIONAL_MISS. Every decisive sample
+captured the XOR level at its clock edge; reset and `raw_valid` behaved as the
+contract requires everywhere; ring duty stayed within 0.524-0.534 across the
+whole grid.**
 
-A later retry (`sim/records/2026-10-10-sampler-array-fs-sf-04.md`) was refused
-again with `batch_no_capacity` for both requests; nothing new was measured.
+First submit of the day (`-05`): the capacity-wait fix worked -- the fleet
+accepted both requests, and the runner/client compatibility of `-01` (exit 87)
+is confirmed gone (`runner_compatibility: match`, runner klt 0.9.0, client
+0.9.3.dev16). But the control request's five sub-milli-valued units returned
+byte-identical results (one simulation mis-attributed five ways) via the
+upstream corner-id collision named above, and the 72-unit grid was deliberately
+**not** submitted into that condition. Remedy: the ns axis encoding described
+above; `-05` carries no measurement.
 
-Batch (`sim/records/2026-10-10-sampler-array-fs-sf-01.md`, raw error envelopes and
-the one fleet report): five submits. Three stopped with `batch_no_capacity`; one
-obtained a fleet job (`klt-sim-d40243c0c1ee`) that the runner rejected with exit 87
-(`runner_compatibility: mismatch`: runner klt 0.5.0, client 0.7.0), all six units
-`batch_job_failed`; the matching older client has no `batch` backend. This is the
-fleet-image problem tracked upstream in
-[2AMLogic/klayout-tools#2948](https://github.com/2AMLogic/klayout-tools/issues/2948),
-[#2851](https://github.com/2AMLogic/klayout-tools/issues/2851) and
-[#3015](https://github.com/2AMLogic/klayout-tools/issues/3015), plus the capacity
-refusals also logged for #418; no new tool issue is warranted. The grid was **not**
-run as a local loop. Once the runner image accepts the client, run the two requests
-with `fs_sf_capture.py run`, `analyze` them, and mint records with the repository's
-append-only conventions.
+Second submit (`-06`): both requests ran cleanly -- 6 control units in 152 s,
+72 grid units in 1304 s (unit runtimes 132-154 s, on spot c7i/m7i.4xlarge
+workers, ngspice-47, runner klt 0.9.0), 72 and 6 distinct corner ids, no two
+units sharing a measurement signature, and each phase unit's measured clock
+edges at its declared offset. Corner-by-corner pooled verdicts (ranges across
+the four phases of each point; full per-unit data in the record's
+`grid.report.json`):
 
-Local single-unit probes (debug probes, not the campaign):
+| process | T (C) | VDD (V) | verdict | ring1 duty | ring2 duty | xo swing (V) | xo min pulse (ps) | decisive / in-aperture | ones |
+|---|---|---|---|---|---|---|---|---|---|
+| fs | -40 | 2.97 | FLAGGED | 0.526 | 0.526 | 3.09 | 78 | 7 / 5 | 7 |
+| fs | -40 | 3.30 | FLAGGED | 0.526 | 0.526 | 3.41 | 77 | 7 / 5 | 5 |
+| fs | -40 | 3.63 | INSUFFICIENT_COVERAGE | 0.527 | 0.527 | 3.73 | 56 | 5 / 7 | 2 |
+| fs | 27 | 2.97 | OK | 0.525 | 0.525 | 3.07 | 190 | 9 / 3 | 4 |
+| fs | 27 | 3.30 | OK | 0.525 | 0.525 | 3.39 | 180 | 8 / 4 | 3 |
+| fs | 27 | 3.63 | FLAGGED | 0.525 | 0.525 | 3.72 | 56 | 6 / 6 | 2 |
+| fs | 125 | 2.97 | FLAGGED | 0.526 | 0.525 | 3.05 | 109 | 9 / 3 | 4 |
+| fs | 125 | 3.30 | OK | 0.525 | 0.525 | 3.37 | 221 | 7 / 5 | 3 |
+| fs | 125 | 3.63 | OK | 0.524 | 0.524 | 3.70 | 198 | 8 / 4 | 7 |
+| sf | -40 | 2.97 | FLAGGED | 0.530 | 0.531 | 3.09 | 82 | 9 / 3 | 4 |
+| sf | -40 | 3.30 | FLAGGED | 0.532 | 0.533 | 3.42 | 133 | 6 / 6 | 4 |
+| sf | -40 | 3.63 | INSUFFICIENT_COVERAGE | 0.533 | 0.534 | 3.74 | 162 | 5 / 7 | 4 |
+| sf | 27 | 2.97 | OK | 0.530 | 0.531 | 3.07 | 181 | 9 / 3 | 1 |
+| sf | 27 | 3.30 | FLAGGED | 0.531 | 0.532 | 3.41 | 32 | 10 / 2 | 6 |
+| sf | 27 | 3.63 | OK | 0.531 | 0.532 | 3.72 | 152 | 10 / 2 | 2 |
+| sf | 125 | 2.97 | OK | 0.531 | 0.531 | 3.05 | 304 | 8 / 4 | 4 |
+| sf | 125 | 3.30 | FLAGGED | 0.531 | 0.532 | 3.38 | 104 | 9 / 3 | 3 |
+| sf | 125 | 3.63 | FLAGGED | 0.531 | 0.532 | 3.71 | 14 | 9 / 3 | 3 |
+| tt | 27 | 3.30 | FLAGGED | 0.528 | 0.528 | 3.40 | 60 | 7 / 5 | 4 |
 
-- `-02`: `fs` and `sf`, -40 C, 2.97 V, phase 0: both rings start without noise and
-  oscillate (periods 5.97 / 5.57 ns at both), ring duty 0.526 / 0.526 (fs) and
-  0.530 / 0.531 (sf); XOR swing 3.09 V; reset and `raw_valid` as the contract
-  requires; all 6 post-release samples resolved to a rail and all 3 decisive ones
-  captured the XOR level; 3 were in the edge aperture. Informational flag: the XOR
-  carries ~80 ps beat glitches. This is **2 of 18 PVT points at 1 of 4 phases**;
-  coverage is below the 6-decisive floor, so these are not coverage-complete.
-- `-03`: the two negative controls at tt/27 C/3.30 V, both caught as
-  `FUNCTIONAL_MISS`; the unchanged rings give tt/27 C/3.30 V duty 0.528 / 0.528 and
-  XOR swing 3.40 V. That is a ring/XOR waveform measurement only; the tt capture
-  control is unmeasured.
+- The **FLAGGED** points carry only the pre-declared informational XOR
+  minimum-pulse flag: sub-140 ps beat glitches on the XOR node, worst 14 ps at
+  `sf` / +125 C / 3.63 V. This is exactly the pulse-shape mechanism DR-0006
+  deferred the asymmetric corners over: the glitches are present at several
+  corners, reach the sampler's D input, and still never produced a wrong or
+  unsettled capture -- but the narrowest of them are far below a comfortable
+  margin over the 10 ps solver resolution, so their widths are interpolated, not
+  independently resolved.
+- **INSUFFICIENT_COVERAGE** at `fs` and `sf` / -40 C / 3.63 V (5 of 12 sampling
+  instants decisive, below the pre-declared floor of 6): the XOR node sits
+  inside the clock-edge aperture more often at 3.63 V / -40 C. A coverage gap of
+  the declared phase sweep, not a capture failure and not an unmeasured unit.
+- **Negative controls: both caught** as `FUNCTIONAL_MISS` on the fleet (reset
+  never released: `raw_valid` never high; 20 ps clock high time: no clock
+  crossing), consistent with the `-03` local probes.
+- No functional miss against the unchanged specification was observed at any of
+  the 19 measured points.
 
-No functional miss against the unchanged specification was observed in the
-measured units; because only 2 of 18 points at one phase were measured, the absence
-of a miss elsewhere is **not** established.
+Earlier attempts (`sim/records/2026-10-10-sampler-array-fs-sf-01.md` ..
+`-04`): the campaign machinery was built (`-02`, `-03` local debug probes), but
+every 2026-10-10 batch submit was refused (`batch_no_capacity`) or rejected by a
+runner/client mismatch (exit 87, tracked upstream and closed 2026-11-14). Those
+records stand unchanged; `-01`'s warning that the grid must not be run as a
+local loop was honored throughout.
 
 ## Comparison with existing evidence
 
-The tt ring figures (period 6.67 / 6.23 ns, duty 0.528 at 27 C, 3.30 V) were not
-compared with the earlier `ro-array-core-power` / `sampler-array-digitize` records,
-whose decks differ (the older digitize deck restates an un-buffered wiring and
-runs a 10 ns clock under injected noise); a comparison needs matching clock, load
-and measurement definitions and is left for when the tt control has run.
+The tt control has now run (record `-06`), through the same deck and the same
+measurement definitions as the `-03` local control probe: ring period/duty
+(duty 0.528 / 0.528) and XOR swing (3.40 V) agree between the fleet run and the
+2026-10-10 local probe at tt / 27 C / 3.30 V. That is the only cross-check with
+matching clock, load and measurement definitions; the earlier
+`ro-array-core-power` / `sampler-array-digitize` records still differ in deck,
+clock and noise injection, and remain uncompared, as `-01` stated.
 
 ## Tested versus not tested
 

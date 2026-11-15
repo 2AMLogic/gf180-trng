@@ -51,6 +51,7 @@
 * the 2026-11-15 control-tt submit: five units with sub-milli values returned
 * byte-identical readouts). Encoding the three time axes in ns keeps every
 * unit's id distinct with stimulus identical to the seconds encoding.
+* Tracked upstream as 2AMLogic/klayout-tools#5870.
 *
 * Stimulus timeline at the defaults (period 1 us = 1 Mbps, edge 1 ns):
 *   0       rings enabled (enable tied high; each ring's first node kicked by
