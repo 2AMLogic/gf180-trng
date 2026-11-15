@@ -589,7 +589,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:190bcf809a2bde8d0ea6d0f2012bcf6b8bea15b43e97a6d192e008e1f00f8f94",
+        "content_hash": "sha256:be06dccd760b40226468383dc924f244bea2dc72f4f022c00ed94c7667013455",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -598,7 +598,7 @@
             "path": "signoff/evidence/inventory-9-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:190bcf809a2bde8d0ea6d0f2012bcf6b8bea15b43e97a6d192e008e1f00f8f94",
+          "content_hash": "sha256:be06dccd760b40226468383dc924f244bea2dc72f4f022c00ed94c7667013455",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), analog partition: 91 analog testbench directories under sim/tb/ (215 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 sim/run_corners.py --check-env` (pdk-nightly.yml), `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-analog.json"
@@ -621,7 +621,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:6ec73ec04229795d4bd85426f53613537eeaeccf217b6ab66aa15e1c721cbb49",
+        "content_hash": "sha256:678f0938a956e0e6148822fcf2ab777a5f542ce5eeb51d4f0bbb89ada3af6e1c",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -630,7 +630,7 @@
             "path": "signoff/evidence/inventory-9-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:6ec73ec04229795d4bd85426f53613537eeaeccf217b6ab66aa15e1c721cbb49",
+          "content_hash": "sha256:678f0938a956e0e6148822fcf2ab777a5f542ce5eeb51d4f0bbb89ada3af6e1c",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), digital partition: 11 digital testbench directories under sim/tb/ (45 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-digital.json"
@@ -653,7 +653,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:354740b2da214c9bcce1b54f3c5f8d2cdc9f1841486726d972a9e11b53a78038",
+        "content_hash": "sha256:bdfa7bb2d05d01d43b9e089eaf707a99f80d30585919f6dfbc1fe3f8beea6d96",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -662,7 +662,7 @@
             "path": "signoff/evidence/inventory-10-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:354740b2da214c9bcce1b54f3c5f8d2cdc9f1841486726d972a9e11b53a78038",
+          "content_hash": "sha256:bdfa7bb2d05d01d43b9e089eaf707a99f80d30585919f6dfbc1fe3f8beea6d96",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 10 (Repo hygiene), analog partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
           "source": "signoff/evidence/inventory-10-analog.json"
@@ -685,7 +685,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:aaa0df1ff41fd8a318ce57e48920cba0b0a5c3656ed23ccea43fa3e38c09802a",
+        "content_hash": "sha256:6df1fbfe92adb6b481343b71ee9646507ac68bc25820ed17928c8acba25b0990",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -694,7 +694,7 @@
             "path": "signoff/evidence/inventory-10-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:aaa0df1ff41fd8a318ce57e48920cba0b0a5c3656ed23ccea43fa3e38c09802a",
+          "content_hash": "sha256:6df1fbfe92adb6b481343b71ee9646507ac68bc25820ed17928c8acba25b0990",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 10 (Repo hygiene), digital partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
           "source": "signoff/evidence/inventory-10-digital.json"

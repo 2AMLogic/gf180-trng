@@ -725,9 +725,9 @@ own composed reference
 ([`layout/floorplan/reports/interregion.json`](../layout/floorplan/reports/interregion.json)).
 **Neither the standalone digital GDS nor the composed stream is DRC-clean.**
 [`layout/digital/reports/drc.json`](../layout/digital/reports/drc.json) reads
-`status: violations`, `violation_count: 2769`, and
+`status: violations`, `violation_count: 2737`, and
 [`layout/floorplan/reports/floorplan.drc.json`](../layout/floorplan/reports/floorplan.drc.json)'s
-`.drc` reads `status: violations`, `violation_count: 2750` — every violation
+`.drc` reads `status: violations`, `violation_count: 2721` — every violation
 in both the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class
 that [#449](https://github.com/2AMLogic/gf180-trng/issues/449) and
 [#717](https://github.com/2AMLogic/gf180-trng/issues/717) track, recorded as

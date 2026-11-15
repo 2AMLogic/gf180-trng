@@ -164,8 +164,8 @@ clean LVS (`status: match`, zero mismatches after #306). Since
 (`layout/floorplan/trng_floorplan.gds`, LVS-matching for all
 four regions). **Neither the digital GDS nor the composed stream is
 DRC-clean.** `layout/digital/reports/drc.json` reads `status: violations`,
-`violation_count: 2769`, and `layout/floorplan/reports/floorplan.drc.json`'s
-`.drc` reads `status: violations`, `violation_count: 2750`. Every violation
+`violation_count: 2737`, and `layout/floorplan/reports/floorplan.drc.json`'s
+`.drc` reads `status: violations`, `violation_count: 2721`. Every violation
 in both is the `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance
 class that [#449](https://github.com/2AMLogic/gf180-trng/issues/449) and
 [#717](https://github.com/2AMLogic/gf180-trng/issues/717) track — no other
@@ -248,7 +248,7 @@ real routing geometry crosses the isolation channels for every net
 stream LVS-matches that declaration's own composed
 reference — `layout/floorplan/reports/interregion.json`. The composed
 stream is **not** DRC-clean: `layout/floorplan/reports/floorplan.drc.json`
-reads `status: violations`, `violation_count: 2750`, all of them the
+reads `status: violations`, `violation_count: 2721`, all of them the
 `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class inherited
 from the `digital` region and tracked by
 [#449](https://github.com/2AMLogic/gf180-trng/issues/449) /
