@@ -106,7 +106,7 @@
     },
     "9.analog": {
       "file": "signoff/evidence/t1-item-9-analog.json",
-      "content_hash": "sha256:190bcf809a2bde8d0ea6d0f2012bcf6b8bea15b43e97a6d192e008e1f00f8f94"
+      "content_hash": "sha256:94e76d8ca1497a58a63d51abfaf01e3aac209cd7a912f0eb2483325423a9e601"
     },
     "9.digital": {
       "file": "signoff/evidence/t1-item-9-digital.json",
