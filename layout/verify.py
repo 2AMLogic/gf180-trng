@@ -169,7 +169,7 @@ EXIT_FAIL = 1
 # against the deck's synthesized `vsubs`, pfet bodies against an anonymous
 # well net, because no cell drew a substrate or well tap -- the deck
 # limitation layout/README.md documents under "Bulk terminals are
-# approximated"). Every cell, ring and block now draws an Nwell tap tied to
+# tapped"). Every cell, ring and block now draws an Nwell tap tied to
 # its supply and a substrate tap tied to its ground, `klt lvs` reports
 # `body_verification.status: verified`, and the warning is gone. The
 # per-class `body_unverified` key below is therefore `{}` on every fixture,
@@ -194,9 +194,13 @@ EXIT_FAIL = 1
 # added (klayout-tools#1983 / #2048) and both checked for exact equality:
 #
 #   body_unverified       {device class: count} from
-#                         `body_verification.findings`, alongside
-#                         `body_verification.status` == "unverified". The
-#                         machine-checkable form of the warning above.
+#                         `body_verification.findings` -- the
+#                         machine-checkable form of the pre-#705 warning
+#                         above. With the taps drawn every report reads
+#                         `body_verification.status` == "verified" with
+#                         `device_count: 0` and no findings, so the key is
+#                         `{}` on every fixture, and the check fails if a
+#                         body ever stops reaching a tap.
 #   power_connectivity    `power_connectivity.status`. "unchecked" on every
 #                         fixture: the tool's own reason is that a
 #                         `plain-element` reference "carries its own
@@ -308,7 +312,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's four devices are all MOS, so nothing else is declared.
             # Same topology as ro_stage at a different starve width: 2 NMOS
-            # + 2 PMOS, all four bodies untapped.
+            # + 2 PMOS, all four bodies tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -335,7 +339,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
-            # Starved NAND2: 3 NMOS + 3 PMOS as extracted, all untapped.
+            # Starved NAND2: 3 NMOS + 3 PMOS as extracted, all bodies tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -366,7 +370,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's six devices are all MOS, so nothing else is declared.
             # Same topology as ro_nand2 at ring2's starve width: 3 NMOS + 3
-            # PMOS, all untapped.
+            # PMOS, all bodies tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -398,7 +402,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's two devices are both MOS, so nothing else is declared.
-            # One inverter stage: 1 NMOS + 1 PMOS, both untapped.
+            # One inverter stage: 1 NMOS + 1 PMOS, both tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -450,7 +454,7 @@ EXPECTATIONS: dict[str, dict] = {
             # Same one deck-level disclosure (`topology`) every fixture above carries
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twelve devices are all MOS, so nothing else is
-            # declared. 6 NMOS + 6 PMOS, all untapped.
+            # declared. 6 NMOS + 6 PMOS, all bodies tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -480,7 +484,7 @@ EXPECTATIONS: dict[str, dict] = {
             # (see the module-level comment above `EXPECTATIONS`) -- this
             # cell's twenty-two devices are all MOS, so nothing else is
             # declared. 11 NMOS + 11 PMOS (transmission gates count one of
-            # each), all untapped.
+            # each), all bodies tied to the drawn taps.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",
@@ -512,7 +516,8 @@ EXPECTATIONS: dict[str, dict] = {
             # forty-six devices here are MOS, so nothing else is declared.
             # 10 x ro_stage (2+2) + 1 x ro_nand2 (3+3) = 23 NMOS + 23 PMOS:
             # exactly the leaf cells' counts summed -- the assembly adds no
-            # tap, so it resolves no body the leaves left unresolved.
+            # tap of its own; the leaves' own drawn taps already resolve
+            # every body.
             "category_counts": {"topology": 1},
             "body_unverified": {},
             "power_connectivity": "unchecked",

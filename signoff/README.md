@@ -290,10 +290,13 @@ shaped the run:
   (klayout-tools#2876).
 
 **What it says.** 27 corners x 3 rows, all 81 rows measured on both sides.
-Ring1's period is **+86 % to +93 %** longer extracted than schematic at every
-corner, the same order as the routing-level re-run (§7 of
+Ring1's period is **+112.21 % to +129.12 %** longer extracted than schematic
+at every corner, the same order as the routing-level re-run (§7 of
 `sim/characterization-post-layout-extracted.md`); average supply current
-magnitude is 3 % to 15 % lower; the swing on `ro` is 5–6 % lower. No row
+magnitude is 11.72 % to 14.23 % lower; the swing on `ro` is 5–6 % lower.
+(The previous citation, published over the untapped layout, read +86 % to
++93 % and 3 % to 15 % lower; re-publishing the envelope over the tapped
+layout under klt 0.9.0 moved both — see the `body_bias` block below.) No row
 has a `limits` block, so `pass` means "measured on both sides", not "met a
 spec": none of the three is a ratified spec row.
 
@@ -468,14 +471,14 @@ requires of the claimant rather than of the tool.
 | 1 Design sources | **`met`** | **`met`** | Cites `evidence/t1-item-1-{analog,digital}.json`, bound to `evidence/inventory-1-{analog,digital}.json`: every `design/xschem/*.sch`/`.sym` and the seven derived `design/*.spice` netlists (analog), and the RTL under `design/trng_top/`, `design/conditioner/`, `design/health_test/` and `design/interface/` with its synthesized netlist and generated register map (digital), each with its sha256. The regeneration gates are named, not run: `design/netlist.py --check` (xschem + PDK) and `design/synth.py --check` (`klt synthesize`) run only in `pdk-nightly.yml`; `design/netlist.py --lint` and `design/interface/regmap.py --check` are PDK-free and run in the PR-blocking job. See "Items 1, 2, 9 and 10 are cited from hashed inventories". |
 | 2 Layout | **`met`** | **`met`** | Cites `evidence/t1-item-2-{analog,digital}.json`, bound to `evidence/inventory-2-{analog,digital}.json`: the hand-drawn cell, ring and block streams with their reference netlists and the composed `layout/floorplan/trng_floorplan.gds` (analog), and `layout/digital/trng_top.gds` with its DEF, as-built netlist, SDF and LVS reference (digital). The stream the item 3/4 citations pin (`layout/blocks/combiner_sampler/combiner_sampler.gds`, `layout/digital/trng_top.gds`) is a member of its inventory and `check.py` holds its hash to those manifest pins. DRC/LVS are not re-run: `layout/verify.py --require-tools` and the other tool-gated checks run only in `pdk-nightly.yml`. The `met` does not assert the layout meets the area budget. |
 | 3 DRC clean | **`met`** | `unmet` | **Digital is `unmet` since the klayout-tools 0.9.0 re-target (#705):** the newer deck's `comp.tap_distance.{nwell,psub}.mv.1` rules report 2769 violations on `layout/digital/trng_top.gds`, the tap-pitch failure #449/#717 already track (`layout/digital/reports/tap-distance.json`, verdict `fail`). They are recorded as known violations tracked by #717, not exempted, and the region stays graded. Analog cites `layout/reports/combiner_sampler.drc.json` (`status: clean` under 0.9.0 after every cell gained well and substrate taps); the digital column cites `layout/digital/reports/drc.json`. Before the re-target both were `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
-| 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 3`, warnings only — `device.body_unverified` ×2, one per MOS class, and `topology` ×1); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 1`, the `topology.power_only_pruned` warning only). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). Neither compare verifies body ties: `body_verification.status` is `"unverified"` (analog: all 104 MOS bodies untapped) and `"unchecked"` (digital). Power connectivity is `"unchecked"` on analog and a computed `"match"` on digital since [#662](https://github.com/2AMLogic/gf180-trng/issues/662). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
+| 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 1`, warnings only — `topology` ×1; the citation published over the untapped layout read `mismatch_count: 3` with `device.body_unverified` ×2 alongside); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 2`, `error_count: 0`, the `topology.power_only_pruned` and `topology.top_level_pins_anchored` warnings only — one warning until the klt 0.9.1 re-run added the second). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). The analog compare's `body_verification` reads `"verified"` with `device_count: 0` since #705/PR #826 drew the taps — every body resolves to a real net, so the tool has no body left to disclose; that is a zero-count `verified`, not a per-device check of the block's 104 bodies. The digital compare's `body_verification` stays `"unchecked"`. Power connectivity is `"unchecked"` on analog and a computed `"match"` on digital since [#662](https://github.com/2AMLogic/gf180-trng/issues/662). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
 | 5 Corner verification | `unmet` / `no_evidence` | **`met`** | This block's largest *real* gap on the analog side, and a narrower one on the digital side. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power), and the grader does not read them. **Digital** (#699) cites two native envelopes, both graded `met`: `evidence/digital-sta/klt_sta_response.json`, one `klt sta` request over the committed routed DEF at all fifteen (liberty × interconnect) points with a propagated CTS clock, per-corner OpenRCX SPEF and the trunk input transitions, pinned and `input_verified: true`; and `evidence/post-route/gate_klt_response.json`, the item-7 functional suite, at **one** corner. See "Item 5 digital" below for what that does and does not say; the area and power rows ([#700](https://github.com/2AMLogic/gf180-trng/issues/700)) are unchanged. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
 | 6 Monte Carlo | `unmet` / `undersized_sample` | `unmet` / `no_evidence` | **Analog** cites the native `klt yield` response `evidence/mc-yield/klt_yield_response.json` over the committed mismatch campaign (`sim/characterization-worst-corner-and-mc-mismatch.md`), four measurements (`period_r1` and `dtrip_v`, each at `tt`/27 °C/3.30 V and `ss`/+125 °C/3.63 V), graded against the limits [DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md) ratified. **The grader renders it `unmet`**: the report's own `sample_size.verdict` is `insufficient` on all four (8 seeds on `period_r1`, 30 on `dtrip_v`, against the 183 the default ±1-point target needs at zero failures), which is a grading input under klayout-tools#2480. Every draw is inside its limit (empirical yield 1.0, Clopper-Pearson lower bound 0.631 on 8 samples and 0.884 on 30), so this is a sample-size outcome, not a failed limit. No `negative_control` is declared (`not_declared`): the campaign's own control only shows the spread collapsing with mismatch off, which is not the seeded known-bad variant `klt yield` means. **Digital** is unchanged: no statement is committed (klayout-tools#2865 pending). See "Item 6: install route and statistical rows" below. |
-| 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"unbiased"` (23 of 23 PMOS bodies on floating wells), which the grader reports and does not grade — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
+| 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"biased"` (`unbiased_device_count: 0`) since #705 drew the taps — which the grader reports and does not grade; the citation it superseded, over the untapped layout, read `"unbiased"` (23 of 23 PMOS bodies on floating wells) — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | **`met`** | **`met`** | Cites `evidence/t1-item-9-{analog,digital}.json`, bound to `evidence/inventory-9-{analog,digital}.json`: every file of the `sim/tb/` testbench directories, split by partition (a directory with an ngspice `.sp` deck is analog; the nine behavioural/RTL/gate-level ones listed in `signoff/inventories.py`'s `DIGITAL_TESTBENCHES` are digital), each with its documented cold-start invocation, and the PDK revision `pdk-nightly.yml` pins (open_pdks `f6eeac7d…`, variant `gf180mcuD`), which `check.py` requires `README.md` to state too. A new `sim/tb/` directory that is neither fails the audit. No testbench is run here. |
 | 10 Repo hygiene | **`met`** | **`met`** | Cites `evidence/t1-item-10-{analog,digital}.json`, bound to `evidence/inventory-10-{analog,digital}.json`: `README.md`, `LICENSE` (Apache-2.0), the ratified spec table, `sim/README.md` and `.github/workflows/ci.yml`, with assertions about each (the README's sections, that it documents how that partition is reproduced, that the workflow runs the named commands). **CI status is not captured**: the workflow file is hashed and its commands named, but whether its last run was green is a property of a run, not of a file, and is not part of what this `met` asserts. |
-| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | **`met`** | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (kind `unexpressible`, no `ties[]` declared): the streams draw no Nplus/Pplus/LVPWELL, so well-tie coverage and the `vsubs` body connection are unverified, not passed. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. Since [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the LVS envelope compares against `trng_top.pnr.v` as `reference.form: "gate-level-verilog"`, so `power_connectivity.status` is a computed `"match"` (4816 instances, zero findings) and the row reads `met`. See "Item 11's `ties[]`" below. |
+| 11 Power delivery | `unmet` / `supply_spec_disclosed_unexpressible` | **`met`** | Item 11 is a compound claim, and as of [#655](https://github.com/2AMLogic/gf180-trng/issues/655) both columns cite the whole set, so each reads a graded verdict instead of `wrong_kind`. **Analog** (`11.analog`): the three region `klt erc` supply reports under `layout/analog/reports/` ([#327](https://github.com/2AMLogic/gf180-trng/issues/327)) plus item 4's own LVS envelope `layout/reports/combiner_sampler.lvs.json`, each pinned. The grader reads the ERC specs' `ties_disclosure` (still kind `unexpressible`, no `ties[]` declared), so well-tie coverage stays unverified, not passed; the disclosure's stated reason — that these streams draw no Nplus/Pplus/LVPWELL — no longer matches the streams, which #705/PR #826 gave Nplus and Pplus taps (LVPWELL still absent), and #701 tracks the disclosure's refresh. **Digital** (`11.digital`): `layout/digital/reports/erc-supply.json` ([#268](https://github.com/2AMLogic/gf180-trng/issues/268), [#276](https://github.com/2AMLogic/gf180-trng/issues/276), [#321](https://github.com/2AMLogic/gf180-trng/issues/321); zero `erc.missing_tie`, clean supplies), item 4's LVS envelope `layout/digital/reports/lvs.json`, and the committed `klt place-and-route` response `layout/digital/reports/place_and_route.json`. Since [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the LVS envelope compares against `trng_top.pnr.v` as `reference.form: "gate-level-verilog"`, so `power_connectivity.status` is a computed `"match"` (4816 instances, zero findings) and the row reads `met`. See "Item 11's `ties[]`" below. |
 
 ### Item 6: install route and statistical rows
 
@@ -663,8 +666,10 @@ DR-0026's original "no verdict moved" measurement had gone stale at 0.6.0 —
 so DR-0026 records the re-measurement: across all 13 `layout/verify.py`
 fixtures, no DRC verdict, rule count, device or net count, extracted
 netlist, or LVS status moved; `device.body_unverified` went from 1 to 2 per
-LVS fixture (the PMOS half of an already-documented limitation, disclosed
-again — see "What each compare did and did not verify" below); and the
+LVS fixture at that re-pin (the PMOS half of an already-documented
+limitation, disclosed again — see "What each compare did and did not
+verify" below; #705 later drew the taps, and the category has since left
+every analog report); and the
 newer deck lists two more skipped Metal4 rules. The DRC verdict is likewise
 measured not to move on the digital side: #273's re-run under 0.6.0
 reproduced `reports/place_and_route.json`'s existing nested `drc` digest
@@ -735,21 +740,23 @@ change verdict: DRC clean, LVS match, ERC clean.
 
 **What each compare did and did not verify.**
 
-- *Analog*: `status: "match"`, `mismatch_count: 3`, `error_count: 0` —
-  `category_counts: {"device.body_unverified": 2, "topology": 1}`, the same
-  warnings-only shape every other analog region's compare carries. Both
-  blocks that were `null` under klt 0.4.0 are now populated, and **neither is
-  `"verified"`/`"match"`**:
+- *Analog*: `status: "match"`, `mismatch_count: 1`, `error_count: 0` —
+  `category_counts: {"topology": 1}` (the reports are produced under klt
+  0.9.1), the warnings-only shape every other analog region's compare
+  carries. The two blocks that were `null` under klt 0.4.0 are both
+  populated; one is still not a pass, and the other stopped being a
+  disclosure when the taps landed:
   - `power_connectivity`, verbatim: `{"status": "unchecked", "reason":
     "reference.form is 'plain-element', whose reference netlist carries its
     own power/ground pins and nets -- they take part in the ordinary compare,
     so this check (which exists to cover the signal-only 'gate-level-verilog'
     form) does not apply", "power_pins": [], "power_pins_derivation": null,
     "instance_count": 0, "expected_nets": null, "unchecked_expected_pins":
-    [], "findings": [], "finding_count": 0}`. As on the digital side, the
+    [], "excluded_pins": [], "findings": [], "finding_count": 0}`. As on the digital side, the
     supply nets *are* inside the ordinary compare, which matched — the
-    envelope's `net_correspondence` pairs layout `d|vdd`, `vss` and `vsubs`
-    with reference `VDD`, `VSS` and `VSUBS` — but not via this field.
+    envelope's `net_correspondence` pairs layout `d|vdd` and `vss` with
+    reference `VDD` and `VSS` (the `vsubs` port is gone from the composition
+    since #705/PR #826 dropped it) — but not via this field.
     **`"unchecked"` is not a power-delivery verdict, and this re-run does not
     advance T1 item 11.** Item 11's Analog column does not ask for
     `power_connectivity` at all: it asks for `klt erc` supply evidence plus
@@ -758,22 +765,30 @@ change verdict: DRC clean, LVS match, ERC clean.
     the row reads `unmet` / `supply_spec_disclosed_unexpressible`.
     The Digital column does ask for `power_connectivity.status: "match"`,
     and there `"unchecked"` explicitly does not satisfy it.
-  - `body_verification`, verbatim: `{"status": "unverified", "reason": null,
+  - `body_verification`, verbatim under the tapped layout:
+    `{"status": "verified", "reason": null, "device_classes": [],
+    "device_count": 0, "findings": [], "finding_count": 0}`. Since #705 /
+    PR #826 every hand-drawn cell draws a substrate tap tied to ground and a
+    well tap tied to its supply, so every body terminal lands on a real net
+    (`layout/README.md`, "Bulk terminals are tapped") and the tool has no
+    body left to disclose. The citation published over the untapped layout
+    read, verbatim: `{"status": "unverified", "reason": null,
     "device_classes": ["nfet", "pfet"], "device_count": 104, "findings":
     [{"class": "nfet", "device_count": 52}, {"class": "pfet",
-    "device_count": 52}], "finding_count": 2}`. All 104 devices in the
-    block — every NMOS and every PMOS — have a body terminal that reached no
-    real net: NMOS bodies land on the deck-synthesized `vsubs`, PMOS bodies
-    on an anonymous KLayout-synthesized well net, because the hand-drawn
-    cells draw no substrate or well taps (`layout/README.md`, "Bulk terminals
-    are approximated"). This is a *disclosure*, not a new defect: the same
-    104 bodies were equally unverified under klt 0.4.0, which disclosed only
-    the 52 NMOS. The PMOS half had been silenced by klayout-tools#1113's
-    deck-level gate and is reported again per device since
-    klayout-tools#2048 — that is the whole of the
-    `device.body_unverified` 1 → 2 change.
-- *Digital*: `mismatch_count: 1`, `error_count: 0`, `category_counts:
-  {"topology.power_only_pruned": 1}` — one warning, no errors. Since
+    "device_count": 52}], "finding_count": 2}` — all 104 devices had a body
+    terminal on no real net (NMOS on the deck-synthesized `vsubs`, PMOS on
+    an anonymous KLayout-synthesized well net), a *disclosure*, not a
+    defect: the same 104 bodies were equally unverified under klt 0.4.0,
+    which disclosed only the 52 NMOS; the PMOS half had been silenced by
+    klayout-tools#1113's deck-level gate and was reported again per device
+    since klayout-tools#2048 — that was the whole of the
+    `device.body_unverified` 1 → 2 change, and the taps are the change that
+    retired the category. The zero in the current block is a device count in
+    the body-verification scope, not a per-device re-check of the 104.
+- *Digital*: `mismatch_count: 2`, `error_count: 0`, `category_counts:
+  {"topology.power_only_pruned": 1, "topology.top_level_pins_anchored": 1}`
+  — two warnings, no errors (the second warning arrived with the klt 0.9.1
+  re-run; until then the report carried one). Since
   [#662](https://github.com/2AMLogic/gf180-trng/issues/662) the request's
   `reference.form` is `gate-level-verilog`, so `power_connectivity.status` is
   a computed `"match"`; `body_verification.status` stays `"unchecked"`, with
@@ -945,14 +960,21 @@ reasons:
   `provenance.input.content_hash` of its GDS. All three read
   `erc_status: clean`, zero findings, one island per declared supply
   (`vddr`/`vss` on the rings, `vdd`/`vss` on combiner_sampler). What that
-  does **not** cover: the specs declare no `ties[]` (these streams draw no
-  Nplus/Pplus/LVPWELL, and the reference netlists give every PMOS a floating
-  well), so `erc.missing_tie` is not computed and `ties_disclosure.kind` is
-  `unexpressible`; `vsubs` is not declared because no label of that name
+  does **not** cover: the specs still declare no `ties[]`, so
+  `erc.missing_tie` is not computed and `ties_disclosure.kind` is still
+  `unexpressible` — well-tie coverage stays ERC-side unverified. The
+  disclosure's stated reason, that these streams draw no Nplus/Pplus/LVPWELL
+  and the reference netlists give every PMOS a floating well, no longer
+  matches its artifacts as of #705/PR #826: the streams draw Nplus (32/0)
+  and Pplus (31/0) — LVPWELL (204/0) is still absent — and the netlists tie
+  every PMOS bulk to `vddr`; #701 tracks refreshing the disclosure, and
+  until it does `11.analog` keeps its `unmet` verdict. Also not covered:
+  `vsubs` is not declared because no label of that name
   exists in any of the three streams (the guard ring lives only in the
   floorplan abstract, which also contains the digital region); the supply
   names are the cell-level `vddr`, not the region-level `vddr1`/`vddr2`; and
-  the LVS `body_verification` (`"unverified"`) field remains as disclosed
+  the LVS `body_verification` field, now `"verified"` with `device_count: 0`
+  since the taps, is disclosed in "What each compare did and did not verify"
   above. These three reports cover only the rings' and combiner's own GDS. The
   composed floorplan stream has its own whole-block run,
   `layout/floorplan/reports/erc-supply.json` (issue #447; five region-level
@@ -1095,11 +1117,15 @@ stood before #699 under 0.8.0: **no row changed status or reason**; only
   "Item 7 analog".
 - **Item 4's `power_connectivity` and `body_verification`** —
   `power_connectivity` is `"unchecked"` on the analog citation and a
-  computed `"match"` on the digital one since #662; `body_verification` is `"unverified"` on the analog one (104 of 104 MOS
-  bodies) and `"unchecked"` on the digital one, each with `klt`'s own stated
-  reason. Neither partition's LVS verdict includes a verified body-tie, and the
-  analog one has no `"match"` power-connectivity result; both are disclosed
-  above rather than folded into the word "match".
+  computed `"match"` on the digital one since #662; `body_verification` is
+  `"verified"` with `device_count: 0` on the analog one since #705/PR #826
+  drew the taps — no device is left in the body-verification scope; the
+  earlier citation, over the untapped layout, read `"unverified"` across all
+  104 MOS bodies — and `"unchecked"` on the digital one, each with `klt`'s
+  own field values. The analog verdict includes no per-device body-tie check
+  and no `"match"` power-connectivity result; the digital one carries no
+  body verdict at all; both are disclosed above rather than folded into the
+  word "match".
 
 ## Evidence this repo has but cannot cite
 
@@ -1262,8 +1288,11 @@ In dependency order, not effort order:
    count did not move — item 4 was already `met` on both partitions — but
    every citation in the manifest is now pinned, and the analog compare's
    `power_connectivity`/`body_verification` are real verdicts
-   (`"unchecked"`/`"unverified"`) instead of `null`. Neither is a pass, and
-   neither advances item 11.
+   (`"unchecked"`/`"unverified"`) instead of `null` — the state at that
+   re-pin, over the untapped layout; since #705/PR #826 the taps made
+   `body_verification` read `"verified"` with `device_count: 0` (see "What
+   each compare did and did not verify"). Neither was a pass, and neither
+   advanced item 11.
 3. ~~**Emit corner evidence as a `klt sta`/`klt functional-verification`
    envelope** for the digital half~~ — done in
    [#699](https://github.com/2AMLogic/gf180-trng/issues/699): see "Item 5
@@ -1329,7 +1358,9 @@ sides errored unmeasured, because the pinned 0.6.0 client does not ship the
 `.include`d DUT and the fleet runner is klt 0.5.0
 (`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`). The grid was
 not run locally, so no ring2 result is committed. The README in that directory
-has the reproduction commands. Whatever it eventually
-reports describes a layout with floating PMOS wells (#339/#411) and is a
-diagnostic under that limitation: no entropy, full-chip timing or
-silicon-performance claim.
+has the reproduction commands. Whatever it eventually reports describes the
+tapped layout: ring2's stream draws the Nplus (32/0) and Pplus (31/0) ties
+#705/PR #826 added and its netlist ties every PMOS bulk to `vddr`, so the
+floating-PMOS-well limitation under which #339/#411 framed the counterfactual
+no longer applies to it. It stays a diagnostic: no entropy, full-chip timing
+or silicon-performance claim.

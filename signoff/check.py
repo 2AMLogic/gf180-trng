@@ -1003,8 +1003,16 @@ def freshness_gate(manifest: dict) -> int:
 
     # Step 1b': the item-6 citation (no provenance block; see ITEM6_ENVELOPE).
     if (manifest.get("evidence") or {}).get("6.analog"):
-        import publish_item6  # noqa: PLC0415 -- imports this module; avoid a cycle
-
+        # Loaded by path, deferred to here: publish_item6 imports this module
+        # at import time, so a module-level import would be a cycle. By path
+        # rather than `import publish_item6` because that bare name only
+        # resolves when check.py is run as a script (which puts `signoff/` on
+        # sys.path); a caller that loads check.py by path -- every test in
+        # sim/tests/test_signoff_freshness.py -- has no `signoff/` on the path
+        # and would raise ModuleNotFoundError the moment 6.analog is cited.
+        publish_item6 = load_module_from_path(  # noqa: PLC0415 -- see above
+            "signoff_publish_item6", REPO_ROOT / "signoff" / "publish_item6.py"
+        )
         item6 = publish_item6.publication_problems()
         failures += [f"6.analog: {p}" for p in item6]
         if not item6:

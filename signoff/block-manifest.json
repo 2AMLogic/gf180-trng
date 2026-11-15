@@ -16,11 +16,11 @@
     },
     "10.analog": {
       "file": "signoff/evidence/t1-item-10-analog.json",
-      "content_hash": "sha256:5be47bbd7a510fb482bedd245ff2e84539b519e83e4aad3adb2ffc12370510b7"
+      "content_hash": "sha256:354740b2da214c9bcce1b54f3c5f8d2cdc9f1841486726d972a9e11b53a78038"
     },
     "10.digital": {
       "file": "signoff/evidence/t1-item-10-digital.json",
-      "content_hash": "sha256:de10ead6899e0a8e960623f1fbf428400f50c3f35228d11237a62797eaabafb3"
+      "content_hash": "sha256:aaa0df1ff41fd8a318ce57e48920cba0b0a5c3656ed23ccea43fa3e38c09802a"
     },
     "11.analog": [
       {
@@ -86,6 +86,9 @@
         "file": "signoff/evidence/post-route/gate_klt_response.json"
       }
     ],
+    "6.analog": {
+      "file": "signoff/evidence/mc-yield/klt_yield_response.json"
+    },
     "7.analog": {
       "file": "signoff/evidence/post-layout/ro_ring11.pex.json",
       "content_hash": "sha256:27e6fdba1a3c2c56ee67c7b474f830f268ac8403467c3f4ec6b33599b3d8de75"
@@ -103,11 +106,11 @@
     },
     "9.analog": {
       "file": "signoff/evidence/t1-item-9-analog.json",
-      "content_hash": "sha256:efe8adaded3280b56dc027a098a1ed3caadf300f9b6b360519eb8544dc0fa57a"
+      "content_hash": "sha256:190bcf809a2bde8d0ea6d0f2012bcf6b8bea15b43e97a6d192e008e1f00f8f94"
     },
     "9.digital": {
       "file": "signoff/evidence/t1-item-9-digital.json",
-      "content_hash": "sha256:8bd3391a0fea2488c2e571c76b5af884a55c758333a4ec1f6a295ea19c074955"
+      "content_hash": "sha256:6ec73ec04229795d4bd85426f53613537eeaeccf217b6ab66aa15e1c721cbb49"
     }
   }
 }
