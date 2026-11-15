@@ -13,6 +13,11 @@ Reported:
         for a binding that closures can capture, in any closure below it)
   F841  a simple named target of `Assign` / `AnnAssign` inside a function
         that is assigned but never read in that block or a child closure
+  RUF100 an explicit `# noqa: F401` / `# noqa: F841` token that never
+        suppressed a finding anywhere in its file (#908) -- a suppression
+        that drops nothing is dead weight that silently widens this hole.
+        Blanket `# noqa` and codes this checker does not evaluate are
+        never judged.
 
 Not reported (outside the supported contract, so never a finding):
 
@@ -68,6 +73,9 @@ _FUNC_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
 _COMP_NODES = (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
 _NOQA = re.compile(r"#\s*noqa\b(?:\s*:\s*(?P<codes>[A-Za-z0-9]+(?:[\s,]+[A-Za-z0-9]+)*))?",
                    re.IGNORECASE)
+# The codes this checker emits, and is therefore entitled to judge a noqa
+# token by; any other code on a noqa line is foreign to it (E402, SLF001, ...).
+_EVALUATED_CODES = frozenset({"F401", "F841"})
 
 
 class CheckerError(Exception):
@@ -88,6 +96,9 @@ class Finding:
     name: str
 
     def format(self) -> str:
+        if self.code == "RUF100":
+            return (f"{self.path}:{self.line}:{self.col}: RUF100 stale "
+                    f"'# noqa: {self.name}' suppresses nothing")
         what = "imported but unused" if self.code == "F401" else \
             "local variable is assigned to but never used"
         return f"{self.path}:{self.line}:{self.col}: {self.code} '{self.name}' {what}"
@@ -312,26 +323,30 @@ def _supplementary_reads(owned: _Owned) -> set[str]:
 # Suppression comments
 
 
-def _noqa_lines(path: str, source: str) -> dict[int, str | None]:
-    """line -> None (blanket noqa) or the upper-cased code list."""
-    out: dict[int, str | None] = {}
+def _noqa_lines(path: str, source: str) -> dict[int, tuple[str | None, int]]:
+    """line -> (None (blanket noqa) or the upper-cased code list, column)."""
+    out: dict[int, tuple[str | None, int]] = {}
     try:
         for tok in tokenize.generate_tokens(io.StringIO(source).readline):
             if tok.type == tokenize.COMMENT:
                 m = _NOQA.search(tok.string)
                 if m:
                     codes = m.group("codes")
-                    out[tok.start[0]] = codes.upper() if codes else None
+                    out[tok.start[0]] = (codes.upper() if codes else None,
+                                         tok.start[1])
     except (tokenize.TokenError, IndentationError) as exc:
         raise CheckerError(path, 1, f"tokenize failed: {exc}") from exc
     return out
 
 
-def _suppressed(noqa: dict[int, str | None], first: int, last: int, code: str) -> bool:
+def _suppressed(noqa: dict[int, tuple[str | None, int]], first: int, last: int,
+                code: str, used: set[tuple[int, str]] | None = None) -> bool:
     for line in range(first, last + 1):
         if line in noqa:
-            codes = noqa[line]
+            codes = noqa[line][0]
             if codes is None or code in re.split(r"[\s,]+", codes):
+                if used is not None and codes is not None:
+                    used.add((line, code))
                 return True
     return False
 
@@ -373,6 +388,7 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
         raise CheckerError(path, 1, f"cannot parse: {exc}") from exc
 
     noqa = _noqa_lines(path, source)
+    used: set[tuple[int, str]] = set()  # (line, code) tokens that dropped a finding
     is_init = Path(path).name == "__init__.py"
     exported = _literal_all(tree)
     # Annotation reads anywhere in the file credit an import in any block:
@@ -428,8 +444,8 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
                 continue
             first = getattr(alias, "lineno", stmt.lineno)
             last = getattr(alias, "end_lineno", None) or first
-            if (_suppressed(noqa, stmt.lineno, stmt.lineno, "F401")
-                    or _suppressed(noqa, first, last, "F401")):
+            if (_suppressed(noqa, stmt.lineno, stmt.lineno, "F401", used)
+                    or _suppressed(noqa, first, last, "F401", used)):
                 continue
             findings.append(Finding(path, first, getattr(alias, "col_offset", stmt.col_offset),
                                     "F401", alias.name if not alias.asname else
@@ -452,11 +468,23 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
             if (sym.is_global() or sym.is_free() or sym.is_parameter()
                     or sym.is_nonlocal() or is_read(tgt.id)):
                 continue
-            if _suppressed(noqa, stmt.lineno, stmt.end_lineno or stmt.lineno, "F841"):
+            if _suppressed(noqa, stmt.lineno, stmt.end_lineno or stmt.lineno,
+                           "F841", used):
                 continue
             findings.append(Finding(path, tgt.lineno, tgt.col_offset, "F841", tgt.id))
 
     visit(top, list(tree.body), "module")
+    # RUF100: an explicit F401/F841 token that never dropped a finding in
+    # this file cannot silence anything, so it is dead weight -- report it.
+    # A blanket `# noqa` may be covering codes this checker never evaluates,
+    # and a foreign code is by definition not ours to judge.
+    for line, (codes, col) in sorted(noqa.items()):
+        if codes is None:
+            continue
+        stale = [c for c in dict.fromkeys(re.split(r"[\s,]+", codes))
+                 if c in _EVALUATED_CODES and (line, c) not in used]
+        if stale:
+            findings.append(Finding(path, line, col, "RUF100", ", ".join(stale)))
     return sorted(findings)
 
 
@@ -473,8 +501,9 @@ def check_files(root: Path, files: Iterable[str]) -> list[Finding]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="Report unused imports (F401) and simple unused function "
-                    "locals (F841) in tracked first-party Python files.")
+        description="Report unused imports (F401), simple unused function "
+                    "locals (F841), and stale '# noqa: F401/F841' tokens "
+                    "(RUF100) in tracked first-party Python files.")
     ap.add_argument("--check", action="store_true", required=True,
                     help="scan and exit non-zero on findings")
     ap.add_argument("--root", type=Path, default=ROOT,
