@@ -19,7 +19,7 @@
   "stream": [
     {
       "path": "layout/digital/trng_top.gds",
-      "sha256": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3"
+      "sha256": "sha256:338a16684ecd4381bb9ea898c9b98e234c4f5c33700b6eac106d80f157b711a6"
     }
   ],
   "implementation": [
@@ -29,25 +29,25 @@
     },
     {
       "path": "layout/digital/trng_top.def",
-      "sha256": "sha256:e3fb53047800ca2076b3bbbe8936fd5a09df39662a43a2007756233be5d970b5"
+      "sha256": "sha256:1fcdf262ae772a6d36b615eafd970dd07e77277123ec68659b9aa9c15af3e208"
     },
     {
       "path": "layout/digital/trng_top.lvs_reference.spice",
-      "sha256": "sha256:e4bfe0e46c6eb3b67387e2ec06715006e2c83c94afd6bfda523b6d7462b42847"
+      "sha256": "sha256:557a95c0275d58b1fbc97ba118981593c55b9303b2eb7b53a0291889f7ab00d1"
     },
     {
       "path": "layout/digital/trng_top.pnr.v",
-      "sha256": "sha256:78f626f23b7f72c8585be6236e1d56046ab2954f3041b01533e4f0024d230ec4"
+      "sha256": "sha256:b14039c4100a1db5e85b1f9f98c255c2dd44febf0298512944d4d8cd49219ed4"
     },
     {
       "path": "layout/digital/trng_top.sdf",
-      "sha256": "sha256:1817570b6ae837d724d1d6cfb3348fda415dcf9b266843d1fce99e6d3b353683"
+      "sha256": "sha256:0142126c7e2c192906c5eaf6d474dde58df0741721eea575ab75a41133a88268"
     }
   ],
   "pinned_by_citations": {
     "stream": {
       "path": "layout/digital/trng_top.gds",
-      "sha256": "sha256:00c77f68dceeb5140c61ec44fe80317d1d66f953a1bd27e58577ba8b089b8bb3"
+      "sha256": "sha256:338a16684ecd4381bb9ea898c9b98e234c4f5c33700b6eac106d80f157b711a6"
     },
     "manifest_keys": [
       "3.digital"

@@ -5,7 +5,7 @@
     python3 sim/tools/active_power_breakdown.py --reconcile      # reconcile with power_rollup.py
     python3 sim/tools/active_power_breakdown.py --rate 1e6   # one rate only
 
-This splits the figure ``sim/tools/power_rollup.py`` reports (749.4 uW at the
+This splits the figure ``sim/tools/power_rollup.py`` reports (748.2 uW at the
 historical 1 MHz sample clock; the same tool's default, the ratified 2 kHz, is
 the second column) into sub-blocks, every one read from a committed record:
 
@@ -69,7 +69,7 @@ SPLIT_ROWS = ("ring buffers", "XOR combiner")
 SPLIT_RECONCILE_TOL = 0.02
 ARRAY_CORNER = "ff/-40/3.63"
 
-#: Rates reported side by side: the historical rate the Power row's 749.4 uW is
+#: Rates reported side by side: the historical rate the Power row's 748.2 uW is
 #: quoted at, and the currently ratified raw rate.
 DEFAULT_RATES = (1e6, pr.RATIFIED_RAW_RATE_BPS)
 

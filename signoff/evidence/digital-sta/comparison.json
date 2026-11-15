@@ -1,141 +1,141 @@
 {
   "tolerance_ns": 0.001,
-  "max_abs_difference_ns": 4.000000000559112e-05,
+  "max_abs_difference_ns": 5.000000000165983e-05,
   "rows": [
     {
       "liberty": "ss_125C_3v00",
       "interconnect": "min",
       "timing_status": "constrained",
-      "klt_setup_ns": 31.5628,
-      "record_setup_ns": 31.56283,
-      "klt_hold_ns": 2.37197,
-      "record_hold_ns": 2.371968
+      "klt_setup_ns": 32.3095,
+      "record_setup_ns": 32.3095,
+      "klt_hold_ns": 2.3707,
+      "record_hold_ns": 2.3707
     },
     {
       "liberty": "ss_125C_3v00",
       "interconnect": "nom",
       "timing_status": "constrained",
-      "klt_setup_ns": 31.2381,
-      "record_setup_ns": 31.23812,
-      "klt_hold_ns": 2.37917,
-      "record_hold_ns": 2.379166
+      "klt_setup_ns": 32.1332,
+      "record_setup_ns": 32.13324,
+      "klt_hold_ns": 2.37855,
+      "record_hold_ns": 2.378547
     },
     {
       "liberty": "ss_125C_3v00",
       "interconnect": "max",
       "timing_status": "constrained",
-      "klt_setup_ns": 30.8411,
-      "record_setup_ns": 30.84113,
-      "klt_hold_ns": 2.38801,
-      "record_hold_ns": 2.388015
+      "klt_setup_ns": 31.9072,
+      "record_setup_ns": 31.90722,
+      "klt_hold_ns": 2.38681,
+      "record_hold_ns": 2.386809
     },
     {
       "liberty": "ss_n40C_3v00",
       "interconnect": "min",
       "timing_status": "constrained",
-      "klt_setup_ns": 37.3059,
-      "record_setup_ns": 37.3059,
-      "klt_hold_ns": 1.65057,
-      "record_hold_ns": 1.650569
+      "klt_setup_ns": 38.0225,
+      "record_setup_ns": 38.02252,
+      "klt_hold_ns": 1.64925,
+      "record_hold_ns": 1.649253
     },
     {
       "liberty": "ss_n40C_3v00",
       "interconnect": "nom",
       "timing_status": "constrained",
-      "klt_setup_ns": 37.0745,
-      "record_setup_ns": 37.07453,
-      "klt_hold_ns": 1.65422,
-      "record_hold_ns": 1.654215
+      "klt_setup_ns": 37.8891,
+      "record_setup_ns": 37.88907,
+      "klt_hold_ns": 1.65465,
+      "record_hold_ns": 1.654649
     },
     {
       "liberty": "ss_n40C_3v00",
       "interconnect": "max",
       "timing_status": "constrained",
-      "klt_setup_ns": 36.7888,
-      "record_setup_ns": 36.78883,
-      "klt_hold_ns": 1.6608,
-      "record_hold_ns": 1.660801
+      "klt_setup_ns": 37.7238,
+      "record_setup_ns": 37.7238,
+      "klt_hold_ns": 1.66106,
+      "record_hold_ns": 1.66106
     },
     {
       "liberty": "tt_025C_3v30",
       "interconnect": "min",
       "timing_status": "constrained",
-      "klt_setup_ns": 40.616,
-      "record_setup_ns": 40.61596,
-      "klt_hold_ns": 1.19887,
-      "record_hold_ns": 1.198869
+      "klt_setup_ns": 41.173,
+      "record_setup_ns": 41.17302,
+      "klt_hold_ns": 1.19791,
+      "record_hold_ns": 1.197909
     },
     {
       "liberty": "tt_025C_3v30",
       "interconnect": "nom",
       "timing_status": "constrained",
-      "klt_setup_ns": 40.4502,
-      "record_setup_ns": 40.45021,
-      "klt_hold_ns": 1.20271,
-      "record_hold_ns": 1.202711
+      "klt_setup_ns": 41.0762,
+      "record_setup_ns": 41.07618,
+      "klt_hold_ns": 1.20152,
+      "record_hold_ns": 1.201517
     },
     {
       "liberty": "tt_025C_3v30",
       "interconnect": "max",
       "timing_status": "constrained",
-      "klt_setup_ns": 40.2464,
-      "record_setup_ns": 40.24638,
-      "klt_hold_ns": 1.20735,
-      "record_hold_ns": 1.207346
+      "klt_setup_ns": 40.9572,
+      "record_setup_ns": 40.95718,
+      "klt_hold_ns": 1.20597,
+      "record_hold_ns": 1.205967
     },
     {
       "liberty": "ff_125C_3v60",
       "interconnect": "min",
       "timing_status": "constrained",
-      "klt_setup_ns": 42.0571,
-      "record_setup_ns": 42.05713,
-      "klt_hold_ns": 1.00114,
-      "record_hold_ns": 1.001141
+      "klt_setup_ns": 42.4937,
+      "record_setup_ns": 42.49371,
+      "klt_hold_ns": 1.00058,
+      "record_hold_ns": 1.000576
     },
     {
       "liberty": "ff_125C_3v60",
       "interconnect": "nom",
       "timing_status": "constrained",
-      "klt_setup_ns": 41.9166,
-      "record_setup_ns": 41.91656,
-      "klt_hold_ns": 1.00429,
-      "record_hold_ns": 1.004295
+      "klt_setup_ns": 42.4137,
+      "record_setup_ns": 42.41369,
+      "klt_hold_ns": 1.00356,
+      "record_hold_ns": 1.003563
     },
     {
       "liberty": "ff_125C_3v60",
       "interconnect": "max",
       "timing_status": "constrained",
-      "klt_setup_ns": 41.7475,
-      "record_setup_ns": 41.74748,
-      "klt_hold_ns": 1.00811,
-      "record_hold_ns": 1.008112
+      "klt_setup_ns": 42.3147,
+      "record_setup_ns": 42.3147,
+      "klt_hold_ns": 1.00724,
+      "record_hold_ns": 1.007243
     },
     {
       "liberty": "ff_n40C_3v60",
       "interconnect": "min",
       "timing_status": "constrained",
-      "klt_setup_ns": 44.5048,
-      "record_setup_ns": 44.50476,
-      "klt_hold_ns": 0.69576,
-      "record_hold_ns": 0.6957618
+      "klt_setup_ns": 44.8769,
+      "record_setup_ns": 44.87685,
+      "klt_hold_ns": 0.69529,
+      "record_hold_ns": 0.6952905
     },
     {
       "liberty": "ff_n40C_3v60",
       "interconnect": "nom",
       "timing_status": "constrained",
-      "klt_setup_ns": 44.405,
-      "record_setup_ns": 44.40501,
-      "klt_hold_ns": 0.69799,
-      "record_hold_ns": 0.697988
+      "klt_setup_ns": 44.8095,
+      "record_setup_ns": 44.8095,
+      "klt_hold_ns": 0.69777,
+      "record_hold_ns": 0.6977702
     },
     {
       "liberty": "ff_n40C_3v60",
       "interconnect": "max",
       "timing_status": "constrained",
-      "klt_setup_ns": 44.2844,
-      "record_setup_ns": 44.28443,
-      "klt_hold_ns": 0.70078,
-      "record_hold_ns": 0.7007842
+      "klt_setup_ns": 44.7266,
+      "record_setup_ns": 44.72658,
+      "klt_hold_ns": 0.70074,
+      "record_hold_ns": 0.7007419
     }
   ]
 }
