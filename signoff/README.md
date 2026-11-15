@@ -626,7 +626,7 @@ digital-skipped rule is also analog-skipped; there is no rule the analog
 partition checked and the digital one did not.
 
 **Both citations' coverage blocks now have the same shape**, because both
-were produced by klt 0.6.0 (see "Which `klt` produced what" below). Alongside
+were produced by klt 0.9.1 (see "Which `klt` produced what" below). Alongside
 the two lists above each carries `coverage.skipped: []`,
 `coverage.unknown: []`, `coverage.nothing_checked: false`, and a
 `coverage.inapplicable` array that gives every skipped rule a
@@ -655,7 +655,7 @@ purpose:
 | Role | Build | Where it is pinned |
 |---|---|---|
 | **Grader** — parses the T1 checklist and renders the verdict | `0.8.0` (released) | `signoff/check.py`'s `KLT_GRADER_PIN`; CI's `signoff` job |
-| **Producer, analog** — `layout/reports/*` | `0.6.0` (released; tag `v0.6.0`, commit `c622e8addb36`), with `klayout==0.30.10` | `.github/workflows/pdk-nightly.yml`, per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md) as amended; `layout/reports/environment.json`'s `klt_origin` |
+| **Producer, analog** — `layout/reports/*` | `0.9.1` (released; tag `v0.9.1`, commit `4d0d29be4fd9`), with `klayout==0.30.10`, since #870 regenerated `layout/reports/`; `0.6.0` (tag `v0.6.0`, commit `c622e8addb36`) before it | no producer release is pinned, per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md)'s amendment of 2026-11-09 ("no single producer of record"); each report records its own build in its `provenance.klt_version`, and the run's environment in `layout/reports/environment.json`'s `klt_origin` |
 | **Producer, digital** — `layout/digital/reports/*` | `0.9.1` (released) for place-and-route, DRC, LVS and ERC since #866 re-ran the chain under the toolchain `.github/workflows/pdk-nightly.yml` installs; `0.6.0` for DRC/LVS and `0.5.0+g32f69f811682` for the place-and-route before it | recorded in each envelope's own `provenance.klt_version` |
 
 The grader pin is deliberately independent of any producer pin — it grades
