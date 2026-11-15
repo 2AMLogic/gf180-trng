@@ -225,9 +225,9 @@ class ParseTests(unittest.TestCase):
                 "m_bad = not_a_number",
             ]
         )
-        self.assertEqual(
-            runner.parse_measurements(text), {"vout": 1.2003456789, "iq": -4.5e-05}
-        )
+        finite, non_finite = runner._scan_measurements(text)
+        self.assertEqual(finite, {"vout": 1.2003456789, "iq": -4.5e-05})
+        self.assertEqual(non_finite, {})
 
     def test_non_finite_values_are_never_parsed_as_measurements(self):
         # `1e999` matches the numeric syntax but float() overflows it to
@@ -242,9 +242,10 @@ class ParseTests(unittest.TestCase):
                 "m_ok = 2.5e-3",
             ]
         )
-        self.assertEqual(runner.parse_measurements(text), {"ok": 2.5e-3})
+        finite, non_finite = runner._scan_measurements(text)
+        self.assertEqual(finite, {"ok": 2.5e-3})
         self.assertEqual(
-            runner.parse_non_finite_measurements(text),
+            non_finite,
             {
                 "big": "1e999",
                 "small": "-1e999",
