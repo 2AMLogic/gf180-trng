@@ -64,6 +64,17 @@ SUPPLIES_V = (2.97, 3.30, 3.63)
 #: either ring period.
 PHASES_S = (0.0, 1.5e-9, 3.0e-9, 4.5e-9)
 
+#: The deck encodes the three time axes (vph, vrel, vthw) as DC sources read
+#: in NANOSECONDS by its B-sources (1 V = 1 ns), and this tool scales the
+#: request rows and converts the report values back to seconds. Seconds-valued
+#: axes collide in klt's per-unit directory / corner ids, which format axis
+#: values to three decimals: distinct units then share one directory, one
+#: netlist runs for several of them, and the report repeats one unit's
+#: measurements across all of them (observed on the 2026-11-15 control-tt
+#: submit). In ns every declared value is distinct at that resolution with
+#: stimulus identical to the seconds encoding.
+TIME_SCALE = 1e9
+
 TCLK_S = 1e-6  # 1 Mbps, DR-0003's ratified raw target
 TCLK0_S = 0.3e-6
 TR_S = 1e-9
@@ -177,12 +188,15 @@ def unit_grid(name: str) -> list[dict]:
     if name == "grid":
         for v in SUPPLIES_V:
             for ph in PHASES_S:
-                rows.append(dict(vsupply=v, vph=ph, vrel=REL_S, vthw=THW_S))
+                rows.append(dict(vsupply=v, vph=ph * TIME_SCALE,
+                                 vrel=REL_S * TIME_SCALE, vthw=THW_S * TIME_SCALE))
     elif name == "control-tt":
         for ph in PHASES_S:
-            rows.append(dict(vsupply=3.30, vph=ph, vrel=REL_S, vthw=THW_S))
+            rows.append(dict(vsupply=3.30, vph=ph * TIME_SCALE,
+                             vrel=REL_S * TIME_SCALE, vthw=THW_S * TIME_SCALE))
         for rel, thw in NEGATIVE_CONTROLS.values():
-            rows.append(dict(vsupply=3.30, vph=0.0, vrel=rel, vthw=thw))
+            rows.append(dict(vsupply=3.30, vph=0.0,
+                             vrel=rel * TIME_SCALE, vthw=thw * TIME_SCALE))
     else:
         raise KeyError(name)
     return rows
@@ -377,15 +391,15 @@ def analyse_unit(corner: dict) -> dict:
     v = _vals(corner)
     sv = corner.get("supply_v", {})
     vdd = float(sv.get("vsupply", 3.3))
-    phase = float(sv.get("vph", 0.0))
+    phase = float(sv.get("vph", 0.0)) / TIME_SCALE
     res: dict = {
         "corner_id": corner.get("corner_id"),
         "process": corner.get("process"),
         "temperature_c": corner.get("temperature_c"),
         "vdd": vdd,
         "phase_s": phase,
-        "vrel": float(sv.get("vrel", REL_S)),
-        "vthw": float(sv.get("vthw", THW_S)),
+        "vrel": float(sv.get("vrel", REL_S * TIME_SCALE)) / TIME_SCALE,
+        "vthw": float(sv.get("vthw", THW_S * TIME_SCALE)) / TIME_SCALE,
         "status": corner.get("status"),
         "runtime_s": corner.get("runtime_s"),
         "n_measured": len(v),

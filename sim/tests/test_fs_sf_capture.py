@@ -48,7 +48,8 @@ def clean_measurements(vdd: float = VDD, phase: float = 0.0, bits=(1, 0, 1)) -> 
 
 
 def unit(meas: dict[str, float], vdd: float = VDD, phase: float = 0.0, **sv) -> dict:
-    supply = {"vsupply": vdd, "vph": phase, "vrel": fc.REL_S, "vthw": fc.THW_S}
+    supply = {"vsupply": vdd, "vph": phase * fc.TIME_SCALE,
+              "vrel": fc.REL_S * fc.TIME_SCALE, "vthw": fc.THW_S * fc.TIME_SCALE}
     supply.update(sv)
     core = {
         "xo_max": vdd, "xo_min": 0.0, "r1_max": vdd, "r1_min": 0.0, "r2_max": vdd, "r2_min": 0.0,
@@ -89,7 +90,8 @@ class TestDeclaredCampaign(unittest.TestCase):
         rows = list(zip(req["corners"]["supply_v"]["vsupply"], req["corners"]["supply_v"]["vph"]))
         self.assertEqual(len(rows), len(set(rows)))
         for v in fc.SUPPLIES_V:
-            self.assertEqual(sorted(p for vv, p in rows if vv == v), sorted(fc.PHASES_S))
+            self.assertEqual(sorted(p for vv, p in rows if vv == v),
+                             sorted(ph * fc.TIME_SCALE for ph in fc.PHASES_S))
 
     def test_fs_sf_sections_skew_only_the_mos_family(self):
         for p in ("fs", "sf"):
@@ -104,8 +106,8 @@ class TestDeclaredCampaign(unittest.TestCase):
         n = len(sv["vsupply"])
         self.assertEqual(n, len(fc.PHASES_S) + len(fc.NEGATIVE_CONTROLS))
         self.assertTrue(all(len(x) == n for x in sv.values()))
-        self.assertEqual(sum(1 for r in sv["vrel"] if r > 0.9), 1)
-        self.assertEqual(sum(1 for w in sv["vthw"] if w < 1e-9), 1)
+        self.assertEqual(sum(1 for r in sv["vrel"] if r > 0.9 * fc.TIME_SCALE), 1)
+        self.assertEqual(sum(1 for w in sv["vthw"] if w < 1e-9 * fc.TIME_SCALE), 1)
 
     def test_phases_fit_before_the_first_read(self):
         # the +8 ns read must come after the latest phase-shifted edge has completed
@@ -180,7 +182,7 @@ class TestCaptureChecker(unittest.TestCase):
             for d in fc.READ_DELAYS_S:
                 m[f"rv_{k}_{round(d * 1e9)}"] = 0.0
                 m[f"rb_{k}_{round(d * 1e9)}"] = 0.0
-        u = fc.analyse_unit(unit(m, vrel=1.0))
+        u = fc.analyse_unit(unit(m, vrel=1.0 * fc.TIME_SCALE))
         self.assertEqual(u["verdict"], "FUNCTIONAL_MISS")
         self.assertTrue(any("raw_valid" in f and "not high" in f for f in u["fails"]))
 
@@ -191,7 +193,7 @@ class TestCaptureChecker(unittest.TestCase):
             if k:
                 for n in ("xl", "xm", "xh"):
                     del m[f"{n}_{k}"]
-        u = fc.analyse_unit(unit(m, vthw=20e-12))
+        u = fc.analyse_unit(unit(m, vthw=20e-12 * fc.TIME_SCALE))
         self.assertEqual(u["verdict"], "FUNCTIONAL_MISS")
         self.assertTrue(any("no clock crossing" in f for f in u["fails"]))
 
