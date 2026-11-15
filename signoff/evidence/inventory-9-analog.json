@@ -1256,15 +1256,15 @@
         },
         {
           "path": "sim/tb/sampler-array-fs-sf/request-control-tt.json",
-          "sha256": "sha256:8982793bf1190167e4f39ec37b213140549a1f19a0735196ce7f71aa1456e7bd"
+          "sha256": "sha256:92a36b4af96c5651a1eeef3855322d1ca3fd5107771f117a67d4b3d2c5938667"
         },
         {
           "path": "sim/tb/sampler-array-fs-sf/request-grid.json",
-          "sha256": "sha256:009288979f5efb217b6001aa9d7affddb279f2ad754ff7fcb8abdf4ae7933962"
+          "sha256": "sha256:e0ddfa0d11a5d0e124eed4d66cefb19c13f197ee3bd38935d5bf735c97b90b1d"
         },
         {
           "path": "sim/tb/sampler-array-fs-sf/tb_sampler_array_fs_sf.sp",
-          "sha256": "sha256:3b7131cdaf7bc9413deb478305faa2a77cd5e2767c62040bab174bcf1e1f2f92"
+          "sha256": "sha256:63c8dea09184a99db93840a7af4e0896c325dbbd37a8fbc8fd03fb8d4fb881f9"
         }
       ]
     },
@@ -1612,11 +1612,11 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:af659a560d3aaa61113d6c3bb570a460880a296f6a9347e841a25ef04fe49516"
+      "sha256": "sha256:597891da11764260a11c6857ffb5d3e06803fcb535852fd3108e2782fa3a3011"
     },
     {
       "path": "sim/README.md",
-      "sha256": "sha256:633b1679fe78ef26cb94aa73766835e756d97f319b121e9e5b9126f8d620210d"
+      "sha256": "sha256:b6f3bfcfdb8b6c42288e9b195fe2a777379b49e94078b2c958d8b1bf4c712bce"
     }
   ]
 }
