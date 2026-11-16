@@ -136,12 +136,9 @@ PROVISIONING_HINT = (
     "provision a cocotb-capable klt once, machine-locally:\n"
     "    python3.13 -m venv ~/.local/venvs/klt-cocotb\n"
     "    ~/.local/venvs/klt-cocotb/bin/pip install 'cocotb==2.0.1' \\\n"
-    "        klayout-tools 'klayout==0.30.10'\n"
+    "        'klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@<pinned-commit>'\n"
     "then re-run with TRNG_POST_ROUTE_KLT=~/.local/venvs/klt-cocotb/bin/klt "
-    "(klayout-tools is unpinned: the repo pins no producer build and CI "
-    "installs the latest tagged release -- DR-0026 amendment of 2026-11-09; "
-    "probe_klt enforces no klt version requirement, the venv is for the "
-    "matching-ABI cocotb 2.0.1 wheel)."
+    "(the <pinned-commit> is the one .github/workflows/pdk-nightly.yml installs)."
 )
 
 
