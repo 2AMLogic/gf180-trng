@@ -99,7 +99,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/activity.py",
-          "sha256": "sha256:9bdac94ecb909b0b2d7f7d9692de4f70e6165c9f63ed07da8a159ec7a69c7659"
+          "sha256": "sha256:5cab13ac7a8a7e977cce03f5dcf90c88c485783be36dca37905f126060d1181c"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_power.py",
