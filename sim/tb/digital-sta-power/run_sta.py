@@ -646,15 +646,6 @@ class Point:
 # --------------------------------------------------------------------------- #
 
 
-def openroad_version() -> str | None:
-    if shutil.which("openroad") is None:
-        return None
-    done = subprocess.run(
-        ["openroad", "-version"], capture_output=True, text=True, check=False
-    )
-    return done.stdout.strip().splitlines()[0].strip() if done.stdout.strip() else None
-
-
 def resolve_pdk():
     try:
         return pdk_mod.find_pdk()
@@ -690,7 +681,7 @@ def rcx_rules_path(pdk, rc: str) -> Path:
 
 def check_environment(pdk) -> list[str]:
     missing: list[str] = []
-    if openroad_version() is None:
+    if report.tool_version(["openroad", "-version"]) is None:
         missing.append(
             "openroad is not on PATH (see layout/digital/README.md's 'OpenROAD' "
             "section for the pinned ORFS image, or install a native build)"
@@ -1815,7 +1806,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR  {reason}", file=sys.stderr)
         return 3
 
-    openroad = openroad_version() or "unknown"
+    openroad = report.tool_version(["openroad", "-version"]) or "unknown"
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     git = report.git_provenance(REPO_ROOT)
     records_dir = SIM_DIR / "records"

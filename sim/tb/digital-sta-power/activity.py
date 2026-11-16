@@ -44,7 +44,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -397,14 +396,6 @@ def normalize_vcd(path: Path) -> None:
     path.write_text(text)
 
 
-def tool_version(cmd: list[str]) -> str | None:
-    if shutil.which(cmd[0]) is None:
-        return None
-    done = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    first = (done.stdout or done.stderr).strip().splitlines()
-    return first[0] if first else None
-
-
 def library_verilog(pdk) -> list[Path]:
     d = Path(pdk.path) / "libs.ref" / CELL_LIBRARY / "verilog"
     return [d / f"{CELL_LIBRARY}.v", d / "primitives.v"]
@@ -488,7 +479,7 @@ def identities(pdk) -> dict:
         },
         "workloads_module_git_blob_sha": report.blob_sha(
             REPO_ROOT, SIM_DIR / "tb" / "trng-top-post-route" / "activity_workloads.py"),
-        "simulator": tool_version(["iverilog", "-V"]),
+        "simulator": report.tool_version(["iverilog", "-V"]),
         "simulator_flags": "-g2012 -gno-specify (zero delay; specify blocks ignored)",
         "x_z_handling": (
             "x/z values are kept verbatim in the VCD and counted in "

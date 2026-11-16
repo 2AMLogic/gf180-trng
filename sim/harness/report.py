@@ -27,6 +27,7 @@ import hashlib
 import json
 import platform
 import re
+import shutil
 import statistics
 import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -161,6 +162,27 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def tool_version(cmd: list[str], *, timeout: float = 60) -> str | None:
+    """First line of ``<cmd>'s`` ``--version``-style banner, or ``None``.
+
+    ``None`` when the binary is not on ``PATH``, the run fails (``OSError``/
+    ``SubprocessError``, including ``timeout``), or the output is empty.
+    Output is taken from ``stdout`` or, if empty, ``stderr``. Tool-version
+    probes gate evidence runs, so every failure mode degrades to a clean
+    ``None`` instead of a traceback (issue #920, consolidating four copies).
+    """
+    if shutil.which(cmd[0]) is None:
+        return None
+    try:
+        done = subprocess.run(
+            cmd, capture_output=True, text=True, check=False, timeout=timeout
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    lines = (done.stdout or done.stderr).strip().splitlines()
+    return lines[0].strip() if lines else None
 
 
 #: Name of the per-record copy of the loaded ``tb.json`` kept in the raw dir.
