@@ -1089,9 +1089,11 @@ saying so.
 `klt place-and-route` shells out to an `openroad` binary. There is no
 Homebrew formula and no common Linux-distro package for it, so
 [`../openroad_docker.sh`](../openroad_docker.sh) presents the pinned ORFS
-Docker image as if it were a native `openroad`, and `build.py` puts it on
-`$PATH` only when no native binary is already there (a real local install
-always wins). The pin:
+Docker image as if it were a native `openroad`, and
+`_ensure_openroad_reachable()` puts it on `$PATH` only when no native binary
+is already there (a real local install always wins). That helper lives in
+[`../_klt.py`](../_klt.py) and is the one copy `build.py` and `gen_sdf.py`
+both call. The pin:
 
 | | |
 |---|---|
