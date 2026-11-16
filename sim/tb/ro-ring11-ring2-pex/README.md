@@ -12,10 +12,11 @@ batch fleet and is committed under
 [`signoff/evidence/post-layout/ring2/`](../../../signoff/evidence/post-layout/ring2/)
 (native envelope, extracted netlist, `publication.json`; `producer_build` 0.9.2,
 `body_bias.status` `biased`). Across the grid the extracted period is
-113.7-130.8 % above the schematic's, average supply current 12.2-14.8 %, and
-output swing -6.1 to -4.9 %; the envelope's `body_bias.status` is `biased`
-because ring2's layout carries the #705 well and substrate ties, so the
-floating-PMOS-well counterfactual does not apply to it. This is a diagnostic
+113.7-130.8 % above the schematic's, average supply current magnitude
+12.2-14.8 % lower, and output swing -6.1 to -4.9 %; the envelope's
+`body_bias.status` is `biased` because ring2's layout carries the #705 well
+and substrate ties, so the floating-PMOS-well counterfactual does not
+apply to it. This is a diagnostic
 under ring2's own isolation, unloaded output and determinism disclosures (see
 "What this does not claim"); it is not a manifest citation and makes no
 silicon, entropy or timing claim. The full record, including fleet job ids and

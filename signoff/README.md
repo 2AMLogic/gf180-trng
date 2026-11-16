@@ -1364,12 +1364,12 @@ under a tagged klt 0.9.2 client against the fleet's 0.9.0 runner, every row
 measured, and the envelope, extracted netlist and `publication.json`
 (`producer_build` "0.9.2", `body_bias_status` "biased") are committed; the
 recorded verdict is recomputed here on every run. The extracted period sits
-113.7-130.8 % above the schematic's across the grid (supply current
-+12.2 to +14.8 %, output swing -6.1 to -4.9 %). Earlier attempts are
-append-only history: the first (#476) errored on the fleet because the pinned
-0.6.0 client did not ship the `.include`d DUT and the fleet runner was klt 0.5.0
-(`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`); the second
-(2026-11-05, klt 0.9.0 both ends) measured the whole grid but stayed
+113.7-130.8 % above the schematic's across the grid (average supply current
+magnitude 12.2-14.8 % lower, output swing -6.1 to -4.9 %). Earlier attempts
+are append-only history: the first (#476) errored on the fleet because the
+pinned 0.6.0 client did not ship the `.include`d DUT and the fleet runner was
+klt 0.5.0 (`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`); the
+second (2026-11-05, klt 0.9.0 both ends) measured the whole grid but stayed
 unpublished on the then-open producer-pin question, and described the
 pre-#826 floating-well layout
 (`sim/records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md`). It stays a diagnostic: no entropy, full-chip timing
