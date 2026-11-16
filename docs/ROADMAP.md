@@ -61,12 +61,12 @@ Startable today, one pull request each.
   violation. `8939b542` is a starting point (14.857 µm at a 30 µm pitch, per PR #720). Base it on
   the chain PR #878 regenerated (#866): the same digital chain, re-run under the nightly's
   Yosys 0.69 / klt 0.9.1 toolchain.
-- **Correct the DRC-clean statements (#879).** Done when the three sentences match `drc.json` and
-  `floorplan.drc.json` and `check.py` passes on the re-hashed README.
 
-In flight, not to be duplicated: #866 (PR #878 merged the re-run chain on 2026-11-14; the issue
-stays open on a Champion AC hold until the first scheduled nightly run shows the synthesis
-staleness guard green), #520 (import convention, PR #581 held).
+In flight, not to be duplicated: #879 (correct the DRC-clean statements so the three sentences
+match `drc.json` and `floorplan.drc.json` and `check.py` passes on the re-hashed README; in
+review as PR #898), #866 (PR #878 merged the re-run chain on 2026-11-14; the issue stays open on
+a Champion AC hold until the first scheduled nightly run shows the synthesis staleness guard
+green), #520 (import convention, PR #581 held).
 
 ## Next
 
@@ -81,10 +81,11 @@ staleness guard green), #520 (import convention, PR #581 held).
   #911); `signoff/README.md` names the gap: 8 and 30 seeds against the 183 the default target
   needs, and no seeded known-bad variant. Done when a `klt yield` report over the larger sample
   set has a `sample_size` verdict other than `insufficient`.
-- **Publish the ring2 paired PEX comparison (#476).** The 27-corner grid measured under klt 0.9.0
-  (`sim/records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md`); its parked question, which
-  producer pin covers it, predates #705 removing the single producer pin. Done when
-  `signoff/evidence/post-layout/ring2/` holds the published response and `check.py` accepts it.
+- **Publish the ring2 paired PEX comparison (#476).** In review as PR #923. The 27-corner grid
+  measured under klt 0.9.0 (`sim/records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md`); its
+  parked question, which producer pin covers it, predates #705 removing the single producer pin.
+  Done when `signoff/evidence/post-layout/ring2/` holds the published response and `check.py`
+  accepts it.
 - **Record the liveness-sampler current in the power rollup (#810)**, once the scope question on
   that issue is answered. Done when the breakdown and `power_rollup.py` agree and
   `sim/characterization-analog-summary.md` quotes the same totals.
@@ -99,7 +100,8 @@ staleness guard green), #520 (import convention, PR #581 held).
   the `docs/area-*-2026-11-09.md` studies reach the bounds, or is there evidence of physical
   unreachability to bring back as a new decision?
 - **Asymmetric fs/sf corners on the integrated sampler path (#472).** Question first: does a batch
-  submission of its grid now obtain capacity and a compatible runner?
+  submission of its grid now obtain capacity and a compatible runner? (In flight: PR #932 is
+  running that campaign on the batch fleet.)
 - **Out-of-envelope health-test behavior.** [The plan](out-of-envelope-characterization-plan.md)
   found no supported simulation grid. Question first: what model range holds outside the envelope?
 
@@ -107,7 +109,8 @@ staleness guard green), #520 (import convention, PR #581 held).
 
 - **#486** needs a controlled GF180MCU DRM revision, or written confirmation of the device-class
   column, for LU.3/LU.4. It gates the final acceptance of #449 and #487 only.
-- **#810** and **#476** each carry an open decision block.
+- **#810** carries an open decision block; #476's is being resolved by its in-review PR #923
+  (DR-0026's 2026-11-09 amendment covers the producer pin).
 - **PR #413** (#339) is parked on whether its branch history may be rewritten. #339, #411 and #412
   describe floating wells that `main` no longer has, and need a re-read, not a build.
 - **6.digital** waits on klayout-tools#2865 reaching a release, as `signoff/README.md` records.
