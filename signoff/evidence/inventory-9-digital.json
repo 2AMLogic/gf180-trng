@@ -83,7 +83,7 @@
         },
         {
           "path": "sim/tb/digital-power-by-block/run_by_block.py",
-          "sha256": "sha256:2e391eb254faa5ee416b81a0bbd9f11167959f4aa83f56abb33b81924a9e8400"
+          "sha256": "sha256:9069050fab057bf615e821892da08f64de41f3f661214d54f6393a2beb356eca"
         }
       ]
     },
@@ -99,11 +99,11 @@
         },
         {
           "path": "sim/tb/digital-sta-power/activity.py",
-          "sha256": "sha256:8c091c3e02152c78b48459d2a925dacd8b14071750c9545b9f94968c9674b3f0"
+          "sha256": "sha256:9bdac94ecb909b0b2d7f7d9692de4f70e6165c9f63ed07da8a159ec7a69c7659"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_power.py",
-          "sha256": "sha256:96b301fc97dfc6c2eca7ed3f52917b82d7a5dbeff378e1950e1494cc144130f7"
+          "sha256": "sha256:b0e3cf98f84f2d4ea9284be4c7489f80f1c04f8e473df85574fb554c261866bd"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_tb.v",
@@ -115,7 +115,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/run_sta.py",
-          "sha256": "sha256:dd8e6b945b4ee61fb28accf3fdd26ab5b9fcd3e3ef076a5757f9a041bf450656"
+          "sha256": "sha256:6161c3b5d9cfb7acca8da646c7fa4aeb305eda1e0ebfb232b50dd2cd62d2d588"
         },
         {
           "path": "sim/tb/digital-sta-power/sdc_treatment_probe.py",
@@ -274,7 +274,7 @@
         },
         {
           "path": "sim/tb/trng-top-post-route/run_demo.py",
-          "sha256": "sha256:dab3e4fb0b79c933a5793e7c238df8e9b870b4e15b9b4a099993347edc3ec01f"
+          "sha256": "sha256:8a85b0491e91fb8e9f7b486f4875e4ab4374e6bb660d324f73262b14c4ff559a"
         },
         {
           "path": "sim/tb/trng-top-post-route/scenarios.py",
@@ -286,7 +286,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:fc15a5658ffbc18e5aa984fecb21ff443d69e49308a24caa903d4ddd33c8c922"
+      "sha256": "sha256:04ab1df0fec38cfb56c3a07bd07ee7f8d6b4f54a61b5f205449cdc2256c308a4"
     },
     {
       "path": "sim/README.md",

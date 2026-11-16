@@ -952,6 +952,15 @@ output was never read. That is disclosed in DR-0025's own Status and
 Consequences, and is a cost input for whoever builds the increment — not a
 source for anything here.)
 
+> **Superseded evidence (issues #449, #717).** The DRC half of the sentence
+> below — "`layout/floorplan/reports/floorplan.drc.json` records
+> `status: "clean"`" — is superseded: that committed report now records
+> `status: "violations"`, all of it the `comp.tap_distance.{nwell,psub}.mv.1`
+> latch-up tie-distance class tracked by #449/#717. The LVS half —
+> `layout/floorplan/reports/interregion.json`'s `check.lvs` recording
+> `status: "match"` — still holds. The prose below is left as written for
+> history.
+
 **What unblocked.** Issue #222 (phase 2 of #219) drew real Metal4 trunks and
 Metal3 risers across the four regions' isolation channels for every net
 `design/floorplan_netlist.py` declares. Verified against the committed

@@ -13,6 +13,8 @@ import re
 import unittest
 from pathlib import Path
 
+from sim.tools import _git_files
+
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "package.json"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
@@ -55,6 +57,36 @@ class CheckScriptParity(unittest.TestCase):
                     or any(re.search(rf"npm run {re.escape(n)}(?![\w-])", scripts[chain]) for n in names),
                     f"CI runs `{command}` but {chain} does not reach it",
                 )
+    def test_every_named_entry_point_has_a_caller(self) -> None:
+        """A `scripts` entry nothing invokes is invisible to the tests above.
+
+        Guards the reverse direction: every named entry point except the two
+        chain roots must be reached by an `npm run <name>` (yarn/pnpm count
+        too) in some tracked file. Scanning `git ls-files` rather than just
+        package.json keeps docs-only callers like `check:signoff` in
+        `signoff/README.md` valid, and makes an unreachable second name for
+        a command fail here instead of sitting unnoticed.
+        """
+        scripts = json.loads(PACKAGE.read_text())["scripts"]
+        chain_roots = {"check:ci", "check:all"}
+        unreached = {
+            name: re.compile(
+                rf"(?:npm|yarn|pnpm) run {re.escape(name)}(?![\w:-])".encode()
+            )
+            for name in scripts
+            if name not in chain_roots
+        }
+        for rel in _git_files.tracked_files(ROOT):
+            text = (ROOT / rel).read_bytes()
+            for name in [n for n, pat in unreached.items() if pat.search(text)]:
+                del unreached[name]
+            if not unreached:
+                return
+        self.assertEqual(
+            sorted(unreached),
+            [],
+            "package.json scripts that no tracked file invokes",
+        )
 
 
 if __name__ == "__main__":

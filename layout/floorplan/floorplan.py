@@ -2502,7 +2502,7 @@ def main(argv: list[str] | None = None) -> int:
     if failures:
         print(f"FAIL: {len(failures)} check(s) not met")
         return EXIT_FAIL
-    print("PASS: floorplan abstract is DRC-clean and its area rollup is reproducible.")
+    print("PASS: floorplan DRC introduces nothing beyond each assembled region's own standalone DRC and its area rollup is reproducible.")
     return EXIT_OK
 
 
