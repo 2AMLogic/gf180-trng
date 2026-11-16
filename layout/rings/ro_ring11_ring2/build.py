@@ -70,8 +70,6 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import klt_version, resolve_pdk  # noqa: E402
-from layout.cells._build_cli import make_pdk_check, make_pdk_main  # noqa: E402
 from layout.rings import _ring_common  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -186,10 +184,6 @@ def _bboxes_and_locals() -> tuple[dict[str, dict], dict[str, dict]]:
     return _ring_common.bboxes_and_locals(SPEC)
 
 
-def _wiring_shapes(offsets: dict[str, float], locals_: dict[str, dict]) -> list[dict]:
-    return _ring_common.wiring_shapes(SPEC, offsets, locals_)
-
-
 def gds_path() -> Path:
     return SPEC.gds_path()
 
@@ -198,24 +192,14 @@ def build(pdk_variant: str, path: Path | None = None) -> bytes:
     return _ring_common.build(SPEC, pdk_variant, path)
 
 
-# The check/CLI tail is the shared one (`layout/cells/_build_cli.py`, #589);
-# `layout/verify.py`'s `_STALENESS_CHECKS` calls this module's `check()`
-# with no arguments.
-check = make_pdk_check(
-    gds_path=gds_path,
-    build=build,
-    resolve_pdk=resolve_pdk,
-    work_dir=WORK_DIR,
-    top_cell=TOP_CELL,
+# The check/CLI tail is the shared one: `_ring_common.ring_cli` binds
+# `layout/cells/_build_cli.py`'s factories (#589) to this ring's own `SPEC`,
+# which already carries every value the two drivers used to thread by hand
+# (#882). `layout/verify.py`'s `_STALENESS_CHECKS` calls this module's
+# `check()` with no arguments.
+check, main = _ring_common.ring_cli(
+    SPEC,
     script="layout/rings/ro_ring11_ring2/build.py",
-)
-main = make_pdk_main(
-    check=check,
-    gds_path=gds_path,
-    build=build,
-    resolve_pdk=resolve_pdk,
-    klt_version=klt_version,
-    top_cell=TOP_CELL,
     description=__doc__.splitlines()[0],
 )
 
