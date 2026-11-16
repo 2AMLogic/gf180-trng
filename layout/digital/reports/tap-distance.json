@@ -25,7 +25,7 @@
     "gds": "layout/digital/trng_top.gds",
     "gds_sha256": "338a16684ecd4381bb9ea898c9b98e234c4f5c33700b6eac106d80f157b711a6",
     "spec": "layout/digital/tap-distance-spec.json",
-    "spec_sha256": "f54e4d3ff0b6323c30cc8804702d10032582e878fafeddfaa004b548467f68c4",
+    "spec_sha256": "8adf9376eb2a780109b5a52e550b47b1ae418da20a30095da39605163d7f7de6",
     "top_cell": "trng_top"
   },
   "kind": "tap-distance",
