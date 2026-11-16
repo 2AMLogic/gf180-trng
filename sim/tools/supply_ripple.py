@@ -512,14 +512,6 @@ def beat_phase_fit(edges1: list[float], edges2: list[float], f_hz: float,
 # --------------------------------------------------------------------------
 
 
-def tone_detected(fit: dict, k_sigma: float = 5.0) -> bool:
-    """A tone is called detected only if it exceeds ``k_sigma`` standard errors
-    of the white residual. Deterministic residual structure (a start-up
-    remnant, solver-step steps) is *not* white, so this is a floor to compare
-    controls against, not a proof that anything beneath it is noise."""
-    return fit["sigma_amp"] > 0 and fit["amp"] > k_sigma * fit["sigma_amp"]
-
-
 def unit_edges(measurements: dict[str, float], ring: int) -> list[float]:
     out = []
     k = 1

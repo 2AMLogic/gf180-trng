@@ -186,10 +186,6 @@ class CommittedRecords(unittest.TestCase):
         self.assertIn("45 records", text)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RecordFrontMatter(unittest.TestCase):
     """The record front matter this tool renders, pinned line for line (issue #834).
 
@@ -298,3 +294,7 @@ raw:
         for text in (measured, attempt):
             self.assertIn("Written by `sim/tools/power_switch.py record`", text)
             self.assertTrue(text.endswith("\n"))
+
+
+if __name__ == "__main__":
+    unittest.main()

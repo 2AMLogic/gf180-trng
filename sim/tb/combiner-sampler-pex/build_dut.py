@@ -95,7 +95,7 @@ REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT / "sim" / "tools"))
 
 import pex_dut  # noqa: E402
-from pex_dut import (  # noqa: E402,F401
+from pex_dut import (  # noqa: E402
     BuildError,
     logical_lines as _logical_lines,
     rel as _rel,

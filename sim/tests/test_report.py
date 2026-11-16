@@ -102,15 +102,15 @@ class RecordStemTests(unittest.TestCase):
     def test_first_allocation_is_01(self):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            stem = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            stem = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(stem, "2026-08-14-ro-jitter-01")
 
     def test_allocation_never_reuses_an_existing_stem(self):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            first = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            first = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             (records_dir / f"{first}.md").write_text("# first\n")
-            second = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            second = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(second, "2026-08-14-ro-jitter-02")
             # the existing record was not touched
             self.assertEqual((records_dir / f"{first}.md").read_text(), "# first\n")
@@ -124,9 +124,9 @@ class RecordStemTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            in_flight = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            in_flight = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             (records_dir / report.RAW_DIRNAME / in_flight).mkdir(parents=True)
-            second = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            second = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(in_flight, "2026-08-14-ro-jitter-01")
             self.assertEqual(second, "2026-08-14-ro-jitter-02")
 
@@ -134,7 +134,7 @@ class RecordStemTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
             (records_dir / "2026-08-14-alpha-01.md").write_text("x")
-            stem = report.allocate_record_stem(records_dir, "2026-08-14", "beta")
+            stem = report.allocate_record_stems(records_dir, "2026-08-14", "beta", 1)[0]
             self.assertEqual(stem, "2026-08-14-beta-01")
 
 
@@ -1496,10 +1496,6 @@ class InputSnapshotTests(unittest.TestCase):
         self.assertEqual(tb.input_snapshots(), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class StartupSnapshotRecordTests(unittest.TestCase):
     """#582: the start-up script the runs consumed is listed in raw.files and
     the metadata digest is cross-checked against it. No PDK, no ngspice."""
@@ -1685,3 +1681,7 @@ class TransientNoiseReproductionScopeTests(unittest.TestCase):
             digest, name = line.split("  ", 1)
             data = (experiment / name).read_bytes()
             self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)
+
+
+if __name__ == "__main__":
+    unittest.main()

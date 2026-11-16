@@ -127,10 +127,6 @@ class CommittedRecords(unittest.TestCase):
         self.assertIn("Binding idle corner", pr.summary_text(self.recs, analog, stem))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RecordFrontMatter(unittest.TestCase):
     """The record front matter this tool renders, pinned line for line (issue #834).
 
@@ -240,3 +236,7 @@ raw:
         for text in (measured, attempt):
             self.assertIn("Written by `sim/tools/power_retention.py record`", text)
             self.assertTrue(text.endswith("\n"))
+
+
+if __name__ == "__main__":
+    unittest.main()
