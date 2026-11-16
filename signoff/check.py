@@ -11,8 +11,8 @@ against the klayout-tools design-evidence ladder: the literal output of
     klt signoff --manifest signoff/block-manifest.json --format json
 
 A verdict that is generated once and then never re-run is prose again within a
-week, so this script exists to re-run it on every push. It fails on four
-separable conditions, in order, so a red build says which one:
+week, so this script exists to re-run it on every push. It fails on separable
+conditions, in order, so a red build says which one:
 
 1. **A cited envelope no longer describes the artifact it ran on.** The
    manifest's pinned `content_hash` is compared by `klt signoff` against the
@@ -64,6 +64,15 @@ with the committed record's tier, met count, item count and the names of its
 missing/malformed block). The row names are what make the block a unique name
 for the verdict: a count alone is a sum, so two rows changing in opposite
 directions would leave it unmoved.
+
+Both files this script writes -- `signoff/block-manifest.json` and
+`signoff/records/t1-tier-report.json` -- must also stay byte-equal to the
+canonical form it writes them in, `json.dumps(json.loads(raw), indent=2) +
+"\n"`: a hand edit or a lossy re-save fails by name, with `--write` as the
+remedy. That gate is stdlib-only and always runs in verify mode -- including
+when `klt` is absent and the re-grade self-skips -- but not in `--write` mode,
+which rewrites both files canonically. `signoff/evidence/**` is out of scope:
+it has other writers (publish_*.py, klt responses) and is append-only.
 
 T1 items 1, 2, 9 and 10 have no `klt` verb behind them, so each of the eight
 (item, partition) citations is an artifact-anchored generic envelope
@@ -1216,6 +1225,38 @@ def run_grader() -> dict | None:
     return json.loads(proc.stdout)
 
 
+def canonical_bytes_problems() -> list[str]:
+    """The two JSON files this script writes must stay byte-equal to what it
+    writes: `json.dumps(json.loads(raw), indent=2) + "\\n"`, the form
+    `write_record` and `write_inventories` produce. Anything else -- a hand
+    edit, an editor re-save, a copy through a lossy channel -- would otherwise
+    pass as grader output. `signoff/evidence/**` is deliberately out of scope:
+    it has other writers (publish_*.py, klt responses) and is append-only."""
+    problems: list[str] = []
+    for path in (MANIFEST, RECORD):
+        if not path.is_file():
+            # A missing file already has its own failure in main() and
+            # compare_record(); do not shadow it with a canonical-form one.
+            continue
+        raw = path.read_bytes()
+        try:
+            canonical = (json.dumps(json.loads(raw), indent=2) + "\n").encode("utf-8")
+        except (UnicodeDecodeError, ValueError):
+            problems.append(
+                f"{path.relative_to(REPO_ROOT)} is not readable JSON -- "
+                "regenerate it with 'python3 signoff/check.py --write' and commit it"
+            )
+            continue
+        if raw != canonical:
+            problems.append(
+                f"{path.relative_to(REPO_ROOT)} is not byte-equal to the canonical "
+                "form this script writes (json.dumps(json.loads(raw), indent=2) + "
+                "'\\n') -- regenerate it with 'python3 signoff/check.py --write' "
+                "and commit it"
+            )
+    return problems
+
+
 def write_record(report: dict) -> int:
     RECORD.parent.mkdir(parents=True, exist_ok=True)
     RECORD.write_text(json.dumps(report, indent=2) + "\n")
@@ -1328,6 +1369,17 @@ def main() -> int:
             "roll-up that consumes this file",
             file=sys.stderr,
         )
+        return 1
+
+    # Canonical-form gate: verify mode only. `--write` is the remedy for a
+    # non-canonical file -- write_inventories and write_record rewrite MANIFEST
+    # and RECORD in exactly this form -- so the gate must not stand in its own
+    # way. It runs before everything else, including the grader's self-skip,
+    # so a mangled file cannot pass merely because klt is absent.
+    canonical = [] if args.write else canonical_bytes_problems()
+    if canonical:
+        for problem in canonical:
+            print(f"signoff/check.py: {problem}", file=sys.stderr)
         return 1
 
     if args.write:

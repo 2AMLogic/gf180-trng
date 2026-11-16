@@ -1,9 +1,11 @@
 """Signoff verdict-of-record comparison: compare_record, _print_item_diff,
-resolve_artifact.
+resolve_artifact, and the canonical-bytes gate on the two files check.py
+writes (canonical_bytes_problems).
 
 compare_record is what stops a silently drifting T1 verdict from passing, so
 its fail-closed contract is pinned: a missing record fails, a differing record
-fails with a diagnosable message, an equal record passes. RECORD and
+fails with a diagnosable message, an equal record passes. canonical_bytes_problems
+is what stops a hand-mangled file from passing as grader output. RECORD and
 REPO_ROOT are pointed at a temp dir so the committed record is never touched.
 """
 
@@ -35,6 +37,17 @@ def make_report(items=None, version="0.6.0"):
         "t1_met_count": sum(1 for i in items if i["status"] == "met"),
         "t1_item_count": len(items),
         "items": items,
+    }
+
+
+def make_manifest():
+    return {
+        "block": {"name": "combiner_sampler"},
+        "kind": "klayout-design-evidence",
+        "partition_boundary": "combiner_sampler",
+        "evidence": {
+            "t1-1/all": {"file": "signoff/evidence/x.json", "content_hash": "abc123"},
+        },
     }
 
 
@@ -95,6 +108,86 @@ class CompareRecord(TempRepo):
         before = self.record.read_text()
         self.call(check.compare_record, make_report(version="0.6.1"))
         self.assertEqual(self.record.read_text(), before)
+
+
+class CanonicalBytes(TempRepo):
+    """The canonical-form gate (issue #951): the two files check.py writes --
+    the manifest and the record -- must stay byte-equal to
+    ``json.dumps(json.loads(raw), indent=2) + "\\n"``. A hand edit that only
+    moves whitespace stays valid JSON, so the byte comparison is the only
+    thing that can catch it; the failure must name the file and the fix."""
+
+    def setUp(self):
+        super().setUp()
+        self.manifest = self.root / "signoff" / "block-manifest.json"
+        patch = mock.patch.object(check, "MANIFEST", self.manifest)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.record.parent.mkdir(parents=True, exist_ok=True)
+        self.record.write_text(json.dumps(make_report([item(1)]), indent=2) + "\n")
+        self.manifest.write_text(json.dumps(make_manifest(), indent=2) + "\n")
+
+    def assert_mangle_fails(self, path, mangled, name):
+        path.write_text(mangled)
+        problems = check.canonical_bytes_problems()
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn(name, problems[0])
+        self.assertIn("python3 signoff/check.py --write", problems[0])
+
+    def test_canonical_copies_pass(self):
+        self.assertEqual(check.canonical_bytes_problems(), [])
+
+    def test_record_newline_eaten_before_final_brace_fails(self):
+        self.assert_mangle_fails(
+            self.record,
+            self.record.read_text().replace("\n}", "}", 1),
+            "signoff/records/t1-tier-report.json",
+        )
+
+    def test_record_newline_eaten_before_sibling_key_fails(self):
+        self.assert_mangle_fails(
+            self.record,
+            self.record.read_text().replace('\n  "items"', '  "items"', 1),
+            "signoff/records/t1-tier-report.json",
+        )
+
+    def test_manifest_newline_eaten_before_final_brace_fails(self):
+        self.assert_mangle_fails(
+            self.manifest,
+            self.manifest.read_text().replace("\n}", "}", 1),
+            "signoff/block-manifest.json",
+        )
+
+    def test_manifest_newline_eaten_before_sibling_key_fails(self):
+        self.assert_mangle_fails(
+            self.manifest,
+            self.manifest.read_text().replace('\n  "evidence"', '  "evidence"', 1),
+            "signoff/block-manifest.json",
+        )
+
+    def test_unparsable_file_fails_and_names_fix(self):
+        self.record.write_text("{oops")
+        problems = check.canonical_bytes_problems()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("not readable JSON", problems[0])
+        self.assertIn("python3 signoff/check.py --write", problems[0])
+
+    def test_main_gate_fails_even_when_the_grader_self_skips(self):
+        # Wire-up proof: with klt absent, main() would print SKIPPED and exit 0
+        # -- the canonical gate must fire before that and fail instead. The
+        # gate's expensive neighbours are patched so this stays offline.
+        self.record.write_text(self.record.read_text().replace("\n}", "}", 1))
+        with mock.patch.object(check, "freshness_gate", return_value=0), \
+                mock.patch.object(check, "verify_current_status", return_value=[]), \
+                mock.patch.object(
+                    check, "run_grader",
+                    side_effect=check.GraderUnavailable("no klt")), \
+                mock.patch.object(check.sys, "argv", ["check.py"]):
+            rc, out, err = self.call(check.main)
+        self.assertEqual(rc, 1)
+        self.assertIn("signoff/records/t1-tier-report.json", err)
+        self.assertIn("python3 signoff/check.py --write", err)
+        self.assertNotIn("SKIPPED", out)
 
 
 class PrintItemDiff(TempRepo):
