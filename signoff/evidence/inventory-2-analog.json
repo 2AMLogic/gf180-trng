@@ -123,7 +123,7 @@
   "rings": [
     {
       "path": "layout/rings/ro_ring11/build.py",
-      "sha256": "sha256:e32cb43e195192e37da1df65ee4abc0febaea5cb84601c905dba4aee470c4821"
+      "sha256": "sha256:d37cf6cbea97ab3469c0a3d5ae67b179a3cae680841cb3dead65d8e90390a194"
     },
     {
       "path": "layout/rings/ro_ring11/ro_ring11.gds",
@@ -135,7 +135,7 @@
     },
     {
       "path": "layout/rings/ro_ring11_ring2/build.py",
-      "sha256": "sha256:2a649f844a0add2d47692806b11ce2be18734f5434287c1f659f6696a3360483"
+      "sha256": "sha256:0987892f75037f663a3286f220ad0265542163cce48ca81298f5d466ea4f0b2d"
     },
     {
       "path": "layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds",

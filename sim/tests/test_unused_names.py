@@ -350,11 +350,220 @@ class StaleNoqa(unittest.TestCase):
                 eval("1")
             """), [(2, "RUF100", "F841")])
 
+    def test_f401_token_in_init_module_is_not_judged(self):
+        self.assertEqual(found("from .bits import pack  # noqa: F401\n",
+                               "pkg/__init__.py"), [])
+        self.assertEqual(found("from .bits import pack  # noqa: F401\n",
+                               "pkg/mod.py"), [])  # live in a normal module
+        self.assertEqual(found("import a  # noqa: F401\na\n", "pkg/mod.py"),
+                         [(1, "RUF100", "F401")])
+
+    def test_multi_code_token_in_init_module_judges_neither_half(self):
+        self.assertEqual(found("from .b import p  # noqa: E402, F401\n",
+                               "pkg/__init__.py"), [])
+
+    def test_stale_f841_token_in_init_module_still_reports(self):
+        self.assertEqual(found("""\
+            def f():
+                x = 1  # noqa: F841
+                return x
+            """, "pkg/__init__.py"), [(2, "RUF100", "F841")])
+
+    def test_blanket_then_coded_token_in_one_span_is_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa
+                a,  # noqa: F401
+            )
+            """), [])
+
+    def test_coded_then_blanket_token_in_one_span_is_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa: F401
+                a,  # noqa
+            )
+            """), [])
+
+    def test_two_coded_tokens_in_one_span_are_both_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa: F401
+                a,  # noqa: F401
+            )
+            """), [])
+
     def test_diagnostic_text(self):
         fs = un.check_source("import a  # noqa: F401\na\n", "pkg/m.py")
         self.assertEqual(
             [f.format() for f in fs],
             ["pkg/m.py:1:10: RUF100 stale '# noqa: F401' suppresses nothing"])
+
+
+class MainGuard(unittest.TestCase):
+    """TRNG001: a definition after the final module-level guard (#930).
+
+    A class or function below the last module-level `if __name__ ==
+    "__main__":` is invisible to direct execution while still collected
+    under import; the rule keys on module-level statements only, and no
+    `# noqa` form suppresses it.
+    """
+
+    def test_class_after_guard_reports(self):
+        self.assertEqual(found("""\
+            def main():
+                pass
+            if __name__ == "__main__":
+                main()
+            class Hidden: pass
+            """), [(5, "TRNG001", "Hidden")])
+
+    def test_function_after_guard_reports(self):
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+
+            def helper():
+                pass
+            """), [(4, "TRNG001", "helper")])
+
+    def test_async_function_after_guard_reports(self):
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+
+            async def ahelper():
+                pass
+            """), [(4, "TRNG001", "ahelper")])
+
+    def test_several_definitions_report_in_line_order(self):
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+
+            class A: pass
+            def b(): pass
+            async def c(): pass
+            """), [(4, "TRNG001", "A"), (5, "TRNG001", "b"),
+                   (6, "TRNG001", "c")])
+
+    def test_guard_as_last_statement_with_pass_body_passes(self):
+        self.assertEqual(found("""\
+            def main():
+                pass
+            if __name__ == "__main__":
+                pass
+            """), [])
+
+    def test_multi_statement_guard_body_passes(self):
+        # The shape of sim/tb/digital-sta-power/activity_power.py: a
+        # multi-statement __main__ body with nothing after it.
+        self.assertEqual(found("""\
+            import sys
+            def main(rows):
+                return list(rows)
+            if __name__ == "__main__":
+                total = 0
+                for arg in sys.argv[1:]:
+                    total += len(arg)
+                print(total)
+            """), [])
+
+    def test_single_statement_multiline_guard_body_passes(self):
+        # The shape of sim/tb/conditioner-crc32/sp800_90b.py: one `for`
+        # statement spanning several lines, nothing after it.
+        self.assertEqual(found("""\
+            import sys
+            if __name__ == "__main__":
+                for line in sys.stdin:
+                    print(line.strip())
+            """), [])
+
+    def test_definitions_inside_the_guard_body_pass(self):
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                class Helper: pass
+                def run(): pass
+            """), [])
+
+    def test_no_guard_passes(self):
+        self.assertEqual(found("""\
+            class Top: pass
+            def main():
+                pass
+            """), [])
+
+    def test_decorated_definition_points_at_the_def(self):
+        self.assertEqual(found("""\
+            import functools
+            if __name__ == "__main__":
+                pass
+
+            @functools.cache
+            def f(x):
+                return x
+            """), [(6, "TRNG001", "f")])
+
+    def test_pragma_comment_on_the_guard_passes(self):
+        self.assertEqual(found("""\
+            def main():
+                pass
+            if __name__ == "__main__":  # pragma: no cover
+                main()
+            """), [])
+
+    def test_nested_guard_is_not_module_level(self):
+        self.assertEqual(found("""\
+            def outer():
+                if __name__ == "__main__":
+                    pass
+                class After: pass
+                return After
+            """), [])
+
+    def test_final_guard_is_the_anchor(self):
+        # No file carries two guards today; pin that the FINAL one anchors
+        # the rule, so a definition between two guards is not flagged.
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+            class Between: pass
+            if __name__ == "__main__":
+                pass
+            class After: pass
+            """), [(6, "TRNG001", "After")])
+
+    def test_trailing_assignment_is_not_flagged(self):
+        # The hiding problem is specific to definitions; a trailing
+        # module-level assignment is out of this rule's contract.
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+            VERSION = 2
+            """), [])
+
+    def test_noqa_token_neither_suppresses_nor_goes_stale(self):
+        # TRNG001 is deliberately absent from _EVALUATED_CODES: the token
+        # drops nothing and is not RUF100-judged, and the finding stands.
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+
+            class Hidden: pass  # noqa: TRNG001
+            """), [(4, "TRNG001", "Hidden")])
+
+    def test_blanket_noqa_does_not_suppress(self):
+        self.assertEqual(found("""\
+            if __name__ == "__main__":
+                pass
+
+            class Hidden: pass  # noqa
+            """), [(4, "TRNG001", "Hidden")])
+
+    def test_diagnostic_text(self):
+        fs = un.check_source(
+            "if __name__ == '__main__':\n    pass\nclass C: pass\n", "pkg/m.py")
+        self.assertEqual(
+            [f.format() for f in fs],
+            ["pkg/m.py:3:0: TRNG001 'C' defined after the module-level "
+             "'__main__' guard"])
 
 
 class Unsupported(unittest.TestCase):

@@ -22,7 +22,11 @@ it goes to the batch fleet; elsewhere it runs on the local backend.
 What it does, and refuses to do:
 
 * The published envelope is the **native** `klt pex` JSON response, byte for
-  byte. Nothing is added to it or derived into it.
+  byte except that a home-directory client path in `environment`
+  (`client_ngspice_binary`, and on a local-backend run `ngspice_binary`,
+  `selected_path` or `root`) loses its prefix and keeps the basename, so the
+  tree passes `check:no-host-paths` (publish_common.load_envelope redacts
+  on load). Nothing else is added to it or derived into it.
 * `publication.json` beside it pins what the envelope cannot: the testbench
   request, the testbench body and the schematic DUT, by sha256, plus the
   envelope itself and the envelope's own `body_bias.status`, copied verbatim

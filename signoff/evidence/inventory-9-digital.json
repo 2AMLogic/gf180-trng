@@ -99,7 +99,7 @@
         },
         {
           "path": "sim/tb/digital-sta-power/activity.py",
-          "sha256": "sha256:9bdac94ecb909b0b2d7f7d9692de4f70e6165c9f63ed07da8a159ec7a69c7659"
+          "sha256": "sha256:5cab13ac7a8a7e977cce03f5dcf90c88c485783be36dca37905f126060d1181c"
         },
         {
           "path": "sim/tb/digital-sta-power/activity_power.py",
@@ -254,7 +254,7 @@
       "files": [
         {
           "path": "sim/tb/trng-top-post-route/README.md",
-          "sha256": "sha256:b8fd34ddefd700da81eb37ce97b87ac76de3a084af3a6a94e9b395c32b36dc23"
+          "sha256": "sha256:695e4db7d006ed9d388c30292291d9463c6cef0a4caa18511f6e1133a95a59cd"
         },
         {
           "path": "sim/tb/trng-top-post-route/activity_workloads.py",
@@ -286,7 +286,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:bc04ea1c459b3f913ec21c6121fee683c5342fbdda80fb374079742a3f45e7b2"
+      "sha256": "sha256:eacf04e49796818a0356ab829978c1243aa8bf684a7cb36c233b9105b39ab1d7"
     },
     {
       "path": "sim/README.md",

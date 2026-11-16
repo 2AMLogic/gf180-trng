@@ -1526,6 +1526,17 @@ double-counting them.
   addressability, and `klt extract --parasitics`' own per-terminal resistance
   star plus its device cards' gate nodes already disclose enough to do it.
   Issue #12's methodology is unchanged. See §7.5.
+
+> **Superseded evidence (issues #449, #717).** The DRC half of the sentence
+> below — "the composed, routed floorplan is DRC-clean" — is superseded:
+> `layout/floorplan/reports/floorplan.drc.json` now records
+> `status: "violations"`, 2721 of them, all of it the
+> `comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class tracked
+> by #449/#717. The LVS half —
+> `layout/floorplan/reports/interregion.json`'s `check.lvs` recording
+> `status: "match"` — still holds. The prose below is left as written for
+> history.
+
 - ~~**Inter-region floorplan routing**, tracked as
   [#219](https://github.com/2AMLogic/gf180-trng/issues/219) per #217's own
   Out-of-scope section — now the only remaining gap between this document's
