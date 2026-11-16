@@ -262,7 +262,7 @@
         },
         {
           "path": "sim/tb/trng-top-post-route/input_inventory.py",
-          "sha256": "sha256:3662957a844ae71c3e893b6de9adf0869773861dcd73a5ae630ff2856ef16b0a"
+          "sha256": "sha256:4e820231c762dd2993ddf31c394985fa2cd0e214eab99eeb81d0975c8cb11ba1"
         },
         {
           "path": "sim/tb/trng-top-post-route/model_probe.py",

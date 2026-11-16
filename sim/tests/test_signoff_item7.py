@@ -251,10 +251,20 @@ class Item7InventoryIsDerived(unittest.TestCase):
             "design/conditioner/crc32_conditioner.py",
             "sim/tb/conditioner-crc32/source_model.py",  # scenario import
             "sim/harness/bits.py",
+            "sim/harness/report.py",                # run_demo import (extra_files)
+            "sim/harness/pdk.py",                   # transitive, via layout/_klt.py
+            "layout/_klt.py",                       # run_demo import (extra_files)
             "sim/tb/trng-top-post-route/run_demo.py",
         ):
             self.assertIn(rel, files)
         self.assertTrue(all(v.startswith("sha256:") for v in files.values()))
+
+    def test_non_python_extra_is_pinned_unparsed(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            (d / "notes.md").write_text("this is not python\n")
+            files = input_inventory.collect(d, [], [], [], [d / "notes.md"])
+            self.assertIn("notes.md", files)
 
     def test_unresolvable_include_is_an_error(self):
         with tempfile.TemporaryDirectory() as t:
