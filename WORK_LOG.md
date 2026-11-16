@@ -10,6 +10,14 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #940**: docs: correct tap-distance spec comment on curated-deck coverage
+- **PR #925**: refactor: remove the dead VcdSummary.as_dict serializer in activity.py
+- **PR #945**: fix: exempt F401 tokens in __init__.py from RUF100 and credit every noqa token in a span
+- **PR #901**: refactor: bind both ring CLI tails with one _ring_common.ring_cli call
+- **Issue #890** (closed): tap-distance-spec.json's _comment still says klt's curated deck codes no tie-distance rule; drc.json reports 2769 of them
+- **Issue #906** (closed): Remove the dead VcdSummary.as_dict serializer in sim/tb/digital-sta-power/activity.py
+- **Issue #926** (closed): unused_names RUF100: decide whether an __init__.py re-export token is stale
+- **Issue #882** (closed): Collapse the duplicated ring CLI tail into _ring_common and delete the unused _wiring_shapes forwarder
 - **PR #933**: signoff: sweep committed envelopes recursively, selected by shape
 - **PR #931**: docs(floorplan): state composed-abstract DRC verdict from the committed report
 - **PR #927**: chore: remove orphaned npm scripts and teach the parity test to report orphans
