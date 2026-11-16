@@ -304,10 +304,6 @@ class CommittedRecordTests(unittest.TestCase):
             self.assertGreater(out["p_flops_w"], 0)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RecordFrontMatter(unittest.TestCase):
     """The record front matter this tool renders, pinned line for line (issue #834).
 
@@ -431,3 +427,7 @@ wall_time: n/a (batch submission failed)
         for text in (measured, attempt):
             self.assertIn("Written by `sim/tools/liveness_sampler_power.py record`", text)
             self.assertTrue(text.endswith("\n"))
+
+
+if __name__ == "__main__":
+    unittest.main()

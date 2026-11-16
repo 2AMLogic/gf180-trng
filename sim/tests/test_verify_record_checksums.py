@@ -424,10 +424,6 @@ class OrphanInventoryTests(_TempRepoCase):
         self.assertIn("git", err)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 STORED_STEM = "2026-01-02-stored-01"
 STORED_FILES = {"deck.cir": b"* deck\n", "out.log": b"result 1.0\n"}
 
@@ -519,3 +515,7 @@ class StoredRecordTests(_TempRepoCase):
         rc, out, err = self.run_cli(["--quiet"])
         self.assertEqual(rc, 0, err)
         self.assertIn("PASS: 2 record(s)", out)
+
+
+if __name__ == "__main__":
+    unittest.main()

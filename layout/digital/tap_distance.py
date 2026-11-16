@@ -509,7 +509,19 @@ def analyze(gds: Path, spec: dict, spec_path: Path | None = None, top: str | Non
         "rule_source": {
             "document": "GF180MCU Design Rule Manual, 14.3.1 Core Latch-up Rules and Guidelines",
             "url": "https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html",
-            "executable_deck_coverage": "none: neither the open-PDK KLayout decks nor klt's curated gf180mcu deck code a tie-distance rule",
+            "executable_deck_coverage": (
+                "partial: klt's curated gf180mcu deck codes the MV tie-distance rules "
+                "comp.tap_distance.nwell.mv.1 and comp.tap_distance.psub.mv.1, first "
+                "observed here under klayout-tools 0.9.0 against deck content_hash "
+                "sha256:cf44de63f0a5b01c1d09c4d58e0535e990aa4b070bcaae17fd3a94a67a1d97e1 "
+                "(see reports/drc.json for that deck's current verdict on this stream; "
+                "the counts there are geometry, not deck coverage, and move with #449/#717). "
+                "No deck available to this flow coded any tie-distance rule before 0.9.0, "
+                "which is why these limits are transcribed from the DRM text rather than "
+                "read from a deck. Whether that deck codes the remaining 14.3.1/14.3.2 "
+                "rules below is not established here, so a deck-clean result would not "
+                "retire the rules this report still reads as unsupported."
+            ),
         },
         "device_class": {
             "gate_polygons": gates_total,

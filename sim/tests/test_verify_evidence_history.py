@@ -223,10 +223,6 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(run("0" * 40), 2)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ManifestHistoryTests(unittest.TestCase):
     """manifests/artifacts/*.manifest.json are append-only like sim/records/ (#686)."""
 
@@ -263,3 +259,7 @@ class ManifestHistoryTests(unittest.TestCase):
         self.r.write("manifests/artifacts/README.md", "better notes\n")
         self.r.commit()
         self.assertEqual(self.check(), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

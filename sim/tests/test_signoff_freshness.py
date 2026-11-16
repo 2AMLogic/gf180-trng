@@ -192,5 +192,136 @@ class CommittedManifest(unittest.TestCase):
         self.assertIn("11.analog", err.getvalue())
 
 
+class CommittedEnvelopeSweep(unittest.TestCase):
+    """committed_envelopes(): step 1's sweep must reach any depth (#916).
+
+    The old selector was a non-recursive EVIDENCE_DIR.glob("*.json"), so an
+    envelope committed under a subdirectory, cited by no manifest entry, was
+    invisible to every freshness step: step 1 could not see it and the
+    citation-keyed steps are each gated on a manifest key that is absent by
+    assumption. These tests pin the recursive, shape-tested selector, the
+    by-name step-1 exemptions, and the gate behaviour on a nested envelope.
+    """
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name).resolve()
+        # EVIDENCE_DIR is derived from REPO_ROOT at import time, so patching
+        # REPO_ROOT alone does not move it; both are patched and the temp
+        # evidence dir is passed to committed_envelopes() directly.
+        self.evidence = self.root / "signoff" / "evidence"
+        for attr, value in (
+            ("REPO_ROOT", self.root),
+            ("EVIDENCE_DIR", self.evidence),
+        ):
+            patch = mock.patch.object(check, attr, value)
+            patch.start()
+            self.addCleanup(patch.stop)
+        self.evidence.mkdir(parents=True)
+        # The gate tests below must be attributable to the nested envelope
+        # alone, so the two freshness steps that run regardless of the
+        # manifest are stubbed out: ring2's fixture check (step 1c') reads
+        # the real testbench tree, and step 1e re-derives every T1 item
+        # inventory from the live tree. An empty manifest already silences
+        # the citation-keyed steps (1b/1b'/1c) and the combiner/sampler
+        # sidecar check (1d) finds no committed publication under the temp
+        # root.
+        ring2 = mock.patch.object(
+            check, "verify_ring2_pex_publication", lambda manifest=None: []
+        )
+        ring2.start()
+        self.addCleanup(ring2.stop)
+        inventories = mock.patch.object(
+            check,
+            "inventories",
+            mock.Mock(all_units=lambda: [], verify_item=lambda *args: []),
+        )
+        inventories.start()
+        self.addCleanup(inventories.stop)
+
+    def write(self, rel, envelope):
+        path = self.evidence / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(envelope))
+        return path
+
+    def write_input(self):
+        (self.root / "art").mkdir()
+        (self.root / "art" / "in.gds").write_bytes(PAYLOAD)
+
+    def test_finds_envelopes_at_any_depth_and_omits_sidecars(self):
+        env = {"file": "art/in.gds", "provenance": {"input": {"content_hash": DIGEST}}}
+        top = self.write("top.json", env)
+        nested = self.write("sub/env.json", env)
+        deeper = self.write("sub/deeper/env.json", env)
+        # The 9 non-envelope sidecar kinds committed under signoff/evidence/*/
+        # (requests, limits, sample sets, publications) name no input.
+        self.write("sub/request.json", {"corners": {"supply_v": {"typ": [3.3]}}})
+        self.write("sub/limits.json", {"min": 0.0, "max": 1.0})
+        self.write("sub/sample_set.json", {"samples": [1, 2, 3]})
+        self.write("sub/publication.json", {"verdict": "pass"})
+        self.assertEqual(
+            check.committed_envelopes(self.evidence), {top, nested, deeper}
+        )
+
+    def test_inventory_prefix_omitted_at_any_depth(self):
+        env = {"file": "art/in.gds", "provenance": {"input": {"content_hash": DIGEST}}}
+        # Both name an input, so only the inventory- name rule excludes them.
+        self.write("inventory-units.json", env)
+        self.write("sub/inventory-units.json", env)
+        self.assertEqual(check.committed_envelopes(self.evidence), set())
+
+    def test_step1_exempt_envelopes_omitted_by_name(self):
+        """ITEM6/ITEM7 are exempt by NAME, not by their current payload shape.
+
+        Both carry a synthetic repo-scoped input here, so the shape test
+        alone would select them -- only the by-name exemption keeps them out.
+        """
+        exempt = {
+            "source": {"path": "art/in.gds", "scope": "repo"},
+            "provenance": {"input": {"content_hash": DIGEST}},
+        }
+        self.write("mc-yield/klt_yield_response.json", exempt)
+        self.write("post-route/gate_klt_response.json", exempt)
+        self.assertEqual(check.committed_envelopes(self.evidence), set())
+
+    def test_repo_scoped_object_counts_and_other_scope_does_not(self):
+        self.write("layout_obj.json", {"layout": {"path": "art/in.gds", "scope": "repo"}})
+        self.write("def_obj.json", {"def_path": {"path": "art/in.gds", "scope": "repo"}})
+        self.write("other_scope.json", {"layout": {"path": "art/in.gds", "scope": "other"}})
+        self.write("empty_obj.json", {"layout": {}})
+        got = check.committed_envelopes(self.evidence)
+        self.assertEqual({p.name for p in got}, {"layout_obj.json", "def_obj.json"})
+
+    def test_gate_fails_when_nested_uncited_envelope_is_stale(self):
+        """The biting case (#916): a nested, uncited, STALE envelope fails.
+
+        A fresh uncited envelope would only raise the verified count, which
+        a broken (non-recursive) selector also passes -- the stale digest is
+        what makes the recursion observable.
+        """
+        self.write_input()
+        self.write(
+            "sub/stale.json",
+            {"file": "art/in.gds", "provenance": {"input": {"content_hash": WRONG}}},
+        )
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            self.assertEqual(check.freshness_gate({}), 1)
+        self.assertIn("signoff/evidence/sub/stale.json", err.getvalue())
+
+    def test_gate_counts_nested_uncited_fresh_envelope(self):
+        self.write_input()
+        self.write(
+            "sub/fresh.json",
+            {"file": "art/in.gds", "provenance": {"input": {"content_hash": DIGEST}}},
+        )
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(check.freshness_gate({}), 0)
+        self.assertIn("1 cited envelope(s)", out.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
