@@ -213,11 +213,16 @@ machine-locally, and point `TRNG_POST_ROUTE_KLT` at it:
 ```sh
 python3.13 -m venv ~/.local/venvs/klt-cocotb
 ~/.local/venvs/klt-cocotb/bin/pip install 'cocotb==2.0.1' \
-  'klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@<commit>'
+  klayout-tools 'klayout==0.30.10'
 ```
 
-`<commit>` is the one `.github/workflows/pdk-nightly.yml` pins. Python 3.13 is
-what that workflow already uses and what cocotb 2.0.1 publishes a wheel for.
+`klayout-tools` itself is unpinned — the repo pins no producer build and CI
+installs the latest tagged release (DR-0026 amendment of 2026-11-09) — and
+`probe_klt` in `run_demo.py` enforces no `klt` version requirement either:
+the venv exists for the matching-ABI `cocotb==2.0.1` wheel, with
+`run_demo.py --check-env` the authority on whether a given `klt` qualifies.
+Python 3.13 matches what `pdk-nightly.yml` uses and what cocotb 2.0.1
+publishes a wheel for.
 `~/.local/venvs/klt-cocotb/bin/klt` is probed automatically, so on a host set
 up this way no environment variable is needed at all.
 
