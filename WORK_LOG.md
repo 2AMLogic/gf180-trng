@@ -1,6 +1,6 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-13.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-14.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
@@ -8,8 +8,19 @@ not independent verification of the claims in issue or PR titles.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-14
+
+- **PR #875**: refactor: read every frontmatter block through one shared scanner
+- **PR #873**: refactor: load the committed wiring plan once, shared by both IR-drop tools
+- **PR #876**: refactor: read the digital-sta-power family through its one shared reader
+- **Issue #868** (closed): Collapse the four copy-pasted frontmatter block readers in sim/tools into one
+- **Issue #865** (closed): Load the committed wiring plan once: vss_trunk_ir_drop.py and its sibling each re-read it
+- **Issue #867** (closed): Remove run_sta.py's hand-rolled record_slacks reader: digital-sta-power has one
+
 ### 2026-11-13
 
+- **PR #874**: sim/tools: select the sampler-offset record with the shared corner selector
+- **Issue #861** (closed): Remove the hand-rolled corner selection in worst_corner_entropy.py
 - **PR #870**: layout: regenerate 45 reports under the pinned KLayout engine and guard the recorded engine
 - **PR #864**: docs(floorplan): drop the hand-maintained net count above the inter-region table
 - **PR #862**: docs(floorplan): retire the pre-#224 framing from the vddd and vss net rows
