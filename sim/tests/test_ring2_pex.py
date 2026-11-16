@@ -124,8 +124,9 @@ class Ring2Fixture(unittest.TestCase):
         self.assertEqual([m["name"] for m in r2["measurements"]],
                          ["period_s", "supply_current_avg_a", "ro_swing_v"])
 
-    def test_committed_state_is_an_unrun_fixture_that_passes_the_gate(self):
-        self.assertFalse((ROOT / check.RING2_ENVELOPE).exists())
+    def test_committed_state_is_a_published_fixture_that_passes_the_gate(self):
+        self.assertTrue((ROOT / check.RING2_ENVELOPE).is_file())
+        self.assertTrue((ROOT / check.RING2_PUBLICATION).is_file())
         self.assertEqual(check.verify_ring2_pex_publication({"evidence": {}}), [])
 
     def test_manifest_must_not_cite_ring2(self):

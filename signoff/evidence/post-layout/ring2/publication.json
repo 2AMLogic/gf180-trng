@@ -1,0 +1,84 @@
+{
+  "schema": "gf180-trng/ring2-pex-publication/1",
+  "scope": "separate native schematic-vs-extracted comparison of ring2; not a manifest citation",
+  "producer": "klt pex layout/rings/ro_ring11_ring2/ro_ring11_ring2.gds sim/tb/ro-ring11-ring2-pex/request.json --deck gf180mcu --pdk gf180mcuD --top ro_ring11_ring2 -o signoff/evidence/post-layout/ring2/ro_ring11_ring2.extracted.spice --outdir sim/.work/ro-ring11-ring2-pex --format json",
+  "producer_build": "0.9.2",
+  "klayout_build": "0.30.10",
+  "pdk": {
+    "name": "gf180mcuD",
+    "source": "search root: ~/.ciel",
+    "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+    "ambiguous_sources": [
+      "search root: ~/.volare"
+    ]
+  },
+  "deck": {
+    "name": "gf180mcu",
+    "content_hash": "sha256:c3f2cce49000857a3a71cb65203aabf0eb27cd0ee6b1c60e29792355c455c4b1",
+    "released": true,
+    "options": {
+      "metal_top": "9K",
+      "mim_cap": "cap_mim_2f0_m4m5_noshield",
+      "poly_res": "1k"
+    },
+    "options_explicit": {
+      "metal_top": false,
+      "mim_cap": false,
+      "poly_res": false
+    },
+    "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
+  },
+  "backend_requested": "batch",
+  "layout_content_hash": "sha256:f4042fc42444c28eb13b803d48b35f17dbf39eb57c03413c4e44354568ad2d09",
+  "source_sha256": "sha256:d98785fe134e8aaac5fc1dcec2fd66c3b3dce439a3de8a8acc1f2f54c23ad3cb",
+  "inputs_sha256": {
+    "sim/tb/ro-ring11-ring2-pex/request.json": "sha256:9210e8aff6306a598890e7c3287b423bad64c978ca77858e50e943d65881f598",
+    "sim/tb/ro-ring11-ring2-pex/tb_ro_ring11_ring2_pex.sp": "sha256:312180ca6bdbd13e01752f78b868c5340d610614d8c911202e31c85be30ef756",
+    "sim/tb/ro-ring11-ring2-pex/ro_ring11_ring2_schematic.spice": "sha256:e4203b211156ad494dc3a064dc595775237353b1c008c826f4cd34f57676eb61"
+  },
+  "port_map": [
+    "n1",
+    "n2",
+    "n3",
+    "n4",
+    "n5",
+    "n6",
+    "n7",
+    "n8",
+    "n9",
+    "n10",
+    "ro",
+    "en",
+    "vddr",
+    "vss"
+  ],
+  "body_bias_status": "biased",
+  "body_bias_unbiased_device_count": 0,
+  "coverage_exclusions": [
+    "scope: ring2 alone (the separately sized oscillator, xr2); ring1, the buffers, the XOR combiner, the samplers and every inter-region net are outside this run",
+    "isolation: one ring free-running on its own supply, `en` tied to that supply; no coupling to the other ring or to neighbouring blocks",
+    "loads: the ring output is unloaded (no ro_buf); absolute periods differ from the array-level records",
+    "determinism: noiseless transient, no device noise or mismatch; nothing here estimates entropy, bias or jitter",
+    "bodies: the layout ties every bulk to a supply through drawn well and substrate taps (body_bias below), as the schematic side does; the testbench holds the substrate reference vsubs at 0 V. The extracted-side result is not a prediction of fabricated silicon",
+    "timing and silicon: no full-chip timing or silicon-performance claim"
+  ],
+  "verdict": {
+    "verdict": "pass",
+    "declared_corners": 27,
+    "declared_rows_per_corner": 3,
+    "limited_rows_per_corner": 0,
+    "counts": {
+      "pass": 0,
+      "fail": 0,
+      "measured": 81,
+      "unmeasured": 0
+    },
+    "failures": [],
+    "unmeasured": [],
+    "consistency_problems": []
+  },
+  "envelope": {
+    "file": "signoff/evidence/post-layout/ring2/ro_ring11_ring2.pex.json",
+    "sha256": "sha256:d063592b52f1b384cbc908e4c52ea49930abbec2a35d1f6c18672444009423a8"
+  }
+}
