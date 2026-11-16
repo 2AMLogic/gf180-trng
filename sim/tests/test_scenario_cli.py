@@ -50,6 +50,7 @@ class _RunScenariosFixture:
         self.run_calls: list[str] = []
         self.results: list[dict] = []
         self.write_calls: list[tuple[dict, Path, dict]] = []
+        self.print_calls: list[dict] = []
         self.provenance_calls: list[Path] = []
         self.git = {"commit": "a" * 40, "dirty": False}
 
@@ -91,7 +92,7 @@ class _RunScenariosFixture:
                 scenarios=scenarios,
                 run_scenario=self.fake_run_scenario,
                 write_record=self.fake_write_record,
-                print_result=lambda result: None,
+                print_result=self.print_calls.append,
                 repo_root=self.repo_root,
                 records_dir=self.records_dir,
             )
@@ -125,6 +126,15 @@ class DefaultRunTests(_RunScenariosFixture, unittest.TestCase):
             self.assertEqual(records_dir, self.records_dir)
             # The git dict is the one report.git_provenance returned.
             self.assertIs(git, self.git)
+
+    def test_print_result_called_once_per_result_with_same_object_in_order(self):
+        # The per-scenario result lines arrive through this injection point
+        # (scenario_cli.py module docstring): losing the call would leave the
+        # headers and record lines with no result body between them.
+        self._run([])
+        self.assertEqual(len(self.print_calls), len(self.results))
+        for i, printed in enumerate(self.print_calls):
+            self.assertIs(printed, self.results[i])
 
 
 class ScenarioSelectionTests(_RunScenariosFixture, unittest.TestCase):
@@ -171,6 +181,8 @@ class NoWriteTests(_RunScenariosFixture, unittest.TestCase):
         self.assertEqual(self.run_calls, ["zeta", "alpha", "mid"])
         self.assertEqual(self.write_calls, [])
         self.assertNotIn("record:", out)
+        # Results are still printed without evidence being minted.
+        self.assertEqual(self.print_calls, self.results)
 
 
 class PassedThroughPathsTests(_RunScenariosFixture, unittest.TestCase):
@@ -190,6 +202,15 @@ class PassedThroughPathsTests(_RunScenariosFixture, unittest.TestCase):
         self._run(["--scenario", "mid"])
         (result, records_dir, git) = self.write_calls[0]
         self.assertEqual(records_dir, self.records_dir)
+
+    def test_record_line_prints_repo_root_relative_path(self):
+        # The minted record line renders ``path.relative_to(repo_root)``
+        # (write gate in scenario_cli's loop); printing ``path`` itself would
+        # leak the host's absolute tmpdir into every runner's stdout.
+        rc, out, _err = self._run(["--scenario", "mid"])
+        self.assertEqual(rc, 0)
+        self.assertIn("   record: records/mid.md", out)
+        self.assertNotIn(str(self.repo_root), out)
 
 
 class EdgeCaseTests(_RunScenariosFixture, unittest.TestCase):
