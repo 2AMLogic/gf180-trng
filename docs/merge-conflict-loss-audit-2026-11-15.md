@@ -98,6 +98,13 @@ git log -1 --format=%h "$B".."$P1" -- "<path>"
 # Single merge base? (all three merges here: yes, exactly one)
 git merge-base --all "$m^1" "$m^2"
 
+# Evidence-key count of signoff/block-manifest.json at each of the five
+# revisions in the seeded-case table (expected: 19 20 19 19 20).
+for r in 0acf3c5a c3ed2b9f d225f324 742bb2af dd30f2df; do
+  git show "$r:signoff/block-manifest.json" |
+    python3 -I -c 'import json,sys; print(len(json.load(sys.stdin)["evidence"]))'
+done
+
 # Is a candidate path present on origin/main today?
 git rev-parse --quiet --verify "origin/main:<path>"
 
@@ -201,15 +208,17 @@ signoff inventories, README count 1179)") except `t1-tier-report.json`
 | `signoff/records/t1-tier-report.json` | both sides | intended |
 
 **The seeded case — `signoff/block-manifest.json`.** Key-level comparison of
-the five revisions:
+the five revisions. `Evidence keys` is the number of top-level keys of the
+manifest's `evidence` object (`len(manifest["evidence"])`), re-derived by the
+`evidence_keys` loop in § Exact commands:
 
-| Revision | Role | Blob | `evidence.6.analog.file` present | Key count |
+| Revision | Role | Blob | `evidence.6.analog.file` present | Evidence keys |
 |---|---|---|---|---|
-| `0acf3c5a` | merge base | `4cd8bb1b` | no | 38 |
-| `c3ed2b9f` | parent 1 | `aa112235` | **yes** | 39 |
-| `d225f324` | parent 2 | `4b33e17e` | no | 38 |
-| `742bb2af` | merge result | `28b989a8` | **no** | 38 |
-| `origin/main` @ `dd30f2df` | today | `056df580` | yes (restored) | 39 |
+| `0acf3c5a` | merge base | `4cd8bb1b` | no | 19 |
+| `c3ed2b9f` | parent 1 | `aa112235` | **yes** | 20 |
+| `d225f324` | parent 2 | `4b33e17e` | no | 19 |
+| `742bb2af` | merge result | `28b989a8` | **no** | 19 |
+| `origin/main` @ `dd30f2df` | today | `056df580` | yes (restored) | 20 |
 
 The blend dropped the one *structural* addition P1 carried — the
 `evidence.6.analog.file` citation — while taking P2's regenerated shape for
@@ -279,7 +288,7 @@ P1-side changes were made by `ac1e5825`; P2-side by `d5236e8d`, except
 - **The current-tree checks validate consistency, not completeness.**
   `verify_record_checksums.py` and `signoff/check.py` check that the
   committed tree is internally consistent — a thinner-but-consistent manifest
-  (38 keys, all hashes matching) passes, and did. Nothing fails on a
+  (19 evidence keys, all hashes matching) passes, and did. Nothing fails on a
   *missing* citation; #885 exists precisely because a human noticed.
 - **`corpus_counts.py`** holds README's prose totals (decision records,
   characterization summaries, evidence-record counts) to the tree — it

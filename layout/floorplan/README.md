@@ -40,8 +40,11 @@ each region against the PDK's own standard-cell LEF and against measured
 device footprints, generates a guard ring per region, composes them into one
 stream with a declared isolation channel between neighbours, runs DRC on the
 result, and compares everything against the committed artefacts under
-[`reports/`](reports/). It prints `PASS` and exits 0 only if the composed
-abstract is DRC-clean **and** the committed artefacts still match.
+[`reports/`](reports/). It prints `PASS` and exits 0 only if composing the
+regions introduces no DRC violation beyond each assembled region's own
+standalone baseline — `reports/floorplan.drc.json`'s own
+`new_violations_from_composition`, not raw DRC-cleanliness of the composed
+abstract — **and** the committed artefacts still match.
 
 Like `layout/verify.py` it **skips with exit 0** when `klt` or the PDK is
 absent, and `--require-tools` turns that skip into a failure. A skip is not a
@@ -1861,29 +1864,42 @@ and the same PDK resolver `layout/verify.py` uses. Verbatim output in
 **Since issue #110, `ring1`/`ring2` carry their own real, placed content;
 since issue #135, so does `combiner_sampler`; since #209/#210, so does
 `digital`** (`layout/digital/trng_top.gds`, the routed digital section).
-Every region in this composed abstract now carries its own real,
-DRC-clean assembled content. This regeneration's own composed abstract is
-fully clean:
+Every region in this composed abstract now carries its own real, placed
+content — and the composed abstract is **not clean**. The committed report
+([`reports/floorplan.drc.json`](reports/floorplan.drc.json)) records
+`status: "violations"`, `violation_count 2721`, every one of them the
+`comp.tap_distance.{nwell,psub}.mv.1` latch-up tie-distance class
+(1432 `nwell` + 1289 `psub`), inherited from the assembled regions' own
+standalone DRC — `digital`'s own `ring_standalone` entry in
+[`reports/ring_fit.json`](reports/ring_fit.json) carries exactly that class
+(2737 = 1432 + 1305), while `ring1`/`ring2`/`combiner_sampler`'s standalone
+entries are clean — and tracked by [#449]/[#717]. What this regeneration's
+own composition check establishes is **0 beyond each assembled region's own
+standalone baseline**:
 
 ```
-composed abstract: status "clean", violation_count 0, rule_counts {}
+composed abstract: status "violations", violation_count 2721, rule_counts {comp.tap_distance.nwell.mv.1: 1432, comp.tap_distance.psub.mv.1: 1289}
 new violations introduced by composing the regions together: 0
 ```
 
-That is a change from what issue #110's own regeneration recorded here
-(`status "violations", violation_count 98`, `rule_counts
+Issue #110's own regeneration, for attributed history, recorded something
+different here (`status "violations", violation_count 98`, `rule_counts
 {metal1.enclosing.contact.1: 10, via1.width.1: 88}` — exactly twice each
 ring's own standalone 49). That 98 was a pre-existing deck-drift gap
 ([klayout-tools#623][kt623], discussed below) between the `klt` build that
 produced `layout/reports/ro_ring11*.drc.json`'s own committed `clean`
-verdict and the `klt` build issue #110's own regeneration ran against; this
+verdict and the `klt` build issue #110's own regeneration ran against;
+neither of those two rules appears in the committed report today, and this
 regeneration's `ring_fit.json` shows `ring1`/`ring2`'s own standalone DRC is
-*also* clean now (`reports/ring_fit.json`'s own `ring_standalone` entries),
-so whatever `klt` build this run resolved on `PATH` evidently carries the
+clean (`reports/ring_fit.json`'s own `ring_standalone` entries), so whatever
+`klt` build this run resolved on `PATH` evidently carries the
 fix for that drift too — see [Tool friction](#tool-friction) for the detail.
-Nothing about `combiner_sampler`'s own placement caused this; it is a
+Nothing about `combiner_sampler`'s own placement caused that 98; it was a
 byproduct of re-running the whole flow against a newer `klt` build,
-surfaced because this issue's own test plan required a full regeneration.
+surfaced because that issue's own test plan required a full regeneration.
+The 2721 the committed report carries now is a different class entirely —
+latch-up tie distance inherited from `digital`'s own standalone DRC
+([#449]/[#717]), not deck drift.
 
 `floorplan.py`'s own pass/fail signal remains **not** "is the composed
 abstract's raw violation count zero", because that is not guaranteed to stay
@@ -1893,14 +1909,16 @@ region's own real content inside its own guard ring, introduce anything
 beyond what that region's own committed GDS already reports on its own"
 (`reports/floorplan.drc.json`'s own `new_violations_from_composition` key,
 and `reports/ring_fit.json`'s own `new_violations_from_fit`, for the same
-question asked pairwise per region). Both report 0 — which, this run,
-happens to coincide with the raw count also being 0.
+question asked pairwise per region). Both report 0 — the raw count this run
+is 2721, not 0, which is exactly why the signal is the delta and not the
+raw count.
 
-**Read the scope off the report, not off this sentence.** The abstract draws
-Comp, Contact and Metal1 only, so the deck checked **three layers** and
-**skipped sixteen rules** for want of the layers they apply to (all upper
-metal, MiM, BJT, poly and n-well). That is in the report's own `coverage`
-block.
+**Read the scope off the report, not off this sentence.** This abstract
+draws the routed digital section as well as the analogue regions, so the
+deck checked **18 layers** and **74 rules**, and **skipped 52 rules** for
+want of any applicable geometry (the MiM, BJT, ESD, fuse, pad, resistor,
+guard-ring-mark and metaltop option layers the stream does not draw). That
+is in the report's own `coverage` block.
 
 **What a clean-relative-to-baseline result here does and does not mean:**
 
@@ -1912,23 +1930,23 @@ block.
   `RING_PLACEMENT_CLEARANCE_UM` establishes (below), introduces no *new*
   rule violation over what that region's own committed GDS already has.
 - It does **not** mean the block is DRC-clean, full stop, as a general
-  property of this check: a DRC run over a
+  property of this check: this regeneration's own raw violation count is
+  2721, none of it new, and a DRC run over a
   floorplan abstract can only check what the floorplan abstract actually
-  contains: three layers (below), not the full deck. That this
-  particular regeneration's own raw violation count happens to be zero too
-  is a fact about this run, not a guarantee `floorplan.py` makes going
-  forward.
+  contains: the 18 checked layers above, not the full deck. That the
+  raw count is non-zero today is a fact about this run, not a quantity
+  `floorplan.py` gates on going forward.
 - It is **not tapeout sign-off**, for all the reasons
   [`layout/README.md`](../README.md) already states: `klt`'s decks are a
   curated subset, not the PDK's own sign-off deck.
 
 The generated streams also cannot be identified to a `klt` build by its own
 version string alone (`klt --version` read `0.1.0` for every build through
-issue #119 — [klayout-tools#306], closed; this regeneration's own
-`klt --version` reads `0.2.0`, and `reports/*.json`'s own
-`provenance.klt_version` field confirms it); `layout/reports/
-environment.json` records the `klt_origin` commit for the same install this
-flow ran on, and every report here carries `klt`'s own `provenance` block
+issue #119 — [klayout-tools#306], closed; this regeneration's own reports
+record `klt` `0.9.1` in their `provenance.klt_version` fields —
+`reports/floorplan.drc.json`'s own `drc.provenance.klt_version`);
+`layout/reports/environment.json` records the `klt_origin` commit for the
+same install this flow ran on, and every report here carries `klt`'s own `provenance` block
 including a content hash of the deck — the content hash, not the version
 string, is what this document actually relies on for reproducibility.
 
@@ -2211,4 +2229,6 @@ would not block that separate question.
 [#449]: https://github.com/2AMLogic/gf180-trng/issues/449
 [#717]: https://github.com/2AMLogic/gf180-trng/issues/717
 [#866]: https://github.com/2AMLogic/gf180-trng/issues/866
+[#449]: https://github.com/2AMLogic/gf180-trng/issues/449
+[#717]: https://github.com/2AMLogic/gf180-trng/issues/717
 [DR-0035]: ../../spec/decision-records/DR-0035-digital-facing-trunk-estimates-follow-the-bottom-edge-pins.md

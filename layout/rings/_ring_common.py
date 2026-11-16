@@ -9,6 +9,10 @@ identical apart from cell-name strings and work-file names, so the row
 placement, the wiring generator and the compose/normalise `build()` live here
 once, parameterised by a `RingSpec`.
 
+The `--check`/CLI tail is here too (`ring_cli`): it was a verbatim
+nine-keyword block in each driver, hand-threading values that a `RingSpec`
+already carries (#882).
+
 What stays per ring, in each `build.py`
 ---------------------------------------
 Each ring's driver keeps its own `STAGE_BBOX`/`STAGE_LOCAL`/`NAND_BBOX`/
@@ -21,16 +25,20 @@ without touching ring1. Sharing the code does not share the geometry; each
 ring's committed `.gds` is still produced from its own constants and still
 byte-checked by its own `--check`.
 
-Standard library plus `layout/_klt.py` only, like the drivers.
+Standard library plus `layout/_klt.py` and `layout/cells/_build_cli.py`
+only, like the drivers.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
-from layout._klt import _rect, _run_klt, normalise_gds
+from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk
+from layout.cells._build_cli import make_pdk_check, make_pdk_main
 
 # --------------------------------------------------------------------------- #
 # Layers -- gf180mcu drawn layers (layout/testcells/build.py's own set, plus
@@ -283,3 +291,59 @@ def build(spec: RingSpec, pdk_variant: str, path: Path | None = None) -> bytes:
     target = path or spec.gds_path()
     target.write_bytes(gds_bytes)
     return gds_bytes
+
+
+# --------------------------------------------------------------------------- #
+# Check / CLI tail
+# --------------------------------------------------------------------------- #
+
+
+def ring_cli(
+    spec: RingSpec, *, script: str, description: str
+) -> tuple[Callable[[], int], Callable[..., int]]:
+    """Return `(check, main)` for one ring driver, bound to `spec`.
+
+    #589 factored the `--check`/CLI tail out of the ten standalone
+    generators into `layout/cells/_build_cli.py`'s factories, but each ring
+    driver still bound them with its own nine-keyword block -- two
+    byte-identical blocks apart from the `script=` string, hand-threading
+    `WORK_DIR`, `TOP_CELL` and `gds_path` with nothing keeping the copies in
+    sync. A one-sided edit there would have quietly weakened one ring's
+    staleness gate rather than failing loudly, so #882 collapsed both into
+    this call: every threaded value is already reachable from `spec`
+    (`work_dir`, `top_cell`, `gds_path()`), and only `script` -- the
+    repo-relative path quoted verbatim in the `MISSING:`/`STALE:` hints --
+    and `description` (the driver's own docstring summary line) are per-ring.
+
+    The printed-message contract `layout/cells/_build_cli.py`'s docstring
+    declares is unchanged: the factories are the same ones, called with the
+    same arguments.
+
+    `layout/verify.py`'s `_STALENESS_CHECKS` calls each driver's `check()`
+    with no arguments, so a driver binds both returned callables at module
+    level:
+
+        check, main = _ring_common.ring_cli(
+            SPEC, script="layout/rings/<ring>/build.py",
+            description=__doc__.splitlines()[0],
+        )
+    """
+    build_for_spec = partial(build, spec)
+    check = make_pdk_check(
+        gds_path=spec.gds_path,
+        build=build_for_spec,
+        resolve_pdk=resolve_pdk,
+        work_dir=spec.work_dir,
+        top_cell=spec.top_cell,
+        script=script,
+    )
+    main = make_pdk_main(
+        check=check,
+        gds_path=spec.gds_path,
+        build=build_for_spec,
+        resolve_pdk=resolve_pdk,
+        klt_version=klt_version,
+        top_cell=spec.top_cell,
+        description=description,
+    )
+    return check, main

@@ -25,12 +25,14 @@ the helpers' own data handling only. They are not evidence that the digital
 section is LVS-clean -- that is re-answered by running `lvs.py` itself.
 
 Helpers covered: `_bit_names`,
-`_library_cell_pins`, `_top_pins`, `_cell_instances` and
-`_def_physical_only_instances`.
+`_library_cell_pins`, `_top_pins`, `_cell_instances`,
+`_def_physical_only_instances`, `_home_relative` and
+`_anonymise_pin_order_sources`.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import unittest
@@ -470,6 +472,131 @@ class DefPhysicalOnlyInstancesTests(_TempRepoMixin, unittest.TestCase):
         with self.assertRaises(lvs.LvsFlowError) as ctx:
             lvs._def_physical_only_instances(path, (PREFIX + "fill_64",))
         self.assertIn("fill_64", str(ctx.exception))
+
+
+class PinOrderSourceAnonymisationTests(unittest.TestCase):
+    """`_home_relative` and `_anonymise_pin_order_sources` keep the
+    committed `klt lvs` envelope free of the producing machine's home
+    directory (issue #903).
+
+    The helpers only execute during a regeneration, which needs `klt` plus
+    the PDK, so a broken branch would not surface on the pull-request path
+    at all -- the next signal would be a nightly, or `check:no-host-paths`
+    on a later PR that happens to carry a regenerated envelope. `$HOME` is
+    the control point: `Path.home()` resolves through `os.path.expanduser`,
+    which prefers `$HOME`, so patching the environment suffices -- no
+    `pathlib` patching, which would leak into every other test in the
+    process.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self._tmp.name)
+        patcher = mock.patch.dict(os.environ, {"HOME": str(self.home)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_home_prefixed_path_becomes_tilde_relative(self):
+        path = str(self.home / "work" / "trng_top.spice")
+        self.assertEqual(lvs._home_relative(path), "~/work/trng_top.spice")
+
+    def test_relative_path_is_returned_byte_identical(self):
+        self.assertEqual(
+            lvs._home_relative("layout/digital/trng_top.spice"),
+            "layout/digital/trng_top.spice",
+        )
+
+    def test_path_outside_home_is_returned_byte_identical(self):
+        path = "/var/tmp/elsewhere/trng_top.spice"
+        self.assertEqual(lvs._home_relative(path), path)
+
+    def test_already_tilde_relative_path_is_returned_byte_identical(self):
+        self.assertEqual(
+            lvs._home_relative("~/work/trng_top.spice"),
+            "~/work/trng_top.spice",
+        )
+
+    def test_path_exactly_home_is_pinned_to_tilde_dot(self):
+        """`Path.relative_to` yields `.` for an exact match, so the
+        exact-home input reads `~/.`. Unreachable in production
+        (`pin_order_sources[].path` always names a file); pinned here, not
+        fixed -- the anonymiser must only ever shorten a prefix."""
+        self.assertEqual(lvs._home_relative(str(self.home)), "~/.")
+
+    def test_scrub_happens_and_sibling_keys_survive(self):
+        provenance = {
+            "library": "gf180mcu_fd_sc_mcu9t5v0",
+            "cells": {"top": "trng_top", "count": 812},
+            "pin_order_sources": [
+                {"path": str(self.home / "work" / "a.spice"), "format": "spice"},
+                {"path": "layout/digital/b.v", "format": "verilog"},
+            ],
+        }
+        out = lvs._anonymise_pin_order_sources(provenance)
+        self.assertEqual(
+            out["pin_order_sources"],
+            [
+                {"path": "~/work/a.spice", "format": "spice"},
+                {"path": "layout/digital/b.v", "format": "verilog"},
+            ],
+        )
+        self.assertEqual(out["library"], "gf180mcu_fd_sc_mcu9t5v0")
+        self.assertEqual(out["cells"], {"top": "trng_top", "count": 812})
+
+    def test_fields_beside_the_scrub_still_differ(self):
+        """Counter-test, the `MachineLocalAndRunScopedFieldTests` model:
+        collapsing the machine-local prefix must not collapse real
+        differences elsewhere in the provenance."""
+        a = {
+            "library": "lib_a",
+            "pin_order_sources": [{"path": str(self.home / "a.spice")}],
+        }
+        b = {
+            "library": "lib_b",
+            "pin_order_sources": [{"path": str(self.home / "a.spice")}],
+        }
+        self.assertNotEqual(
+            lvs._anonymise_pin_order_sources(a),
+            lvs._anonymise_pin_order_sources(b),
+        )
+
+    def test_input_provenance_is_not_mutated(self):
+        home_path = str(self.home / "work" / "a.spice")
+        provenance = {
+            "library": "gf180mcu",
+            "pin_order_sources": [{"path": home_path, "format": "spice"}],
+        }
+        out = lvs._anonymise_pin_order_sources(provenance)
+        self.assertEqual(out["pin_order_sources"][0]["path"], "~/work/a.spice")
+        self.assertEqual(provenance["pin_order_sources"][0]["path"], home_path)
+
+    def test_no_pin_order_sources_key_grows_nothing(self):
+        provenance = {"library": "gf180mcu", "cells": 42}
+        out = lvs._anonymise_pin_order_sources(provenance)
+        self.assertEqual(out, provenance)
+        self.assertNotIn("pin_order_sources", out)
+
+    def test_non_list_pin_order_sources_pass_through(self):
+        for sources in (None, {"path": "/home/nobody/a.spice"}):
+            provenance = {"pin_order_sources": sources}
+            self.assertEqual(lvs._anonymise_pin_order_sources(provenance), provenance)
+
+    def test_non_dict_entry_is_kept_verbatim(self):
+        provenance = {"pin_order_sources": ["layout/digital/a.spice", None]}
+        self.assertEqual(lvs._anonymise_pin_order_sources(provenance), provenance)
+
+    def test_entry_without_path_is_kept_verbatim(self):
+        provenance = {"pin_order_sources": [{"format": "spice", "top": "trng_top"}]}
+        self.assertEqual(lvs._anonymise_pin_order_sources(provenance), provenance)
+
+    def test_entry_with_non_string_path_is_kept_verbatim(self):
+        provenance = {"pin_order_sources": [{"path": 7}]}
+        self.assertEqual(lvs._anonymise_pin_order_sources(provenance), provenance)
+
+    def test_non_dict_provenance_is_returned_unchanged(self):
+        for value in ("not-a-dict", None, 17, ["x"]):
+            self.assertEqual(lvs._anonymise_pin_order_sources(value), value)
 
 
 if __name__ == "__main__":
