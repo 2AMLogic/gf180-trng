@@ -10,6 +10,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #955**: refactor(test): mix the shared CLI fixture into RecordedRunTests
+- **Issue #928** (closed): Point test_evidence_store.py's three borrowed fixture members at _CliFixture instead of RunIntegrityTests
+- **PR #954**: docs: call out superseded DRC-clean claim in post-layout characterization
+- **Issue #934** (closed): sim/characterization-post-layout-extracted.md:1538 still reads the composed floorplan as DRC-clean — live prose, not struck-through history
 - **PR #923**: signoff: run and publish ring2's native 27-corner paired comparison
 - **Issue #921** (closed): sim/tb/trng-top-post-route/README.md asks for a klayout-tools commit pdk-nightly.yml no longer pins
 - **Issue #930** (closed): Lint guard: fail when a tracked *.py defines a class or function after a module-level __main__ guard
