@@ -1,6 +1,6 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-14.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-16.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
@@ -8,8 +8,56 @@ not independent verification of the claims in issue or PR titles.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-16
+
+- **PR #940**: docs: correct tap-distance spec comment on curated-deck coverage
+- **PR #925**: refactor: remove the dead VcdSummary.as_dict serializer in activity.py
+- **PR #945**: fix: exempt F401 tokens in __init__.py from RUF100 and credit every noqa token in a span
+- **PR #901**: refactor: bind both ring CLI tails with one _ring_common.ring_cli call
+- **Issue #890** (closed): tap-distance-spec.json's _comment still says klt's curated deck codes no tie-distance rule; drc.json reports 2769 of them
+- **Issue #906** (closed): Remove the dead VcdSummary.as_dict serializer in sim/tb/digital-sta-power/activity.py
+- **Issue #926** (closed): unused_names RUF100: decide whether an __init__.py re-export token is stale
+- **Issue #882** (closed): Collapse the duplicated ring CLI tail into _ring_common and delete the unused _wiring_shapes forwarder
+- **PR #933**: signoff: sweep committed envelopes recursively, selected by shape
+- **PR #931**: docs(floorplan): state composed-abstract DRC verdict from the committed report
+- **PR #927**: chore: remove orphaned npm scripts and teach the parity test to report orphans
+- **PR #924**: test: cover the lvs.py home-dir anonymisation helpers
+- **PR #899**: refactor: move the OpenROAD shim provisioning into layout/_klt.py
+- **PR #891**: signoff: carry the unmet-row composition in the T1 status fence, and correct the tap-distance deck-coverage disclosure
+- **PR #884**: docs: roadmap as of 2026-11-13
+- **Issue #936** (closed): layout/floorplan/README.md's "DRC: what actually ran" section quotes a clean verdict and a 3-layer coverage scope its own cited report contradicts
+- **Issue #916** (closed): signoff step 1's uncited-envelope sweep is non-recursive, so an envelope committed under signoff/evidence/*/ is never swept
+- **Issue #910** (closed): Remove two orphaned package.json script entries, and teach the parity test to report orphans
+- **Issue #907** (closed): Two remaining README/record sites still read the composed floorplan DRC as clean
+- **Issue #903** (closed): layout/digital/lvs.py: no unit coverage for the pin_order_sources path anonymizer
+- **Issue #892** (closed): Consolidate the duplicated OpenROAD shim provisioning in layout/digital into layout/_klt.py
+- **Issue #881** (closed): Verification plumbing describes the pre-0.9.0 world: the T1 marker hides row swaps, and tap-distance.json claims no deck codes a tie-distance rule
+
+### 2026-11-15
+
+- **PR #922**: docs: audit conflict-resolution merges a395d6e1, 742bb2af, d870871b for discarded content
+- **PR #919**: feat: teach unused_names to report stale F401/F841 noqa tokens (RUF100)
+- **PR #918**: docs: name the klt release the analog layout reports actually record
+- **PR #914**: test: share one _CliFixture mixin instead of three fixture-sharing mechanisms in test_cli.py
+- **PR #911**: fix(signoff): cite the committed klt yield response as 6.analog again
+- **PR #909**: test: move eight stray mid-file __main__ guards to end of file
+- **PR #896**: refactor: hoist the shared scenario-runner CLI into sim/harness/scenario_cli
+- **PR #893**: refactor: drop four test-only helpers for the functions they wrapped
+- **Issue #913** (closed): signoff/README.md names klt 0.6.0 as the analog reports' producer; the committed reports record 0.9.1
+- **Issue #908** (closed): Remove two stale `# noqa: F401` suppressions, and teach unused_names.py to report them
+- **Issue #904** (closed): Remove eight stray mid-file __main__ guards in sim/tests that hide 47 tests from direct execution
+- **Issue #894** (closed): Collapse the three ways sim/tests/test_cli.py shares one fixture into one mixin (its cancellation list already leaks a 5x-run test)
+- **Issue #888** (closed): The --scenario/--no-write runner CLI is hand-rolled once per behavioral testbench in sim/tb; move it behind a sim/harness entry point
+- **Issue #887** (closed): Audit merges a395d6e1, 742bb2af and d870871b for content lost in conflict resolution
+- **Issue #885** (closed): Restore the 6.analog citation that merge d870871b dropped from signoff/block-manifest.json
+- **Issue #877** (closed): Remove four test-only helpers: allocate_record_stem, parse_measurements, parse_non_finite_measurements, tone_detected
+
 ### 2026-11-14
 
+- **PR #912**: docs: state the committed tapped-layout reports in layout and signoff prose
+- **PR #878**: digital: re-run the chain under the nightly's Yosys 0.69 / klt 0.9.1 toolchain
+- **Issue #900** (closed): Remove three unused sim/harness wrappers: no production caller, and one offers the documented-unsafe allocator
+- **Issue #886** (closed): Layout and signoff READMEs still describe floating analog bodies; the committed LVS and PEX reports read verified and biased
 - **PR #875**: refactor: read every frontmatter block through one shared scanner
 - **PR #873**: refactor: load the committed wiring plan once, shared by both IR-drop tools
 - **PR #876**: refactor: read the digital-sta-power family through its one shared reader

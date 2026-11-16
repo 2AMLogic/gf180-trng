@@ -237,7 +237,11 @@ than timing signoff, which stays with OpenROAD STA. The citation's `klt pex`
 ## Item 7 analog
 
 The citation is the **native** JSON response of one `klt pex` run (#326),
-copied byte for byte by `publish_item7_analog.py`. The pinned grader grades
+copied byte for byte by `publish_item7_analog.py` (except that a
+home-directory client path in `environment` -- `client_ngspice_binary`, and
+on a local-backend run `ngspice_binary`, `selected_path` or `root` -- loses
+its prefix and keeps the basename, as for combiner/sampler below, so the
+tree passes `check:no-host-paths`). The pinned grader grades
 it `met`: kind `pex`, `status: "pass"`, `content_hash` pinned to
 `layout/rings/ro_ring11/ro_ring11.gds`, `input_verified: true`.
 
@@ -357,8 +361,10 @@ README has the scenarios, settling windows and exclusions.
 
 When the run is published, `publish_combiner_sampler_pex.py` writes the
 native envelope to `evidence/post-layout/combiner_sampler/` (byte for byte, except that
-`environment.client_ngspice_binary` loses its home-directory prefix and keeps the
-binary's name, so the tree passes `check:no-host-paths`),
+a home-directory client path in `environment` -- `client_ngspice_binary`, and on a
+local-backend run `ngspice_binary`, `selected_path` or `root` -- loses its prefix and
+keeps the basename, so the tree passes `check:no-host-paths`; every publisher
+inherits this from `publish_common.load_envelope`),
 with a `publication.json`. That file pins the request, testbench, DUT, source
 identity, port map, PDK/deck provenance and `body_bias`, and records the
 verdict. `check.py` re-verifies all of it on every run (step 1d) and
