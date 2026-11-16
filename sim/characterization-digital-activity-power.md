@@ -15,25 +15,25 @@ budget, and what does not").
 1. **The uniform 0.25 transitions/net/cycle assumption is conservative for
    every workload tried**, by a margin that is almost corner-independent:
    at the same netlist, SPEF and 1 MHz rate, the largest observed steady-state
-   total is **0.745 to 0.753** of the uniform figure across all 15 corners
+   total is **0.752 to 0.760** of the uniform figure across all 15 corners
    (table below). At the digital-binding corner of the rollup
-   (`ff_125C_3v60`, `max` interconnect) that is 254.71 uW observed against
-   339.35 uW uniform.
+   (`ff_125C_3v60`, `max` interconnect) that is 256.06 uW observed against
+   338.12 uW uniform.
 2. **The workloads differ from each other by far less than either differs from
    the uniform model.** Steady-state conditioned streaming, raw streaming and a
    fully stalled consumer are within about 1 % of each other. Alarm-gated
    operation (conditioned path gated, raw tap still running) is about 11 %
-   lower, and a **disabled block with a running clock still draws 0.622 of the
+   lower, and a **disabled block with a running clock still draws 0.626 of the
    uniform figure**: the clock tree and every flop's clock-pin internal energy
    are paid regardless of whether the block is doing anything. No claim is made
    that any of these five stimuli is a universal worst case.
 3. **Start-up and reset are cheaper than steady state**, not dearer, for the
    streaming workloads: at the binding corner conditioned streaming runs
-   reset 0.607, start-up 0.698, steady 0.747 of uniform, and raw streaming
-   reset 0.607, start-up 0.700, steady 0.751. The conditioner and FIFOs are
+   reset 0.612, start-up 0.702, steady 0.754 of uniform, and raw streaming
+   reset 0.612, start-up 0.704, steady 0.757. The conditioner and FIFOs are
    still gated or empty.
 4. **Annotation is complete.** Every window of every workload of every corner
-   binds all 5143 pins to VCD activity; no pin runs on a fallback activity, so
+   binds all 5145 pins to VCD activity; no pin runs on a fallback activity, so
    nothing in the table is an unannotated number presented as measured.
 5. **The budget verdict does not move.** See section 5.
 
@@ -216,22 +216,22 @@ The ratified rollup (`python3 sim/tools/power_rollup.py`) is unchanged and still
   less than 0.25 transitions/net/cycle on average, not that the assumption is
   wrong for other stimuli.
 - **Clock-network power is not workload-dependent in this analysis.** The
-  clock group (75.74 uW at the binding corner) is identical in every row,
+  clock group (76.73 uW at the binding corner) is identical in every row,
   because OpenSTA derives clock-network activity from the propagated clock, not
   from the VCD; the VCD's `clk` toggle count is checked against the window
   length instead. This is also why a disabled block with a running clock
   retains most of the power.
 - **Leakage** is a separate column in every row and is state-dependent in the
   library (`when` conditions), so it moves by a few percent between workloads
-  (7.051 to 7.977 uW at the binding corner). It is **not** the stopped-clock idle
+  (7.002 to 7.937 uW at the binding corner). It is **not** the stopped-clock idle
   figure: that state was not simulated and its leakage depends on the flop
-  contents it holds. The default flow's leakage column (7.617 uW at the same
+  contents it holds. The default flow's leakage column (7.579 uW at the same
   corner) is the nearest like-for-like number.
 - **x/z handling.** FIFO memory flops have no reset port and hold x until
   written; the x events are counted per trace (about 0.2 % of events or fewer)
   and kept verbatim. How OpenSTA's reader treats a transition through x is that
   tool's behaviour and is not independently verified here.
-- **Coverage.** 5143 of 5143 pins annotated from the VCD in every window;
+- **Coverage.** 5145 of 5145 pins annotated from the VCD in every window;
   unannotated pins are counted per window in every record and, above 1 %,
   reject the corner.
 - Interconnect, IR drop, I/O timing and extraction caveats are those of the
@@ -240,13 +240,13 @@ The ratified rollup (`python3 sim/tools/power_rollup.py`) is unchanged and still
 ## 5. What changes in the budget, and what does not
 
 Nothing is changed. `python3 sim/tools/power_rollup.py` still prices the digital
-term at its ratified 339.4 uW (uniform activity, `ff_125C_3v60`/`max`) and
-reports the worst active corner at 749.4 uW, 149.9 % of the < 500 uW row. The
+term at its ratified 338.1 uW (uniform activity, `ff_125C_3v60`/`max`) and
+reports the worst active corner at 748.2 uW, 149.6 % of the < 500 uW row. The
 illustration at the end of section 3 shows what a substitution would do: the
-digital term would fall by 84.6 uW, taking that worst-corner total to about
-664.8 uW, still above the row (about 133 %). The verdict (the active-power row is
+digital term would fall by 82.1 uW, taking that worst-corner total to about
+666.1 uW, still above the row (about 133 %). The verdict (the active-power row is
 not met) is therefore the same under either digital term, which is why this is
-recorded as characterization. The 749.4 uW (and the 664.8 uW illustration) are a lower bound on the
+recorded as characterization. The 748.2 uW (and the 666.1 uW illustration) are a lower bound on the
 analog side: the ledger now carries the shipped liveness samplers as a required
 term (#463), measured at 1 of 27 corners so far and a gap at this one, so the
 analog term here excludes them. That is independent of the digital choice and
