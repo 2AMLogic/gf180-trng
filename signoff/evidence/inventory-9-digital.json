@@ -254,7 +254,7 @@
       "files": [
         {
           "path": "sim/tb/trng-top-post-route/README.md",
-          "sha256": "sha256:b8fd34ddefd700da81eb37ce97b87ac76de3a084af3a6a94e9b395c32b36dc23"
+          "sha256": "sha256:695e4db7d006ed9d388c30292291d9463c6cef0a4caa18511f6e1133a95a59cd"
         },
         {
           "path": "sim/tb/trng-top-post-route/activity_workloads.py",
