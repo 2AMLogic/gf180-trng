@@ -10,6 +10,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #962**: fix: fail check:signoff when the manifest or tier record is not byte-canonical
+- **Issue #951** (closed): No gate catches hand-mangled formatting in generated signoff/ JSON
+- **PR #959**: test: pin scenario_cli's print_result injection and repo-relative record line
+- **Issue #958** (closed): test_scenario_cli.py does not assert print_result or the record line's repo-relative path (two mutations survive)
 - **PR #957**: test: pin scenario_cli's --scenario/--no-write contract
 - **Issue #917** (closed): sim/harness/scenario_cli.py has no dedicated test module, unlike 10 of the 13 other harness modules
 - **PR #955**: refactor(test): mix the shared CLI fixture into RecordedRunTests
