@@ -15,7 +15,9 @@ The inventory is *derived*, not listed twice:
   every repository-local module they import (transitively, found by parsing
   the imports, so a new ``import`` is picked up without editing a list).
 * The testbench directory's own ``*.py`` files and ``run_demo.py`` itself,
-  which build the request and the comparison.
+  which build the request and the comparison; their repository-local
+  imports are followed like every Python entry above (a non-Python extra
+  is pinned as-is, never parsed).
 
 Cell-library, simulator and tool versions are not source files and are not
 covered here; ``signoff/check.py`` says so in ``ITEM7_LIMITS``.
@@ -124,7 +126,11 @@ def collect(
         walk(p, lambda f: _verilog_includes(f, include_dirs))
     for p in python_entries:
         walk(p, lambda f: _python_imports(f, roots))
-    seen.update(p.resolve() for p in extra_files)
+    for p in extra_files:
+        if p.suffix == ".py":
+            walk(p, lambda f: _python_imports(f, roots))
+        else:
+            seen.add(p.resolve())
     return {
         str(p.relative_to(repo_root)): _sha256(p)
         for p in sorted(seen)
