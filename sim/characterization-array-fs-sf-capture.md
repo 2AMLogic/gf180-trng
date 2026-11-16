@@ -148,6 +148,32 @@ matching clock, load and measurement definitions; the earlier
 `ro-array-core-power` / `sampler-array-digitize` records still differ in deck,
 clock and noise injection, and remain uncompared, as `-01` stated.
 
+## Reproduce (cold start)
+
+Declared before any run (`plan`, `emit --check`), then run on the batch fleet
+(`KLT_SIM_BACKEND=batch`, one request at a time; never a local loop):
+
+```sh
+python3 sim/tools/fs_sf_capture.py plan
+python3 sim/tools/fs_sf_capture.py emit --check
+python3 sim/tools/fs_sf_capture.py run control-tt --outdir DIR --backend batch
+python3 sim/tools/fs_sf_capture.py run grid --outdir DIR --backend batch
+python3 sim/tools/fs_sf_capture.py analyze DIR1/grid.report.json DIR2/control-tt.report.json
+```
+
+Input hashes on this tree: testbench deck
+`sim/tb/sampler-array-fs-sf/tb_sampler_array_fs_sf.sp` sha256
+`63c8dea09184a99db93840a7af4e0896c325dbbd37a8fbc8fd03fb8d4fb881f9`;
+`sim/tb/sampler-array-fs-sf/request-grid.json` sha256
+`e0ddfa0d11a5d0e124eed4d66cefb19c13f197ee3bd38935d5bf735c97b90b1d`;
+`sim/tb/sampler-array-fs-sf/request-control-tt.json` sha256
+`92a36b4af96c5651a1eeef3855322d1ca3fd5107771f117a67d4b3d2c5938667`.
+The `-06` runs used the deck as committed at `791ad51c` (sha256
+`66904c21fde604ddd1fff55d5c064a5ec86d1d488d354dbaa11714958d3950e7`; one added
+comment line since, no stimulus change) and byte-identical requests. The table
+above re-derives from the committed fleet reports with `analyze` — its output is
+record `-06`'s `analysis.txt` (`sim/records/2026-11-15-sampler-array-fs-sf-06.md`).
+
 ## Tested versus not tested
 
 Tested offline (`sim/tests/test_fs_sf_capture.py`): the committed requests match the
@@ -158,7 +184,7 @@ not dominate a clock edge; reset never released; missing clock edge; low swing;
 in-aperture sample; missing measurements -> `UNMEASURED`); and the pooling rule
 that a missing unit prevents a coverage-complete verdict.
 
-Not tested, and unbounded by this work even once the campaign runs:
+Not tested, and unbounded by the completed campaign:
 
 - noise, jitter and mismatch (nothing here is randomness; no min-entropy figure);
 - continuous clock-phase coverage (4 offsets, 3 edges), clock jitter, duty error or
