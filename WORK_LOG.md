@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #957**: test: pin scenario_cli's --scenario/--no-write contract
+- **Issue #917** (closed): sim/harness/scenario_cli.py has no dedicated test module, unlike 10 of the 13 other harness modules
 - **PR #955**: refactor(test): mix the shared CLI fixture into RecordedRunTests
 - **Issue #928** (closed): Point test_evidence_store.py's three borrowed fixture members at _CliFixture instead of RunIntegrityTests
 - **PR #954**: docs: call out superseded DRC-clean claim in post-layout characterization
