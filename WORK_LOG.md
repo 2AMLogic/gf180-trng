@@ -10,6 +10,7 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #923**: signoff: run and publish ring2's native 27-corner paired comparison
 - **Issue #921** (closed): sim/tb/trng-top-post-route/README.md asks for a klayout-tools commit pdk-nightly.yml no longer pins
 - **Issue #930** (closed): Lint guard: fail when a tracked *.py defines a class or function after a module-level __main__ guard
 - **PR #939**: feat: teach unused_names to flag definitions after the __main__ guard (TRNG001)
