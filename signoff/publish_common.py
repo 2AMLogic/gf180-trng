@@ -6,7 +6,8 @@ published as signoff evidence live here once, so a refusal added to one
 publisher cannot silently miss the other:
 
 * run_pex          -- one `klt pex` invocation, stdout to a response file
-* load_envelope    -- run (or read) the response; a failed run publishes nothing
+* load_envelope    -- run (or read) the response, redacting client paths; a
+                      failed run publishes nothing
 * envelope_refusals -- the pin / mismatch / missing-netlist refusals
 * publish_envelope -- write the envelope, build and validate the publication,
                       restore the previous envelope on any failure, then write
@@ -52,27 +53,34 @@ def run_pex(root: Path, scratch: Path, pex_args: list[str], backend: str | None,
     return out
 
 
+# The only host paths a `klt pex` response can carry are in each side's
+# `environment`: the client's own ngspice resolution (`client_ngspice_binary`)
+# and, when the run executed on that same host (local backend), the runner's
+# ngspice (`ngspice_binary`, `worker_environment.simulator.selected_path`)
+# and PDK root (`worker_environment.pdk.root`). All are informational, so the
+# shared loader keeps each basename and drops the home directory; a
+# fleet-runner value (`/usr/local/bin/ngspice`, `/opt/pdk`) has no /home or
+# /Users prefix and is untouched.
+_HOST_PATH_VALUE = re.compile(
+    rb'("(?:client_ngspice_binary|ngspice_binary|selected_path|root)":\s*")/(?:home|Users)/[^"]*/([^"/]*)(")'
+)
+
+
+def redact_client_paths(raw: bytes) -> bytes:
+    """`raw` with each home-directory `environment` path reduced to its basename."""
+    return _HOST_PATH_VALUE.sub(rb"\1\2\3", raw)
+
+
 def load_envelope(path: Path | None, run: Callable[[], Path], tag: str) -> tuple[bytes, dict] | None:
-    """The raw response bytes and their parse, from `path` or a fresh `run()`; None if klt pex failed."""
+    """The response bytes, client paths redacted, and their parse, from `path` or a fresh `run()`; None if klt pex failed."""
     try:
         src = path.resolve() if path else run()
     except subprocess.CalledProcessError as exc:
         # klt pex prints its error envelope on stdout/stderr; nothing is published.
         print(f"{tag}: klt pex failed (exit {exc.returncode}); nothing published", file=sys.stderr)
         return None
-    raw = src.read_bytes()
+    raw = redact_client_paths(src.read_bytes())
     return raw, json.loads(raw)
-
-
-# The client's ngspice path is the only host path in a `klt pex` response
-# (`environment.client_ngspice_binary`); it is informational, so the publisher
-# keeps the binary's name and drops the directory.
-_CLIENT_BINARY = re.compile(rb'("client_ngspice_binary":\s*")/(?:home|Users)/[^"]*/([^"/]*)(")')
-
-
-def redact_client_paths(raw: bytes) -> bytes:
-    """`raw` with each home-directory `client_ngspice_binary` reduced to its basename."""
-    return _CLIENT_BINARY.sub(rb"\1\2\3", raw)
 
 
 def envelope_refusals(root: Path, envelope: dict, netlist_rel: str) -> list[str]:
