@@ -26,7 +26,11 @@ publication.json records which backend was requested and nothing more.
 What it does, and refuses to do:
 
 * The published envelope is the **native** `klt pex` JSON response, byte for
-  byte. Nothing is added to it or derived into it.
+  byte except that a home-directory client path in `environment`
+  (`client_ngspice_binary`, and on a local-backend run `ngspice_binary`,
+  `selected_path` or `root`) loses its prefix and keeps the basename, so the
+  tree passes `check:no-host-paths` (publish_common.load_envelope redacts
+  on load). Nothing else is added to it or derived into it.
 * `publication.json` beside it pins what the envelope does not: the request,
   testbench body and schematic DUT (sha256), the consumed design-source
   identity, the extracted netlist's port map, the PDK/deck provenance, the
@@ -49,7 +53,6 @@ What it does, and refuses to do:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
@@ -143,8 +146,6 @@ def main(argv: list[str] | None = None) -> int:
     if loaded is None:
         return 1
     raw, envelope = loaded
-    raw = common.redact_client_paths(raw)
-    envelope = json.loads(raw)
     refusals = common.envelope_refusals(REPO_ROOT, envelope, check.CS_NETLIST)
     if refusals:
         return common.fail(f"{TAG}: refusing to publish", refusals)
