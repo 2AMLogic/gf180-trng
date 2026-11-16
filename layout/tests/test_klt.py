@@ -129,7 +129,10 @@ class EnsureOpenroadReachableTests(unittest.TestCase):
     def tearDown(self):
         os.environ["PATH"] = self._entry_path
         for shim_dir in self._shim_dirs:
-            shutil.rmtree(shim_dir, ignore_errors=True)
+            # Only delete what the helper created; a mis-registered entry
+            # must survive to be reported, not be rmtree'd silently (#915).
+            if shim_dir.name.startswith("klt-openroad-shim-"):
+                shutil.rmtree(shim_dir, ignore_errors=True)
 
     def test_native_openroad_wins_and_leaves_path_untouched(self):
         """A real local install always wins -- no shim, no `$PATH` edit."""
