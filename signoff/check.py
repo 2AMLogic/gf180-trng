@@ -807,6 +807,18 @@ def resolve_artifact(envelope_path: Path, named: str) -> Path | None:
     return None
 
 
+#: (field naming the input artifact, field carrying its digest) -- the one
+#: definition of what makes a JSON file an envelope, shared by
+#: check_envelope_against_its_input() and envelope_names_an_input().
+ENVELOPE_INPUT_KINDS = [
+    ("file", "provenance.input.content_hash"),
+    ("layout", "environment.layout_sha256"),
+    ("source", "provenance.input.content_hash"),
+    # `klt sta` (schema 2) names its DEF as a `{path, scope}` object.
+    ("def_path", "provenance.input.content_hash"),
+]
+
+
 def check_envelope_against_its_input(
     envelope_path: Path, envelope: dict, failures: list[str]
 ) -> bool:
@@ -816,16 +828,7 @@ def check_envelope_against_its_input(
     caller can count what was actually verified rather than what was seen.
     """
     rel = envelope_path.relative_to(REPO_ROOT)
-    kind_hints = [
-        # (field naming the input artifact, field carrying its digest)
-        ("file", "provenance.input.content_hash"),
-        ("layout", "environment.layout_sha256"),
-        ("source", "provenance.input.content_hash"),
-        # `klt sta` (schema 2) names its DEF as a `{path, scope}` object.
-        ("def_path", "provenance.input.content_hash"),
-    ]
-
-    for name_field, digest_field in kind_hints:
+    for name_field, digest_field in ENVELOPE_INPUT_KINDS:
         named = envelope.get(name_field)
         if isinstance(named, dict):
             # `klt pex` (schema 2) writes `layout` (and `klt sta` its
@@ -873,6 +876,25 @@ def check_envelope_against_its_input(
         f"{rel}: names no input artifact (no 'file', 'layout' or 'source' "
         f"field), so its freshness cannot be verified"
     )
+    return False
+
+
+def envelope_names_an_input(envelope: dict) -> bool:
+    """True when this JSON names an input artifact, i.e. it is an envelope.
+
+    The same naming rule check_envelope_against_its_input() verifies, so the
+    step-1 sweep selector and the checker can never disagree about what an
+    envelope is: a `file`, `source`, `layout` or `def_path` field carrying a
+    non-empty path, directly or as a `{path, scope: "repo"}` object.
+    """
+    if not isinstance(envelope, dict):
+        return False
+    for name_field, _digest_field in ENVELOPE_INPUT_KINDS:
+        named = envelope.get(name_field)
+        if isinstance(named, dict):
+            named = named.get("path") if named.get("scope") == "repo" else None
+        if isinstance(named, str) and named:
+            return True
     return False
 
 
@@ -953,6 +975,54 @@ def verify_current_status() -> list[str]:
     return current_status_problems(report, docs)
 
 
+#: The envelopes freshness_gate() step 1 exempts from the generic
+#: envelope-vs-input sweep, named once so the cited filter below and
+#: committed_envelopes() exempt the same set. Each carries no checkable input
+#: digest by design (see the constants above) and has its own freshness step
+#: keyed on its manifest citation (steps 1b/1b'/1c). The exemption is BY
+#: NAME on purpose: their current payloads happen to fail the envelope shape
+#: test, but that is an accident -- a later `klt yield` writing
+#: `source.scope == "repo"` would otherwise silently pull one into the sweep
+#: and fail the gate on an envelope step 1 is written to skip.
+STEP1_EXEMPT = (ITEM7_ENVELOPE, PNR_ENVELOPE, ITEM6_ENVELOPE)
+
+
+def committed_envelopes(evidence_dir: Path) -> set[Path]:
+    """Every committed envelope under evidence_dir, at any depth.
+
+    Step 1's committed set must reach subdirectories: an envelope committed
+    under signoff/evidence/*/, cited by no manifest entry, is invisible to
+    every other freshness step (each of those is gated on a manifest key
+    that is absent by assumption), so only this sweep can catch it going
+    stale -- the uncited half of the #885 gap.
+
+    A file counts as an envelope when envelope_names_an_input() says it
+    names an input artifact. That rule keeps the sidecars sharing these
+    directories out of the sweep: requests, limits, sample sets and
+    publication.json sidecars name no input, which is exactly what makes
+    them sidecars rather than envelopes. inventory-*.json files are the
+    item 1/2/9/10 inventories, not envelopes, at any depth, and the three
+    STEP1_EXEMPT envelopes are excluded by name. Malformed JSON propagates,
+    exactly as the loop consuming this set has always let it.
+
+    Accepted trade-off: a committed, uncited JSON that was meant to be an
+    envelope but forgot its input-naming field is skipped here rather than
+    failing -- every envelope carrying a signoff claim is cited, and the
+    cited path still fails loudly in check_envelope_against_its_input()
+    with "names no input artifact".
+    """
+    envelopes: set[Path] = set()
+    for path in evidence_dir.rglob("*.json"):
+        if path.name.startswith("inventory-"):
+            continue
+        if path.relative_to(REPO_ROOT).as_posix() in STEP1_EXEMPT:
+            continue
+        envelope = json.loads(path.read_text())
+        if envelope_names_an_input(envelope):
+            envelopes.add(path)
+    return envelopes
+
+
 def freshness_gate(manifest: dict) -> int:
     failures: list[str] = []
     verified = 0
@@ -962,11 +1032,11 @@ def freshness_gate(manifest: dict) -> int:
     cited: list[Path] = []
     for _key, part in manifest_entries(manifest):
         named = part.get("file")
-        if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE, ITEM6_ENVELOPE):
+        if named and named not in STEP1_EXEMPT:
             cited.append(REPO_ROOT / named)
     # The item 1/2/9/10 inventories are not envelopes (they name no input);
     # their freshness is the member-by-member re-derivation in step 1e.
-    committed = {p for p in EVIDENCE_DIR.glob("*.json") if not p.name.startswith("inventory-")}
+    committed = committed_envelopes(EVIDENCE_DIR)
     for path in sorted(set(cited) | committed):
         if not path.is_file():
             failures.append(

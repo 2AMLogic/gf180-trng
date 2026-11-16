@@ -95,19 +95,15 @@ class CheckEnvTests(unittest.TestCase):
         self.assertNotIn("note:", output)
 
 
-class RunIntegrityTests(unittest.TestCase):
-    """A completed run re-hashes its raw output before it reports success.
+class _CliFixture:
+    """Shared CLI test fixture: fake PDK, tiny testbench, and the patched
+    ``cli`` module globals.
 
-    Regression coverage for #60: two concurrent ``run_corners.py``
-    invocations were handed overlapping record stems, the second overwrote
-    raw files the first had already hashed into its records, and the run
-    printed ``status : OK`` and exited 0 with 30 records whose ``raw.files``
-    checksums matched nothing on disk.
-
-    No ngspice is needed: ``runner.run_one`` is replaced by a stub that
-    writes a deck and a log the way a real run does, and the collision is
-    injected by having a later run write into an earlier point's raw
-    directory -- exactly what the losing invocation did.
+    Deliberately *not* a ``TestCase`` -- it carries no test methods of its
+    own, so a class that mixes it in runs exactly its own tests, once each.
+    This replaces the three sharing mechanisms this file used previously
+    (subclassing ``RunIntegrityTests`` plus a per-class cancellation list,
+    a duplicated copy of the fixture, and an unbound-method alias).
     """
 
     def setUp(self):
@@ -181,6 +177,22 @@ class RunIntegrityTests(unittest.TestCase):
         with redirect_stdout(out), redirect_stderr(err):
             status = cli.main(argv)
         return status, out.getvalue(), err.getvalue()
+
+
+class RunIntegrityTests(_CliFixture, unittest.TestCase):
+    """A completed run re-hashes its raw output before it reports success.
+
+    Regression coverage for #60: two concurrent ``run_corners.py``
+    invocations were handed overlapping record stems, the second overwrote
+    raw files the first had already hashed into its records, and the run
+    printed ``status : OK`` and exited 0 with 30 records whose ``raw.files``
+    checksums matched nothing on disk.
+
+    No ngspice is needed: ``runner.run_one`` is replaced by a stub that
+    writes a deck and a log the way a real run does, and the collision is
+    injected by having a later run write into an earlier point's raw
+    directory -- exactly what the losing invocation did.
+    """
 
     def test_clean_run_reserves_disjoint_stems_and_reports_ok(self):
         self._install_runner()
@@ -272,15 +284,10 @@ class RunIntegrityTests(unittest.TestCase):
         self.assertIn("raw output changed after it was hashed", err)
 
 
-class NoWriteScratchIsolationTests(RunIntegrityTests):
-    # Inherits only the fixture; the parent's own tests run in their class.
-    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
-    test_a_second_writer_clobbering_raw_output_fails_the_run = None
-    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
-
+class NoWriteScratchIsolationTests(_CliFixture, unittest.TestCase):
     """``--no-write`` invocations never share scratch directories (#499).
 
-    Reuses the RunIntegrityTests fixture (fake PDK, tiny testbench); the
+    Reuses the ``_CliFixture`` fixture (fake PDK, tiny testbench); the
     simulator is a stub, so no PDK or ngspice is needed. Overlap between two
     invocations is made deterministic by running the second one from inside
     the first one's stubbed simulator call.
@@ -381,12 +388,7 @@ class NoWriteScratchIsolationTests(RunIntegrityTests):
         self.assertTrue(any(self.work_dir.rglob("*.log")))
 
 
-class InvalidPlanRejectionTests(RunIntegrityTests):
-    # Inherits only the fixture; the parent's own tests run in their class.
-    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
-    test_a_second_writer_clobbering_raw_output_fails_the_run = None
-    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
-
+class InvalidPlanRejectionTests(_CliFixture, unittest.TestCase):
     """A plan that repeats a seed or a PVT point, or whose points alias to one
     output id, is refused before anything is allocated (#511).
 
@@ -519,12 +521,9 @@ class InvalidPlanRejectionTests(RunIntegrityTests):
         self.assertEqual(len(list(self.work_dir.glob("*/run-*"))), 1)
 
 
-class ArtifactCollisionRejectionTests(RunIntegrityTests):
+class ArtifactCollisionRejectionTests(_CliFixture, unittest.TestCase):
     """A DUT include named like a generated artifact is refused before any
     record stem, scratch directory or simulator launch (#565)."""
-    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
-    test_a_second_writer_clobbering_raw_output_fails_the_run = None
-    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
 
     def _with_dependency(self, name, extra_manifest=None):
         dutdir = self.root / "dutdir"
@@ -581,12 +580,7 @@ class ArtifactCollisionRejectionTests(RunIntegrityTests):
         self.assertEqual(status, cli.EXIT_OK, err)
 
 
-class NonpositiveTimeoutRejectionTests(RunIntegrityTests):
-    # Inherits only the fixture; the parent's own tests run in their class.
-    test_clean_run_reserves_disjoint_stems_and_reports_ok = None
-    test_a_second_writer_clobbering_raw_output_fails_the_run = None
-    test_raw_output_clobbered_before_the_record_is_written_is_refused = None
-
+class NonpositiveTimeoutRejectionTests(_CliFixture, unittest.TestCase):
     """``--timeout`` must be a strictly positive integer: coreutils
     ``timeout(1)`` treats 0 as "no timeout", which would disable the
     independent watchdog. An invalid bound is refused before PDK discovery,
@@ -661,53 +655,11 @@ class NonpositiveTimeoutRejectionTests(RunIntegrityTests):
                 self.setUp()
 
 
-class TimeoutSummaryTests(unittest.TestCase):
+class TimeoutSummaryTests(_CliFixture, unittest.TestCase):
     """A corner ``runner.run_one`` reports as killed by the wall-clock bound
     (issue #83) must stand out in the summary and still leave a written
     breadcrumb record naming the deck and elapsed time -- not vanish the
     way the incident's silent 4.5h hang did."""
-
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
-        self.records_dir = self.root / "records"
-
-        self.tb_dir = self.root / "tb" / "an-experiment"
-        self.tb_dir.mkdir(parents=True)
-        (self.tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
-        (self.tb_dir / "tb.json").write_text(
-            json.dumps({
-                "name": "an-experiment", "netlist": "x.spice",
-                "measure": {"vout": "v(out)"},
-            })
-        )
-
-        variant = _make_variant(self.root, "gf180mcuD")
-        (variant / "libs.tech" / "ngspice" / "design.ngspice").write_text("* fake\n")
-        (variant / "SOURCES").write_text("open_pdks deadbeef\n")
-        pdk = Pdk(path=variant, variant="gf180mcuD", source="test")
-
-        for target, value in (
-            ("RECORDS_DIR", self.records_dir),
-            ("REPO_ROOT", self.root),
-        ):
-            patcher = mock.patch.object(cli, target, value)
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        for target, value in (
-            ("find_pdk", lambda: pdk),
-            ("git_provenance", lambda _root: {"commit": "f" * 40, "dirty": False}),
-        ):
-            patcher = mock.patch.object(
-                cli if target == "find_pdk" else cli.report, target, value
-            )
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        patcher = mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46")
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        _fake_store.install(self, self.root, cli)
 
     def _install_runner(self, timed_out_corner: str):
         def fake_run_one(tb, pdk, point, workdir, seed=None, run_index=0, timeout_s=0, startup_snapshot=None):
@@ -739,14 +691,6 @@ class TimeoutSummaryTests(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def _run(self, *extra: str):
-        argv = [str(self.tb_dir), "--corners", "tt", "ss", "--temps", "27",
-                "--supply-tol", "0", *extra]
-        out, err = io.StringIO(), io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
-            status = cli.main(argv)
-        return status, out.getvalue(), err.getvalue()
-
     def test_timed_out_corner_reports_failed_timeout_and_fails_the_run(self):
         self._install_runner(timed_out_corner="ss")
         status, out, _err = self._run()
@@ -776,12 +720,9 @@ class TimeoutSummaryTests(unittest.TestCase):
         self.assertIn(".spice", text)
 
 
-class ExecutionFailureExitTests(unittest.TestCase):
+class ExecutionFailureExitTests(_CliFixture, unittest.TestCase):
     """A fake ngspice that prints every measurement but exits nonzero (issue
     #498) must fail the CLI run; the real ``runner.run_one`` is exercised."""
-
-    setUp = TimeoutSummaryTests.setUp
-    _run = TimeoutSummaryTests._run
 
     def _fake(self, body: str):
         bin_dir = self.root / "bin"

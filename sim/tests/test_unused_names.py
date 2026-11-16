@@ -250,7 +250,8 @@ class Exclusions(unittest.TestCase):
                 x = 1  # noqa
                 y = 2  # noqa: F841
                 z = 3  # noqa: F401
-            """), [(5, "F401", "e"), (6, "F401", "f"), (10, "F841", "z")])
+            """), [(5, "F401", "e"), (6, "F401", "f"), (6, "RUF100", "F841"),
+                   (10, "F841", "z"), (10, "RUF100", "F401")])
 
     def test_noqa_in_string_is_not_a_comment(self):
         self.assertEqual(found("import os; s = '# noqa'\n"), [(1, "F401", "os")])
@@ -271,6 +272,89 @@ class Exclusions(unittest.TestCase):
                 )
                 y = 2
             """), [(7, "F401", "f"), (13, "F841", "y")])
+
+
+class StaleNoqa(unittest.TestCase):
+    """RUF100: an F401/F841 token that never dropped a finding (#908)."""
+
+    def test_stale_f401_reports(self):
+        self.assertEqual(found("""\
+            import os
+            import a  # noqa: F401
+            os.getcwd()
+            a
+            """), [(2, "RUF100", "F401")])
+
+    def test_live_f401_does_not_report(self):
+        self.assertEqual(found("import a  # noqa: F401\n"), [])
+
+    def test_multiline_reexport_noqa_is_live(self):
+        # The shape of the three legitimate re-export suppressions: a
+        # parenthesised, genuinely-unused import with the token on the
+        # statement's first line. Cite the statement, not a line number.
+        self.assertEqual(found("""\
+            from harness.bits import (  # noqa: F401 -- re-exported
+                pack_lsb_first,
+                min_entropy_for_p_one,
+            )
+            """), [])
+
+    def test_multiline_import_with_all_names_used_is_stale_f401(self):
+        # The shape of the two removed tokens: every binding used (the
+        # underscore-prefixed ones are never checked), so the token drops
+        # nothing -- exactly the hole this report closes.
+        self.assertEqual(found("""\
+            from pex_dut import (  # noqa: E402, F401
+                BuildError,
+                logical_lines as _logical_lines,
+                rel as _rel,
+            )
+            def f():
+                with _rel("a", "b") as r:
+                    pass
+                raise BuildError
+            """), [(1, "RUF100", "F401")])
+
+    def test_stale_f841_reports_alongside_the_real_finding(self):
+        self.assertEqual(found("""\
+            def f():
+                x = 1  # noqa: F401
+                return 2
+            """), [(2, "F841", "x"), (2, "RUF100", "F401")])
+
+    def test_blanket_noqa_is_never_judged(self):
+        self.assertEqual(found("import a  # noqa\n"), [])
+
+    def test_foreign_codes_are_never_judged(self):
+        self.assertEqual(found("import a  # noqa: E402, SLF001\n"),
+                         [(1, "F401", "a")])
+
+    def test_both_codes_stale_reports_both(self):
+        self.assertEqual(found("""\
+            import os
+            import a  # noqa: F401, F841
+            os.getcwd()
+            a
+            """), [(2, "RUF100", "F401, F841")])
+
+    def test_one_live_one_stale_code(self):
+        self.assertEqual(found("import a  # noqa: F401, F841\n"),
+                         [(1, "RUF100", "F841")])
+
+    def test_stale_token_in_a_dynamic_block_still_reports(self):
+        # The block is skipped for findings, so its tokens can never be
+        # consulted -- they are reported rather than silently trusted.
+        self.assertEqual(found("""\
+            def f():
+                x = 1  # noqa: F841
+                eval("1")
+            """), [(2, "RUF100", "F841")])
+
+    def test_diagnostic_text(self):
+        fs = un.check_source("import a  # noqa: F401\na\n", "pkg/m.py")
+        self.assertEqual(
+            [f.format() for f in fs],
+            ["pkg/m.py:1:10: RUF100 stale '# noqa: F401' suppresses nothing"])
 
 
 class Unsupported(unittest.TestCase):

@@ -1496,10 +1496,6 @@ class InputSnapshotTests(unittest.TestCase):
         self.assertEqual(tb.input_snapshots(), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class StartupSnapshotRecordTests(unittest.TestCase):
     """#582: the start-up script the runs consumed is listed in raw.files and
     the metadata digest is cross-checked against it. No PDK, no ngspice."""
@@ -1685,3 +1681,7 @@ class TransientNoiseReproductionScopeTests(unittest.TestCase):
             digest, name = line.split("  ", 1)
             data = (experiment / name).read_bytes()
             self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)
+
+
+if __name__ == "__main__":
+    unittest.main()
