@@ -125,12 +125,6 @@ class VcdSummary:
     #: ordinary toggles.
     same_timestamp_extra_changes: int = 0
 
-    def as_dict(self) -> dict:
-        d = dict(self.__dict__)
-        d["instances"] = len(self.instances)
-        d["ports"] = sorted(self.ports)
-        return d
-
 
 def _unescape(name: str) -> str:
     return name[1:] if name.startswith("\\") else name

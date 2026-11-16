@@ -17,7 +17,8 @@ Reported:
         suppressed a finding anywhere in its file (#908) -- a suppression
         that drops nothing is dead weight that silently widens this hole.
         Blanket `# noqa` and codes this checker does not evaluate are
-        never judged.
+        never judged -- including `F401` in an `__init__.py`, where no
+        import is evaluated, so a re-export there may carry the token.
   TRNG001 a class or function defined after the final module-level
         `if __name__ == "__main__":` guard (#930) -- invisible to direct
         execution (`python3 file.py`) while still collected under import.
@@ -350,14 +351,17 @@ def _noqa_lines(path: str, source: str) -> dict[int, tuple[str | None, int]]:
 
 def _suppressed(noqa: dict[int, tuple[str | None, int]], first: int, last: int,
                 code: str, used: set[tuple[int, str]] | None = None) -> bool:
+    hit = False
+    # Credit every matching token in the span, not just the first, so a
+    # later token on the same statement is not reported stale (#926).
     for line in range(first, last + 1):
         if line in noqa:
             codes = noqa[line][0]
             if codes is None or code in re.split(r"[\s,]+", codes):
                 if used is not None and codes is not None:
                     used.add((line, code))
-                return True
-    return False
+                hit = True
+    return hit
 
 
 # --------------------------------------------------------------------------
@@ -471,8 +475,11 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
                 continue
             first = getattr(alias, "lineno", stmt.lineno)
             last = getattr(alias, "end_lineno", None) or first
-            if (_suppressed(noqa, stmt.lineno, stmt.lineno, "F401", used)
-                    or _suppressed(noqa, first, last, "F401", used)):
+            # Both spans are consulted (no short-circuit) so every matching
+            # token is credited as live (#926).
+            on_stmt = _suppressed(noqa, stmt.lineno, stmt.lineno, "F401", used)
+            on_alias = _suppressed(noqa, first, last, "F401", used)
+            if on_stmt or on_alias:
                 continue
             findings.append(Finding(path, first, getattr(alias, "col_offset", stmt.col_offset),
                                     "F401", alias.name if not alias.asname else
@@ -511,11 +518,12 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
     # this file cannot silence anything, so it is dead weight -- report it.
     # A blanket `# noqa` may be covering codes this checker never evaluates,
     # and a foreign code is by definition not ours to judge.
+    judged = _EVALUATED_CODES - {"F401"} if is_init else _EVALUATED_CODES
     for line, (codes, col) in sorted(noqa.items()):
         if codes is None:
             continue
         stale = [c for c in dict.fromkeys(re.split(r"[\s,]+", codes))
-                 if c in _EVALUATED_CODES and (line, c) not in used]
+                 if c in judged and (line, c) not in used]
         if stale:
             findings.append(Finding(path, line, col, "RUF100", ", ".join(stale)))
     return sorted(findings)

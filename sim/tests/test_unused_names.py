@@ -350,6 +350,46 @@ class StaleNoqa(unittest.TestCase):
                 eval("1")
             """), [(2, "RUF100", "F841")])
 
+    def test_f401_token_in_init_module_is_not_judged(self):
+        self.assertEqual(found("from .bits import pack  # noqa: F401\n",
+                               "pkg/__init__.py"), [])
+        self.assertEqual(found("from .bits import pack  # noqa: F401\n",
+                               "pkg/mod.py"), [])  # live in a normal module
+        self.assertEqual(found("import a  # noqa: F401\na\n", "pkg/mod.py"),
+                         [(1, "RUF100", "F401")])
+
+    def test_multi_code_token_in_init_module_judges_neither_half(self):
+        self.assertEqual(found("from .b import p  # noqa: E402, F401\n",
+                               "pkg/__init__.py"), [])
+
+    def test_stale_f841_token_in_init_module_still_reports(self):
+        self.assertEqual(found("""\
+            def f():
+                x = 1  # noqa: F841
+                return x
+            """, "pkg/__init__.py"), [(2, "RUF100", "F841")])
+
+    def test_blanket_then_coded_token_in_one_span_is_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa
+                a,  # noqa: F401
+            )
+            """), [])
+
+    def test_coded_then_blanket_token_in_one_span_is_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa: F401
+                a,  # noqa
+            )
+            """), [])
+
+    def test_two_coded_tokens_in_one_span_are_both_live(self):
+        self.assertEqual(found("""\
+            from p import (  # noqa: F401
+                a,  # noqa: F401
+            )
+            """), [])
+
     def test_diagnostic_text(self):
         fs = un.check_source("import a  # noqa: F401\na\n", "pkg/m.py")
         self.assertEqual(
