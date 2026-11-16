@@ -54,6 +54,31 @@ sys.path.insert(0, str(TB_DIR))
 
 import run_sta  # noqa: E402
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _committed_pins_are_top_edge() -> bool:
+    """Does the committed `interregion.json` route any `digital` endpoint
+    around the east flank (a top-edge pin), rather than straight into the
+    `combiner_sampler | digital` channel (a bottom-edge pin)?
+
+    `layout/digital/build.py` sends no `io.pin_constraints`, so which edge
+    OpenROAD's `place_pins` lands these six on is a property of the
+    place-and-route run; `layout/floorplan/interregion.py` routes both
+    (gf180-trng#315). Reading the committed report keeps that out of the
+    pinned table below, which is about C/R arithmetic, not about geometry
+    this file gets to assume.
+    """
+    report = json.loads(
+        (REPO_ROOT / "layout" / "floorplan" / "reports" / "interregion.json")
+        .read_text()
+    )
+    return any(
+        endpoint.get("anchor") == "digital_pin_top"
+        for route in report["routes"]
+        for endpoint in route["endpoints"]
+    )
+
 
 #: Just enough of a liberty header for ``liberty_slew_convention()``. The real
 #: decks declare all three (30/70 % thresholds, derate 0.5); these tests use
@@ -192,51 +217,66 @@ class InterfaceTrunkArithmeticTests(unittest.TestCase):
 
     The numbers track the committed geometry, not a spec limit. DR-0025's
     table (spec/decision-records/DR-0025-full-chip-pex-scope.md) is the
-    depth-8 snapshot. Since #256 regenerated `interregion.json` against the
-    depth-2 place-and-route, the pinned values are DR-0027's table
-    (spec/decision-records/DR-0027-digital-facing-trunk-estimates-follow-
-    the-regenerated-geometry.md). A future change to any of these trunks
-    fails here and is re-dated by a new record. Do not widen the tolerance."""
+    depth-8 snapshot; DR-0027 re-dated it for #256's regeneration, DR-0028
+    added the top-edge legs, and DR-0034 re-dated both for #803's stacked
+    floorplan. The pinned values here are DR-0035's table
+    (spec/decision-records/DR-0035-digital-facing-trunk-estimates-follow-
+    the-bottom-edge-pins.md), measured on the place-and-route #866 re-ran
+    under the toolchain `.github/workflows/pdk-nightly.yml` installs. A
+    future change to any of these trunks fails here and is re-dated by a new
+    record. Do not widen the tolerance."""
 
-    def test_matches_dr0027_estimates_for_the_committed_six(self):
-        # (net, C in fF, R in ohm; the stacked floorplan of #803, DR-0034's
-        # table. DR-0027's figures are the earlier row geometry and stay as
-        # written)
+    def test_matches_dr0035_estimates_for_the_committed_six(self):
+        # (net, C in fF, R in ohm; the bottom-edge pin geometry of #866,
+        # DR-0035's table. DR-0027's, DR-0028's and DR-0034's figures are
+        # earlier geometries and stay as written)
         expected = {
-            "raw_bit": (11.3, 58),
-            "raw_valid": (7.8, 40),
-            "ring_bit1": (4.3, 22),
-            "clk": (1.0, 5),
-            "rst_n": (0.9, 5),
-            "ring_bit2": (0.8, 4),
+            "raw_bit": (0.5, 3),
+            "raw_valid": (2.6, 13),
+            "ring_bit1": (6.8, 35),
+            "clk": (15.9, 82),
+            "rst_n": (14.6, 75),
+            "ring_bit2": (13.4, 69),
         }
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(set(trunks), set(expected))
         for net, (c_ff, r_ohm) in expected.items():
             trunk = trunks[net]
-            # DR-0027's table is trunk-only; since #456 `cap_fF`/`res_ohm`
-            # also price the legs, so this table is asserted on the
-            # `trunk_*` properties (same numbers, same tolerances).
+            # The table is trunk-only; since #456 `cap_fF`/`res_ohm` also
+            # price the legs, so it is asserted on the `trunk_*` properties
+            # (same numbers, same tolerances -- and, for a bottom-edge pin,
+            # identical to `cap_fF`/`res_ohm`, since there are no legs).
             self.assertAlmostEqual(trunk.trunk_cap_fF, c_ff, delta=0.1)
             self.assertAlmostEqual(trunk.trunk_res_ohm, r_ohm, delta=1.0)
 
-    def test_matches_dr0028_estimates_with_the_legs_priced(self):
+    def test_matches_dr0035_estimates_including_the_leg_count(self):
+        """The with-legs basis, re-dated to DR-0035.
+
+        The committed DEF places all six pins on `digital`'s **bottom**
+        edge, so none of them leaves the block on the Metal4 stub / Metal5
+        track / Metal3 east-flank riser triple DR-0028 priced: `legs` is
+        empty, and the with-legs figures collapse onto the trunk-only ones
+        above. The expected leg count is derived from the committed pin
+        edges rather than hard-coded, so a place-and-route that puts these
+        pins back on the top edge fails on the C/R table (and is re-dated by
+        a new record) instead of failing on a count this file guessed.
+        """
         # (net, C in fF, R in ohm, transition in ps at the 30/70 %, derate 0.5
-        # convention; DR-0034's table for the stacked floorplan of #803.
-        # DR-0028's figures are the earlier row geometry and stay as written)
+        # convention; DR-0035's table for the bottom-edge pins of #866)
         expected = {
-            "raw_bit": (52.1, 232, 20.5),
-            "raw_valid": (50.3, 220, 18.8),
-            "ring_bit1": (43.1, 191, 13.9),
-            "clk": (37.4, 165, 10.5),
-            "rst_n": (40.7, 176, 12.1),
-            "ring_bit2": (39.7, 173, 11.6),
+            "raw_bit": (0.5, 3, 0.0),
+            "raw_valid": (2.6, 13, 0.1),
+            "ring_bit1": (6.8, 35, 0.4),
+            "clk": (15.9, 82, 2.2),
+            "rst_n": (14.6, 75, 1.8),
+            "ring_bit2": (13.4, 69, 1.6),
         }
+        want_legs = 3 if _committed_pins_are_top_edge() else 0
         trunks = {t.net: t for t in run_sta.digital_facing_trunks()}
         self.assertEqual(set(trunks), set(expected))
         for net, (c_ff, r_ohm, ps) in expected.items():
             trunk = trunks[net]
-            self.assertEqual(len(trunk.legs), 3, net)
+            self.assertEqual(len(trunk.legs), want_legs, net)
             self.assertAlmostEqual(trunk.cap_fF, c_ff, delta=0.1)
             self.assertAlmostEqual(trunk.res_ohm, r_ohm, delta=1.0)
             self.assertAlmostEqual(

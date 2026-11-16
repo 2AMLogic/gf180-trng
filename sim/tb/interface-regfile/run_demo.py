@@ -29,7 +29,6 @@ line so that "re-run the demonstration" means exactly one thing.
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import sys
@@ -47,7 +46,7 @@ sys.path.insert(0, str(SIM_DIR / "tb" / "conditioner-crc32"))
 sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 sys.path.insert(0, str(REPO_ROOT / "design" / "interface"))
 
-from harness import report  # noqa: E402
+from harness import report, scenario_cli  # noqa: E402
 import crc32_conditioner as cond  # noqa: E402
 import regmap  # noqa: E402
 import source_model  # noqa: E402
@@ -489,50 +488,41 @@ def write_record(result: dict, records_dir: Path, git: dict) -> Path:
     return report.finalize_record(records_dir, date, SLUG, render)
 
 
+def _print_result(result: dict) -> None:
+    print(
+        f"   {result['raw_samples']} raw samples, "
+        f"{result['data_words_read']} DATA words, "
+        f"{result['raw_words_read']} RAW_DATA words, "
+        f"{result['flush_events']} flush events"
+    )
+    print(
+        f"   final STATUS {result['status_final']}  "
+        f"alarm={result['status_ht_alarm']} startup={result['status_startup']} "
+        f"cond_ready={result['status_cond_ready']} "
+        f"ovf={result['status_ovf_data']}/{result['status_ovf_raw']}"
+    )
+    for key in (
+        "raw_words_packed_while_alarmed",
+        "raw_words_read_while_alarmed",
+        "data_words_read_while_alarmed",
+        "fifo_words_surviving_last_switch",
+        "raw_words_are_a_prefix_of_the_source",
+    ):
+        if key in result:
+            print(f"   {key}: {result[key]}")
+
+
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--scenario", action="append", choices=sorted(SCENARIOS),
-        help="run only this scenario (repeatable); default is all of them",
+    return scenario_cli.run_scenarios(
+        argv,
+        description=__doc__,
+        scenarios=SCENARIOS,
+        run_scenario=run_scenario,
+        write_record=write_record,
+        print_result=_print_result,
+        repo_root=REPO_ROOT,
+        records_dir=SIM_DIR / "records",
     )
-    parser.add_argument(
-        "--no-write", action="store_true",
-        help="print the results without minting evidence records",
-    )
-    args = parser.parse_args(argv)
-
-    names = args.scenario or list(SCENARIOS)
-    git = report.git_provenance(REPO_ROOT)
-    records_dir = SIM_DIR / "records"
-
-    for name in names:
-        result = run_scenario(name)
-        print(f"== {name} ==")
-        print(
-            f"   {result['raw_samples']} raw samples, "
-            f"{result['data_words_read']} DATA words, "
-            f"{result['raw_words_read']} RAW_DATA words, "
-            f"{result['flush_events']} flush events"
-        )
-        print(
-            f"   final STATUS {result['status_final']}  "
-            f"alarm={result['status_ht_alarm']} startup={result['status_startup']} "
-            f"cond_ready={result['status_cond_ready']} "
-            f"ovf={result['status_ovf_data']}/{result['status_ovf_raw']}"
-        )
-        for key in (
-            "raw_words_packed_while_alarmed",
-            "raw_words_read_while_alarmed",
-            "data_words_read_while_alarmed",
-            "fifo_words_surviving_last_switch",
-            "raw_words_are_a_prefix_of_the_source",
-        ):
-            if key in result:
-                print(f"   {key}: {result[key]}")
-        if not args.no_write:
-            path = write_record(result, records_dir, git)
-            print(f"   record: {path.relative_to(REPO_ROOT)}")
-    return 0
 
 
 if __name__ == "__main__":

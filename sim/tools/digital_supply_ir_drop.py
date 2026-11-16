@@ -239,25 +239,15 @@ def _nm(um: float) -> int:
     return int(round(um * 1000))
 
 
-def committed_wiring_plan(compose_path: Path = COMPOSE_REPORT,
-                          area_path: Path = AREA_REPORT) -> tuple[dict, dict]:
-    """`interregion.wiring_plan()` over the committed reports -- the same
-    inputs `vss_trunk_ir_drop.resistance_model()` uses -- and `digital`'s
-    content origin in the composed frame."""
-    compose = json.loads(compose_path.read_text())
-    origins_um = compose["request"]["placement"]["origins_um"]
-    area = json.loads(area_path.read_text())
-    origins: dict[str, dict] = {}
-    bboxes: dict[str, dict] = {}
-    for region in area["regions"]:
-        rid = region["id"]
-        if f"{rid}_ring" in origins_um:
-            origins[rid] = origins_um[f"{rid}_ring"]
-            bboxes[rid] = region["ring_content_bbox_um"]
+def committed_wiring_plan() -> tuple[dict, dict]:
+    """`analog.committed_wiring_plan()` -- the one loader that turns
+    `layout/floorplan/reports/{compose,area}.json` into a plan, shared with
+    `vss_trunk_ir_drop.resistance_model()` -- narrowed to what this module
+    needs: the plan, and `digital`'s content origin in the composed frame."""
+    plan, origins = analog.committed_wiring_plan()
     if DIGITAL not in origins:
         raise ConnectivityError("compose.json places no `digital` content")
-    bboxes[DIGITAL] = interregion.digital_die_bbox()
-    return interregion.wiring_plan(origins, bboxes), origins[DIGITAL]
+    return plan, origins[DIGITAL]
 
 
 @dataclass

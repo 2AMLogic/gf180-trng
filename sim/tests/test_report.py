@@ -102,15 +102,15 @@ class RecordStemTests(unittest.TestCase):
     def test_first_allocation_is_01(self):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            stem = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            stem = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(stem, "2026-08-14-ro-jitter-01")
 
     def test_allocation_never_reuses_an_existing_stem(self):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            first = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            first = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             (records_dir / f"{first}.md").write_text("# first\n")
-            second = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            second = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(second, "2026-08-14-ro-jitter-02")
             # the existing record was not touched
             self.assertEqual((records_dir / f"{first}.md").read_text(), "# first\n")
@@ -124,9 +124,9 @@ class RecordStemTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
-            in_flight = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            in_flight = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             (records_dir / report.RAW_DIRNAME / in_flight).mkdir(parents=True)
-            second = report.allocate_record_stem(records_dir, "2026-08-14", "ro-jitter")
+            second = report.allocate_record_stems(records_dir, "2026-08-14", "ro-jitter", 1)[0]
             self.assertEqual(in_flight, "2026-08-14-ro-jitter-01")
             self.assertEqual(second, "2026-08-14-ro-jitter-02")
 
@@ -134,7 +134,7 @@ class RecordStemTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             records_dir = Path(tmp)
             (records_dir / "2026-08-14-alpha-01.md").write_text("x")
-            stem = report.allocate_record_stem(records_dir, "2026-08-14", "beta")
+            stem = report.allocate_record_stems(records_dir, "2026-08-14", "beta", 1)[0]
             self.assertEqual(stem, "2026-08-14-beta-01")
 
 
@@ -1286,6 +1286,71 @@ class ManifestSnapshotTests(unittest.TestCase):
         self.assertEqual(report.verify_record_file(path, self.root), [])
 
 
+class FrontmatterBlockReaderTests(unittest.TestCase):
+    """The top-level block readers agree on how a block is delimited (#868).
+
+    Characterisation tests: each case held before the readers were collapsed
+    onto one scanner, and must keep holding afterwards. Their value is that a
+    correction to a delimiter rule now has one place to be made -- these
+    assert it takes effect for every reader, not just the one it was made in.
+    """
+
+    READERS = {
+        "manifest": report.parse_manifest_section,
+        "inputs": report.parse_inputs_section,
+        "pdk_content": report.parse_pdk_content_section,
+    }
+
+    def _for_each(self, body, expected):
+        for name, read in self.READERS.items():
+            with self.subTest(block=name):
+                self.assertEqual(read(body.format(name=name)), expected)
+
+    def test_every_reader_reads_its_own_block(self):
+        self._for_each("---\n{name}:\n  a: 1\n  b: two\n---\n", {"a": "1", "b": "two"})
+
+    def test_every_reader_ignores_a_foreign_block(self):
+        self._for_each("---\nother:\n  a: 1\n---\n", {})
+
+    def test_every_reader_treats_an_absent_block_as_empty(self):
+        self._for_each("---\nrecord: x\n---\n", {})
+
+    def test_every_reader_requires_closed_frontmatter(self):
+        self._for_each("{name}:\n  a: 1\n", {})
+        self._for_each("---\n{name}:\n  a: 1\n", {})
+
+    def test_every_reader_tolerates_trailing_space_after_the_header(self):
+        self._for_each("---\n{name}:  \n  a: 1\n---\n", {"a": "1"})
+
+    def test_every_reader_ends_the_block_at_the_first_unindented_line(self):
+        self._for_each("---\n{name}:\n  a: 1\nnext: 2\n  b: 3\n---\n", {"a": "1"})
+
+    def test_every_reader_strips_padding_and_keeps_colons_in_a_value(self):
+        self._for_each("---\n{name}:\n  a:   x: y   \n---\n", {"a": "x: y"})
+
+    def test_startup_reader_filters_by_prefix_and_strips_quotes(self):
+        text = (
+            "---\ntool:\n"
+            '  ngspice_startup_spinit_sha256: "abc"\n'
+            "  ngspice_startup_spinit_snapshot: spinit\n"
+            "  version: 44\n"
+            "---\n"
+        )
+        self.assertEqual(
+            report.parse_startup_section(text),
+            {"spinit_sha256": "abc", "spinit_snapshot": "spinit"},
+        )
+
+    def test_startup_reader_shares_the_block_delimiting_rules(self):
+        self.assertEqual(report.parse_startup_section("tool:\n  ngspice_startup_a: 1\n"), {})
+        self.assertEqual(
+            report.parse_startup_section(
+                "---\ntool:\n  ngspice_startup_a: 1\nx: 2\n  ngspice_startup_b: 3\n---\n"
+            ),
+            {"a": "1"},
+        )
+
+
 class ManifestWriteIdempotenceTests(unittest.TestCase):
     """Manifest writers accept identical existing bytes and refuse others."""
 
@@ -1429,10 +1494,6 @@ class InputSnapshotTests(unittest.TestCase):
         tb = testbench.Testbench(directory=self.tb_dir, slug="h", netlist=self.frag)
         self.assertEqual(testbench.write_input_snapshots(tb, self.root / "o"), [])
         self.assertEqual(tb.input_snapshots(), [])
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class StartupSnapshotRecordTests(unittest.TestCase):
@@ -1620,3 +1681,7 @@ class TransientNoiseReproductionScopeTests(unittest.TestCase):
             digest, name = line.split("  ", 1)
             data = (experiment / name).read_bytes()
             self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)
+
+
+if __name__ == "__main__":
+    unittest.main()

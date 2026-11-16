@@ -216,19 +216,30 @@ class StackedDigitalSupplyTie(unittest.TestCase):
         self.assertGreaterEqual(
             origins["digital"]["y"] - strip_top, floorplan.ISOLATION_CHANNEL_UM - 1e-6)
 
-    def test_pdn_risers_are_east_of_the_whole_strip_and_every_wrap_column(self):
-        wraps = [
-            e["legs"] for r in self.routes.values() for e in r["endpoints"]
-            if e["region"] == "digital" and e.get("legs")
-        ]
-        self.assertTrue(wraps)
-        last_wrap = max(
-            e["riser_x_um"] for r in self.routes.values() for e in r["endpoints"]
-            if e["region"] == "digital" and e["anchor"] == "digital_pin_top"
-        )
+    def test_pdn_risers_are_east_of_the_whole_strip(self):
+        """Unconditional: the `vddd`/`vss` ties dock on the stack's east
+        flank whatever the signal pins do (gf180-trng#803)."""
         for net in ("vddd", "vss"):
             x = self._pdn_endpoint(net)["riser_x_um"]
             self.assertGreater(x, self.cs_east, f"{net} PDN riser is not east of the strip")
+
+    def test_pdn_risers_clear_every_wrap_column(self):
+        """Conditional on there being wrap columns at all: only a *top*-edge
+        signal pin wraps around the east flank, and which edge the committed
+        DEF places those six on is the P&R run's business
+        (`_committed_pin_edges`). With bottom-edge pins no wrap column
+        exists, so there is nothing for the PDN riser to clear -- asserted
+        as the two possibilities, never skipped silently."""
+        wrap_x = [
+            e["riser_x_um"] for r in self.routes.values() for e in r["endpoints"]
+            if e["region"] == "digital" and e["anchor"] == "digital_pin_top"
+        ]
+        self.assertEqual(bool(wrap_x), bool(_committed_top_edge_nets()))
+        if not wrap_x:
+            return
+        last_wrap = max(wrap_x)
+        for net in ("vddd", "vss"):
+            x = self._pdn_endpoint(net)["riser_x_um"]
             self.assertGreaterEqual(
                 x - interregion.PDN_RISER_W_UM / 2 - (last_wrap + interregion.WIRE_W / 2),
                 interregion.MIN_SPACE, f"{net} PDN riser is too close to a wrap column")
@@ -267,14 +278,32 @@ class StackedDigitalSupplyTie(unittest.TestCase):
                     continue                       # the dock reaches into digital's own strap
                 self.assertGreater(sh["rect_um"][0], self.cs_east, (net, sh))
 
-    def test_clk_and_rst_n_stay_east_of_the_strip(self):
-        """DR-0012-clock's rationale for the row-ordering guard, restated for the
-        stack: the sample clock and reset reach the samplers from the digital
-        side, east of every region of the strip, never over a ring channel."""
+    def test_clk_and_rst_n_stay_clear_of_both_ring_channels(self):
+        """DR-0012-clock's rationale for the row-ordering guard, restated for
+        the stack: the sample clock and reset reach the samplers from the
+        `digital` side, never over a ring's guarded area or isolation
+        channel.
+
+        The bound is `combiner_sampler`'s own **west** edge, which is what
+        `layout/floorplan/README.md` states ("both trunks are pinned east of
+        `combiner_sampler`'s own west edge and never enter a ring's isolation
+        channel") and what `TrunkLanes` asserts for the trunks. This test
+        extends it to the `digital`-side riser, which the trunk reaches.
+
+        Until #866 this asserted the strictly stronger "east of
+        combiner_sampler's own *east* edge". That held only because the
+        committed DEF then placed these pins on the top edge, so they wrapped
+        around the east flank -- a property of that P&R run, not of the
+        floorplan (`_committed_pin_edges`). A bottom-edge pin drops straight
+        into the `combiner_sampler | digital` channel instead, which is east
+        of both ring channels and is the case `interregion.py` has routed
+        since gf180-trng#315. Asserting the east edge would have made the
+        documented constraint unsatisfiable for an equally valid placement."""
+        west_limit = self.origins["combiner_sampler"]["x"]
         for net in ("clk", "rst_n"):
-            self.assertGreater(
+            self.assertGreaterEqual(
                 min(e["riser_x_um"] for e in self.routes[net]["endpoints"]
-                    if e["region"] == "digital"), self.cs_east)
+                    if e["region"] == "digital"), west_limit, net)
 
     def test_derived_east_edge_clears_the_combiner_sampler_columns(self):
         east = interregion.stack_digital_east_um(self.cs_east)
@@ -287,8 +316,48 @@ class StackedDigitalSupplyTie(unittest.TestCase):
 # Metal stack the connectivity check below walks: a via layer joins the two
 # metals it sits between.
 _VIA_JOINS = {(40, 0): ((42, 0), (46, 0)), (41, 0): ((46, 0), (81, 0))}
-_TOP_EDGE_ENDPOINTS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit[0]", "ring_bit[1]")
-_TOP_EDGE_NETS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit1", "ring_bit2")
+#: The six inter-region signal endpoints on the `digital` region, by their
+#: DEF pin name and by the net each carries. Which block edge they sit on is
+#: NOT part of this list -- see `_committed_pin_edges()`.
+_SIGNAL_ENDPOINTS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit[0]", "ring_bit[1]")
+_SIGNAL_NETS = ("clk", "rst_n", "raw_bit", "raw_valid", "ring_bit1", "ring_bit2")
+
+#: Net carried by each signal endpoint, in the same order.
+_NET_OF_ENDPOINT = dict(zip(_SIGNAL_ENDPOINTS, _SIGNAL_NETS))
+
+
+def _committed_pin_edges() -> dict[str, str]:
+    """Which block edge the committed DEF places each signal pin on.
+
+    **This is read, never assumed.** `layout/digital/build.py` does not ask
+    for a pin edge, and `layout/digital/README.md`'s own "The one command"
+    section says placement and routing are "seeded but not byte-reproducible
+    across `openroad` builds, thread counts or host architectures" -- so
+    which edge `place_pins` lands these six on is a property of the
+    *committed artefact*, not a design input. It has already flipped twice:
+    bottom when gf180-trng#315 was filed, top after that issue's own
+    re-place-and-route (commit `4fc111b0`), and bottom again when #866
+    re-ran the chain under the nightly's pinned toolchain.
+
+    `interregion.py` routes both edges by design (`digital_pin_edge`, and
+    its "Bottom-edge pins keep the existing stub" path), so a flip is not a
+    regression -- it is the supported case changing. What *is* asserted
+    below is the invariant that survives a flip: every pin sits on an edge
+    this module can route (`digital_pin_edge` raises otherwise), the drawn
+    stub reaches it, DR-0012-clock's channel constraint still holds, and the
+    committed report states exactly the legs the rules produce for that edge.
+    """
+    bbox = interregion.digital_die_bbox()
+    positions = interregion.digital_pin_positions()
+    return {pin: interregion.digital_pin_edge(positions[pin][1], bbox)
+            for pin in _SIGNAL_ENDPOINTS}
+
+
+def _committed_top_edge_nets() -> set[str]:
+    """The signal nets whose committed `digital` pin is on the top edge --
+    exactly the endpoints that get a stub/track/riser leg triple."""
+    return {_NET_OF_ENDPOINT[pin] for pin, edge in _committed_pin_edges().items()
+            if edge == "top"}
 
 
 def _overlap_area(a: list[float], b: list[float]) -> float:
@@ -341,9 +410,9 @@ def _connected(shapes: list[dict], pin_rect: list[float], trunk: dict) -> bool:
 
 
 class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
-    """gf180-trng#315: the six `digital` signal pins sit on the block's top
-    edge after the re-place-and-route; the drawn stub must reach that metal,
-    wherever the block is placed."""
+    """gf180-trng#315: the drawn stub must reach whichever block edge the
+    committed DEF places each of the six `digital` signal pins on, wherever
+    the block itself is placed."""
 
     def _plan_at(self, dx: float, dy: float) -> tuple[dict, dict]:
         origins = {rid: dict(o) for rid, o in _content_origins().items()}
@@ -357,7 +426,7 @@ class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
         plan, origin = self._plan_at(dx, dy)
         for net in floorplan_netlist.INTER_REGION_NETS:
             for rid, pin in net.get("endpoints", ()):
-                if rid != "digital" or pin not in _TOP_EDGE_ENDPOINTS:
+                if rid != "digital" or pin not in _SIGNAL_ENDPOINTS:
                     continue
                 shapes = [sh for sh in plan["shapes"] if sh["_net"] == net["name"]]
                 trunk = next(sh for sh in shapes
@@ -367,11 +436,24 @@ class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
                 self.assertTrue(_connected(shapes, _pin_rect(pin, origin), trunk),
                                 f"{net['name']}/{pin} is not joined to its trunk")
 
-    def test_the_committed_def_places_the_signal_pins_on_the_top_edge(self):
-        bbox = interregion.digital_die_bbox()
-        for pin in _TOP_EDGE_ENDPOINTS:
-            _, ly = interregion.digital_pin_positions()[pin]
-            self.assertEqual(interregion.digital_pin_edge(ly, bbox), "top", pin)
+    def test_the_committed_def_places_the_signal_pins_on_a_routable_edge(self):
+        """`digital_pin_edge` raises on anything but the two edges this
+        module routes, so resolving all six is the assertion -- which edge
+        they landed on is the P&R run's business (`_committed_pin_edges`),
+        not this file's."""
+        edges = _committed_pin_edges()
+        self.assertEqual(set(edges), set(_SIGNAL_ENDPOINTS))
+        for pin, edge in edges.items():
+            self.assertIn(edge, ("top", "bottom"), pin)
+
+    def test_the_six_signal_pins_share_one_edge(self):
+        """They are placed as one group by `place_pins`, and the stacked
+        arrangement's wiring argument (`layout/floorplan/README.md`) reasons
+        about them together. A split would mean half the nets take the
+        east-flank wrap and half drop into the channel -- routable, but a
+        topology nobody has reviewed."""
+        self.assertEqual(len(set(_committed_pin_edges().values())), 1,
+                         _committed_pin_edges())
 
     def test_every_top_edge_pin_is_joined_to_its_trunk(self):
         self._check_all_joined(0.0, 0.0)
@@ -381,7 +463,7 @@ class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
 
     def test_the_stub_overlaps_the_pin_with_positive_area(self):
         plan, origin = self._plan_at(0.0, 0.0)
-        for pin in _TOP_EDGE_ENDPOINTS:
+        for pin in _SIGNAL_ENDPOINTS:
             rect = _pin_rect(pin, origin)
             hits = [sh for sh in plan["shapes"] if tuple(sh["layer"]) == (46, 0)
                     and _overlap_area(sh["rect_um"], rect) > 0]
@@ -408,13 +490,13 @@ class DigitalEndpointsFollowThePlacedPin(unittest.TestCase):
         self.assertEqual(interregion.digital_pin_edge(0.26, bbox), "bottom")
         with mock.patch.object(interregion, "digital_pin_positions",
                                return_value={p: (10.0 + i * 3, 0.26)
-                                             for i, p in enumerate(_TOP_EDGE_ENDPOINTS)}):
+                                             for i, p in enumerate(_SIGNAL_ENDPOINTS)}):
             plan = interregion.wiring_plan(
                 _content_origins(),
                 {"combiner_sampler": {"x0": -0.5, "y0": -0.3, "x1": 50.0, "y1": 0.0},
                  "digital": bbox})
         anchors = {e["anchor"] for r in plan["routes"] for e in r["endpoints"]
-                   if e["region"] == "digital" and e["pin"] in _TOP_EDGE_ENDPOINTS}
+                   if e["region"] == "digital" and e["pin"] in _SIGNAL_ENDPOINTS}
         self.assertEqual(anchors, {"digital_pin"})
 
     def test_a_mid_block_pin_is_rejected_before_any_geometry(self):
@@ -437,7 +519,7 @@ class TopEdgeLegsAreReported(unittest.TestCase):
         plan = _plan()
         legged = {(r["net"], e["pin"]) for r in plan["routes"]
                   for e in r["endpoints"] if "legs" in e}
-        self.assertEqual({net for net, _ in legged}, set(_TOP_EDGE_NETS))
+        self.assertEqual({net for net, _ in legged}, _committed_top_edge_nets())
         for r in plan["routes"]:
             for e in r["endpoints"]:
                 self.assertEqual("legs" in e, e["anchor"] == "digital_pin_top")
@@ -448,9 +530,14 @@ class TopEdgeLegsAreReported(unittest.TestCase):
         one Metal5 rectangle wider than tall, the riser the Metal3 rectangle
         taller than wide, on that net."""
         plan = _plan()
+        legs_by_net = self._legs(plan)
+        if not legs_by_net:
+            self.skipTest("the committed DEF places no signal pin on the top "
+                          "edge, so no endpoint draws a stub/track/riser "
+                          "triple to measure")
         riser_x = {r["net"]: e["riser_x_um"] for r in plan["routes"]
                    for e in r["endpoints"] if "legs" in e}
-        for net, legs in self._legs(plan).items():
+        for net, legs in legs_by_net.items():
             by_layer = {leg["layer"]: leg for leg in legs}
             self.assertEqual(set(by_layer), {"metal4", "metal5", "metal3"})
             shapes = [sh for sh in plan["shapes"] if sh["_net"] == net]
@@ -488,13 +575,13 @@ class TopEdgeLegsAreReported(unittest.TestCase):
         got = {r["net"]: e["legs"] for r in committed["routes"]
                for e in r["endpoints"] if "legs" in e}
         self.assertEqual(got, self._legs(_plan()))
-        self.assertEqual(set(got), set(_TOP_EDGE_NETS))
+        self.assertEqual(set(got), _committed_top_edge_nets())
 
     def test_bottom_edge_endpoints_report_no_legs(self):
         bbox = {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0}
         with mock.patch.object(interregion, "digital_pin_positions",
                                return_value={p: (10.0 + i * 3, 0.26)
-                                             for i, p in enumerate(_TOP_EDGE_ENDPOINTS)}):
+                                             for i, p in enumerate(_SIGNAL_ENDPOINTS)}):
             plan = interregion.wiring_plan(
                 _content_origins(),
                 {"combiner_sampler": {"x0": -0.5, "y0": -0.3, "x1": 50.0, "y1": 0.0},

@@ -130,9 +130,15 @@ class ResistanceModelFromCommittedGeometry(unittest.TestCase):
 
         gf180-trng#705 tapped every hand-drawn cell, which widens the placed
         row, so the chip pin and the pin-to-ring chain move east again
-        (131.0 -> 140.0 ohm); the tolerance is unchanged."""
+        (131.0 -> 140.0 ohm); the tolerance is unchanged.
+
+        gf180-trng#866 re-ran the digital chain under the toolchain
+        `.github/workflows/pdk-nightly.yml` installs. Yosys 0.69 maps the
+        same design to slightly less area, so the routed die narrows from
+        395.715 to 394.24 um and the chip pin moves back west with it
+        (140.0 -> 139.0 ohm); the tolerance is unchanged."""
         total = sum(node["seg_r_ohm"] for node in self.model["chain"])
-        self.assertAlmostEqual(total, 140.0, delta=0.5)
+        self.assertAlmostEqual(total, 139.0, delta=0.5)
 
 
 class ReportAndCheckRunCleanly(unittest.TestCase):
