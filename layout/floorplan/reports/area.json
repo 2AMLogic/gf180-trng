@@ -274,24 +274,24 @@
         "bbox_um": {
           "x0": 0.0,
           "y0": 0.0,
-          "x1": 395.71500000000003,
-          "y1": 395.71500000000003
+          "x1": 394.24,
+          "y1": 394.24
         }
       },
-      "inner_w_um": 396.515,
-      "inner_h_um": 396.515,
+      "inner_w_um": 395.04,
+      "inner_h_um": 395.04,
       "ring_placement_clearance_um": 0.4,
       "ring_band_width_um": 0.6,
-      "guarded_w_um": 398.035,
-      "guarded_h_um": 398.035,
-      "guarded_area_um2": 158431.86,
+      "guarded_w_um": 396.56,
+      "guarded_h_um": 396.56,
+      "guarded_area_um2": 157259.83,
       "guard_taps": 792,
       "ring_content_report": "fp_ring_content_digital.json",
       "ring_content_bbox_um": {
         "x0": 0.0,
         "y0": 0.0,
-        "x1": 395.71500000000003,
-        "y1": 395.71500000000003
+        "x1": 394.24,
+        "y1": 394.24
       }
     }
   ],
@@ -324,16 +324,16 @@
           "digital"
         ],
         "width_um": 20.0,
-        "span_um": 398.035,
-        "area_um2": 7960.7
+        "span_um": 396.56,
+        "area_um2": 7931.2
       }
     ],
-    "guarded_region_area_um2": 165544.07,
-    "isolation_channel_area_um2": 8486.1,
-    "floorplan_area_um2": 174030.17,
+    "guarded_region_area_um2": 164372.04,
+    "isolation_channel_area_um2": 8456.6,
+    "floorplan_area_um2": 172828.64,
     "row_bbox_um": {
-      "w": 547.155,
-      "h": 452.715
+      "w": 543.69,
+      "h": 446.75
     },
     "placed_area_um2": {
       "60pct": 57779.91,
@@ -357,13 +357,13 @@
           "digital"
         ],
         "cell_area_um2": 33228.74,
-        "guarded_area_um2": 158431.86,
+        "guarded_area_um2": 157259.83,
         "isolation_channel_area_um2": 0,
-        "area_um2": 158431.86,
-        "share_of_budget_pct": 316.86
+        "area_um2": 157259.83,
+        "share_of_budget_pct": 314.52
       }
     },
-    "share_of_budget_pct": 348.1,
+    "share_of_budget_pct": 345.7,
     "excluded": {
       "ring_liveness_monitor_DR0016": {
         "cells": 85,

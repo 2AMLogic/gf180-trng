@@ -139,15 +139,18 @@ The git build's extra rules are legitimate; the problem is that
 nothing in the version string says which deck generation ran. Re-filed as
 fresh evidence on [klayout-tools#306][kt306]. **Consequence for anyone
 reproducing this directory's reports:** the build that matters is the one
-`.github/workflows/pdk-nightly.yml` pins. Until [#281][gf281] that was an
-explicit git ref/SHA, because the latest release (`v0.2.0`) predated the
-gf180mcu flow this repository needs (#142). Since #281 it is the `0.6.0`
-PyPI release, with `klayout==0.30.10` — see
-[DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md)
-(as amended) for the decision and the measured diff. A locally-installed
-build from any other commit — including a source build that also calls
-itself `0.6.0` — may resolve a different deck; check
-`provenance.deck.content_hash` before concluding the geometry moved.
+the report's own `klt_origin` records. Nothing pins a producer release —
+per [DR-0026](../spec/decision-records/DR-0026-normative-klt-build-for-floorplan-reports.md)'s
+amendment of 2026-11-09, CI installs the latest tagged release (`v0.9.1`
+today) with the pinned `klayout==0.30.10`, and the repo tracks the fleet's
+klayout-tools release. Until [#281][gf281] that build was an explicit git
+ref/SHA, because the latest release then (`v0.2.0`) predated the gf180mcu
+flow this repository needs (#142); from #281 to the amendment it was the
+`0.6.0` PyPI release. See the DR (as amended) for the decision and the
+measured diff. A locally-installed build from any other commit — including
+a source build that reports the same version string — may resolve a
+different deck; check `provenance.deck.content_hash` before concluding the
+geometry moved.
 
 This is not hypothetical. On 2026-08-02 the reports committed here stopped
 matching a fresh run on the same machine, with `klt --version` and the
@@ -349,16 +352,17 @@ load-bearing for LVS diagnosis, not cosmetic; see Tool friction #2.)
 | `trng_tc_inv_drcbad` | `metal1.width.1` ×1, `metal1.space.1` ×1 | not run | DRC actually fires, and names the *specific* rules — not merely "some error" |
 | `trng_tc_inv_lvsbad` | clean | mismatch, 2 errors (`net.unmatched` ×1, `device.unmatched` ×1) | LVS catches a defect DRC structurally cannot see |
 
-Every LVS run — including the known-good one — also reports two categories
-at `severity: "warning"`: `device.body_unverified` ×2 (one entry per MOS
-class) and `topology` ×1. They describe the *deck* and the absence of drawn
-taps, not the defect, so they are identical on all three;
+Every LVS run — including the known-good one — also reports one category
+at `severity: "warning"`: `topology` ×1. Until #705 drew the taps every run
+carried a second, `device.body_unverified` ×2 (one entry per MOS class),
+describing the absence of drawn taps;
 ["Warnings every run carries"](#warnings-every-run-carries) below says what
-each one means. `verify.py` pins them by exact count like everything else,
-pins the per-class body counts from each report's `body_verification` block,
-and separately pins the number of `severity: "error"` mismatches — the
-column above — so that carrying known warnings cannot quietly absorb a
-future error arriving in the same category.
+each means and where the second one went. `verify.py` pins them by exact
+count like everything else, pins the per-class body map from each report's
+`body_verification` block — `{}` on every fixture now, and a loud failure
+the day any body stops reaching its tap — and separately pins the number of
+`severity: "error"` mismatches — the column above — so that carrying known
+warnings cannot quietly absorb a future error arriving in the same category.
 
 The third row is the interesting one. `trng_tc_inv_lvsbad` is the good cell
 with its output strap cut in two: the NMOS drain and the PMOS drain end up
@@ -433,41 +437,65 @@ reference still uses `M` cards with the generic `nfet`/`pfet` names, and
 `klt lvs` reconciles the two — so the reference stays a statement about the
 circuit rather than about the extractor's output format.
 
-**Both bulk terminals are approximated on these fixtures, and both say so:**
+**Both bulk terminals are tapped on these fixtures, and the reports say so.**
+Until #705 / PR #826 drew the taps, neither bulk reached a real net:
 
-- NMOS bulk is the deck's substrate global, `vsubs`. These fixtures draw no
-  dedicated `Pplus`-over-`Comp`-outside-`Nwell` substrate tap, so no real
-  net resolves it, and `klt lvs` discloses this every run (below).
-- PMOS bulk is a **floating, anonymous net** on these fixtures — `klt
-  extract`'s own output resolves it to an unnamed net (`$5` in
-  `trng_tc_inv`'s extracted SPICE), not a real schematic name. These
-  fixtures draw no `Nplus`-over-`Comp`-inside-`Nwell` well tie. For a while
-  `klt lvs` did not say so: from [klayout-tools#1113][kt1113] (this
-  repository's [#170][gf170] re-pin) the PMOS warning was gated on whether
-  the *deck* declared a well-tap mechanism at all, not on whether *this
-  instance* used one, so it went silent while the bodies stayed exactly as
-  unverified. klayout-tools#2048 made the PMOS check per-device again, and
-  since [#281][gf281] re-pinned to the 0.6.0 release that includes it, `klt
-  lvs` discloses the PMOS half too — with the same per-fixture count as the
-  NMOS half, because every fixture here is complementary CMOS.
+- NMOS bulk was compared against the deck's substrate global, `vsubs` — a
+  net the deck synthesized, not a drawn one, because these fixtures drew no
+  dedicated `Pplus`-over-`Comp`-outside-`Nwell` substrate tap.
+- PMOS bulk was a **floating, anonymous net** — `klt extract`'s own output
+  resolved it to an unnamed net (`$5` in `trng_tc_inv`'s extracted SPICE),
+  not a real schematic name, because the fixtures drew no
+  `Nplus`-over-`Comp`-inside-`Nwell` well tie.
 
-The fixtures are drawn on the curated-deck layer subset only. Implant
-(Nplus/Pplus) and the rest of the sign-off layer set are absent: adding them
-would change no result these decks produce, and drawing them would imply a
-fab-readiness these cells do not have.
+#705 drew an Nwell tap tied to the supply and a substrate tap tied to ground
+into every fixture, so both bodies now resolve to real schematic nets
+(`VDD`/`VSS` on the inverter) and `klt lvs` reports
+`body_verification.status: "verified"` with `device_count: 0` and
+`finding_count: 0` on every fixture here — no device appears in the
+body-verification scope, because the tool has no body outside a real net
+left to disclose. That is a zero-count `verified`, not a per-device check
+of each transistor. The disclosure history of the untapped era is kept
+below because it is the evidence for
+[Pinning the tool](#pinning-the-tool): from [klayout-tools#1113][kt1113]
+(this repository's [#170][gf170] re-pin) `klt lvs` gated the PMOS half of
+the warning on whether the *deck* declared a well-tap mechanism at all, not
+on whether *this instance* used one, so it went silent while the bodies
+stayed exactly as unverified; klayout-tools#2048 made the check per-device
+again, and from [#281][gf281]'s re-pin to the 0.6.0 release that includes
+it until the taps, the warning ran at one entry per MOS class.
+
+The fixtures are drawn on the curated-deck layer subset plus the two
+implant layers the taps need — #705 added Nplus (32/0) and Pplus (31/0),
+and drawing them changed a real result: the `body_verification` verdict
+moved from `"unverified"` to `"verified"`. The rest of the sign-off layer
+set is still absent, and drawing it would still imply a fab-readiness these
+cells do not have.
 
 ### Warnings every run carries
 
-`klt lvs` states two of the limits above per run rather than leaving them to
-this document. Both arrive at `severity: "warning"`, both appear on all
-three fixtures because both are properties of the deck, and neither changes
-a verdict — `trng_tc_inv` is still `match` and `trng_tc_inv_lvsbad` is still
+`klt lvs` states one of the limits above per run rather than leaving it to
+this document. It arrives at `severity: "warning"`, it appears on all three
+fixtures because it is a property of the deck, and it does not change a
+verdict — `trng_tc_inv` is still `match` and `trng_tc_inv_lvsbad` is still
 `mismatch`.
 
 | category | count | what it says |
 |---|---|---|
-| `device.body_unverified` | 2 | One entry per MOS class. The `nfet` entry counts NMOS whose body terminal was compared against `vsubs`, a net the deck synthesized; the `pfet` entry counts PMOS whose body landed on an anonymous, KLayout-synthesized well net. Neither is a real schematic net, so those terminals were **not** verified. This is the bulk-terminal approximation above, restated by the tool. On every fixture here both entries count every device of their class: 1 + 1 for the inverter fixtures. The same numbers appear machine-readably in each report's `body_verification` block (`status: "unverified"`). |
 | `topology` | 1 | A device class the deck declares has no counterpart on the reference side *and* zero extracted devices. The tool's own text: "not a real topology mismatch". |
+
+A second warning, `device.body_unverified`, one entry per MOS class, sat
+alongside it on every run until the taps were drawn (#705). The `nfet` entry
+counted NMOS whose body terminal was compared against `vsubs`, a net the
+deck synthesized; the `pfet` entry counted PMOS whose body landed on an
+anonymous, KLayout-synthesized well net. Neither was a real schematic net,
+so those terminals were **not** verified — that was the bulk-terminal
+approximation above, restated by the tool, machine-readably in each report's
+`body_verification` block (`status: "unverified"`, and on the analog
+envelope `device_count: 104`). Since #705 both bodies reach a drawn tap:
+the block reads `status: "verified"` with `device_count: 0` and
+`finding_count: 0` — no device appears in the body-verification scope, not
+a per-device re-check — and the category is gone from every report here.
 
 Each report also carries a `power_connectivity` block reading `"unchecked"`:
 the reference netlists here are `plain-element` (they carry their own supply
@@ -477,11 +505,13 @@ does not apply. `"unchecked"` is not `"match"`; nothing in these reports is a
 power-delivery verdict.
 
 They are pinned in `EXPECTATIONS` at their exact counts rather than filtered
-out, because "the tool says a body terminal is unverified" is a claim that
-should fail loudly the day the count moves again. And because a warning
-count alone cannot distinguish a disclosure from a finding, `verify.py` also
-pins the number of `severity: "error"` mismatches per fixture: 0 for the
-known-good cell, 2 for the known-bad one.
+out: the `topology` count because a disclosure that moves should fail
+loudly, and the per-class `body_unverified` map — `{}` on every fixture now
+— because a body that stops reaching its tap is exactly the regression that
+should fail loudly the day it happens. And because a warning count alone
+cannot distinguish a disclosure from a finding, `verify.py` also pins the
+number of `severity: "error"` mismatches per fixture: 0 for the known-good
+cell, 2 for the known-bad one.
 
 Both categories appeared on 2026-08-02 with every version string this repo
 recorded unchanged, which is what prompted [Pinning the tool](#pinning-the-tool)
@@ -489,18 +519,22 @@ above and the upstream note in
 [klayout-tools#306][kt306]. The `device.body_unverified` check is
 [klayout-tools#281][kt281]; the `topology` entry follows from the deck
 declaring device classes it did not previously have. The
-`device.body_unverified` count has moved twice with nothing about the
-fixtures changing: from 2 to 1 on [#170][gf170]'s `klt` re-pin
-([klayout-tools#1113][kt1113], which silenced the PMOS half), and from 1 back
-to 2 on [#281][gf281]'s re-pin to the 0.6.0 release (klayout-tools#2048,
-which restored it per device). The PMOS bodies were unverified throughout;
-only the disclosure came and went.
+`device.body_unverified` count has moved three times: from 2 to 1 on
+[#170][gf170]'s `klt` re-pin ([klayout-tools#1113][kt1113], which silenced
+the PMOS half), from 1 back to 2 on [#281][gf281]'s re-pin to the 0.6.0
+release (klayout-tools#2048, which restored it per device) — both with
+nothing about the fixtures changing — and to absent on #705's taps, which
+resolved every body and retired the category (`body_verification` now reads
+`"verified"` with `device_count: 0`). The PMOS bodies were unverified
+through the first two moves; the third ended it.
 
 **Therefore: a clean report from this flow is not tapeout sign-off**, and
 must never be cited as one. It is evidence that a specific, enumerated set
 of rules passed on a specific stream, under the specific tool build recorded
-as `klt_origin` in `layout/reports/environment.json` — and, for two MOS body
-terminals, evidence the tool explicitly declines to give.
+as `klt_origin` in `layout/reports/environment.json`. The
+`body_verification` block reading `"verified"` with `device_count: 0` says
+the taps put every body on a real net — it is not a claim that the curated
+deck signs off device bodies against PDK body rules.
 
 ---
 

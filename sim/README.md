@@ -871,6 +871,15 @@ full history and uses the pull request's base SHA for `pull_request` events and
 the pre-push SHA for `push` events; the all-zero "before" SHA of a first push
 therefore fails loudly instead of passing.
 
+That endpoint comparison is also this guarantee's known blind spot, quantified
+in the [merge-conflict loss audit](../docs/merge-conflict-loss-audit-2026-11-15.md):
+a record added on a branch and then discarded by a conflict-resolution merge on
+the same branch never appears in the endpoint diff — the audit documents three
+such merges (`a395d6e1`, `742bb2af`, `d870871b`) and classifies every candidate
+path they discarded, 177 of which are absent from `main` as a result. The
+append-only rule covers evidence already on `main`; it does not cover evidence
+that never arrives.
+
 `manifests/artifacts/*.manifest.json` are held to the same rule: a new manifest
 passes, any change to or removal of a committed one fails.
 

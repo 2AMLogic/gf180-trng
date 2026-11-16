@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
+from sim.tools.verify_report_host_paths import find_host_paths  # noqa: E402
 item7 = load_module_from_path("signoff_publish_item7_analog", ROOT / "signoff" / "publish_item7_analog.py")
 cs = load_module_from_path("signoff_publish_combiner_sampler_pex", ROOT / "signoff" / "publish_combiner_sampler_pex.py")
 check = item7.check
@@ -436,6 +437,17 @@ class CombinerSamplerMain(Scratch):
         self.assertEqual(seen, [None, "batch"])
         self.assertTrue((self.root / check.CS_PUBLICATION).is_file())
 
+    def test_home_path_envelope_is_published_redacted(self):
+        env = _envelope()
+        env["environment"] = {"client_ngspice_binary": "/home/alice/.local/bin/ngspice"}
+        with mock.patch.object(cs, "build_publication", return_value={"verdict": VERDICT, "body_bias_status": "u"}), \
+                mock.patch.object(check, "combiner_sampler_problems", return_value=[]):
+            rc, _ = self.with_envelope(env)
+        self.assertEqual(rc, 0)
+        written = json.loads((self.root / check.CS_ENVELOPE).read_text())
+        self.assertEqual(written["environment"]["client_ngspice_binary"], "ngspice")
+        self.assertEqual(list(find_host_paths(written)), [])
+
 
 class RedactClientPaths(unittest.TestCase):
     def test_home_directory_dropped_other_text_untouched(self):
@@ -445,6 +457,88 @@ class RedactClientPaths(unittest.TestCase):
             self.assertEqual(json.loads(out), {"client_ngspice_binary": "ngspice", "x": "/usr/bin/ngspice"})
         raw = b'{"client_ngspice_binary": "/tmp/p/ngspice"}'
         self.assertEqual(common.redact_client_paths(raw), raw)
+
+    def test_runner_resolved_paths_reduced_only_under_a_home_directory(self):
+        raw = (b'{"ngspice_binary": "/home/alice/bin/ngspice",'
+               b' "selected_path": "/home/alice/bin/ngspice",'
+               b' "root": "/home/alice/pdks/gf180mcuD"}')
+        self.assertEqual(json.loads(common.redact_client_paths(raw)),
+                         {"ngspice_binary": "ngspice", "selected_path": "ngspice", "root": "gf180mcuD"})
+        raw = (b'{"ngspice_binary": "/usr/local/bin/ngspice",'
+               b' "selected_path": "/usr/local/bin/ngspice",'
+               b' "root": "/opt/pdk"}')
+        self.assertEqual(common.redact_client_paths(raw), raw)
+
+
+class LoadEnvelopeRedactsClientPaths(unittest.TestCase):
+    """The shared loader redacts client paths on load (#941), so every publisher inherits it."""
+
+    def load(self, text):
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "in.json"
+            f.write_text(text)
+            return common.load_envelope(f, None, "t")
+
+    def test_home_path_redacted_in_raw_and_parse(self):
+        for home in ("/home/alice/.local/bin/", "/Users/bob/bin/"):
+            with self.subTest(home=home):
+                raw, env = self.load('{"environment": {"client_ngspice_binary": "%sngspice"}}' % home)
+                self.assertEqual(env["environment"]["client_ngspice_binary"], "ngspice")
+                self.assertEqual(json.loads(raw), env)
+                self.assertNotIn(home.encode(), raw)
+
+    def test_clean_and_field_free_responses_are_byte_identical(self):
+        for text in ('{"environment": {"client_ngspice_binary": "/usr/bin/ngspice"}}',
+                     '{"environment": {"engine": "ngspice"}}'):
+            with self.subTest(text=text):
+                raw, env = self.load(text)
+                self.assertEqual(raw, text.encode())
+                self.assertEqual(env, json.loads(text))
+
+    def test_both_sides_of_one_response_are_redacted(self):
+        raw, env = self.load(
+            '{"sides": {"schematic": {"environment": {"client_ngspice_binary": "/home/a/b/ngspice"}},'
+            ' "extracted": {"environment": {"client_ngspice_binary": "/Users/c/d/ngspice"}}}}')
+        self.assertEqual(env["sides"]["schematic"]["environment"]["client_ngspice_binary"], "ngspice")
+        self.assertEqual(env["sides"]["extracted"]["environment"]["client_ngspice_binary"], "ngspice")
+        self.assertNotIn(b"/home/", raw)
+        self.assertNotIn(b"/Users/", raw)
+
+    def test_path_with_spaces(self):
+        raw, env = self.load('{"environment": {"client_ngspice_binary": "/home/alice/my tools/ngspice"}}')
+        self.assertEqual(env["environment"]["client_ngspice_binary"], "ngspice")
+        self.assertNotIn(b"/home/alice", raw)
+
+
+class Item7AnalogHomePathClient(Scratch):
+    """A publishing client whose ngspice lives under /home still publishes a clean envelope (#941)."""
+
+    mod = item7
+
+    def test_ring1_envelope_passes_the_host_path_guard(self):
+        for rel in check.ITEM7A_INPUTS:
+            self.write(rel, rel)
+        manifest = self.write("block-manifest.json", json.dumps({"evidence": {}}))
+        envelope = _envelope()
+        envelope["sides"] = {
+            side: {"environment": {"client_ngspice_binary": "/home/alice/.local/bin/ngspice"}}
+            for side in ("schematic", "extracted")
+        }
+        env_file = self.write("in.json", json.dumps(envelope))
+        bd = mock.Mock()
+        bd.source_identity.return_value = {"sec": "h"}
+        with mock.patch.object(sys, "argv", ["publish_item7_analog.py", "--envelope", str(env_file)]), \
+                mock.patch.object(check, "item7_analog_dut_source_problems", return_value=[]), \
+                mock.patch.object(check, "MANIFEST", manifest), \
+                mock.patch.object(item7, "_build_dut", return_value=bd), \
+                mock.patch.object(check, "item7_analog_problems", return_value=[]):
+            rc, _ = self.run_quiet(item7.main)
+        self.assertEqual(rc, 0)
+        written = json.loads((self.root / check.ITEM7A_ENVELOPE).read_text())
+        for side in written["sides"].values():
+            self.assertEqual(side["environment"]["client_ngspice_binary"], "ngspice")
+        self.assertEqual(list(find_host_paths(written)), [])
+        self.assertEqual(json.loads(manifest.read_text())["evidence"]["7.analog"]["file"], check.ITEM7A_ENVELOPE)
 
 
 class CombinerSamplerPublication(Scratch):

@@ -8,33 +8,41 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#895**: sim: pin the activity-power prose to its generator, and re-derive it
+- **#937**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Very Important
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 
 ## Important
 
 `loom:important`; taken before unlabelled work.
 
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
+_None._
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
+- **#902**: Single-source the klt/PDK availability preflight hand-rolled in six layout entry points (#589 follow-up)
+- **#917**: sim/harness/scenario_cli.py has no dedicated test module, unlike 10 of the 13 other harness modules
+- **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
+- **#947**: unused_names docstring: the RUF100 carve-out sentence does not cover the dynamic-call block
+- **#951**: No gate catches hand-mangled formatting in generated signoff/ JSON
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
+- **#472**: Characterize asymmetric fs/sf corners on the integrated ring-array sampler path
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
-- **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped
+- **#879**: README claims the digital section and composed floorplan are DRC-clean; the committed reports read 2769/2750 tap-distance violations
+- **#883**: sim/characterization-digital-activity-power.md marks a superseded record family "(current)"
+- **#920**: Single-source the tool --version probes hand-rolled in four places (two have no timeout)
 
 ## PRs Awaiting Review
 
@@ -46,7 +54,8 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#895**: sim: pin the activity-power prose to its generator, and re-derive it
+- **#937**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Proposed
 
@@ -63,13 +72,18 @@ Issues carrying `loom:curated`.
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
 - **#810**: Power: record ring-liveness sampler (xsr1/xsr2) active current at the binding corner *(curated)*
 - **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)*
+- **#879**: README claims the digital section and composed floorplan are DRC-clean; the committed reports read 2769/2750 tap-distance violations *(curated)*
+- **#883**: sim/characterization-digital-activity-power.md marks a superseded record family "(current)" *(curated)*
+- **#917**: sim/harness/scenario_cli.py has no dedicated test module, unlike 10 of the 13 other harness modules *(curated)*
+- **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
+- **#947**: unused_names docstring: the RUF100 carve-out sentence does not cover the dynamic-call block *(curated)*
+- **#951**: No gate catches hand-mangled formatting in generated signoff/ JSON *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#861**: Remove the hand-rolled corner selection in worst_corner_entropy.py's _sampler_offset: latest_current_record already does it *(hermit)*
-- **#865**: Load the committed wiring plan once: vss_trunk_ir_drop.py and digital_supply_ir_drop.py each rebuild it, one behind an expired #256 workaround *(hermit)*
-- **#867**: Remove run_sta.py's hand-rolled record_slacks reader: digital_corner_characterization.load() already selects the current digital-sta-power family *(hermit)*
-- **#868**: Collapse the four copy-pasted frontmatter block readers in sim/harness/report.py into one helper *(hermit)*
+- **#880**: Collapse the four copy-pasted recorded-verdict gates in sim/tools into one helper (they have drifted) *(hermit)*
+- **#889**: Collapse the six duplicated write_record callbacks in sim/tb behind one sim/harness/report.py helper (reverses #888's scope boundary) *(hermit)*
+- **#897**: Consolidate four divergent copies of the committed-PDK-provenance rule into layout/_klt.py *(hermit)*
 
 ## Epics
 
@@ -79,14 +93,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
-| Very important | 0 |
-| Important | 1 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 2 |
+| Operator merge-risk holds | 2 |
+| Very important | 1 |
+| Important | 0 |
+| Ready (`loom:issue`) | 6 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 11 |
-| Architect / Hermit proposals | 4 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 17 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

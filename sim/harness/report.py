@@ -235,11 +235,6 @@ def allocate_record_stems(
     return [f"{prefix}{max_n + i:02d}" for i in range(1, count + 1)]
 
 
-def allocate_record_stem(records_dir: Path, date: str, slug: str) -> str:
-    """Mint the next unused ``<date>-<slug>-<nn>`` stem."""
-    return allocate_record_stems(records_dir, date, slug, 1)[0]
-
-
 def reserve_record_stems(
     records_dir: Path, date: str, slug: str, count: int, lock_root: Path | None = None
 ) -> list[str]:

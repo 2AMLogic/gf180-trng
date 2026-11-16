@@ -11,8 +11,8 @@ against the klayout-tools design-evidence ladder: the literal output of
     klt signoff --manifest signoff/block-manifest.json --format json
 
 A verdict that is generated once and then never re-run is prose again within a
-week, so this script exists to re-run it on every push. It fails on four
-separable conditions, in order, so a red build says which one:
+week, so this script exists to re-run it on every push. It fails on separable
+conditions, in order, so a red build says which one:
 
 1. **A cited envelope no longer describes the artifact it ran on.** The
    manifest's pinned `content_hash` is compared by `klt signoff` against the
@@ -59,8 +59,20 @@ separable conditions, in order, so a red build says which one:
 
 Before the re-grade, the designated current-status blocks of README.md and
 signoff/README.md (fenced by `current-t1-status` marker comments) are compared
-with the committed record's tier, met count and item count (stdlib-only,
-always run, fails on mismatch or a missing/malformed block).
+with the committed record's tier, met count, item count and the names of its
+`unmet` T1 rows (stdlib-only, always run, fails on mismatch or a
+missing/malformed block). The row names are what make the block a unique name
+for the verdict: a count alone is a sum, so two rows changing in opposite
+directions would leave it unmoved.
+
+Both files this script writes -- `signoff/block-manifest.json` and
+`signoff/records/t1-tier-report.json` -- must also stay byte-equal to the
+canonical form it writes them in, `json.dumps(json.loads(raw), indent=2) +
+"\n"`: a hand edit or a lossy re-save fails by name, with `--write` as the
+remedy. That gate is stdlib-only and always runs in verify mode -- including
+when `klt` is absent and the re-grade self-skips -- but not in `--write` mode,
+which rewrites both files canonically. `signoff/evidence/**` is out of scope:
+it has other writers (publish_*.py, klt responses) and is append-only.
 
 T1 items 1, 2, 9 and 10 have no `klt` verb behind them, so each of the eight
 (item, partition) citations is an artifact-anchored generic envelope
@@ -807,6 +819,18 @@ def resolve_artifact(envelope_path: Path, named: str) -> Path | None:
     return None
 
 
+#: (field naming the input artifact, field carrying its digest) -- the one
+#: definition of what makes a JSON file an envelope, shared by
+#: check_envelope_against_its_input() and envelope_names_an_input().
+ENVELOPE_INPUT_KINDS = [
+    ("file", "provenance.input.content_hash"),
+    ("layout", "environment.layout_sha256"),
+    ("source", "provenance.input.content_hash"),
+    # `klt sta` (schema 2) names its DEF as a `{path, scope}` object.
+    ("def_path", "provenance.input.content_hash"),
+]
+
+
 def check_envelope_against_its_input(
     envelope_path: Path, envelope: dict, failures: list[str]
 ) -> bool:
@@ -816,16 +840,7 @@ def check_envelope_against_its_input(
     caller can count what was actually verified rather than what was seen.
     """
     rel = envelope_path.relative_to(REPO_ROOT)
-    kind_hints = [
-        # (field naming the input artifact, field carrying its digest)
-        ("file", "provenance.input.content_hash"),
-        ("layout", "environment.layout_sha256"),
-        ("source", "provenance.input.content_hash"),
-        # `klt sta` (schema 2) names its DEF as a `{path, scope}` object.
-        ("def_path", "provenance.input.content_hash"),
-    ]
-
-    for name_field, digest_field in kind_hints:
+    for name_field, digest_field in ENVELOPE_INPUT_KINDS:
         named = envelope.get(name_field)
         if isinstance(named, dict):
             # `klt pex` (schema 2) writes `layout` (and `klt sta` its
@@ -876,6 +891,25 @@ def check_envelope_against_its_input(
     return False
 
 
+def envelope_names_an_input(envelope: dict) -> bool:
+    """True when this JSON names an input artifact, i.e. it is an envelope.
+
+    The same naming rule check_envelope_against_its_input() verifies, so the
+    step-1 sweep selector and the checker can never disagree about what an
+    envelope is: a `file`, `source`, `layout` or `def_path` field carrying a
+    non-empty path, directly or as a `{path, scope: "repo"}` object.
+    """
+    if not isinstance(envelope, dict):
+        return False
+    for name_field, _digest_field in ENVELOPE_INPUT_KINDS:
+        named = envelope.get(name_field)
+        if isinstance(named, dict):
+            named = named.get("path") if named.get("scope") == "repo" else None
+        if isinstance(named, str) and named:
+            return True
+    return False
+
+
 def manifest_entries(manifest: dict):
     """Yield (item key, entry dict) for every object-shaped evidence entry."""
     for key, entry in sorted((manifest.get("evidence") or {}).items()):
@@ -894,20 +928,71 @@ CURRENT_STATUS_BEGIN = "<!-- current-t1-status:begin -->"
 CURRENT_STATUS_END = "<!-- current-t1-status:end -->"
 _STATUS_TIER = re.compile(r"`tier:\s*(null|T\d+)`")
 _STATUS_COUNT = re.compile(r"T1\s+(\d+)\s+of\s+(\d+)\s+items\s+met")
+#: The unmet-row composition: the literal `none`, or a comma-separated list of
+#: backticked `<item>.<partition>` row names (a row the report grades without a
+#: partition is named by its item number alone).
+_STATUS_ROW_RE = r"`\d+(?:\.[a-z]+)?`"
+_STATUS_UNMET = re.compile(
+    rf"unmet:\s*(none|{_STATUS_ROW_RE}(?:\s*,\s*{_STATUS_ROW_RE})*)", re.IGNORECASE
+)
+_STATUS_ROW = re.compile(r"`(\d+(?:\.[a-z]+)?)`", re.IGNORECASE)
+
+
+def t1_unmet_rows(report: dict) -> list[str] | None:
+    """Names of every T1 row the report does not grade `met`, (item, partition)-sorted.
+
+    ``None`` means the report carries no readable ``items`` array, which is
+    itself a problem: a record that cannot name its own composition is exactly
+    the blind spot the composition clause exists to close.
+
+    Only ``tier == "T1"`` entries are rows. The record also carries one
+    summary entry per higher tier (T2/T3/T4) with ``id`` and ``partition``
+    null and ``status`` ``unmet``; counting those would invent rows that no
+    checklist has.
+    """
+    items = report.get("items")
+    if not isinstance(items, list):
+        return None
+    rows: list[tuple[int, str, str]] = []
+    for entry in items:
+        if not isinstance(entry, dict) or entry.get("tier") != "T1":
+            continue
+        if entry.get("status") == "met":
+            continue
+        ident, partition = entry.get("id"), entry.get("partition")
+        name = f"{ident}.{partition}" if partition else f"{ident}"
+        rows.append((ident if isinstance(ident, int) else -1, partition or "", name))
+    return [name for _, _, name in sorted(rows)]
+
+
+def format_unmet_rows(rows: list[str]) -> str:
+    """Render row names as the composition clause's block text."""
+    return ", ".join(f"`{name}`" for name in rows) if rows else "none"
 
 
 def current_status_problems(report: dict, docs: dict[str, str]) -> list[str]:
     """Compare designated current-status text with the committed report.
 
     ``docs`` maps a display name to document text. The expected numerator,
-    denominator and tier come from ``report`` (never hard-coded). A document
-    with no block, more than one block, or a block lacking a parseable tier or
-    count is a problem, as is any disagreement.
+    denominator, tier and unmet-row names come from ``report`` (never
+    hard-coded). A document with no block, more than one block, or a block
+    lacking a parseable tier, count or unmet clause is a problem, as is any
+    disagreement.
+
+    The unmet clause must list the rows in the canonical order
+    `format_unmet_rows` renders, so one graded state has exactly one valid
+    block text.
     """
     want_tier = report.get("tier")
     want_met = report.get("t1_met_count")
     want_total = report.get("t1_item_count")
+    want_unmet = t1_unmet_rows(report)
     problems: list[str] = []
+    if want_unmet is None:
+        problems.append(
+            "the report carries no readable items[] array, so no document's "
+            "unmet-row composition can be verified"
+        )
     for name, text in docs.items():
         begins = text.count(CURRENT_STATUS_BEGIN)
         ends = text.count(CURRENT_STATUS_END)
@@ -921,20 +1006,30 @@ def current_status_problems(report: dict, docs: dict[str, str]) -> list[str]:
         block, _, _ = rest.partition(CURRENT_STATUS_END)
         tier_m = _STATUS_TIER.findall(block)
         count_m = _STATUS_COUNT.findall(block)
-        if len(tier_m) != 1 or len(count_m) != 1:
+        unmet_m = _STATUS_UNMET.findall(block)
+        if len(tier_m) != 1 or len(count_m) != 1 or len(unmet_m) != 1:
             problems.append(
                 f"{name}: current-status block must state one "
-                f"`tier: <null|Tn>` and one 'T1 N of M items met'"
+                f"`tier: <null|Tn>`, one 'T1 N of M items met' and one "
+                f"'unmet: <row names|none>'"
             )
             continue
         got_tier = None if tier_m[0] == "null" else tier_m[0]
         got_met, got_total = int(count_m[0][0]), int(count_m[0][1])
+        got_unmet = (
+            [] if unmet_m[0].lower() == "none" else _STATUS_ROW.findall(unmet_m[0])
+        )
         if got_tier != want_tier:
             problems.append(f"{name}: tier states {got_tier!r}, report says {want_tier!r}")
         if got_met != want_met:
             problems.append(f"{name}: states {got_met} items met, report says {want_met}")
         if got_total != want_total:
             problems.append(f"{name}: states {got_total} T1 items, report says {want_total}")
+        if want_unmet is not None and got_unmet != want_unmet:
+            problems.append(
+                f"{name}: states unmet rows {format_unmet_rows(got_unmet)}, "
+                f"report says {format_unmet_rows(want_unmet)}"
+            )
     return problems
 
 
@@ -953,6 +1048,54 @@ def verify_current_status() -> list[str]:
     return current_status_problems(report, docs)
 
 
+#: The envelopes freshness_gate() step 1 exempts from the generic
+#: envelope-vs-input sweep, named once so the cited filter below and
+#: committed_envelopes() exempt the same set. Each carries no checkable input
+#: digest by design (see the constants above) and has its own freshness step
+#: keyed on its manifest citation (steps 1b/1b'/1c). The exemption is BY
+#: NAME on purpose: their current payloads happen to fail the envelope shape
+#: test, but that is an accident -- a later `klt yield` writing
+#: `source.scope == "repo"` would otherwise silently pull one into the sweep
+#: and fail the gate on an envelope step 1 is written to skip.
+STEP1_EXEMPT = (ITEM7_ENVELOPE, PNR_ENVELOPE, ITEM6_ENVELOPE)
+
+
+def committed_envelopes(evidence_dir: Path) -> set[Path]:
+    """Every committed envelope under evidence_dir, at any depth.
+
+    Step 1's committed set must reach subdirectories: an envelope committed
+    under signoff/evidence/*/, cited by no manifest entry, is invisible to
+    every other freshness step (each of those is gated on a manifest key
+    that is absent by assumption), so only this sweep can catch it going
+    stale -- the uncited half of the #885 gap.
+
+    A file counts as an envelope when envelope_names_an_input() says it
+    names an input artifact. That rule keeps the sidecars sharing these
+    directories out of the sweep: requests, limits, sample sets and
+    publication.json sidecars name no input, which is exactly what makes
+    them sidecars rather than envelopes. inventory-*.json files are the
+    item 1/2/9/10 inventories, not envelopes, at any depth, and the three
+    STEP1_EXEMPT envelopes are excluded by name. Malformed JSON propagates,
+    exactly as the loop consuming this set has always let it.
+
+    Accepted trade-off: a committed, uncited JSON that was meant to be an
+    envelope but forgot its input-naming field is skipped here rather than
+    failing -- every envelope carrying a signoff claim is cited, and the
+    cited path still fails loudly in check_envelope_against_its_input()
+    with "names no input artifact".
+    """
+    envelopes: set[Path] = set()
+    for path in evidence_dir.rglob("*.json"):
+        if path.name.startswith("inventory-"):
+            continue
+        if path.relative_to(REPO_ROOT).as_posix() in STEP1_EXEMPT:
+            continue
+        envelope = json.loads(path.read_text())
+        if envelope_names_an_input(envelope):
+            envelopes.add(path)
+    return envelopes
+
+
 def freshness_gate(manifest: dict) -> int:
     failures: list[str] = []
     verified = 0
@@ -962,11 +1105,11 @@ def freshness_gate(manifest: dict) -> int:
     cited: list[Path] = []
     for _key, part in manifest_entries(manifest):
         named = part.get("file")
-        if named and named not in (ITEM7_ENVELOPE, PNR_ENVELOPE, ITEM6_ENVELOPE):
+        if named and named not in STEP1_EXEMPT:
             cited.append(REPO_ROOT / named)
     # The item 1/2/9/10 inventories are not envelopes (they name no input);
     # their freshness is the member-by-member re-derivation in step 1e.
-    committed = {p for p in EVIDENCE_DIR.glob("*.json") if not p.name.startswith("inventory-")}
+    committed = committed_envelopes(EVIDENCE_DIR)
     for path in sorted(set(cited) | committed):
         if not path.is_file():
             failures.append(
@@ -1003,8 +1146,16 @@ def freshness_gate(manifest: dict) -> int:
 
     # Step 1b': the item-6 citation (no provenance block; see ITEM6_ENVELOPE).
     if (manifest.get("evidence") or {}).get("6.analog"):
-        import publish_item6  # noqa: PLC0415 -- imports this module; avoid a cycle
-
+        # Loaded by path, deferred to here: publish_item6 imports this module
+        # at import time, so a module-level import would be a cycle. By path
+        # rather than `import publish_item6` because that bare name only
+        # resolves when check.py is run as a script (which puts `signoff/` on
+        # sys.path); a caller that loads check.py by path -- every test in
+        # sim/tests/test_signoff_freshness.py -- has no `signoff/` on the path
+        # and would raise ModuleNotFoundError the moment 6.analog is cited.
+        publish_item6 = load_module_from_path(  # noqa: PLC0415 -- see above
+            "signoff_publish_item6", REPO_ROOT / "signoff" / "publish_item6.py"
+        )
         item6 = publish_item6.publication_problems()
         failures += [f"6.analog: {p}" for p in item6]
         if not item6:
@@ -1072,6 +1223,38 @@ def run_grader() -> dict | None:
         sys.stderr.write(proc.stderr)
         return None
     return json.loads(proc.stdout)
+
+
+def canonical_bytes_problems() -> list[str]:
+    """The two JSON files this script writes must stay byte-equal to what it
+    writes: `json.dumps(json.loads(raw), indent=2) + "\\n"`, the form
+    `write_record` and `write_inventories` produce. Anything else -- a hand
+    edit, an editor re-save, a copy through a lossy channel -- would otherwise
+    pass as grader output. `signoff/evidence/**` is deliberately out of scope:
+    it has other writers (publish_*.py, klt responses) and is append-only."""
+    problems: list[str] = []
+    for path in (MANIFEST, RECORD):
+        if not path.is_file():
+            # A missing file already has its own failure in main() and
+            # compare_record(); do not shadow it with a canonical-form one.
+            continue
+        raw = path.read_bytes()
+        try:
+            canonical = (json.dumps(json.loads(raw), indent=2) + "\n").encode("utf-8")
+        except (UnicodeDecodeError, ValueError):
+            problems.append(
+                f"{path.relative_to(REPO_ROOT)} is not readable JSON -- "
+                "regenerate it with 'python3 signoff/check.py --write' and commit it"
+            )
+            continue
+        if raw != canonical:
+            problems.append(
+                f"{path.relative_to(REPO_ROOT)} is not byte-equal to the canonical "
+                "form this script writes (json.dumps(json.loads(raw), indent=2) + "
+                "'\\n') -- regenerate it with 'python3 signoff/check.py --write' "
+                "and commit it"
+            )
+    return problems
 
 
 def write_record(report: dict) -> int:
@@ -1186,6 +1369,17 @@ def main() -> int:
             "roll-up that consumes this file",
             file=sys.stderr,
         )
+        return 1
+
+    # Canonical-form gate: verify mode only. `--write` is the remedy for a
+    # non-canonical file -- write_inventories and write_record rewrite MANIFEST
+    # and RECORD in exactly this form -- so the gate must not stand in its own
+    # way. It runs before everything else, including the grader's self-skip,
+    # so a mangled file cannot pass merely because klt is absent.
+    canonical = [] if args.write else canonical_bytes_problems()
+    if canonical:
+        for problem in canonical:
+            print(f"signoff/check.py: {problem}", file=sys.stderr)
         return 1
 
     if args.write:

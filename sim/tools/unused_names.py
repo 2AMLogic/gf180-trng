@@ -13,6 +13,17 @@ Reported:
         for a binding that closures can capture, in any closure below it)
   F841  a simple named target of `Assign` / `AnnAssign` inside a function
         that is assigned but never read in that block or a child closure
+  RUF100 an explicit `# noqa: F401` / `# noqa: F841` token that never
+        suppressed a finding anywhere in its file (#908) -- a suppression
+        that drops nothing is dead weight that silently widens this hole.
+        Blanket `# noqa` and codes this checker does not evaluate are
+        never judged -- including `F401` in an `__init__.py`, where no
+        import is evaluated, so a re-export there may carry the token.
+  TRNG001 a class or function defined after the final module-level
+        `if __name__ == "__main__":` guard (#930) -- invisible to direct
+        execution (`python3 file.py`) while still collected under import.
+        Never suppressible: no `# noqa` form is consulted, and the code is
+        deliberately absent from the RUF100-judged set.
 
 Not reported (outside the supported contract, so never a finding):
 
@@ -68,6 +79,9 @@ _FUNC_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
 _COMP_NODES = (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
 _NOQA = re.compile(r"#\s*noqa\b(?:\s*:\s*(?P<codes>[A-Za-z0-9]+(?:[\s,]+[A-Za-z0-9]+)*))?",
                    re.IGNORECASE)
+# The codes this checker emits, and is therefore entitled to judge a noqa
+# token by; any other code on a noqa line is foreign to it (E402, SLF001, ...).
+_EVALUATED_CODES = frozenset({"F401", "F841"})
 
 
 class CheckerError(Exception):
@@ -88,6 +102,13 @@ class Finding:
     name: str
 
     def format(self) -> str:
+        if self.code == "RUF100":
+            return (f"{self.path}:{self.line}:{self.col}: RUF100 stale "
+                    f"'# noqa: {self.name}' suppresses nothing")
+        if self.code == "TRNG001":
+            return (f"{self.path}:{self.line}:{self.col}: TRNG001 "
+                    f"'{self.name}' defined after the module-level "
+                    f"'__main__' guard")
         what = "imported but unused" if self.code == "F401" else \
             "local variable is assigned to but never used"
         return f"{self.path}:{self.line}:{self.col}: {self.code} '{self.name}' {what}"
@@ -312,28 +333,35 @@ def _supplementary_reads(owned: _Owned) -> set[str]:
 # Suppression comments
 
 
-def _noqa_lines(path: str, source: str) -> dict[int, str | None]:
-    """line -> None (blanket noqa) or the upper-cased code list."""
-    out: dict[int, str | None] = {}
+def _noqa_lines(path: str, source: str) -> dict[int, tuple[str | None, int]]:
+    """line -> (None (blanket noqa) or the upper-cased code list, column)."""
+    out: dict[int, tuple[str | None, int]] = {}
     try:
         for tok in tokenize.generate_tokens(io.StringIO(source).readline):
             if tok.type == tokenize.COMMENT:
                 m = _NOQA.search(tok.string)
                 if m:
                     codes = m.group("codes")
-                    out[tok.start[0]] = codes.upper() if codes else None
+                    out[tok.start[0]] = (codes.upper() if codes else None,
+                                         tok.start[1])
     except (tokenize.TokenError, IndentationError) as exc:
         raise CheckerError(path, 1, f"tokenize failed: {exc}") from exc
     return out
 
 
-def _suppressed(noqa: dict[int, str | None], first: int, last: int, code: str) -> bool:
+def _suppressed(noqa: dict[int, tuple[str | None, int]], first: int, last: int,
+                code: str, used: set[tuple[int, str]] | None = None) -> bool:
+    hit = False
+    # Credit every matching token in the span, not just the first, so a
+    # later token on the same statement is not reported stale (#926).
     for line in range(first, last + 1):
         if line in noqa:
-            codes = noqa[line]
+            codes = noqa[line][0]
             if codes is None or code in re.split(r"[\s,]+", codes):
-                return True
-    return False
+                if used is not None and codes is not None:
+                    used.add((line, code))
+                hit = True
+    return hit
 
 
 # --------------------------------------------------------------------------
@@ -362,6 +390,24 @@ def _has_dynamic_call(nodes: list[ast.AST]) -> bool:
                and n.func.id in DYNAMIC_CALLS for n in nodes)
 
 
+def _after_main_guard(tree: ast.Module) -> list[ast.AST]:
+    """Module-level class/function definitions after the final module-level
+    `if __name__ == ...` guard (#930): below it they are invisible to direct
+    execution while still collected under import. A nested (non-module-level)
+    guard is not an anchor, and non-definition statements are not this
+    rule's concern."""
+    guard = -1
+    for i, stmt in enumerate(tree.body):
+        if (isinstance(stmt, ast.If) and isinstance(stmt.test, ast.Compare)
+                and isinstance(stmt.test.left, ast.Name)
+                and stmt.test.left.id == "__name__"):
+            guard = i
+    if guard < 0:
+        return []
+    return [s for s in tree.body[guard + 1:]
+            if isinstance(s, (*_FUNC_NODES, ast.ClassDef))]
+
+
 def check_source(source: str, path: str = "<string>") -> list[Finding]:
     """Analyse one module's source; return findings in deterministic order."""
     try:
@@ -373,6 +419,7 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
         raise CheckerError(path, 1, f"cannot parse: {exc}") from exc
 
     noqa = _noqa_lines(path, source)
+    used: set[tuple[int, str]] = set()  # (line, code) tokens that dropped a finding
     is_init = Path(path).name == "__init__.py"
     exported = _literal_all(tree)
     # Annotation reads anywhere in the file credit an import in any block:
@@ -428,8 +475,11 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
                 continue
             first = getattr(alias, "lineno", stmt.lineno)
             last = getattr(alias, "end_lineno", None) or first
-            if (_suppressed(noqa, stmt.lineno, stmt.lineno, "F401")
-                    or _suppressed(noqa, first, last, "F401")):
+            # Both spans are consulted (no short-circuit) so every matching
+            # token is credited as live (#926).
+            on_stmt = _suppressed(noqa, stmt.lineno, stmt.lineno, "F401", used)
+            on_alias = _suppressed(noqa, first, last, "F401", used)
+            if on_stmt or on_alias:
                 continue
             findings.append(Finding(path, first, getattr(alias, "col_offset", stmt.col_offset),
                                     "F401", alias.name if not alias.asname else
@@ -452,11 +502,30 @@ def check_source(source: str, path: str = "<string>") -> list[Finding]:
             if (sym.is_global() or sym.is_free() or sym.is_parameter()
                     or sym.is_nonlocal() or is_read(tgt.id)):
                 continue
-            if _suppressed(noqa, stmt.lineno, stmt.end_lineno or stmt.lineno, "F841"):
+            if _suppressed(noqa, stmt.lineno, stmt.end_lineno or stmt.lineno,
+                           "F841", used):
                 continue
             findings.append(Finding(path, tgt.lineno, tgt.col_offset, "F841", tgt.id))
 
     visit(top, list(tree.body), "module")
+    # TRNG001 (#930): pure AST structure over module-level statements, so
+    # no symtable involvement, and deliberately unsuppressible -- no noqa
+    # form is consulted for it anywhere.
+    for node in _after_main_guard(tree):
+        findings.append(Finding(path, node.lineno, node.col_offset,
+                                "TRNG001", node.name))
+    # RUF100: an explicit F401/F841 token that never dropped a finding in
+    # this file cannot silence anything, so it is dead weight -- report it.
+    # A blanket `# noqa` may be covering codes this checker never evaluates,
+    # and a foreign code is by definition not ours to judge.
+    judged = _EVALUATED_CODES - {"F401"} if is_init else _EVALUATED_CODES
+    for line, (codes, col) in sorted(noqa.items()):
+        if codes is None:
+            continue
+        stale = [c for c in dict.fromkeys(re.split(r"[\s,]+", codes))
+                 if c in judged and (line, c) not in used]
+        if stale:
+            findings.append(Finding(path, line, col, "RUF100", ", ".join(stale)))
     return sorted(findings)
 
 
@@ -473,8 +542,11 @@ def check_files(root: Path, files: Iterable[str]) -> list[Finding]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="Report unused imports (F401) and simple unused function "
-                    "locals (F841) in tracked first-party Python files.")
+        description="Report unused imports (F401), simple unused function "
+                    "locals (F841), stale '# noqa: F401/F841' tokens "
+                    "(RUF100), and class/function definitions after the "
+                    "module-level '__main__' guard (TRNG001) in tracked "
+                    "first-party Python files.")
     ap.add_argument("--check", action="store_true", required=True,
                     help="scan and exit non-zero on findings")
     ap.add_argument("--root", type=Path, default=ROOT,
