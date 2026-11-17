@@ -1,17 +1,17 @@
 {
   "schema": "gf180-trng/item7-publication/1",
-  "record": "sim/records/2026-11-16-trng-top-post-route-01.md",
-  "raw_dir": "sim/records/raw/2026-11-16-trng-top-post-route-01",
+  "record": "sim/records/2026-11-17-trng-top-post-route-01.md",
+  "raw_dir": "sim/records/raw/2026-11-17-trng-top-post-route-01",
   "raw_sha256": {
-    "environment.json": "sha256:aee9eadf71341480b3400cc1c9d33fc0f849ce89c7dc477f06cb12734dbe3d4b",
-    "gate_comparison.json": "sha256:b0e1815ab1462847325723b56cfe94475a10e2ab8c16ae5be13ed516c94e84b2",
-    "gate_klt_response.json": "sha256:55c86dd96ee5958dad0514fa18864276658fa8e1655e20b4d92a4e96f2a3a458",
-    "gate_request.json": "sha256:7d7def2afc1c6fa3cdaac53592a621f6104e238f4c5af86dd5152bd9dc52cdb5",
-    "gate_transcript_digest.json": "sha256:3c73261584672a61d43a0072ef419d512466aa8d070587a40c7e2ac19aee47c0",
-    "rtl_comparison.json": "sha256:a4aaaf486d1201a6872beac03f7507ec54706038bd99d87d1f48932cbec563e7",
-    "rtl_klt_response.json": "sha256:84be271bec8d4026d371eed056170500cad749969ca092d7baf5a81fc1b5303f",
-    "rtl_request.json": "sha256:65ae0262290ee107cc7f0feff343e428894a704ac5c3b1c66a90e66e22824f7b",
-    "rtl_transcript_digest.json": "sha256:448f15dbf71af9d3a827dfeda10e467f27afe8ecf512cbc5c24227d648626afd",
+    "environment.json": "sha256:8a765d3d46b372926f99f31df0704ce86e29fad69d2254b6659f90bc205095a2",
+    "gate_comparison.json": "sha256:5fda21bb5a9acf7eafcbfcbd951086b9c1d3c42611d6f8d1e785bfd483819e11",
+    "gate_klt_response.json": "sha256:d84e79e586bdb2d17fa930420357250d0de6f9a5f3d206c3eef4018b7a38d390",
+    "gate_request.json": "sha256:d82737b168669459715632aedc6b08ead39129e0b00b0a3b03a8cdb71043d33c",
+    "gate_transcript_digest.json": "sha256:181d80f2988b4adccb288d4d0902f14fe0c4c2f72311af53219709595727f592",
+    "rtl_comparison.json": "sha256:47701e1d1d38ebb91c4ca4eb3fdd2245cda29fb1b3b6dedc27b3c8f056e3483a",
+    "rtl_klt_response.json": "sha256:80ed42261a38dff089708fbe9df14dceb1ac2e1ae2009878a1cb48f4de05c162",
+    "rtl_request.json": "sha256:dde57cd0007b2ebe30eb464504b497dbdc9c7fc5de60fb44ce92af9731546927",
+    "rtl_transcript_digest.json": "sha256:db89e08365c9f0632a52c157c3bea7d159d3dde82ebb411c082613efdf313f62",
     "sources.json": "sha256:6cdf830d1806e0d18483328294fa8911d03c11a45ef75e504bd65e62fa0a5dac",
     "verdict.json": "sha256:c970eed5c5747006f439894bc22edc4738d347f5dc87c92d01d1fbeb48b5e1c9"
   },
@@ -21,7 +21,7 @@
   },
   "sdf": {
     "path": "layout/digital/trng_top.sdf",
-    "sha256": "sha256:0142126c7e2c192906c5eaf6d474dde58df0741721eea575ab75a41133a88268"
+    "sha256": "sha256:9c86bfde5f02b96638b91b6afa887c5af8d2a1152ac90e3f93c1d31ac9d5c209"
   },
   "limits": "Single corner (SDF corner typ from the ss_125C_3v00 liberty), not a PVT claim. Cell IOPATH delay only: no interconnect delay. Icarus 13.0 enforces no setup/hold/width checks and drops SDF TIMINGCHECK, so no timing violation is reported or ruled out. IOPATH arcs of ifnone-qualified edge-sensitive specify paths (xor/xnor/mux/addf/addh select/toggle) run at library default delay. Functional equivalence with the applied delays is not timing signoff; see sim/tb/trng-top-post-route/README.md. Local source files the run consumed (RTL, included headers, behavioural model, testbench and stimulus, with their local imports) are pinned by sha256; the cell library, PDK, simulator and klt versions are not source-pinned.",
   "sources": {
@@ -51,6 +51,6 @@
   },
   "envelope": {
     "file": "signoff/evidence/post-route/gate_klt_response.json",
-    "sha256": "sha256:55c86dd96ee5958dad0514fa18864276658fa8e1655e20b4d92a4e96f2a3a458"
+    "sha256": "sha256:d84e79e586bdb2d17fa930420357250d0de6f9a5f3d206c3eef4018b7a38d390"
   }
 }

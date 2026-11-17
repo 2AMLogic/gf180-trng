@@ -163,7 +163,7 @@
   "floorplan": [
     {
       "path": "layout/floorplan/trng_floorplan.gds",
-      "sha256": "sha256:faa782a8ec4f8c17c04cb2f32cf2bf19c7ec89cddcc1bb1ca29da8c71a991ff3"
+      "sha256": "sha256:c4e3b373ec24c6518a6800947f3058a4075ee7836fedff9d5d74384d45854a0c"
     },
     {
       "path": "layout/floorplan/trng_floorplan.lvs_reference.spice",

@@ -16,7 +16,7 @@
     "results_xml": {
       "path": null,
       "scope": "external",
-      "sha256": "sha256:71320dfdaa8050809a3d8de6b45a793cd515aad56b5b79743830edc8f3c48599"
+      "sha256": "sha256:e9bba66c6d629aabf1395a02e2f207d47a8911a0e9911d1142e9d56cd6345773"
     },
     "sdf": {
       "annotated": true,
@@ -384,14 +384,14 @@
         }
       },
       "entries": "all",
-      "file": "/tmp/trng920/layout/digital/trng_top.sdf",
+      "file": "/tmp/trng-rebase/layout/digital/trng_top.sdf",
       "partial": true
     },
     "source_defines": {},
     "test_log": {
       "path": null,
       "scope": "external",
-      "sha256": "sha256:931a989bd0529a2cea3902d794aa276e2e8012bcd250bfc5d9c2f965ffc4a711"
+      "sha256": "sha256:145ea926b079bb8f2f7068fb2a29d2783b6c567010e35bd5441bdece91e60b25"
     },
     "tools": []
   },
@@ -406,49 +406,49 @@
   "tests": [
     {
       "name": "smoke",
-      "real_time_s": 0.08179664611816406,
+      "real_time_s": 0.10107684135437012,
       "sim_time_ns": 695.0,
       "status": "passed"
     },
     {
       "name": "startup_and_regfile",
-      "real_time_s": 0.8072834014892578,
+      "real_time_s": 0.9734375476837158,
       "sim_time_ns": 53645.0,
       "status": "passed"
     },
     {
       "name": "conditioner_blocks",
-      "real_time_s": 1.2039508819580078,
+      "real_time_s": 1.6211395263671875,
       "sim_time_ns": 77745.0,
       "status": "passed"
     },
     {
       "name": "rct_stuck_output",
-      "real_time_s": 0.21703100204467773,
+      "real_time_s": 0.3125777244567871,
       "sim_time_ns": 16245.0,
       "status": "passed"
     },
     {
       "name": "ring1_stuck",
-      "real_time_s": 0.16888070106506348,
+      "real_time_s": 0.2598869800567627,
       "sim_time_ns": 12245.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk",
-      "real_time_s": 0.07031774520874023,
+      "real_time_s": 0.10923981666564941,
       "sim_time_ns": 4945.0,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_early_sample",
-      "real_time_s": 0.06947731971740723,
+      "real_time_s": 0.09998869895935059,
       "sim_time_ns": 4905.100000000006,
       "status": "passed"
     },
     {
       "name": "reg_read_walk_settle_sweep",
-      "real_time_s": 0.7304558753967285,
+      "real_time_s": 1.0008409023284912,
       "sim_time_ns": 49549.0,
       "status": "passed"
     }
