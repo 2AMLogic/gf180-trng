@@ -4,10 +4,14 @@
 `bash -n` only catches parse errors; shellcheck (warning severity) also finds
 unquoted expansions, unchecked `cd`, masked exit statuses and similar.
 
-File selection is `git ls-files '*.sh'` minus the vendored `.loom/` and
-`.claude/` trees. When shellcheck is not installed the step prints a clear
-"shellcheck unavailable" message and exits 0, unless `--require-tools` is
-given, in which case it exits 1 (the repo's usual skip-vs-fail convention).
+File selection is tracked `*.sh` files, plus tracked files under
+`.github/scripts/` whose first line is a shell shebang (`^#!.*\\b(ba)?sh\\b`,
+e.g. `#!/usr/bin/env bash`) — an executable script without a `.sh` extension
+is invisible to a suffix-only rule (#993). Both sets minus the vendored
+`.loom/` and `.claude/` trees. When shellcheck is not installed the step
+prints a clear "shellcheck unavailable" message and exits 0, unless
+`--require-tools` is given, in which case it exits 1 (the repo's usual
+skip-vs-fail convention).
 
   python3 -m sim.tools.lint_shell                  # skip if unavailable
   python3 -m sim.tools.lint_shell --require-tools  # fail if unavailable
@@ -16,9 +20,11 @@ given, in which case it exits 1 (the repo's usual skip-vs-fail convention).
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -28,16 +34,34 @@ import _git_files  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 VENDORED_PREFIXES = (".loom/", ".claude/")
 SEVERITY = "warning"
+SHELL_SHEBANG_RE = re.compile(r"^#!.*\b(ba)?sh\b")
 
 
-def select_scripts(tracked: list[str]) -> list[str]:
-    """Tracked *.sh paths that are first-party (not vendored), sorted."""
+def read_first_line(path: str, root: Path = ROOT) -> str:
+    """First line of a repo file, or ``""`` when empty or unreadable."""
+    try:
+        with open(root / path, encoding="utf-8", errors="replace") as fh:
+            return fh.readline()
+    except OSError:
+        return ""
+
+
+def select_scripts(tracked: list[str],
+                   first_line: Callable[[str], str] | None = None) -> list[str]:
+    """Tracked first-party shell scripts, sorted.
+
+    A path is selected when it ends in ``.sh`` or its first line is a shell
+    shebang, so extension-less scripts such as the ``.github/scripts/``
+    helpers are covered too. Vendored trees are always excluded.
+    """
+    read = read_first_line if first_line is None else first_line
     return sorted(p for p in tracked
-                  if p.endswith(".sh") and not p.startswith(VENDORED_PREFIXES))
+                  if not p.startswith(VENDORED_PREFIXES)
+                  and (p.endswith(".sh") or SHELL_SHEBANG_RE.match(read(p) or "")))
 
 
 def tracked_files() -> list[str]:
-    return _git_files.tracked_files(ROOT, "*.sh")
+    return _git_files.tracked_files(ROOT, "*.sh", ".github/scripts/*")
 
 
 def run(require_tools: bool, which=shutil.which, files=None) -> int:
