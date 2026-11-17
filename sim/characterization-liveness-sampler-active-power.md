@@ -154,3 +154,24 @@ python3 sim/tools/liveness_sampler_power.py record DIR/*.report.json
 python3 sim/tools/power_rollup.py            # ledger, inventory, per-corner gaps
 python3 -m unittest sim.tests.test_liveness_sampler_power
 ```
+
+**The `job_ceiling` warning on a fleet re-submit of the grid is advisory
+([#974](https://github.com/2AMLogic/gf180-trng/issues/974)).**
+`request-grid.json` declares `options.timeout_s` 7200 s, so a
+`--backend batch` run of the grid prints klt's advisory warning that the
+conservative serial bound (27 x 7200 s + 120 s) exceeds the fleet's 3600 s
+whole-job ceiling. The passing fleet runs of every campaign in this repo that
+got fleet capacity print it too; it is not a defect in this request, and no
+multi-unit request can clear it at this `timeout_s` (even the warning's
+suggested 3480 s leaves a 2-unit job over the bound). The only measured
+runtime for this deck is the local single-point probe above, 14.0 s for one
+unit (`report-unit.json`, record `-01`); the grid's one fleet submit was
+rejected before any simulation (see "Run status"), so no job
+`elapsed_seconds` exists yet. The warning becomes a real hazard only if a
+grid re-run's `elapsed_seconds` approaches 3600 s — the fleet then kills the
+job and reports all 27 units `batch_job_timeout` — at which point the grid
+must be split into several requests, as the ripple campaign split its 2 MHz
+requests, not rescued by lowering `timeout_s`. The measured-runtime table
+across the affected generators lives in
+[`characterization-array-fs-sf-capture.md`](characterization-array-fs-sf-capture.md),
+"Reproduce (cold start)".
