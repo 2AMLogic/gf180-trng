@@ -127,6 +127,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from layout._klt import (  # noqa: E402
     _ensure_openroad_reachable,
     klt_version,
+    missing_tools,
     resolve_pdk,
 )
 from sim.harness.report import tool_version  # noqa: E402
@@ -217,15 +218,23 @@ class SdfError(RuntimeError):
 
 
 def _check_environment() -> list[str]:
+    """Human-readable reasons an SDF run cannot proceed, or `[]`.
+
+    `klt` is deliberately NOT among the probed tools (issue #902 resolved
+    this explicitly rather than letting the refactor decide): SDF
+    generation runs OpenROAD/OpenSTA only and never invokes `klt`, so a
+    missing `klt` must not block the run. The committed report still stamps
+    `klt_version()` when the tool happens to be installed (provenance, like
+    `engine_version`), reading `null` when it is not -- recording absence,
+    not requiring presence.
+    """
     missing = []
     if not NETLIST_PATH.is_file():
         missing.append(
             f"{NETLIST_PATH.relative_to(REPO_ROOT)} is missing -- run "
             "`python3 layout/digital/build.py` first (#111)"
         )
-    pdk = resolve_pdk()
-    if pdk is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
+    missing += missing_tools(pdk=resolve_pdk())
     missing += _ensure_openroad_reachable()
     return missing
 

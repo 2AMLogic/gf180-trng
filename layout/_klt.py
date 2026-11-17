@@ -44,6 +44,25 @@ module name risks shadowing one of the many sibling
 "Corner and clock" note); importing `layout._klt` is not that import, so
 that decision stands unchanged.
 
+`missing_tools()`/`report_missing()` (issue #902) are the klt/PDK
+availability gate seven entry points used to hand-roll: four inline copies
+(`layout/cells/_build_cli.py`'s `make_pdk_main`, `layout/verify.py`,
+`layout/floorplan/floorplan.py`,
+`layout/blocks/combiner_sampler/build.py`) and three `_check_environment()`
+collectors (`design/synth.py`, `layout/digital/build.py`,
+`layout/digital/gen_sdf.py`), each printing its own copy of the two reason
+strings -- copies that had already drifted (two skip wordings, one probe
+set missing `klt`). `missing_tools()` maps probe *results* to the canonical
+reasons, so a caller that probes for values it needs after the gate anyway
+(the report headers print them, the generators build with them) probes each
+tool exactly once, and a caller that deliberately does not require a tool
+simply omits that probe. `report_missing()` owns the print /
+`--require-tools`-fail / skip verdict; `hint` carries the two-line skip's
+second line where a caller had one. The strings are a contract --
+`layout/tests/test_build_cli.py` pins them, committed docs quote them --
+and `layout/tests/test_tool_gate.py` pins the verdict text and the order
+the reasons come back in.
+
 Not a package member of anything else under `layout/` -- it computes its own
 `REPO_ROOT` from its own location (`layout/_klt.py` sits directly under
 `layout/`, so one `.parent` up is the repo root) rather than importing a
@@ -154,6 +173,80 @@ def klt_version() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
     return (done.stdout or done.stderr).strip() or None
+
+
+#: The availability gate's two canonical reason strings, written exactly
+#: once (issue #902 -- seven entry points used to print their own copies,
+#: and the copies had drifted). Contract: `layout/tests/test_build_cli.py`
+#: pins them, committed docs quote them.
+KLT_MISSING_REASON = "klayout-tools (`klt`) is not on PATH"
+PDK_MISSING_REASON = "no gf180mcu PDK install found (see sim/harness/pdk.py)"
+
+#: Sentinel for "this probe was not requested" -- distinct from `None`,
+#: which always means "probed and found absent".
+_NOT_PROBED = object()
+
+
+def missing_tools(
+    *, klt_version: str | None = _NOT_PROBED, pdk: object = _NOT_PROBED
+) -> list[str]:
+    """The availability gate's canonical reasons, from probe results.
+
+    Pass each probe's RESULT: `klt_version()`'s return and `resolve_pdk()`'s
+    return, where None means the tool is absent. Results rather than flags
+    probing internally, so a caller that needs the values after the gate
+    (the report headers print them, the generators build with them) probes
+    each tool exactly once, and `layout/cells/_build_cli.py`'s injected
+    probe hooks (#589) keep working unchanged. Omit a probe this caller
+    does not require -- `layout/digital/gen_sdf.py` never requires `klt`
+    (see its `_check_environment`) -- so not requiring a tool is explicit
+    rather than an accident of copy-paste.
+
+    Reasons come back in the gate's canonical order: `klt` first, then the
+    PDK.
+    """
+    missing: list[str] = []
+    if klt_version is not _NOT_PROBED and klt_version is None:
+        missing.append(KLT_MISSING_REASON)
+    if pdk is not _NOT_PROBED and pdk is None:
+        missing.append(PDK_MISSING_REASON)
+    return missing
+
+
+def report_missing(
+    missing: list[str],
+    *,
+    require_tools: bool,
+    what: str,
+    hint: str | None = None,
+) -> int | None:
+    """Print the availability gate's verdict for `missing`, or None to go.
+
+    Byte-for-byte the verdict the four inline gates used to print (issue
+    #902): each reason as `  - <reason>`; under `--require-tools` the FAIL
+    line and exit 1; otherwise `SKIP: <what> -- the tools above are not
+    available.` and exit 0, with `hint` appended as the second line
+    (`      <hint> (see layout/README.md).`) where the caller carried one --
+    `layout/verify.py` and `layout/floorplan/floorplan.py` do, the
+    generators do not.
+
+    Returns the exit code to propagate, or None when nothing is missing and
+    the flow should proceed. The exits are bare 0/1 on purpose: every call
+    site's own EXIT_OK/EXIT_FAIL are those same values, so callers return
+    it directly.
+    """
+    if not missing:
+        return None
+    for line in missing:
+        print(f"  - {line}")
+    if require_tools:
+        print("FAIL: --require-tools was given and the flow cannot run")
+        return 1
+    skip = f"SKIP: {what} -- the tools above are not available."
+    if hint is not None:
+        skip += f"\n      {hint} (see layout/README.md)."
+    print(skip)
+    return 0
 
 
 def klt_origin() -> dict | None:

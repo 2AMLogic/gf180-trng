@@ -2,6 +2,24 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-16
+
+- **PR #253**: docs: propagate idle-current figures after #240's digital rebuild
+- **Issue #252** (closed): Refresh README.md's Power row idle-leakage figure after #240's digital rebuild
+
+### 2026-09-15
+
+- **PR #251**: docs(digital): refresh README's P&R figures after #240's rebuild
+- **Issue #250** (closed): Refresh layout/digital/README.md's P&R figures after #240's max_transition/max_capacitance rebuild
+- **PR #249**: fix(digital): constrain max_transition/max_capacitance at P&R and rebuild
+- **PR #248**: docs(spec): propose DR-0026, re-pin klayout-tools forward to match floorplan reports
+- **Issue #240** (closed): Constrain max_transition at place-and-route time once klt can express it (follow-up to #237)
+- **Issue #230** (closed): Decide which klayout-tools build is normative for layout/floorplan/reports/
+
+### 2026-09-14
+
+- **Issue #247** (closed): Point digital_corner_characterization.py at the shared record-parsing helper (#104 follow-up)
+
 ### 2026-09-12
 
 - **PR #246**: refactor: deduplicate load_variants() across sim/tools variant scripts

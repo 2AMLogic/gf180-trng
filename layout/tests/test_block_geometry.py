@@ -26,13 +26,8 @@ if str(REPO_ROOT) not in sys.path:
 from layout.rings import _ring_common  # noqa: E402
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
-
-def _load(name: str, path: Path):
-    return load_module_from_path(name, path)
-
-
-comb = _load("layout_block_geometry_comb", LAYOUT_DIR / "blocks" / "combiner_sampler" / "build.py")
-ring = _load("layout_block_geometry_ring", LAYOUT_DIR / "rings" / "ro_ring11" / "build.py")
+comb = load_module_from_path("layout_block_geometry_comb", LAYOUT_DIR / "blocks" / "combiner_sampler" / "build.py")
+ring = load_module_from_path("layout_block_geometry_ring", LAYOUT_DIR / "rings" / "ro_ring11" / "build.py")
 
 EPS = 1e-9
 

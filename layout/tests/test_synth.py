@@ -55,18 +55,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
-
-def _load(name: str, path: Path):
-    """Load a flat top-level driver script as a module.
-
-    `design/synth.py` is a script run by path, not a package member, so
-    there is no import path to reach it by; `load_module_from_path` loads it
-    from its own file under a unique module name.
-    """
-    return load_module_from_path(name, path)
-
-
-synth = _load("design_synth", REPO_ROOT / "design" / "synth.py")
+# A script run by path, not a package member -- hence the unique module name.
+synth = load_module_from_path("design_synth", REPO_ROOT / "design" / "synth.py")
 
 #: A committed file, used as the v2 shape's repo-relative `path` -- it is
 #: the very artefact `klt synthesize` reports there in a real run, and it

@@ -47,18 +47,8 @@ from sim.tools.pathload import load_module_from_path  # noqa: E402
 
 DIGITAL_DIR = LAYOUT_DIR / "digital"
 
-
-def _load(name: str, path: Path):
-    """Load a flat `layout/digital/*.py` driver as a module.
-
-    These are scripts run by path, not package members, so there is no
-    import path to reach them by; `load_module_from_path` loads each from its
-    own file under a unique module name.
-    """
-    return load_module_from_path(name, path)
-
-
-lvs = _load("layout_digital_lvs", DIGITAL_DIR / "lvs.py")
+# A script run by path, not a package member -- hence the unique module name.
+lvs = load_module_from_path("layout_digital_lvs", DIGITAL_DIR / "lvs.py")
 
 # Cell-type names, restated here rather than read back from the module.
 PREFIX = "gf180mcu_fd_sc_mcu9t5v0__"

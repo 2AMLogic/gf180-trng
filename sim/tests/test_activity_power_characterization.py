@@ -255,6 +255,22 @@ class ProseAgreesWithTheGeneratedBlockTests(unittest.TestCase):
         problems = apc.document_problems(fam, self.texts)
         self.assertTrue(any("clock group" in p for p in problems), problems)
 
+    def test_a_divergent_pin_total_across_records_is_caught(self):
+        # §0.4 and §4 state the pin count as a universal over the family.
+        # When the records disagree, the guard must refuse to derive that
+        # figure at all, not format it from the minimum and pass (#965).
+        snippet = next(s for lab, s in self.pins[apc.DOC] if "pins bound to VCD activity" in lab)
+        committed = int(re.search(r"\d+", snippet).group())
+        fam = apc.load_family()
+        fam[apc.BINDING].values[apc.key("raw-streaming", "steady", "annotated_pins")] += 1.0
+        problems = apc.document_problems(fam, self.texts)
+        self.assertTrue(problems, "a divergent pin total must fail the document check")
+        named = [p for p in problems if "pin total" in p]
+        self.assertTrue(named, problems)
+        self.assertIn(f"{committed} pins", named[0])
+        self.assertIn(f"{committed + 1} pins", named[0])
+        self.assertIn(apc.BINDING, named[0])
+
     def test_section_2_historical_pin_counts_are_left_alone(self):
         # The `5371` figures in section 2 are quotes from an earlier bring-up
         # run on the DEF of the day, explicitly marked as such. The guard

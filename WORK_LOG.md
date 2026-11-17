@@ -1,6 +1,6 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-16.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-17.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
@@ -8,8 +8,28 @@ not independent verification of the claims in issue or PR titles.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-17
+
+- **PR #978**: docs: record accept decision for the nominal-beat 2329 s fleet runtime
+- **Issue #976** (closed): Ripple nominal-beat fleet job runs at 2329 s, ~two-thirds of the 3600 s ceiling: decide whether to pre-split it
+- **PR #977**: docs: record the advisory job_ceiling warning decision with measured runtimes
+- **Issue #974** (closed): Committed klt requests declare options.timeout_s 7200 s, above the batch fleet's whole-job ceiling
+- **PR #973**: fix: refuse to derive the pin-count prose when records disagree
+- **Issue #965** (closed): activity_power_characterization: the pin-count prose pins use the minimum across the family, so a divergent corner would pass a universal claim
+- **PR #972**: refactor: collapse the three plain-bullet Record constructors into CornerRecord
+- **Issue #964** (closed): Collapse three identical Record constructors in sim/tools into one CornerRecord
+- **PR #968**: unused_names: document that dynamic-call blocks still judge their noqa tokens
+- **Issue #947** (closed): unused_names docstring: the RUF100 carve-out sentence does not cover the dynamic-call block
+- **PR #935**: refactor: single-source the tool --version probes in report.tool_version
+- **Issue #920** (closed): Single-source the tool --version probes hand-rolled in four places (two have no timeout)
+- **PR #932**: Run the fs/sf capture campaign on the batch fleet
+- **Issue #472** (closed): Characterize asymmetric fs/sf corners on the integrated ring-array sampler path
+- **PR #895**: sim: pin the activity-power prose to its generator, and re-derive it
+- **Issue #883** (closed): sim/characterization-digital-activity-power.md marks a superseded record family "(current)"
+
 ### 2026-11-16
 
+- **PR #937**: chore(loom): resync installed Loom to v0.19.1302
 - **PR #962**: fix: fail check:signoff when the manifest or tier record is not byte-canonical
 - **Issue #951** (closed): No gate catches hand-mangled formatting in generated signoff/ JSON
 - **PR #959**: test: pin scenario_cli's print_result injection and repo-relative record line
@@ -706,22 +726,4 @@ not independent verification of the claims in issue or PR titles.
 - **Issue #259** (closed): Remove unused import: re in layout/tests/test_pex_fullchip.py
 - **PR #258**: feat: set FIFO_DEPTH to DR-0020's ratified 2 and re-derive area/power
 - **Issue #254** (closed): Implement DR-0020's ratified FIFO_DEPTH=2 in RTL/regmap and refresh the digital power/area estimates
-
-### 2026-09-16
-
-- **PR #253**: docs: propagate idle-current figures after #240's digital rebuild
-- **Issue #252** (closed): Refresh README.md's Power row idle-leakage figure after #240's digital rebuild
-
-### 2026-09-15
-
-- **PR #251**: docs(digital): refresh README's P&R figures after #240's rebuild
-- **Issue #250** (closed): Refresh layout/digital/README.md's P&R figures after #240's max_transition/max_capacitance rebuild
-- **PR #249**: fix(digital): constrain max_transition/max_capacitance at P&R and rebuild
-- **PR #248**: docs(spec): propose DR-0026, re-pin klayout-tools forward to match floorplan reports
-- **Issue #240** (closed): Constrain max_transition at place-and-route time once klt can express it (follow-up to #237)
-- **Issue #230** (closed): Decide which klayout-tools build is normative for layout/floorplan/reports/
-
-### 2026-09-14
-
-- **Issue #247** (closed): Point digital_corner_characterization.py at the shared record-parsing helper (#104 follow-up)
 

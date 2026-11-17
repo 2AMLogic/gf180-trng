@@ -187,7 +187,15 @@ WORK_DIR = REPO_ROOT / "layout" / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import _rect, _run_klt, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout._klt import (  # noqa: E402
+    _rect,
+    _run_klt,
+    klt_version,
+    missing_tools,
+    normalise_gds,
+    report_missing,
+    resolve_pdk,
+)
 from layout.cells._build_cli import make_pdk_check  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -641,19 +649,13 @@ def main(argv: list[str] | None = None) -> int:
 
     version = klt_version()
     pdk = resolve_pdk()
-    missing = []
-    if version is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
-    if pdk is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
-    if missing:
-        for line in missing:
-            print(f"  - {line}")
-        if args.require_tools:
-            print("FAIL: --require-tools was given and the flow cannot run")
-            return EXIT_FAIL
-        print("SKIP: combiner_sampler build -- the tools above are not available.")
-        return EXIT_OK
+    skip = report_missing(
+        missing_tools(klt_version=version, pdk=pdk),
+        require_tools=args.require_tools,
+        what="combiner_sampler build",
+    )
+    if skip is not None:
+        return skip
 
     if args.check:
         return check()

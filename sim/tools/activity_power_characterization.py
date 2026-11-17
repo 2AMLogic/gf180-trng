@@ -457,8 +457,20 @@ def prose_pins(fam: dict[str, Rec]) -> dict[Path, list[tuple[str, str]]]:
     spread_pct = (max(streaming) - min(streaming)) / min(streaming) * 100
     gated_pct = (obs - r.v(key("alarm-gated", "steady", "total_w"))) / obs * 100
     leaks = [r.v(key(n, w, "leakage_w")) * 1e6 for n in names for w in WINDOWS]
-    pins = sorted({int(x.v(key(n, w, "annotated_pins")) + x.v(key(n, w, "unannotated_pins")))
-                   for x in fam.values() for n in names for w in WINDOWS})
+    # §0.4 and §4 state the pin count as a universal over the family; a
+    # divergent family has no single figure to format, and the minimum would
+    # pass the guard on a claim the records do not support (#965).
+    pins_by_total: dict[int, set[str]] = {}
+    for x in fam.values():
+        for n in names:
+            for w in WINDOWS:
+                t = int(x.v(key(n, w, "annotated_pins")) + x.v(key(n, w, "unannotated_pins")))
+                pins_by_total.setdefault(t, set()).add(x.corner)
+    if len(pins_by_total) > 1:
+        who = "; ".join(f"{t} pins in {sorted(cs)}" for t, cs in sorted(pins_by_total.items()))
+        raise CheckError("records disagree on the design's pin total, so the universal §0.4/§4 "
+                         f"pin sentences cannot be derived from one figure: {who}")
+    pins = sorted(pins_by_total)
     roll = rollup_figures()
     # Negative: the substitution lowers the digital term. Section 5 says "fall
     # by", so a sign flip must fail this pin and force the sentence to be

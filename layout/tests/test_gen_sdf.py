@@ -20,12 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
-
-def _load(name: str, path: Path):
-    return load_module_from_path(name, path)
-
-
-gen_sdf = _load("layout_digital_gen_sdf", LAYOUT_DIR / "digital" / "gen_sdf.py")
+gen_sdf = load_module_from_path("layout_digital_gen_sdf", LAYOUT_DIR / "digital" / "gen_sdf.py")
 
 LIB = gen_sdf.CELL_LIBRARY
 XNOR = f"{LIB}__xnor2_1"

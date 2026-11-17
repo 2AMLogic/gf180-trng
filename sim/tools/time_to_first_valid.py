@@ -76,7 +76,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import current_records, format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
+from _record_parsing import CornerRecord, current_records  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -126,17 +126,10 @@ DR0010_RAW_RATE_BPS = 500.0
 DR0003_FLOOR_S = 1.28e-3
 
 
-class Record:
-    def __init__(self, path: Path) -> None:
-        text = path.read_text()
-        self.stem = path.stem
-        self.values = parse_result_values(text, label=self.stem, error_cls=RuntimeError)
-        self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
-        self.status = parse_status(text, label=self.stem)
-
-    @property
-    def corner(self) -> str:
-        return format_corner(self.process, self.temp_c, self.vdd)
+#: This tool needs nothing beyond the shared record shape, so its record
+#: class IS the shared one (issue #964); ``load_startup_records`` and the
+#: annotation-only uses below keep the local name for readability.
+Record = CornerRecord
 
 
 def load_startup_records(*, include_superseded: bool = False) -> list[Record]:

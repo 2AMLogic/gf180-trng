@@ -66,6 +66,8 @@ from layout._klt import (  # noqa: E402
     _run_klt,
     klt_origin,
     klt_version,
+    missing_tools,
+    report_missing,
     resolve_pdk,
 )
 
@@ -1102,22 +1104,14 @@ def main(argv: list[str] | None = None) -> int:
 
     version = klt_version()
     pdk = resolve_pdk()
-    missing = []
-    if version is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
-    if pdk is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
-    if missing:
-        for line in missing:
-            print(f"  - {line}")
-        if args.require_tools:
-            print("FAIL: --require-tools was given and the flow cannot run")
-            return EXIT_FAIL
-        print(
-            "SKIP: layout verification -- the tools above are not available.\n"
-            "      Install them to run the DRC/LVS flow (see layout/README.md)."
-        )
-        return EXIT_OK
+    skip = report_missing(
+        missing_tools(klt_version=version, pdk=pdk),
+        require_tools=args.require_tools,
+        what="layout verification",
+        hint="Install them to run the DRC/LVS flow",
+    )
+    if skip is not None:
+        return skip
 
     origin = klt_origin()
     commit = (origin or {}).get("commit")

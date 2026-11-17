@@ -55,19 +55,9 @@ DRC_REPORT = REPORTS_DIR / "drc.json"
 LVS_REPORT = REPORTS_DIR / "lvs.json"
 MANIFEST = REPO_ROOT / "signoff" / "block-manifest.json"
 
-
-def _load(name: str, path: Path):
-    """Load a flat `layout/digital/*.py` driver as a module.
-
-    These are scripts run by path, not package members, so there is no
-    import path to reach them by; `load_module_from_path` loads each from its
-    own file under a unique module name.
-    """
-    return load_module_from_path(name, path)
-
-
-build = _load("layout_digital_build", DIGITAL_DIR / "build.py")
-lvs = _load("layout_digital_lvs", DIGITAL_DIR / "lvs.py")
+# Scripts run by path, not package members -- hence the unique module names.
+build = load_module_from_path("layout_digital_build", DIGITAL_DIR / "build.py")
+lvs = load_module_from_path("layout_digital_lvs", DIGITAL_DIR / "lvs.py")
 
 
 def _sha256(path: Path) -> str:
