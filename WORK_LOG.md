@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-17
 
+- **PR #997**: digital+layout: re-baseline the committed klt reports under the nightly's klt 0.9.2 toolchain
+- **Issue #994** (closed): pdk-nightly red 12 days: design/synth.py --check says trng_top.synth.json provenance is stale
 - **PR #995**: fix: lint extension-less shell scripts under .github/scripts
 - **PR #988**: docs: remove duplicate [gf717] reference-link definition
 - **PR #987**: chore(loom): resync installed Loom to v0.19.1306
