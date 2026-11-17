@@ -10,6 +10,21 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-17
 
+- **PR #988**: docs: remove duplicate [gf717] reference-link definition
+- **PR #987**: chore(loom): resync installed Loom to v0.19.1306
+- **PR #986**: refactor: call load_module_from_path directly, dropping seven _load pass-throughs
+- **PR #985**: docs(floorplan): drop duplicate reference-link definitions for #256, #449, #717
+- **PR #982**: docs: narrow job_ceiling note to the candidate the shard arithmetic leaves standing
+- **PR #975**: docs: state the not-reported RUF100 rule once in unused_names
+- **PR #969**: refactor: single-source the klt/PDK availability gate in layout/_klt.py
+- **PR #898**: docs: state the digital and composed DRC verdicts the committed reports read
+- **Issue #984** (closed): layout/digital/README.md carries a duplicate reference-link definition ([gf717])
+- **Issue #983** (closed): layout/floorplan/README.md carries duplicate reference-link definitions ([#256], [#449], [#717])
+- **Issue #980** (closed): Remove seven pass-through _load wrappers around load_module_from_path
+- **Issue #979** (closed): job_ceiling note: two of three candidate explanations for the missing ring5 warning are ruled out by the shard arithmetic
+- **Issue #971** (closed): unused_names docstring: the RUF100 cross-reference singles out the dynamic-call block, but every "Not reported" context judges its tokens the same way
+- **Issue #902** (closed): Single-source the klt/PDK availability preflight hand-rolled in six layout entry points (#589 follow-up)
+- **Issue #879** (closed): README claims the digital section and composed floorplan are DRC-clean; the committed reports read 2769/2750 tap-distance violations
 - **PR #978**: docs: record accept decision for the nominal-beat 2329 s fleet runtime
 - **Issue #976** (closed): Ripple nominal-beat fleet job runs at 2329 s, ~two-thirds of the 3600 s ceiling: decide whether to pre-split it
 - **PR #977**: docs: record the advisory job_ceiling warning decision with measured runtimes
