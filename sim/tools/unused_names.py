@@ -34,9 +34,12 @@ Reported:
 
 Not reported (outside the supported contract, so never a finding):
 
-  None of these contexts consults a `# noqa` token, so an explicit
-  `F401` / `F841` token in any of them is RUF100-judged (the
-  `__init__.py` `F401` carve-out above being the only exception).
+  None of these contexts consults a `# noqa` token except the last
+  bullet, which is the suppression mechanism itself. On the first
+  four, an explicit `F401` / `F841` token suppresses nothing and is
+  itself RUF100-judged (the `__init__.py` `F401` carve-out above
+  excepted); on the last, the token is consulted exactly when it
+  drops a finding, and RUF100-judged when it drops none.
 
   * `from ... import *`, `__future__` imports, imports in `__init__.py`,
     and any name beginning with `_`
