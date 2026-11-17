@@ -409,15 +409,6 @@ def pdn_riser_x_local(pin: str, digital_east_local: float, top_slots: int) -> fl
 # --------------------------------------------------------------------------- #
 
 
-def _load(name: str, path: Path):
-    """Load a region's own `build.py` under a unique module name -- the same
-    helper (and the same reason for it) as `layout/verify.py`'s own
-    `_load_build_module`: every region directory names its geometry module
-    `build.py`, so a bare `import build` would hand back whichever one was
-    imported first."""
-    return load_module_from_path(name, path)
-
-
 _RING_BUILD = {
     "ring1": ("fp_ir_ring1", LAYOUT_DIR / "rings" / "ro_ring11" / "build.py"),
     "ring2": ("fp_ir_ring2", LAYOUT_DIR / "rings" / "ro_ring11_ring2" / "build.py"),
@@ -510,7 +501,9 @@ def ring_anchors(rid: str) -> dict[str, tuple[float, float, str]]:
     """`{pin: (local x, local y, kind)}` for one ring region, from that
     ring's own build module."""
     name, path = _RING_BUILD[rid]
-    ring = _load(name, path)
+    # A bare `import build` would collide across regions -- hence the unique
+    # module name per region (`layout/verify.py` loads its own the same way).
+    ring = load_module_from_path(name, path)
     bboxes, locals_ = ring._bboxes_and_locals()
     offsets = ring.row_offsets(ring.ROW_ORDER, bboxes)
 
@@ -575,7 +568,7 @@ def cs_anchors(east_edge_um: float) -> dict[str, tuple]:
       `vss`) that leave the region eastwards into the isolation channel.
     """
     name, path = _CS_BUILD
-    cs = _load(name, path)
+    cs = load_module_from_path(name, path)
     offsets = cs.row_offsets()
     anchors: dict[str, tuple] = {}
 

@@ -29,13 +29,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 
-
-def _load(name: str, path: Path):
-    return load_module_from_path(name, path)
-
-
-build = _load("layout_digital_build_checks", LAYOUT_DIR / "digital" / "build.py")
-gdsii = _load("layout_gdsii_build_checks", LAYOUT_DIR / "testcells" / "gdsii.py")
+build = load_module_from_path("layout_digital_build_checks", LAYOUT_DIR / "digital" / "build.py")
+gdsii = load_module_from_path("layout_gdsii_build_checks", LAYOUT_DIR / "testcells" / "gdsii.py")
 
 LIB = build.CELL_LIBRARY
 TAP = f"{LIB}__filltie"
