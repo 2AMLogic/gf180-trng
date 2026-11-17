@@ -29,19 +29,32 @@ name: PDK nightly
 # than silent drift:
 #
 #   NGSPICE_VERSION / NGSPICE_SHA256  the ngspice release tarball and its digest
+#   XSCHEM_VERSION / XSCHEM_COMMIT    the xschem tag and the commit the tag must
+#                                     resolve to -- the fleet's one xschem
+#                                     version (2am#7275), whose master pin is
+#                                     klayout-tools' docker/eda-sim/
+#                                     pdk-versions.json tools.xschem. Until
+#                                     klayout-tools#6219 publishes that build
+#                                     as a release asset, this workflow builds
+#                                     it from source
+#                                     (.github/scripts/install-xschem).
 #   PDK_VERSION                       the open_pdks commit the PDK build is cut from
 #   CIEL_VERSION                      the PDK version manager itself
 #
 # Every pin is part of the cache key it belongs to, so a stale cache cannot mask
 # a bump.
 #
-# xschem is the one exception: it comes from the runner's distro rather than a
-# pin, because it is a netlister and not a numerical tool. Its output formatting
-# is an input to the staleness comparison, so a distro version bump can turn
-# this job red without any schematic having changed. That is the intended
-# failure mode -- loud rather than silent. The fix in that case is to regenerate
-# with `python3 design/netlist.py` and commit the diff, noting the version bump.
-# The step below prints the version it used.
+# xschem -- the schematic netlister feeding `design/netlist.py --check` -- is
+# built from source at the pinned commit. Its output formatting is an input to
+# the staleness comparison, so a version bump can turn this job red without any
+# schematic having changed. That is the intended failure mode -- loud rather
+# than silent. netlist.py canonicalises the continuation-line wrapping that
+# moved between releases (3.4.4 breaks a device line after `as=`, 3.4.7 after
+# `pd=`), so the 3.4.7 pin is expected to pass --check with no netlist
+# regeneration; a change in what xschem actually *emits* still fires the
+# guard, and the fix is to regenerate with `python3 design/netlist.py` and
+# commit the diff, noting the version bump. The install steps print the
+# version they used and fail if it is not the pin.
 #
 # This job writes no evidence records. `sim/records/` is append-only and minted
 # deliberately by a human or agent with the PDK installed (sim/README.md), never
@@ -77,6 +90,14 @@ jobs:
       # this is a source build of the pinned release.
       NGSPICE_VERSION: "46"
       NGSPICE_SHA256: "a0d1699af1940b06649276dcd6ff5a566c8c0cad01b2f7b5e99dedbb4d64c19b"
+      # xschem pin (the schematic netlister): the fleet's one xschem version,
+      # whose master pin is klayout-tools' docker/eda-sim/pdk-versions.json
+      # tools.xschem. XSCHEM_COMMIT must be the commit the XSCHEM_VERSION tag
+      # resolves to -- .github/scripts/install-xschem asserts it before
+      # building. Grep XSCHEM_COMMIT when bumping. Until klayout-tools#6219
+      # publishes the pinned build as a release asset, this is a source build.
+      XSCHEM_VERSION: "3.4.7"
+      XSCHEM_COMMIT: "92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0"
       CIEL_VERSION: "2.6.1"
       # open_pdks commit; the matching PDK build is published as
       # https://github.com/fossi-foundation/ciel-releases/releases/tag/gf180mcu-<PDK_VERSION>
@@ -111,7 +132,9 @@ jobs:
           python-version: "3.13"
 
       - name: Resolve install prefix
-        run: echo "NGSPICE_PREFIX=${HOME}/.local/ngspice-${NGSPICE_VERSION}" >> "${GITHUB_ENV}"
+        run: |
+          echo "NGSPICE_PREFIX=${HOME}/.local/ngspice-${NGSPICE_VERSION}" >> "${GITHUB_ENV}"
+          echo "XSCHEM_PREFIX=${HOME}/.local/xschem-${XSCHEM_VERSION}" >> "${GITHUB_ENV}"
 
       - name: Cache ngspice build
         id: cache-ngspice
@@ -189,12 +212,34 @@ jobs:
       - name: Environment probe (must report ngspice OK and PDK OK)
         run: python3 sim/run_corners.py --check-env
 
-      - name: Install xschem (the schematic netlister)
+      - name: Cache xschem build
+        id: cache-xschem
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ env.XSCHEM_PREFIX }}
+          key: xschem-${{ env.XSCHEM_VERSION }}-${{ env.XSCHEM_COMMIT }}-${{ runner.os }}-${{ runner.arch }}
+
+      # Build the pinned xschem (skipped on a cache hit -- the step below still
+      # verifies whatever the cache restored). See .github/scripts/
+      # install-xschem for why a source build and not apt: the script refuses
+      # to build anything but the commit the pinned tag resolves to, and fails
+      # if the binary does not report the pinned version.
+      - name: Install xschem ${{ env.XSCHEM_VERSION }} from source (the schematic netlister)
+        if: steps.cache-xschem.outputs.cache-hit != 'true'
+        run: .github/scripts/install-xschem
+
+      # Unconditional, so a broken or stale cache entry is caught too: put the
+      # prefix on PATH and fail unless the binary reports the pinned version.
+      - name: Put xschem on PATH and enforce the pin
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xschem
-          xschem --version 2>&1 | head -n 2
+          echo "${XSCHEM_PREFIX}/bin" >> "${GITHUB_PATH}"
+          out="$("${XSCHEM_PREFIX}/bin/xschem" --version 2>&1 | head -n 2)"
+          printf '%s\n' "${out}"
+          if ! printf '%s\n' "${out}" | grep -q "XSCHEM V${XSCHEM_VERSION}\$"; then
+            echo "FAIL: xschem ${XSCHEM_VERSION} required (the fleet pin), found: ${out}"
+            exit 1
+          fi
 
       # Fails if design/*.spice no longer matches design/xschem/*.sch. Writes
       # nothing: --check exports to a temp dir and diffs. The gf180mcu symbol
@@ -547,8 +592,8 @@ jobs:
       # the missing tool, instead of skipping. ngspice is the pinned build put
       # on PATH above.
       #
-      # Icarus Verilog comes from the runner's distro, like xschem and for the
-      # same reason: the tests compare the RTL against the Python models
+      # Icarus Verilog comes from the runner's distro (xschem, unlike this, is
+      # pinned above): the tests compare the RTL against the Python models
       # cycle by cycle, not against recorded numerics, and use only plain
       # `iverilog -g2012` compiles (the 13.0+ floor in
       # sim/tb/digital-sta-power/README.md is for the SDF flows, which no unit
