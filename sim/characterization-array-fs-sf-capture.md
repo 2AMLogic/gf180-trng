@@ -193,10 +193,15 @@ repo, though: the passing 2026-11-13 `ro-ring5-starved-jitter` red-supply
 fleet runs (`2026-11-13-ro-ring5-starved-jitter-redsup-01..05`) used an
 older klt client than the `-06` submits (0.9.2.dev885 vs 0.9.3.dev16) and
 their preserved submit logs contain no warning; those requests declare
-`timeout_s` 3480 s. Why no warning appeared is not established by the
-committed evidence — a client that predates the ceiling check, the 3480 s
-declaration, and the `--batch-set` shard split are not distinguishable from
-what is recorded here.
+`timeout_s` 3480 s. The only candidate the committed evidence leaves open
+for why no warning appeared is a client that predates the ceiling check
+(0.9.2.dev885 vs 0.9.3.dev16): at 3480 s the serial bound (3480 s x units
++ 120 s) reaches the 3600 s ceiling only for a 1-unit job and exceeds it
+for anything larger, and every shard job in these five records carried at
+least 2 units (8 corners over 4 fleet jobs in `-01`..`-04`, over 2 in
+`-05`) — so neither the 3480 s declaration nor the `--batch-set` shard
+split explains the absence. Whether that older client performs the check
+is not established by what is recorded here.
 Per the decision the ripple campaign
 already recorded
 ([`characterization-array-supply-ripple.md`](characterization-array-supply-ripple.md),
