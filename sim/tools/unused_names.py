@@ -19,7 +19,7 @@ Reported:
         Blanket `# noqa` and codes this checker does not evaluate are
         never judged -- including `F401` in an `__init__.py`, where no
         import is evaluated, so a re-export there may carry the token.
-        The exception is a lexical block that directly calls exec /
+        One exception is a lexical block that directly calls exec /
         eval / globals / locals / vars: neither code is evaluated
         there, yet its explicit `F401` / `F841` tokens are still
         judged -- the block yields no findings, so a token can never
