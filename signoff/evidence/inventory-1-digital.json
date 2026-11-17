@@ -49,7 +49,7 @@
     },
     {
       "path": "design/trng_top/trng_top.synth.json",
-      "sha256": "sha256:c95d71a30169bb88dadbd10cdbd13b6e101d848d65c88f78f52dc007292794c1"
+      "sha256": "sha256:24b1be9cb8a71dd35a27a0a249f7c0064fad76530112e720c5d865b006276b9d"
     },
     {
       "path": "design/trng_top/trng_top.synth.v",

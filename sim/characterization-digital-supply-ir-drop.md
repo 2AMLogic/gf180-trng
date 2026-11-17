@@ -134,7 +134,7 @@ prices the cuts of one id as n parallel cuts at their centroid.
 {
  "connectivity": {
   "erc_status": "clean",
-  "klt_version": "0.9.1",
+  "klt_version": "0.9.2",
   "nets_checked": [
    "vddd",
    "vss"
@@ -254,13 +254,13 @@ prices the cuts of one id as n parallel cuts at their centroid.
    "sha256": "ce595d39ddbe154a66d704c1253c78882a89f51917028ec93b1d3bfd320524c8"
   },
   "layout/floorplan/reports/compose.json": {
-   "sha256": "0a245017499223852498cdd6b1d31f4f1f5cc24d5ba7b6df6b7e6cb26c90e553"
+   "sha256": "31f78f42961cb551359c437a8595fb0bbf0e5442efc1ee26bf8128976d165498"
   },
   "layout/floorplan/reports/interregion.json": {
    "sha256": "0895fc227155b66342207ff0d9548e2b341cebcf749c01aa1c578cd80c7ba37d"
   },
   "layout/floorplan/trng_floorplan.gds": {
-   "sha256": "faa782a8ec4f8c17c04cb2f32cf2bf19c7ec89cddcc1bb1ca29da8c71a991ff3"
+   "sha256": "c4e3b373ec24c6518a6800947f3058a4075ee7836fedff9d5d74384d45854a0c"
   },
   "wiring_plan(vddd, vss) shapes+routes": {
    "sha256": "f09b5218335bf2ee8c8a95660f61e7b388e94a33c7645a4cef01324d3e4984e5"
@@ -425,6 +425,7 @@ Worst per-corner estimate: 50.691 mV at ff_125C_3v60/rc-max. Effective local sup
 `vss_trunk_ir_drop.py`'s own conservative bound (analog load only, nominal sheet): 23.136 mV. Adding the digital load's active-rate shift bound at the analog taps (0.137 mV): 23.272 mV against 33.000 mV.
 
 <!-- digital-supply-ir-drop:end -->
+
 
 ## 6. Refusals: what never becomes a zero-drop pass
 
