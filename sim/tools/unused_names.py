@@ -34,14 +34,17 @@ Reported:
 
 Not reported (outside the supported contract, so never a finding):
 
+  None of these contexts consults a `# noqa` token, so an explicit
+  `F401` / `F841` token in any of them is RUF100-judged (the
+  `__init__.py` `F401` carve-out above being the only exception).
+
   * `from ... import *`, `__future__` imports, imports in `__init__.py`,
     and any name beginning with `_`
   * module imports named by a module-level literal `__all__`
   * tuple/list destructuring, loop targets, `with ... as`, exception
     targets, pattern bindings, assignment expressions
   * a whole lexical block that directly calls exec / eval / globals /
-    locals / vars (other blocks are still checked; its explicit
-    `F401` / `F841` tokens are still RUF100-judged, see above)
+    locals / vars (other blocks are still checked)
   * a statement carrying `# noqa`, `# noqa: F401` or `# noqa: F841`
     (as relevant) on one of its physical lines
 
