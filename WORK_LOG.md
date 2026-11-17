@@ -10,6 +10,7 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-17
 
+- **PR #995**: fix: lint extension-less shell scripts under .github/scripts
 - **PR #988**: docs: remove duplicate [gf717] reference-link definition
 - **PR #987**: chore(loom): resync installed Loom to v0.19.1306
 - **PR #986**: refactor: call load_module_from_path directly, dropping seven _load pass-throughs
@@ -18,6 +19,7 @@ not independent verification of the claims in issue or PR titles.
 - **PR #975**: docs: state the not-reported RUF100 rule once in unused_names
 - **PR #969**: refactor: single-source the klt/PDK availability gate in layout/_klt.py
 - **PR #898**: docs: state the digital and composed DRC verdicts the committed reports read
+- **Issue #993** (closed): check:lint-shell selects on the .sh extension, so .github/scripts/install-xschem is unlinted
 - **Issue #984** (closed): layout/digital/README.md carries a duplicate reference-link definition ([gf717])
 - **Issue #983** (closed): layout/floorplan/README.md carries duplicate reference-link definitions ([#256], [#449], [#717])
 - **Issue #980** (closed): Remove seven pass-through _load wrappers around load_module_from_path
