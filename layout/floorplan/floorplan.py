@@ -97,7 +97,14 @@ import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
 from spice_text import subckt_pins  # noqa: E402  (design/spice_text.py)
-from layout._klt import FlowError, klt_version, normalise_gds, resolve_pdk  # noqa: E402
+from layout._klt import (  # noqa: E402
+    FlowError,
+    klt_version,
+    missing_tools,
+    normalise_gds,
+    report_missing,
+    resolve_pdk,
+)
 from layout._klt import _run_klt as _shared_run_klt  # noqa: E402
 from layout.floorplan import erc_supply  # noqa: E402  (issue #447)
 from layout.floorplan import interregion  # noqa: E402  (issue #222, phase 2)
@@ -2396,22 +2403,14 @@ def main(argv: list[str] | None = None) -> int:
 
     version = klt_version()
     pdk = resolve_pdk()
-    missing = []
-    if version is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
-    if pdk is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
-    if missing:
-        for line in missing:
-            print(f"  - {line}")
-        if args.require_tools:
-            print("FAIL: --require-tools was given and the flow cannot run")
-            return EXIT_FAIL
-        print(
-            "SKIP: floorplan build -- the tools above are not available.\n"
-            "      Install them to rebuild the floorplan (see layout/README.md)."
-        )
-        return EXIT_OK
+    skip = report_missing(
+        missing_tools(klt_version=version, pdk=pdk),
+        require_tools=args.require_tools,
+        what="floorplan build",
+        hint="Install them to rebuild the floorplan",
+    )
+    if skip is not None:
+        return skip
 
     print(f"klt:  {version}")
     print(f"pdk:  {pdk.variant} @ {pdk.version} ({pdk.source})")

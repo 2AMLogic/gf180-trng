@@ -193,8 +193,14 @@ def make_pdk_main(
     Probes for `klt` and the PDK before doing anything: with either absent
     it prints the missing tools and skips (exit 0), or fails under
     `--require-tools`. With both present, `--check` runs `check()` and the
-    default path writes the committed stream.
+    default path writes the committed stream. The gate itself is
+    `layout/_klt.py`'s shared `missing_tools()`/`report_missing()` (#902),
+    imported here at factory-call time rather than at module level so this
+    module stays importable from the flat-`sys.path` context the cells run
+    in (where `layout._klt` is not reachable); only the repo-root context
+    the rings run in ever calls this factory (`layout/rings/_ring_common.py`).
     """
+    from layout._klt import missing_tools, report_missing
 
     def main(argv: list[str] | None = None) -> int:
         parser = argparse.ArgumentParser(description=description)
@@ -206,19 +212,13 @@ def make_pdk_main(
 
         version = klt_version()
         pdk = resolve_pdk()
-        missing = []
-        if version is None:
-            missing.append("klayout-tools (`klt`) is not on PATH")
-        if pdk is None:
-            missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
-        if missing:
-            for line in missing:
-                print(f"  - {line}")
-            if args.require_tools:
-                print("FAIL: --require-tools was given and the flow cannot run")
-                return 1
-            print(f"SKIP: {top_cell} build -- the tools above are not available.")
-            return 0
+        skip = report_missing(
+            missing_tools(klt_version=version, pdk=pdk),
+            require_tools=args.require_tools,
+            what=f"{top_cell} build",
+        )
+        if skip is not None:
+            return skip
 
         if args.check:
             return check()
