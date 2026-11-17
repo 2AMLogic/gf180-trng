@@ -160,10 +160,16 @@ python3 -m unittest sim.tests.test_liveness_sampler_power
 `request-grid.json` declares `options.timeout_s` 7200 s, so a
 `--backend batch` run of the grid prints klt's advisory warning that the
 conservative serial bound (27 x 7200 s + 120 s) exceeds the fleet's 3600 s
-whole-job ceiling. The passing fleet runs of every campaign in this repo that
-got fleet capacity print it too; it is not a defect in this request, and no
-multi-unit request can clear it at this `timeout_s` (even the warning's
-suggested 3480 s leaves a 2-unit job over the bound). The only measured
+whole-job ceiling. The passing fleet runs whose submit logs are preserved in
+this repo print it too — the 2026-10-15 supply-ripple campaigns, the
+sampler-array `fs_sf_capture` `-05`/`-06` submits and the 2026-11-05 /
+2026-11-15 ring2-pex publish logs — so it is not a defect in this request,
+and no multi-unit request can clear it at this `timeout_s` (even the
+warning's suggested 3480 s leaves a 2-unit job over the bound). Not every
+fleet campaign prints it: the passing 2026-11-13 `ro-ring5-starved-jitter`
+red-supply runs, whose requests declare `timeout_s` 3480 s, preserved submit
+logs with no warning, and the committed evidence does not establish why.
+The only measured
 runtime for this deck is the local single-point probe above, 14.0 s for one
 unit (`report-unit.json`, record `-01`); the grid's one fleet submit was
 rejected before any simulation (see "Run status"), so no job
