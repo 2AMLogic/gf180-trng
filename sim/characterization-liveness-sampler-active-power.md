@@ -160,8 +160,8 @@ python3 -m unittest sim.tests.test_liveness_sampler_power
 `request-grid.json` declares `options.timeout_s` 7200 s, so a
 `--backend batch` run of the grid prints klt's advisory warning that the
 conservative serial bound (27 x 7200 s + 120 s) exceeds the fleet's 3600 s
-whole-job ceiling. The passing fleet runs whose submit logs are preserved in
-this repo print it too — the 2026-10-15 supply-ripple campaigns, the
+whole-job ceiling. Fleet submits whose logs are preserved in this repo print
+it too, passing or not — the 2026-10-15 supply-ripple campaigns, the
 sampler-array `fs_sf_capture` `-05`/`-06` submits and the 2026-11-05 /
 2026-11-15 ring2-pex publish logs — so it is not a defect in this request,
 and no multi-unit request can clear it at this `timeout_s` (even the

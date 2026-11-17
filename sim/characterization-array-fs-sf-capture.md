@@ -181,8 +181,8 @@ submit of them prints klt's advisory `job_ceiling` warning: the conservative
 fully-serial bound (7200 s x units + 120 s) exceeds the fleet's 3600 s
 whole-job ceiling — 518,520 s for the 72-unit grid, 43,320 s for the 6-unit
 control (`-06` `grid.report.json` / `control-tt.report.json`,
-`environment.remote.job_ceiling`). The same warning was printed by the passing
-fleet runs whose submit logs are preserved here — the 2026-10-15
+`environment.remote.job_ceiling`). The same warning was printed by fleet
+submits whose logs are preserved here, passing or not — the 2026-10-15
 supply-ripple campaigns, this array's `-05`/`-06` submits, and the
 2026-11-05 / 2026-11-15 ring2-pex publish logs, 15 of the 25 preserved
 `stderr` logs in `sim/records/raw/` — so it is not a defect in these
@@ -190,10 +190,13 @@ requests: no multi-unit request can clear it at this `timeout_s`, and even
 the warning's suggested 3480 s leaves a 2-unit job over the bound (2 x
 3480 s + 120 s = 7080 s). It is not printed by every fleet campaign in the
 repo, though: the passing 2026-11-13 `ro-ring5-starved-jitter` red-supply
-fleet runs (`2026-11-13-ro-ring5-starved-jitter-redsup-01..05`) used the
-same klt client as the `-06` submits (0.9.2.dev885) and their preserved
-submit logs contain no warning; those requests declare `timeout_s` 3480 s,
-and why no warning appeared is not established by the committed evidence.
+fleet runs (`2026-11-13-ro-ring5-starved-jitter-redsup-01..05`) used an
+older klt client than the `-06` submits (0.9.2.dev885 vs 0.9.3.dev16) and
+their preserved submit logs contain no warning; those requests declare
+`timeout_s` 3480 s. Why no warning appeared is not established by the
+committed evidence — a client that predates the ceiling check, the 3480 s
+declaration, and the `--batch-set` shard split are not distinguishable from
+what is recorded here.
 Per the decision the ripple campaign
 already recorded
 ([`characterization-array-supply-ripple.md`](characterization-array-supply-ripple.md),
