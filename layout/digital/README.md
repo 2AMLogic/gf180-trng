@@ -1202,4 +1202,3 @@ boundary.
 [gf448]: https://github.com/2AMLogic/gf180-trng/issues/448
 [gf-lu]: https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_14_3_1.html
 [gf449]: https://github.com/2AMLogic/gf180-trng/issues/449
-[gf717]: https://github.com/2AMLogic/gf180-trng/issues/717
