@@ -651,7 +651,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     pdk = sta.resolve_pdk()
-    openroad = sta.openroad_version()
+    openroad = report.tool_version(["openroad", "-version"])
     if pdk is None or openroad is None:
         print("error: needs openroad on PATH and a gf180mcu PDK install", file=sys.stderr)
         return 2

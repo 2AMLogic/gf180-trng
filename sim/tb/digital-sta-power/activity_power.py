@@ -400,7 +400,7 @@ def main(corners, manifest_path: Path, *, no_write: bool) -> int:
     except (activity.ActivityError, OSError, KeyError, json.JSONDecodeError) as exc:
         print(f"REJECTED activity manifest {manifest_path}: {exc}", file=sys.stderr)
         return 1
-    openroad = run_sta.openroad_version() or "unknown"
+    openroad = report.tool_version(["openroad", "-version"]) or "unknown"
     run_sta.WORK_DIR.mkdir(parents=True, exist_ok=True)
     git = report.git_provenance(REPO_ROOT)
     records_dir = SIM_DIR / "records"

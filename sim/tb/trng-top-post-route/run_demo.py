@@ -262,19 +262,6 @@ def klt_candidates() -> list[Path]:
     return unique
 
 
-def iverilog_version() -> str | None:
-    if shutil.which("iverilog") is None:
-        return None
-    try:
-        done = subprocess.run(
-            ["iverilog", "-V"], capture_output=True, text=True, timeout=60
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    first = (done.stdout or done.stderr).strip().split("\n", 1)[0]
-    return first or None
-
-
 def library_verilog(pdk) -> list[Path]:
     """The cell library's timing (non-``FUNCTIONAL``) Verilog models plus the
     UDP primitives they instantiate."""
@@ -288,7 +275,7 @@ def check_environment() -> tuple[dict, list[str]]:
     env: dict = {
         "python": f"{platform.python_version()} ({platform.python_implementation()})",
         "platform": platform.platform(),
-        "iverilog": iverilog_version(),
+        "iverilog": report.tool_version(["iverilog", "-V"]),
         "klt_on_path": klt_version(),
         "klt_candidates": [],
     }
