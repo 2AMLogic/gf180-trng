@@ -11,16 +11,18 @@ the ``- `key`: value`` bullet lines, and the ``process:``/``temperature:``/
 and/or the corner triplet. ``jitter_estimator_calibration_check.py``
 duplicated the bullet regex too, without the corner triplet.
 
-This module is that one place. It is deliberately NOT a ``Record`` base
-class: the seven callers' record shapes differ too much for that (plain
-bullets vs. multi-seed ``mean ... over N seeds (sd ...)`` bullets, whether a
-``netlist:`` block is read, whether the corner is even parsed) -- only the
-low-level field extraction is common, and that is what is factored out
-here. Each caller keeps its own ``Record``/``BitstreamRecord`` class and its
-own module-level ``RecordError`` (where it has one); this module never
-raises its own exception type by default, so those ``except RecordError``
-call sites elsewhere in ``sim/tools/`` (and in scripts that import
-``RecordError`` from one of the seven) keep working unchanged.
+This module is that one place. Its low-level parsers serve callers whose
+record shapes differ too much for one class to fit them all (plain bullets
+vs. multi-seed ``mean ... over N seeds (sd ...)`` bullets, whether a
+``netlist:`` block is read, whether the corner is even parsed). The three
+plain-bullet callers whose records are exactly the shared shape -- a Result
+section of plain bullets, a corner triplet, a lifecycle ``status:`` --
+share :class:`CornerRecord` for it (issue #964); the multi-seed and
+gate-level callers keep their own ``Record``/``BitstreamRecord`` classes
+and their own module-level ``RecordError`` (where they have one). This
+module never raises its own exception type by default, so those ``except
+RecordError`` call sites elsewhere in ``sim/tools/`` (and in scripts that
+import ``RecordError`` from one of the callers) keep working unchanged.
 """
 
 from __future__ import annotations
@@ -584,3 +586,40 @@ def format_corner(process: str, temp_c: float, vdd: float) -> str:
     touching more call sites, not fewer.
     """
     return f"{process}/{temp_c:.0f}/{vdd:.2f}"
+
+
+class CornerRecord:
+    """One committed evidence record with the plain shared shape.
+
+    The record object for the three tools whose records are exactly the
+    shared shape -- a ``## Result`` section of plain ``- `key`: value``
+    bullets, a frontmatter corner triplet and a lifecycle ``status:`` --
+    so their per-record loading is defined once instead of hand-copied
+    (issue #964). ``array_sizing.py`` subclasses it for ``temp_k`` and
+    ``power_rollup.py`` for ``netlist_sha``; ``time_to_first_valid.py``
+    uses it directly. Callers whose records carry per-seed summaries or a
+    gate-level field set keep their own classes.
+
+    ``error_cls`` is raised naming the record for every malformed one,
+    defaulting to ``RuntimeError`` as the three callers' hand-copied
+    constructors did; a caller with its own ``RecordError`` may pass it.
+    """
+
+    def __init__(self, path: Path, *, error_cls: type[Exception] = RuntimeError) -> None:
+        text = path.read_text()
+        self.stem = path.stem
+        self.values = parse_result_values(text, label=self.stem, error_cls=error_cls)
+        self.process, self.temp_c, self.vdd = parse_corner(
+            text, label=self.stem, error_cls=error_cls
+        )
+        #: ``valid`` or ``superseded`` (``sim/README.md``); a record with any
+        #: other lifecycle raises here, naming the record.
+        self.status = parse_status(text, label=self.stem, error_cls=error_cls)
+        #: The complete record text, kept for a subclass that reads a
+        #: further frontmatter block (``power_rollup.py``'s ``netlist:``
+        #: SHA) without re-reading the file.
+        self._text = text
+
+    @property
+    def corner(self) -> str:
+        return format_corner(self.process, self.temp_c, self.vdd)
