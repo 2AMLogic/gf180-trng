@@ -212,7 +212,14 @@ WORK_DIR = DESIGN_DIR / ".work"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from layout._klt import FlowError, _run_klt, klt_origin, klt_version, resolve_pdk  # noqa: E402
+from layout._klt import (  # noqa: E402
+    FlowError,
+    _run_klt,
+    klt_origin,
+    klt_version,
+    missing_tools,
+    resolve_pdk,
+)
 
 #: The one synthesized unit -- see the module docstring's "One netlist, not
 #: five" section. `trng_top.v` is `hdl_toplevel`; the other four are its
@@ -270,16 +277,13 @@ def _rtl_sources() -> list[dict]:
 
 def _check_environment() -> list[str]:
     """Human-readable reasons a synthesis run cannot proceed, or `[]`."""
-    missing = []
-    if klt_version() is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
+    missing = missing_tools(klt_version=klt_version())
     if shutil.which("yosys") is None:
         missing.append(
             "yosys is not on PATH (`klt synthesize` shells out to it as a "
             "subprocess -- install Yosys and put it on PATH)"
         )
-    if resolve_pdk() is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
+    missing += missing_tools(pdk=resolve_pdk())
     return missing
 
 

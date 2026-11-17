@@ -132,10 +132,12 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import (  # noqa: E402
     FlowError,
+    KLT_MISSING_REASON,
     _ensure_openroad_reachable,
     _run_klt,
     klt_origin,
     klt_version,
+    missing_tools,
     normalise_gds,
     resolve_pdk,
 )
@@ -372,11 +374,7 @@ class PrError(RuntimeError):
 
 
 def _check_environment() -> list[str]:
-    missing = []
-    if klt_version() is None:
-        missing.append("klayout-tools (`klt`) is not on PATH")
-    if resolve_pdk() is None:
-        missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
+    missing = missing_tools(klt_version=klt_version(), pdk=resolve_pdk())
     if not NETLIST_PATH.is_file():
         missing.append(
             f"{NETLIST_PATH.relative_to(REPO_ROOT)} is missing -- run "
@@ -1067,7 +1065,7 @@ def drc_only() -> int:
         )
         return EXIT_ENVIRONMENT
     if klt_version() is None:
-        print("ERROR  klayout-tools (`klt`) is not on PATH", file=sys.stderr)
+        print(f"ERROR  {KLT_MISSING_REASON}", file=sys.stderr)
         return EXIT_ENVIRONMENT
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
