@@ -129,6 +129,7 @@ from layout._klt import (  # noqa: E402
     klt_version,
     resolve_pdk,
 )
+from sim.harness.report import tool_version  # noqa: E402
 
 HDL_TOPLEVEL = "trng_top"
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu9t5v0"
@@ -227,23 +228,6 @@ def _check_environment() -> list[str]:
         missing.append("no gf180mcu PDK install found (see sim/harness/pdk.py)")
     missing += _ensure_openroad_reachable()
     return missing
-
-
-def _openroad_version() -> str | None:
-    try:
-        done = subprocess.run(
-            ["openroad", "-version"], capture_output=True, text=True, timeout=60
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return (done.stdout or done.stderr).strip() or None
-
-
-# --------------------------------------------------------------------------- #
-# OpenSTA session: link the as-built netlist against the resolved liberty,
-# no DEF, no placement, no routing -- write_sdf is purely a function of the
-# netlist + liberty + clock constraint at that point.
-# --------------------------------------------------------------------------- #
 
 
 def _lib_paths(pdk) -> dict[str, Path]:
@@ -481,7 +465,7 @@ def _report(stats: dict, sdf_text: str) -> dict:
     return {
         "schema_version": 1,
         "engine": "opensta",
-        "engine_version": _openroad_version(),
+        "engine_version": tool_version(["openroad", "-version"]),
         "klt_version": klt_version(),
         "hdl_toplevel": HDL_TOPLEVEL,
         "netlist_path": str(NETLIST_PATH.relative_to(REPO_ROOT)),

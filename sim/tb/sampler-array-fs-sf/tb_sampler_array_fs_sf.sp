@@ -34,12 +34,24 @@
 * together BY INDEX are DC sources (alter reaches a source's value, not an
 * already-evaluated .param), all named in the request:
 *   vsupply  the supply, volts
-*   vph      clock phase offset, seconds (the reproducible phase sweep)
-*   vrel     reset-release time, seconds (default 0.5 us; the negative control
-*            sets it far beyond tstop so reset is never released)
-*   vthw     clock high time, seconds (default 0.5 us = 50 % duty; the second
-*            negative control sets 20 ps so the clock never swings far enough
-*            to operate the sampler's transmission gates)
+*   vph      clock phase offset, ENCODED AS NANOSECONDS (value * 1e-9 =
+*            seconds; see the axis-encoding note below)
+*   vrel     reset-release time, nanoseconds (default 500 = 0.5 us; the
+*            negative control sets it far beyond tstop so reset is never
+*            released)
+*   vthw     clock high time, nanoseconds (default 500 = 0.5 us = 50 % duty;
+*            the second negative control sets 0.02 = 20 ps so the clock never
+*            swings far enough to operate the sampler's transmission gates)
+*
+* AXIS ENCODING. klt derives each unit's working directory and corner id from
+* the axis values formatted to three decimals, so axes whose values differ
+* only below that resolution (phases of a few ns, a 20 ps window) collide:
+* distinct units share one directory and one netlist, and their returned
+* measurements are one simulation mis-attributed to all of them (observed on
+* the 2026-11-15 control-tt submit: five units with sub-milli values returned
+* byte-identical readouts). Encoding the three time axes in ns keeps every
+* unit's id distinct with stimulus identical to the seconds encoding.
+* Tracked upstream as 2AMLogic/klayout-tools#5870.
 *
 * Stimulus timeline at the defaults (period 1 us = 1 Mbps, edge 1 ns):
 *   0       rings enabled (enable tied high; each ring's first node kicked by
@@ -59,8 +71,8 @@
 
 vsupply vsup 0 dc 3.3
 vph ph 0 dc 0
-vrel rel 0 dc 0.5u
-vthw thw 0 dc 0.5u
+vrel rel 0 dc 500
+vthw thw 0 dc 500
 
 een en 0 vsup 0 1
 vtr vdd vsup dc 0
@@ -71,9 +83,10 @@ xs en en vddr1 vddr2 vdd 0 clk rst_n raw_bit raw_valid ring_bit1 ring_bit2 sampl
 
 * external fixed-rate clock, phase-shiftable per unit (max/min clamps: ngspice's
 * limit() in a B-source is not a clamp): trapezoid, rises at
-* tclk0 + vph + k*tclk, high for vthw, edge time tr.
-bclk clk 0 v = (time >= tclk0 + v(ph)) ? v(vsup)*(max(0,min(1,((time - tclk0 - v(ph)) - tclk*floor((time - tclk0 - v(ph))/tclk))/tr)) - max(0,min(1,(((time - tclk0 - v(ph)) - tclk*floor((time - tclk0 - v(ph))/tclk)) - v(thw))/tr))) : 0
-brst rst_n 0 v = v(vsup)*max(0, min(1, (time - v(rel))/100p))
+* tclk0 + vph + k*tclk, high for vthw, edge time tr. v(ph)/v(rel)/v(thw) are
+* read in ns (see the axis-encoding note above) and converted to seconds here.
+bclk clk 0 v = (time >= tclk0 + v(ph)*1e-9) ? v(vsup)*(max(0,min(1,((time - tclk0 - v(ph)*1e-9) - tclk*floor((time - tclk0 - v(ph)*1e-9)/tclk))/tr)) - max(0,min(1,(((time - tclk0 - v(ph)*1e-9) - tclk*floor((time - tclk0 - v(ph)*1e-9)/tclk)) - v(thw)*1e-9)/tr))) : 0
+brst rst_n 0 v = v(vsup)*max(0, min(1, (time - v(rel)*1e-9)/100p))
 
 * measurement-only probes: mid-supply, and the 25 % / 80 % supply levels that
 * bracket the clock edge's transit through the transmission gates' switching

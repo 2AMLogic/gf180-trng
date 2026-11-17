@@ -47,7 +47,13 @@ summary table — is `sim/tools/fs_sf_capture.py`.
 | Ring duty / XOR pulses | high and low durations of `ro1`, `ro2`, `xo` from mid-supply crossings 8-23 (rings) and 8-31 (xo), all before the first clock edge |
 
 Thresholds are the named constants at the top of `fs_sf_capture.py`; `plan` prints
-them. In words: ring and XOR swing >= 0.90 x supply; `raw_valid` and `raw_bit`
+them. **Axis encoding:** the deck's `vph`/`vrel`/`vthw` time axes are DC sources
+consumed only by its B-sources and are encoded in nanoseconds, 1 V = 1 ns — the
+committed requests carry `"vrel": 1e9` and `"vthw": 0.02` for the controls
+described below in physical units (1 s, 20 ps) — because klt derives each fleet
+unit's id from axis values formatted to three decimals, so a seconds encoding
+collides distinct units
+([2AMLogic/klayout-tools#5870](https://github.com/2AMLogic/klayout-tools/issues/5870)). In words: ring and XOR swing >= 0.90 x supply; `raw_valid` and `raw_bit`
 below 0.10 x supply through the edge that arrives during reset; `raw_valid` above
 0.90 x supply after each post-release edge; `raw_bit` within 0.10 x supply of a
 rail at +8 ns and 0.05 x supply at +50/+300 ns, moving no more than 0.05 x supply

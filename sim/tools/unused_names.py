@@ -19,6 +19,13 @@ Reported:
         Blanket `# noqa` and codes this checker does not evaluate are
         never judged -- including `F401` in an `__init__.py`, where no
         import is evaluated, so a re-export there may carry the token.
+        One exception is a lexical block that directly calls exec /
+        eval / globals / locals / vars: neither code is evaluated
+        there, yet its explicit `F401` / `F841` tokens are still
+        judged -- the block yields no findings, so a token can never
+        be consulted, and is reported rather than silently trusted
+        (in an `__init__.py`, the `F401` half stays unjudged, as
+        above).
   TRNG001 a class or function defined after the final module-level
         `if __name__ == "__main__":` guard (#930) -- invisible to direct
         execution (`python3 file.py`) while still collected under import.
@@ -33,7 +40,8 @@ Not reported (outside the supported contract, so never a finding):
   * tuple/list destructuring, loop targets, `with ... as`, exception
     targets, pattern bindings, assignment expressions
   * a whole lexical block that directly calls exec / eval / globals /
-    locals / vars (other blocks are still checked)
+    locals / vars (other blocks are still checked; its explicit
+    `F401` / `F841` tokens are still RUF100-judged, see above)
   * a statement carrying `# noqa`, `# noqa: F401` or `# noqa: F841`
     (as relevant) on one of its physical lines
 

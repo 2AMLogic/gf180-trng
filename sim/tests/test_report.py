@@ -74,6 +74,66 @@ class ChecksumTests(unittest.TestCase):
             self.assertNotEqual(report.blob_sha(root, a), report.blob_sha(root, b))
 
 
+class ToolVersionTests(unittest.TestCase):
+    """`report.tool_version` -- the one tool ``--version`` probe (#920).
+
+    Failure modes degrade to ``None``; success is the first line of
+    ``stdout`` or, when empty, ``stderr``. The first-line rule is pinned
+    with a multi-line banner because ``gen_sdf`` previously recorded the
+    whole stripped output and must not regress silently.
+    """
+
+    CMD = ["fake-tool", "-version"]
+
+    def test_missing_binary_returns_none(self):
+        with mock.patch("shutil.which", return_value=None):
+            self.assertIsNone(report.tool_version(self.CMD))
+
+    def test_stderr_banner_returns_first_line(self):
+        done = subprocess.CompletedProcess(
+            self.CMD, 0, stdout="", stderr="Fake Tool v1.2.3\nbuild 2026.11.16\n"
+        )
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch("subprocess.run", return_value=done):
+            self.assertEqual(report.tool_version(self.CMD), "Fake Tool v1.2.3")
+
+    def test_multiline_stdout_returns_first_line(self):
+        done = subprocess.CompletedProcess(
+            self.CMD, 0, stdout="Fake Tool v2.0.0\nbuilt with flags\n", stderr=""
+        )
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch("subprocess.run", return_value=done):
+            self.assertEqual(report.tool_version(self.CMD), "Fake Tool v2.0.0")
+
+    def test_empty_output_returns_none(self):
+        done = subprocess.CompletedProcess(self.CMD, 0, stdout="", stderr="")
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch("subprocess.run", return_value=done):
+            self.assertIsNone(report.tool_version(self.CMD))
+
+    def test_timeout_returns_none(self):
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch(
+                    "subprocess.run",
+                    side_effect=subprocess.TimeoutExpired(self.CMD, 60),
+                ):
+            self.assertIsNone(report.tool_version(self.CMD))
+
+    def test_oserror_returns_none(self):
+        # An unexecutable-but-on-PATH binary raises PermissionError (an
+        # OSError): the clean "tool missing" answer, never a traceback.
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch("subprocess.run", side_effect=PermissionError(13, "denied")):
+            self.assertIsNone(report.tool_version(self.CMD))
+
+    def test_timeout_is_forwarded(self):
+        done = subprocess.CompletedProcess(self.CMD, 0, stdout="v1\n", stderr="")
+        with mock.patch("shutil.which", return_value="/fake/bin/fake-tool"), \
+                mock.patch("subprocess.run", return_value=done) as run:
+            report.tool_version(self.CMD, timeout=5)
+            self.assertEqual(run.call_args.kwargs["timeout"], 5)
+
+
 class RawPathValidationTests(unittest.TestCase):
     def test_library_rejects_escapes_before_hashing(self):
         with tempfile.TemporaryDirectory() as tmp:

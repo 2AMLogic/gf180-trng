@@ -1364,15 +1364,24 @@ to `evidence/post-layout/ring2/` with a recomputed, never-passing-when-incomplet
 verdict; `check.py` checks the fixture and any such publication in step 1c',
 independently of ring1, and fails if the manifest cites it.
 
-**Currently unrun.** The batch fleet first refused the 27-corner submission for
-capacity. A second attempt (#476) ran on the fleet, but every corner on both
-sides errored unmeasured, because the pinned 0.6.0 client does not ship the
-`.include`d DUT and the fleet runner is klt 0.5.0
-(`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`). The grid was
-not run locally, so no ring2 result is committed. The README in that directory
-has the reproduction commands. Whatever it eventually reports describes the
-tapped layout: ring2's stream draws the Nplus (32/0) and Pplus (31/0) ties
-#705/PR #826 added and its netlist ties every PMOS bulk to `vddr`, so the
-floating-PMOS-well limitation under which #339/#411 framed the counterfactual
-no longer applies to it. It stays a diagnostic: no entropy, full-chip timing
-or silicon-performance claim.
+**Measured and published** (attempt 03, 2026-11-15) under
+`evidence/post-layout/ring2/`: the paired 27x2 grid ran on the batch fleet
+under a tagged klt 0.9.2 client against the fleet's 0.9.0 runner, every row
+measured, and the envelope, extracted netlist and `publication.json`
+(`producer_build` "0.9.2", `body_bias_status` "biased") are committed; the
+recorded verdict is recomputed here on every run. The extracted period sits
+113.7-130.8 % above the schematic's across the grid (average supply current
+magnitude 12.2-14.8 % lower, output swing -6.1 to -4.9 %). Earlier attempts
+are append-only history: the first (#476) errored on the fleet because the
+pinned 0.6.0 client did not ship the `.include`d DUT and the fleet runner was
+klt 0.5.0 (`sim/records/2026-10-10-ro-ring11-ring2-pex-attempt-01.md`); the
+second (2026-11-05, klt 0.9.0 both ends) measured the whole grid but stayed
+unpublished on the then-open producer-pin question, and described the
+pre-#826 floating-well layout
+(`sim/records/2026-11-05-ro-ring11-ring2-pex-attempt-02.md`). It stays a diagnostic: no entropy, full-chip timing
+or silicon-performance claim, and still not a citation — the manifest does
+not cite ring2. The fixture README in that directory has the reproduction
+commands and the body-bias reading: ring2's stream draws the Nplus (32/0) and
+Pplus (31/0) ties #705/PR #826 added and its netlist ties every PMOS bulk to
+`vddr` through its tap, so the floating-PMOS-well limitation under which
+#339/#411 framed the counterfactual does not apply to it.

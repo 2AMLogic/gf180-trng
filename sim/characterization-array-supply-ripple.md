@@ -228,7 +228,10 @@ The fleet now accepts the client (`runner_compatibility: match`, runner klt
   `options.timeout_s` of 7200 s times 7 units exceeds the ceiling. That warning is
   advisory: the same warning was printed by the requests that did pass, and
   lowering `timeout_s` to 3480 s cannot make a job that is killed at 3600 s
-  finish, so the committed requests were not edited.
+  finish, so the committed requests were not edited. The measured-runtime
+  table behind that decision is in
+  [`characterization-array-fs-sf-capture.md`](characterization-array-fs-sf-capture.md)
+  ("Reproduce (cold start)", #974).
 - Two single-unit local diagnostic probes of the `nominal-lowf` deck (the
   control and the `both` 150 mV unit; one corner each, not recorded as evidence
   and not used in any table) each finished in about 48 s wall, so the units are
@@ -264,6 +267,31 @@ parts passed on the first submit, each job finishing in well under a minute
 So the 7-unit jobs were limited by units-per-job, not by the deck (consistent
 with 2AMLogic/klayout-tools#2970). The bounded exit for a repeat timeout was not
 needed.
+
+### Update 2026-11-17 (nominal-beat runtime near the fleet ceiling: accepted)
+
+While compiling the measured-runtime table for #974, the slowest of the ten
+2026-10-15 fleet jobs above stood out: `nominal-beat` (job
+`klt-sim-8fa7c38d7357`, report
+`sim/records/raw/2026-10-15-ro-array-supply-ripple-nominal-beat-01/report.json`)
+took `elapsed_seconds` 2329 s — 65 % of the fleet's 3600 s whole-job ceiling,
+71 s under the two-thirds (2400 s) threshold #974 flags — against 516 s for the
+sibling `binding-beat`, a job of identical deck shape and window. All figures
+are read from the 2026-10-15 reports, not re-measured; the 4.5x spread between
+two structurally identical jobs is fleet variance, and the 2 MHz experience in
+the previous update shows that a ceiling kill reports every unit
+`batch_job_timeout` with no partial results.
+
+Decision (issue #976): accept the margin and leave the request as committed.
+The run is recorded, passing, append-only evidence and no re-run is planned,
+while pre-splitting now would buy headroom against a re-submit nobody has
+scheduled. Bounded trigger for that re-submit: split
+`request-nominal-beat.json` into parts first (generalising the `-lowf-pN`
+split in `sim/tools/supply_ripple.py`), because 2329 s leaves only 1271 s of
+headroom on a job whose failure mode returns nothing. One correction to
+#976's framing: the request *is* a hashed `inventory-9-analog.json` member
+(sha256 `aef6bacf…`), so a split would also require the usual signoff re-pin —
+one more reason not to split speculatively.
 
 ## Tested versus not tested
 

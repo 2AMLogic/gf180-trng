@@ -10,6 +10,27 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-16
 
+- **PR #962**: fix: fail check:signoff when the manifest or tier record is not byte-canonical
+- **Issue #951** (closed): No gate catches hand-mangled formatting in generated signoff/ JSON
+- **PR #959**: test: pin scenario_cli's print_result injection and repo-relative record line
+- **Issue #958** (closed): test_scenario_cli.py does not assert print_result or the record line's repo-relative path (two mutations survive)
+- **PR #957**: test: pin scenario_cli's --scenario/--no-write contract
+- **Issue #917** (closed): sim/harness/scenario_cli.py has no dedicated test module, unlike 10 of the 13 other harness modules
+- **PR #955**: refactor(test): mix the shared CLI fixture into RecordedRunTests
+- **Issue #928** (closed): Point test_evidence_store.py's three borrowed fixture members at _CliFixture instead of RunIntegrityTests
+- **PR #954**: docs: call out superseded DRC-clean claim in post-layout characterization
+- **Issue #934** (closed): sim/characterization-post-layout-extracted.md:1538 still reads the composed floorplan as DRC-clean — live prose, not struck-through history
+- **PR #923**: signoff: run and publish ring2's native 27-corner paired comparison
+- **Issue #921** (closed): sim/tb/trng-top-post-route/README.md asks for a klayout-tools commit pdk-nightly.yml no longer pins
+- **Issue #930** (closed): Lint guard: fail when a tracked *.py defines a class or function after a module-level __main__ guard
+- **PR #939**: feat: teach unused_names to flag definitions after the __main__ guard (TRNG001)
+- **PR #938**: fix(sim): replace the dead klayout-tools git pin in the post-route provisioning instructions
+- **Issue #915** (closed): layout/tests/test_klt.py: the shim-dir tearDown registers $PATH[0] for rmtree before validating it
+- **PR #950**: test: guard the shim-dir tearDown rmtree on the klt-openroad-shim- prefix
+- **Issue #941** (closed): publish_item7_analog.py does not redact client_ngspice_binary, so a /home-resolved ngspice costs a whole fleet rerun
+- **PR #948**: Redact client host paths in the shared klt pex envelope loader
+- **Issue #929** (closed): Audit note's block-manifest "Key count" column (38/39) is not reproducible and states no counting rule
+- **PR #943**: docs: state the manifest key-count rule and correct the audit's figures
 - **PR #940**: docs: correct tap-distance spec comment on curated-deck coverage
 - **PR #925**: refactor: remove the dead VcdSummary.as_dict serializer in activity.py
 - **PR #945**: fix: exempt F401 tokens in __init__.py from RUF100 and credit every noqa token in a span

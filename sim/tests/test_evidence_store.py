@@ -126,15 +126,12 @@ class StoreTests(unittest.TestCase):
         self.assertTrue(es.validate_manifest({"schema_version": 1, "entries": [good, good]}))
 
 
-class RecordedRunTests(unittest.TestCase):
-    """A ``run_corners.py`` run stores its raw output and commits only a manifest."""
+class RecordedRunTests(test_cli._CliFixture, unittest.TestCase):
+    """A ``run_corners.py`` run stores its raw output and commits only a manifest.
 
-    _install_runner = test_cli.RunIntegrityTests._install_runner
-    _run = test_cli.RunIntegrityTests._run
-
-    def setUp(self):
-        # Shared fixture: fake PDK/testbench, patched cli globals and the store shim.
-        test_cli.RunIntegrityTests.setUp(self)
+    Mixes in the shared CLI fixture (fake PDK/testbench, patched ``cli``
+    globals, the store shim) the same way ``test_cli``'s own classes do.
+    """
 
     def _manifests(self) -> list[Path]:
         return sorted((self.root / "manifests" / "artifacts").glob("*.manifest.json"))

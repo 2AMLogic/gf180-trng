@@ -1,0 +1,1 @@
+publish_item7_analog: published ring2 (not a manifest citation); verdict 'pass' {'pass': 0, 'fail': 0, 'measured': 81, 'unmeasured': 0} (body_bias.status: 'biased')
