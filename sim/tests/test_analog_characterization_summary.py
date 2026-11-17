@@ -69,6 +69,8 @@ QUOTED = [
     ("**2.138 µA = 214 %**", "power", r"Worst idle corner: ff/125/3\.63\s*-> 2\.138 uA\s*= 214%"),
     ("digital leakage at 2.105 µA", "power", r"digital leakage \(MEASURED-at-gate-level\): 2\.105 uA"),
     # Current ratified rate (2 kbps), DERIVED -- section 1.1 of the summary
+    ("measurement (338.1 µW)", "power_current",
+     r"rate-scaled from 338\.1 uW @ 1 MHz"),
     ("**8.24 µW** at 2 kbps", "power_current", r"digital \(MEASURED-at-gate-level\): 8\.24 uW"),
     ("**418.2 µW = 83.6 %**", "power_current",
      r"Worst active corner: ff/-40/3\.63\s*-> 418\.2 uW\s*= 83\.6%"),
