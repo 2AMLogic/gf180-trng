@@ -230,16 +230,16 @@ jobs:
 
       # Unconditional, so a broken or stale cache entry is caught too: put the
       # prefix on PATH and fail unless the binary reports the pinned version.
+      # The verdict goes through the script's --check, which greps the full
+      # `--version` output -- xschem prints its runtime-dir/rc startup lines
+      # (stderr) before the version line (stdout), so head-ing the first lines
+      # would read the preamble, not the version. The explicit PATH prefix
+      # covers same-step resolution: GITHUB_PATH applies only to later steps.
       - name: Put xschem on PATH and enforce the pin
         run: |
           set -euo pipefail
           echo "${XSCHEM_PREFIX}/bin" >> "${GITHUB_PATH}"
-          out="$("${XSCHEM_PREFIX}/bin/xschem" --version 2>&1 | head -n 2)"
-          printf '%s\n' "${out}"
-          if ! printf '%s\n' "${out}" | grep -q "XSCHEM V${XSCHEM_VERSION}\$"; then
-            echo "FAIL: xschem ${XSCHEM_VERSION} required (the fleet pin), found: ${out}"
-            exit 1
-          fi
+          PATH="${XSCHEM_PREFIX}/bin:${PATH}" .github/scripts/install-xschem --check
 
       # Fails if design/*.spice no longer matches design/xschem/*.sch. Writes
       # nothing: --check exports to a temp dir and diffs. The gf180mcu symbol
