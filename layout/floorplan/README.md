@@ -2224,11 +2224,8 @@ would not block that separate question.
 [#256]: https://github.com/2AMLogic/gf180-trng/issues/256
 [#254]: https://github.com/2AMLogic/gf180-trng/issues/254
 [#255]: https://github.com/2AMLogic/gf180-trng/issues/255
-[#256]: https://github.com/2AMLogic/gf180-trng/issues/256
 [#315]: https://github.com/2AMLogic/gf180-trng/issues/315
 [#449]: https://github.com/2AMLogic/gf180-trng/issues/449
 [#717]: https://github.com/2AMLogic/gf180-trng/issues/717
 [#866]: https://github.com/2AMLogic/gf180-trng/issues/866
-[#449]: https://github.com/2AMLogic/gf180-trng/issues/449
-[#717]: https://github.com/2AMLogic/gf180-trng/issues/717
 [DR-0035]: ../../spec/decision-records/DR-0035-digital-facing-trunk-estimates-follow-the-bottom-edge-pins.md
