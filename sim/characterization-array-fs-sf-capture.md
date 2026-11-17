@@ -174,6 +174,64 @@ comment line since, no stimulus change) and byte-identical requests. The table
 above re-derives from the committed fleet reports with `analyze` — its output is
 record `-06`'s `analysis.txt` (`sim/records/2026-11-15-sampler-array-fs-sf-06.md`).
 
+### The `job_ceiling` warning on these requests is advisory (#974)
+
+Both committed requests declare `options.timeout_s` 7200 s, so every fleet
+submit of them prints klt's advisory `job_ceiling` warning: the conservative
+fully-serial bound (7200 s x units + 120 s) exceeds the fleet's 3600 s
+whole-job ceiling — 518,520 s for the 72-unit grid, 43,320 s for the 6-unit
+control (`-06` `grid.report.json` / `control-tt.report.json`,
+`environment.remote.job_ceiling`). The same warning was printed by fleet
+submits whose logs are preserved here, passing or not — the 2026-10-15
+supply-ripple campaigns, this array's `-05`/`-06` submits, and the
+2026-11-05 / 2026-11-15 ring2-pex publish logs, 15 of the 25 preserved
+`stderr` logs in `sim/records/raw/` — so it is not a defect in these
+requests: no multi-unit request can clear it at this `timeout_s`, and even
+the warning's suggested 3480 s leaves a 2-unit job over the bound (2 x
+3480 s + 120 s = 7080 s). It is not printed by every fleet campaign in the
+repo, though: the passing 2026-11-13 `ro-ring5-starved-jitter` red-supply
+fleet runs (`2026-11-13-ro-ring5-starved-jitter-redsup-01..05`) used an
+older klt client than the `-06` submits (0.9.2.dev885 vs 0.9.3.dev16) and
+their preserved submit logs contain no warning; those requests declare
+`timeout_s` 3480 s. Why no warning appeared is not established by the
+committed evidence — a client that predates the ceiling check, the 3480 s
+declaration, and the `--batch-set` shard split are not distinguishable from
+what is recorded here.
+Per the decision the ripple campaign
+already recorded
+([`characterization-array-supply-ripple.md`](characterization-array-supply-ripple.md),
+"Update 2026-10-15"), the committed requests, their pinned hashes and the
+generator are left alone. The warning becomes a real hazard only if a job's
+`elapsed_seconds` approaches 3600 s: the fleet then kills the whole job and
+reports every unit `batch_job_timeout` (this happened to the ripple 2 MHz
+requests before they were split). If that starts happening here, the grid must
+be split into several requests, the way the ripple campaign split its 2 MHz
+requests — lowering `timeout_s` cannot rescue a job the ceiling kills.
+
+Measured runtimes behind that decision, slowest recorded per affected
+generator (`fs_sf_capture`, `liveness_sampler_power`, `supply_ripple`), read
+from the committed reports:
+
+| generator / request | units per job | slowest recorded unit `runtime_s` | job `elapsed_seconds` | source |
+|---|---|---|---|---|
+| `fs_sf_capture` `request-grid.json` | 72 | 154.4 s (per-unit) | 1304 s | `sim/records/raw/2026-11-15-sampler-array-fs-sf-06/grid.report.json` |
+| `fs_sf_capture` `request-control-tt.json` | 6 | 143.2 s (per-unit) | 152 s | `sim/records/raw/2026-11-15-sampler-array-fs-sf-06/control-tt.report.json` |
+| `liveness_sampler_power` `request-grid.json` | 27 | 14.0 s (local single-point probe; the grid's one fleet submit was rejected before simulation, so no fleet unit or job time exists) | none recorded | `sim/records/raw/2026-10-10-sampler-core-liveness-active-01/report-unit.json` |
+| `supply_ripple` `request-nominal-beat.json` | 7 | 2322.0 s (job-scale, see note) | 2329 s | `sim/records/raw/2026-10-15-ro-array-supply-ripple-nominal-beat-01/report.json` |
+| `supply_ripple` `request-binding-beat.json` | 7 | 496.2 s (job-scale) | 516 s | `sim/records/raw/2026-10-15-ro-array-supply-ripple-binding-beat-01/report.json` |
+| `supply_ripple` `request-conv-binding-beat-2p5.json` / `-5p.json` | 2 | 30.0 s / 15.0 s (job-scale) | 36 s / 21 s | `sim/records/raw/2026-10-15-ro-array-supply-ripple-conv-binding-beat-2p5-01/report.json`, `…-conv-binding-beat-5p-01/report.json` |
+| `supply_ripple` lowf parts `request-*-lowf-p1..p3.json` (6 requests) | 3 | 39.9 s (job-scale, worst part) | 40–46 s | `sim/records/raw/2026-10-15-ro-array-supply-ripple-{nominal,binding}-lowf-p{1,2,3}-01/report.json` |
+
+Note on the ripple rows: units of a ripple job report a job-scale
+`runtime_s` — the longest unit's value tracks the whole job's wall time, per
+the ripple doc's "Update 2026-10-15" — so those entries are whole-job wall
+times, not per-unit simulation times; the fs/sf rows are true per-unit times.
+The slowest recorded job anywhere in the three generators is the ripple
+`nominal-beat` at 2329 s (65 % of the ceiling); the two requests that were
+actually killed at the ceiling (the unsplit 2 MHz `nominal-lowf` /
+`binding-lowf` submits, `elapsed_seconds` 3604 s, no record minted) were split
+into the `p1..p3` parts the same day.
+
 ## Tested versus not tested
 
 Tested offline (`sim/tests/test_fs_sf_capture.py`): the committed requests match the

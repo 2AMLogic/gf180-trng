@@ -228,7 +228,10 @@ The fleet now accepts the client (`runner_compatibility: match`, runner klt
   `options.timeout_s` of 7200 s times 7 units exceeds the ceiling. That warning is
   advisory: the same warning was printed by the requests that did pass, and
   lowering `timeout_s` to 3480 s cannot make a job that is killed at 3600 s
-  finish, so the committed requests were not edited.
+  finish, so the committed requests were not edited. The measured-runtime
+  table behind that decision is in
+  [`characterization-array-fs-sf-capture.md`](characterization-array-fs-sf-capture.md)
+  ("Reproduce (cold start)", #974).
 - Two single-unit local diagnostic probes of the `nominal-lowf` deck (the
   control and the `both` 150 mV unit; one corner each, not recorded as evidence
   and not used in any table) each finished in about 48 s wall, so the units are
