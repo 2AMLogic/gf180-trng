@@ -23,6 +23,11 @@ parts a reader might not expect:
   record and field for every failure (issue #443).
 - ``format_corner`` rounds temperature to zero decimal places and supply to
   two, so it is not a lossless inverse of ``parse_corner``.
+- ``CornerRecord`` (issue #964) loads a committed record's stem, Result
+  values, corner triplet and lifecycle status into one shared object,
+  raising the caller's ``error_cls`` for a malformed record and keeping the
+  complete record text available to subclasses that read further
+  frontmatter blocks.
 
 Everything here is stdlib-only: no ngspice and no PDK.
 """
@@ -40,6 +45,7 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 from _record_parsing import (  # noqa: E402
+    CornerRecord,
     format_corner,
     frontmatter,
     iter_result_seed_summaries,
@@ -464,6 +470,71 @@ class FormatCornerTests(unittest.TestCase):
 
     def test_formats_parsed_record_excerpt(self) -> None:
         self.assertEqual(format_corner(*parse_corner(_wrap(RECORD_EXCERPT))), "tt/-40/2.97")
+
+
+class CornerRecordTests(unittest.TestCase):
+    """``CornerRecord`` (issue #964) is the shared record object behind the
+    three plain-bullet tools; these tests pin its loading contract directly,
+    the way the module's parsers are pinned above."""
+
+    #: One well-formed plain-bullet record: frontmatter corner triplet and
+    #: lifecycle status, plus one Result bullet.
+    _RECORD = (
+        "---\nrecord: fixture\nstatus: valid\n"
+        "corner:\n  process: ss\n  voltage: 3.63 V (nominal 3.3 V, +10%)\n"
+        "  temperature: 125\n"
+        "---\n\n"
+        "## Result\n\n- `q_hat`: 1.25e-9\n"
+    )
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+
+    def _write(self, stem: str, text: str) -> Path:
+        path = self.dir / f"{stem}.md"
+        path.write_text(text)
+        return path
+
+    def test_reads_stem_values_corner_and_status(self) -> None:
+        rec = CornerRecord(self._write("2026-01-01-fixture-01", self._RECORD))
+        self.assertEqual(rec.stem, "2026-01-01-fixture-01")
+        self.assertEqual(rec.values, {"q_hat": 1.25e-9})
+        self.assertEqual((rec.process, rec.temp_c, rec.vdd), ("ss", 125.0, 3.63))
+        self.assertEqual(rec.status, "valid")
+        self.assertEqual(rec.corner, "ss/125/3.63")
+
+    def test_superseded_status_is_read_not_raised(self) -> None:
+        # CornerRecord itself does not filter the lifecycle; current_records
+        # does that on top of it.
+        rec = CornerRecord(
+            self._write(
+                "2026-01-02-fixture-01",
+                self._RECORD.replace("status: valid", "status: superseded"),
+            )
+        )
+        self.assertEqual(rec.status, "superseded")
+
+    def test_subclass_reads_raw_text_and_errors_use_error_cls(self) -> None:
+        # A subclass that reads a further frontmatter field works off the
+        # record text the base already read, exactly as power_rollup.py's
+        # netlist_sha does; a malformed record raises error_cls, not
+        # RuntimeError.
+        class WithNote(CornerRecord):
+            def __init__(self, path: Path) -> None:
+                super().__init__(path, error_cls=CustomRecordError)
+                self.note = parse_frontmatter_field(
+                    self._text, "record", label=self.stem, error_cls=CustomRecordError
+                )
+
+        rec = WithNote(self._write("2026-01-03-fixture-01", self._RECORD))
+        self.assertEqual(rec.note, "fixture")
+        bad = self._write(
+            "2026-01-04-fixture-01", self._RECORD.replace("  temperature: 125\n", "")
+        )
+        with self.assertRaises(CustomRecordError):
+            WithNote(bad)
 
 
 class RecordExcerptProvenanceTests(unittest.TestCase):

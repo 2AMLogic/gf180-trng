@@ -116,7 +116,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import digital_corner_characterization as dcc  # noqa: E402
-from _record_parsing import format_corner, parse_corner, parse_result_values, parse_status  # noqa: E402
+from _record_parsing import CornerRecord  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RECORDS = REPO_ROOT / "sim" / "records"
@@ -201,27 +201,19 @@ HISTORICAL_TAP_LIVENESS_W = 81.3e-6
 _NETLIST = re.compile(r"^netlist:\s*\n(?:^[ \t]+.*\n)*?^[ \t]+sha:\s*([0-9a-f]+)", re.M)
 
 
-class Record:
+class Record(CornerRecord):
+    """A plain-bullet record, plus its netlist blob SHA (``netlist_sha``)."""
+
     def __init__(self, path: Path) -> None:
-        text = path.read_text()
-        self.stem = path.stem
-        self.values = parse_result_values(text, label=self.stem, error_cls=RuntimeError)
-        self.process, self.temp_c, self.vdd = parse_corner(text, label=self.stem)
-        #: ``valid`` or ``superseded`` (``sim/README.md``); a record with any
-        #: other lifecycle raises here, naming the record.
-        self.status = parse_status(text, label=self.stem)
+        super().__init__(path)
         #: Blob SHA of the netlist this record's numbers were measured
         #: against, or ``None`` for a record whose deck names no netlist.
         #: This is what identifies the DUT *revision*: two records of the same
         #: family and the same corner that carry different netlist SHAs
         #: measured two different designs, and a tool that means one of them
         #: specifically (rather than "the newest") has to say which.
-        m = _NETLIST.search(text)
+        m = _NETLIST.search(self._text)
         self.netlist_sha = m.group(1) if m else None
-
-    @property
-    def corner(self) -> str:
-        return format_corner(self.process, self.temp_c, self.vdd)
 
 
 def load(globs, *, include_superseded: bool = False) -> list[Record]:
