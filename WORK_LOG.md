@@ -1,12 +1,19 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-17.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-18.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
 ## Archives
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-18
+
+- **PR #1006**: fix: anchor signoff gate needles to whole lines instead of substrings
+- **PR #1002**: check: single-source the check list in sim/check.sh; retire the parity test
+- **Issue #1004** (closed): signoff gate audit: 'npm run test' needle is satisfied by 'npm run test:layout', so the unit-test gate can silently leave the PR-blocking list
+- **Issue #1000** (closed): Single-source the check list: one script behind check:ci, check:all and ci.yml; retire test_check_script_parity.py
 
 ### 2026-11-17
 
