@@ -164,6 +164,11 @@ def _has_line(text: str, needle: str) -> bool:
 
 # --- gates --------------------------------------------------------------------
 
+#: The PR-blocking job's call of the single check list, as it appears on its
+#: own line in ci.yml. Matched with `_has_line`, so a `#` comment quoting the
+#: call or the step's `name:` string cannot satisfy an audit (issue #1007).
+_CHECK_LIST_CALL = "sim/check.sh ci"
+
 #: (command, workflow that runs it, text that must appear there as a whole
 #:  line, runs without the PDK/external tools, why not / how it runs, extra
 #:  (file, text) pairs that must also appear). A gate named in an inventory is
@@ -185,7 +190,7 @@ _GATES: dict[str, tuple] = {
         "through `sim/check.sh ci`",
         (
             ("package.json", "design/netlist.py --lint"),
-            (CI_WORKFLOW, "sim/check.sh ci"),
+            (CI_WORKFLOW, _CHECK_LIST_CALL),
         ),
     ),
     "netlist-check": (
@@ -200,7 +205,7 @@ _GATES: dict[str, tuple] = {
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "design/interface/regmap.py --check"),
-            (CI_WORKFLOW, "sim/check.sh ci"),
+            (CI_WORKFLOW, _CHECK_LIST_CALL),
         ),
     ),
     "synth-check": (
@@ -215,7 +220,7 @@ _GATES: dict[str, tuple] = {
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "design/floorplan_netlist.py --check"),
-            (CI_WORKFLOW, "sim/check.sh ci"),
+            (CI_WORKFLOW, _CHECK_LIST_CALL),
         ),
     ),
     "layout-verify": (
@@ -238,7 +243,7 @@ _GATES: dict[str, tuple] = {
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "layout/digital/build.py --check-input"),
-            (CI_WORKFLOW, "sim/check.sh ci"),
+            (CI_WORKFLOW, _CHECK_LIST_CALL),
         ),
     ),
     "tap-distance-check": (
@@ -266,7 +271,7 @@ _GATES: dict[str, tuple] = {
         "sim/tests, including the behavioural testbench drivers; those that need Icarus "
         "Verilog self-skip when it is absent; runs in the PR-blocking job through "
         "`sim/check.sh ci`",
-        ((CI_WORKFLOW, "sim/check.sh ci"),),
+        ((CI_WORKFLOW, _CHECK_LIST_CALL),),
     ),
     "signoff-check": (
         "python3 signoff/check.py --require-tools", CI_WORKFLOW,
@@ -299,7 +304,15 @@ def _gate_records(root: Path, item: int, partition: str) -> list[dict]:
                 where = workflow
             raise AuditError(f"{where} does not contain {needle!r}; the gate {command!r} is not run there")
         for rel, text in also:
-            if text not in _read(root, rel):
+            # ci.yml pairs are whole-line matches, so a `#` comment quoting
+            # the call cannot stand in for the invocation (issue #1007); the
+            # other `also` targets are bare substrings by design.
+            found = (
+                _has_line(_read(root, rel), text)
+                if rel == CI_WORKFLOW
+                else text in _read(root, rel)
+            )
+            if not found:
                 raise AuditError(f"{rel} does not contain {text!r}; the gate {command!r} is not real")
         out.append(
             {
@@ -609,10 +622,13 @@ def _build_item10(root: Path, partition: str) -> dict:
     for rel, text in _HYGIENE_REPRODUCTION[partition]:
         if text not in _read(root, rel):
             raise AuditError(f"{rel} does not document {text!r}")
-    ci = _read(root, CI_WORKFLOW)
-    for text in ("sim/check.sh ci", "python3 signoff/check.py --require-tools"):
-        if text not in ci:
-            raise AuditError(f"{CI_WORKFLOW}: does not run {text!r}")
+    # Whole-line match: ci.yml's `#` comment (issue #1000) and the step
+    # `name:` string both quote the call; only the run body satisfies the
+    # audit (issue #1007). The `python3 signoff/check.py --require-tools`
+    # step is not re-checked here: the `signoff-check` gate above pins it
+    # with its anchored `run:` needle.
+    if not _has_line(_read(root, CI_WORKFLOW), _CHECK_LIST_CALL):
+        raise AuditError(f"{CI_WORKFLOW}: does not run {_CHECK_LIST_CALL!r}")
     for text in _HYGIENE_CI[partition]:
         if not _has_line(_check_script_ci_group(root), f'step "{text}" {text}'):
             raise AuditError(f"{CHECK_SCRIPT}'s ci group does not run {text!r}")
