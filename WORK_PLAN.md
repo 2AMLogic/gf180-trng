@@ -35,12 +35,13 @@ Issues currently being built (`loom:building`).
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123
+- **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#992**: ci: build the fleet-pinned xschem 3.4.7 from source in pdk-nightly
 
 ## Approved (Awaiting Merge)
 
@@ -64,6 +65,7 @@ Issues carrying `loom:curated`.
 - **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)*
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123 *(curated)*
+- **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -83,10 +85,10 @@ _None._
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 4 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 12 |
+| Curated | 13 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
