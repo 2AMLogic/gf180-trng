@@ -867,9 +867,10 @@ The comparison is between the merge-base of the base and HEAD, and HEAD. The
 base must be loadable: an unknown revision, a shallow clone lacking it, or no
 shared history exits 2 rather than checking an empty diff. Fetch the base first
 (`git fetch origin main`) if `origin/main` is missing locally. CI checks out
-full history and uses the pull request's base SHA for `pull_request` events and
-the pre-push SHA for `push` events; the all-zero "before" SHA of a first push
-therefore fails loudly instead of passing.
+full history and uses the pull request's base SHA for `pull_request` events,
+the pre-push SHA for `push` events and the merge queue's base SHA
+(`github.event.merge_group.base_sha`) for `merge_group` events; the all-zero
+"before" SHA of a first push therefore fails loudly instead of passing.
 
 That endpoint comparison is also this guarantee's known blind spot, quantified
 in the [merge-conflict loss audit](../docs/merge-conflict-loss-audit-2026-11-15.md):

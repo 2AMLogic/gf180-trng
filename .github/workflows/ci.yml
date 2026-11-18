@@ -109,7 +109,8 @@ name: CI
 #       self-consistent; a rewritten record with matching hashes, or a
 #       deleted record + raw directory, would still pass it). Compares
 #       sim/records/ at HEAD with a base: the PR base SHA for pull_request,
-#       the pre-push SHA for push -- computed in this workflow and handed to
+#       the pre-push SHA for push, the merge queue's base SHA for
+#       merge_group -- computed in this workflow and handed to
 #       the script through SIM_CHECK_EVIDENCE_BASE, since it is
 #       event-dependent; locally the tool's own origin/main default applies.
 #       A base that cannot be loaded (all-zero SHA on a first push, missing
@@ -372,6 +373,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -402,7 +404,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Full history: the evidence-history step of the check list needs
-          # the PR base (or pushed-from) commit and a merge-base with HEAD.
+          # the PR base, pushed-from or merge-queue base commit and a
+          # merge-base with HEAD.
           fetch-depth: 0
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -423,18 +426,21 @@ jobs:
       # a failure (shellcheck ships on this runner), and
       # SIM_CHECK_EVIDENCE_BASE carries the append-only base revision --
       # event-dependent, so the case below computes it here: the PR base SHA
-      # for pull_request, the pushed-from SHA for push, origin/main for any
-      # other event. A base that cannot be resolved is a failure, not an
-      # empty diff (see sim/README.md).
+      # for pull_request, the pushed-from SHA for push, the merge queue's
+      # base SHA for merge_group, origin/main for any other event. A base
+      # that cannot be resolved is a failure, not an empty diff (see
+      # sim/README.md).
       - name: "Self-checks (the one check list: sim/check.sh ci)"
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
         run: |
           case "$EVENT_NAME" in
             pull_request) base="$PR_BASE_SHA" ;;
             push) base="$PUSH_BEFORE_SHA" ;;
+            merge_group) base="$MERGE_GROUP_BASE_SHA" ;;
             *) base="origin/main" ;;
           esac
           if [ -z "$base" ]; then
