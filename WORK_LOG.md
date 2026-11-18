@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-18
 
+- **PR #1017**: docs: narrow workflow_yaml_guard's soundness claim to three measured exceptions
+- **Issue #1015** (closed): workflow_yaml_guard: three block-header shapes report findings on documents that parse
 - **PR #1013**: fix: decide workflow_yaml_guard block headers from the key's own colon
 - **Issue #1011** (closed): workflow_yaml_guard misses a name: trap whose value ends in a block-scalar indicator
 - **PR #1010**: signoff: match the ci.yml check-list call as a whole line, not a substring
