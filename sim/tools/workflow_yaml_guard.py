@@ -18,6 +18,14 @@ and ``://`` URL colons are left alone -- a document that parses cannot
 contain a plain ``name:`` value with ``": "`` in it, so a finding is always
 a file that does not parse.
 
+A line opens a block scalar only when the value after the line's FIRST
+colon -- the key's own -- is exactly a block indicator: ``run: |``,
+``- name: >-``, ``- - run: |`` at any sequence depth (bounded by the key's
+column, where the mapping's sibling keys live), or a quoted/flow key by
+shape (``"a: b": |``, whose colons are its own). A plain value that merely
+ends in an indicator (``name: build a: |``) is therefore a member of the
+defect class and is scanned, not opened as a block (issue #1011).
+
   python3 -m sim.tools.workflow_yaml_guard --check
 """
 
@@ -33,21 +41,43 @@ from sim.tools._git_files import GitError, tracked_files
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_DIR = ".github/workflows"
 
-# A mapping key named exactly `name` with its value: `name: v`, `- name: v`.
-# Indented to any depth, the dash needs a following space (`-name:` is a
-# different, invalid key), and spaces before the colon are legal YAML
-# (`name : v`).
-NAME_KEY = re.compile(r"^[ \t]*(?:-[ \t]+)?name[ \t]*:(?P<value>.*)$")
+# A mapping key named exactly `name` with its value: `name: v`, `- name: v`,
+# `- - name: v`. Indented to any depth, at any sequence-dash depth, the dash
+# needs a following space (`-name:` is a different, invalid key), and spaces
+# before the colon are legal YAML (`name : v`).
+NAME_KEY = re.compile(r"^[ \t]*(?:-[ \t]+)*name[ \t]*:(?P<value>.*)$")
 
 # Block scalar header after a key colon or a sequence dash: `|`, `>-`,
 # `|2`, `|2-`, `>-+`, ... (indent indicator digit and chomping indicator in
 # either order).
 BLOCK_HDR = r"[|>](?:\d?[+-]?|[+-]?\d)?"
-BLOCK_AFTER_KEY = re.compile(rf":(?:[ \t]+)?({BLOCK_HDR})$")
-BLOCK_AFTER_DASH = re.compile(rf"^[ \t]*-[ \t]+({BLOCK_HDR})$")
-# A sequence-item lead: dash, then whitespace up to the mapping key. The
-# key's column (its length) is where sibling keys of the same step live.
-DASH_LEAD = re.compile(r"^[ \t]*-[ \t]+")
+
+# A line whose value after its FIRST colon -- the key's own, since the key
+# and the dash lead cannot contain one -- is exactly a block header:
+# `run: |`, `- name: >-`, `- - run: |`, any depth of sequence dashes.
+# Anchored there, `name: build a: |` is NOT a header: its value is the
+# plain scalar `build a: |`, a member of the defect class, so the line is
+# scanned below instead of opening a block. `lead` ends at the key's
+# column, where the sibling keys of the same mapping live -- the indent a
+# line must dedent to before it is scanned again.
+KEY_BLOCK = re.compile(
+    rf"^(?P<lead>[ \t]*(?:-[ \t]+)*)(?P<key>[^ \t:][^:]*?)[ \t]*:"
+    rf"(?P<value>[ \t]*{BLOCK_HDR})$"
+)
+
+# Quoted and flow keys (`"a: b": |`) carry colons of their own, so the
+# first colon on the line is not the key separator; recognized by shape so
+# their block bodies are still skipped. A plain key never starts with a
+# quote or a flow indicator, so this never masks a defective plain value.
+QUOTED_KEY_BLOCK = re.compile(
+    rf'^(?P<lead>[ \t]*(?:-[ \t]+)*)'
+    rf'(?P<key>"[^"]*"|\'[^\']*\'|\{{.*\}}|\[.*\])[ \t]*:'
+    rf"(?P<value>[ \t]*{BLOCK_HDR})$"
+)
+
+# A sequence item that is itself a block scalar -- `- |`, `- - >` -- with
+# no key. `dash` is bounded at the innermost dash's column.
+BARE_BLOCK = re.compile(rf"^(?P<dash>[ \t]*(?:-[ \t]+)+){BLOCK_HDR}$")
 
 
 def strip_comment(line: str) -> str:
@@ -105,19 +135,18 @@ def findings(text: str, path: str = "<doc>") -> list[str]:
                 continue
             block_indent = None
         stripped = strip_comment(line).rstrip()
-        start = (BLOCK_AFTER_KEY.search(stripped) or BLOCK_AFTER_DASH.match(stripped))
-        if start:
-            if BLOCK_AFTER_DASH.match(stripped):
-                # Bare `- |` item: the block is bounded by the dash's own
-                # indent.
-                block_indent = indent
-            elif DASH_LEAD.match(stripped):
-                # `- run: |`: sibling keys of the step live at the key's
-                # column, not the dash's -- a line dedented to the key
-                # column ends the block and is scanned normally.
-                block_indent = len(DASH_LEAD.match(stripped).group(0))
-            else:
-                block_indent = indent
+        hdr = KEY_BLOCK.match(stripped) or QUOTED_KEY_BLOCK.match(stripped)
+        if hdr:
+            # `run: |` / `- name: >-` / `- - run: |`: the block is bounded
+            # by the key's column -- after every sequence dash -- where the
+            # sibling keys of the same mapping live.
+            block_indent = len(hdr.group("lead"))
+            continue
+        bare = BARE_BLOCK.match(stripped)
+        if bare:
+            # Bare `- |` item: the block is bounded by the innermost
+            # dash's column.
+            block_indent = len(bare.group("dash").rstrip()) - 1
             continue
         m = NAME_KEY.match(stripped)
         if not m:
