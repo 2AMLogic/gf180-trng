@@ -36,6 +36,7 @@ Issues currently being built (`loom:building`).
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
+- **#1000**: Single-source the check list: one script behind check:ci, check:all and ci.yml; retire test_check_script_parity.py
 
 ## PRs Awaiting Review
 
@@ -53,25 +54,26 @@ _None._
 
 Issues carrying `loom:curated`.
 
-- **#200**: Champion: Merge-Risk Hold Digest *(curated)*
-- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)*
-- **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)*
-- **#476**: Complete the unrun 27-corner ring2 paired PEX diagnostic campaign *(curated)*
-- **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)*
+- **#200**: Champion: Merge-Risk Hold Digest *(curated)* *(held)*
+- **#339**: Post-layout re-sims run on floating PMOS wells; quantify against a well-tied extracted netlist *(curated)* *(held)*
+- **#449**: Digital tap spacing exceeds DRM 14.3.1 MV latch-up limit (49.7 um vs 15 um): confirm and decide *(curated)* *(held)*
+- **#476**: Complete the unrun 27-corner ring2 paired PEX diagnostic campaign *(curated)* *(held)*
+- **#486**: Obtain controlled GF180MCU DRM revision for LU.3/LU.4 and confirm the digital device-class column *(curated)* *(held)*
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard *(curated)*
 - **#700**: T1 item 5 (corner verification): resolve the missed Power (758 uW vs < 500 uW) and Area (0.176 mm^2 vs < 0.05 mm^2) rows *(curated)*
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487) *(curated)*
-- **#810**: Power: record ring-liveness sampler (xsr1/xsr2) active current at the binding corner *(curated)*
-- **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)*
+- **#810**: Power: record ring-liveness sampler (xsr1/xsr2) active current at the binding corner *(curated)* *(held)*
+- **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)* *(held)*
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123 *(curated)*
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
+- **#1000**: Single-source the check list: one script behind check:ci, check:all and ci.yml; retire test_check_script_parity.py *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#880**: Collapse the four copy-pasted recorded-verdict gates in sim/tools into one helper (they have drifted) *(hermit)*
-- **#889**: Collapse the six duplicated write_record callbacks in sim/tb behind one sim/harness/report.py helper (reverses #888's scope boundary) *(hermit)*
-- **#897**: Consolidate four divergent copies of the committed-PDK-provenance rule into layout/_klt.py *(hermit)*
+- **#880**: Collapse the four copy-pasted recorded-verdict gates in sim/tools into one helper (they have drifted) *(hermit)* *(held)*
+- **#889**: Collapse the six duplicated write_record callbacks in sim/tb behind one sim/harness/report.py helper (reverses #888's scope boundary) *(hermit)* *(held)*
+- **#897**: Consolidate four divergent copies of the committed-PDK-provenance rule into layout/_klt.py *(hermit)* *(held)*
 
 ## Epics
 
@@ -85,10 +87,10 @@ _None._
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 4 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 13 |
+| Curated | 14 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
