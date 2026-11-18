@@ -417,7 +417,7 @@ jobs:
       # for pull_request, the pushed-from SHA for push, origin/main for any
       # other event. A base that cannot be resolved is a failure, not an
       # empty diff (see sim/README.md).
-      - name: Self-checks (the one check list: sim/check.sh ci)
+      - name: "Self-checks (the one check list: sim/check.sh ci)"
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}

@@ -108,7 +108,7 @@ class InventoryDrift(unittest.TestCase):
         script = self.root / inv.CHECK_SCRIPT
         script.write_text(
             script.read_text().replace(
-                'step "npm run check:digital-input" npm run check:digital-input\n', ""
+                'step "npm run check:digital-input" npm run check:digital-input\n', "", 1
             )
         )
         with self.assertRaises(inv.AuditError):
