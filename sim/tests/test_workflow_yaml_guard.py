@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Hold sim/tools/workflow_yaml_guard.py to its contract (issue #1003).
+"""Hold sim/tools/workflow_yaml_guard.py to its contract (issues #1003, #1011).
 
 The guard is a line scanner, not a YAML parser: it flags the one defect
 class measured in issue #1003 -- a plain ``name:`` mapping value containing
 ``": "`` (or ending in ``:``), which every YAML parser reads as a nested
 mapping and which therefore turns the workflow into a zero-job startup
 failure -- while leaving quoted values, block scalars, flow collections,
-comments and URL colons alone. Every case feeds a literal document to
-findings(); nothing depends on the state of the real tree except the final
-guard-on-this-tree case. Stdlib only.
+comments and URL colons alone. Issue #1011 extends the cover: a plain
+value that ends in a block-scalar indicator is a defect, not a header,
+and nested sequence dashes bound blocks at the key's column. Every case
+feeds a literal document to findings(); nothing depends on the state of
+the real tree except the final guard-on-this-tree case. Stdlib only;
+the PyYAML cross-checks skip when it is not installed.
 """
 
 from __future__ import annotations
@@ -21,6 +24,11 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import workflow_yaml_guard as guard  # noqa: E402
+
+try:
+    import yaml  # PyYAML is not a repo dependency; cross-checks are opt-in
+except ImportError:
+    yaml = None
 
 OFFENDING = ("jobs:\n"
              "  t:\n"
@@ -180,6 +188,115 @@ class Findings(unittest.TestCase):
                "  - name: a: b\n")
         f = self.finding(doc)
         self.assertTrue(f.startswith("wf.yml:4:"), f)
+
+    # -- plain values that END in a block indicator (issue #1011) ---------
+
+    def test_name_value_ending_in_literal_bar_is_flagged(self):
+        # The header decision is made from the value after the FIRST colon
+        # (the key's own), so `build a: |` is a plain value containing
+        # ": ", not a block header that hides the line.
+        f = self.finding("name: build a: |\non: push\n")
+        self.assertTrue(f.startswith("wf.yml:1:"), f)
+
+    def test_name_value_ending_in_folded_gt_is_flagged(self):
+        self.assertEqual(len(guard.findings("name: build a: >\non: push\n")), 1)
+
+    def test_name_value_ending_in_chomped_bar_is_flagged(self):
+        self.assertEqual(len(guard.findings("name: build a: |-\non: push\n")), 1)
+
+    def test_step_name_value_ending_in_bar_is_flagged(self):
+        doc = ("jobs:\n"
+               "  j:\n"
+               "    steps:\n"
+               "      - name: a: |\n"
+               "        run: echo\n")
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:4:"), f)
+
+    def test_indicator_ending_line_still_opens_block_for_other_keys(self):
+        # A non-name key with the same trailing shape is not a header
+        # either; its body is scanned, and a defective `name:` inside it
+        # is flagged (the document cannot parse either way).
+        doc = ("run: echo: |\n"
+               "  name: a: b\n")
+        self.assertEqual(len(guard.findings(doc)), 1)
+
+    # -- nested sequence dashes (issue #1011) ------------------------------
+
+    def test_nested_dash_run_block_is_bounded_by_key_column(self):
+        # `- - run: |`: the block is bounded by the key's column (after
+        # every dash), so the sibling `name:` ends it and is scanned.
+        doc = ("a:\n"
+               "  - - run: |\n"
+               "        echo\n"
+               "      name: x: y\n")
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:4:"), f)
+
+    def test_nested_dash_name_is_flagged(self):
+        self.assertEqual(len(guard.findings("a:\n  - - name: x: y\n")), 1)
+
+    def test_nested_bare_dash_block_content_is_clean(self):
+        # `- - |`: the bare item's block is bounded by the innermost
+        # dash's column; its literal content is not scanned.
+        doc = ("a:\n"
+               "  - - |\n"
+               "        name: x: y\n")
+        self.clean(doc)
+
+    def test_quoted_key_block_header_still_opens_block(self):
+        # `"a: b": |` carries its own colons; recognized by shape so the
+        # body stays literal and the document (which parses) stays clean.
+        doc = ('"a: b": |\n'
+               '  name: x: y\n')
+        self.clean(doc)
+
+    def test_flow_key_block_header_still_opens_block(self):
+        doc = ("{a: b}: |\n"
+               "  name: x: y\n")
+        self.clean(doc)
+
+
+@unittest.skipUnless(yaml, "PyYAML not installed (not a repo dependency)")
+class PyYamlAgreement(unittest.TestCase):
+    """Cross-check the issue-#1011 shapes against a real parser.
+
+    PyYAML is present on some hosts but is not a repo dependency, so this
+    class skips rather than fails when it is absent; the Findings cases
+    above carry the contract on their own.
+    """
+
+    DEFECT_DOCS = [
+        "name: build a: |\non: push\n",
+        "name: build a: >\non: push\n",
+        "name: build a: |-\non: push\n",
+        "jobs:\n  j:\n    steps:\n      - name: a: |\n        run: echo\n",
+        "a:\n  - - run: |\n        echo\n      name: x: y\n",
+        "a:\n  - - name: x: y\n",
+    ]
+    CLEAN_DOCS = [
+        "name: |\n  a: b\n",
+        "steps:\n  - run: |\n      echo\n    name: ok\n",
+        '"a: b": |\n  name: x: y\n',
+        "{a: b}: |\n  name: x: y\n",
+        "a:\n  - - |\n        name: x: y\n",
+    ]
+
+    def test_defect_shapes_do_not_parse_and_are_flagged(self):
+        for doc in self.DEFECT_DOCS:
+            with self.subTest(doc=doc):
+                with self.assertRaises(yaml.YAMLError):
+                    yaml.compose(doc)
+                self.assertEqual(len(guard.findings(doc, "wf.yml")), 1)
+
+    def test_clean_shapes_parse_and_stay_clean(self):
+        # yaml.compose is the parse oracle: it builds the node tree without
+        # constructing Python objects, so a valid flow-collection key
+        # (`{a: b}: |`, unhashable for safe_load) still counts as parsing.
+        for doc in self.CLEAN_DOCS:
+            with self.subTest(doc=doc):
+                yaml.compose(doc)
+                self.assertEqual(guard.findings(doc, "wf.yml"), [])
 
 
 class Main(unittest.TestCase):
