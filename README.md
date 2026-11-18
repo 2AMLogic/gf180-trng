@@ -333,9 +333,15 @@ sim/selftest.sh --require-pdk  # fail (instead of skip) if ngspice/PDK are absen
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs, on every push and
 pull request, every check that needs no PDK, on Python 3.10 and 3.13, by
-calling `npm run <script>` once per group — `package.json` is the one
-inventory of what each check is, and the workflow is a runner over it rather
-than a second list that can say something different (#97):
+calling one script, `sim/check.sh ci` (#1000) — the single place the step
+list is written (the operator ruling recorded at 2AMLogic/2am#7561 requires
+exactly that: when the same checks run locally and in CI, the commands are
+written once, in a script in the repository, and the workflow calls the
+script). Its steps are the named `npm run <script>` entry points below —
+`package.json` remains the inventory of what each check is — and the script
+prints a banner per step (`== npm run check:spec ==`, ...), so a CI log still
+shows which check failed under the workflow's single job step (#97 records
+what letting copies of the list drift used to cost):
 
 - **`npm run lint`** — Python/shell syntax and lightweight static guards for
   schematic text blocks, unused Python names, path-based module loading, and
@@ -378,9 +384,12 @@ than a second list that can say something different (#97):
 - **`sim/selftest.sh`** — whose PDK-dependent stages detect the missing PDK
   and skip themselves on a hosted runner.
 
-`npm run check:ci` runs the same steps, in the same order, as the local
-entry point for the same intent — a contributor who runs it before pushing
-exercises exactly what the PR-blocking workflow above will run.
+`npm run check:ci` and the workflow run the same steps, in the same order,
+from the same place — `sim/check.sh ci` (#1000) — so a contributor who runs
+it before pushing exercises exactly what the PR-blocking workflow above will
+run. `npm run check:all` is the local pre-commit gate: the same list in the
+strict `--require-tools`/`--require-pdk` forms, plus the checks that need
+those tools outright, via `sim/check.sh all`.
 
 The smoke run, the corner-sanity check and the schematic-vs-netlist staleness
 guard (`python3 design/netlist.py --check`) are deliberately *not* on the PR

@@ -8,12 +8,25 @@ name: CI
 # (package.json declares none), so `npm run <script>` needs no setup step
 # either.
 #
-# Every check below that has a `package.json` script runs it via `npm run
-# <script>` rather than re-typing the underlying command: package.json is the
-# one inventory, and this file is a runner over it, not a second list that can
-# say something different (issue #97 -- `npm run check:ci` and this job used
-# to enumerate two different sets of tools; the fix is to stop having two
-# lists rather than to reconcile them once and let them drift again).
+# Every check the harness job runs is written once, in sim/check.sh's `ci`
+# group (issue #1000), and the job calls `sim/check.sh ci` instead of
+# enumerating steps: the script prints a banner per step (`== npm run
+# check:spec ==`, ...), so the log still shows which check failed under the
+# single job step. This file is a runner over that list, not a second copy of
+# it (issue #97 -- this job and `npm run check:ci` once enumerated two
+# different sets of tools, and the fix then was to stop having two lists;
+# issue #1000 applied the operator ruling recorded at 2AMLogic/2am#7561 --
+# the commands are written once, in a script in the repository, and the
+# workflow calls that script -- which deleted the parity test that held the
+# copies together). The individual checks keep their named `npm run <script>`
+# entry points in package.json, the inventory of what each check is.
+#
+# Two steps of the `ci` group have a form only this workflow uses, selected
+# through the environment rather than by keeping a second copy of the list:
+# SIM_CHECK_SHELL_STRICT=1 (shellcheck ships on this runner, so a missing
+# binary must fail, not skip) and SIM_CHECK_EVIDENCE_BASE (the base SHA the
+# evidence-history step compares sim/records/ against, computed below from
+# the event -- it depends on github.event_*, which a local run does not have).
 #
 # ---------------------------------------------------------------------------
 # Self-check inventory
@@ -23,7 +36,8 @@ name: CI
 #
 #   sim/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test`. The tests that need an external simulator (the RTL
+#       the check list (`npm run test`). The tests that need an external
+#       simulator (the RTL
 #       equivalence classes need Icarus Verilog; two runner probes need
 #       ngspice) SKIP here, since this job installs nothing. They run
 #       strictly in pdk-nightly.yml, which installs both and sets
@@ -33,7 +47,7 @@ name: CI
 #
 #   layout/tests/*.py (unittest)
 #       RUN on every push/PR, on the oldest and newest supported Python, via
-#       `npm run test:layout`. test_verify.py holds layout/verify.py's
+#       the check list (`npm run test:layout`). test_verify.py holds layout/verify.py's
 #       freshness-gate comparison (`_stable()` / `compare_reports()`, issue
 #       #148) to its own documented contract, with synthetic report payloads
 #       -- no klt, no PDK, sub-second. Every machine-local field `_stable()`
@@ -51,7 +65,16 @@ name: CI
 #       ...) must be caught, not silently accepted.
 #
 #   sim/selftest.sh stage 1 (harness unit tests)
-#       RUN on every push/PR (via sim/selftest.sh itself).
+#       RUN on every push/PR (via sim/selftest.sh itself, the last step of
+#       the check list).
+#
+#   python3 -m sim.tools.lint_shell (shell lint, #591)
+#       RUN on every push/PR via the check list: shellcheck (warning
+#       severity) over the tracked first-party *.sh files and shebang-carrying
+#       scripts. ubuntu-latest ships shellcheck, so this workflow's
+#       environment selects the strict form (SIM_CHECK_SHELL_STRICT=1, below)
+#       in which a missing binary fails; `npm run check:ci` runs the lenient
+#       form, which prints "shellcheck unavailable" and exits 0 when it is.
 #
 #   sim/tools/verify_record_checksums.py
 #   sim/selftest.sh stage 2 (the same check, --no-git)
@@ -63,13 +86,34 @@ name: CI
 #       what stops a record whose provenance is broken (#60: two concurrent
 #       run_corners.py invocations overwriting each other's raw output) from
 #       reaching main, where sim/records/ is append-only and a bad record can
-#       only be superseded, never fixed. Run twice over, deliberately: as its
-#       own step below (the strict form, which also checks git-commit state)
-#       and inside sim/selftest.sh's stage 2 (--no-git, so a freshly minted
-#       but not-yet-`git add`ed record does not fail an otherwise clean tree)
-#       -- npm run check:ci does not call this script directly, only via the
-#       sim/selftest.sh call at the end of its chain, which is why this one
-#       is not itself an `npm run <script>` step.
+#       only be superseded, never fixed. Run twice over, deliberately: as the
+#       named entry point `npm run check:record-checksums` in the check list
+#       (the strict form, which also checks git-commit state) and inside
+#       sim/selftest.sh's stage 2 (--no-git, so a freshly minted but
+#       not-yet-`git add`ed record does not fail an otherwise clean tree).
+#
+#   sim/tools/verify_artifact_manifests.py check (manifests/artifacts/,
+#   DR-0032)
+#       RUN on every push/PR via `npm run check:artifact-manifests`. New
+#       evidence keeps its raw bytes in the artifact store; git holds a
+#       manifest per run. Offline and stdlib-only: validates the manifest
+#       schema, accepts only artifact: URIs, rejects storage names, and
+#       fails if a stored object's bytes (or anything under the git-ignored
+#       sim/.work/) are committed. Re-hashing against the store is `klt
+#       artifact verify`, which needs the broker and so runs on a fleet
+#       worker, not here.
+#
+#   sim/tools/verify_evidence_history.py (sim/records/ append-only vs base)
+#       RUN on every push/PR via the check list. Append-only enforcement
+#       (the record-checksum entry above only proves the CURRENT tree is
+#       self-consistent; a rewritten record with matching hashes, or a
+#       deleted record + raw directory, would still pass it). Compares
+#       sim/records/ at HEAD with a base: the PR base SHA for pull_request,
+#       the pre-push SHA for push -- computed in this workflow and handed to
+#       the script through SIM_CHECK_EVIDENCE_BASE, since it is
+#       event-dependent; locally the tool's own origin/main default applies.
+#       A base that cannot be loaded (all-zero SHA on a first push, missing
+#       history) is a failure rather than an empty diff -- see sim/README.md.
 #
 #   sim/tools/jitter_energy_law.py --check
 #   sim/tools/starved_cell_jitter_energy.py --check
@@ -95,8 +139,77 @@ name: CI
 #       single list of all twenty). Every one is a pure derivation over
 #       records already committed under sim/records/ -- stdlib-only, no
 #       ngspice, no PDK, sub-second -- so a newly appended record cannot
-#       silently move a conclusion a summary document still asserts. See the
-#       "Spec arithmetic self-checks" step below for what each one guards.
+#       silently move a conclusion a summary document still asserts.
+#       jitter_energy_law.py --check fails if the three record families it
+#       reads stop agreeing on the invariant DR-0010 calls `a`;
+#       array_sizing.py --check fails if the shipped array stops satisfying
+#       DR-0007 §2 at any measured corner at DR-0010's rate, or if its own
+#       copy of `a` has drifted from that derivation.
+#       starved_cell_jitter_energy.py --check is the shipped starved-cell
+#       counterpart of the plain-cell derivation `a` comes from: it fails if
+#       the shipped ring's own starved-cell records stop agreeing with the
+#       calibration jitter_energy_law.py derives.
+#       worst_corner_entropy.py --check fails if the entropy-binding corner
+#       (issue #13: the minimum-Q corner over the full covered 27-point PVT
+#       grid) stops being the corner array_sizing.py's DR-0007 §2 inequality
+#       actually binds on, or if a newly appended corner record beats it.
+#       array_coupling_variants.py --check fails if the four DUT variants of
+#       issue #51 stop classifying the way
+#       sim/characterization-array-ring-coupling.md says they do -- i.e. if a
+#       record moves the conclusion out from under a summary document that
+#       still asserts it.
+#       array_coupling_buffer_variant.py --check is the same guard for issue
+#       #75's follow-on: it fails if the buffered variant stops isolating the
+#       ring (sigma_1 no longer below the unbuffered variant's), or if
+#       substituting the buffered array into the block's active rollup stops
+#       being power-neutral-or-better -- the two claims
+#       sim/characterization-ring-buffer-mitigation.md rests on. On a runner
+#       with no PDK the digital term is unavailable, which changes both
+#       rollup totals by the same constant and so leaves that comparison
+#       valid.
+#       liveness_tap_phase_variants.py --check is the same guard for issue
+#       #76: it fails if the DUT variants of the DR-0016 liveness-digitizer
+#       phase-cost experiment stop classifying the way
+#       sim/characterization-liveness-tap-phase-cost.md says they do -- either
+#       the clk-locked finding on the pre-#82 direct tap, or the separate
+#       finding about how much of it the buffer #82 adopted removes.
+#       array_liveness_tap_phase_variants.py --check is issue #87's equivalent
+#       guard on the SHIPPED topology -- whether the shipped clk-locked
+#       residual comes in below the 19.9x upper bound #76 recorded for it (it
+#       does, at 3.46x), and whether the xsb-on-xo raw-tap path reaches either
+#       ring node (it does not: 0.96x, unreachable at this corner). It was
+#       deliberately withheld from the list while the xsb pair was still
+#       running, because --check requires BOTH verdicts and exits non-zero
+#       while either RECORDED_*_VERDICT is None -- a half-armed gate that
+#       passed on the half it cannot see would be worse than no gate. Both
+#       pairs have landed and both verdicts are recorded, so the line is on
+#       the list now.
+#       sampler_bit_bias_variants.py --check is issue #86's guard, one level
+#       downstream of #76's: it fails if the sampled bit at the DR-0001 raw
+#       tap stops behaving the way sim/characterization-sampler-bit-bias.md
+#       says it does when the DR-0016 liveness digitizers' clock is running
+#       rather than parked -- i.e. if a future record turns that null into a
+#       measured bias, which would put a term into DR-0007 §1's independence
+#       argument. It also fails on a record whose sampled levels never
+#       settled to a rail, since bit statistics taken off a metastable capture
+#       are not bit statistics.
+#       time_to_first_valid.py --check fails if any start-up corner stops
+#       converging, if the ring swing stops being settled by the early
+#       window, or if the measured total drops below the README's arithmetic
+#       floor (which claims to be a lower bound, so falling under it would
+#       make the ratified row wrong rather than conservative).
+#       power_rollup.py --check fails on a missing corner, on an idle record
+#       whose two measurement windows disagree (its own static-state
+#       self-check), or on a sampler record that never witnessed a capture.
+#       It deliberately does NOT fail on a README row being missed -- the idle
+#       row IS missed, by 4.5x, and that is routed through DR-0017 rather than
+#       through a red build. It degrades to the measured-silicon-only view on
+#       a runner with no PDK and therefore no Liberty library.
+#       higher_rate_options.py --check (issue #629) fails if the starved-cell
+#       constant it sizes with drifts from starved_cell_jitter_energy.py, if
+#       its law stops reproducing the shipped ring count, or if any figure
+#       docs/higher-rate-source-options-study.md quotes stops reproducing
+#       from the committed records it reads.
 #       jitter_estimator_calibration_check.py checks the committed
 #       jitter-estimator-calibration record against its closed-form
 #       Phi(bias/NA) prediction (DR-0012); statistical_battery.py self-tests
@@ -120,11 +233,27 @@ name: CI
 #           sim/selftest.sh --require-pdk     # fails instead of skipping
 #
 #       That is also the command a contributor runs before committing any
-#       evidence record (sim/README.md), and it is what `npm run check:all`
-#       invokes; the nightly job does not replace the local pre-commit run.
+#       evidence record (sim/README.md), and it is what the `all` group of
+#       sim/check.sh invokes; the nightly job does not replace the local
+#       pre-commit run.
+#
+#   sim/tools/verify_report_host_paths.py (generated-report host-path guard)
+#       RUN on every push/PR via `npm run check:no-host-paths`. Tracked
+#       generated JSON under design/, layout/ and signoff/ must not embed
+#       absolute /home/<user>/ or /Users/<user>/ paths. One historical
+#       native response is exempt by exact path and SHA-256. Stdlib only.
+#
+#   layout/digital/build.py --check-input (digital P&R input-netlist
+#   staleness guard, #293)
+#       RUN on every push/PR via `npm run check:digital-input`.
+#       layout/digital/reports/place_and_route.json records the sha256 of
+#       the netlist place-and-route consumed, and this fails if
+#       design/trng_top/trng_top.synth.v has since been re-synthesized
+#       without the implementation being re-run. Pure stdlib -- no OpenROAD,
+#       no klt.
 #
 #   design/interface/regmap.py --check (register-map staleness guard)
-#       RUN on every push/PR, twice over: as its own step below (via `npm run
+#       RUN on every push/PR, twice over: in the check list (via `npm run
 #       check:regmap`), and inside sim/tests/test_interface.py. It regenerates
 #       the interface block's Verilog header and pinout document from the one
 #       normative table and diffs them against what is committed -- stdlib-
@@ -153,14 +282,14 @@ name: CI
 #       PR-blocking path provisions -- same exclusion, and the same reason, as
 #       selftest stages 4-5 above. See .github/workflows/pdk-nightly.yml. Its
 #       *syntax* is still compiled here (the compileall step covers design/).
-#       Deliberately absent from `npm run check:ci` too (only `check:all`
-#       calls it, as `check:netlist`) -- adding it there would make the local
-#       pre-push command need the PDK, which is exactly what `check:ci` exists
-#       to avoid.
+#       Deliberately absent from the `ci` group of sim/check.sh too (only its
+#       `all` group runs it, as `check:netlist`) -- adding it there would make
+#       the local pre-push command need the PDK, which is exactly what the
+#       `ci` group exists to avoid.
 #
 #   design/netlist.py --lint (schematic T {...} text-block brace guard)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
-#       and so into this job's first step. Unlike --check above, this is a
+#       and so into the check list. Unlike --check above, this is a
 #       pure-Python scan of the schematics' own text for a stray brace inside
 #       a T {...} free-text block -- no xschem, no PDK. A brace there (even a
 #       balanced pair) makes xschem's own parser miscount and silently corrupt
@@ -172,7 +301,7 @@ name: CI
 #   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
 #   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
-#       and so into this job's first step; all are stdlib-only and need no
+#       and so into the check list; all are stdlib-only and need no
 #       PDK. verify_markdown_links walks the git-tracked *.md files (outside
 #       the append-only sim/records/ tree and the installed .loom/, .claude/
 #       and .agents/ surfaces) and fails on any relative inline link or
@@ -189,7 +318,8 @@ name: CI
 #       `check:floorplan` respectively. None needs the PDK to at least run its
 #       own argument handling, tool probe and skip path -- a skip is not a
 #       pass, so exercising the skip path itself is still worth a green check
-#       here; `npm run check:all` runs the latter two with --require-tools.
+#       here; the `all` group runs the latter two with --require-tools
+#       locally.
 #
 #   layout/digital/tap_distance.py --check (tap-distance report freshness)
 #       RUN on every push/PR via `npm run check:digital-tap-distance`, which
@@ -263,143 +393,31 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          # Full history: the evidence-history step below needs the PR base
-          # (or pushed-from) commit and a merge-base with HEAD.
+          # Full history: the evidence-history step of the check list needs
+          # the PR base (or pushed-from) commit and a merge-base with HEAD.
           fetch-depth: 0
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
 
-      # python3 -m compileall + bash -n sim/selftest.sh, then
-      # design/netlist.py --lint -- a pure-Python scan of every
-      # design/xschem/*.sch's T {...} free-text block for a stray brace, which
-      # xschem's own parser silently mis-handles and turns into a corrupted
-      # netlist (#61). No xschem, no PDK, so it belongs here rather than on
-      # .github/workflows/pdk-nightly.yml with design/netlist.py --check.
-      # The chain ends with the unused-name and relative markdown link guards
-      # (see the inventory above).
-      - name: Lint (syntax check, shell check, schematic brace guard)
-        run: npm run lint
-
-      # shellcheck (warning severity) over the tracked first-party *.sh (#591).
-      # ubuntu-latest ships shellcheck; --require-tools makes a missing
-      # binary a failure here instead of the local skip.
-      - name: Shell lint (shellcheck)
-        run: python3 -m sim.tools.lint_shell --require-tools
-
-      - name: Harness unit tests
-        run: npm run test
-
-      # layout/verify.py's freshness-gate comparison logic, exercised with
-      # synthetic report payloads -- no klt, no PDK, no network. See the
-      # `layout/tests/*.py` entry in the self-check inventory above.
-      - name: Layout unit tests
-        run: npm run test:layout
-
-      # Derivations over committed sim/records/ only: no ngspice, no PDK, no
-      # network, nothing written. Run via `npm run check:spec` -- the full
-      # list of twenty lives in package.json, not here (issue #97).
-      # jitter_energy_law.py --check fails if the three record families it
-      # reads stop agreeing on the invariant DR-0010 calls `a`; array_sizing.py
-      # --check fails if the shipped array stops satisfying DR-0007 §2 at any
-      # measured corner at DR-0010's rate, or if its own copy of `a` has
-      # drifted from that derivation.
-      # starved_cell_jitter_energy.py --check is the shipped starved-cell
-      # counterpart of the plain-cell derivation `a` above comes from: it
-      # fails if the shipped ring's own starved-cell records stop agreeing
-      # with the calibration jitter_energy_law.py derives.
-      # worst_corner_entropy.py --check fails if the entropy-binding corner
-      # (issue #13: the minimum-Q corner over the full covered 27-point PVT
-      # grid) stops being the corner array_sizing.py's DR-0007 §2 inequality
-      # actually binds on, or if a newly appended corner record beats it.
-      # array_coupling_variants.py --check fails if the four DUT variants of
-      # issue #51 stop classifying the way sim/characterization-array-ring-
-      # coupling.md says they do -- i.e. if a record moves the conclusion out
-      # from under a summary document that still asserts it.
-      # array_coupling_buffer_variant.py --check is the same guard for issue
-      # #75's follow-on: it fails if the buffered variant stops isolating the
-      # ring (sigma_1 no longer below the unbuffered variant's), or if
-      # substituting the buffered array into the block's active rollup stops
-      # being power-neutral-or-better -- the two claims
-      # sim/characterization-ring-buffer-mitigation.md rests on. On a runner
-      # with no PDK the digital term is unavailable, which changes both rollup
-      # totals by the same constant and so leaves that comparison valid.
-      # liveness_tap_phase_variants.py --check is the same guard for issue #76:
-      # it fails if the DUT variants of the DR-0016 liveness-digitizer
-      # phase-cost experiment stop classifying the way
-      # sim/characterization-liveness-tap-phase-cost.md says they do -- either
-      # the clk-locked finding on the pre-#82 direct tap, or the separate
-      # finding about how much of it the buffer #82 adopted removes.
-      # array_liveness_tap_phase_variants.py --check is issue #87's equivalent
-      # guard on the SHIPPED topology -- whether the shipped clk-locked residual
-      # comes in below the 19.9x upper bound #76 recorded for it (it does, at
-      # 3.46x), and whether the xsb-on-xo raw-tap path reaches either ring node
-      # (it does not: 0.96x, unreachable at this corner). It was deliberately
-      # withheld from the list below while the xsb pair was still running,
-      # because --check requires BOTH verdicts and exits non-zero while either
-      # RECORDED_*_VERDICT is None -- a half-armed gate that passed on the half
-      # it cannot see would be worse than no gate. Both pairs have landed and
-      # both verdicts are recorded, so the line is on the list now.
-      # sampler_bit_bias_variants.py --check is issue #86's guard, one level
-      # downstream of #76's: it fails if the sampled bit at the DR-0001 raw tap
-      # stops behaving the way sim/characterization-sampler-bit-bias.md says it
-      # does when the DR-0016 liveness digitizers' clock is running rather than
-      # parked -- i.e. if a future record turns that null into a measured bias,
-      # which would put a term into DR-0007 §1's independence argument. It also
-      # fails on a record whose sampled levels never settled to a rail, since
-      # bit statistics taken off a metastable capture are not bit statistics.
-      # time_to_first_valid.py --check fails if any start-up corner stops
-      # converging, if the ring swing stops being settled by the early window,
-      # or if the measured total drops below the README's arithmetic floor
-      # (which claims to be a lower bound, so falling under it would make the
-      # ratified row wrong rather than conservative).
-      # power_rollup.py --check fails on a missing corner, on an idle record
-      # whose two measurement windows disagree (its own static-state
-      # self-check), or on a sampler record that never witnessed a capture. It
-      # deliberately does NOT fail on a README row being missed -- the idle row
-      # IS missed, by 4.5x, and that is routed through DR-0017 rather than
-      # through a red build. It degrades to the measured-silicon-only view on
-      # this runner, which has no PDK and therefore no Liberty library.
-      # higher_rate_options.py --check (issue #629) fails if the starved-cell
-      # constant it sizes with drifts from starved_cell_jitter_energy.py, if
-      # its law stops reproducing the shipped ring count, or if any figure
-      # docs/higher-rate-source-options-study.md quotes stops reproducing
-      # from the committed records it reads.
-      - name: "Spec arithmetic self-checks (jitter-energy law, array sizing, entropy corner, ring coupling, issue 14 rollups)"
-        run: npm run check:spec
-
-      # Ties every record's numbers to the raw ngspice output it cites: each
-      # file listed in raw.files is re-hashed against sim/records/raw/, and a
-      # mismatch, a missing file, an unlisted file in a raw directory, or raw
-      # output that was never committed fails the run. sim/records/ is
-      # append-only, so a record with broken provenance that reaches main can
-      # only be superseded -- this is the gate that keeps one out (#60). This
-      # is the strict, git-commit-state-checking form, run as the named entry
-      # point `npm run check:record-checksums` (also in check:ci and
-      # check:all). sim/selftest.sh re-runs the check in its --no-git form, so
-      # this is a deliberately redundant early check.
-      - name: Record checksum verification (sim/records/ raw.files)
-        run: npm run check:record-checksums
-
-      # New evidence keeps its raw bytes in the artifact store; git holds a
-      # manifest per run (manifests/artifacts/, DR-0032). Offline and
-      # stdlib-only: validates the manifest schema, accepts only artifact:
-      # URIs, rejects storage names, and fails if a stored object's bytes (or
-      # anything under the git-ignored sim/.work/) are committed. Re-hashing
-      # against the store is `klt artifact verify`, which needs the broker and
-      # so runs on a fleet worker, not here.
-      - name: Artifact manifests (manifests/artifacts/, no stored bytes committed)
-        run: npm run check:artifact-manifests
-
-      # Append-only enforcement (the checksum step above only proves the
-      # CURRENT tree is self-consistent; a rewritten record with matching
-      # hashes, or a deleted record + raw directory, would still pass it).
-      # Compares sim/records/ at HEAD with the base: the PR base SHA for
-      # pull_request, the pre-push SHA for push. Any other event, or a base
-      # that cannot be loaded (all-zero SHA on a first push, missing history),
-      # is a failure rather than an empty diff -- see sim/README.md.
-      - name: Evidence history is append-only (sim/records/ vs base)
+      # The PR-blocking check list, written once in sim/check.sh's `ci` group
+      # (#1000): lint (Python/shell syntax, the schematic brace guard, the
+      # unused-name, pathload and markdown-link guards), shell lint, the
+      # harness and layout unit tests, the spec arithmetic, the
+      # record/artifact/regmap/floorplan-netlist/digital-input/host-path
+      # guards, the DRC/LVS/floorplan/tap-distance self-skip drivers, the
+      # signoff freshness half, and sim/selftest.sh's PDK-absent skip path.
+      # The script prints a banner per step, so a failure still names the
+      # check that failed. The two environment variables select this
+      # workflow's forms: SIM_CHECK_SHELL_STRICT=1 makes a missing shellcheck
+      # a failure (shellcheck ships on this runner), and
+      # SIM_CHECK_EVIDENCE_BASE carries the append-only base revision --
+      # event-dependent, so the case below computes it here: the PR base SHA
+      # for pull_request, the pushed-from SHA for push, origin/main for any
+      # other event. A base that cannot be resolved is a failure, not an
+      # empty diff (see sim/README.md).
+      - name: Self-checks (the one check list: sim/check.sh ci)
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -414,82 +432,8 @@ jobs:
             echo "ERROR: no base revision for event $EVENT_NAME" >&2
             exit 2
           fi
-          python3 sim/tools/verify_evidence_history.py --base "$base"
-
-      # The digital half's equivalent of design/netlist.py --check: the
-      # interface block's Verilog header and pinout document are generated
-      # from design/interface/regmap.py, and this fails if either is stale.
-      # Unlike the netlist guard it needs no PDK and no external tool, so it
-      # belongs on the PR-blocking path.
-      - name: Register-map staleness guard
-        run: npm run check:regmap
-
-      # Tracked generated JSON under design/, layout/ and signoff/ must not
-      # embed absolute /home/<user>/ or /Users/<user>/ paths. One historical
-      # native response is exempt by exact path and SHA-256. Stdlib only.
-      - name: Generated-report host-path guard
-        run: npm run check:no-host-paths
-
-      # design/floorplan_netlist.py's own inter-region net list (issue #221,
-      # phase 1 of the #219 floorplan-composition epic) against the four
-      # regions' own committed reference netlists, and the composed
-      # layout/floorplan/trng_floorplan.lvs_reference.spice it generates.
-      # Pure stdlib -- no klt, no PDK -- so it belongs on the PR-blocking path.
-      - name: Floorplan inter-region net list self-check
-        run: npm run check:floorplan-netlist
-
-      # The layout equivalent of the register-map guard: layout/testcells/*.gds
-      # are generated by layout/testcells/build.py and every committed DRC/LVS
-      # report is only meaningful for the exact stream it ran on, so a geometry
-      # edit that was not regenerated must fail here. Pure stdlib -- no PDK, no
-      # klayout-tools, no network -- so it belongs on the PR-blocking path.
-      - name: Layout test-cell staleness guard
-        run: npm run check:fixtures
-
-      # The input edge of the committed digital implementation (#293):
-      # layout/digital/reports/place_and_route.json records the sha256 of the
-      # netlist place-and-route consumed, and this fails if
-      # design/trng_top/trng_top.synth.v has since been re-synthesized without
-      # the implementation being re-run. Pure stdlib -- no OpenROAD, no klt.
-      - name: Digital P&R input-netlist staleness guard
-        run: npm run check:digital-input
-
-      # Runs the DRC/LVS flow when klayout-tools and the PDK are present, and
-      # self-skips with exit 0 when they are not (this runner has neither).
-      # Included for the same reason selftest.sh is: it covers the driver's own
-      # argument handling, tool probe, and skip path. A skip is not a pass --
-      # `npm run check:all` runs it with --require-tools locally.
-      - name: Layout DRC/LVS flow (self-skips on a hosted runner)
-        run: npm run check:layout
-
-      # Rebuilds the entropy-source floorplan abstract (one klt gen guard_ring
-      # per isolation region, DRC'd) and holds its area rollup to the
-      # committed artefacts under layout/floorplan/. Same self-skip pattern as
-      # layout/verify.py above -- klt/the PDK are absent on this runner, so
-      # this exercises the driver's own tool probe and skip path rather than
-      # the flow itself; `npm run check:all` runs it with --require-tools
-      # locally. Was previously absent from this workflow with no documented
-      # reason, unlike design/netlist.py --check and selftest.sh stages 4-5
-      # above, which are excluded on purpose (issue #97).
-      - name: Entropy-source floorplan self-check (self-skips on a hosted runner)
-        run: npm run check:floorplan
-
-      # Tap-distance report freshness (#448/#458). Re-measures the committed
-      # trng_top.gds and compares with layout/digital/reports/tap-distance.json.
-      # Needs only the `klayout` Python module, which this runner does not
-      # install, so it prints "the `klayout` Python module is not installed;
-      # skipping" and exits 0 -- a skip, not a pass. The mandatory form
-      # (--check --require-tools) runs in pdk-nightly.yml. Read-only.
-      - name: Tap-distance report freshness (self-skips on a hosted runner)
-        run: npm run check:digital-tap-distance
-
-      # sim/selftest.sh re-runs the unit tests and the record-checksum check
-      # as its own stages 1-2; the few seconds of overlap buy coverage of the
-      # acceptance script itself -- its argument handling, its environment
-      # probe, and its PDK-absent skip path (stages 4-5 self-skip and the
-      # script exits 0 on this runner).
-      - name: Harness acceptance test (PDK stages self-skip on a hosted runner)
-        run: sim/selftest.sh
+          export SIM_CHECK_EVIDENCE_BASE="$base" SIM_CHECK_SHELL_STRICT=1
+          sim/check.sh ci
 
   # ---------------------------------------------------------------------------
   # T1 evidence signoff. Separate job because it is the only check here that
