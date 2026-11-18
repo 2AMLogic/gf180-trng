@@ -10,6 +10,10 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-18
 
+- **PR #1010**: signoff: match the ci.yml check-list call as a whole line, not a substring
+- **PR #1005**: lint: add workflow_yaml_guard for the zero-job-startup YAML name-scalar trap
+- **Issue #1007** (closed): signoff: item 10's `sim/check.sh ci` literal is satisfiable by a comment and a step name, not only by the run line
+- **Issue #1003** (closed): No check validates that .github/workflows/*.yml parses as YAML
 - **PR #1006**: fix: anchor signoff gate needles to whole lines instead of substrings
 - **PR #1002**: check: single-source the check list in sim/check.sh; retire the parity test
 - **Issue #1004** (closed): signoff gate audit: 'npm run test' needle is satisfied by 'npm run test:layout', so the unit-test gate can silently leave the PR-blocking list
