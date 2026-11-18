@@ -15,13 +15,13 @@
     "README.md has Target specification, Layout, sim/ harness, Checks and License sections and links spec/",
     "spec/ratification-2026-07-31-target-spec.md carries the ratified specification table",
     "README.md documents how this partition is reproduced: `design/interface/regmap.py --check`, `layout/digital/build.py --check-input`",
-    ".github/workflows/ci.yml runs `npm run check:regmap`, `npm run check:digital-input` and `python3 signoff/check.py --require-tools`"
+    ".github/workflows/ci.yml runs the check list through `sim/check.sh ci`, whose steps include `npm run check:regmap`, `npm run check:digital-input`, and runs `python3 signoff/check.py --require-tools` in its signoff job"
   ],
-  "ci_status": "not captured: green CI is a property of a run, not of a file. This inventory hashes the workflow and names the command; whether the last run was green is not recorded here and is not part of what a `met` row asserts.",
+  "ci_status": "not captured: green CI is a property of a run, not of a file. This inventory hashes the check list and the workflow and names the commands; whether the last run was green is not recorded here and is not part of what a `met` row asserts.",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "sha256:46eccc83bb1251bd8e59d9505a6bf3b83ef231d8dfdb485372da4046dc3505f1"
+      "sha256": "sha256:390aae1dba6f79609d0d9dbc43c0ed60743a5ae5476d86f1a02eb3aa3f63c117"
     },
     {
       "path": "LICENSE",
@@ -29,11 +29,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "sha256:5a4373a632260878780e4c4375c23a84e26b6a76757994abe29f00fba34c35d1"
+      "sha256": "sha256:e61be2329c2f981e6ca35f80fb62aeb78d6eea8823692b04883fba42c3fae7bc"
     },
     {
       "path": "sim/README.md",
       "sha256": "sha256:b6f3bfcfdb8b6c42288e9b195fe2a777379b49e94078b2c958d8b1bf4c712bce"
+    },
+    {
+      "path": "sim/check.sh",
+      "sha256": "sha256:1add6ff42819e16d77f6a8d523d358aa2df524ab240805bc22ea5e027c690138"
     },
     {
       "path": "spec/ratification-2026-07-31-target-spec.md",

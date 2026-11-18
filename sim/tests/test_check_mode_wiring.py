@@ -12,8 +12,9 @@ in ``_power_cli.py`` (issue #837) -- and requires each to be either
 (b) listed in ``UNWIRED_ALLOWLIST`` below with a one-line reason.
 
 It also requires allowlist entries to stay truthful (the tool still defines
-``--check`` and is still not wired), and that every ``npm run check:*`` that
-.github/workflows/ci.yml names exists in package.json. Stdlib only.
+``--check`` and is still not wired), and that the check list the CI workflow
+runs -- ``sim/check.sh ci`` (#1000), the one place the step list is written --
+only invokes ``npm run`` entry points that exist in package.json. Stdlib only.
 """
 
 from __future__ import annotations
@@ -98,11 +99,16 @@ def check_tools(tools_dir: Path = TOOLS_DIR) -> set[str]:
 
 
 def wired_tools(scripts: dict[str, str]) -> set[str]:
-    """Names of sim/tools scripts invoked by any ``check:*`` package script."""
+    """Names of sim/tools scripts invoked by any ``check:*`` package script,
+    or by either group of sim/check.sh -- the single check list (#1000) that
+    both chains now call."""
     found: set[str] = set()
     for name, cmd in scripts.items():
         if name.startswith("check:"):
             found.update(re.findall(r"sim/tools/([\w-]+\.py)", cmd))
+    check_script = REPO_ROOT / "sim" / "check.sh"
+    if check_script.is_file():
+        found.update(re.findall(r"sim/tools/([\w-]+\.py)", check_script.read_text()))
     return found
 
 
@@ -146,12 +152,25 @@ class CheckModeWiring(unittest.TestCase):
             self.assertIn(name, tools, f"{name}: no longer defines --check; drop it from the allowlist")
             self.assertNotIn(name, wired, f"{name}: now wired in package.json; drop it from the allowlist")
 
-    def test_ci_npm_scripts_exist(self) -> None:
+    def test_ci_runs_the_check_list_script(self) -> None:
+        """ci.yml runs the single check list, and that list stays real.
+
+        sim/check.sh (#1000) is the one place the step list is written; the
+        workflow calls it instead of enumerating steps. So the wiring guard
+        moves with it: ci.yml must run `sim/check.sh ci`, and every
+        `npm run <name>` either group of the script invokes must exist in
+        package.json -- a step renamed or dropped from package.json while the
+        list still calls it fails here.
+        """
         ci = CI_YML.read_text()
-        referenced = set(re.findall(r"^\s*run:\s*npm run ([\w:-]+)", ci, re.M))
+        self.assertRegex(ci, r"(?m)^\s+sim/check\.sh ci$", "ci.yml must run the check list through sim/check.sh ci")
+        script = (REPO_ROOT / "sim" / "check.sh").read_text()
+        # every step the list runs through an npm entry point: the banners are
+        # written as step "npm run <name>" (see step() in sim/check.sh)
+        referenced = set(re.findall(r'step "npm run ([\w:-]+)"', script))
         self.assertTrue(referenced)
-        for script in sorted(referenced):
-            self.assertIn(script, self.scripts, f"ci.yml runs `npm run {script}` but package.json lacks it")
+        for name in sorted(referenced):
+            self.assertIn(name, self.scripts, f"sim/check.sh runs `npm run {name}` but package.json lacks it")
 
 
 if __name__ == "__main__":

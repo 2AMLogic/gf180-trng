@@ -5,9 +5,9 @@
   "gates": [
     {
       "command": "python3 design/interface/regmap.py --check",
-      "runs_in": ".github/workflows/ci.yml",
+      "runs_in": "sim/check.sh",
       "runs_without_pdk_or_external_tools": true,
-      "note": "stdlib only; runs in the PR-blocking job"
+      "note": "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`"
     },
     {
       "command": "python3 design/synth.py --check",

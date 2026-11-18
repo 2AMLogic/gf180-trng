@@ -42,11 +42,15 @@ class InventoryDrift(unittest.TestCase):
         self.root = Path(tmp.name)
 
     def stage_item10(self):
-        copy_files(self.root, [*WORKFLOWS, "README.md", "LICENSE", inv.SPEC, "sim/README.md", "package.json"])
+        copy_files(
+            self.root,
+            [*WORKFLOWS, "README.md", "LICENSE", inv.SPEC, "sim/README.md", inv.CHECK_SCRIPT, "package.json"],
+        )
 
     def stage_item9_digital(self):
         files = [
             *WORKFLOWS, "README.md", "sim/README.md", "sim/pdk.json", "package.json",
+            inv.CHECK_SCRIPT,
             *inv.DOCUMENTED_BY.values(),
         ]
         for slug in inv.DIGITAL_TESTBENCHES:
@@ -94,6 +98,21 @@ class InventoryDrift(unittest.TestCase):
         ci.write_text(ci.read_text().replace("python3 signoff/check.py --require-tools", "true"))
         with self.assertRaises(inv.AuditError):
             inv.build_inventory(self.root, 10, "analog")
+
+    def test_gate_the_check_list_does_not_run_fails_the_audit(self):
+        """The single-source guard: a step removed from sim/check.sh's `ci`
+        group fails the audit even though the script still contains the same
+        command elsewhere (issue #1000 -- the `all` group is not what CI
+        runs)."""
+        self.stage_item10()
+        script = self.root / inv.CHECK_SCRIPT
+        script.write_text(
+            script.read_text().replace(
+                'step "npm run check:digital-input" npm run check:digital-input\n', "", 1
+            )
+        )
+        with self.assertRaises(inv.AuditError):
+            inv.build_inventory(self.root, 10, "digital")
 
 
 class CommittedCitations(unittest.TestCase):
