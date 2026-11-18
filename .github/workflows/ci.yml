@@ -300,6 +300,8 @@ name: CI
 #   sim/tools/unused_names.py --check (unused import / local guard, #494)
 #   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
 #   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
+#   sim/tools/workflow_yaml_guard.py --check (workflow name-scalar guard,
+#       #1003)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
 #       and so into the check list; all are stdlib-only and need no
 #       PDK. verify_markdown_links walks the git-tracked *.md files (outside
@@ -309,6 +311,12 @@ name: CI
 #       directory -- decision-record citations in evidence summaries are the
 #       audit trail for spec claims, and nothing else checks they resolve.
 #       File existence only; anchors are out of scope.
+#       workflow_yaml_guard scans these tracked workflow files for a plain
+#       (unquoted, non-block) `name:` value containing ": " -- a defect that
+#       makes the file unparseable, so the run is a startup failure with
+#       zero jobs and no required context ever reports (#1003); it is the
+#       one failure mode no check inside the workflow can see, because the
+#       workflow is what runs the checks.
 #
 #   layout/testcells/build.py --check (layout test-cell staleness guard)
 #   layout/verify.py (DRC/LVS flow, self-skips without klt/the PDK)
@@ -403,7 +411,8 @@ jobs:
 
       # The PR-blocking check list, written once in sim/check.sh's `ci` group
       # (#1000): lint (Python/shell syntax, the schematic brace guard, the
-      # unused-name, pathload and markdown-link guards), shell lint, the
+      # unused-name, pathload, markdown-link and workflow name-scalar guards),
+      # shell lint, the
       # harness and layout unit tests, the spec arithmetic, the
       # record/artifact/regmap/floorplan-netlist/digital-input/host-path
       # guards, the DRC/LVS/floorplan/tap-distance self-skip drivers, the

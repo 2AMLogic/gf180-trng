@@ -3,7 +3,7 @@
   "description": "Loom-managed workspace. There is no JavaScript in this repo; these scripts are named entry points for the stdlib-only Python/shell self-checks, so agents, contributors and CI all invoke the same commands. The PR-blocking chain (check:ci) and the local pre-commit chain (check:all) are one script, sim/check.sh (issue #1000) -- the only place the step list is written; the other entries are the named checks those groups and the docs cite. See sim/check.sh and .github/workflows/ci.yml for what each script checks and why.",
   "private": true,
   "scripts": {
-    "lint": "python3 -m compileall -q sim design layout signoff && bash -n sim/selftest.sh && bash -n sim/check.sh && python3 design/netlist.py --lint && python3 -m sim.tools.unused_names --check && python3 -m sim.tools.pathload_guard --check && python3 -m sim.tools.verify_markdown_links --check",
+    "lint": "python3 -m compileall -q sim design layout signoff && bash -n sim/selftest.sh && bash -n sim/check.sh && python3 design/netlist.py --lint && python3 -m sim.tools.unused_names --check && python3 -m sim.tools.pathload_guard --check && python3 -m sim.tools.verify_markdown_links --check && python3 -m sim.tools.workflow_yaml_guard --check",
     "check:lint-shell": "python3 -m sim.tools.lint_shell",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests",
     "test:layout": "python3 -m unittest discover -s layout/tests -t layout/tests",
