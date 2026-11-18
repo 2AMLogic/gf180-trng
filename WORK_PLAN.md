@@ -4,6 +4,7 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
+_Generated: 2026-11-18T14:59:10Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -34,7 +35,6 @@ Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
-- **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
 - **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates
 
@@ -65,7 +65,6 @@ Issues carrying `loom:curated`.
 - **#810**: Power: record ring-liveness sampler (xsr1/xsr2) active current at the binding corner *(curated)* *(held)*
 - **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)* *(held)*
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
-- **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123 *(curated)*
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
 - **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates *(curated)*
 
@@ -87,10 +86,10 @@ _None._
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
-| In Progress (`loom:building`) | 5 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 14 |
+| Curated | 13 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
