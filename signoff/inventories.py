@@ -614,7 +614,7 @@ def _build_item10(root: Path, partition: str) -> dict:
         if text not in ci:
             raise AuditError(f"{CI_WORKFLOW}: does not run {text!r}")
     for text in _HYGIENE_CI[partition]:
-        if text not in _check_script_ci_group(root):
+        if not _has_line(_check_script_ci_group(root), f'step "{text}" {text}'):
             raise AuditError(f"{CHECK_SCRIPT}'s ci group does not run {text!r}")
     return {
         "assertions": [

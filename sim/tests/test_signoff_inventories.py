@@ -105,6 +105,19 @@ class InventoryDrift(unittest.TestCase):
             inv.build_inventory(self.root, 9, "digital")
         self.assertIn('step "npm run test" npm run test', str(ctx.exception))
 
+    def test_hygiene_gate_whose_command_is_a_prefix_of_a_longer_step_fails_the_audit(self):
+        """The hygiene row's `npm run test` claim (item 10, analog) is audited
+        against the same whole step lines, so the longer `npm run test:layout`
+        step cannot satisfy it either (issue #1004's second false pass)."""
+        self.stage_item10()
+        script = self.root / inv.CHECK_SCRIPT
+        script.write_text(
+            script.read_text().replace('step "npm run test" npm run test\n', "", 1)
+        )
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 10, "analog")
+        self.assertIn("ci group does not run 'npm run test'", str(ctx.exception))
+
     def test_gate_the_workflow_does_not_run_fails_the_audit(self):
         self.stage_item10()
         ci = self.root / inv.CI_WORKFLOW
