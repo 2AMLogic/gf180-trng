@@ -16,11 +16,11 @@
     },
     "10.analog": {
       "file": "signoff/evidence/t1-item-10-analog.json",
-      "content_hash": "sha256:e186a2ae04ee4f31854a926fd00a95cdfbd6f28ab92c1262b53080ea161daeea"
+      "content_hash": "sha256:b6ed6026727e0854a9181907ff5d0beb49f052588615f458da3ab01176b0f328"
     },
     "10.digital": {
       "file": "signoff/evidence/t1-item-10-digital.json",
-      "content_hash": "sha256:ab38615263362949f59d65c990be07696a5ae30bc3fdbc5b78bea4ea227c2795"
+      "content_hash": "sha256:7148c236f7fea3093a6eabf4dcef016faa100e8b591e49d9d290677ccd8b5ed4"
     },
     "11.analog": [
       {

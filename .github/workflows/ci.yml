@@ -171,6 +171,8 @@ name: CI
 #   sim/tools/unused_names.py --check (unused import / local guard, #494)
 #   sim/tools/verify_markdown_links.py --check (relative link guard, #570)
 #   sim/tools/pathload_guard.py --check (hand-copied path-loader guard, #553)
+#   sim/tools/workflow_yaml_guard.py --check (workflow name-scalar guard,
+#       #1003)
 #       RUN on every push/PR, folded into `npm run lint`'s chain (package.json)
 #       and so into this job's first step; all are stdlib-only and need no
 #       PDK. verify_markdown_links walks the git-tracked *.md files (outside
@@ -180,6 +182,12 @@ name: CI
 #       directory -- decision-record citations in evidence summaries are the
 #       audit trail for spec claims, and nothing else checks they resolve.
 #       File existence only; anchors are out of scope.
+#       workflow_yaml_guard scans these tracked workflow files for a plain
+#       (unquoted, non-block) `name:` value containing ": " -- a defect that
+#       makes the file unparseable, so the run is a startup failure with
+#       zero jobs and no required context ever reports (#1003); it is the
+#       one failure mode no check inside the workflow can see, because the
+#       workflow is what runs the checks.
 #
 #   layout/testcells/build.py --check (layout test-cell staleness guard)
 #   layout/verify.py (DRC/LVS flow, self-skips without klt/the PDK)
@@ -277,8 +285,8 @@ jobs:
       # xschem's own parser silently mis-handles and turns into a corrupted
       # netlist (#61). No xschem, no PDK, so it belongs here rather than on
       # .github/workflows/pdk-nightly.yml with design/netlist.py --check.
-      # The chain ends with the unused-name and relative markdown link guards
-      # (see the inventory above).
+      # The chain ends with the unused-name, relative markdown link, and
+      # workflow name-scalar guards (see the inventory above).
       - name: Lint (syntax check, shell check, schematic brace guard)
         run: npm run lint
 

@@ -52,6 +52,10 @@ UNWIRED_ALLOWLIST = {
         "enforced by the `lint` script (`python3 -m sim.tools.pathload_guard --check`), "
         "which check:ci runs first; it is a source linter, not a spec/evidence gate"
     ),
+    "workflow_yaml_guard.py": (
+        "enforced by the `lint` script (`python3 -m sim.tools.workflow_yaml_guard --check`), "
+        "which check:ci runs first; it is a source linter, not a spec/evidence gate"
+    ),
     "verify_markdown_links.py": (
         "enforced by the `lint` script (`python3 -m sim.tools.verify_markdown_links --check`), "
         "which check:ci runs first; it is a documentation link guard, not a spec/evidence gate"

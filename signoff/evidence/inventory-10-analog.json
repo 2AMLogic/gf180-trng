@@ -21,7 +21,7 @@
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "sha256:46eccc83bb1251bd8e59d9505a6bf3b83ef231d8dfdb485372da4046dc3505f1"
+      "sha256": "sha256:6090de9539e2fa7be2a13957825868dca40f00952ef70e2c4a5a7eabe423ca1a"
     },
     {
       "path": "LICENSE",
