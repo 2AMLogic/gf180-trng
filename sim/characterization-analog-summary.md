@@ -120,7 +120,7 @@ and `python3 sim/tools/time_to_first_valid.py --check` at their default
 taken at other rates, not a 2 kbps transistor-level run.
 
 - **Power, active.** The digital term is scaled from the fixed 1 MHz gate-level
-  measurement (339.4 µW) to **8.24 µW** at 2 kbps; leakage does not scale.
+  measurement (338.1 µW) to **8.24 µW** at 2 kbps; leakage does not scale.
   The whole block comes to **418.2 µW = 83.6 %** of the < 500 µW row at
   `ff`/−40 °C/3.63 V, with the entropy source unchanged at 393.2 µW. The
   liveness samplers are still a GAP at the worst corner, so this is a
