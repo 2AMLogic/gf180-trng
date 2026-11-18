@@ -119,6 +119,68 @@ class Findings(unittest.TestCase):
                "    A: B: C\n")
         self.clean(doc)
 
+    # -- block headers on dash-led steps (run: first, name: after) --------
+
+    def test_name_after_dash_led_block_scalar_is_flagged(self):
+        # `- run: |` before `name:`: the sibling key lives at the key's
+        # column, not the dash's, so it ends the block and is scanned.
+        doc = ("jobs:\n"
+               "  j:\n"
+               "    steps:\n"
+               "      - run: |\n"
+               "          echo\n"
+               "        name: Self-checks (the one check list: sim/check.sh ci)\n")
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:6:"), f)
+
+    def test_name_after_folded_dash_led_block_is_flagged(self):
+        doc = ("steps:\n"
+               "      - run: >\n"
+               "          echo\n"
+               "        name: check list: sim/check.sh ci\n")
+        self.assertEqual(len(guard.findings(doc)), 1)
+
+    def test_name_after_chomped_dash_led_block_is_flagged(self):
+        doc = ("steps:\n"
+               "      - run: |-\n"
+               "          echo\n"
+               "        name: Steps:\n")
+        self.assertEqual(len(guard.findings(doc)), 1)
+
+    def test_name_after_indicator_pair_dash_led_block_is_flagged(self):
+        doc = ("steps:\n"
+               "      - run: >-\n"
+               "          echo\n"
+               "        name: Steps:\n")
+        self.assertEqual(len(guard.findings(doc)), 1)
+
+    def test_block_header_with_trailing_comment_stays_clean(self):
+        # `run: | # note` is a valid block header: its content lines are
+        # literal, not mapping lines to scan.
+        doc = ("jobs:\n"
+               "  j:\n"
+               "    steps:\n"
+               "      - name: ok\n"
+               "        run: | # note\n"
+               "          name: looks: trap\n")
+        self.clean(doc)
+
+    def test_chomped_header_with_trailing_comment_stays_clean(self):
+        doc = ("      - name: ok\n"
+               "        run: >- # note\n"
+               "          name: looks: trap\n")
+        self.clean(doc)
+
+    def test_bare_dash_block_still_bounds_at_dash_indent(self):
+        # A bare `- |` item is bounded by the dash column (unchanged); the
+        # next item at the dash indent is scanned and flagged.
+        doc = ("env:\n"
+               "  - |\n"
+               "    A: B: C\n"
+               "  - name: a: b\n")
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:4:"), f)
+
 
 class Main(unittest.TestCase):
     def test_this_tree_is_clean(self):

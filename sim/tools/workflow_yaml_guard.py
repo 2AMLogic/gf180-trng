@@ -45,6 +45,9 @@ NAME_KEY = re.compile(r"^[ \t]*(?:-[ \t]+)?name[ \t]*:(?P<value>.*)$")
 BLOCK_HDR = r"[|>](?:\d?[+-]?|[+-]?\d)?"
 BLOCK_AFTER_KEY = re.compile(rf":(?:[ \t]+)?({BLOCK_HDR})$")
 BLOCK_AFTER_DASH = re.compile(rf"^[ \t]*-[ \t]+({BLOCK_HDR})$")
+# A sequence-item lead: dash, then whitespace up to the mapping key. The
+# key's column (its length) is where sibling keys of the same step live.
+DASH_LEAD = re.compile(r"^[ \t]*-[ \t]+")
 
 
 def strip_comment(line: str) -> str:
@@ -101,10 +104,20 @@ def findings(text: str, path: str = "<doc>") -> list[str]:
             if not line.strip() or indent > block_indent:
                 continue
             block_indent = None
-        stripped = strip_comment(line)
+        stripped = strip_comment(line).rstrip()
         start = (BLOCK_AFTER_KEY.search(stripped) or BLOCK_AFTER_DASH.match(stripped))
         if start:
-            block_indent = indent
+            if BLOCK_AFTER_DASH.match(stripped):
+                # Bare `- |` item: the block is bounded by the dash's own
+                # indent.
+                block_indent = indent
+            elif DASH_LEAD.match(stripped):
+                # `- run: |`: sibling keys of the step live at the key's
+                # column, not the dash's -- a line dedented to the key
+                # column ends the block and is scanned normally.
+                block_indent = len(DASH_LEAD.match(stripped).group(0))
+            else:
+                block_indent = indent
             continue
         m = NAME_KEY.match(stripped)
         if not m:
