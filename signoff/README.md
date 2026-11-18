@@ -1052,8 +1052,9 @@ that changed, was deleted or newly appeared fails by name even though the
 inventory's own bytes did not move. `python3 signoff/check.py --write` is the
 only thing that re-pins them, and it refuses to write an envelope when the
 tree no longer supports the audit (a netlist with no schematic, a layout
-directory with no stream, a `sim/tb/` directory nobody classified, a gate the
-workflow does not run, a README that no longer states the pinned PDK commit).
+directory with no stream, a `sim/tb/` directory nobody classified, a gate
+neither the workflow nor the check list it runs contains, a README that no
+longer states the pinned PDK commit).
 
 **What a `met` here means, and does not.** It means the inventoried files still
 hash to the values pinned when the inventory was written, and the inventory's
@@ -1063,18 +1064,20 @@ the inventory passed today, and `signoff/check.py` does not run them:
 | Item | Named gate | Runs without the PDK? | Where it runs |
 |---|---|---|---|
 | 1 analog | `design/netlist.py --check` | no (xschem + PDK) | `pdk-nightly.yml` |
-| 1 analog | `design/netlist.py --lint` | yes | `ci.yml`, via `npm run lint` |
-| 1 digital | `design/interface/regmap.py --check` | yes | `ci.yml`, via `npm run check:regmap` |
+| 1 analog | `design/netlist.py --lint` | yes | `ci.yml`, via `sim/check.sh ci` (#1000) |
+| 1 digital | `design/interface/regmap.py --check` | yes | `ci.yml`, via `sim/check.sh ci` (#1000) |
 | 1 digital | `design/synth.py --check` | no (`klt synthesize`, Yosys) | `pdk-nightly.yml` |
-| 2 analog | `design/floorplan_netlist.py --check` | yes | `ci.yml`, via `npm run check:floorplan-netlist` |
+| 2 analog | `design/floorplan_netlist.py --check` | yes | `ci.yml`, via `sim/check.sh ci` (#1000) |
 | 2 analog | `layout/verify.py --require-tools`, `layout/floorplan/floorplan.py --require-tools` | no (klt + PDK) | `pdk-nightly.yml` (the PR job's `check:layout` / `check:floorplan` self-skip) |
-| 2 digital | `layout/digital/build.py --check-input` | yes | `ci.yml`, via `npm run check:digital-input` |
+| 2 digital | `layout/digital/build.py --check-input` | yes | `ci.yml`, via `sim/check.sh ci` (#1000) |
 | 2 digital | `layout/digital/tap_distance.py --check --require-tools` | no (klt + PDK) | `pdk-nightly.yml` |
 | 9 | `python3 sim/run_corners.py --check-env`, `sim/selftest.sh --require-pdk` | no (ngspice + PDK) | `pdk-nightly.yml` |
-| 9 | `npm run test` (drives the behavioural benches; those needing Icarus Verilog self-skip) | yes | `ci.yml` |
-| 10 | `python3 signoff/check.py --require-tools` | yes | `ci.yml` |
+| 9 | `npm run test` (drives the behavioural benches; those needing Icarus Verilog self-skip) | yes | `ci.yml`, via `sim/check.sh ci` (#1000) |
+| 10 | `python3 signoff/check.py --require-tools` | yes | `ci.yml` (its own `signoff` job) |
 
-Each envelope's `summary` says the same thing about its own gates. Further
+`sim/check.sh` (#1000) is the single check list: `npm run check:ci` and the
+PR-blocking workflow both run its `ci` group, so the audit pins the step to
+that group's text and asserts the workflow calls the script. Each envelope's `summary` says the same thing about its own gates. Further
 limits that travel with these citations:
 
 - **Item 2 asserts the layout exists and is the one DRC/LVS graded**, not that

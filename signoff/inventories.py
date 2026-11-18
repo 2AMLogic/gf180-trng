@@ -15,7 +15,7 @@ member file, and this module is both their only writer and their verifier:
 * `build_inventory` derives an inventory from the tree and **raises** when
   the audit fails (a schematic with no committed netlist, a layout directory
   with no stream, a testbench directory nobody classified, a gate command the
-  named workflow does not run, ...). `check.py --write` therefore cannot
+  named workflow -- or the check list it runs -- does not run, ...). `check.py --write` therefore cannot
   write a `pass` envelope over a claim the tree does not support.
 * `verify_item` rebuilds the same inventory from the live tree and compares
   it with the committed one, member by member, so a changed, deleted or newly
@@ -43,6 +43,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 CI_WORKFLOW = ".github/workflows/ci.yml"
+#: The single check list (#1000): `npm run check:ci`, `npm run check:all` and
+#: the CI workflow's harness job all run their checks through this script, so
+#: a gate that runs in the PR-blocking job is audited against the `ci` group
+#: of this file, with the workflow asserted to call it.
+CHECK_SCRIPT = "sim/check.sh"
 NIGHTLY_WORKFLOW = ".github/workflows/pdk-nightly.yml"
 SPEC = "spec/ratification-2026-07-31-target-spec.md"
 PARTITIONS = ("analog", "digital")
@@ -121,18 +126,51 @@ def _read(root: Path, rel: str) -> str:
         raise AuditError(f"{rel}: unreadable ({exc})") from exc
 
 
+def _check_script_ci_group(root: Path) -> str:
+    """The `ci` group's section of sim/check.sh -- the PR-blocking step list.
+
+    The `all` group is the stricter local superset, not what CI runs, so a
+    gate claimed to run in the PR-blocking job is audited against this
+    section alone: a step demoted out of the `ci` group fails here even
+    though the script still contains it somewhere.
+    """
+    text = _read(root, CHECK_SCRIPT)
+    match = re.search(r"^# --- group: ci\b.*?(?=^# --- group: )", text, re.M | re.S)
+    if not match:
+        raise AuditError(
+            f"{CHECK_SCRIPT}: no '# --- group: ci' marker; cannot audit the PR-blocking step list"
+        )
+    return match.group(0)
+
+
+def _gate_source(root: Path, where: str) -> str:
+    """The text a gate's needle must appear in: a workflow file, or -- for the
+    single check list -- the `ci` group section of sim/check.sh."""
+    if where == CHECK_SCRIPT:
+        return _check_script_ci_group(root)
+    return _read(root, where)
+
+
 # --- gates --------------------------------------------------------------------
 
-#: (command, workflow that runs it, text that must appear in that workflow,
+#: (command, workflow that runs it, text that must appear there,
 #:  runs without the PDK/external tools, why not / how it runs, extra
 #:  (file, text) pairs that must also appear). A gate named in an inventory is
-#: audited against the workflow, so an inventory cannot cite a check nobody
-#: runs.
+#: audited against where it runs, so an inventory cannot cite a check nobody
+#: runs. Gates of the PR-blocking job are audited against the `ci` group of
+#: sim/check.sh (CHECK_SCRIPT, the single check list), with the workflow's
+#: call of the script asserted in `also`; the nightly gates keep their plain
+#: workflow needles; `signoff-check` keeps its own step in ci.yml's signoff
+#: job, which installs the grader the other jobs must not.
 _GATES: dict[str, tuple] = {
     "netlist-lint": (
-        "python3 design/netlist.py --lint", CI_WORKFLOW, "run: npm run lint", True,
-        "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job",
-        (("package.json", "design/netlist.py --lint"),),
+        "python3 design/netlist.py --lint", CHECK_SCRIPT, "npm run lint", True,
+        "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job "
+        "through `sim/check.sh ci`",
+        (
+            ("package.json", "design/netlist.py --lint"),
+            (CI_WORKFLOW, "sim/check.sh ci"),
+        ),
     ),
     "netlist-check": (
         "python3 design/netlist.py --check", NIGHTLY_WORKFLOW,
@@ -141,10 +179,12 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "regmap-check": (
-        "python3 design/interface/regmap.py --check", CI_WORKFLOW,
-        "run: npm run check:regmap", True,
-        "stdlib only; runs in the PR-blocking job",
-        (("package.json", "design/interface/regmap.py --check"),),
+        "python3 design/interface/regmap.py --check", CHECK_SCRIPT, "npm run check:regmap", True,
+        "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
+        (
+            ("package.json", "design/interface/regmap.py --check"),
+            (CI_WORKFLOW, "sim/check.sh ci"),
+        ),
     ),
     "synth-check": (
         "python3 design/synth.py --check", NIGHTLY_WORKFLOW,
@@ -153,10 +193,12 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "floorplan-netlist-check": (
-        "python3 design/floorplan_netlist.py --check", CI_WORKFLOW,
-        "run: npm run check:floorplan-netlist", True,
-        "stdlib only; runs in the PR-blocking job",
-        (("package.json", "design/floorplan_netlist.py --check"),),
+        "python3 design/floorplan_netlist.py --check", CHECK_SCRIPT, "npm run check:floorplan-netlist", True,
+        "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
+        (
+            ("package.json", "design/floorplan_netlist.py --check"),
+            (CI_WORKFLOW, "sim/check.sh ci"),
+        ),
     ),
     "layout-verify": (
         "python3 layout/verify.py --require-tools", NIGHTLY_WORKFLOW,
@@ -173,10 +215,12 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "digital-input-check": (
-        "python3 layout/digital/build.py --check-input", CI_WORKFLOW,
-        "run: npm run check:digital-input", True,
-        "stdlib only; runs in the PR-blocking job",
-        (("package.json", "layout/digital/build.py --check-input"),),
+        "python3 layout/digital/build.py --check-input", CHECK_SCRIPT, "npm run check:digital-input", True,
+        "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
+        (
+            ("package.json", "layout/digital/build.py --check-input"),
+            (CI_WORKFLOW, "sim/check.sh ci"),
+        ),
     ),
     "tap-distance-check": (
         "python3 layout/digital/tap_distance.py --check --require-tools", NIGHTLY_WORKFLOW,
@@ -199,10 +243,11 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "unit-tests": (
-        "npm run test", CI_WORKFLOW, "run: npm run test", True,
+        "npm run test", CHECK_SCRIPT, "npm run test", True,
         "sim/tests, including the behavioural testbench drivers; those that need Icarus "
-        "Verilog self-skip when it is absent",
-        (),
+        "Verilog self-skip when it is absent; runs in the PR-blocking job through "
+        "`sim/check.sh ci`",
+        ((CI_WORKFLOW, "sim/check.sh ci"),),
     ),
     "signoff-check": (
         "python3 signoff/check.py --require-tools", CI_WORKFLOW,
@@ -228,8 +273,12 @@ def _gate_records(root: Path, item: int, partition: str) -> list[dict]:
     out = []
     for name in _UNIT_GATES[(item, partition)]:
         command, workflow, needle, pdk_free, how, also = _GATES[name]
-        if needle not in _read(root, workflow):
-            raise AuditError(f"{workflow} does not contain {needle!r}; the gate {command!r} is not run there")
+        if needle not in _gate_source(root, workflow):
+            if workflow == CHECK_SCRIPT:
+                where = f"{CHECK_SCRIPT}'s '# --- group: ci' section"
+            else:
+                where = workflow
+            raise AuditError(f"{where} does not contain {needle!r}; the gate {command!r} is not run there")
         for rel, text in also:
             if text not in _read(root, rel):
                 raise AuditError(f"{rel} does not contain {text!r}; the gate {command!r} is not real")
@@ -521,8 +570,8 @@ _HYGIENE_REPRODUCTION = {
     ),
 }
 _HYGIENE_CI = {
-    "analog": ("run: npm run lint", "run: npm run test"),
-    "digital": ("run: npm run check:regmap", "run: npm run check:digital-input"),
+    "analog": ("npm run lint", "npm run test"),
+    "digital": ("npm run check:regmap", "npm run check:digital-input"),
 }
 
 
@@ -542,9 +591,12 @@ def _build_item10(root: Path, partition: str) -> dict:
         if text not in _read(root, rel):
             raise AuditError(f"{rel} does not document {text!r}")
     ci = _read(root, CI_WORKFLOW)
-    for text in ("python3 signoff/check.py --require-tools", *_HYGIENE_CI[partition]):
+    for text in ("sim/check.sh ci", "python3 signoff/check.py --require-tools"):
         if text not in ci:
             raise AuditError(f"{CI_WORKFLOW}: does not run {text!r}")
+    for text in _HYGIENE_CI[partition]:
+        if text not in _check_script_ci_group(root):
+            raise AuditError(f"{CHECK_SCRIPT}'s ci group does not run {text!r}")
     return {
         "assertions": [
             "LICENSE contains the Apache License, Version 2.0 text",
@@ -553,14 +605,14 @@ def _build_item10(root: Path, partition: str) -> dict:
             f"{SPEC} carries the ratified specification table",
             "README.md documents how this partition is reproduced: "
             + ", ".join(f"`{t}`" for _r, t in _HYGIENE_REPRODUCTION[partition]),
-            f"{CI_WORKFLOW} runs "
-            + ", ".join(f"`{t.removeprefix('run: ')}`" for t in _HYGIENE_CI[partition])
-            + " and `python3 signoff/check.py --require-tools`",
+            f"{CI_WORKFLOW} runs the check list through `sim/check.sh ci`, whose steps include "
+            + ", ".join(f"`{t}`" for t in _HYGIENE_CI[partition])
+            + ", and runs `python3 signoff/check.py --require-tools` in its signoff job",
         ],
         "ci_status": "not captured: green CI is a property of a run, not of a file. This "
-        "inventory hashes the workflow and names the command; whether the last run was green "
-        "is not recorded here and is not part of what a `met` row asserts.",
-        "files": _members(root, ["README.md", "LICENSE", SPEC, "sim/README.md", CI_WORKFLOW]),
+        "inventory hashes the check list and the workflow and names the commands; whether the "
+        "last run was green is not recorded here and is not part of what a `met` row asserts.",
+        "files": _members(root, ["README.md", "LICENSE", SPEC, "sim/README.md", CHECK_SCRIPT, CI_WORKFLOW]),
     }
 
 
@@ -624,7 +676,7 @@ def build_envelope(root: Path, item: int, partition: str) -> dict:
     else:
         what = (
             f"{n} repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, "
-            "the CI workflow) with the stated assertions"
+            "the check list sim/check.sh, the CI workflow) with the stated assertions"
         )
     summary = (
         f"Audited inventory for T1 item {item} ({ITEM_TITLES[item]}), {partition} partition: {what}. "

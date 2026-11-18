@@ -5,9 +5,9 @@
   "gates": [
     {
       "command": "python3 design/netlist.py --lint",
-      "runs_in": ".github/workflows/ci.yml",
+      "runs_in": "sim/check.sh",
       "runs_without_pdk_or_external_tools": true,
-      "note": "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job"
+      "note": "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job through `sim/check.sh ci`"
     },
     {
       "command": "python3 design/netlist.py --check",

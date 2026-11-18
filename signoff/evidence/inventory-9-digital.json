@@ -5,9 +5,9 @@
   "gates": [
     {
       "command": "npm run test",
-      "runs_in": ".github/workflows/ci.yml",
+      "runs_in": "sim/check.sh",
       "runs_without_pdk_or_external_tools": true,
-      "note": "sim/tests, including the behavioural testbench drivers; those that need Icarus Verilog self-skip when it is absent"
+      "note": "sim/tests, including the behavioural testbench drivers; those that need Icarus Verilog self-skip when it is absent; runs in the PR-blocking job through `sim/check.sh ci`"
     },
     {
       "command": "sim/selftest.sh --require-pdk",
@@ -286,7 +286,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:5a4373a632260878780e4c4375c23a84e26b6a76757994abe29f00fba34c35d1"
+      "sha256": "sha256:e61be2329c2f981e6ca35f80fb62aeb78d6eea8823692b04883fba42c3fae7bc"
     },
     {
       "path": "sim/README.md",

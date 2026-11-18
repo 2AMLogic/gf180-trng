@@ -3,7 +3,7 @@
   "kind": "generic",
   "t1_item": 10,
   "status": "pass",
-  "summary": "Audited inventory for T1 item 10 (Repo hygiene), analog partition: 5 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
+  "summary": "Audited inventory for T1 item 10 (Repo hygiene), analog partition: 6 repo-hygiene files (README, LICENSE, the ratified spec table, sim/README.md, the check list sim/check.sh, the CI workflow) with the stated assertions. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 signoff/check.py --require-tools`. It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value. CI status is not captured: the workflow file is hashed, whether its last run was green is not.",
   "source": "signoff/evidence/inventory-10-analog.json",
   "provenance": {
     "klt_version": null,
@@ -15,7 +15,7 @@
         "path": "signoff/evidence/inventory-10-analog.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:b6ed6026727e0854a9181907ff5d0beb49f052588615f458da3ab01176b0f328"
+      "content_hash": "sha256:29591812d3a4e0679168c2d899508c8bad09e1ba903e70a02b66b447eb174cd1"
     }
   }
 }

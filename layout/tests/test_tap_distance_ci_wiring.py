@@ -3,9 +3,10 @@
 
 Stdlib only; needs no klayout. Two groups:
 
-* inventory: `npm run check:digital-tap-distance` is in `check:ci` and the PR
-  workflow, and the nightly workflow runs the strict form independently of
-  earlier step failures; the docs name it.
+* inventory: `npm run check:digital-tap-distance` is a step of the `ci` group
+  of `sim/check.sh` (#1000) -- the single check list that both `npm run
+  check:ci` and the PR-blocking workflow run -- and the nightly workflow runs
+  the strict form independently of earlier step failures; the docs name it.
 * `--check` semantics, with the measurement stubbed: an unchanged calculated
   result passes even when it discloses a failing verdict, a changed calculated
   result with unchanged input hashes fails, a missing module is an explicit
@@ -30,7 +31,16 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 from sim.tools.pathload import load_module_from_path  # noqa: E402
 DIGITAL = REPO / "layout" / "digital"
+CHECK_SCRIPT = REPO / "sim" / "check.sh"
 STRICT = "python3 layout/digital/tap_distance.py --check --require-tools"
+
+
+def _ci_group() -> str:
+    """The `ci` group section of sim/check.sh -- the list the PR job runs."""
+    text = CHECK_SCRIPT.read_text()
+    match = re.search(r"^# --- group: ci\b.*?(?=^# --- group: )", text, re.M | re.S)
+    assert match is not None, "sim/check.sh: no '# --- group: ci' marker"
+    return match.group(0)
 
 
 def _load():
@@ -44,13 +54,13 @@ class InventoryTests(unittest.TestCase):
     def test_check_ci_and_check_all_expose_the_check(self):
         scripts = json.loads((REPO / "package.json").read_text())["scripts"]
         self.assertEqual(scripts["check:digital-tap-distance"], "python3 layout/digital/tap_distance.py --check")
-        self.assertIn("npm run check:digital-tap-distance", scripts["check:ci"])
-        self.assertIn(STRICT, scripts["check:all"])
+        self.assertIn("npm run check:digital-tap-distance", _ci_group())
+        self.assertIn(STRICT, CHECK_SCRIPT.read_text())
 
     def test_pr_workflow_runs_the_ordinary_form(self):
         ci = (REPO / ".github" / "workflows" / "ci.yml").read_text()
-        self.assertRegex(ci, r"run: npm run check:digital-tap-distance\n")
-        self.assertIn("layout/digital/tap_distance.py --check (tap-distance report freshness)", ci)
+        self.assertRegex(ci, r"(?m)^\s+sim/check\.sh ci$")
+        self.assertIn("npm run check:digital-tap-distance", _ci_group())
 
     def test_nightly_runs_strict_form_independently(self):
         text = (REPO / ".github" / "workflows" / "pdk-nightly.yml").read_text()
