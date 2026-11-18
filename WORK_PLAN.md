@@ -8,7 +8,7 @@ dependency block or an operator-only decision.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#1014**: ci: add merge_group trigger and fail-closed queue-base arm to ci.yml
 
 ## Very Important
 
@@ -24,7 +24,7 @@ _None._
 
 ## Ready
 
-Human-approved issues ready for implementation (`loom:issue`).
+Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
 
@@ -36,7 +36,7 @@ Issues currently being built (`loom:building`).
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
-- **#1000**: Single-source the check list: one script behind check:ci, check:all and ci.yml; retire test_check_script_parity.py
+- **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates
 
 ## PRs Awaiting Review
 
@@ -48,7 +48,7 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#1014**: ci: add merge_group trigger and fail-closed queue-base arm to ci.yml
 
 ## Proposed
 
@@ -67,7 +67,7 @@ Issues carrying `loom:curated`.
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
 - **#966**: characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123 *(curated)*
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
-- **#1000**: Single-source the check list: one script behind check:ci, check:all and ci.yml; retire test_check_script_parity.py *(curated)*
+- **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -83,13 +83,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 0 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
 | In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 14 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
