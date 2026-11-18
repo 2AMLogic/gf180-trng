@@ -15,8 +15,9 @@ claims no coverage beyond it: only plain (unquoted, non-block) values of
 mapping keys named exactly ``name`` are examined. Quoted values, block
 scalars (``|``/``>``), flow collections, anchors and aliases, ``#`` comments
 and ``://`` URL colons are left alone -- a document that parses cannot
-contain a plain ``name:`` value with ``": "`` in it, so a finding is always
-a file that does not parse.
+contain a plain ``name:`` value with ``": "`` in it, so a finding is
+always a file that does not parse, outside the three block-header
+shapes named below as measured exceptions (issue #1015).
 
 A line opens a block scalar only when the value after the line's FIRST
 colon -- the key's own -- is exactly a block indicator: ``run: |``,
@@ -25,6 +26,19 @@ column, where the mapping's sibling keys live), or a quoted/flow key by
 shape (``"a: b": |``, whose colons are its own). A plain value that merely
 ends in an indicator (``name: build a: |``) is therefore a member of the
 defect class and is scanned, not opened as a block (issue #1011).
+
+Three block-header shapes are measured exceptions to the soundness
+claim above (issue #1015): an explicit-key value line (``? a: b`` /
+``: |``, whose opener carries no key text for KEY_BLOCK to match) and
+anchored (``a: &anc |``) or tagged (``a: !!str |``) values, where the
+indicator is not the value's first token. Each opens a block the
+scanner does not recognise, so the literal body is scanned and a
+``name: x: y`` line inside it is flagged even though the document
+parses. None can appear in a working GitHub Actions workflow -- every
+key in the Actions schema is a plain string, and GitHub's workflow
+parser accepts no explicit complex keys, anchors or tags -- so they
+are pinned as documented exceptions
+(sim/tests/test_workflow_yaml_guard.py) rather than fixed.
 
   python3 -m sim.tools.workflow_yaml_guard --check
 """

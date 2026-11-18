@@ -8,7 +8,11 @@ mapping and which therefore turns the workflow into a zero-job startup
 failure -- while leaving quoted values, block scalars, flow collections,
 comments and URL colons alone. Issue #1011 extends the cover: a plain
 value that ends in a block-scalar indicator is a defect, not a header,
-and nested sequence dashes bound blocks at the key's column. Every case
+and nested sequence dashes bound blocks at the key's column. Issue
+#1015 pins the docstring's measured exceptions: three block-header
+shapes (explicit-key, anchored, tagged) report a finding on a document
+that parses -- unrepresentable in a working Actions workflow, so
+documented and pinned, not fixed. Every case
 feeds a literal document to findings(); nothing depends on the state of
 the real tree except the final guard-on-this-tree case. Stdlib only;
 the PyYAML cross-checks skip when it is not installed.
@@ -213,7 +217,7 @@ class Findings(unittest.TestCase):
         f = self.finding(doc)
         self.assertTrue(f.startswith("wf.yml:4:"), f)
 
-    def test_indicator_ending_line_still_opens_block_for_other_keys(self):
+    def test_indicator_ending_line_is_not_a_block_header_for_other_keys(self):
         # A non-name key with the same trailing shape is not a header
         # either; its body is scanned, and a defective `name:` inside it
         # is flagged (the document cannot parse either way).
@@ -256,6 +260,37 @@ class Findings(unittest.TestCase):
                "  name: x: y\n")
         self.clean(doc)
 
+    # -- documented exceptions to the soundness claim (issue #1015) -------
+
+    def test_explicit_key_block_scalar_is_a_documented_exception(self):
+        # `? a: b` / `: |`: the value line has no key text, so KEY_BLOCK
+        # cannot match it; the block body is scanned and its `name:` line
+        # is flagged even though the document parses. No Actions key is a
+        # complex node, so the shape is unrepresentable in a working
+        # workflow: pinned as a documented exception, not fixed.
+        doc = "? a: b\n: |\n  name: x: y\n"
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:3:"), f)
+
+    def test_anchored_block_scalar_is_a_documented_exception(self):
+        # `a: &anc |`: the indicator is not the value's first token, so
+        # the line is not recognised as a header; the block body is
+        # scanned and flagged even though the document parses. Anchors
+        # are not accepted in workflow files, so the shape is
+        # unrepresentable in a working workflow: pinned, not fixed.
+        doc = "a: &anc |\n  name: x: y\n"
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:2:"), f)
+
+    def test_tagged_block_scalar_is_a_documented_exception(self):
+        # `a: !!str |`: as with the anchored shape, the indicator is not
+        # the value's first token; the body is scanned and flagged even
+        # though the document parses. Tags are not accepted in workflow
+        # files either: pinned, not fixed.
+        doc = "a: !!str |\n  name: x: y\n"
+        f = self.finding(doc)
+        self.assertTrue(f.startswith("wf.yml:2:"), f)
+
 
 @unittest.skipUnless(yaml, "PyYAML not installed (not a repo dependency)")
 class PyYamlAgreement(unittest.TestCase):
@@ -263,7 +298,9 @@ class PyYamlAgreement(unittest.TestCase):
 
     PyYAML is present on some hosts but is not a repo dependency, so this
     class skips rather than fails when it is absent; the Findings cases
-    above carry the contract on their own.
+    above carry the contract on their own. The issue-#1015 documented
+    exceptions live here too: each parses, unlike the defect shapes, and
+    that half of the pin is what PyYAML contributes.
     """
 
     DEFECT_DOCS = [
@@ -281,6 +318,11 @@ class PyYamlAgreement(unittest.TestCase):
         "{a: b}: |\n  name: x: y\n",
         "a:\n  - - |\n        name: x: y\n",
     ]
+    EXCEPTION_DOCS = [
+        "? a: b\n: |\n  name: x: y\n",
+        "a: &anc |\n  name: x: y\n",
+        "a: !!str |\n  name: x: y\n",
+    ]
 
     def test_defect_shapes_do_not_parse_and_are_flagged(self):
         for doc in self.DEFECT_DOCS:
@@ -297,6 +339,15 @@ class PyYamlAgreement(unittest.TestCase):
             with self.subTest(doc=doc):
                 yaml.compose(doc)
                 self.assertEqual(guard.findings(doc, "wf.yml"), [])
+
+    def test_exception_shapes_parse_but_are_flagged(self):
+        # The issue-#1015 documented exceptions: each document parses
+        # (compose succeeds) and still reports exactly one finding -- the
+        # opposite half of the DEFECT_DOCS contract.
+        for doc in self.EXCEPTION_DOCS:
+            with self.subTest(doc=doc):
+                yaml.compose(doc)
+                self.assertEqual(len(guard.findings(doc, "wf.yml")), 1)
 
 
 class Main(unittest.TestCase):
