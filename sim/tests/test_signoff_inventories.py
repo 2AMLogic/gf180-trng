@@ -8,6 +8,7 @@ no klt, no PDK.
 """
 
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -139,6 +140,90 @@ class InventoryDrift(unittest.TestCase):
         )
         with self.assertRaises(inv.AuditError):
             inv.build_inventory(self.root, 10, "digital")
+
+    def delete_check_list_run_line(self) -> None:
+        """Delete only the `sim/check.sh ci` run body from the staged ci.yml,
+        leaving the `#` comment (issue #1000) and the step `name:` string --
+        which both quote the call -- in place (issue #1007)."""
+        ci = self.root / inv.CI_WORKFLOW
+        text = ci.read_text()
+        self.assertEqual(len(re.findall(r"(?m)^[ \t]*sim/check\.sh ci[ \t]*$", text)), 1)
+        ci.write_text(re.sub(r"(?m)^[ \t]*sim/check\.sh ci[ \t]*\n", "", text, count=1))
+
+    def test_item10_audit_fails_when_only_the_check_list_run_line_is_deleted(self):
+        """Item 10's claim that CI runs the check list is satisfied by the run
+        body line alone: deleting it fails the audit even though the comment
+        and the step `name:` still quote the call (issue #1007)."""
+        self.stage_item10()
+        self.delete_check_list_run_line()
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 10, "analog")
+        self.assertIn("does not run 'sim/check.sh ci'", str(ctx.exception))
+
+    def test_item9_audit_fails_when_only_the_check_list_run_line_is_deleted(self):
+        """Item 9's gates pin the same ci.yml call through `unit-tests`'s
+        `also` entry, so the run line vanishing fails there too (issue
+        #1007)."""
+        self.stage_item9_digital()
+        self.delete_check_list_run_line()
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 9, "digital")
+        self.assertIn("does not contain 'sim/check.sh ci'", str(ctx.exception))
+
+    def test_every_gate_pinning_the_check_list_call_fails_when_the_run_line_is_deleted(self):
+        """All five `_GATES` `also` entries that pin ci.yml's call of the
+        check list fail the same way when only the run body line is deleted
+        (issue #1007)."""
+        self.stage_item10()
+        self.delete_check_list_run_line()
+        sites = [
+            (1, "analog", "netlist-lint"),
+            (1, "digital", "regmap-check"),
+            (2, "analog", "floorplan-netlist-check"),
+            (2, "digital", "digital-input-check"),
+            (9, "analog", "unit-tests"),
+        ]
+        for item, partition, gate in sites:
+            with self.subTest(gate=gate):
+                with self.assertRaises(inv.AuditError) as ctx:
+                    inv._gate_records(self.root, item, partition)
+                message = str(ctx.exception)
+                self.assertIn("does not contain 'sim/check.sh ci'", message)
+                self.assertIn(inv._GATES[gate][0], message)
+
+    def test_comment_only_check_list_occurrence_fails_the_audit(self):
+        """A `#` comment line quoting the call must not satisfy the audit;
+        only the run body line counts (issue #1007)."""
+        self.stage_item10()
+        ci = self.root / inv.CI_WORKFLOW
+        ci.write_text(
+            re.sub(
+                r"(?m)^[ \t]*sim/check\.sh ci[ \t]*$",
+                " " * 10 + "# sim/check.sh ci",
+                ci.read_text(),
+                count=1,
+            )
+        )
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 10, "analog")
+        self.assertIn("does not run 'sim/check.sh ci'", str(ctx.exception))
+
+    def test_comment_only_signoff_check_occurrence_fails_the_audit(self):
+        """The second literal the old substring pair checked --
+        `python3 signoff/check.py --require-tools` -- is pinned by the
+        `signoff-check` gate's anchored `run:` needle, so a comment quoting
+        that step cannot satisfy item 10 either (issue #1007)."""
+        self.stage_item10()
+        ci = self.root / inv.CI_WORKFLOW
+        ci.write_text(
+            ci.read_text().replace(
+                "run: python3 signoff/check.py --require-tools",
+                "# run: python3 signoff/check.py --require-tools",
+            )
+        )
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 10, "analog")
+        self.assertIn("run: python3 signoff/check.py --require-tools", str(ctx.exception))
 
 
 class CommittedCitations(unittest.TestCase):
