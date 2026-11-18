@@ -92,6 +92,19 @@ class InventoryDrift(unittest.TestCase):
             inv.build_inventory(self.root, 9, "digital")
         self.assertIn("not classified in DIGITAL_TESTBENCHES", str(ctx.exception))
 
+    def test_gate_whose_command_is_a_prefix_of_a_longer_step_fails_the_audit(self):
+        """The anchored needle: `npm run test` must be satisfied by its own
+        step line alone, never by the longer `npm run test:layout` step a
+        bare substring containment also hits (issue #1004)."""
+        self.stage_item9_digital()
+        script = self.root / inv.CHECK_SCRIPT
+        script.write_text(
+            script.read_text().replace('step "npm run test" npm run test\n', "", 1)
+        )
+        with self.assertRaises(inv.AuditError) as ctx:
+            inv.build_inventory(self.root, 9, "digital")
+        self.assertIn('step "npm run test" npm run test', str(ctx.exception))
+
     def test_gate_the_workflow_does_not_run_fails_the_audit(self):
         self.stage_item10()
         ci = self.root / inv.CI_WORKFLOW

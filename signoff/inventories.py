@@ -144,27 +144,43 @@ def _check_script_ci_group(root: Path) -> str:
 
 
 def _gate_source(root: Path, where: str) -> str:
-    """The text a gate's needle must appear in: a workflow file, or -- for the
-    single check list -- the `ci` group section of sim/check.sh."""
+    """The text a gate's needle must appear in as a whole line: a workflow
+    file, or -- for the single check list -- the `ci` group section of
+    sim/check.sh."""
     if where == CHECK_SCRIPT:
         return _check_script_ci_group(root)
     return _read(root, where)
 
 
+def _has_line(text: str, needle: str) -> bool:
+    """True when `needle` is a whole line of `text` -- anchored at both ends,
+    tolerating indentation and an optional `- ` list marker -- and false for a
+    bare substring of a longer line, so `npm run test` is not satisfied by an
+    `npm run test:layout` line (or by a `#` comment quoting it)."""
+    return (
+        re.search(rf"(?m)^[ \t]*(?:-[ \t]+)?{re.escape(needle)}[ \t]*$", text) is not None
+    )
+
+
 # --- gates --------------------------------------------------------------------
 
-#: (command, workflow that runs it, text that must appear there,
-#:  runs without the PDK/external tools, why not / how it runs, extra
+#: (command, workflow that runs it, text that must appear there as a whole
+#:  line, runs without the PDK/external tools, why not / how it runs, extra
 #:  (file, text) pairs that must also appear). A gate named in an inventory is
 #: audited against where it runs, so an inventory cannot cite a check nobody
-#: runs. Gates of the PR-blocking job are audited against the `ci` group of
-#: sim/check.sh (CHECK_SCRIPT, the single check list), with the workflow's
-#: call of the script asserted in `also`; the nightly gates keep their plain
-#: workflow needles; `signoff-check` keeps its own step in ci.yml's signoff
+#: runs. The needle is matched anchored to the whole line (`_has_line`), so a
+#: command that prefixes a longer one (`npm run test` vs `npm run
+#: test:layout`) needs its own line. Gates of the PR-blocking job are audited
+#: against the `ci` group of sim/check.sh (CHECK_SCRIPT, the single check
+#: list), where the needle is the full `step "<cmd>" <cmd>` invocation line,
+#: with the workflow's call of the script asserted in `also`; the nightly
+#: gates keep their plain `run: <cmd>` workflow needles; `signoff-check`
+#: keeps its own step in ci.yml's signoff
 #: job, which installs the grader the other jobs must not.
 _GATES: dict[str, tuple] = {
     "netlist-lint": (
-        "python3 design/netlist.py --lint", CHECK_SCRIPT, "npm run lint", True,
+        "python3 design/netlist.py --lint", CHECK_SCRIPT,
+        'step "npm run lint" npm run lint', True,
         "pure-Python scan of the schematics' text blocks; runs in the PR-blocking job "
         "through `sim/check.sh ci`",
         (
@@ -179,7 +195,8 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "regmap-check": (
-        "python3 design/interface/regmap.py --check", CHECK_SCRIPT, "npm run check:regmap", True,
+        "python3 design/interface/regmap.py --check", CHECK_SCRIPT,
+        'step "npm run check:regmap" npm run check:regmap', True,
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "design/interface/regmap.py --check"),
@@ -193,7 +210,8 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "floorplan-netlist-check": (
-        "python3 design/floorplan_netlist.py --check", CHECK_SCRIPT, "npm run check:floorplan-netlist", True,
+        "python3 design/floorplan_netlist.py --check", CHECK_SCRIPT,
+        'step "npm run check:floorplan-netlist" npm run check:floorplan-netlist', True,
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "design/floorplan_netlist.py --check"),
@@ -215,7 +233,8 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "digital-input-check": (
-        "python3 layout/digital/build.py --check-input", CHECK_SCRIPT, "npm run check:digital-input", True,
+        "python3 layout/digital/build.py --check-input", CHECK_SCRIPT,
+        'step "npm run check:digital-input" npm run check:digital-input', True,
         "stdlib only; runs in the PR-blocking job through `sim/check.sh ci`",
         (
             ("package.json", "layout/digital/build.py --check-input"),
@@ -243,7 +262,7 @@ _GATES: dict[str, tuple] = {
         (),
     ),
     "unit-tests": (
-        "npm run test", CHECK_SCRIPT, "npm run test", True,
+        "npm run test", CHECK_SCRIPT, 'step "npm run test" npm run test', True,
         "sim/tests, including the behavioural testbench drivers; those that need Icarus "
         "Verilog self-skip when it is absent; runs in the PR-blocking job through "
         "`sim/check.sh ci`",
@@ -273,7 +292,7 @@ def _gate_records(root: Path, item: int, partition: str) -> list[dict]:
     out = []
     for name in _UNIT_GATES[(item, partition)]:
         command, workflow, needle, pdk_free, how, also = _GATES[name]
-        if needle not in _gate_source(root, workflow):
+        if not _has_line(_gate_source(root, workflow), needle):
             if workflow == CHECK_SCRIPT:
                 where = f"{CHECK_SCRIPT}'s '# --- group: ci' section"
             else:
