@@ -189,6 +189,27 @@ class HistoryTests(unittest.TestCase):
         self.r.git("checkout", "-q", "topic")
         self.assertEqual(self.check(), [])
 
+    def test_merge_group_trial_merge_addition_passes(self):
+        # A merge_group run's HEAD is the queue's trial merge: the base SHA
+        # (the main tip when the PR was queued) merged with the PR commits.
+        self.r.git("checkout", "-q", "-b", "topic")
+        self.r.write(f"sim/records/{NEW}.md", NEW_REC)
+        self.r.write(f"sim/records/raw/{NEW}/out.log", "new\n")
+        self.r.commit("PR adds a record")
+        pr_head = self.r.git("rev-parse", "HEAD")
+        self.r.git("checkout", "-q", "main")
+        self.r.git("merge", "-q", "--no-ff", "-m", "trial merge", pr_head)
+        self.assertEqual(self.check(), [])
+
+    def test_merge_group_trial_merge_edit_fails(self):
+        self.r.git("checkout", "-q", "-b", "topic")
+        self.r.write(f"sim/records/raw/{OLD}/out.log", "tampered\n")
+        self.r.commit("PR edits committed evidence")
+        pr_head = self.r.git("rev-parse", "HEAD")
+        self.r.git("checkout", "-q", "main")
+        self.r.git("merge", "-q", "--no-ff", "-m", "trial merge", pr_head)
+        self.assertFails("raw")
+
     def test_unresolvable_base_is_an_error(self):
         for bad in ("0" * 40, "no-such-ref"):
             with self.assertRaises(veh.HistoryError):
