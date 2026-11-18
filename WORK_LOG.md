@@ -10,6 +10,8 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-18
 
+- **PR #970**: fix(sim): correct section 1.1's 1 MHz digital term to 338.1 uW and pin it
+- **Issue #966** (closed): characterization-analog-summary.md contradicts itself on the digital term: 338.1 µW at line 107, 339.4 µW at line 123
 - **PR #1017**: docs: narrow workflow_yaml_guard's soundness claim to three measured exceptions
 - **Issue #1015** (closed): workflow_yaml_guard: three block-header shapes report findings on documents that parse
 - **PR #1013**: fix: decide workflow_yaml_guard block headers from the key's own colon
