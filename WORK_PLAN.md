@@ -4,7 +4,7 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-19T02:00:08Z (snapshot; compare against live labels)_
+_Generated: 2026-11-19T06:20:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -41,7 +41,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#992**: ci: build the fleet-pinned xschem 3.4.7 from source in pdk-nightly
+- **#992**: ci: build the fleet-pinned xschem 3.4.7 from source in pdk-nightly *(held)*
 
 ## Approved (Awaiting Merge)
 
