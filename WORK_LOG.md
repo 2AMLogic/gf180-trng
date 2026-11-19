@@ -1,12 +1,16 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-18.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-19.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
 ## Archives
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-19
+
+- **Issue #1009** (closed): Merge queue: add the merge_group trigger and adapt the PR-metadata gates
 
 ### 2026-11-18
 
