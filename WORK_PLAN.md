@@ -4,12 +4,12 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-18T14:59:10Z (snapshot; compare against live labels)_
+_Generated: 2026-11-19T02:00:08Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#1014**: ci: add merge_group trigger and fail-closed queue-base arm to ci.yml
+_None._
 
 ## Very Important
 
@@ -36,7 +36,6 @@ Issues currently being built (`loom:building`).
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
-- **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates
 
 ## PRs Awaiting Review
 
@@ -48,7 +47,7 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#1014**: ci: add merge_group trigger and fail-closed queue-base arm to ci.yml
+_None._
 
 ## Proposed
 
@@ -66,7 +65,7 @@ Issues carrying `loom:curated`.
 - **#866**: pdk-nightly is red at the synthesis staleness guard, so the layout and floorplan freshness steps are skipped *(curated)* *(held)*
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
-- **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates *(curated)*
+- **#1009**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates *(curated)* *(held)*
 
 ## Proposed (Architect / Hermit)
 
@@ -82,13 +81,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
-| In Progress (`loom:building`) | 4 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 0 |
 | Curated | 13 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
