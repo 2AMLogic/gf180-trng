@@ -1,0 +1,74 @@
+{
+  "rows": [
+    {
+      "id": "entropy_source",
+      "class": "architectural",
+      "reason": "A design decision, not a measured quantity: the N-way free-running ring-oscillator array, XOR-combined ahead of a single sampler, sized by the jitter-budget law of DR-0007 §2 at the entropy-binding corner. No Monte Carlo population is defined for this row; its check is the sizing arithmetic (array_sizing.py --check)."
+    },
+    {
+      "id": "raw_rate",
+      "class": "corner-bounded",
+      "reason": "A rate floor and sample-clock ceiling binding at the slowest-RO corner (ss / -10 % / +125 °C), derived arithmetically from the measured starved-cell jitter energy (DR-0011-rate, DR-0007 §2). The bound is evaluated per PVT corner, not over a draw; the mismatch-free corners bound it."
+    },
+    {
+      "id": "raw_min_entropy_per_bit",
+      "class": "placeholder",
+      "reason": "A ratified placeholder design target (H0 = 0.5 bit/sample at the entropy-binding corner, DR-0015), with no transistor-level measurement behind it before silicon (DR-0004). The figure is owed to measured silicon, not to a Monte Carlo campaign."
+    },
+    {
+      "id": "quality",
+      "class": "specification",
+      "reason": "A structural conformance plan: designed-for SP 800-90B raw access, RCT/APT and entropy-source model, with 90B validation itself deferred to measured silicon (DR-0004). It names no distribution to estimate."
+    },
+    {
+      "id": "conditioning",
+      "class": "specification",
+      "reason": "Deterministic logic with fixed parameters: the non-vetted CRC-32 Galois LFSR (poly 0xEDB88320, state cleared every block, K = 8) of DR-0008, whose output is a bit-exact function of its input stream. The 0.85 bit/output-bit credit is a SP 800-90B cap on non-vetted functions, not a measured yield."
+    },
+    {
+      "id": "delivered_post_conditioning_rate",
+      "class": "derived",
+      "reason": "Arithmetic on the raw-rate row (R_cond = R_raw / K, K = 8) at that row's binding corner; it inherits the raw-rate row's corner-bounded character and adds no new quantity."
+    },
+    {
+      "id": "health_tests",
+      "class": "functional",
+      "reason": "Deterministic RCT and APT logic over the raw stream with formula-parameterized cutoffs in H (DR-0002); a bit-exact function of the sampled stream, verified functionally, not estimated over a population."
+    },
+    {
+      "id": "time_to_first_valid",
+      "class": "derived",
+      "reason": "An arithmetic floor at the target rate: the 1024-sample start-up health-test window plus the 256-sample conditioner latency, which do not overlap (DR-0002 §Failure behavior, DR-0008 §7). No distribution is drawn."
+    },
+    {
+      "id": "power",
+      "class": "corner-bounded",
+      "reason": "Active and idle power bounds at the fastest and leakiest corner (ff / +10 % supply, and ff / +10 % / +125 °C for idle), evaluated from measured gate-level and per-corner characterized values (DR-0023, DR-0017). A worst-corner deterministic bound, not a statistical estimate."
+    },
+    {
+      "id": "area",
+      "class": "physical",
+      "reason": "A layout quantity: die area including isolation channels, a deterministic function of the committed floorplan (DR-0019). It is re-measured when the geometry changes, never sampled."
+    },
+    {
+      "id": "operating_envelope",
+      "class": "specification",
+      "reason": "The environmental boundary (-40 ... +125 °C, 3.3 V ± 10 %) inside which every other row holds; a specification of operating conditions, not a quantity with a distribution."
+    },
+    {
+      "id": "interface",
+      "class": "functional",
+      "reason": "Register-map and streaming semantics (OUT_MODE, CTRL/STATUS/DATA/RAW_DATA, the 32-bit valid/ready port and the never-gated raw path of DR-0001/DR-0013): deterministic digital logic, verified bit-exact against the reference model."
+    },
+    {
+      "id": "period_r1",
+      "class": "statistical",
+      "reason": "Statistical: a mismatch Monte Carlo limit on the analog ring-1 period (DR-0033), drawn over the mismatch campaign's seeds at two corners. It belongs to the analog partition and is evidenced under 6.analog (the committed klt yield response, currently unmet / undersized_sample); it is not a digital-partition claim."
+    },
+    {
+      "id": "dtrip_v",
+      "class": "statistical",
+      "reason": "Statistical: a mismatch Monte Carlo limit on the sampler decision threshold (DR-0033), drawn over the mismatch campaign's seeds at two corners. It belongs to the analog partition (the sampler's analog storage loops) and is evidenced under 6.analog (the committed klt yield response, currently unmet / undersized_sample); it is not a digital-partition claim."
+    }
+  ]
+}

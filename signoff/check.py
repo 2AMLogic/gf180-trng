@@ -3,7 +3,8 @@
 
     python3 signoff/check.py                  # verify; self-skips the re-grade if klt is absent
     python3 signoff/check.py --require-tools  # verify; fail instead of skipping (CI, check:all)
-    python3 signoff/check.py --write          # rebuild the item 1/2/9/10 inventories, then signoff/records/t1-tier-report.json
+    python3 signoff/check.py --write          # rebuild the item 1/2/9/10 inventories, the item-6
+                                              # digital spec projection, then signoff/records/t1-tier-report.json
 
 `signoff/records/t1-tier-report.json` is this block's **verdict of record**
 against the klayout-tools design-evidence ladder: the literal output of
@@ -83,6 +84,15 @@ tree: an inventoried file that changed, vanished or appeared fails by name, and
 hash to what was inventoried; it does not run the regeneration or DRC/LVS
 gates the inventories name (they need the PDK, xschem or Yosys and run in
 `pdk-nightly.yml`).
+
+T1 item 6 digital instead cites the `not_applicable` form's two documents
+(klayout-tools#2865): a generated projection of README.md's ratified
+target-spec table and a hand-written per-row statement, pinned by content hash
+inside the manifest entry. Step 1b'' holds the spec document to a fresh
+projection of the table and the statement to exact row coverage -- checks that
+run independently of where the grader's own scan of the same documents
+stopped (on this tree it refuses at the first statistical row before ever
+looking at the statement; see verify_item6_digital_publication).
 
 Step 1 and step 2 are stdlib-only and always run -- they need no `klt`, no
 PDK and no network, which is why the freshness half of this gate is on the
@@ -179,6 +189,25 @@ PNR_ENVELOPE = "layout/digital/reports/place_and_route.json"
 #: ITEM7_ENVELOPE it carries no provenance block, so it is exempt from the
 #: input-digest step and its freshness is publish_item6.publication_problems().
 ITEM6_ENVELOPE = "signoff/evidence/mc-yield/klt_yield_response.json"
+#: Item 6 digital: the two documents of the `not_applicable` form
+#: (klayout-tools#2865, shipped in the 0.8.0 grader this repo pins; the
+#: digital partition of a mixed-signal block may use it, re-ruled
+#: klayout-tools#4183). `spec` is a JSON projection of README.md's ratified
+#: target-spec table; `statement` is the hand-written per-row classification.
+#: Both are pinned by content hash inside the manifest's
+#: `evidence["6.digital"].not_applicable` -- nested, so the manifest_entries
+#: loops above (which read top-level `file`/`content_hash`) do not see them;
+#: verify_item6_digital_publication() is their freshness step.
+ITEM6D_SPEC = "signoff/evidence/item6-digital-spec.json"
+ITEM6D_STATEMENT = "signoff/evidence/item6-digital-statement.json"
+#: The README heading that introduces the ratified target-spec table: the
+#: single source the spec document projects.
+ITEM6D_SPEC_HEADING = "## Target specification (ratified 2026-07-31)"
+#: The two DR-0033 rows that ARE statistical. They are analog-partition rows
+#: evidenced under `6.analog`, so the statement must classify exactly these
+#: as statistical and say where they are evidenced -- and no other row may
+#: claim to be, because the ratified table has exactly two statistical rows.
+ITEM6D_STATISTICAL_ROWS = frozenset({"period_r1", "dtrip_v"})
 
 ITEM7_DIR = "signoff/evidence/post-route"
 ITEM7_ENVELOPE = f"{ITEM7_DIR}/gate_klt_response.json"
@@ -799,6 +828,189 @@ def verify_combiner_sampler_publication() -> list[str]:
     )
 
 
+def project_item6_digital_spec(readme_text: str) -> dict:
+    """Deterministic JSON projection of README.md's ratified target-spec
+    table -- the `spec` document of the item-6 digital `not_applicable` form.
+
+    This projection exists only because the 0.8.0 grader pin has no
+    markdown-table spec source (klayout-tools#4793, 0.9.2): it carries every
+    ratified row's four cells verbatim, so the rendering stays honest, and
+    nothing else. When the grader pin moves to a release with the native
+    source, retire this document for the grader's own markdown-table input.
+
+    Row ids: the trailing backticked identifier when the parameter cell
+    carries one (the DR-0033 style "Ring period under mismatch
+    (`period_r1`)"), else a slug of the parameter text. Raises ValueError on
+    a table this parser cannot read whole -- a partial projection would be
+    worse than none.
+    """
+    lines = readme_text.splitlines()
+    try:
+        start = lines.index(ITEM6D_SPEC_HEADING)
+    except ValueError:
+        raise ValueError(f"README.md carries no {ITEM6D_SPEC_HEADING!r} heading") from None
+    rows: list[dict] = []
+    seen_table = False
+    for line in lines[start + 1:]:
+        stripped = line.strip()
+        if not stripped:
+            if seen_table:
+                break
+            continue
+        if not stripped.startswith("|"):
+            if seen_table:
+                break
+            continue
+        seen_table = True
+        cells = [c.strip() for c in stripped[1:-1].split("|")] if stripped.endswith("|") else []
+        if len(cells) != 4:
+            raise ValueError(
+                f"target-spec table row does not have exactly four cells: {stripped[:60]!r}"
+            )
+        if all(set(c) <= set("-: ") and c for c in cells):
+            continue  # the header/separator rule of the markdown table
+        if [c.lower() for c in cells] == ["parameter", "target", "stretch", "status"]:
+            continue  # the header row
+        parameter, target, stretch, status = cells
+        backticked = re.findall(r"`([a-z][a-z0-9_]+)`", parameter)
+        row_id = backticked[-1] if backticked else re.sub(
+            r"[^a-z0-9]+", "_", parameter.lower()
+        ).strip("_")
+        if not row_id:
+            raise ValueError(f"target-spec row has no derivable id: {parameter!r}")
+        rows.append(
+            {
+                "id": row_id,
+                "parameter": parameter,
+                "target": target,
+                "stretch": stretch,
+                "status": status,
+            }
+        )
+    if not rows:
+        raise ValueError("no data rows found under the target-spec heading")
+    ids = [r["id"] for r in rows]
+    if len(set(ids)) != len(ids):
+        raise ValueError(f"target-spec rows project duplicate ids: {sorted(ids)}")
+    return {"status": "ratified", "rows": rows}
+
+
+def _item6d_doc_problems(label: str, path: Path, pinned: str | None) -> list[str]:
+    """Hash-bind one `not_applicable` document to its bytes on disk."""
+    if not path.is_file():
+        return [f"{label}: {path.relative_to(REPO_ROOT)} is missing"]
+    actual = sha256_file(path)
+    if pinned != actual:
+        return [
+            f"{label}: STALE -- the manifest pins {pinned!r}, "
+            f"{path.relative_to(REPO_ROOT)} hashes to {actual} today; re-run "
+            f"'python3 signoff/check.py --write' to re-pin"
+        ]
+    return []
+
+
+def verify_item6_digital_publication(manifest: dict) -> list[str]:
+    """Freshness gate for the `6.digital` `not_applicable` citation (stdlib
+    only, always runs once the entry is cited).
+
+    The grader hash-checks both documents and scans them itself, but it
+    stops at the first refusal: on this tree the spec scan refuses at the
+    first DR-0033 row (`not_applicable_statistical_row`, the recorded
+    outcome), which returns before the statement's coverage is ever looked
+    at. So this step re-checks, independently of the grader and of where
+    the grader stopped: both document hashes against file bytes, the spec
+    document against a fresh projection of README's ratified table (so it
+    cannot drift from the table it renders), and the statement's rows --
+    one entry per ratified row, id for id, each with a nonempty class and
+    reason, the two statistical rows classified as statistical and pointing
+    at the `6.analog` citation that evidences them, and no other row
+    claiming to be statistical.
+    """
+    entry = (manifest.get("evidence") or {}).get("6.digital")
+    if entry is None:
+        return []
+    form = entry.get("not_applicable") if isinstance(entry, dict) else None
+    if not isinstance(form, dict):
+        return ["manifest 6.digital must be a 'not_applicable' object citing the "
+                "spec and statement documents"]
+    out: list[str] = []
+    refs: dict[str, dict] = {}
+    for label, want in (("spec", ITEM6D_SPEC), ("statement", ITEM6D_STATEMENT)):
+        ref = form.get(label)
+        if not isinstance(ref, dict) or ref.get("file") != want:
+            out.append(f"manifest 6.digital not_applicable.{label} must cite {want}")
+        else:
+            refs[label] = ref
+            out += _item6d_doc_problems(label, REPO_ROOT / want, ref.get("content_hash"))
+    try:
+        readme = (REPO_ROOT / "README.md").read_text()
+    except OSError as exc:
+        return out + [f"README.md: unreadable ({exc})"]
+    try:
+        projection = project_item6_digital_spec(readme)
+    except ValueError as exc:
+        return out + [f"README.md target-spec table: {exc}"]
+    ids = [row["id"] for row in projection["rows"]]
+    if "spec" in refs and (REPO_ROOT / ITEM6D_SPEC).is_file():
+        try:
+            committed = json.loads((REPO_ROOT / ITEM6D_SPEC).read_text())
+        except (OSError, ValueError) as exc:
+            out.append(f"spec: {ITEM6D_SPEC} is unreadable ({exc})")
+        else:
+            if committed != projection:
+                out.append(
+                    "spec: the committed document is not the current projection of "
+                    "README.md's ratified target-spec table; regenerate it with "
+                    "'python3 signoff/check.py --write'"
+                )
+    statement_rows: list[dict] = []
+    if "statement" in refs and (REPO_ROOT / ITEM6D_STATEMENT).is_file():
+        try:
+            doc = json.loads((REPO_ROOT / ITEM6D_STATEMENT).read_text())
+            statement_rows = doc.get("rows") if isinstance(doc, dict) else None
+        except (OSError, ValueError) as exc:
+            out.append(f"statement: {ITEM6D_STATEMENT} is unreadable ({exc})")
+            statement_rows = []
+        if statement_rows is None or not all(
+            isinstance(row, dict)
+            and all(isinstance(row.get(k), str) and row[k].strip() for k in ("id", "class", "reason"))
+            for row in statement_rows
+        ):
+            out.append("statement: 'rows' must be a list of objects each with a "
+                       "nonempty string id, class and reason")
+            statement_rows = []
+    if statement_rows:
+        statement_ids = [row["id"] for row in statement_rows]
+        uncovered = [rid for rid in ids if rid not in statement_ids]
+        unknown = [rid for rid in statement_ids if rid not in ids]
+        if uncovered or unknown or len(set(statement_ids)) != len(statement_ids):
+            out.append(
+                f"statement: does not account for exactly the ratified rows "
+                f"(uncovered: {uncovered}, unknown: {unknown}, duplicated: "
+                f"{sorted({r for r in statement_ids if statement_ids.count(r) > 1})})"
+            )
+        for row in statement_rows:
+            is_statistical = row["id"] in ITEM6D_STATISTICAL_ROWS
+            claims = row["class"].strip().lower() == "statistical"
+            if is_statistical and not claims:
+                out.append(
+                    f"statement: row {row['id']} is one of the two DR-0033 statistical "
+                    f"rows but is classified {row['class']!r}"
+                )
+            if is_statistical and "6.analog" not in row["reason"]:
+                out.append(
+                    f"statement: row {row['id']} is statistical and must say it is "
+                    f"evidenced under 6.analog (analog partition)"
+                )
+            if claims and not is_statistical:
+                out.append(
+                    f"statement: row {row['id']} claims to be statistical, but the "
+                    f"ratified table's only statistical rows are "
+                    f"{sorted(ITEM6D_STATISTICAL_ROWS)}"
+                )
+    return out
+
+
 sha256_file = inventories.sha256_file
 
 
@@ -1161,6 +1373,15 @@ def freshness_gate(manifest: dict) -> int:
         if not item6:
             verified += 1
 
+    # Step 1b'': the item-6 digital `not_applicable` documents (see ITEM6D_*).
+    # Nested document refs, invisible to the manifest_entries loops of steps
+    # 1 and 2, and covered independently of where the grader's own scan
+    # stopped.
+    item6d = verify_item6_digital_publication(manifest)
+    failures += [f"6.digital: {p}" for p in item6d]
+    if (manifest.get("evidence") or {}).get("6.digital") and not item6d:
+        verified += 1
+
     # Step 1c: the 7.analog citation's testbench-side pins (see ITEM7A_*). Its
     # layout pin is already covered by steps 1 and 2 above.
     failures += [f"7.analog: {p}" for p in verify_item7_analog_publication(manifest)]
@@ -1346,13 +1567,57 @@ def write_inventories(manifest: dict) -> dict | None:
     return manifest
 
 
+def write_item6_digital(manifest: dict) -> dict | None:
+    """Re-project README's ratified table into the item-6 digital spec
+    document and re-pin both `not_applicable` hashes (`--write`).
+
+    The statement is hand-written, never generated: `--write` re-pins its
+    hash from bytes, and the freshness gate's content checks (coverage,
+    nonempty class/reason, the two statistical rows classified honestly)
+    are what keep a re-pin from blessing a bad one. Returns the updated
+    manifest, or None (nothing written) when the projection cannot be read
+    or the statement is not committed.
+    """
+    try:
+        projection = project_item6_digital_spec((REPO_ROOT / "README.md").read_text())
+    except (OSError, ValueError) as exc:
+        print(f"signoff/check.py: item-6 digital spec projection FAILED: {exc}", file=sys.stderr)
+        return None
+    statement = REPO_ROOT / ITEM6D_STATEMENT
+    if not statement.is_file():
+        print(
+            f"signoff/check.py: {ITEM6D_STATEMENT} is missing -- it is hand-written, "
+            f"not generated; commit it before re-pinning",
+            file=sys.stderr,
+        )
+        return None
+    spec_path = REPO_ROOT / ITEM6D_SPEC
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_path.write_text(json.dumps(projection, indent=2) + "\n")
+    evidence = manifest.setdefault("evidence", {})
+    evidence["6.digital"] = {
+        "not_applicable": {
+            "spec": {"file": ITEM6D_SPEC, "content_hash": sha256_file(spec_path)},
+            "statement": {"file": ITEM6D_STATEMENT, "content_hash": sha256_file(statement)},
+        }
+    }
+    manifest["evidence"] = dict(sorted(evidence.items()))
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(
+        f"signoff/check.py: wrote {ITEM6D_SPEC} ({len(projection['rows'])} ratified "
+        f"rows) and the 6.digital not_applicable document pins"
+    )
+    return manifest
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--write",
         action="store_true",
-        help="rebuild the item 1/2/9/10 inventories, envelopes and manifest pins, then "
-        "regenerate signoff/records/t1-tier-report.json instead of diffing it",
+        help="rebuild the item 1/2/9/10 inventories, the item-6 digital spec projection "
+        "and its manifest pins, then regenerate signoff/records/t1-tier-report.json "
+        "instead of diffing it",
     )
     parser.add_argument(
         "--require-tools",
@@ -1384,6 +1649,9 @@ def main() -> int:
 
     if args.write:
         manifest = write_inventories(manifest)
+        if manifest is None:
+            return 1
+        manifest = write_item6_digital(manifest)
         if manifest is None:
             return 1
 

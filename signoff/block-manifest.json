@@ -89,6 +89,18 @@
     "6.analog": {
       "file": "signoff/evidence/mc-yield/klt_yield_response.json"
     },
+    "6.digital": {
+      "not_applicable": {
+        "spec": {
+          "file": "signoff/evidence/item6-digital-spec.json",
+          "content_hash": "sha256:c575cc6611fd59b5f40577bdd6a0518455ffc46a9e09d02249e883947456e018"
+        },
+        "statement": {
+          "file": "signoff/evidence/item6-digital-statement.json",
+          "content_hash": "sha256:a4a1aaef675464280a839f4f129961900177fba567fd9af45e0391bc14da6ba3"
+        }
+      }
+    },
     "7.analog": {
       "file": "signoff/evidence/post-layout/ro_ring11.pex.json",
       "content_hash": "sha256:27e6fdba1a3c2c56ee67c7b474f830f268ac8403467c3f4ec6b33599b3d8de75"
