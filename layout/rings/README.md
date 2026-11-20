@@ -19,17 +19,22 @@ left to right in ring order (`xg, x1, x2, ..., x10`) by `klt gen-compose`
 (`placement.strategy: "explicit"`, a caller-declared `{x, y}` per block —
 every cell's own drawn geometry is kept exactly as committed, only
 translated) plus one more `klt draw` stream carrying the inter-cell
-metal1/metal2 wiring this assembly step adds. See
-[`ro_ring11/build.py`](ro_ring11/build.py)'s own module docstring for the
-full account: why the wiring is hand-routed rather than `gen-compose`'s own
-`connectivity[]` router (`ro_stage` puts both `a` and `y` on its west side,
-so every chain link is a *same-facing* port pair — the case the router
-detects and rejects but cannot route around, with no orientation, waypoint,
-or routing-channel control to work around it; filed generically as
-[klayout-tools#634][klt634]), the two-metal-layer plan (metal1
-for the ring's own `a`/`y` chain, metal2 + via1 for the `vddr`/`vss`
-rails), and the small maze-routed escape `ro_nand2`'s own dense internal
-metal1 needs.
+metal1/metal2 wiring this assembly step adds. That wiring is two metal
+layers — metal1 for the ring's own `a`/`y` chain (vertical stubs from each
+pin into one shared horizontal track, plus a maze-routed escape for the two
+links clearing `ro_nand2`'s dense internal metal1), metal2 + via1 for the
+`vddr`/`vss` rails as one continuous strip per rail — and it is
+hand-computed rather than drawn by `gen-compose`'s own `connectivity[]`
+router, because `ro_stage` puts both `a` and `y` on its west side: every
+chain link is a *same-facing* port pair, which the router then rejected
+outright (filed generically as [klayout-tools#634][klt634]).
+[`ro_ring11/build.py`](ro_ring11/build.py)'s own module docstring keeps the
+full design history. Its no-waypoint account is the tool as of that build,
+not today's: `gen-compose` has since grown caller-supplied `waypoints_um`
+for exactly that same-facing two-pin case (klayout-tools release notes; the
+tool's own `docs/cli/gen-compose.md`, "Routing same-facing port pairs with
+`waypoints_um`") — which does not by itself show the router can wire this
+whole ring. The committed hand-routed geometry stands unchanged.
 
 `ro_ring11_ring2` ([#118][gf118]) closes the gap this directory's own ring1
 assembly work surfaced: `layout/cells/ro_nand2/` was drawn only at ring1's
