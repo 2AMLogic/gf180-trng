@@ -97,7 +97,7 @@
         },
         "statement": {
           "file": "signoff/evidence/item6-digital-statement.json",
-          "content_hash": "sha256:a4a1aaef675464280a839f4f129961900177fba567fd9af45e0391bc14da6ba3"
+          "content_hash": "sha256:6bcf263763b35c1e7cac81009e23fb93d42a14fa292e4ba5eac374c99ed03256"
         }
       }
     },

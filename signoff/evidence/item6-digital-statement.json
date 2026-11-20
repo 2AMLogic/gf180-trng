@@ -8,7 +8,7 @@
     {
       "id": "raw_rate",
       "class": "corner-bounded",
-      "reason": "A rate floor and sample-clock ceiling binding at the slowest-RO corner (ss / -10 % / +125 °C), derived arithmetically from the measured starved-cell jitter energy (DR-0011-rate, DR-0007 §2). The bound is evaluated per PVT corner, not over a draw; the mismatch-free corners bound it."
+      "reason": "The > 2 kbps raw-rate floor binds at the slowest-RO corner (ss / +125 °C / 2.97 V). The 2773 bps sample-clock ceiling binds at the entropy-binding corner (ss / +125 °C / 3.63 V). Both bounds are calculated per PVT corner from the measured starved-cell jitter energy (DR-0011-rate, DR-0007 §2)."
     },
     {
       "id": "raw_min_entropy_per_bit",

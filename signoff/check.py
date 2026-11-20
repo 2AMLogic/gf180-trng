@@ -963,23 +963,19 @@ def verify_item6_digital_publication(manifest: dict) -> list[str]:
                     "README.md's ratified target-spec table; regenerate it with "
                     "'python3 signoff/check.py --write'"
                 )
-    statement_rows: list[dict] = []
     if "statement" in refs and (REPO_ROOT / ITEM6D_STATEMENT).is_file():
         try:
             doc = json.loads((REPO_ROOT / ITEM6D_STATEMENT).read_text())
-            statement_rows = doc.get("rows") if isinstance(doc, dict) else None
         except (OSError, ValueError) as exc:
-            out.append(f"statement: {ITEM6D_STATEMENT} is unreadable ({exc})")
-            statement_rows = []
-        if statement_rows is None or not all(
+            return out + [f"statement: {ITEM6D_STATEMENT} is unreadable ({exc})"]
+        statement_rows = doc.get("rows") if isinstance(doc, dict) else None
+        if not isinstance(statement_rows, list) or not all(
             isinstance(row, dict)
             and all(isinstance(row.get(k), str) and row[k].strip() for k in ("id", "class", "reason"))
             for row in statement_rows
         ):
-            out.append("statement: 'rows' must be a list of objects each with a "
-                       "nonempty string id, class and reason")
-            statement_rows = []
-    if statement_rows:
+            return out + ["statement: 'rows' must be a list of objects each with a "
+                          "nonempty string id, class and reason"]
         statement_ids = [row["id"] for row in statement_rows]
         uncovered = [rid for rid in ids if rid not in statement_ids]
         unknown = [rid for rid in statement_ids if rid not in ids]

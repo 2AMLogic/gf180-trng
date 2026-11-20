@@ -506,6 +506,18 @@ class Item6DigitalNotApplicable(unittest.TestCase):
         problems = check.verify_item6_digital_publication(self.manifest())
         self.assertTrue(any("uncovered: ['interface']" in p for p in problems))
 
+    def test_empty_statement_rows_report_every_uncovered_id_despite_a_fresh_pin(self):
+        self.write_statement({"rows": []})
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertIn(f"uncovered: {SYNTH_IDS}", "\n".join(problems))
+
+    def test_non_list_statement_rows_fail_despite_a_fresh_pin(self):
+        for rows in ({}, "", 1, False, None):
+            with self.subTest(rows=rows):
+                self.write_statement({"rows": rows})
+                problems = check.verify_item6_digital_publication(self.manifest())
+                self.assertIn("'rows' must be a list", "\n".join(problems))
+
     def test_duplicate_statement_row_fails_despite_a_fresh_pin(self):
         doc = json.loads(json.dumps(SYNTH_STATEMENT))
         doc["rows"].append(dict(doc["rows"][0]))
