@@ -323,5 +323,282 @@ class CommittedEnvelopeSweep(unittest.TestCase):
         self.assertIn("1 cited envelope(s)", out.getvalue())
 
 
+#: A miniature ratified table: two deterministic rows and one statistical
+#: (`period_r1`), mirroring the real one's shape.
+SYNTH_README = """# block
+
+## Target specification (ratified 2026-07-31)
+
+| Parameter | Target | Stretch | Status |
+|---|---|---|---|
+| Entropy source | **N-way array of rings**, XOR-combined | metastability hybrid | specified |
+| Interface | streaming raw / conditioned | — | specified |
+| Ring period under mismatch (`period_r1`) | ≤ 9.151 ns over the mismatch Monte Carlo draw | — | specified |
+
+## After
+"""
+
+SYNTH_IDS = ["entropy_source", "interface", "period_r1"]
+
+SYNTH_STATEMENT = {
+    "rows": [
+        {
+            "id": "entropy_source",
+            "class": "architectural",
+            "reason": "a design decision, not a measured quantity",
+        },
+        {
+            "id": "interface",
+            "class": "functional",
+            "reason": "deterministic logic, verified bit-exact",
+        },
+        {
+            "id": "period_r1",
+            "class": "statistical",
+            "reason": "Statistical (mismatch Monte Carlo); evidenced under 6.analog.",
+        },
+        # dtrip_v deliberately absent: the synthetic table has one
+        # statistical row, so ITEM6D_STATISTICAL_ROWS is not consulted for
+        # rows the projection does not carry -- coverage against the
+        # projection's own ids is the rule under test.
+    ]
+}
+
+
+class Item6DigitalProjection(unittest.TestCase):
+    """project_item6_digital_spec(): README's ratified table -> the spec
+    document, id for id, cell for cell."""
+
+    def test_projection_ids_are_pinned_against_the_committed_table(self):
+        projection = check.project_item6_digital_spec(
+            (ROOT / "README.md").read_text()
+        )
+        self.assertEqual(projection["status"], "ratified")
+        self.assertEqual(
+            [row["id"] for row in projection["rows"]],
+            [
+                "entropy_source", "raw_rate", "raw_min_entropy_per_bit", "quality",
+                "conditioning", "delivered_post_conditioning_rate", "health_tests",
+                "time_to_first_valid", "power", "area", "operating_envelope",
+                "interface", "period_r1", "dtrip_v",
+            ],
+        )
+
+    def test_committed_spec_document_is_the_current_projection(self):
+        """The freshness wire: the committed document cannot drift from the
+        table it renders (README edits it does not carry fail the gate)."""
+        projection = check.project_item6_digital_spec(
+            (ROOT / "README.md").read_text()
+        )
+        committed = json.loads((ROOT / check.ITEM6D_SPEC).read_text())
+        self.assertEqual(committed, projection)
+
+    def test_committed_statement_accounts_for_every_ratified_row(self):
+        projection = check.project_item6_digital_spec(
+            (ROOT / "README.md").read_text()
+        )
+        statement = json.loads((ROOT / check.ITEM6D_STATEMENT).read_text())
+        self.assertEqual(
+            sorted(row["id"] for row in statement["rows"]),
+            sorted(row["id"] for row in projection["rows"]),
+        )
+        for row in statement["rows"]:
+            if row["id"] in check.ITEM6D_STATISTICAL_ROWS:
+                self.assertEqual(row["class"].lower(), "statistical")
+                self.assertIn("6.analog", row["reason"])
+            else:
+                self.assertNotEqual(row["class"].lower(), "statistical")
+
+    def test_backticked_id_and_slug_rules(self):
+        projection = check.project_item6_digital_spec(SYNTH_README)
+        self.assertEqual([row["id"] for row in projection["rows"]], SYNTH_IDS)
+        # Cells are carried verbatim, escapes and all.
+        self.assertEqual(
+            projection["rows"][0]["target"], "**N-way array of rings**, XOR-combined"
+        )
+        self.assertEqual(projection["rows"][1]["stretch"], "—")
+
+    def test_malformed_table_raises_rather_than_projecting_partially(self):
+        bad = SYNTH_README.replace(
+            "| Interface | streaming raw / conditioned | — | specified |",
+            "| Interface | streaming | specified |",  # one cell short
+        )
+        with self.assertRaises(ValueError):
+            check.project_item6_digital_spec(bad)
+        with self.assertRaises(ValueError):
+            check.project_item6_digital_spec("# no such heading\n")
+
+    def test_duplicate_projected_ids_raise(self):
+        bad = SYNTH_README.replace("| Interface |", "| Entropy source |", 1)
+        with self.assertRaises(ValueError):
+            check.project_item6_digital_spec(bad)
+
+
+class Item6DigitalNotApplicable(unittest.TestCase):
+    """verify_item6_digital_publication(): the 6.digital gate.
+
+    The grader stops at the first refusal -- on this tree the spec scan's
+    `not_applicable_statistical_row`, which returns before the statement's
+    coverage is ever looked at -- so every check here must bite on its own:
+    a stale pin, a statement row removed or duplicated *with its pin
+    recomputed*, a README edit the spec document does not carry, and the
+    two statistical rows classified honestly.
+    """
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name).resolve()
+        patch = mock.patch.object(check, "REPO_ROOT", self.root)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.spec_path = self.root / "signoff" / "evidence" / "item6-digital-spec.json"
+        self.statement_path = (
+            self.root / "signoff" / "evidence" / "item6-digital-statement.json"
+        )
+        self.spec_path.parent.mkdir(parents=True)
+        self.readme = self.root / "README.md"
+        self.readme.write_text(SYNTH_README)
+        self.write_spec()
+        self.write_statement(SYNTH_STATEMENT)
+
+    def write_spec(self):
+        projection = check.project_item6_digital_spec(self.readme.read_text())
+        self.spec_path.write_text(json.dumps(projection, indent=2) + "\n")
+
+    def write_statement(self, doc):
+        self.statement_path.write_text(json.dumps(doc, indent=2) + "\n")
+
+    def pin(self, path):
+        return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def manifest(self):
+        return {
+            "evidence": {
+                "6.digital": {
+                    "not_applicable": {
+                        "spec": {
+                            "file": "signoff/evidence/item6-digital-spec.json",
+                            "content_hash": self.pin(self.spec_path),
+                        },
+                        "statement": {
+                            "file": "signoff/evidence/item6-digital-statement.json",
+                            "content_hash": self.pin(self.statement_path),
+                        },
+                    }
+                }
+            }
+        }
+
+    def test_clean_documents_pass(self):
+        self.assertEqual(check.verify_item6_digital_publication(self.manifest()), [])
+
+    def test_absent_entry_is_not_a_problem(self):
+        self.assertEqual(check.verify_item6_digital_publication({}), [])
+        self.assertEqual(
+            check.verify_item6_digital_publication({"evidence": {}}), []
+        )
+
+    def test_missing_statement_row_fails_despite_a_fresh_pin(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"] = [r for r in doc["rows"] if r["id"] != "interface"]
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("uncovered: ['interface']" in p for p in problems))
+
+    def test_empty_statement_rows_report_every_uncovered_id_despite_a_fresh_pin(self):
+        self.write_statement({"rows": []})
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertIn(f"uncovered: {SYNTH_IDS}", "\n".join(problems))
+
+    def test_non_list_statement_rows_fail_despite_a_fresh_pin(self):
+        for rows in ({}, "", 1, False, None):
+            with self.subTest(rows=rows):
+                self.write_statement({"rows": rows})
+                problems = check.verify_item6_digital_publication(self.manifest())
+                self.assertIn("'rows' must be a list", "\n".join(problems))
+
+    def test_duplicate_statement_row_fails_despite_a_fresh_pin(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"].append(dict(doc["rows"][0]))
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("duplicated: ['entropy_source']" in p for p in problems))
+
+    def test_unknown_statement_row_fails(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"][1]["id"] = "no_such_row"
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("unknown: ['no_such_row']" in p for p in problems))
+
+    def test_empty_class_or_reason_fails(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"][0]["reason"] = "   "
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("nonempty string id, class and reason" in p for p in problems))
+
+    def test_statistical_row_must_be_classified_statistical(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"][2]["class"] = "corner-bounded"  # period_r1, one of the two
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("statistical rows but is classified" in p for p in problems))
+
+    def test_statistical_row_reason_must_name_the_analog_citation(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"][2]["reason"] = "Statistical, but evidenced elsewhere."
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("evidenced under 6.analog" in p for p in problems))
+
+    def test_deterministic_row_may_not_claim_to_be_statistical(self):
+        doc = json.loads(json.dumps(SYNTH_STATEMENT))
+        doc["rows"][1]["class"] = "statistical"
+        self.write_statement(doc)
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("claims to be statistical" in p for p in problems))
+
+    def test_stale_spec_pin_fails_by_name(self):
+        manifest = self.manifest()  # pins the bytes on disk right now
+        self.spec_path.write_text(
+            json.dumps({"status": "ratified", "rows": [{"id": "x"}]}, indent=2) + "\n"
+        )
+        problems = check.verify_item6_digital_publication(manifest)
+        self.assertTrue(any(p.startswith("spec: STALE") for p in problems))
+        self.assertTrue(any("is not the current projection" in p for p in problems))
+
+    def test_stale_statement_pin_fails_by_name(self):
+        manifest = self.manifest()
+        self.statement_path.write_text('{"rows": []}\n')
+        problems = check.verify_item6_digital_publication(manifest)
+        self.assertTrue(any(p.startswith("statement: STALE") for p in problems))
+
+    def test_readme_edit_the_spec_does_not_carry_fails(self):
+        self.readme.write_text(
+            SYNTH_README.replace("streaming raw / conditioned", "packet interface")
+        )
+        # The spec document's pin is still fresh (the file did not change);
+        # only the projection comparison can catch the drift.
+        problems = check.verify_item6_digital_publication(self.manifest())
+        self.assertTrue(any("is not the current projection" in p for p in problems))
+
+    def test_missing_documents_fail_by_name(self):
+        manifest = self.manifest()
+        self.spec_path.unlink()
+        self.statement_path.unlink()
+        problems = check.verify_item6_digital_publication(manifest)
+        self.assertTrue(any("item6-digital-spec.json is missing" in p for p in problems))
+        self.assertTrue(any("item6-digital-statement.json is missing" in p for p in problems))
+
+    def test_entry_without_the_form_is_rejected(self):
+        problems = check.verify_item6_digital_publication(
+            {"evidence": {"6.digital": {"file": "signoff/evidence/x.json"}}}
+        )
+        self.assertEqual(len(problems), 1)
+        self.assertIn("not_applicable", problems[0])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -31,7 +31,7 @@ amended only through [`spec/decision-records/`](../spec/decision-records/). READ
 | 3.digital DRC clean | `check_failed`: 2737 violations, all `comp.tap_distance.{nwell,psub}.mv.1` | #717, then #718 |
 | 5.analog corner verification | `no_evidence` | no ratified analog row has a measured quantity with a bound ([`signoff/README.md`](../signoff/README.md), "Item 5 analog") |
 | 6.analog Monte Carlo | `undersized_sample` | size the mismatch campaign (Next) |
-| 6.digital Monte Carlo | `no_evidence` | a hash-bound "not applicable" statement, pending klayout-tools#2865 in a release |
+| 6.digital Monte Carlo | `not_applicable_statistical_row` | the statement is committed and refused as-is (mixed-signal scoping gap, [klayout-tools#6938](https://github.com/2AMLogic/klayout-tools/issues/6938)); see [`signoff/README.md`](../signoff/README.md), "Item 6" |
 | 11.analog power delivery | `supply_spec_disclosed_unexpressible` | #701 |
 
 Since #698 was written, 5.digital became `met` and 3.digital `unmet`: same count, different rows.
@@ -113,7 +113,9 @@ green), #520 (import convention, PR #581 held).
   (DR-0026's 2026-11-09 amendment covers the producer pin).
 - **PR #413** (#339) is parked on whether its branch history may be rewritten. #339, #411 and #412
   describe floating wells that `main` no longer has, and need a re-read, not a build.
-- **6.digital** waits on klayout-tools#2865 reaching a release, as `signoff/README.md` records.
+- **6.digital** waits on klayout-tools#6938 (scoping an item-6 `not_applicable`
+  to one partition of a mixed-signal block), as `signoff/README.md` records;
+  the statement itself is committed and its refusal is the recorded verdict.
 
 ## Not planned
 
