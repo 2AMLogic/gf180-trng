@@ -28,7 +28,7 @@ moving `KLT_GRADER_PIN` (signoff/check.py) re-renders the committed verdict
 `signoff/records/t1-tier-report.json` and must align CI's install step and
 the README's "Running it" line in the same commit. The pin is a published
 PyPI release so a third party reproduces the record with one `pip install`
-of `klayout-tools==0.8.0`.
+of `klayout-tools==0.8.0`. <!-- klt-pin: grader -->
 
 Two things forced a measured keep-or-move decision now ([#1032]):
 
@@ -102,7 +102,7 @@ same rows, reproduces the statistical-row finding) are not met.
 
 ## Decision
 
-**We keep `KLT_GRADER_PIN` at `klayout-tools==0.8.0`.** Nothing changes:
+**We keep `KLT_GRADER_PIN` at `klayout-tools==0.8.0`.** Nothing changes: <!-- klt-pin: grader -->
 not `signoff/check.py`, not CI's grader install step, not
 `signoff/README.md`'s install lines, not the committed
 `t1-tier-report.json`. The released 0.9.2 grader renders an identical
