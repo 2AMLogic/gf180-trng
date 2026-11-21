@@ -106,6 +106,15 @@ record with one `pip install`, and the record itself carries `build.version`,
 in the diff rather than inferred. Bumping the pin is a real change to the
 yardstick: expect the record to move in the same commit, and re-read
 signoff/README.md's per-item notes against anything the bump adds or rewords.
+
+The pin stayed at 0.8.0 after a measured comparison against the released
+klt 0.9.2 (2026-11-21, main `cd6778b2`, throwaway `uvx` env): all 22 T1
+rows identical in status and reason, 17/22 met on both, and the item-11
+dev-build `invalid_evidence` flip does not reproduce on the release. What
+0.9.2 changes for this block is yardstick text and report shape only.
+See DR-0036 in spec/decision-records/ for the row comparison, the
+item-6-projection retirement blocker (0.9.2's native markdown-table spec
+source mis-reads the ratified README table), and the revisit conditions.
 """
 
 from __future__ import annotations
