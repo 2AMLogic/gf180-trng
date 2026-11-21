@@ -1,12 +1,17 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-19.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-21.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
 ## Archives
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-21
+
+- **PR #1034**: chore: ignore loom-daemon's codex account-ranking file
+- **Issue #1028** (closed): gitignore: .loom/account-ranking.codex (daemon fleet state) is untracked and fails check-main-clean
 
 ### 2026-11-19
 
@@ -751,20 +756,4 @@ not independent verification of the claims in issue or PR titles.
 - **PR #272**: docs: propagate #255/#266's depth-2 digital power figures into the Power row
 - **Issue #269** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
 - **Issue #265** (closed): Propagate the depth-2 gate-level digital power figures into README's Power row
-
-### 2026-09-19
-
-- **PR #266**: feat(digital): re-synthesize and re-place-and-route at DR-0020's FIFO_DEPTH = 2
-- **PR #263**: docs(sim): correct the FIFO-read-path mux2_1 leakage figure to 5.60 µW
-- **Issue #262** (closed): The 6.28 uW FIFO-read-path mux figure in characterization-startup-and-power-budget.md does not reproduce from the Liberty library
-- **PR #261**: docs(sim): label every digital-estimate figure with its FIFO_DEPTH and add the depth-2 figures
-- **Issue #257** (closed): Propagate the FIFO_DEPTH = 2 digital estimate figures into sim/characterization-startup-and-power-budget.md
-- **Issue #255** (closed): Re-synthesize and place-and-route the digital block at FIFO_DEPTH = 2
-
-### 2026-09-18
-
-- **PR #260**: chore: remove unused `import re` from test_pex_fullchip.py
-- **Issue #259** (closed): Remove unused import: re in layout/tests/test_pex_fullchip.py
-- **PR #258**: feat: set FIFO_DEPTH to DR-0020's ratified 2 and re-derive area/power
-- **Issue #254** (closed): Implement DR-0020's ratified FIFO_DEPTH=2 in RTL/regmap and refresh the digital power/area estimates
 
