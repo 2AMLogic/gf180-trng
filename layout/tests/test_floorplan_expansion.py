@@ -58,6 +58,17 @@ xbuf y y2 ro_buf
 .ends
 """
 
+# An instance card whose `+` continuation is separated from it by a comment
+# line: the continuation must attach to the card, not to the comment, or the
+# subcircuit name it carries is dropped with the comment (issue #1036).
+SPLIT_COMMENT = """\
+.subckt wrap a y
+x1 a y
+* split instance
++ ro_stage
+.ends
+"""
+
 
 def _write(text: str) -> Path:
     tmp = tempfile.TemporaryDirectory()
@@ -174,6 +185,12 @@ class ExpandInstanceTest(unittest.TestCase):
         self.assertEqual(
             floorplan.expand_instance(self.subckts, "top", {}),
             Counter({"ro_stage": 4, "ro_nand2": 2, "ro_buf": 1}),
+        )
+
+    def test_comment_between_card_and_continuation_still_counts(self) -> None:
+        subckts = floorplan.read_subckts(_write(SPLIT_COMMENT))
+        self.assertEqual(
+            floorplan.expand_instance(subckts, "wrap", {}), Counter({"ro_stage": 1})
         )
 
     def test_unknown_root_is_empty(self) -> None:
