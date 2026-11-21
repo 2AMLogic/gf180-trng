@@ -1,0 +1,12 @@
+== sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-tt.report.json
+   seed 10250201 declared_n 220 samples 220
+   m_dtrip_v      n  220 errored 0 failed_limit 0 mean 1.38641 stddev 0.0153 min 1.34215 max 1.43036
+== sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-ss.report.json
+   seed 10250202 declared_n 220 samples 220
+   m_dtrip_v      n  220 errored 0 failed_limit 0 mean 1.54245 stddev 0.0155 min 1.50595 max 1.58766
+== sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-control-tt.report.json
+   seed 10250281 declared_n 30 samples 30
+   m_dtrip_v      n   30 errored 0 failed_limit 30 mean 3.58623 stddev 0.0133 min 3.56119 max 3.61725
+== sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-control-ss.report.json
+   seed 10250282 declared_n 30 samples 30
+   m_dtrip_v      n   30 errored 0 failed_limit 30 mean 3.74247 stddev 0.0112 min 3.72203 max 3.76299

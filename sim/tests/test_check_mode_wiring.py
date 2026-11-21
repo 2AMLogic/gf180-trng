@@ -65,6 +65,10 @@ UNWIRED_ALLOWLIST = {
         "only the `run` subcommand needs the batch fleet; `emit --check` is offline and its drift "
         "comparison is exercised by test_committed_request_matches_grid in test_starved_hot_corner.py"
     ),
+    "mc_yield_campaign.py": (
+        "only the `run-set` subcommand submits to the batch fleet; `emit --check` is offline and its "
+        "drift comparison is exercised by test_emit_check_clean in test_mc_yield_campaign.py"
+    ),
     "power_switch.py": (
         "only the `run` subcommand needs the batch fleet; `emit --check` is offline and is run via "
         "cmd_emit(check=True) by test_power_switch.py"
