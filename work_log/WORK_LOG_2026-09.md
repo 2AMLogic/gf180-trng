@@ -2,6 +2,22 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-19
+
+- **PR #266**: feat(digital): re-synthesize and re-place-and-route at DR-0020's FIFO_DEPTH = 2
+- **PR #263**: docs(sim): correct the FIFO-read-path mux2_1 leakage figure to 5.60 µW
+- **Issue #262** (closed): The 6.28 uW FIFO-read-path mux figure in characterization-startup-and-power-budget.md does not reproduce from the Liberty library
+- **PR #261**: docs(sim): label every digital-estimate figure with its FIFO_DEPTH and add the depth-2 figures
+- **Issue #257** (closed): Propagate the FIFO_DEPTH = 2 digital estimate figures into sim/characterization-startup-and-power-budget.md
+- **Issue #255** (closed): Re-synthesize and place-and-route the digital block at FIFO_DEPTH = 2
+
+### 2026-09-18
+
+- **PR #260**: chore: remove unused `import re` from test_pex_fullchip.py
+- **Issue #259** (closed): Remove unused import: re in layout/tests/test_pex_fullchip.py
+- **PR #258**: feat: set FIFO_DEPTH to DR-0020's ratified 2 and re-derive area/power
+- **Issue #254** (closed): Implement DR-0020's ratified FIFO_DEPTH=2 in RTL/regmap and refresh the digital power/area estimates
+
 ### 2026-09-16
 
 - **PR #253**: docs: propagate idle-current figures after #240's digital rebuild
