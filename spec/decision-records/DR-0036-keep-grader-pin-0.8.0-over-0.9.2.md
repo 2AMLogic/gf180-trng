@@ -9,8 +9,7 @@ superseded_by: n/a
 related: "#1032 (the pin-tracking issue), DR-0026 (normative klt build), signoff/check.py (KLT_GRADER_PIN), PR #1029 (the item-6 JSON projection and its retirement note, still open at decision time), klayout-tools#4793 (the markdown-table spec source), klayout-tools#6938 (mixed-signal item-6 scoping, out of scope)"
 ---
 
-# DR-0036: Keep the klt signoff grader pin at 0.8.0 after re-grading main
-against the released klt 0.9.2
+# DR-0036: Keep the klt signoff grader pin at 0.8.0 after re-grading main against the released klt 0.9.2
 
 ## Status
 
