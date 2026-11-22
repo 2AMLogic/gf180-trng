@@ -31,7 +31,7 @@ import shutil
 import statistics
 import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Callable
+from typing import Callable, TypeVar
 
 from . import pdk_models, runner, startup
 from .corners import PvtPoint
@@ -1044,6 +1044,91 @@ class RawSectionError(ValueError):
     """A record's frontmatter ``raw`` provenance is malformed or ambiguous."""
 
 
+_EntryT = TypeVar("_EntryT")
+
+
+def _parse_file_section(
+    text: str,
+    *,
+    section: str,
+    scalar_key: str,
+    entry_re: re.Pattern[str],
+    entry_hint: str,
+    parse_entry: Callable[[re.Match[str]], _EntryT],
+) -> tuple[str, list[_EntryT]] | None:
+    """The one frontmatter file-section scanner both record formats share.
+
+    ``parse_raw_section`` (``raw:`` / ``path:``) and ``parse_stored_section``
+    (``stored_evidence:`` / ``manifest:``) read the same shape, so this is
+    the only copy of it. Deliberately a small line scanner over the shape
+    ``render_frontmatter`` emits, not a YAML parse: the harness is
+    stdlib-only (see README.md), and this is the inverse of exactly one
+    renderer.
+
+    Strict about that shape: only the initial ``---`` ... ``---`` frontmatter
+    block is read (an example in the Markdown body is ignored), and anything
+    malformed raises ``RawSectionError`` rather than yielding a parsed
+    prefix: an unterminated frontmatter block, an unsupported or duplicate
+    ``<section>:`` declaration, a duplicate ``<scalar_key>:`` or ``files:``
+    declaration, an unknown line inside the section, or a file entry that
+    does not match ``entry_re`` (reported as ``entry_hint``). Returns
+    ``None`` when the frontmatter or the ``<section>:`` block is absent.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return None
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
+        raise RawSectionError(
+            "frontmatter is not terminated by a closing '---' line"
+        ) from None
+    front = lines[1:end]
+
+    scalar = ""
+    entries: list[_EntryT] = []
+    seen_section = False
+    i = 0
+    while i < len(front):
+        line = front[i]
+        i += 1
+        if line.rstrip() != f"{section}:":
+            if line.startswith(f"{section}:"):
+                raise RawSectionError(f"unsupported {section} declaration: {line!r}")
+            continue
+        if seen_section:
+            raise RawSectionError(f"duplicate '{section}:' declaration in frontmatter")
+        seen_section = True
+        seen_scalar = seen_files = False
+        while i < len(front) and front[i][:1] in (" ", "\t"):
+            line = front[i]
+            i += 1
+            if not line.strip():
+                continue
+            if line.startswith(f"  {scalar_key}:") and not line.startswith("   "):
+                if seen_scalar:
+                    raise RawSectionError(f"duplicate '{section}.{scalar_key}' declaration")
+                seen_scalar = True
+                scalar = line.split(":", 1)[1].strip()
+            elif line.rstrip() == "  files:":
+                if seen_files:
+                    raise RawSectionError(f"duplicate '{section}.files' declaration")
+                seen_files = True
+                while i < len(front) and front[i][:1] in (" ", "\t"):
+                    entry = front[i]
+                    i += 1
+                    match = entry_re.match(entry)
+                    if not match:
+                        raise RawSectionError(
+                            f"malformed {section}.files entry (want {entry_hint}): "
+                            f"{entry.strip()!r}"
+                        )
+                    entries.append(parse_entry(match))
+            else:
+                raise RawSectionError(f"unexpected line inside {section}: {line.strip()!r}")
+    return (scalar, entries) if seen_section else None
+
+
 def parse_raw_section(text: str) -> tuple[str, list[tuple[str, str]]]:
     """Read ``raw.path`` and ``raw.files`` back out of a rendered record.
 
@@ -1059,58 +1144,15 @@ def parse_raw_section(text: str) -> tuple[str, list[tuple[str, str]]]:
     file entry that is not ``- <name>  sha256:<64 hex>``. A record with no
     ``raw:`` section at all returns ``("", [])``.
     """
-    lines = text.splitlines()
-    if not lines or lines[0] != "---":
-        return "", []
-    try:
-        end = lines.index("---", 1)
-    except ValueError:
-        raise RawSectionError(
-            "frontmatter is not terminated by a closing '---' line"
-        ) from None
-    front = lines[1:end]
-
-    raw_path = ""
-    files: list[tuple[str, str]] = []
-    seen_raw = seen_path = seen_files = False
-    i = 0
-    while i < len(front):
-        line = front[i]
-        i += 1
-        if line.rstrip() != "raw:":
-            if line.startswith("raw:"):
-                raise RawSectionError(f"unsupported raw declaration: {line!r}")
-            continue
-        if seen_raw:
-            raise RawSectionError("duplicate 'raw:' declaration in frontmatter")
-        seen_raw = True
-        while i < len(front) and front[i][:1] in (" ", "\t"):
-            line = front[i]
-            i += 1
-            if not line.strip():
-                continue
-            if line.startswith("  path:") and not line.startswith("   "):
-                if seen_path:
-                    raise RawSectionError("duplicate 'raw.path' declaration")
-                seen_path = True
-                raw_path = line.split(":", 1)[1].strip()
-            elif line.rstrip() == "  files:":
-                if seen_files:
-                    raise RawSectionError("duplicate 'raw.files' declaration")
-                seen_files = True
-                while i < len(front) and front[i][:1] in (" ", "\t"):
-                    entry = front[i]
-                    i += 1
-                    match = RAW_FILE_LINE.match(entry)
-                    if not match:
-                        raise RawSectionError(
-                            f"malformed raw.files entry (want '- <name>  "
-                            f"sha256:<64 hex>'): {entry.strip()!r}"
-                        )
-                    files.append((match.group("name"), match.group("digest")))
-            else:
-                raise RawSectionError(f"unexpected line inside raw: {line.strip()!r}")
-    return raw_path, files
+    parsed = _parse_file_section(
+        text,
+        section="raw",
+        scalar_key="path",
+        entry_re=RAW_FILE_LINE,
+        entry_hint="'- <name>  sha256:<64 hex>'",
+        parse_entry=lambda m: (m.group("name"), m.group("digest")),
+    )
+    return ("", []) if parsed is None else parsed
 
 
 STORED_FILE_LINE = re.compile(
@@ -1125,60 +1167,14 @@ def parse_stored_section(text: str) -> tuple[str, list[tuple[str, int, str]]] | 
     Same strictness as ``parse_raw_section``: only the initial frontmatter is
     read and anything malformed raises ``RawSectionError``.
     """
-    lines = text.splitlines()
-    if not lines or lines[0] != "---":
-        return None
-    try:
-        end = lines.index("---", 1)
-    except ValueError:
-        raise RawSectionError("frontmatter is not terminated by a closing '---' line") from None
-    front = lines[1:end]
-    manifest = ""
-    files: list[tuple[str, int, str]] = []
-    found = False
-    i = 0
-    while i < len(front):
-        line = front[i]
-        i += 1
-        if line.rstrip() != "stored_evidence:":
-            if line.startswith("stored_evidence:"):
-                raise RawSectionError(f"unsupported stored_evidence declaration: {line!r}")
-            continue
-        if found:
-            raise RawSectionError("duplicate 'stored_evidence:' declaration in frontmatter")
-        found = True
-        seen_manifest = seen_files = False
-        while i < len(front) and front[i][:1] in (" ", "\t"):
-            line = front[i]
-            i += 1
-            if not line.strip():
-                continue
-            if line.startswith("  manifest:") and not line.startswith("   "):
-                if seen_manifest:
-                    raise RawSectionError("duplicate 'stored_evidence.manifest' declaration")
-                seen_manifest = True
-                manifest = line.split(":", 1)[1].strip()
-            elif line.rstrip() == "  files:":
-                if seen_files:
-                    raise RawSectionError("duplicate 'stored_evidence.files' declaration")
-                seen_files = True
-                while i < len(front) and front[i][:1] in (" ", "\t"):
-                    entry = front[i]
-                    i += 1
-                    match = STORED_FILE_LINE.match(entry)
-                    if not match:
-                        raise RawSectionError(
-                            "malformed stored_evidence.files entry (want '- <name>  "
-                            f"size:<bytes>  sha256:<64 hex>'): {entry.strip()!r}"
-                        )
-                    files.append(
-                        (match.group("name"), int(match.group("size")), match.group("digest"))
-                    )
-            else:
-                raise RawSectionError(
-                    f"unexpected line inside stored_evidence: {line.strip()!r}"
-                )
-    return (manifest, files) if found else None
+    return _parse_file_section(
+        text,
+        section="stored_evidence",
+        scalar_key="manifest",
+        entry_re=STORED_FILE_LINE,
+        entry_hint="'- <name>  size:<bytes>  sha256:<64 hex>'",
+        parse_entry=lambda m: (m.group("name"), int(m.group("size")), m.group("digest")),
+    )
 
 
 def verify_stored_record(path: Path, repo_root: Path, stored: tuple[str, list[tuple[str, int, str]]],
