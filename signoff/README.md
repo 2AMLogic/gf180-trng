@@ -546,9 +546,13 @@ target half-width). Nothing was re-simulated by the publisher; the fleet
 reports are the append-only raw records cited above. The sizing is read from
 the report itself (`required_n`), never hard-coded. `evidence/mc-yield/
 publication.json` pins every fleet report by sha256 and `check.py` re-reads
-them (and re-extracts each draw with an independent reader), because the
-response carries no `provenance` block (the same schema limitation as item 7
-digital), so the manifest cannot pin a `content_hash` for it. The
+them (re-extracting each draw with an independent reader, comparing the
+published `unit`, `source_corners` and both `errored` counts against the
+same reports, requiring the zero-count flags (`failed_unmeasurable`,
+`censored`, `inconclusive` where the block publishes it) to stay zero, and
+the `negative_control` description to equal the declared defect), because
+the response carries no `provenance` block (the same schema limitation as
+item 7 digital), so the manifest cannot pin a `content_hash` for it. The
 pre-sizing flow (per-seed lines out of the 2026-08-17 harness logs) is in
 `publish_item6.py`'s git history.
 

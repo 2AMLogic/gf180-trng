@@ -154,6 +154,57 @@ class CommittedManifest(unittest.TestCase):
                     publisher.publication_problems(),
                 )
 
+    def test_item6_rejects_tampered_published_metadata(self):
+        """Every report-derivable sample-set field is guarded (#1046).
+
+        publication_problems() re-derives the unit, the source corners and
+        both errored counts from the pinned reports, requires the campaign's
+        zero-count flags to stay zero, and checks the control description
+        against the declared defect. The pre-#1042 whole-document equality
+        compare caught these for free; the klt-free rewrite of #1042 lost
+        them, and mutating any of them silently passed.
+        """
+        publisher = load_module_from_path("signoff_publish_item6", ROOT / "signoff" / "publish_item6.py")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            for name in ("limits.json", "publication.json", "sample_set.json"):
+                shutil.copyfile(publisher.OUT / name, out / name)
+            path = out / "sample_set.json"
+            original = path.read_text()
+            with mock.patch.object(publisher, "OUT", out):
+                self.assertEqual(publisher.publication_problems(), [])
+                name = "period_r1@tt_27c_3.30v"
+
+                def problems_after(mutate) -> list[str]:
+                    doc = json.loads(original)
+                    mutate({m["name"]: m for m in doc["measurements"]}[name])
+                    path.write_text(json.dumps(doc))
+                    return publisher.publication_problems()
+
+                cases = [
+                    (lambda e: e.update(unit="ms"), f"{name}: published unit differs from the nominal report"),
+                    (lambda e: e.update(errored=5), f"{name}: published errored count differs from the nominal report"),
+                    (lambda e: e.update(failed_unmeasurable=5), f"{name}: published failed_unmeasurable must be 0 for this campaign"),
+                    (lambda e: e.update(censored=5), f"{name}: published censored must be 0 for this campaign"),
+                    (lambda e: e.update(inconclusive=2), f"{name}: published inconclusive must be 0 for this campaign"),
+                    (lambda e: e.update(source_corners=["ss/125C/3.63v"]), f"{name}: published source_corners differ from the nominal report"),
+                    (
+                        lambda e: e["negative_control"].update(errored=3),
+                        f"{name}: negative_control errored count differs from the companion report",
+                    ),
+                    (
+                        lambda e: e["negative_control"].update(censored=1),
+                        f"{name}: negative_control censored must be 0 for this campaign",
+                    ),
+                    (
+                        lambda e: e["negative_control"].update(description=""),
+                        f"{name}: negative_control description differs from the declared defect",
+                    ),
+                ]
+                for mutate, expected in cases:
+                    with self.subTest(expected):
+                        self.assertEqual(problems_after(mutate), [expected])
+
     def test_freshness_gate_passes_on_committed_manifest(self):
         manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
