@@ -1,0 +1,3778 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq_batch.sp",
+    "scope": "repo"
+  },
+  "status": "fail",
+  "corner_count": 30,
+  "passed": 0,
+  "failed": 30,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 30,
+    "sim__corner__passed_count": 0,
+    "sim__corner__failed_count": 30,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "47",
+    "ngspice_binary": "/usr/local/bin/ngspice",
+    "engine_build": {
+      "version_banner": "******\n** ngspice-47 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2026, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Fri Nov 13 23:19:32 UTC 2026\n******",
+      "binary_sha256": null,
+      "probe": "ok",
+      "reason": null
+    },
+    "ngspice_init": {
+      "source": "runner",
+      "lines": null,
+      "sha256": null
+    },
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "models_lib_sha256_scope": "client",
+    "netlist_sha256": "c4858d254ccd1d857f4e5b43d5984970aeb284622462da824f8ac34277c93955",
+    "netlist_sha256_scope": "staged",
+    "netlist_closure": [
+      {
+        "path": "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq_batch.sp",
+        "scope": "repo",
+        "sha256": "c4858d254ccd1d857f4e5b43d5984970aeb284622462da824f8ac34277c93955"
+      },
+      {
+        "path": "design/ro_array_core.spice",
+        "scope": "repo",
+        "sha256": "754c20ae6474a82b1b1c7eddd566df21f70fedaafaa80350233ecc76755f931d"
+      }
+    ],
+    "netlist_identity": "sha256:1ae5d42c17dc7f2cece2b4616ad5cd82a4b3aeb0017400a47ec870e841dce79f",
+    "remote": {
+      "fleet": [
+        {
+          "provider": "aws-batch-fleet",
+          "job_id": "klt-sim-12b19986f13a",
+          "region": "us-east-1",
+          "instance_id": "i-07b235d972f3f821b",
+          "instance_type": "m6i.4xlarge",
+          "availability_zone": "us-east-1d",
+          "ami_id": "ami-09c14f55df4958cbd",
+          "lifecycle": "spot",
+          "spot": true,
+          "state": "failed",
+          "exit_code": "3",
+          "concurrency": "1",
+          "physical_cores": "8",
+          "elapsed_seconds": 61,
+          "client_submitted_at": "2026-11-21T08:50:42.155690Z",
+          "client_launched_at": "2026-11-21T08:52:08.740068Z",
+          "client_status_terminal_at": "2026-11-21T08:57:07.328514Z",
+          "client_collected_at": "2026-11-21T08:57:10.552372Z",
+          "runner_klt_version": "0.9.0",
+          "client_klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+          "runner_compatibility": "match",
+          "runner_request_features": {
+            "required": [
+              "options.ngspice_init",
+              "corners.params"
+            ],
+            "missing": [],
+            "status": "supported"
+          },
+          "worker_environment": {
+            "capture": "ok",
+            "simulator": {
+              "requested_binary": "ngspice",
+              "binary_source": "PATH",
+              "selected_path": "/usr/local/bin/ngspice",
+              "version_banner": "******\n** ngspice-47 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2026, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Fri Nov 13 23:19:32 UTC 2026\n******\n",
+              "version_probe": "ok"
+            },
+            "pdk": {
+              "variant": "gf180mcuD",
+              "root": "/opt/pdk",
+              "stamp_scheme": "sources-sha256",
+              "stamp_sha256": "4ca10280ae9f293aa1ff69f0060a52e0026929111bda881503717469b429ce67",
+              "stamp_text": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+              "models_staged": false,
+              "stamp_scope": "executed"
+            },
+            "cpu_model": "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz",
+            "omp_num_threads": null,
+            "image_manifest": null,
+            "model_inputs": null,
+            "diagnostics": [],
+            "pdk_stamp_comparison": {
+              "status": "match"
+            },
+            "ngspice_init": null,
+            "threads_per_worker": 1,
+            "engine_build_comparison": {
+              "status": "match"
+            }
+          },
+          "runner_model_inputs": null,
+          "exit_reason": {
+            "exit_code": 3,
+            "report_status": "fail",
+            "nothing_checked": false,
+            "nothing_checked_reasons": [],
+            "message": "klt sim exited 3 (a corner or measurement failed): aggregate status 'fail'; the job state is failed because of this verdict exit code, not a runner crash and not the whole-job ceiling (a ceiling kill reports state timeout, exit 124)",
+            "units": {
+              "total": 10,
+              "by_status": {
+                "fail": 10
+              },
+              "first_not_passed": [
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                }
+              ]
+            }
+          },
+          "runner_models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+          "runner_osdi_preload": null,
+          "resumed": false,
+          "models_lib_comparison": {
+            "status": "match"
+          }
+        },
+        {
+          "provider": "aws-batch-fleet",
+          "job_id": "klt-sim-42f14c21b4f9",
+          "region": "us-east-1",
+          "instance_id": "i-09357c3763503a3d2",
+          "instance_type": "m6i.4xlarge",
+          "availability_zone": "us-east-1d",
+          "ami_id": "ami-09c14f55df4958cbd",
+          "lifecycle": "spot",
+          "spot": true,
+          "state": "failed",
+          "exit_code": "3",
+          "concurrency": "1",
+          "physical_cores": "8",
+          "elapsed_seconds": 60,
+          "client_submitted_at": "2026-11-21T08:50:42.178686Z",
+          "client_launched_at": "2026-11-21T08:51:49.254258Z",
+          "client_status_terminal_at": "2026-11-21T08:57:28.384358Z",
+          "client_collected_at": "2026-11-21T08:57:54.732283Z",
+          "runner_klt_version": "0.9.0",
+          "client_klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+          "runner_compatibility": "match",
+          "runner_request_features": {
+            "required": [
+              "options.ngspice_init",
+              "corners.params"
+            ],
+            "missing": [],
+            "status": "supported"
+          },
+          "worker_environment": {
+            "capture": "ok",
+            "simulator": {
+              "requested_binary": "ngspice",
+              "binary_source": "PATH",
+              "selected_path": "/usr/local/bin/ngspice",
+              "version_banner": "******\n** ngspice-47 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2026, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Fri Nov 13 23:19:32 UTC 2026\n******\n",
+              "version_probe": "ok"
+            },
+            "pdk": {
+              "variant": "gf180mcuD",
+              "root": "/opt/pdk",
+              "stamp_scheme": "sources-sha256",
+              "stamp_sha256": "4ca10280ae9f293aa1ff69f0060a52e0026929111bda881503717469b429ce67",
+              "stamp_text": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+              "models_staged": false,
+              "stamp_scope": "executed"
+            },
+            "cpu_model": "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz",
+            "omp_num_threads": null,
+            "image_manifest": null,
+            "model_inputs": null,
+            "diagnostics": [],
+            "pdk_stamp_comparison": {
+              "status": "match"
+            },
+            "ngspice_init": null,
+            "threads_per_worker": 1,
+            "engine_build_comparison": {
+              "status": "match"
+            }
+          },
+          "runner_model_inputs": null,
+          "exit_reason": {
+            "exit_code": 3,
+            "report_status": "fail",
+            "nothing_checked": false,
+            "nothing_checked_reasons": [],
+            "message": "klt sim exited 3 (a corner or measurement failed): aggregate status 'fail'; the job state is failed because of this verdict exit code, not a runner crash and not the whole-job ceiling (a ceiling kill reports state timeout, exit 124)",
+            "units": {
+              "total": 10,
+              "by_status": {
+                "fail": 10
+              },
+              "first_not_passed": [
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                }
+              ]
+            }
+          },
+          "runner_models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+          "runner_osdi_preload": null,
+          "resumed": false,
+          "models_lib_comparison": {
+            "status": "match"
+          }
+        },
+        {
+          "provider": "aws-batch-fleet",
+          "job_id": "klt-sim-27b69621b8fe",
+          "region": "us-east-1",
+          "instance_id": "i-0869c1b188d6c9b65",
+          "instance_type": "m6i.4xlarge",
+          "availability_zone": "us-east-1d",
+          "ami_id": "ami-09c14f55df4958cbd",
+          "lifecycle": "spot",
+          "spot": true,
+          "state": "failed",
+          "exit_code": "3",
+          "concurrency": "1",
+          "physical_cores": "8",
+          "elapsed_seconds": 60,
+          "client_submitted_at": "2026-11-21T08:50:42.203859Z",
+          "client_launched_at": "2026-11-21T08:51:50.811140Z",
+          "client_status_terminal_at": "2026-11-21T08:55:40.954785Z",
+          "client_collected_at": "2026-11-21T08:55:44.313271Z",
+          "runner_klt_version": "0.9.0",
+          "client_klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+          "runner_compatibility": "match",
+          "runner_request_features": {
+            "required": [
+              "options.ngspice_init",
+              "corners.params"
+            ],
+            "missing": [],
+            "status": "supported"
+          },
+          "worker_environment": {
+            "capture": "ok",
+            "simulator": {
+              "requested_binary": "ngspice",
+              "binary_source": "PATH",
+              "selected_path": "/usr/local/bin/ngspice",
+              "version_banner": "******\n** ngspice-47 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2026, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Fri Nov 13 23:19:32 UTC 2026\n******\n",
+              "version_probe": "ok"
+            },
+            "pdk": {
+              "variant": "gf180mcuD",
+              "root": "/opt/pdk",
+              "stamp_scheme": "sources-sha256",
+              "stamp_sha256": "4ca10280ae9f293aa1ff69f0060a52e0026929111bda881503717469b429ce67",
+              "stamp_text": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+              "models_staged": false,
+              "stamp_scope": "executed"
+            },
+            "cpu_model": "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz",
+            "omp_num_threads": null,
+            "image_manifest": null,
+            "model_inputs": null,
+            "diagnostics": [],
+            "pdk_stamp_comparison": {
+              "status": "match"
+            },
+            "ngspice_init": null,
+            "threads_per_worker": 1,
+            "engine_build_comparison": {
+              "status": "match"
+            }
+          },
+          "runner_model_inputs": null,
+          "exit_reason": {
+            "exit_code": 3,
+            "report_status": "fail",
+            "nothing_checked": false,
+            "nothing_checked_reasons": [],
+            "message": "klt sim exited 3 (a corner or measurement failed): aggregate status 'fail'; the job state is failed because of this verdict exit code, not a runner crash and not the whole-job ceiling (a ceiling kill reports state timeout, exit 124)",
+            "units": {
+              "total": 10,
+              "by_status": {
+                "fail": 10
+              },
+              "first_not_passed": [
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                },
+                {
+                  "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24",
+                  "status": "fail",
+                  "code": null,
+                  "message": null
+                }
+              ]
+            }
+          },
+          "runner_models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+          "runner_osdi_preload": null,
+          "resumed": false,
+          "models_lib_comparison": {
+            "status": "match"
+          }
+        }
+      ],
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 30,
+        "per_unit_timeout_s": 240,
+        "overhead_s": 120.0,
+        "job_bound_s": 7320.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 14,
+        "recommended_hosts": 3,
+        "warning": "batch job bound 7320s (options.timeout_s 240s x 30 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 3 to run one job per shard of at most 14 units, each within the ceiling",
+        "split": true,
+        "effective_hosts": 3
+      },
+      "job_ids": [
+        "klt-sim-12b19986f13a",
+        "klt-sim-42f14c21b4f9",
+        "klt-sim-27b69621b8fe"
+      ],
+      "runner_compatibility": "match"
+    },
+    "engine_host": "worker",
+    "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+    "client_engine_build": {
+      "version_banner": "******\n** ngspice-47 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2026, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Fri Nov 13 23:19:32 UTC 2026\n******",
+      "binary_sha256": "39ca1adb826660324c3626f72bd946ec40704f0f3fc8e243c623f76e24b3eee2",
+      "probe": "ok",
+      "reason": null
+    },
+    "backend": {
+      "resolved": "batch",
+      "source": "flag",
+      "requested": "batch"
+    },
+    "monte_carlo": {
+      "n": 30,
+      "seed": 10250181,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        },
+        {
+          "family": "capacitor",
+          "active": false,
+          "note": "The MIM-capacitor subcircuits (cap_mim_*) reference only the global sw_stat_global terms (one draw per run shared by every instance); sw_stat_mismatch is not referenced inside them, so no per-instance capacitor mismatch is sampled. See issue #2898."
+        },
+        {
+          "family": "resistor",
+          "active": false,
+          "note": "The poly-resistor subcircuits' per-instance mismatch hook (mis_r, scaling body resistance via `(1 + mis_r * <switch>)`) defaults to a hardcoded 0, and the accompanying Pelgrom-style sigma formula ships commented out in the vendored deck -- resistor mismatch is structurally disabled regardless of sw_stat_mismatch. A run with mismatch enabled samples no resistor variation. See issue #355."
+        },
+        {
+          "family": "mosfet",
+          "active": true,
+          "note": "MOS per-instance mismatch (the fets_mm include) is gated by the model-level sw_stat_mismatch switch and scales the per-device delvto/mulu0 terms -- active whenever that switch is set (see docs/cli/sim.md's 'Known-good mismatch mechanisms')."
+        }
+      ],
+      "family_mismatch_scan": {
+        "scanned": [
+          "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq_batch.sp",
+          "design/ro_array_core.spice"
+        ],
+        "not_scanned": []
+      }
+    },
+    "timeout_preflight_warning": "options.timeout_s (240s) looks implausible for a tran analysis with ~1e+05 timepoints (1p step, 100n window) -- even 50 timepoints/s (a generous floor, not a real engine-rate estimate) would need 2e+03s per corner. This is only a coarse, advisory pre-grid heuristic -- it does not block the sweep, and a plausible-looking budget can still turn out to be too short in practice."
+  },
+  "coverage": {
+    "corners_simulated": 30,
+    "measurements_declared": 6,
+    "measurements_with_limits": 1,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "limit:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_period_r1\",\"max\"]",
+      "limit:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_period_r1\",\"max\"]",
+      "limit:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_period_r1\",\"max\"]",
+      "limit:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_period_r1\",\"max\"]",
+      "limit:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_period_r1\",\"max\"]",
+      "limit:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_period_r1\",\"max\"]",
+      "limit:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_period_r1\",\"max\"]",
+      "limit:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_period_r1\",\"max\"]",
+      "limit:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_period_r1\",\"max\"]",
+      "limit:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_period_r1\",\"max\"]",
+      "limit:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_period_r1\",\"max\"]",
+      "limit:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_period_r1\",\"max\"]",
+      "limit:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_period_r1\",\"max\"]",
+      "limit:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_period_r1\",\"max\"]",
+      "limit:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_period_r1\",\"max\"]",
+      "limit:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_period_r1\",\"max\"]",
+      "limit:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_period_r1\",\"max\"]",
+      "limit:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_period_r1\",\"max\"]",
+      "limit:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_period_r1\",\"max\"]",
+      "limit:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_period_r1\",\"max\"]",
+      "limit:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_period_r1\",\"max\"]",
+      "limit:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_period_r1\",\"max\"]",
+      "limit:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_period_r1\",\"max\"]",
+      "limit:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_period_r1\",\"max\"]",
+      "limit:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_period_r1\",\"max\"]",
+      "limit:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_period_r1\",\"max\"]",
+      "limit:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_period_r1\",\"max\"]",
+      "limit:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_period_r1\",\"max\"]",
+      "limit:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_period_r1\",\"max\"]",
+      "limit:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_period_r1\",\"max\"]",
+      "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_f_r1\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_f_r2\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_period_r2\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_t4_r1\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_t4_r2\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_f_r1\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_f_r2\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_period_r2\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_t4_r1\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_t4_r2\"]/observation",
+      "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_f_r1\"]/observation",
+      "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_f_r2\"]/observation",
+      "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_period_r2\"]/observation",
+      "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_t4_r1\"]/observation",
+      "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_t4_r2\"]/observation",
+      "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_f_r1\"]/observation",
+      "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_f_r2\"]/observation",
+      "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_period_r2\"]/observation",
+      "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_t4_r1\"]/observation",
+      "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_t4_r2\"]/observation",
+      "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_f_r1\"]/observation",
+      "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_f_r2\"]/observation",
+      "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_period_r2\"]/observation",
+      "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_t4_r1\"]/observation",
+      "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_t4_r2\"]/observation",
+      "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_f_r1\"]/observation",
+      "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_f_r2\"]/observation",
+      "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_period_r2\"]/observation",
+      "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_t4_r1\"]/observation",
+      "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_t4_r2\"]/observation",
+      "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_f_r1\"]/observation",
+      "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_f_r2\"]/observation",
+      "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_period_r2\"]/observation",
+      "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_t4_r1\"]/observation",
+      "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_t4_r2\"]/observation",
+      "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_f_r1\"]/observation",
+      "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_f_r2\"]/observation",
+      "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_period_r2\"]/observation",
+      "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_t4_r1\"]/observation",
+      "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_t4_r2\"]/observation",
+      "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_f_r1\"]/observation",
+      "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_f_r2\"]/observation",
+      "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_period_r2\"]/observation",
+      "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_t4_r1\"]/observation",
+      "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_t4_r2\"]/observation",
+      "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_f_r1\"]/observation",
+      "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_f_r2\"]/observation",
+      "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_period_r2\"]/observation",
+      "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_t4_r1\"]/observation",
+      "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_t4_r2\"]/observation",
+      "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_f_r1\"]/observation",
+      "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_f_r2\"]/observation",
+      "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_period_r2\"]/observation",
+      "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_t4_r1\"]/observation",
+      "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_t4_r2\"]/observation",
+      "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_f_r1\"]/observation",
+      "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_f_r2\"]/observation",
+      "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_period_r2\"]/observation",
+      "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_t4_r1\"]/observation",
+      "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_t4_r2\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_f_r1\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_f_r2\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_period_r2\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_t4_r1\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_t4_r2\"]/observation",
+      "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_f_r1\"]/observation",
+      "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_f_r2\"]/observation",
+      "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_period_r2\"]/observation",
+      "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_t4_r1\"]/observation",
+      "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_t4_r2\"]/observation",
+      "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_f_r1\"]/observation",
+      "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_f_r2\"]/observation",
+      "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_period_r2\"]/observation",
+      "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_t4_r1\"]/observation",
+      "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_t4_r2\"]/observation",
+      "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_f_r1\"]/observation",
+      "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_f_r2\"]/observation",
+      "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_period_r2\"]/observation",
+      "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_t4_r1\"]/observation",
+      "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_t4_r2\"]/observation",
+      "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_f_r1\"]/observation",
+      "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_f_r2\"]/observation",
+      "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_period_r2\"]/observation",
+      "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_t4_r1\"]/observation",
+      "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_t4_r2\"]/observation",
+      "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_f_r1\"]/observation",
+      "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_f_r2\"]/observation",
+      "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_period_r2\"]/observation",
+      "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_t4_r1\"]/observation",
+      "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_t4_r2\"]/observation",
+      "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_f_r1\"]/observation",
+      "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_f_r2\"]/observation",
+      "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_period_r2\"]/observation",
+      "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_t4_r1\"]/observation",
+      "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_t4_r2\"]/observation",
+      "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_f_r1\"]/observation",
+      "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_f_r2\"]/observation",
+      "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_period_r2\"]/observation",
+      "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_t4_r1\"]/observation",
+      "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_t4_r2\"]/observation",
+      "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_f_r1\"]/observation",
+      "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_f_r2\"]/observation",
+      "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_period_r2\"]/observation",
+      "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_t4_r1\"]/observation",
+      "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_t4_r2\"]/observation",
+      "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_f_r1\"]/observation",
+      "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_f_r2\"]/observation",
+      "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_period_r2\"]/observation",
+      "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_t4_r1\"]/observation",
+      "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_t4_r2\"]/observation",
+      "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_f_r1\"]/observation",
+      "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_f_r2\"]/observation",
+      "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_period_r2\"]/observation",
+      "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_t4_r1\"]/observation",
+      "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_t4_r2\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_f_r1\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_f_r2\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_period_r2\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_t4_r1\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_t4_r2\"]/observation",
+      "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_f_r1\"]/observation",
+      "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_f_r2\"]/observation",
+      "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_period_r2\"]/observation",
+      "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_t4_r1\"]/observation",
+      "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_t4_r2\"]/observation",
+      "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_f_r1\"]/observation",
+      "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_f_r2\"]/observation",
+      "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_period_r2\"]/observation",
+      "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_t4_r1\"]/observation",
+      "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_t4_r2\"]/observation",
+      "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_f_r1\"]/observation",
+      "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_f_r2\"]/observation",
+      "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_period_r2\"]/observation",
+      "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_t4_r1\"]/observation",
+      "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_t4_r2\"]/observation",
+      "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_f_r1\"]/observation",
+      "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_f_r2\"]/observation",
+      "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_period_r2\"]/observation",
+      "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_t4_r1\"]/observation",
+      "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_t4_r2\"]/observation",
+      "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_f_r1\"]/observation",
+      "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_f_r2\"]/observation",
+      "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_period_r2\"]/observation",
+      "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_t4_r1\"]/observation",
+      "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_t4_r2\"]/observation",
+      "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_f_r1\"]/observation",
+      "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_f_r2\"]/observation",
+      "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_period_r2\"]/observation",
+      "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_t4_r1\"]/observation",
+      "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_t4_r2\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[15,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[16,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[17,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[18,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[19,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[20,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[21,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[22,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[23,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[24,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[25,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[26,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[27,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[28,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[29,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_f_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_f_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_period_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_t4_r1\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9\",\"m_t4_r2\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+    "klt_git_commit": "6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:c4858d254ccd1d857f4e5b43d5984970aeb284622462da824f8ac34277c93955",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "m_t4_r1",
+      "unit": "s",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+        "value": 3.808161738056e-08,
+        "margin": null
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25",
+        "value": 3.789079089988e-08
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16",
+        "value": 3.816150615879e-08
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.803444074883934e-08,
+        "stddev": 6.695840708532473e-11,
+        "min": 3.789079089988e-08,
+        "max": 3.816150615879e-08,
+        "quantiles": {
+          "p5": 3.7922667767719003e-08,
+          "p50": 3.804286983872e-08,
+          "p95": 3.8126293698556003e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.803444074883934e-08,
+            "stddev": 6.695840708532473e-11,
+            "min": 3.789079089988e-08,
+            "max": 3.816150615879e-08,
+            "quantiles": {
+              "p5": 3.7922667767719003e-08,
+              "p50": 3.804286983872e-08,
+              "p95": 3.8126293698556003e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "m_period_r1",
+      "unit": "s",
+      "limits": {
+        "max": 9.151e-09
+      },
+      "status": "fail",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16",
+        "value": 9.540376539698e-09,
+        "margin": -3.893765396979993e-10
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25",
+        "value": 9.472697724971e-09
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16",
+        "value": 9.540376539698e-09
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 9.50861018721e-09,
+        "stddev": 1.6739601771169248e-11,
+        "min": 9.472697724971e-09,
+        "max": 9.540376539698e-09,
+        "quantiles": {
+          "p5": 9.4806669419308e-09,
+          "p50": 9.5107174596795e-09,
+          "p95": 9.53157342463895e-09
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 9.50861018721e-09,
+            "stddev": 1.6739601771169248e-11,
+            "min": 9.472697724971e-09,
+            "max": 9.540376539698e-09,
+            "quantiles": {
+              "p5": 9.4806669419308e-09,
+              "p50": 9.5107174596795e-09,
+              "p95": 9.53157342463895e-09
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "m_t4_r2",
+      "unit": "s",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+        "value": 2.503269878372e-08,
+        "margin": null
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19",
+        "value": 2.486267382678e-08
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20",
+        "value": 2.508007952e-08
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 2.4973427493931e-08,
+        "stddev": 5.2798579718105477e-11,
+        "min": 2.486267382678e-08,
+        "max": 2.508007952e-08,
+        "quantiles": {
+          "p5": 2.4899106689912e-08,
+          "p50": 2.4974704393385e-08,
+          "p95": 2.5053717703256e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 2.4973427493931e-08,
+            "stddev": 5.2798579718105477e-11,
+            "min": 2.486267382678e-08,
+            "max": 2.508007952e-08,
+            "quantiles": {
+              "p5": 2.4899106689912e-08,
+              "p50": 2.4974704393385e-08,
+              "p95": 2.5053717703256e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "m_period_r2",
+      "unit": "s",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+        "value": 6.258174695931e-09,
+        "margin": null
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19",
+        "value": 6.215668456696e-09
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20",
+        "value": 6.27001988e-09
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 6.243356873482833e-09,
+        "stddev": 1.3199644929443257e-11,
+        "min": 6.215668456696e-09,
+        "max": 6.27001988e-09,
+        "quantiles": {
+          "p5": 6.2247766724784e-09,
+          "p50": 6.2436760983464995e-09,
+          "p95": 6.263429425814e-09
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 6.243356873482833e-09,
+            "stddev": 1.3199644929443257e-11,
+            "min": 6.215668456696e-09,
+            "max": 6.27001988e-09,
+            "quantiles": {
+              "p5": 6.2247766724784e-09,
+              "p50": 6.2436760983464995e-09,
+              "p95": 6.263429425814e-09
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "m_f_r1",
+      "unit": "Hz",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+        "value": 105037555.5226,
+        "margin": null
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16",
+        "value": 104817665.8268
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25",
+        "value": 105566548.0979
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 105168155.79238667,
+        "stddev": 185243.79927938926,
+        "min": 104817665.8268,
+        "max": 105566548.0979,
+        "quantiles": {
+          "p5": 104914472.842265,
+          "p50": 105144542.77059999,
+          "p95": 105477828.168305
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 105168155.79238667,
+            "stddev": 185243.79927938926,
+            "min": 104817665.8268,
+            "max": 105566548.0979,
+            "quantiles": {
+              "p5": 104914472.842265,
+              "p50": 105144542.77059999,
+              "p95": 105477828.168305
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "m_f_r2",
+      "unit": "Hz",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+        "value": 159791001.1445,
+        "margin": null
+      },
+      "min": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20",
+        "value": 159489127.489
+      },
+      "max": {
+        "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19",
+        "value": 160883741.9446
+      },
+      "monte_carlo": {
+        "n": 30,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 160170937.02537334,
+        "stddev": 338615.8659968171,
+        "min": 159489127.489,
+        "max": 160883741.9446,
+        "quantiles": {
+          "p5": 159656943.95963,
+          "p50": 160162056.20615,
+          "p95": 160648334.41359
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1",
+            "n": 30,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 160170937.02537334,
+            "stddev": 338615.8659968171,
+            "min": 159489127.489,
+            "max": 160883741.9446,
+            "quantiles": {
+              "p5": 159656943.95963,
+              "p50": 160162056.20615,
+              "p95": 160648334.41359
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc0",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 27.0,
+      "peak_rss_bytes": 92028928,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.808161738056e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.52040434514e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.694043451400001e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.503269878372e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.258174695931e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105037555.5226,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159791001.1445,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 0,
+        "seed": 2074815830,
+        "process_seed": 695066362,
+        "mismatch_seed": 1810797723
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc1",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 27.064,
+      "peak_rss_bytes": 92041216,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.805035554891e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.512588887228e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.615888872280003e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.500842647079e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.252106617699e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105123853.4383,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159946088.7582,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 1,
+        "seed": 1628334626,
+        "process_seed": 695066362,
+        "mismatch_seed": 1080016465
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc2",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.994,
+      "peak_rss_bytes": 92041216,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.812483152349e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.531207880873e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.802078808729993e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.49417214149e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.235430353726e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104918496.4276,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160373854.453,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 2,
+        "seed": 1285327447,
+        "process_seed": 695066362,
+        "mismatch_seed": 1146804026
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc3",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.896,
+      "peak_rss_bytes": 92028928,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.8096920456e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.524230114001e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.7323011400099966e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.500596632543e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.251491581358e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104995363.1979,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159961824.6279,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 3,
+        "seed": 590566065,
+        "process_seed": 695066362,
+        "mismatch_seed": 1270954371
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc4",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.84,
+      "peak_rss_bytes": 92028928,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.803241578357e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.508103945893e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.57103945892999e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.498350516122e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.245876290305e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105173440.014,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160105636.6666,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 4,
+        "seed": 993927482,
+        "process_seed": 695066362,
+        "mismatch_seed": 1629573325
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc5",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.992,
+      "peak_rss_bytes": 92028928,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.805891700375e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.514729250938e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.6372925093799936e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.49721056018e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.243026400451e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105100205.5473,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160178723.5639,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 5,
+        "seed": 1665546352,
+        "process_seed": 695066362,
+        "mismatch_seed": 180823126
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc6",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.996,
+      "peak_rss_bytes": 92041216,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.805330122147e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.513325305368e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.6232530536799983e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.493365763442e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.233414408605e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105115715.8933,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160425720.8729,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 6,
+        "seed": 1455222799,
+        "process_seed": 695066362,
+        "mismatch_seed": 1640662669
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc7",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.936,
+      "peak_rss_bytes": 92028928,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.812749002361e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.531872505902e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.8087250590199914e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.493073512064e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.23268378016e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104911180.8179,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160444526.8318,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 7,
+        "seed": 1457253749,
+        "process_seed": 695066362,
+        "mismatch_seed": 710816403
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc8",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.107,
+      "peak_rss_bytes": 92041216,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.809919907591e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.524799768978e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.7379976897800026e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.4914681216e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.228670303999e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104989083.682,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160547910.0986,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 8,
+        "seed": 1973318602,
+        "process_seed": 695066362,
+        "mismatch_seed": 1404094314
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc9",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 26.053,
+      "peak_rss_bytes": 92041216,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.803538412853e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.508846032131e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.578460321309999e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.498784424174e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.246961060434e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105165232.1029,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160077834.6985,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 9,
+        "seed": 776336233,
+        "process_seed": 695066362,
+        "mismatch_seed": 90487670
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc10",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.853,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.796731797315e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.491829493288e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.4082949328799987e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.501428137313e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.253570343282e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105353767.7544,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159908651.3953,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 10,
+        "seed": 1543255376,
+        "process_seed": 695066362,
+        "mismatch_seed": 1497190185
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc11",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.854,
+      "peak_rss_bytes": 92082176,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.802752886509e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.506882216272e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.5588221627199974e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.496039128208e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.240097820521e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105186955.8548,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160253898.0577,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 11,
+        "seed": 1475001088,
+        "process_seed": 695066362,
+        "mismatch_seed": 1779610576
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc12",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.861,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.800470337139e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.501175842848e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.50175842848e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.500656825053e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.251642062631e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105250130.7775,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159957974.2381,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 12,
+        "seed": 74805733,
+        "process_seed": 695066362,
+        "mismatch_seed": 811584291
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc13",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.804,
+      "peak_rss_bytes": 92082176,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.803520843466e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.508802108665e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.578021086650002e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.498514150612e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.24628537653e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105165717.8867,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160095150.9128,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 13,
+        "seed": 17641734,
+        "process_seed": 695066362,
+        "mismatch_seed": 1190962670
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc14",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.903,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.79721603262e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.49304008155e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.420400815499997e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.497353394609e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.243383486524e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105340332.6447,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160169562.2507,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 14,
+        "seed": 766458835,
+        "process_seed": 695066362,
+        "mismatch_seed": 1639499178
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc15",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.801,
+      "peak_rss_bytes": 92082176,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.806328256508e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.515820641269e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.6482064126899964e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.496039865594e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.240099663984e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105088151.3743,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160253850.7152,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 15,
+        "seed": 1693438812,
+        "process_seed": 695066362,
+        "mismatch_seed": 809317467
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc16",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.851,
+      "peak_rss_bytes": 92082176,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.816150615879e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.540376539698e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.893765396979993e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.505291852514e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.263229631285e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104817665.8268,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159662036.8196,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 16,
+        "seed": 1405217758,
+        "process_seed": 695066362,
+        "mismatch_seed": 1791959810
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc17",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.954,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.793991013993e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.484977534983e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.3397753498299937e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.499200081579e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.248000203947e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105429875.4332,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160051211.1649,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 17,
+        "seed": 729552827,
+        "process_seed": 695066362,
+        "mismatch_seed": 1046607034
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc18",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.651,
+      "peak_rss_bytes": 92168192,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.806023094198e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.515057735495e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.640577354949994e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.497587484068e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.243968710169e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105096577.2146,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160154550.1616,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 18,
+        "seed": 1616001584,
+        "process_seed": 695066362,
+        "mismatch_seed": 2048500910
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc19",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.646,
+      "peak_rss_bytes": 92168192,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.80836098589e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.520902464724e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.6990246472399904e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.486267382678e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.215668456696e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105032060.1125,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160883741.9446,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 19,
+        "seed": 1682465297,
+        "process_seed": 695066362,
+        "mismatch_seed": 465596679
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc20",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.904,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.799035111524e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.497587778811e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.46587778811e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.508007952e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.27001988e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105289892.8959,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159489127.489,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 20,
+        "seed": 1490086796,
+        "process_seed": 695066362,
+        "mismatch_seed": 1437600252
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc21",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.902,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.790900550671e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.477251376679e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.26251376678999e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.501681902712e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.25420475678e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105515825.2382,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159892430.5949,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 21,
+        "seed": 1888758288,
+        "process_seed": 695066362,
+        "mismatch_seed": 181849192
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc22",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.853,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.805637731891e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.514094329728e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.630943297279993e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.490095945619e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.225239864049e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105107219.3887,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160636380.5795,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 22,
+        "seed": 895367672,
+        "process_seed": 695066362,
+        "mismatch_seed": 910081136
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc23",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.805,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.811855448076e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.52963862019e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.7863862019e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.49208711543e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.230217788575e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 104935773.5225,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160508032.6139,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 23,
+        "seed": 1618563677,
+        "process_seed": 695066362,
+        "mismatch_seed": 375862684
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc24",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.702,
+      "peak_rss_bytes": 91840512,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.796899981205e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.492249953012e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.4124995301200017e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.505437157626e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.263592894065e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105349101.1035,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159652777.0742,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 24,
+        "seed": 1070499246,
+        "process_seed": 695066362,
+        "mismatch_seed": 1301340076
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc25",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.751,
+      "peak_rss_bytes": 92102656,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.789079089988e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.472697724971e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.216977249710002e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.493354763149e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.233386907873e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105566548.0979,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160426428.6462,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 25,
+        "seed": 1715162401,
+        "process_seed": 695066362,
+        "mismatch_seed": 389565633
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc26",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.951,
+      "peak_rss_bytes": 92160000,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.801979616833e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.504949042082e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.539490420819994e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.494288924567e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.235722311416e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105208349.4159,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160366345.719,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 26,
+        "seed": 1130289293,
+        "process_seed": 695066362,
+        "mismatch_seed": 939636833
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc27",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.904,
+      "peak_rss_bytes": 92160000,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.793936608673e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.484841521683e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.338415216830002e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.489759079023e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.224397697557e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105431387.3051,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160658114.8233,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 27,
+        "seed": 275381448,
+        "process_seed": 695066362,
+        "mismatch_seed": 785588213
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc28",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.75,
+      "peak_rss_bytes": 92246016,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.798774895763e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.496937239407e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.4593723940700027e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.491508414695e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.228771036738e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105297105.2447,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 160545313.6906,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 28,
+        "seed": 1856312833,
+        "process_seed": 695066362,
+        "mismatch_seed": 1850241906
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/params:ro_lstv=3.4e-06,sw_stat_mismatch=1/mc29",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "params": {
+        "ro_lstv": 3.4e-06,
+        "sw_stat_mismatch": 1
+      },
+      "status": "fail",
+      "runtime_s": 25.7,
+      "peak_rss_bytes": 92160000,
+      "engine_exit_code": 0,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "m_t4_r1",
+          "value": 3.807634133797e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r1",
+          "value": 9.519085334493e-09,
+          "unit": "s",
+          "status": "fail",
+          "margin": -3.680853344929992e-10
+        },
+        {
+          "name": "m_t4_r2",
+          "value": 2.504548727678e-08,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_period_r2",
+          "value": 6.261371819195e-09,
+          "unit": "s",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r1",
+          "value": 105052110.0359,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "m_f_r2",
+          "value": 159709410.1542,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": {
+        "sample_index": 29,
+        "seed": 472312552,
+        "process_seed": 695066362,
+        "mismatch_seed": 1918137264
+      }
+    }
+  ]
+}

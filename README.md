@@ -14,7 +14,7 @@ measured on silicon.** What exists today is an evidence-record convention,
 [thirty-five decision records](spec/decision-records/), an entropy-source
 architecture survey, a PVT corner simulation harness and a gate-level
 static-timing and power flow, together producing twenty-one characterization
-summaries (`sim/characterization-*.md`) resting on 1306 append-only evidence
+summaries (`sim/characterization-*.md`) resting on 1308 append-only evidence
 records under [`sim/records/`](sim/records/). `design/` holds the analog
 entropy source and sampler as xschem schematics plus four digital blocks, each
 a behavioural model with RTL checked against it. `layout/` holds a DRC/LVS
@@ -185,7 +185,7 @@ Where this block stands against the klayout-tools design-evidence ladder is
 is the verdict of record, produced by `klt signoff --manifest` from
 [`signoff/block-manifest.json`](signoff/block-manifest.json) and re-run by CI
 on every push. <!-- current-t1-status:begin -->Today it reads `tier: null`,
-**T1 17 of 22 items met**, unmet: `3.digital`, `5.analog`, `6.analog`,
+**T1 18 of 22 items met**, unmet: `3.digital`, `5.analog`,
 `6.digital`, `11.analog`<!-- current-t1-status:end --> (a
 `mixed-signal` block is graded once per partition, so the eleven-item T1
 checklist renders 22 rows). That is a stricter reading than "which work has

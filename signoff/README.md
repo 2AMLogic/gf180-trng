@@ -15,8 +15,8 @@ hand-maintained checkbox list does. Issue
 gap-to-T1 tracker — cites it and no longer keeps a parallel checklist of its
 own.
 
-<!-- current-t1-status:begin -->**Today: `tier: null`, T1 17 of 22 items met.**
-Unmet: `3.digital`, `5.analog`, `6.analog`, `6.digital`, `11.analog`.<!-- current-t1-status:end --> A `mixed-signal` block is
+<!-- current-t1-status:begin -->**Today: `tier: null`, T1 18 of 22 items met.**
+Unmet: `3.digital`, `5.analog`, `6.digital`, `11.analog`.<!-- current-t1-status:end --> A `mixed-signal` block is
 graded twice over, once per partition, so the eleven-item checklist renders
 22 rows. That block is the only composition statement in this file, and it is
 not hand-maintained: `check.py` holds its tier, count **and** unmet-row names
@@ -485,7 +485,7 @@ requires of the claimant rather than of the tool.
 | 3 DRC clean | **`met`** | `unmet` | **Digital is `unmet` since the klayout-tools 0.9.0 re-target (#705):** the newer deck's `comp.tap_distance.{nwell,psub}.mv.1` rules report 2737 violations on `layout/digital/trng_top.gds`, the tap-pitch failure #449/#717 already track (`layout/digital/reports/tap-distance.json`, verdict `fail`). They are recorded as known violations tracked by #717, not exempted, and the region stays graded. Analog cites `layout/reports/combiner_sampler.drc.json` (`status: clean` under 0.9.0 after every cell gained well and substrate taps); the digital column cites `layout/digital/reports/drc.json`. Before the re-target both were `status: clean`, both against deck `gf180mcu` identified by content hash, both pinned and `input_verified: true`. The two partitions' decks are the same deck; their *coverage* is not, because the streams differ. Both enumerated below. |
 | 4 LVS clean | **`met`** | **`met`** | Analog cites `layout/reports/combiner_sampler.lvs.json` (`status: match`, `mismatch_count: 1`, warnings only — `topology` ×1; the citation published over the untapped layout read `mismatch_count: 3` with `device.body_unverified` ×2 alongside); digital cites `layout/digital/reports/lvs.json` (`status: match`, `mismatch_count: 2`, `error_count: 0`, the `topology.power_only_pruned` and `topology.top_level_pins_anchored` warnings only — one warning until the klt 0.9.1 re-run added the second). Both citations carry a `content_hash` pin and read `input_verified: true` (analog since [#281](https://github.com/2AMLogic/gf180-trng/issues/281)). The analog compare's `body_verification` reads `"verified"` with `device_count: 0` since #705/PR #826 drew the taps — every body resolves to a real net, so the tool has no body left to disclose; that is a zero-count `verified`, not a per-device check of the block's 104 bodies. The digital compare's `body_verification` stays `"unchecked"`. Power connectivity is `"unchecked"` on analog and a computed `"match"` on digital since [#662](https://github.com/2AMLogic/gf180-trng/issues/662). See "Item 4 is `met` twice, and both are pinned" for the verbatim blocks and what each compare did *not* verify. |
 | 5 Corner verification | `unmet` / `no_evidence` | **`met`** | This block's largest *real* gap on the analog side, and a narrower one on the digital side. README's ratified spec table still misses four rows (raw rate, raw min-entropy, area, power), and the grader does not read them. **Digital** (#699) cites two native envelopes, both graded `met`: `evidence/digital-sta/klt_sta_response.json`, one `klt sta` request over the committed routed DEF at all fifteen (liberty × interconnect) points with a propagated CTS clock, per-corner OpenRCX SPEF and the trunk input transitions, pinned and `input_verified: true`; and `evidence/post-route/gate_klt_response.json`, the item-7 functional suite, at **one** corner. See "Item 5 digital" below for what that does and does not say; the area and power rows ([#700](https://github.com/2AMLogic/gf180-trng/issues/700)) are unchanged. The analog half is no longer blocked on the tool: klayout-tools#2533 shipped in 0.7.0, whose `klt sim` accepts a caller-side `expr` measurement. What blocks it now is that no ratified analog row carries a measured quantity to cite — see "Item 5 analog: which spec rows a `klt sim` envelope could cover" below, which enumerates every row and declares each gap. `5.analog` is not cited. |
-| 6 Monte Carlo | `unmet` / `undersized_sample` | `unmet` / `no_evidence` | **Analog** cites the native `klt yield` response `evidence/mc-yield/klt_yield_response.json` over the committed mismatch campaign (`sim/characterization-worst-corner-and-mc-mismatch.md`), four measurements (`period_r1` and `dtrip_v`, each at `tt`/27 °C/3.30 V and `ss`/+125 °C/3.63 V), graded against the limits [DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md) ratified. **The grader renders it `unmet`**: the report's own `sample_size.verdict` is `insufficient` on all four (8 seeds on `period_r1`, 30 on `dtrip_v`, against the 183 the default ±1-point target needs at zero failures), which is a grading input under klayout-tools#2480. Every draw is inside its limit (empirical yield 1.0, Clopper-Pearson lower bound 0.631 on 8 samples and 0.884 on 30), so this is a sample-size outcome, not a failed limit. No `negative_control` is declared (`not_declared`): the campaign's own control only shows the spread collapsing with mismatch off, which is not the seeded known-bad variant `klt yield` means. **Digital** is unchanged: no statement is committed (klayout-tools#2865 pending). See "Item 6: install route and statistical rows" below. |
+| 6 Monte Carlo | **`met`** | `unmet` / `no_evidence` | **Analog** cites the native `klt yield` response `evidence/mc-yield/klt_yield_response.json` over the sized mismatch campaign (#1025: `sim/records/2026-11-21-ro-array-core-mc-freq-sized-01.md` and `...-sampler-dff-mc-offset-sized-01.md`, summarized in `sim/characterization-worst-corner-and-mc-mismatch.md`), four measurements (`period_r1` and `dtrip_v`, each at `tt`/27 °C/3.30 V and `ss`/+125 °C/3.63 V), graded against the limits [DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md) ratified. **The grader renders it `met`**: `sample_size.verdict` is `sufficient` on all four (220 seeded draws per measurement against the 183 the default ±1-point target needs at zero failures, 1.2x headroom so one stray failure still grades `sufficient`), every draw is inside its limit (empirical yield 1.0, Clopper-Pearson lower bound 0.9834 on 220 samples), and each measurement declares a `negative_control` the report shows `detected` — a seeded known-bad variant (ring 1 channel fabricated long; a forced −2.2 V input-referred sampler offset) caught 30/30 at both corners. No `target_yield` is declared, so the response status is `reported` and no yield claim is checked — the estimates are reported, never failed (the no-`target_yield` row-coverage gap itself is klayout-tools#5490's subject, not this repo's). The pre-sizing 8-/30-seed campaign it extends is untouched (`2026-08-17-*` records). **Digital** is unchanged: no statement is committed (klayout-tools#2865 pending). See "Item 6: install route and statistical rows" below. |
 | 7 Post-layout | **`met`** | **`met`** | **Analog** cites the native `klt pex` response over ring1's layout (`evidence/post-layout/ro_ring11.pex.json`), published by `publish_item7_analog.py` from `sim/tb/ro-ring11-pex/` (#326): 27 corners, 81 delta rows, every row measured on both sides, `input_verified: true`. Its `body_bias.status` is `"biased"` (`unbiased_device_count: 0`) since #705 drew the taps — which the grader reports and does not grade; the citation it superseded, over the untapped layout, read `"unbiased"` (23 of 23 PMOS bodies on floating wells) — see "Item 7 analog" below; it covers ring1 only. **Digital** cites the native `klt functional-verification` response of the SDF-annotated post-route gate run (`evidence/post-route/gate_klt_response.json`), published by `publish_item7.py` from `sim/tb/trng-top-post-route/` (#314) — see "Item 7 digital" below; the claim is functional equivalence under cell delay at one corner, not timing signoff. The wider post-layout work (`sim/characterization-post-layout-extracted.md`, issues #17/#217/#232: the whole array, device-, routing- and inter-region-level) stays in this repo's Markdown records; `layout/pex/build.py` composes its own netlists and emits no `klt pex` report, and is unchanged. |
 | 8 Characterization | **`met`** | **`met`** | Digital cites `evidence/characterization-digital.generic.json`, wrapping `sim/characterization-digital-sta-area-power.md`. Analog cites `evidence/characterization-analog.generic.json`, wrapping `sim/characterization-analog-summary.md` (#313). Both mean that a current aggregate exists. Neither means the rows in it pass. See below. |
 | 9 Testbenches shipped | **`met`** | **`met`** | Cites `evidence/t1-item-9-{analog,digital}.json`, bound to `evidence/inventory-9-{analog,digital}.json`: every file of the `sim/tb/` testbench directories, split by partition (a directory with an ngspice `.sp` deck is analog; the nine behavioural/RTL/gate-level ones listed in `signoff/inventories.py`'s `DIGITAL_TESTBENCHES` are digital), each with its documented cold-start invocation, and the PDK revision `pdk-nightly.yml` pins (open_pdks `f6eeac7d…`, variant `gf180mcuD`), which `check.py` requires `README.md` to state too. A new `sim/tb/` directory that is neither fails the audit. No testbench is run here. |
@@ -531,36 +531,49 @@ conditioner, health tests and interface are deterministic logic). The
 hash-bound "not applicable" statement that would record this is pending
 klayout-tools#2865 reaching a release; none is committed.
 
-**The report.** `publish_item6.py` reads the per-seed `m_period_r1` /
-`m_dtrip_v` lines from the raw logs under `sim/records/raw/2026-08-17-ro-array-core-mc-freq-0{1,2}/`
-and `...-sampler-dff-mc-offset-0{2,3}/` (8 and 30 seeds per corner), writes
-`evidence/mc-yield/sample_set.json` with the DR-0033 limits from
-`evidence/mc-yield/limits.json`, and runs `klt yield` 0.9.0 over it at its
-defaults (confidence 0.95, ±0.01 target half-width). Nothing was re-simulated;
-no batch job was submitted. `evidence/mc-yield/publication.json` pins every
-raw log by sha256 and `check.py` re-reads them, because the response carries
-no `provenance` block (the same schema limitation as item 7 digital), so the
-manifest cannot pin a `content_hash` for it.
+**The report.** Since #1025 the sized campaign is the report's population:
+`publish_item6.py` reads the four fleet-run `klt sim` Monte Carlo reports per
+testbench from `sim/records/raw/2026-11-21-ro-array-core-mc-freq-sized-01/`
+and `...-sampler-dff-mc-offset-sized-01/` (220 nominal draws per corner at
+1.2x of the required 183, plus 30 known-bad control draws), derives each
+measurement's sample set — the nominal draw as the samples, the known-bad
+companion's draw as its `negative_control` — through `klt yield-samples`
+(klayout-tools 0.9.0, the item 6 pin above; both reports read by `klt
+yield`'s own sim-report reader, the control graded against the nominal's
+DR-0033 limits from `evidence/mc-yield/limits.json`), and runs `klt yield`
+0.9.0 over the merged document at its defaults (confidence 0.95, ±0.01
+target half-width). Nothing was re-simulated by the publisher; the fleet
+reports are the append-only raw records cited above. The sizing is read from
+the report itself (`required_n`), never hard-coded. `evidence/mc-yield/
+publication.json` pins every fleet report by sha256 and `check.py` re-reads
+them (and re-extracts each draw with an independent reader), because the
+response carries no `provenance` block (the same schema limitation as item 7
+digital), so the manifest cannot pin a `content_hash` for it. The
+pre-sizing flow (per-seed lines out of the 2026-08-17 harness logs) is in
+`publish_item6.py`'s git history.
 
 **Recorded as-is.**
 
-| Measurement | n | Empirical yield | 95 % lower bound | `sample_size.verdict` |
-|---|---|---|---|---|
-| `period_r1@tt_27c_3.30v` | 8 | 1.0 | 0.631 | `insufficient` |
-| `period_r1@ss_125c_3.63v` | 8 | 1.0 | 0.631 | `insufficient` |
-| `dtrip_v@tt_27c_3.30v` | 30 | 1.0 | 0.884 | `insufficient` |
-| `dtrip_v@ss_125c_3.63v` | 30 | 1.0 | 0.884 | `insufficient` |
+| Measurement | n | Empirical yield | 95 % lower bound | `sample_size.verdict` | `negative_control` |
+|---|---|---|---|---|---|
+| `period_r1@tt_27c_3.30v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `period_r1@ss_125c_3.63v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `dtrip_v@tt_27c_3.30v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `dtrip_v@ss_125c_3.63v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
 
-The grader reads that as `unmet` / `undersized_sample`, with
-`negative_control: "not_declared"`. Neither is hidden: the verdict of record
-(`records/t1-tier-report.json`) carries both under `detail.yield_campaign`.
-Moving it to `met` takes a campaign sized to the target (183 draws per
-measurement at zero failures, a multi-seed grid to be expressed as a `klt sim`
-request with `monte_carlo` for the batch fleet) and a `klt yield` negative
-control, meaning a seeded known-bad variant that must degrade yield. This
-campaign's `sw_stat_mismatch=0` control shows the spread collapsing to zero,
-which is a different thing and is not declared as one. Neither is done here, and
-no limit or target was changed to get a different verdict.
+The grader reads that as `met` (the row's `status: "reported"` reflects the
+unratified `target_yield`: no yield claim is checked, the estimates are
+reported, never failed — klayout-tools#5490 tracks that coverage semantics;
+adding a target here would be a spec change needing its own decision record).
+Each `negative_control` is a seeded known-bad variant, the form `klt yield`
+means: ring 1's per-stage channel fabricated long (`ro_lstv` 2e-6 → 3.4e-6 m,
+a slow-device defect the period ceiling must catch) and a forced −2.2 V
+input-referred sampler threshold offset (which pushes the switching threshold
+past the rail the window guards). Both are graded against the nominal's own
+limits and are caught 30/30 at both corners; the records state what was
+perturbed and why each is a fair known-bad case. No limit or target was
+changed to get this verdict; the earlier `sw_stat_mismatch=0` spread-collapse
+control is a different thing and is still not declared as a negative control.
 
 ### Item 3's deck coverage gaps, each partition from its own citation
 
@@ -1324,12 +1337,12 @@ In dependency order, not effort order:
    `klt pex` report as `7.analog` and moved the verdict of record from 7 to
    8 of 22. Its `body_bias.status` is `"biased"` since #705 drew well ties into the
    cells (see "Item 7 analog"). Item 6's `klt yield` report is
-   committed and cited as `6.analog` (#656, limits from DR-0033), and grades
-   `unmet` / `undersized_sample`: the 8- and 30-seed campaign is below the
-   default sample-size target and declares no `klt yield` negative control.
-   What would move it is a sized campaign (a `klt sim` request with
-   `monte_carlo`, batch fleet) plus a seeded known-bad variant, see "Item 6:
-   install route and statistical rows".
+   committed and cited as `6.analog` (#656, limits from DR-0033), and since
+   #1025's sized campaign (220 seeded draws per measurement, seeded known-bad
+   controls detected 30/30) it grades `met`: `sample_size.verdict`
+   `sufficient` and `negative_control: detected` on all four measurements,
+   with no `target_yield` ratified so the estimates stay `reported`. See
+   "Item 6: install route and statistical rows".
 5. ~~**A `klt erc` supply spec and run**~~ **Done, in two steps** — the spec
    and report first landed via [#268](https://github.com/2AMLogic/gf180-trng/issues/268),
    and [#276](https://github.com/2AMLogic/gf180-trng/issues/276) declared
