@@ -86,7 +86,9 @@ Run notes:
   re-dispatched 10-point shard came back with 30 corner reports), so the
   committed `mc-control-ss.report.json` is a clean fresh 30-unit re-submit
   with the same request file and base seed 10250182. The interrupted report
-  is not committed; nothing from it enters any publication.
+  is not committed; nothing from it enters any publication. The resume
+  result-count mismatch is tracked in
+  [klayout-tools#7208](https://github.com/2AMLogic/klayout-tools/issues/7208).
 - Per-unit wall time on the fleet was 17-25 s class (transient bench, 100 ns
   of 150 MHz-class rings at 1 ps print step); the 240 s per-unit timeout
   carried a >=10x margin and no unit timed out.
