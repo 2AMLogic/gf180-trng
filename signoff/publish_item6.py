@@ -63,6 +63,11 @@ CAMPAIGN = {
     "dtrip_v@ss_125c_3.63v": ("2026-11-21-sampler-dff-mc-offset-sized-01", "mc-ss", "m_dtrip_v"),
 }
 
+CONTROL_DESCRIPTIONS = {
+    "m_period_r1": "Ring 1 per-stage channel length (ro_lstv) increased from 2 to 3.4 µm.",
+    "m_dtrip_v": "A -2.2 V input-referred offset (voff) shifts the sampler threshold above the supply rail.",
+}
+
 
 def sha256(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
@@ -115,6 +120,7 @@ def build(klt: str) -> tuple[dict, dict[str, str]]:
             *shlex.split(klt), "yield-samples",
             nominal.relative_to(REPO_ROOT).as_posix(),
             "--negative-control", control.relative_to(REPO_ROOT).as_posix(),
+            "--description", CONTROL_DESCRIPTIONS[value],
             "--measurement", value,
             "--format", "json",
         ]
@@ -142,12 +148,16 @@ def publication_problems() -> list[str]:
         elif sha256(path) != pin:
             problems.append(f"{rel}: pinned report hash differs from the tree")
     sample_set = json.loads((OUT / "sample_set.json").read_text())
-    got = {m["name"]: m for m in sample_set.get("measurements", [])}
-    if set(got) != set(CAMPAIGN):
+    measurements = sample_set.get("measurements", [])
+    got = {m["name"]: m for m in measurements}
+    if len(measurements) != len(CAMPAIGN) or set(got) != set(CAMPAIGN):
         problems.append("sample_set.json: measurements differ from the declared campaign")
         return problems
+    ratified = json.loads((OUT / "limits.json").read_text())["measurements"]
     for dr_name, (stem, request, value) in CAMPAIGN.items():
         entry = got[dr_name]
+        if entry.get("limits") != ratified[dr_name]:
+            problems.append(f"{dr_name}: published limits differ from limits.json")
         nominal = report_path(stem, request)
         control = report_path(stem, control_request(request))
         if not nominal.exists() or not control.exists():
@@ -185,7 +195,7 @@ def main() -> int:
                 "klayout_tools_yield_pin": YIELD_PIN,
                 "klt_exit": done.returncode,
                 "raw_reports": pins,
-                "derivation": "klt yield-samples <nominal> --negative-control <control> --measurement <value>, one per measurement, seeds and jobs in the pinned reports",
+                "derivation": "klt yield-samples <nominal> --negative-control <control> --description <defect> --measurement <value>, one per measurement, seeds and jobs in the pinned reports",
             },
             indent=2,
         )

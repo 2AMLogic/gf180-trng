@@ -57,10 +57,11 @@ class Sizing(unittest.TestCase):
         self.assertGreaterEqual(n, required_one)
 
     def test_control_draw_detects_all_fail(self):
-        # 30 all-failing draws: Clopper-Pearson [0, ~0.116] against the
-        # nominal's [~0.980, 1.0] -- disjoint by a wide margin.
+        # Exact two-sided 95% Clopper-Pearson bounds at zero and all successes.
         self.assertLess(mc.N_CONTROL, mc.n_nominal())
-        self.assertLess(0.116, 0.980)
+        control_upper = 1 - 0.025 ** (1 / mc.N_CONTROL)
+        nominal_lower = 0.025 ** (1 / mc.n_nominal())
+        self.assertLess(control_upper, nominal_lower)
 
 
 class Requests(unittest.TestCase):

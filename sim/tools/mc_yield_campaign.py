@@ -11,16 +11,16 @@ same measurement method, at the sample count the report itself asks for, plus
 one seeded known-bad variant per measurement:
 
 ``ro-array-core-mc-freq`` (``period_r1``)
-    ``request-mc-tt|ss.request.json`` -- nominal mismatch population, seeded.
-    ``request-mc-control-tt|ss.request.json`` -- same corner, same seeds
-    machinery, with ring 1's per-stage channel length fabricated long
+    ``mc-{tt,ss}.request.json`` -- nominal mismatch population, seeded.
+    ``mc-control-{tt,ss}.request.json`` -- same corner and seeding
+    scheme, with ring 1's per-stage channel length fabricated long
     (``ro_lstv``; see the batch body's header): a deterministic slow-device
     defect the DR-0033 period ceiling must catch, imposed on a seeded
     mismatch population so the control is a distribution, not a point.
 
 ``sampler-dff-mc-offset`` (``dtrip_v``)
-    ``request-mc-tt|ss.request.json`` -- nominal mismatch population, seeded.
-    ``request-mc-control-tt|ss.request.json`` -- same corner, a forced -2.2 V
+    ``mc-{tt,ss}.request.json`` -- nominal mismatch population, seeded.
+    ``mc-control-{tt,ss}.request.json`` -- same corner, a forced -2.2 V
     input-referred threshold offset (``voff``; see the batch body's header)
     that pushes the master latch's switching threshold past the positive
     supply rail: the DR-0033 rail window must catch it. The control requests
@@ -112,8 +112,8 @@ SAM_VOFF_V = -2.2
 #: multiple of 5 (see the module docstring for the one-stray-failure
 #: arithmetic). The control draw is sized for detection, not precision: the
 #: defect is engineered so every draw fails, and 30 all-failing draws give a
-#: Clopper-Pearson interval of [0, 0.116] against the nominal's [0.980, 1.0]
-#: at n=183+ -- disjoint by a wide margin.
+#: 95% Clopper-Pearson interval of [0, 0.116] against the nominal all-pass
+#: interval of [0.983, 1.0] at 220 draws.
 HEADROOM = 1.2
 N_CONTROL = 30
 

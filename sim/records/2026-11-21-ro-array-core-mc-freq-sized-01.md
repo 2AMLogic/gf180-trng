@@ -75,7 +75,7 @@ attributable to the defect, not the harness.
 
 Why 30 control draws: the control is sized for detection, not precision. All
 30 failing gives a Clopper-Pearson yield interval of [0, 0.116] against the
-nominal's [0.980, 1.0] at n=220 -- disjoint by a wide margin; ~3 failures
+nominal's [0.983, 1.0] at n=220 -- disjoint by a wide margin; ~3 failures
 would already separate them at this n.
 
 Run notes:
@@ -105,13 +105,15 @@ Run notes:
 
 ## How to reproduce
 
+Use the recorded `repo_commit` for the exact deck bytes submitted to the fleet.
+
 ```sh
 python3 sim/tools/mc_yield_campaign.py plan
 python3 sim/tools/mc_yield_campaign.py run-set ro --outdir DIR   # submits mc-tt, mc-ss, mc-control-tt, mc-control-ss to the batch fleet
 python3 sim/tools/mc_yield_campaign.py analyze DIR/mc-tt/report.json DIR/mc-ss/report.json DIR/mc-control-tt/report.json DIR/mc-control-ss/report.json
 ```
 
-Request files `mc-{tt,ss,mc-control-tt,mc-control-ss}.request.json` are
+Request files `mc-{tt,ss,control-tt,control-ss}.request.json` are
 generated (`emit --check` guards against drift); environment:
 `KLT_SIM_BACKEND=batch`. The committed reports' `netlist_closure` pins the
 deck and `design/ro_array_core.spice` to the hashes above.

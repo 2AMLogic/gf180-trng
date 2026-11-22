@@ -55,7 +55,7 @@
 * the probe).
 *
 * Nothing in this file is run by sim/selftest.sh or CI; the requests beside
-* it (request-mc-*.json, emitted by sim/tools/mc_yield_campaign.py) are the
+* it (mc-*.request.json, emitted by sim/tools/mc_yield_campaign.py) are the
 * run mechanism (batch fleet, monte_carlo per request).
 
 .include "../../../design/ro_array_core.spice"

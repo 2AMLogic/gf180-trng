@@ -425,7 +425,7 @@
         "command": null,
         "kind": "yield",
         "check_status": "reported",
-        "content_hash": "sha256:e3e9e648c4fb88cf5c0dae3704a7777fa964c3c385627cbb674e124895a4d7e4",
+        "content_hash": "sha256:1f888c545abe6b48e632a0f86ad1fa5bbd20f374e848fcded05a7d2de07c16bc",
         "input_verified": true,
         "exit_status": 0,
         "yield_campaign": {
@@ -585,7 +585,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:115513a4feed9e584c6a9f7d65d82859d3864ba83451959886445bdc23231b77",
+        "content_hash": "sha256:3d0c58c3ed40ffc04e2716583bfd437940a709f144e28e6b78abbdadad60d5fd",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -594,7 +594,7 @@
             "path": "signoff/evidence/inventory-9-analog.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:115513a4feed9e584c6a9f7d65d82859d3864ba83451959886445bdc23231b77",
+          "content_hash": "sha256:3d0c58c3ed40ffc04e2716583bfd437940a709f144e28e6b78abbdadad60d5fd",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 9 (Testbenches shipped), analog partition: 91 analog testbench directories under sim/tb/ (225 files), each with its documented invocation, and the pinned PDK revision (open_pdks f6eeac7dad08, variant gf180mcuD). Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `npm run test`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 sim/run_corners.py --check-env` (pdk-nightly.yml), `sim/selftest.sh --require-pdk` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-9-analog.json"

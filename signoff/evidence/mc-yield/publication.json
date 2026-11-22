@@ -11,5 +11,5 @@
     "sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-ss.report.json": "sha256:b7b529d8b8490bf30d6652edcd279944d7008a6fbe50ac2ceb4dd445ba119ab7",
     "sim/records/raw/2026-11-21-sampler-dff-mc-offset-sized-01/mc-control-ss.report.json": "sha256:aa4f50b42e1d5ea0bf57d8de945dff18dfcbfe6d4b650b0928ec632a52897aea"
   },
-  "derivation": "klt yield-samples <nominal> --negative-control <control> --measurement <value>, one per measurement, seeds and jobs in the pinned reports"
+  "derivation": "klt yield-samples <nominal> --negative-control <control> --description <defect> --measurement <value>, one per measurement, seeds and jobs in the pinned reports"
 }

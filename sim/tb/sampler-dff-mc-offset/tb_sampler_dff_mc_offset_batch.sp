@@ -37,7 +37,7 @@
 * under mismatch exactly like the nominal one.
 *
 * Nothing in this file is run by sim/selftest.sh or CI; the requests beside
-* it (request-mc-*.json, emitted by sim/tools/mc_yield_campaign.py) are the
+* it (mc-*.request.json, emitted by sim/tools/mc_yield_campaign.py) are the
 * run mechanism (batch fleet, monte_carlo per request).
 
 .include "../../../design/sampler_core.spice"

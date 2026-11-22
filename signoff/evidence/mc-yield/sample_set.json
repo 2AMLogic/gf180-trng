@@ -271,7 +271,7 @@
         "errored": 0,
         "failed_unmeasurable": 0,
         "censored": 0,
-        "description": null
+        "description": "Ring 1 per-stage channel length (ro_lstv) increased from 2 to 3.4 \u00b5m."
       },
       "analytic_cross_check": null,
       "sampling": null
@@ -547,7 +547,7 @@
         "errored": 0,
         "failed_unmeasurable": 0,
         "censored": 0,
-        "description": null
+        "description": "Ring 1 per-stage channel length (ro_lstv) increased from 2 to 3.4 \u00b5m."
       },
       "analytic_cross_check": null,
       "sampling": null
@@ -826,7 +826,7 @@
         "errored": 0,
         "failed_unmeasurable": 0,
         "censored": 0,
-        "description": null
+        "description": "A -2.2 V input-referred offset (voff) shifts the sampler threshold above the supply rail."
       },
       "analytic_cross_check": null,
       "sampling": null
@@ -1105,7 +1105,7 @@
         "errored": 0,
         "failed_unmeasurable": 0,
         "censored": 0,
-        "description": null
+        "description": "A -2.2 V input-referred offset (voff) shifts the sampler threshold above the supply rail."
       },
       "analytic_cross_check": null,
       "sampling": null

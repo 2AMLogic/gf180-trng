@@ -74,7 +74,7 @@ knob, the perturbation form `klt yield`'s own documentation names; the
 measurement definition, corner and grading path are the nominal's.
 
 Why 30 control draws: detection, not precision (see the ring record's
-arithmetic -- [0, 0.116] vs [0.980, 1.0] Clopper-Pearson intervals are
+arithmetic -- [0, 0.116] vs [0.983, 1.0] Clopper-Pearson intervals are
 disjoint by a wide margin at these n).
 
 Run notes:
@@ -96,13 +96,15 @@ Run notes:
 
 ## How to reproduce
 
+Use the recorded `repo_commit` for the exact deck bytes submitted to the fleet.
+
 ```sh
 python3 sim/tools/mc_yield_campaign.py plan
 python3 sim/tools/mc_yield_campaign.py run-set sampler --outdir DIR   # submits mc-tt, mc-ss, mc-control-tt, mc-control-ss to the batch fleet
 python3 sim/tools/mc_yield_campaign.py analyze DIR/mc-tt/report.json DIR/mc-ss/report.json DIR/mc-control-tt/report.json DIR/mc-control-ss/report.json
 ```
 
-Request files `mc-{tt,ss,mc-control-tt,mc-control-ss}.request.json` are
+Request files `mc-{tt,ss,control-tt,control-ss}.request.json` are
 generated (`emit --check` guards against drift); environment:
 `KLT_SIM_BACKEND=batch`. The committed reports' `netlist_closure` pins the
 deck and `design/sampler_core.spice` to the hashes above.

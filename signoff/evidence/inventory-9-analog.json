@@ -437,7 +437,7 @@
         },
         {
           "path": "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq_batch.sp",
-          "sha256": "sha256:c4858d254ccd1d857f4e5b43d5984970aeb284622462da824f8ac34277c93955"
+          "sha256": "sha256:bd4b4b693682b9316c02f1966b2843c345bc8caed7ee4e730bb1c182d2dfb3a4"
         }
       ]
     },
@@ -1532,7 +1532,7 @@
         },
         {
           "path": "sim/tb/sampler-dff-mc-offset/tb_sampler_dff_mc_offset_batch.sp",
-          "sha256": "sha256:456298d1d746a4c3e03cd00476e4f02e973c78691bfed87f00fb2125e66d7f32"
+          "sha256": "sha256:babc1b1d3f128fe3a4a8af873d0eed547cd2af28040a6516a9dda481822179ee"
         }
       ]
     },
