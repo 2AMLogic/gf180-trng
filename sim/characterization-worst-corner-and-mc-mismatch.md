@@ -313,47 +313,58 @@ would already be sufficient given the mechanism, but distinct seeds
 collapsing to the same number is more convincing than asserting invariance
 from the mechanism alone.
 
-### 3.5 `klt yield` (issue #146, Leg 3 — not run)
+### 3.5 `klt yield`: the sized campaign and its report (issue #1025)
 
-The `klt yield` verb (Monte Carlo sample set + spec limits -> yield
-estimate with CIs) **is present** on the `klt` build this repository now
-uses: [gf180-trng#142] re-pinned `klt` off the floating PyPI `v0.2.0`
-release onto a specific `klayout-tools` git commit
-(`a482d3934bd644b763cf925f6344ac05f54a1623`, `layout/_klt.py`'s pin,
-[#163]) specifically to pick up the gf180mcu digital flow, `klt pex` and
-`klt yield` that had landed on `klayout-tools` `main` but never reached a
-release -- `klt yield --help` resolves against that pin, confirmed both
-during [gf180-trng#142]'s own verification and again here.
-
-**But it does not run.** Constructing the sample-set document `klt yield`
-expects (`{"measurements": [{"name", "samples", "limits"}, ...]}`) from
-this section's own MC records (e.g. `period_r1`'s 8-seed sample vector) and
-invoking `klt yield` against it, confirmed empirically today:
-
-```
-$ klt yield sample_set.json
-klt yield: the klt_yield_native extension is not installed -- from a repo
-checkout, run `maturin develop --release` inside native/yield/ (or `uv sync
---group yield`); see docs/cli/yield.md#building-the-native-extension
-```
-
-The verb's statistics run in a native Rust extension (`klt_yield_native`,
-`native/yield/` in the `klayout-tools` source tree) that is not published
-as a prebuilt wheel and is not built by a `pip`/`git+https://...` install
-(the install method `.github/workflows/pdk-nightly.yml` and this repo's
-`layout/README.md` both document) -- building it needs a full source
-checkout of `klayout-tools` and a Rust toolchain, which is that repository's
-own build system, not this one's, and out of scope for this issue (per
-#146's own leg-3 scope note: "only address it if trivially available,
-otherwise record why it's absent"; it is not). That gap -- the CLI surface
-existing on a git-pinned install while the verb it names is unreachable
-from that same install method -- is filed generically (tool gap, not this
-block's design) at
+`klt yield` (Monte Carlo sample set + spec limits -> yield estimate with
+CIs) became reachable when `klayout-tools[yield]` gained a prebuilt
+`klt_yield_native` wheel (0.9.0; the historical gap of the git-pin era is
 [klayout-tools#1061](https://github.com/2AMLogic/klayout-tools/issues/1061),
-per this repository's friction protocol. Once that lands (a prebuilt wheel,
-or a documented pip-reachable build path), the corresponding report belongs
-here, backed by its own evidence record under `sim/records/` for whichever
-of this section's MC records it is run against.
+closed). [gf180-trng#656](https://github.com/2AMLogic/gf180-trng/issues/656)
+committed the first report over §3.1/§3.2's 8- and 30-seed draws with the
+[DR-0033](../spec/decision-records/DR-0033-mismatch-monte-carlo-limits-on-ring-period-and-sampler-threshold.md)
+limits; it graded the campaign `insufficient` on sample size (183 draws per
+measurement needed at the default ±1-point target, zero failures) with no
+`klt yield`-sense negative control — §3.4's spread-collapse control is a
+different thing and is not one.
+
+Issue
+[gf180-trng#1025](https://github.com/2AMLogic/gf180-trng/issues/1025) sized
+the campaign to the report's own requirement and declared the missing
+controls. Two new append-only records
+(`sim/records/2026-11-21-ro-array-core-mc-freq-sized-01.md`,
+`sim/records/2026-11-21-sampler-dff-mc-offset-sized-01.md`) hold the fleet
+runs: **220 seeded draws per measurement per corner** (1.2x the required
+183, so one stray failure still grades `sufficient`), plus one seeded
+known-bad variant per measurement — ring 1's per-stage channel fabricated
+long (`ro_lstv` 2 µm -> 3.4 µm, 30 draws) and a forced −2.2 V input-referred
+sampler threshold offset (`voff`, 30 draws) — each graded against the
+nominal's own DR-0033 limits. All base seeds are recorded in
+`sim/tools/mc_yield_campaign.py` and echoed by every report's
+`environment.monte_carlo`.
+
+The republished report (`signoff/evidence/mc-yield/klt_yield_response.json`,
+derived by `signoff/publish_item6.py` through `klt yield-samples` so the
+control enters as a `negative_control`, never hand-assembled) now reads, on
+all four measurements:
+
+| Measurement | n | Empirical yield | 95 % Clopper-Pearson lower bound | `sample_size.verdict` | `negative_control` |
+|---|---|---|---|---|---|
+| `period_r1@tt_27c_3.30v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `period_r1@ss_125c_3.63v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `dtrip_v@tt_27c_3.30v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+| `dtrip_v@ss_125c_3.63v` | 220 | 1.0 | 0.9834 | `sufficient` | `detected` (30/30) |
+
+The sized draws agree with §3.1/§3.2's smaller campaigns where they overlap:
+`period_r1` CV 0.19 % (tt) / 0.17 % (ss) here vs 0.13 % / 0.11 % over 8
+seeds — the 8-seed sd was itself the uncertain quantity — and `dtrip_v`
+mismatch sd 15.3 mV (tt) / 15.5 mV (ss) vs 14.78 mV / 15.02 mV over 30. No
+draw fell outside a DR-0033 limit, so no design-iteration follow-up was
+filed; no limit, spec row or decision record changed, and no `target_yield`
+is declared (the estimates are `reported`, never failed — a target is a spec
+change needing its own decision record; the coverage semantics of a
+no-target citation are
+[klayout-tools#5490](https://github.com/2AMLogic/klayout-tools/issues/5490)'s
+subject).
 
 ## 4. Do the conditioner and health-test margins cover the observed spread?
 

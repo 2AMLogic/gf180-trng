@@ -412,12 +412,32 @@
       },
       "files": [
         {
+          "path": "sim/tb/ro-array-core-mc-freq/mc-control-ss.request.json",
+          "sha256": "sha256:01831a692211d83211b13fb9830c27dbc5f6a2e1c31db8a77adce9f60926566e"
+        },
+        {
+          "path": "sim/tb/ro-array-core-mc-freq/mc-control-tt.request.json",
+          "sha256": "sha256:14742d51c0d7aa77b6ef68ddf564c9a3297bbcd64d9664eeff62d9cdc72765a0"
+        },
+        {
+          "path": "sim/tb/ro-array-core-mc-freq/mc-ss.request.json",
+          "sha256": "sha256:670b49a8cd3aedba22cc24c283ae306f90e8f750ea15b9dd6afbe7ff635d6ef6"
+        },
+        {
+          "path": "sim/tb/ro-array-core-mc-freq/mc-tt.request.json",
+          "sha256": "sha256:e2d16b281bdb8fd044f22b0ea7517e2dc9c19cfc2d346b0806d624d6e754fe36"
+        },
+        {
           "path": "sim/tb/ro-array-core-mc-freq/tb.json",
           "sha256": "sha256:a79234e81b96e3c449a745429e2c2907d614ca2aae59c8256fdb2f2f73d2a3ce"
         },
         {
           "path": "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq.sp",
           "sha256": "sha256:c6e005e8b140fee32527cc48eeb7b2e0898e91dddf8fdc4a9ba0e750cd4ceb70"
+        },
+        {
+          "path": "sim/tb/ro-array-core-mc-freq/tb_ro_array_core_mc_freq_batch.sp",
+          "sha256": "sha256:bd4b4b693682b9316c02f1966b2843c345bc8caed7ee4e730bb1c182d2dfb3a4"
         }
       ]
     },
@@ -1487,12 +1507,32 @@
       },
       "files": [
         {
+          "path": "sim/tb/sampler-dff-mc-offset/mc-control-ss.request.json",
+          "sha256": "sha256:dca64f5a75fe034e7545054ab7b009374366f0bbf3e016eaef55ea4b4d389c2e"
+        },
+        {
+          "path": "sim/tb/sampler-dff-mc-offset/mc-control-tt.request.json",
+          "sha256": "sha256:8202ee3ed17db525d101a1d741c38b468ea61ff3fd2c4e59184e1eb8ec461d84"
+        },
+        {
+          "path": "sim/tb/sampler-dff-mc-offset/mc-ss.request.json",
+          "sha256": "sha256:f02befb6b23f9d8e18d5f0a85d8f9f6f8b536705793659c4b574677ec851a465"
+        },
+        {
+          "path": "sim/tb/sampler-dff-mc-offset/mc-tt.request.json",
+          "sha256": "sha256:ac94fd0d400c97de87f97b2fdb309540552b5c14f92708cfb8e5886e98e0d485"
+        },
+        {
           "path": "sim/tb/sampler-dff-mc-offset/tb.json",
           "sha256": "sha256:e42847febe13006e518372df39c91b455dbb396e60b77a4f9e119306027f8264"
         },
         {
           "path": "sim/tb/sampler-dff-mc-offset/tb_sampler_dff_mc_offset.sp",
           "sha256": "sha256:bc2c1bb0ee62ff5bc7b854568bd9f759b3ea9370e62246da66339e328b5dd6e3"
+        },
+        {
+          "path": "sim/tb/sampler-dff-mc-offset/tb_sampler_dff_mc_offset_batch.sp",
+          "sha256": "sha256:babc1b1d3f128fe3a4a8af873d0eed547cd2af28040a6516a9dda481822179ee"
         }
       ]
     },
@@ -1612,7 +1652,7 @@
   "cold_start_docs": [
     {
       "path": "README.md",
-      "sha256": "sha256:e4aaaa6aea0aaa4d6052a49bb0cc7dfcb8d794e144dcb7d30b2a75022d901bb3"
+      "sha256": "sha256:0ed99861daa1585f09636d07b03114a06ef6d4d48ea8711d4a9953fae6885820"
     },
     {
       "path": "sim/README.md",

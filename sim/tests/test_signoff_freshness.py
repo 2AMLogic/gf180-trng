@@ -10,6 +10,7 @@ import contextlib
 import hashlib
 import io
 import json
+import shutil
 import tempfile
 import sys
 import unittest
@@ -124,6 +125,35 @@ class Helpers(unittest.TestCase):
 
 
 class CommittedManifest(unittest.TestCase):
+    def test_item6_rejects_relaxed_published_limits(self):
+        publisher = load_module_from_path("signoff_publish_item6", ROOT / "signoff" / "publish_item6.py")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            for name in ("limits.json", "publication.json", "sample_set.json"):
+                shutil.copyfile(publisher.OUT / name, out / name)
+            with mock.patch.object(publisher, "OUT", out):
+                self.assertEqual(publisher.publication_problems(), [])
+                path = out / "sample_set.json"
+                doc = json.loads(path.read_text())
+                entries = {entry["name"]: entry for entry in doc["measurements"]}
+                period = "period_r1@tt_27c_3.30v"
+                trip = "dtrip_v@ss_125c_3.63v"
+                original_period = entries[period].copy()
+                entries[period]["limits"] = {"max": 99e-9}
+                del entries[trip]["limits"]["exclusive_max"]
+                path.write_text(json.dumps(doc))
+                self.assertCountEqual(publisher.publication_problems(), [
+                    f"{name}: published limits differ from limits.json" for name in (period, trip)
+                ])
+
+                # A second entry with the original ceiling cannot hide the widened one.
+                doc["measurements"].append(original_period)
+                path.write_text(json.dumps(doc))
+                self.assertIn(
+                    "sample_set.json: measurements differ from the declared campaign",
+                    publisher.publication_problems(),
+                )
+
     def test_freshness_gate_passes_on_committed_manifest(self):
         manifest = json.loads((ROOT / "signoff" / "block-manifest.json").read_text())
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):

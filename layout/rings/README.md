@@ -19,17 +19,15 @@ left to right in ring order (`xg, x1, x2, ..., x10`) by `klt gen-compose`
 (`placement.strategy: "explicit"`, a caller-declared `{x, y}` per block —
 every cell's own drawn geometry is kept exactly as committed, only
 translated) plus one more `klt draw` stream carrying the inter-cell
-metal1/metal2 wiring this assembly step adds. See
-[`ro_ring11/build.py`](ro_ring11/build.py)'s own module docstring for the
-full account: why the wiring is hand-routed rather than `gen-compose`'s own
-`connectivity[]` router (`ro_stage` puts both `a` and `y` on its west side,
-so every chain link is a *same-facing* port pair — the case the router
-detects and rejects but cannot route around, with no orientation, waypoint,
-or routing-channel control to work around it; filed generically as
-[klayout-tools#634][klt634]), the two-metal-layer plan (metal1
-for the ring's own `a`/`y` chain, metal2 + via1 for the `vddr`/`vss`
-rails), and the small maze-routed escape `ro_nand2`'s own dense internal
-metal1 needs.
+metal1/metal2 wiring this assembly step adds: metal1 carries the `a`/`y`
+signal chain, with a maze-routed escape at the `ro_nand2` pins, and metal2 +
+via1 carry the `vddr`/`vss` rails. It is hand-computed, not drawn by
+`gen-compose`'s `connectivity[]` router, because `ro_stage` puts both `a` and
+`y` on its west side, so every chain link is a same-facing port pair the
+router rejected at build time ([klayout-tools#634][klt634]).
+`gen-compose` now accepts caller-supplied `waypoints_um` for two-pin
+same-facing links (its `docs/cli/gen-compose.md`); the committed geometry is
+unchanged. [`ro_ring11/build.py`](ro_ring11/build.py) keeps the full history.
 
 `ro_ring11_ring2` ([#118][gf118]) closes the gap this directory's own ring1
 assembly work surfaced: `layout/cells/ro_nand2/` was drawn only at ring1's
