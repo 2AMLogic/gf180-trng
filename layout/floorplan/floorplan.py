@@ -96,7 +96,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
 import area_estimate  # noqa: E402  (design/conditioner/area_estimate.py)
 import digital_power_estimate as digital  # noqa: E402  (design/)
 import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221)
-from spice_text import subckt_pins  # noqa: E402  (design/spice_text.py)
+from spice_text import join_spice_continuations, subckt_pins  # noqa: E402  (design/spice_text.py)
 from layout._klt import (  # noqa: E402
     FlowError,
     klt_version,
@@ -462,7 +462,7 @@ def _to_float(token: str, env: dict[str, float]) -> float:
 
 def read_subckts(path: Path) -> dict[str, list[str]]:
     """Return {subckt name: body lines}, with `+` continuations joined."""
-    text = re.sub(r"\n\+\s*", " ", path.read_text())
+    text = join_spice_continuations(path.read_text())
     blocks: dict[str, list[str]] = {}
     for match in re.finditer(r"^\.subckt\s+(\S+)(.*?)^\.ends", text, re.M | re.S):
         name = match.group(1)
