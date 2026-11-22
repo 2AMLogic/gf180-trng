@@ -126,6 +126,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -373,7 +374,7 @@ RING2_INPUTS = (
 RING2_PUBLICATION_SCHEMA = "gf180-trng/ring2-pex-publication/1"
 
 
-def _ring_port_check(netlist: Path, ring: str = "ring1") -> str | None:
+def _ring_port_problems(netlist: Path, ring: str) -> list[str]:
     """Re-derive the extracted netlist's ring positions with the producer's
     own build_dut.py and require they match the schematic DUT's header."""
     mod = _load_build_dut()
@@ -382,10 +383,10 @@ def _ring_port_check(netlist: Path, ring: str = "ring1") -> str | None:
         got = mod.extraction_port_map(netlist.read_text(), r)
         want = mod.dut_header(r.dut.read_text(), r)
     except mod.BuildError as exc:
-        return str(exc)
+        return [f"ring port positions: {exc}"]
     if got != want:
-        return f"extracted ring positions {got} != schematic DUT header {want}"
-    return None
+        return [f"ring port positions: extracted ring positions {got} != schematic DUT header {want}"]
+    return []
 
 
 def _load_build_dut():
@@ -425,30 +426,31 @@ def item7_analog_dut_source_problems(pub: dict | None = None, ring: str = "ring1
     return out
 
 
-def item7_analog_problems(pub: dict, envelope: dict, ring: str = "ring1") -> list[str]:
-    """Every reason the ring's native-pex publication must not be treated as
-    current (ring1: the 7.analog citation; ring2: the uncited #423 coverage)."""
-    if ring == "ring1":
-        files = dict(netlist=ITEM7A_NETLIST, inputs=ITEM7A_INPUTS, envelope=ITEM7A_ENVELOPE,
-                     gds=None, publisher="signoff/publish_item7_analog.py")
-    else:
-        files = dict(netlist=RING2_NETLIST, inputs=RING2_INPUTS, envelope=RING2_ENVELOPE,
-                     gds=RING2_GDS, publisher=f"signoff/publish_item7_analog.py --ring {ring}")
-    out: list[str] = item7_analog_dut_source_problems(pub, ring)
-    if ring != "ring1":
-        if pub.get("schema") != RING2_PUBLICATION_SCHEMA:
-            out.append(f"publication schema is {pub.get('schema')!r}, not {RING2_PUBLICATION_SCHEMA!r}")
+def _pex_publication_problems(
+    pub: dict, envelope: dict, *, netlist_rel: str, inputs: tuple[str, ...], envelope_rel: str, publisher: str,
+    check_netlist_ports: Callable[[Path], list[str]] | None = None, schema: str | None = None,
+    gds_rel: str | None = None, request_rel: str | None = None, require_envelope_file: bool = False,
+) -> list[str]:
+    """Why a `klt pex` publication is not current evidence, for the ring and
+    combiner/sampler publications alike: every committed artifact must be the
+    one the run used, and the recorded verdict what the envelope and request
+    yield today. `schema`, `gds_rel` and `request_rel` are None for what a
+    publication does not record; `check_netlist_ports` is the fixture's own
+    port check on the extracted netlist. An envelope absent from disk is a
+    problem only when `require_envelope_file`.
+    """
+    out: list[str] = []
+    if schema is not None and pub.get("schema") != schema:
+        out.append(f"publication schema is {pub.get('schema')!r}, not {schema!r}")
+    if gds_rel is not None:
         layout = envelope.get("layout") or {}
-        if layout.get("path") != files["gds"]:
-            out.append(f"envelope layout is {layout.get('path')!r}, not {files['gds']}")
-        gds = REPO_ROOT / files["gds"]
+        if layout.get("path") != gds_rel:
+            out.append(f"envelope layout is {layout.get('path')!r}, not {gds_rel}")
+        gds = REPO_ROOT / gds_rel
         if not gds.is_file() or sha256_file(gds) != pinned_input_hash(envelope):
-            out.append(f"{files['gds']} is not the layout this klt pex run extracted (re-run and re-publish)")
+            out.append(f"{gds_rel} is not the layout this klt pex run extracted (re-run and re-publish)")
         if pub.get("layout_content_hash") != pinned_input_hash(envelope):
             out.append("publication layout_content_hash differs from the envelope's")
-    strict = ring == "ring1"  # the cited run must be complete; ring2 states its verdict
-    if strict and envelope.get("status") != "pass":
-        out.append(f"klt pex status is {envelope.get('status')!r}, not 'pass'")
     # The 0.6.0 release predates `measurement` (klayout-tools#2478); absent
     # means testbench mode. A caller-measured run is not what this cites.
     if (envelope.get("measurement") or {}).get("mode", "testbench") != "testbench":
@@ -456,7 +458,64 @@ def item7_analog_problems(pub: dict, envelope: dict, ring: str = "ring1") -> lis
     for key in ("pin_count_mismatch", "flat_dut_mismatch"):
         if envelope.get(key) is not None:
             out.append(f"klt pex reports {key}")
-    if strict:
+    if request_rel is not None:
+        req = REPO_ROOT / request_rel
+        if req.is_file():
+            verdict = combiner_sampler_verdict(envelope, json.loads(req.read_text()))
+            if pub.get("verdict") != verdict:
+                out.append("recorded verdict is not what the envelope and request yield today")
+            out += [f"verdict: {p}" for p in verdict["consistency_problems"]]
+    bias = envelope.get("body_bias")
+    if not isinstance(bias, dict) or "status" not in bias:
+        out.append("envelope carries no body_bias block")
+    elif pub.get("body_bias_status") != bias["status"]:
+        out.append(
+            f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
+            f"the envelope says {bias['status']!r}"
+        )
+    netlist = REPO_ROOT / netlist_rel
+    if not netlist.is_file():
+        out.append(f"{netlist_rel} is missing")
+    else:
+        recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
+        if sha256_file(netlist) != f"sha256:{recorded}":
+            out.append(f"{netlist_rel} is not the netlist this klt pex run extracted")
+        if check_netlist_ports is not None:
+            out += check_netlist_ports(netlist)
+    pinned = pub.get("inputs_sha256") or {}
+    for rel in inputs:
+        path = REPO_ROOT / rel
+        if rel not in pinned or not path.is_file():
+            out.append(f"input {rel}: not pinned or missing")
+        elif sha256_file(path) != pinned[rel]:
+            out.append(
+                f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
+                f"{sha256_file(path)} today; re-run {publisher}"
+            )
+    env_path = REPO_ROOT / envelope_rel
+    if not env_path.is_file():
+        if require_envelope_file:
+            out.append("published envelope differs from the sha256 in publication.json")
+    elif (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
+        out.append("published envelope differs from the sha256 in publication.json")
+    return out
+
+
+def item7_analog_problems(pub: dict, envelope: dict, ring: str = "ring1") -> list[str]:
+    """Every reason the ring's native-pex publication must not be treated as
+    current (ring1: the 7.analog citation; ring2: the uncited #423 coverage)."""
+    if ring == "ring1":
+        shared = dict(netlist_rel=ITEM7A_NETLIST, inputs=ITEM7A_INPUTS, envelope_rel=ITEM7A_ENVELOPE,
+                      publisher="signoff/publish_item7_analog.py")
+    else:
+        shared = dict(netlist_rel=RING2_NETLIST, inputs=RING2_INPUTS, envelope_rel=RING2_ENVELOPE,
+                      publisher=f"signoff/publish_item7_analog.py --ring {ring}",
+                      schema=RING2_PUBLICATION_SCHEMA, gds_rel=RING2_GDS, request_rel=RING2_INPUTS[0])
+    out: list[str] = item7_analog_dut_source_problems(pub, ring)
+    if ring == "ring1":
+        # The cited run must be complete; ring2 states its verdict instead.
+        if envelope.get("status") != "pass":
+            out.append(f"klt pex status is {envelope.get('status')!r}, not 'pass'")
         if envelope.get("corner_count") != ITEM7A_CORNERS:
             out.append(f"corner_count is {envelope.get('corner_count')}, not {ITEM7A_CORNERS}")
         names = [n for tb in envelope.get("testbenches") or [] for n in tb.get("measurement_names") or []]
@@ -471,44 +530,9 @@ def item7_analog_problems(pub: dict, envelope: dict, ring: str = "ring1") -> lis
         # of that result, provided the recorded verdict is exactly what the
         # envelope and request yield today (every declared corner/row accounted).
         out += ring2_request_problems()
-        req = REPO_ROOT / RING2_INPUTS[0]
-        if req.is_file():
-            verdict = combiner_sampler_verdict(envelope, json.loads(req.read_text()))
-            if pub.get("verdict") != verdict:
-                out.append("recorded verdict is not what the envelope and request yield today")
-            out += [f"verdict: {p}" for p in verdict["consistency_problems"]]
-    bias = envelope.get("body_bias")
-    if not isinstance(bias, dict) or "status" not in bias:
-        out.append("envelope carries no body_bias block")
-    elif pub.get("body_bias_status") != bias["status"]:
-        out.append(
-            f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
-            f"the envelope says {bias['status']!r}"
-        )
-    netlist = REPO_ROOT / files["netlist"]
-    if not netlist.is_file():
-        out.append(f"{files['netlist']} is missing")
-    else:
-        recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
-        if sha256_file(netlist) != f"sha256:{recorded}":
-            out.append(f"{files['netlist']} is not the netlist this klt pex run extracted")
-        problem = _ring_port_check(netlist, ring)
-        if problem:
-            out.append(f"ring port positions: {problem}")
-    pinned = pub.get("inputs_sha256") or {}
-    for rel in files["inputs"]:
-        path = REPO_ROOT / rel
-        if rel not in pinned or not path.is_file():
-            out.append(f"input {rel}: not pinned or missing")
-        elif sha256_file(path) != pinned[rel]:
-            out.append(
-                f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
-                f"{sha256_file(path)} today; re-run {files['publisher']}"
-            )
-    env_path = REPO_ROOT / files["envelope"]
-    if env_path.is_file() and (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
-        out.append("published envelope differs from the sha256 in publication.json")
-    return out
+    return out + _pex_publication_problems(
+        pub, envelope, check_netlist_ports=lambda netlist: _ring_port_problems(netlist, ring), **shared
+    )
 
 
 def ring2_request_problems() -> list[str]:
@@ -718,6 +742,26 @@ def combiner_sampler_dut_source_problems(pub: dict | None = None) -> list[str]:
     return out
 
 
+def _combiner_sampler_port_map_problems(netlist: Path, pub: dict) -> list[str]:
+    """The committed netlist's ports must re-derive to the DUT header and to
+    the port map the publication records."""
+    out: list[str] = []
+    bd = _load_tb_module(CS_TB_DIR, "build_dut")
+    try:
+        dut_text = bd.DUT.read_text()
+        got = bd.extraction_port_map(netlist.read_text(), dut_text)
+        want = bd.dut_header(dut_text)
+    except (bd.BuildError, OSError) as exc:
+        out.append(f"port map: {exc}")
+    else:
+        if got != want:
+            out.append(f"port map: extracted ports resolve to {got}, DUT header is {want}")
+        header = bd.extracted_graph(netlist.read_text())[1]
+        if pub.get("port_map") != dict(zip(header, got)):
+            out.append("publication port_map differs from the one the committed netlist yields")
+    return out
+
+
 def combiner_sampler_problems(pub: dict, envelope: dict) -> list[str]:
     """Every reason the combiner/sampler publication is not current evidence.
 
@@ -727,71 +771,12 @@ def combiner_sampler_problems(pub: dict, envelope: dict) -> list[str]:
     exactly what the envelope and request yield today, and that the
     extracted netlist's ports re-derive to the DUT header.
     """
-    out = combiner_sampler_dut_source_problems(pub)
-    if pub.get("schema") != CS_PUBLICATION_SCHEMA:
-        out.append(f"publication schema is {pub.get('schema')!r}, not {CS_PUBLICATION_SCHEMA!r}")
-    if (envelope.get("measurement") or {}).get("mode", "testbench") != "testbench":
-        out.append("klt pex measurement.mode is not 'testbench'")
-    for key in ("pin_count_mismatch", "flat_dut_mismatch"):
-        if envelope.get(key) is not None:
-            out.append(f"klt pex reports {key}")
-    layout = envelope.get("layout") or {}
-    if layout.get("path") != CS_GDS:
-        out.append(f"envelope layout is {layout.get('path')!r}, not {CS_GDS}")
-    gds = REPO_ROOT / CS_GDS
-    if not gds.is_file() or sha256_file(gds) != pinned_input_hash(envelope):
-        out.append(f"{CS_GDS} is not the layout this klt pex run extracted (re-run and re-publish)")
-    if pub.get("layout_content_hash") != pinned_input_hash(envelope):
-        out.append("publication layout_content_hash differs from the envelope's")
-    bias = envelope.get("body_bias")
-    if not isinstance(bias, dict) or "status" not in bias:
-        out.append("envelope carries no body_bias block")
-    elif pub.get("body_bias_status") != bias["status"]:
-        out.append(
-            f"publication.json states body_bias_status {pub.get('body_bias_status')!r}, "
-            f"the envelope says {bias['status']!r}"
-        )
-    netlist = REPO_ROOT / CS_NETLIST
-    if not netlist.is_file():
-        out.append(f"{CS_NETLIST} is missing")
-    else:
-        recorded = (envelope.get("extraction") or {}).get("netlist_sha256")
-        if sha256_file(netlist) != f"sha256:{recorded}":
-            out.append(f"{CS_NETLIST} is not the netlist this klt pex run extracted")
-        bd = _load_tb_module(CS_TB_DIR, "build_dut")
-        try:
-            dut_text = bd.DUT.read_text()
-            got = bd.extraction_port_map(netlist.read_text(), dut_text)
-            want = bd.dut_header(dut_text)
-        except (bd.BuildError, OSError) as exc:
-            out.append(f"port map: {exc}")
-        else:
-            if got != want:
-                out.append(f"port map: extracted ports resolve to {got}, DUT header is {want}")
-            header = bd.extracted_graph(netlist.read_text())[1]
-            if pub.get("port_map") != dict(zip(header, got)):
-                out.append("publication port_map differs from the one the committed netlist yields")
-    pinned = pub.get("inputs_sha256") or {}
-    for rel in CS_INPUTS:
-        path = REPO_ROOT / rel
-        if rel not in pinned or not path.is_file():
-            out.append(f"input {rel}: not pinned or missing")
-        elif sha256_file(path) != pinned[rel]:
-            out.append(
-                f"input {rel}: STALE -- the run used {pinned[rel]}, it hashes to "
-                f"{sha256_file(path)} today; re-run signoff/publish_combiner_sampler_pex.py"
-            )
-    req_path = REPO_ROOT / CS_REQUEST
-    if req_path.is_file():
-        verdict = combiner_sampler_verdict(envelope, json.loads(req_path.read_text()))
-        if pub.get("verdict") != verdict:
-            out.append("recorded verdict is not what the envelope and request yield today")
-        for p in verdict["consistency_problems"]:
-            out.append(f"verdict: {p}")
-    env_path = REPO_ROOT / CS_ENVELOPE
-    if not env_path.is_file() or (pub.get("envelope") or {}).get("sha256") != sha256_file(env_path):
-        out.append("published envelope differs from the sha256 in publication.json")
-    return out
+    return combiner_sampler_dut_source_problems(pub) + _pex_publication_problems(
+        pub, envelope, netlist_rel=CS_NETLIST, inputs=CS_INPUTS, envelope_rel=CS_ENVELOPE,
+        publisher="signoff/publish_combiner_sampler_pex.py", schema=CS_PUBLICATION_SCHEMA, gds_rel=CS_GDS,
+        request_rel=CS_REQUEST, require_envelope_file=True,
+        check_netlist_ports=lambda netlist: _combiner_sampler_port_map_problems(netlist, pub),
+    )
 
 
 def verify_combiner_sampler_publication() -> list[str]:
