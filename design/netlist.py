@@ -282,13 +282,23 @@ def _rewrap(line: str) -> list[str]:
 
 
 def _join_continuations(lines: list[str]) -> list[str]:
-    """Glue ``+`` continuation lines back onto the line they continue."""
+    """Glue ``+`` continuation lines back onto the line they continue.
+
+    The anchor is the last non-comment card, not ``out[-1]``: a ``*`` comment
+    interleaved between a card and its continuation must not swallow the
+    continuation's tokens (#1043). Blank lines keep their pre-fix role as
+    anchors, and an orphan continuation (no card before it, comments aside)
+    stays its own line.
+    """
     joined: list[str] = []
+    anchor: int | None = None
     for line in lines:
         stripped = line.lstrip()
-        if stripped.startswith("+") and joined:
-            joined[-1] = f"{joined[-1]} {stripped[1:].strip()}".rstrip()
+        if stripped.startswith("+") and anchor is not None:
+            joined[anchor] = f"{joined[anchor]} {stripped[1:].strip()}".rstrip()
         else:
+            if not stripped.startswith("*"):
+                anchor = len(joined)
             joined.append(line)
     return joined
 
