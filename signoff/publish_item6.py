@@ -31,8 +31,9 @@ What it does (issue #1025; the pre-sizing flow read per-seed lines from the
 
 ``publication.json`` pins every fleet report the sample set was derived from
 by sha256; ``publication_problems()`` re-reads them (and re-extracts each
-measurement's draw with an independent reader) so a stale or hand-edited
-sample set can be refused.
+measurement's draw, unit, source corners and errored counts with an
+independent reader, and checks the campaign's zero-count flags and control
+descriptions) so a stale or hand-edited sample set can be refused.
 """
 
 from __future__ import annotations
@@ -40,10 +41,12 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check  # noqa: E402
@@ -81,25 +84,47 @@ def control_request(request: str) -> str:
     return request.replace("mc-", "mc-control-", 1)
 
 
-def read_draw(report: Path, value: str) -> tuple[list[float | None], int]:
+class Draw(NamedTuple):
+    """What read_draw() extracts from one report for one measurement."""
+
+    values: list[float | None]
+    errored: int
+    unit: str | None
+    source_corners: list[str]
+
+
+def read_draw(report: Path, value: str) -> Draw:
     """The measurement's draw out of a klt sim Monte Carlo report.
 
     Mirrors ``klt yield``'s sim-report reader for the shapes this campaign
     produces: only corners carrying a ``monte_carlo`` block are samples, a
     ``null`` value is an errored draw, and this campaign declares no
     plausibility bounds or fail_on_diagnostic so nothing is inconclusive.
-    Used by ``publication_problems()`` as an independent cross-check of the
-    ``klt yield-samples`` derivation, never as a substitute for it.
+    Beside the draw it returns what those same corners say about the
+    measurement's ``unit`` (None if the report is inconsistent about it)
+    and the base corner ids (each Monte Carlo repetition's trailing
+    ``/mc<N>`` stripped, de-duplicated in first-seen order) -- the
+    report-derivable metadata publication_problems() compares against the
+    published sample set. Used by ``publication_problems()`` as an
+    independent cross-check of the ``klt yield-samples`` derivation, never
+    as a substitute for it.
     """
     doc = json.loads(report.read_text())
     values: list[float | None] = []
+    units: set[str] = set()
+    source_corners: list[str] = []
     for corner in doc.get("corners", []):
         if not corner.get("monte_carlo"):
             continue
+        base = re.sub(r"/mc[0-9]+$", "", corner.get("corner_id", ""))
+        if base not in source_corners:
+            source_corners.append(base)
         for m in corner.get("measurements", []):
             if m["name"] == value:
                 values.append(m.get("value"))
-    return values, values.count(None)
+                units.add(m.get("unit"))
+    unit = next(iter(units)) if len(units) == 1 else None
+    return Draw(values, values.count(None), unit, source_corners)
 
 
 def build(klt: str) -> tuple[dict, dict[str, str]]:
@@ -163,16 +188,32 @@ def publication_problems() -> list[str]:
         if not nominal.exists() or not control.exists():
             problems.append(f"{dr_name}: a source report is missing from the tree")
             continue
-        values, errored = read_draw(nominal, value)
-        ctl_values, ctl_errored = read_draw(control, value)
+        draw = read_draw(nominal, value)
+        ctl_draw = read_draw(control, value)
         have = list(entry.get("samples", []))
         nulls = sum(1 for v in have if v is None)
-        if [v for v in have if v is not None] != [v for v in values if v is not None] or nulls != errored:
+        if [v for v in have if v is not None] != [v for v in draw.values if v is not None] or nulls != draw.errored:
             problems.append(f"{dr_name}: samples no longer match the nominal report's draw")
         ctl = entry.get("negative_control") or {}
         ctl_have = [v for v in ctl.get("samples", []) if v is not None]
-        if ctl_have != [v for v in ctl_values if v is not None]:
+        if ctl_have != [v for v in ctl_draw.values if v is not None]:
             problems.append(f"{dr_name}: negative_control samples no longer match the companion report's draw")
+        if entry.get("unit") != draw.unit:
+            problems.append(f"{dr_name}: published unit differs from the nominal report")
+        if entry.get("source_corners") != draw.source_corners:
+            problems.append(f"{dr_name}: published source_corners differ from the nominal report")
+        if entry.get("errored") != draw.errored:
+            problems.append(f"{dr_name}: published errored count differs from the nominal report")
+        if ctl.get("errored") != ctl_draw.errored:
+            problems.append(f"{dr_name}: negative_control errored count differs from the companion report")
+        for field in ("failed_unmeasurable", "censored", "inconclusive"):
+            if entry.get(field) != 0:
+                problems.append(f"{dr_name}: published {field} must be 0 for this campaign")
+        for field in ("failed_unmeasurable", "censored"):
+            if ctl.get(field) != 0:
+                problems.append(f"{dr_name}: negative_control {field} must be 0 for this campaign")
+        if ctl.get("description") != CONTROL_DESCRIPTIONS[value]:
+            problems.append(f"{dr_name}: negative_control description differs from the declared defect")
     return problems
 
 
