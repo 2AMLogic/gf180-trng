@@ -11,7 +11,7 @@ which says what each report answers and whether it is complete.
 
 **Status: early. Nothing here has been fabricated, and nothing here has been
 measured on silicon.** What exists today is an evidence-record convention,
-[thirty-five decision records](spec/decision-records/), an entropy-source
+[thirty-six decision records](spec/decision-records/), an entropy-source
 architecture survey, a PVT corner simulation harness and a gate-level
 static-timing and power flow, together producing twenty-one characterization
 summaries (`sim/characterization-*.md`) resting on 1308 append-only evidence
