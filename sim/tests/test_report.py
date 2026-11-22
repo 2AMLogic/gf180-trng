@@ -1172,6 +1172,135 @@ class RawFileVerificationTests(unittest.TestCase):
             report.parse_raw_section(broken)
 
 
+class FileSectionParserTests(unittest.TestCase):
+    """``parse_raw_section`` and ``parse_stored_section`` share one scanner (#1047).
+
+    Characterisation tests: each case held before the two parsers were
+    collapsed onto one scanner, and must keep holding afterwards. Their value
+    is that a strictness correction now has one place to be made -- these
+    assert it takes effect for both record formats, not just the ``raw:``
+    format that carried the parser tests until now.
+    """
+
+    HEX = "0" * 64
+
+    def _good(self, name):
+        if name == "raw":
+            return (
+                report.parse_raw_section,
+                "raw:\n  path: r/x-01\n  files:\n"
+                f"    - a.log  sha256:{self.HEX}",
+                "path",
+            )
+        return (
+            report.parse_stored_section,
+            "stored_evidence:\n  manifest: manifests/artifacts/x-01.manifest.json\n  files:\n"
+            f"    - a.log  size:12  sha256:{self.HEX}",
+            "manifest",
+        )
+
+    def _wrapped(self, section):
+        return f"---\nrecord: x\n{section}\nwall_time: 1\n---\n\n# Record\n"
+
+    def _assert_both_raise(self, build, message=None):
+        for name in ("raw", "stored_evidence"):
+            parse, section, key = self._good(name)
+            with self.subTest(section=name):
+                with self.assertRaises(report.RawSectionError) as caught:
+                    parse(build(section))
+                if message:
+                    self.assertIn(message.format(section=name, key=key), str(caught.exception))
+
+    def test_both_read_their_rendered_section(self):
+        _parse, section, _ = self._good("raw")
+        self.assertEqual(
+            report.parse_raw_section(self._wrapped(section)),
+            ("r/x-01", [("a.log", self.HEX)]),
+        )
+        _parse, section, _ = self._good("stored_evidence")
+        self.assertEqual(
+            report.parse_stored_section(self._wrapped(section)),
+            ("manifests/artifacts/x-01.manifest.json", [("a.log", 12, self.HEX)]),
+        )
+
+    def test_absent_section_returns_the_absent_sentinel(self):
+        text = self._wrapped("analysis:\n  type: tran")
+        self.assertEqual(report.parse_raw_section(text), ("", []))
+        self.assertIsNone(report.parse_stored_section(text))
+
+    def test_body_only_section_is_not_accepted(self):
+        _parse, section, _ = self._good("raw")
+        text = "---\nrecord: x\nwall_time: 1\n---\n\n```\n" + section + "\n```\n"
+        self.assertEqual(report.parse_raw_section(text), ("", []))
+        self.assertIsNone(report.parse_stored_section(text))
+
+    def test_no_frontmatter_ignores_a_section_in_the_body(self):
+        _parse, section, _ = self._good("raw")
+        text = "\n".join(self._wrapped(section).splitlines()[1:])
+        self.assertEqual(report.parse_raw_section(text), ("", []))
+        self.assertIsNone(report.parse_stored_section(text))
+
+    def test_unterminated_frontmatter_raises(self):
+        self._assert_both_raise(
+            lambda s: "---\nrecord: x\n" + s,
+            "frontmatter is not terminated by a closing '---' line",
+        )
+
+    def test_unsupported_section_header_raises(self):
+        self._assert_both_raise(
+            lambda s: self._wrapped(s.splitlines()[0] + " extra"),
+            "unsupported {section} declaration",
+        )
+
+    def test_duplicate_section_declaration_raises(self):
+        self._assert_both_raise(
+            lambda s: self._wrapped(s).replace(
+                "\nwall_time: 1", "\n" + s.splitlines()[0] + "\nwall_time: 1", 1),
+            "duplicate '{section}:' declaration in frontmatter",
+        )
+
+    def test_duplicate_scalar_declaration_raises(self):
+        self._assert_both_raise(
+            lambda s: self._wrapped(s).replace(
+                "\n  files:", "\n" + s.splitlines()[1] + "\n  files:", 1),
+            "duplicate '{section}.{key}' declaration",
+        )
+
+    def test_a_second_files_header_inside_the_entries_block_still_raises(self):
+        # Inserted after the entries, "  files:" is consumed by the entries
+        # loop, not the section loop -- so it reports as a malformed entry,
+        # exactly as the pre-#1047 scanner did for raw: records.
+        self._assert_both_raise(
+            lambda s: self._wrapped(s).replace(
+                "\nwall_time: 1", "\n  files:\nwall_time: 1", 1),
+            "malformed {section}.files entry",
+        )
+
+    def test_malformed_entry_after_a_valid_one_raises(self):
+        self._assert_both_raise(
+            lambda s: self._wrapped(s + "\n    - ghost.log  sha256:abc123"),
+            "malformed {section}.files entry",
+        )
+
+    def test_invalid_first_entry_not_rescued_by_later_lines(self):
+        def break_first(s):
+            lines = s.splitlines()
+            return self._wrapped("\n".join([*lines[:3], "    - first.log  sha256:zzz", *lines[4:]]))
+        self._assert_both_raise(break_first, "malformed {section}.files entry")
+
+    def test_unexpected_line_inside_the_section_raises(self):
+        self._assert_both_raise(
+            lambda s: self._wrapped(s).replace("\n  files:", "\n  note: hi\n  files:", 1),
+            "unexpected line inside {section}",
+        )
+
+    def test_three_space_indent_is_not_the_scalar_key(self):
+        def three_space(s):
+            key = s.splitlines()[1].strip().split(":", 1)[0]
+            return self._wrapped(s).replace("\n  files:", f"\n   {key}: other\n  files:", 1)
+        self._assert_both_raise(three_space, "unexpected line inside {section}")
+
+
 class VerifyRecordChecksumsCliTests(unittest.TestCase):
     """The verify_record_checksums.py entry point on malformed evidence."""
 
