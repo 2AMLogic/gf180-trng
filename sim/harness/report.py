@@ -31,7 +31,7 @@ import shutil
 import statistics
 import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Callable, TypeVar
+from typing import Callable, Sequence, TypeVar
 
 from . import pdk_models, runner, startup
 from .corners import PvtPoint
@@ -341,6 +341,54 @@ def finalize_record(
     raw_dir = records_dir / RAW_DIRNAME / stem
     text = render(stem, raw_dir)
     return publish_record_text(records_dir / f"{stem}.md", text)
+
+
+def behavioral_record(
+    records_dir: Path,
+    slug: str,
+    result: dict,
+    *,
+    render_text: Callable[[str, list[tuple[str, str]]], str],
+    payloads: Sequence[tuple[str, bytes | str]] = (),
+    exclude: Callable[[str], bool] | None = None,
+) -> Path:
+    """Mint a behavioral record from ``result`` through ``finalize_record``.
+
+    The scaffolding the behavioral runners' ``write_record`` entry points
+    shared verbatim until #889 factored it here: stamp today's UTC date,
+    write the runner's payloads and a filtered ``summary.json`` into the
+    raw directory ``finalize_record`` reserves, hash the files into a
+    ``raw_files`` manifest, and publish the text ``render_text`` returns.
+
+    ``payloads`` are the runner's raw artifacts as ``(name, data)`` in
+    manifest order; ``bytes`` are written with ``write_bytes`` and ``str``
+    with ``write_text``, exactly as the runners wrote them. The manifest
+    order is ``(*payload names, "summary.json")`` -- the order the
+    committed records under ``sim/records/`` already list. ``exclude``
+    drops summary keys (the runners pass ``k.startswith("_")``); ``None``
+    keeps every key. ``render_text(stem, raw_files)`` composes the
+    runner's own frontmatter and body, which stay per-testbench.
+
+    Reservation, concurrency and exclusive publication are ``finalize_record``
+    's; this helper only owns what happens inside the render callback.
+    """
+    date = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d")
+
+    def render(stem: str, raw_dir: Path) -> str:
+        for name, data in payloads:
+            if isinstance(data, bytes):
+                (raw_dir / name).write_bytes(data)
+            else:
+                (raw_dir / name).write_text(data)
+        summary = {k: v for k, v in result.items() if exclude is None or not exclude(k)}
+        (raw_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
+        raw_files = [
+            (name, sha256_file(raw_dir / name))
+            for name in (*(n for n, _ in payloads), "summary.json")
+        ]
+        return render_text(stem, raw_files)
+
+    return finalize_record(records_dir, date, slug, render)
 
 
 BEHAVIORAL_PDK = (

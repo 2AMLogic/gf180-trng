@@ -30,10 +30,8 @@ line so that "re-run the demonstration" means exactly one thing.
 from __future__ import annotations
 
 import hashlib
-import json
 import sys
 import time
-from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -472,20 +470,17 @@ via `supersedes` (see `sim/README.md`).
 
 
 def write_record(result: dict, records_dir: Path, git: dict) -> Path:
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    def render(stem: str, raw_dir: Path) -> str:
-        (raw_dir / "data_words.hex").write_text(result["_data_hex"])
-        (raw_dir / "raw_words.hex").write_text(result["_raw_hex"])
-        summary = {k: v for k, v in result.items() if not k.startswith("_")}
-        (raw_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
-        raw_files = [
-            (name, report.sha256_file(raw_dir / name))
-            for name in ("data_words.hex", "raw_words.hex", "summary.json")
-        ]
+    def text(stem: str, raw_files) -> str:
         return _frontmatter(stem, result, git, raw_files) + "\n" + _body(result)
 
-    return report.finalize_record(records_dir, date, SLUG, render)
+    return report.behavioral_record(
+        records_dir,
+        SLUG,
+        result,
+        render_text=text,
+        payloads=[("data_words.hex", result["_data_hex"]), ("raw_words.hex", result["_raw_hex"])],
+        exclude=lambda k: k.startswith("_"),
+    )
 
 
 def _print_result(result: dict) -> None:
