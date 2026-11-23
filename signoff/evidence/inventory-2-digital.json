@@ -25,7 +25,7 @@
   "implementation": [
     {
       "path": "layout/digital/build.py",
-      "sha256": "sha256:43c58ad402f120187bd69a3cb57bd62dec0a7e94e4b699b52ce7a04c10f19eb8"
+      "sha256": "sha256:c0bcae87e7f41bbe44f76d0f6157b76c36fb6bab0b2feaf8fa011775c489d664"
     },
     {
       "path": "layout/digital/trng_top.def",

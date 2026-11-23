@@ -115,6 +115,7 @@ import floorplan_netlist  # noqa: E402  (design/floorplan_netlist.py, issue #221
 from spice_text import join_spice_continuations, subckt_pins  # noqa: E402  (design/spice_text.py)
 from layout._klt import (  # noqa: E402
     FlowError,
+    committed_pdk_provenance,
     klt_version,
     missing_tools,
     normalise_gds,
@@ -2301,7 +2302,13 @@ ARTEFACTS = {
         for key in ("_comment", "stdcell_library", "stdcell_lef", "utilisation",
                     "geometry_utilisation", "device_footprints", "regions", "rollup")
     },
-    "compose.json": lambda report: report["composition"],
+    # `response` is the `klt gen-compose` envelope; its machine-local PDK
+    # discovery provenance is stripped by the shared helper (issue #897), not
+    # by adding `source` to the recursive `_VOLATILE_KEYS` filter.
+    "compose.json": lambda report: {
+        **report["composition"],
+        "response": committed_pdk_provenance(report["composition"]["response"]),
+    },
     "floorplan.drc.json": lambda report: {
         "drc": report["drc"],
         "new_violations_from_composition": report["drc_new_violations_from_composition"],

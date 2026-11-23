@@ -254,7 +254,7 @@ prices the cuts of one id as n parallel cuts at their centroid.
    "sha256": "ce595d39ddbe154a66d704c1253c78882a89f51917028ec93b1d3bfd320524c8"
   },
   "layout/floorplan/reports/compose.json": {
-   "sha256": "31f78f42961cb551359c437a8595fb0bbf0e5442efc1ee26bf8128976d165498"
+   "sha256": "3506f7d9f93b119736ed5af2231b0334c3fe0b298baa8d3eed3b1dc2ec316d6d"
   },
   "layout/floorplan/reports/interregion.json": {
    "sha256": "0895fc227155b66342207ff0d9548e2b341cebcf749c01aa1c578cd80c7ba37d"

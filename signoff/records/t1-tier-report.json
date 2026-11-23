@@ -70,7 +70,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:0122777048368450a4f09435166902b9e22277a59ac8b7cd4780c8a701d2ffc8",
+        "content_hash": "sha256:49884ee328b36b35f9ebd9058cbc173aa7d25f89c94821f4c3d8948fc1d69ed3",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -79,7 +79,7 @@
             "path": "signoff/evidence/inventory-1-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:0122777048368450a4f09435166902b9e22277a59ac8b7cd4780c8a701d2ffc8",
+          "content_hash": "sha256:49884ee328b36b35f9ebd9058cbc173aa7d25f89c94821f4c3d8948fc1d69ed3",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 1 (Design sources), digital partition: 11 design-source files (the RTL, its synthesized netlist and the generated register map) with their regeneration gates. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 design/interface/regmap.py --check`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 design/synth.py --check` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-1-digital.json"
@@ -134,7 +134,7 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:942048e8438f3bd4ad05f20e272c5230cf2b35bf174d870c290cf4c0fd819af8",
+        "content_hash": "sha256:c9b0c6fdb9bcd1688786ee85402df886ec20e56af1ca9b2423e48179097e337b",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
@@ -143,7 +143,7 @@
             "path": "signoff/evidence/inventory-2-digital.json",
             "scope": "repo"
           },
-          "content_hash": "sha256:942048e8438f3bd4ad05f20e272c5230cf2b35bf174d870c290cf4c0fd819af8",
+          "content_hash": "sha256:c9b0c6fdb9bcd1688786ee85402df886ec20e56af1ca9b2423e48179097e337b",
           "input_verified": true,
           "summary": "Audited inventory for T1 item 2 (Layout), digital partition: 7 layout files (the placed-and-routed stream, DEF, as-built netlist, SDF and LVS reference); the stream the item 3/4 citations pin (layout/digital/trng_top.gds) is a member and its hash is held to those pins. Every member file is listed with its sha256, so the bound hash proves the inventory is current and the member hashes prove the files it describes are. signoff/check.py re-derives the inventory from the live tree and runs none of the gates it names; PDK-free gates run by the PR-blocking CI job: `python3 layout/digital/build.py --check-input`; gates that need the PDK or an external tool and so are NOT run by the PDK-free job: `python3 layout/digital/tap_distance.py --check --require-tools` (pdk-nightly.yml). It does not run a simulation, a regeneration gate or DRC/LVS, and it does not re-derive any measured value.",
           "source": "signoff/evidence/inventory-2-digital.json"
