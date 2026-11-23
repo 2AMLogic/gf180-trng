@@ -25,13 +25,22 @@ What it produces, in order:
    installed PDK for every gate-shaped cell, plus a measured footprint for the
    two long-channel starve devices per ring stage, which no standard cell
    represents. See `AREA MODEL` below for what that does and does not mean.
-3. **A DRC-clean floorplan abstract**: one `klt gen guard_ring` per region,
+3. **A composed floorplan abstract**: one `klt gen guard_ring` per region,
    sized to that region's placed area -- or, for a region with a real
-   committed assembly (`ring1`/`ring2` as of issue #119, `combiner_sampler`
-   as of issue #135, see `ASSEMBLED_RING_GDS`), to that assembly's own
-   bounding box instead -- composed into a single stream by `klt gen-compose`
-   with a declared isolation channel between neighbours, and run through
-   `klt drc` with the same deck `layout/verify.py` uses.
+   committed assembly (every region has one now: `ring1`/`ring2` since
+   issue #119, `combiner_sampler` since #135, `digital` since #210; see
+   `ASSEMBLED_RING_GDS` for the current list), to that assembly's own
+   bounding box instead -- with each region's real assembled geometry and
+   the inter-region wiring (issue #222) composed into a single stream by
+   `klt gen-compose` with a declared isolation channel between neighbours,
+   and run through `klt drc` with the same deck `layout/verify.py` uses.
+   That DRC step makes no cleanliness claim about the composed stream:
+   what this script enforces is `new_violations_from_composition`, the
+   count of additional violations composition introduces beyond each
+   assembled region's own standalone baseline. Raw and
+   composition-introduced counts live in `reports/floorplan.drc.json` --
+   read them there, not here, so a regenerated report can never stale a
+   verdict copied into this docstring.
 3b. **A ring-fit check** (issue #119) for every region sized from a real
    assembly: composes that region's own guard ring with the real ring GDS,
    aligned to the tightest legal placement, and runs `klt drc` over the pair
@@ -41,9 +50,11 @@ What it produces, in order:
 
 AREA MODEL -- what this is and is not
 -------------------------------------
-It is a **bottom-up inventory estimate with a stated method**, not a synthesis
-or a layout result. No synthesiser, placer or router has been run on this
-block, and none of the analog cells has been drawn. Specifically:
+It is a **bottom-up inventory estimate with a stated method**, not a
+measurement of placed geometry. The two are deliberately kept distinct: each
+region's `cell_area_um2`/`placed_area_um2` figures are this estimate, while a
+region's guarded footprint comes from its committed assembly's real bounding
+box and the composed abstract is real placed geometry. Specifically:
 
 - Gate-shaped cells (`ro_stage`'s core inverter, `ro_nand2`, `xor2`,
   `sampler_dff`) are priced at their nearest `gf180mcu_fd_sc_mcu7t5v0`
@@ -56,11 +67,15 @@ block, and none of the analog cells has been drawn. Specifically:
 - Placement utilisation is a **range**, not a number: 60 % and 80 % are both
   printed, matching DR-0008's convention.
 
-The floorplan abstract is a **floorplan**, not a layout. Its guard rings are
-real, generated, DRC-clean geometry; the regions they enclose are empty. A
-clean DRC here says the isolation structures and their spacings are legal at
-these dimensions. It says nothing whatever about the cells that will go inside
-them, because those cells do not exist yet.
+The composed abstract is placed geometry, not an empty plan: every guard
+ring encloses its region's real committed assembly, and the regions are
+joined by real inter-region wiring (issue #222). Each assembled region
+carries its own standalone DRC verdict; the composition DRC adds one
+question on top of those -- whether putting the regions together
+introduces additional violations against those standalone baselines. The
+counts, raw and composition-introduced, are whatever
+`reports/floorplan.drc.json` currently records; this docstring
+deliberately quotes none.
 
 Standard library only, and everything that touches KLayout goes through the
 `klt` command line -- same rule as `layout/verify.py`.
