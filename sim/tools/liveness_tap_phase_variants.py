@@ -197,14 +197,15 @@ MODULATION_MATERIAL = 0.003
 #: constant is written down AFTER the measurement, and if a future record moves
 #: the classification the check fails and whoever moved it has to update the
 #: recorded conclusion rather than quietly leaving a stale one in the
-#: characterization document. Set it to ``None`` to run the classification
-#: without gating on its outcome.
+#: characterization document. Setting it to ``None`` does not disable the
+#: gate: ``--check`` then exits ``2`` (nothing to gate against). Run without
+#: ``--check`` to see an ungated classification.
 RECORDED_VERDICT: str | None = "clk-locked"
 
 #: Same contract for the buffer question -- a separate finding with its own
 #: evidence, and since PR #82 a statement about the SHIPPED topology rather
-#: than about a proposal: ``"removed"``, ``"reduced"``, ``"not-removed"``, or
-#: ``None`` to skip the gate.
+#: than about a proposal: ``"removed"``, ``"reduced"``, ``"not-removed"``.
+#: ``None`` does not disable the check: ``--check`` then exits ``2``.
 RECORDED_BUFFER_VERDICT: str | None = "reduced"
 
 

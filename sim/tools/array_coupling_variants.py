@@ -158,8 +158,9 @@ EXCESS_FACTOR = 10.0
 #: being true: this constant is written down AFTER the measurement, and if a
 #: future record moves the classification the check fails and whoever moved it
 #: has to update the recorded conclusion rather than quietly leaving a stale
-#: one in the characterization document. Set it to ``None`` to run the
-#: classification without gating on its outcome.
+#: one in the characterization document. Setting it to ``None`` does not
+#: disable the gate: ``--check`` then exits ``2`` (nothing to gate against).
+#: Run without ``--check`` to see an ungated classification.
 RECORDED_VERDICT: str | None = "coupling"
 
 

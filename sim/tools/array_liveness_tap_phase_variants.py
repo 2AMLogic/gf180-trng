@@ -187,7 +187,9 @@ BOUND_MARGIN = 0.10
 #: written down AFTER the measurement, and if a future record moves the
 #: classification the check fails and whoever moved it has to update the recorded
 #: conclusion rather than quietly leaving a stale one in the characterization
-#: document. Set either to ``None`` to run the classification without gating.
+#: document. Setting either to ``None`` does not disable the gate: ``--check``
+#: then exits ``2`` (nothing to gate against). Run without ``--check`` to see
+#: an ungated classification.
 #:
 #: All four decks have now been run, each pair with both of its records
 #: produced on one host, and both constants below are filled in from what this
