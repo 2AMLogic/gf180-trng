@@ -184,7 +184,7 @@ class MainCheckTests(unittest.TestCase):
     def test_unset_recorded_verdict_returns_two(self) -> None:
         code, _, err = self.run_main(variants_with_ratios(1.06, 28.6, 1.0), recorded=None)
         self.assertEqual(code, 2)
-        self.assertIn("RECORDED_VERDICT is unset", err)
+        self.assertIn("ERROR: the recorded verdict for the array-coupling question is unset", err)
 
     def test_unset_verdict_is_reported_even_when_evidence_conflicts(self) -> None:
         code, _, _ = self.run_main(variants_with_ratios(1.0, 1.0, 1.0), recorded=None)

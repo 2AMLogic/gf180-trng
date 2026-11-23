@@ -28,12 +28,19 @@ parts a reader might not expect:
   raising the caller's ``error_cls`` for a malformed record and keeping the
   complete record text available to subclasses that read further
   frontmatter blocks.
+- ``check_recorded_verdicts`` (issue #880) is the one ``--check`` gate
+  behind the four recorded-verdict tools: an unset recorded verdict, or
+  no pair to check, exits ``2`` before anything is compared; a missing or
+  moved verdict reports every failing pair and exits ``1``; only a full
+  match prints the ``OK:`` line and exits ``0``.
 
 Everything here is stdlib-only: no ngspice and no PDK.
 """
 
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -46,6 +53,7 @@ sys.path.insert(0, str(SIM_DIR / "tools"))
 
 from _record_parsing import (  # noqa: E402
     CornerRecord,
+    check_recorded_verdicts,
     format_corner,
     frontmatter,
     iter_result_seed_summaries,
@@ -720,6 +728,120 @@ class ResultSectionTests(unittest.TestCase):
                     iter_result_seed_summaries(text, label=path.stem),
                     list(iter_seed_summaries(text, label=path.stem)),
                 )
+
+
+class CheckRecordedVerdictsTests(unittest.TestCase):
+    """``check_recorded_verdicts`` (issue #880): the one ``--check`` gate
+    behind the four recorded-verdict tools, strict about an unset constant."""
+
+    DOC = "sim/characterization-fixture.md"
+    CLK = ("clk-locked", "clk-locked", "the clk-locked question")
+    BUFFER = ("reduced", "reduced", "the buffer question")
+
+    def gate(self, pairs):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = check_recorded_verdicts(pairs, self.DOC)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_single_matching_pair_returns_zero(self) -> None:
+        code, out, err = self.gate((self.CLK,))
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            out,
+            f"\nOK: the committed records still classify as 'clk-locked', "
+            f"the conclusion {self.DOC} records.\n",
+        )
+        self.assertEqual(err, "")
+
+    def test_every_pair_matching_returns_zero(self) -> None:
+        code, out, err = self.gate((self.CLK, self.BUFFER))
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            out,
+            f"\nOK: the committed records still classify as 'clk-locked' / 'reduced', "
+            f"the conclusions {self.DOC} records.\n",
+        )
+        self.assertEqual(err, "")
+
+    def test_single_mismatch_returns_one_and_names_only_the_failing_pair(self) -> None:
+        code, out, err = self.gate(
+            (("quiet", "clk-locked", "the clk-locked question"), self.BUFFER)
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertEqual(err.count("FAIL:"), 1)
+        self.assertIn(
+            f"\nFAIL: the committed records now classify the clk-locked question as "
+            f"'quiet', but the conclusion recorded in {self.DOC} is 'clk-locked'. ",
+            err,
+        )
+        self.assertNotIn("the buffer question", err)
+
+    def test_simultaneous_mismatches_are_all_reported_in_order(self) -> None:
+        code, out, err = self.gate(
+            (
+                ("quiet", "clk-locked", "the clk-locked question"),
+                ("not-removed", "reduced", "the buffer question"),
+            )
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertEqual(err.count("FAIL:"), 2)
+        self.assertLess(err.index("the clk-locked question"), err.index("the buffer question"))
+
+    def test_missing_evidence_returns_one(self) -> None:
+        code, out, err = self.gate(((None, "reduced", "the buffer question"),))
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertIn(
+            "\nFAIL: the buffer question has a recorded conclusion ('reduced') but the "
+            "records that support it are no longer on file",
+            err,
+        )
+
+    def test_missing_evidence_and_a_mismatch_are_both_reported(self) -> None:
+        code, _, err = self.gate(
+            (
+                ("quiet", "clk-locked", "the clk-locked question"),
+                (None, "reduced", "the buffer question"),
+            )
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(err.count("FAIL:"), 2)
+
+    def test_unset_recorded_verdict_returns_two(self) -> None:
+        code, out, err = self.gate((("clk-locked", None, "the clk-locked question"),))
+        self.assertEqual(code, 2)
+        self.assertEqual(
+            err,
+            "\nERROR: the recorded verdict for the clk-locked question is unset, so --check "
+            "has nothing to gate against.\n",
+        )
+        self.assertEqual(out, "")
+
+    def test_unset_outranks_a_conflicting_earlier_pair(self) -> None:
+        code, _, err = self.gate(
+            (
+                ("quiet", "clk-locked", "the clk-locked question"),
+                ("reduced", None, "the buffer question"),
+            )
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR: the recorded verdict for the buffer question is unset", err)
+        self.assertNotIn("FAIL:", err)
+
+    def test_unset_outranks_missing_evidence(self) -> None:
+        code, _, err = self.gate(((None, None, "the clk-locked question"),))
+        self.assertEqual(code, 2)
+        self.assertIn("the clk-locked question is unset", err)
+        self.assertNotIn("FAIL:", err)
+
+    def test_no_pairs_is_an_error_not_a_vacuous_pass(self) -> None:
+        code, out, err = self.gate(())
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR:", err)
+        self.assertEqual(out, "")
 
 
 if __name__ == "__main__":

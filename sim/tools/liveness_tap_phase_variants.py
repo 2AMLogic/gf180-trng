@@ -100,6 +100,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import check_recorded_verdicts  # noqa: E402
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
     VariantBase,
@@ -453,35 +454,12 @@ def main(argv: list[str] | None = None) -> int:
     print(buffer_rationale)
 
     if args.check:
-        failed = False
-        for got, recorded, what in (
-            (verdict, RECORDED_VERDICT, "the clk-locked question"),
-            (buffer_verdict, RECORDED_BUFFER_VERDICT, "the buffer question"),
-        ):
-            if recorded is None:
-                print(
-                    f"\nERROR: the recorded verdict for {what} is unset, so --check has "
-                    "nothing to gate against.",
-                    file=sys.stderr,
-                )
-                return 2
-            if got != recorded:
-                print(
-                    f"\nFAIL: the committed records now classify {what} as {got!r}, but the "
-                    f"conclusion recorded in "
-                    f"sim/characterization-liveness-tap-phase-cost.md is {recorded!r}. "
-                    "Either a record changed or a variant was re-run; update the recorded "
-                    "conclusion to match the evidence (and this constant with it) rather "
-                    "than leaving a stale one.",
-                    file=sys.stderr,
-                )
-                failed = True
-        if failed:
-            return 1
-        print(
-            f"\nOK: the committed records still classify as {verdict!r} / "
-            f"{buffer_verdict!r}, the conclusions "
-            "sim/characterization-liveness-tap-phase-cost.md records."
+        return check_recorded_verdicts(
+            (
+                (verdict, RECORDED_VERDICT, "the clk-locked question"),
+                (buffer_verdict, RECORDED_BUFFER_VERDICT, "the buffer question"),
+            ),
+            "sim/characterization-liveness-tap-phase-cost.md",
         )
     return 0
 

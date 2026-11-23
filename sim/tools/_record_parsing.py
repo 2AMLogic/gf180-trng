@@ -23,12 +23,21 @@ and their own module-level ``RecordError`` (where they have one). This
 module never raises its own exception type by default, so those ``except
 RecordError`` call sites elsewhere in ``sim/tools/`` (and in scripts that
 import ``RecordError`` from one of the callers) keep working unchanged.
+
+The ``--check`` recorded-verdict gate lived the same way before issue #880:
+``array_coupling_variants.py``, ``liveness_tap_phase_variants.py``,
+``array_liveness_tap_phase_variants.py`` and ``sampler_bit_bias_variants.py``
+each hand-wrote the comparison of a freshly classified verdict against its
+``RECORDED_*_VERDICT`` constant, and the copies had drifted -- three exited
+``2`` on an unset constant while the fourth passed.
+:func:`check_recorded_verdicts` is the one strict gate they all call now.
 """
 
 from __future__ import annotations
 
 import math
 import re
+import sys
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -623,3 +632,75 @@ class CornerRecord:
     @property
     def corner(self) -> str:
         return format_corner(self.process, self.temp_c, self.vdd)
+
+
+def check_recorded_verdicts(
+    pairs: Sequence[tuple[str | None, str | None, str]], doc_path: str
+) -> int:
+    """The ``--check`` exit code of a tool's recorded-verdict gate.
+
+    ``pairs`` holds one ``(got, recorded, what)`` per question the tool
+    answers: ``got`` is the verdict the committed records classify as right
+    now (``None`` when the records that would decide it are not on file),
+    ``recorded`` is the tool's ``RECORDED_*_VERDICT`` constant, and ``what``
+    names the question in the message. ``doc_path`` is the characterization
+    document whose recorded conclusion the constants mirror.
+
+    The gate is strict about what it cannot compare. No pair at all, or any
+    pair whose ``recorded`` is ``None``, is reported as ``ERROR:`` on stderr
+    and returns ``2`` before a single verdict is looked at -- a gate with
+    nothing to compare against must not pass as if it had compared (issue
+    #880, operator ruling of 2026-11-23). Otherwise each pair in order is
+    reported on stderr as ``FAIL:`` when its evidence is gone (``got`` is
+    ``None``) or its verdict has moved off the recorded one, every failing
+    pair before ``1`` is returned. Only when every pair matches does the
+    ``OK:`` summary go to stdout and ``0`` come back.
+
+    Nothing is raised and no file is read: verdict strings in, an exit code
+    and its text out.
+    """
+    if not pairs:
+        print(
+            "\nERROR: no recorded verdict was passed to the gate, so --check has "
+            "nothing to gate against.",
+            file=sys.stderr,
+        )
+        return 2
+    for _got, recorded, what in pairs:
+        if recorded is None:
+            print(
+                f"\nERROR: the recorded verdict for {what} is unset, so --check has "
+                "nothing to gate against.",
+                file=sys.stderr,
+            )
+            return 2
+    failed = False
+    for got, recorded, what in pairs:
+        if got is None:
+            print(
+                f"\nFAIL: {what} has a recorded conclusion ({recorded!r}) but the "
+                "records that support it are no longer on file at this corner. A "
+                "conclusion whose evidence has gone is not a conclusion; restore the "
+                "records or withdraw it.",
+                file=sys.stderr,
+            )
+            failed = True
+        elif got != recorded:
+            print(
+                f"\nFAIL: the committed records now classify {what} as {got!r}, but the "
+                f"conclusion recorded in {doc_path} is {recorded!r}. Either a record "
+                "changed or a variant was re-run; update the recorded conclusion to "
+                "match the evidence (and this constant with it) rather than leaving a "
+                "stale one.",
+                file=sys.stderr,
+            )
+            failed = True
+    if failed:
+        return 1
+    verdicts = " / ".join(repr(got) for got, _recorded, _what in pairs)
+    conclusions = "conclusions" if len(pairs) > 1 else "conclusion"
+    print(
+        f"\nOK: the committed records still classify as {verdicts}, the "
+        f"{conclusions} {doc_path} records."
+    )
+    return 0

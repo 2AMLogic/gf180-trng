@@ -139,7 +139,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import latest_current_record  # noqa: E402
+from _record_parsing import check_recorded_verdicts, latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import Record, RecordError  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -224,7 +224,9 @@ LOCK_TOLERANCE = 5e-4
 #: constant is written down AFTER the measurement, and if a future record moves
 #: the classification the check fails and whoever moved it has to update the
 #: recorded conclusion rather than leave a stale one in the characterization
-#: document. Set it to ``None`` to run the classification without gating.
+#: document. Unsetting it -- ``None`` -- fails ``--check`` with exit 2 rather
+#: than passing ungated, like every other recorded-verdict gate; run without
+#: ``--check`` to see a classification that is not gated.
 RECORDED_VERDICT: str | None = "no-measurable-bit-effect"
 
 _BK = re.compile(r"^bk\s+=\s+(-?[\d.]+e[-+]?\d+)\s*$", re.M)
@@ -733,21 +735,13 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
 
     verdict, rationale = classify(pairs)
-    if RECORDED_VERDICT is None:
-        print(f"sampler bit bias: verdict {verdict} (not gated)")
-        return 0
-    if verdict != RECORDED_VERDICT:
-        print(
-            f"error: the committed evidence now classifies as {verdict!r}, but\n"
-            "sim/characterization-sampler-bit-bias.md and this script record\n"
-            f"{RECORDED_VERDICT!r}. One of them is stale -- re-read the records,\n"
-            "update the document, and move RECORDED_VERDICT with it.\n\n"
-            f"{rationale}",
-            file=sys.stderr,
-        )
-        return 1
-    print(f"sampler bit bias: {RECORDED_VERDICT} (issue #86) -- OK")
-    return 0
+    gate = check_recorded_verdicts(
+        ((verdict, RECORDED_VERDICT, "sampler bit bias"),),
+        "sim/characterization-sampler-bit-bias.md",
+    )
+    if gate == 1:
+        print(f"\n{rationale}", file=sys.stderr)
+    return gate
 
 
 if __name__ == "__main__":
