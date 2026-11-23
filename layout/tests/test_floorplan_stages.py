@@ -216,6 +216,49 @@ class StarveAreaTest(unittest.TestCase):
             floorplan.starve_area(self.STARVE, {}, "ring1", "nfet")
 
 
+class BuildRegionsAssemblyMappingTest(unittest.TestCase):
+    """Stage 3: issue #1045 -- a declared region without an assembled GDS
+    mapping is a per-region build error raised before any geometry tool
+    runs, not a silent sqrt(cell_area/utilisation) square footprint."""
+
+    def _build(self) -> None:
+        # The up-front mapping check runs before any argument is read, so
+        # empty inventories/prices are enough to reach it tool-free.
+        floorplan.build_regions({}, Counter(), [], {}, {}, {})
+
+    def test_committed_tree_maps_every_declared_region(self) -> None:
+        missing = [
+            spec["id"]
+            for spec in floorplan.REGIONS
+            if spec["id"] not in floorplan.ASSEMBLED_RING_GDS
+        ]
+        self.assertEqual(missing, [])
+
+    def test_unmapped_region_is_named_in_the_error(self) -> None:
+        saved = dict(floorplan.ASSEMBLED_RING_GDS)
+        try:
+            del floorplan.ASSEMBLED_RING_GDS["digital"]
+            with self.assertRaises(floorplan.FlowError) as raised:
+                self._build()
+        finally:
+            floorplan.ASSEMBLED_RING_GDS.clear()
+            floorplan.ASSEMBLED_RING_GDS.update(saved)
+        self.assertIn("'digital'", str(raised.exception))
+        # A mapped region is not accused alongside the missing one.
+        self.assertNotIn("'ring1'", str(raised.exception))
+
+    def test_every_unmapped_region_is_named(self) -> None:
+        saved = dict(floorplan.ASSEMBLED_RING_GDS)
+        floorplan.ASSEMBLED_RING_GDS.clear()
+        try:
+            with self.assertRaises(floorplan.FlowError) as raised:
+                self._build()
+        finally:
+            floorplan.ASSEMBLED_RING_GDS.update(saved)
+        for rid in ("ring1", "ring2", "combiner_sampler", "digital"):
+            self.assertIn(f"'{rid}'", str(raised.exception))
+
+
 # --------------------------------------------------------------------------- #
 # Stage 5 -- channels, subtotals, rollup
 # --------------------------------------------------------------------------- #

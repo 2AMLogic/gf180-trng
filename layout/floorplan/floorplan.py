@@ -26,11 +26,12 @@ What it produces, in order:
    two long-channel starve devices per ring stage, which no standard cell
    represents. See `AREA MODEL` below for what that does and does not mean.
 3. **A composed floorplan abstract**: one `klt gen guard_ring` per region,
-   sized to that region's placed area -- or, for a region with a real
-   committed assembly (every region has one now: `ring1`/`ring2` since
-   issue #119, `combiner_sampler` since #135, `digital` since #210; see
-   `ASSEMBLED_RING_GDS` for the current list), to that assembly's own
-   bounding box instead -- with each region's real assembled geometry and
+   sized to that region's own committed assembly's bounding box (every
+   region has one now: `ring1`/`ring2` since issue #119,
+   `combiner_sampler` since #135, `digital` since #210; see
+   `ASSEMBLED_RING_GDS` for the current list -- issue #1045 retired the
+   area/utilisation-estimate square a region without an assembly used to
+   be sized from) -- with each region's real assembled geometry and
    the inter-region wiring (issue #222) composed into a single stream by
    `klt gen-compose` with a declared isolation channel between neighbours,
    and run through `klt drc` with the same deck `layout/verify.py` uses.
@@ -175,10 +176,13 @@ ISOLATION_CHANNEL_UM = 20.0
 GUARD_RING_WIDTH_UM = 1.0
 GUARD_CONTACT_PITCH_UM = 2.0
 
-#: Committed, real assembled geometry that sizes a region's
-#: guarded footprint below, instead of the area/utilisation estimate's
-#: sqrt(area) square (issue #119, Option A for `ring1`/`ring2`; issue #135,
-#: Option A for `combiner_sampler`). `ring1` and `ring2` share the same cell
+#: Committed, real assembled geometry that sizes a region's guarded
+#: footprint below, instead of the area/utilisation estimate's sqrt(area)
+#: square (issue #119, Option A for `ring1`/`ring2`; issue #135, Option A
+#: for `combiner_sampler`). Every declared region must have an entry
+#: (issue #1045): the square a region without one used to be sized from is
+#: retired, and `build_regions` fails naming the region instead.
+#: `ring1` and `ring2` share the same cell
 #: inventory and the same row layout (`layout/rings/ro_ring11/build.py`), so
 #: both bounding boxes happen to be identical, but each is read from its own
 #: committed stream rather than assumed equal.
@@ -852,9 +856,9 @@ def compose(regions: list[dict], variant: str,
     # block is given the same absolute origin `"row"` would have computed
     # (`_row_offsets`, above) -- so every region and channel lands exactly
     # where the pre-#110 `"row"` composition put it, still checkable against
-    # issue #119's own committed `reports/area.json` -- and `ring1`/`ring2`
-    # additionally get one more block each, the real assembled `ro_ring11`/
-    # `ro_ring11_ring2` geometry, translated to
+    # issue #119's own committed `reports/area.json` -- and every region
+    # additionally gets one more block, its own real assembled geometry,
+    # translated to
     # `(region's own row offset + GUARD_RING_WIDTH_UM - ring bbox x0/y0)`:
     # the same "flush against the guard ring's own declared inner corner"
     # placement `check_ring_fit` already verifies DRC/LVS-clean for
@@ -870,8 +874,6 @@ def compose(regions: list[dict], variant: str,
     content_ids: list[str] = []
     for region in regions:
         rid = region["id"]
-        if rid not in ASSEMBLED_RING_GDS:
-            continue
         content_id = f"{rid}_ring"
         bbox = region["ring_content_bbox_um"]
         blocks.append({"id": content_id, "generator_report": region["ring_content_report"]})
@@ -1656,8 +1658,22 @@ def build_regions(
     device_footprints: dict[str, dict],
 ) -> list[dict]:
     """Stage 3: per-region cell area, placed area and the guarded footprint
-    each region's guard ring will be sized to -- real assembled geometry
-    where it exists, the area/utilisation estimate's square elsewhere."""
+    each region's guard ring will be sized to -- the region's own committed
+    assembled geometry's bounding box, which every declared region must
+    have mapped in `ASSEMBLED_RING_GDS` (issue #1045 retired the
+    area/utilisation estimate's square fallback for a region without
+    one)."""
+    unmapped = [
+        spec["id"] for spec in REGIONS if spec["id"] not in ASSEMBLED_RING_GDS
+    ]
+    if unmapped:
+        raise FlowError(
+            "no assembled GDS mapped in ASSEMBLED_RING_GDS for region(s) "
+            + ", ".join(f"'{rid}'" for rid in unmapped)
+            + " -- since issue #1045 retired the sqrt(cell_area_um2 / "
+            "geometry_utilisation) square fallback, every declared region "
+            "needs a committed assembly to be sized from"
+        )
     regions: list[dict] = []
     for spec in REGIONS:
         rid = spec["id"]
@@ -1707,68 +1723,56 @@ def build_regions(
         placed = {f"{int(u * 100)}pct": cell_area / u for u in UTILISATION}
         side = round(math.sqrt(cell_area / GEOMETRY_UTILISATION), 2)
 
-        # The guarded-region footprint below: real assembled geometry where
-        # it exists (`ASSEMBLED_RING_GDS` -- issue #119, Option A for
-        # `ring1`/`ring2`; issue #135, Option A for `combiner_sampler`), the
-        # area/utilisation estimate's sqrt(area) square everywhere else
-        # (`digital`, not yet assembled). Either way this is what
+        # The guarded-region footprint below: the region's own real
+        # assembled geometry (`ASSEMBLED_RING_GDS` -- issue #119, Option A
+        # for `ring1`/`ring2`; issue #135, Option A for
+        # `combiner_sampler`; #209/#210 for `digital`). This is what
         # `gen_guard_ring` below actually encloses -- `footprint_source`
-        # records which one, and why.
-        if rid in ASSEMBLED_RING_GDS:
-            gds_path = ASSEMBLED_RING_GDS[rid]
-            bbox = read_gds_bbox(gds_path)
-            inner_w_um = round(bbox["x1"] - bbox["x0"], 3)
-            inner_h_um = round(bbox["y1"] - bbox["y0"], 3)
-            footprint_source = {
-                "kind": "assembled_gds",
+        # records where it came from and what the area/utilisation
+        # estimate alone would have given.
+        gds_path = ASSEMBLED_RING_GDS[rid]
+        bbox = read_gds_bbox(gds_path)
+        inner_w_um = round(bbox["x1"] - bbox["x0"], 3)
+        inner_h_um = round(bbox["y1"] - bbox["y0"], 3)
+        footprint_source = {
+            "kind": "assembled_gds",
+            "note": (
+                "sized from the committed, DRC/LVS-clean assembled "
+                "row's own bounding box (issue #119), not from the "
+                "area/utilisation estimate's sqrt(cell_area_um2 / "
+                "geometry_utilisation) square -- see this region's own "
+                "cell_area_um2/placed_area_um2 above for what that "
+                f"estimate alone would have given ({side:.2f} x "
+                f"{side:.2f} um)"
+            ),
+            "gds": str(gds_path.relative_to(REPO_ROOT)),
+            "cell_name": bbox["cell_name"],
+            "bbox_um": {
+                "x0": bbox["x0"], "y0": bbox["y0"],
+                "x1": bbox["x1"], "y1": bbox["y1"],
+            },
+        }
+        # Disclose, in the committed artefact itself, any cell this
+        # region's inventory prices that the assembly the footprint was
+        # measured from does not contain (issue #144) -- see
+        # `ASSEMBLY_INVENTORY_GAP`'s own docstring.
+        missing = tuple(
+            cell
+            for cell in ASSEMBLY_INVENTORY_GAP.get(rid, ())
+            if cell in inventories[rid]
+        )
+        if missing:
+            footprint_source["inventoried_but_not_in_assembly"] = {
+                "cells": {cell: inventories[rid][cell] for cell in missing},
                 "note": (
-                    "sized from the committed, DRC/LVS-clean assembled "
-                    "row's own bounding box (issue #119), not from the "
-                    "area/utilisation estimate's sqrt(cell_area_um2 / "
-                    "geometry_utilisation) square -- see this region's own "
-                    "cell_area_um2/placed_area_um2 above for what that "
-                    f"estimate alone would have given ({side:.2f} x "
-                    f"{side:.2f} um)"
-                ),
-                "gds": str(gds_path.relative_to(REPO_ROOT)),
-                "cell_name": bbox["cell_name"],
-                "bbox_um": {
-                    "x0": bbox["x0"], "y0": bbox["y0"],
-                    "x1": bbox["x1"], "y1": bbox["y1"],
-                },
-            }
-            # Disclose, in the committed artefact itself, any cell this
-            # region's inventory prices that the assembly the footprint was
-            # measured from does not contain (issue #144) -- see
-            # `ASSEMBLY_INVENTORY_GAP`'s own docstring.
-            missing = tuple(
-                cell
-                for cell in ASSEMBLY_INVENTORY_GAP.get(rid, ())
-                if cell in inventories[rid]
-            )
-            if missing:
-                footprint_source["inventoried_but_not_in_assembly"] = {
-                    "cells": {cell: inventories[rid][cell] for cell in missing},
-                    "note": (
-                        "these cells are counted in this region's cell/placed "
-                        "area above and are drawn and verified standalone "
-                        "under layout/cells/, but they are NOT present in the "
-                        "assembled GDS this region's guarded footprint was "
-                        "measured from -- so the region is budgeted for them, "
-                        "not yet drawn with them. See layout/floorplan/"
-                        "floorplan.py's ASSEMBLY_INVENTORY_GAP for why, and "
-                        "layout/README.md for the standing inventory."
-                    ),
-                }
-        else:
-            inner_w_um = inner_h_um = side
-            footprint_source = {
-                "kind": "area_estimate",
-                "note": (
-                    "sqrt(cell_area_um2 / geometry_utilisation) -- see this "
-                    "module's own AREA MODEL docstring. Not yet assembled, "
-                    "so no committed GDS exists to size this region from "
-                    "instead (issue #119's own Scope note)."
+                    "these cells are counted in this region's cell/placed "
+                    "area above and are drawn and verified standalone "
+                    "under layout/cells/, but they are NOT present in the "
+                    "assembled GDS this region's guarded footprint was "
+                    "measured from -- so the region is budgeted for them, "
+                    "not yet drawn with them. See layout/floorplan/"
+                    "floorplan.py's ASSEMBLY_INVENTORY_GAP for why, and "
+                    "layout/README.md for the standing inventory."
                 ),
             }
 
@@ -1800,41 +1804,32 @@ def generate_guard_rings(regions: list[dict], variant: str) -> float | None:
     guard_dbu_um: float | None = None
     for region in regions:
         rid = region["id"]
-        # `ring1`/`ring2` reserve `RING_PLACEMENT_CLEARANCE_UM` of clearance
+        # Every region reserves `RING_PLACEMENT_CLEARANCE_UM` of clearance
         # between the guard ring's own inner wall and the real ring content
         # placed inside it (below) by growing the guard ring's *inner*
         # cavity and shrinking its own band width by the same amount -- the
         # two cancel, so the *outer* (guarded) footprint stays exactly what
         # issue #119 already committed (see that constant's own docstring).
-        # Every other region is unaffected: `ring_width_um` defaults to
-        # `GUARD_RING_WIDTH_UM` and `inner_w_um`/`inner_h_um` are unchanged.
-        if rid in ASSEMBLED_RING_GDS:
-            clearance = RING_PLACEMENT_CLEARANCE_UM
-            ring_band_um = round(GUARD_RING_WIDTH_UM - clearance, 3)
-            gen_inner_w = round(region["inner_w_um"] + 2 * clearance, 3)
-            gen_inner_h = round(region["inner_h_um"] + 2 * clearance, 3)
-        else:
-            clearance = None
-            ring_band_um = GUARD_RING_WIDTH_UM
-            gen_inner_w = region["inner_w_um"]
-            gen_inner_h = region["inner_h_um"]
+        clearance = RING_PLACEMENT_CLEARANCE_UM
+        ring_band_um = round(GUARD_RING_WIDTH_UM - clearance, 3)
+        gen_inner_w = round(region["inner_w_um"] + 2 * clearance, 3)
+        gen_inner_h = round(region["inner_h_um"] + 2 * clearance, 3)
 
         response = gen_guard_ring(rid, gen_inner_w, gen_inner_h, variant, ring_band_um)
 
-        if clearance is not None:
-            reported_min = (response.get("drc_hints") or {}).get("min_spacing_um")
-            if reported_min is not None and reported_min > clearance:
-                raise FlowError(
-                    f"region '{rid}': klt gen guard_ring's own "
-                    f"drc_hints.min_spacing_um ({reported_min} um) exceeds "
-                    f"this module's RING_PLACEMENT_CLEARANCE_UM "
-                    f"({clearance} um) -- see that constant's own docstring "
-                    "for why this must not be silently ignored"
-                )
-            region["ring_placement_clearance_um"] = clearance
-            region["ring_band_width_um"] = ring_band_um
-            region["inner_w_um"] = gen_inner_w
-            region["inner_h_um"] = gen_inner_h
+        reported_min = (response.get("drc_hints") or {}).get("min_spacing_um")
+        if reported_min is not None and reported_min > clearance:
+            raise FlowError(
+                f"region '{rid}': klt gen guard_ring's own "
+                f"drc_hints.min_spacing_um ({reported_min} um) exceeds "
+                f"this module's RING_PLACEMENT_CLEARANCE_UM "
+                f"({clearance} um) -- see that constant's own docstring "
+                "for why this must not be silently ignored"
+            )
+        region["ring_placement_clearance_um"] = clearance
+        region["ring_band_width_um"] = ring_band_um
+        region["inner_w_um"] = gen_inner_w
+        region["inner_h_um"] = gen_inner_h
 
         if guard_dbu_um is None:
             guard_dbu_um = response.get("dbu_um")
@@ -1850,10 +1845,9 @@ def generate_guard_rings(regions: list[dict], variant: str) -> float | None:
             json.dumps(response, indent=2) + "\n"
         )
 
-        if rid in ASSEMBLED_RING_GDS:
-            report_name, content_bbox = write_ring_content_report(region)
-            region["ring_content_report"] = report_name
-            region["ring_content_bbox_um"] = content_bbox
+        report_name, content_bbox = write_ring_content_report(region)
+        region["ring_content_report"] = report_name
+        region["ring_content_bbox_um"] = content_bbox
 
         print(
             f"  {region['id']:<18} inner {region['inner_w_um']:8.2f} x "
@@ -1874,16 +1868,13 @@ def measure_ring_fit(regions: list[dict], variant: str) -> dict[str, dict]:
     actual placement) extends the same check to `klt lvs`, since a
     DRC-clean fit turned out not to be a connectivity-clean one at zero
     clearance (`RING_PLACEMENT_CLEARANCE_UM`'s own docstring). For every
-    region whose guarded footprint above came from a real assembled GDS
-    (`ASSEMBLED_RING_GDS`), compose that region's own guard ring with the
-    real ring geometry and run both (`check_ring_fit`).
+    region, compose that region's own guard ring with its real assembled
+    geometry (`ASSEMBLED_RING_GDS`) and run both (`check_ring_fit`).
     """
     print("== ring fit (issue #119, DRC; issue #110, + LVS) ==")
     ring_fit: dict[str, dict] = {}
     for region in regions:
         rid = region["id"]
-        if rid not in ASSEMBLED_RING_GDS:
-            continue
         fit = check_ring_fit(region, ASSEMBLED_RING_GDS[rid], variant)
         ring_fit[rid] = fit
         print(
