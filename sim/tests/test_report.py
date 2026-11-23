@@ -447,6 +447,136 @@ def fake_pdk(root: Path) -> Pdk:
     return Pdk(path=root, variant=root.name, source="test")
 
 
+class BehavioralRecordTests(unittest.TestCase):
+    """behavioral_record() is the write_record scaffolding the four
+    unconditional behavioral runners share (#889): derive the UTC date,
+    write payloads plus a filtered summary.json into the reserved raw
+    directory, hash them in the caller's order, publish render_text.
+    """
+
+    DATE = "2026-08-14"
+    SLUG = "a-behavioral-demo"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.repo_root = Path(self.tmp.name)
+        self.records_dir = self.repo_root / "sim" / "records"
+        self.fixed_now = _dt.datetime(2026, 8, 14, 12, 0, 0, tzinfo=_dt.timezone.utc)
+        self.seen: dict[str, object] = {}
+
+    def _mint(self, result, *, render_text=None, **kwargs) -> Path:
+        """Call behavioral_record() with the clock pinned to self.DATE."""
+        if render_text is None:
+
+            def render_text(stem, raw_files):
+                self.seen["stem"] = stem
+                self.seen["raw_files"] = list(raw_files)
+                return "".join(
+                    f"record: {stem}\n" + "".join(
+                        f"file: {name} sha256:{digest}\n" for name, digest in raw_files
+                    )
+                )
+
+        clock = mock.Mock()
+        clock.datetime.now.return_value = self.fixed_now
+        clock.timezone.utc = _dt.timezone.utc
+        with mock.patch.object(report, "_dt", clock):
+            return report.behavioral_record(
+                self.records_dir, self.SLUG, result, render_text=render_text, **kwargs
+            )
+
+    def _raw_file(self, stem: str, name: str) -> Path:
+        return self.records_dir / report.RAW_DIRNAME / stem / name
+
+    def test_summary_only_record_serializes_every_key_exactly(self):
+        result = {"b": 2, "a": [1, 2], "_hidden": "x"}
+        path = self._mint(result)
+        stem = f"{self.DATE}-{self.SLUG}-01"
+        self.assertEqual(path, self.records_dir / f"{stem}.md")
+        self.assertEqual(
+            self._raw_file(stem, "summary.json").read_text(),
+            json.dumps(result, indent=2, default=str) + "\n",
+        )
+        self.assertEqual(
+            self.seen["raw_files"],
+            [("summary.json", report.sha256_file(self._raw_file(stem, "summary.json")))],
+        )
+        self.assertEqual(
+            path.read_text(),
+            f"record: {stem}\n"
+            f"file: summary.json sha256:{self.seen['raw_files'][0][1]}\n",
+        )
+
+    def test_multi_file_record_writes_payloads_and_manifest_in_order(self):
+        result = {"_raw_bytes": b"\x01\x02", "raw_bits": 2, "_hex": "ff\n", "n": 1}
+        self._mint(
+            result,
+            payloads=[("raw.bin", b"\x01\x02"), ("words.hex", "ff\n")],
+            exclude=lambda k: k.startswith("_"),
+        )
+        stem = f"{self.DATE}-{self.SLUG}-01"
+        self.assertEqual(self._raw_file(stem, "raw.bin").read_bytes(), b"\x01\x02")
+        self.assertEqual(self._raw_file(stem, "words.hex").read_text(), "ff\n")
+        summary_path = self._raw_file(stem, "summary.json")
+        expected_summary = {"raw_bits": 2, "n": 1}
+        self.assertEqual(
+            summary_path.read_text(),
+            json.dumps(expected_summary, indent=2, default=str) + "\n",
+        )
+        self.assertEqual(
+            [name for name, _ in self.seen["raw_files"]],
+            ["raw.bin", "words.hex", "summary.json"],
+        )
+        self.assertEqual(
+            [digest for _, digest in self.seen["raw_files"]],
+            [
+                report.sha256_file(self._raw_file(stem, "raw.bin")),
+                report.sha256_file(self._raw_file(stem, "words.hex")),
+                report.sha256_file(summary_path),
+            ],
+        )
+
+    def test_exclusion_preserves_result_key_order(self):
+        result = {"_raw_bytes": b"", "raw_bits": 3, "_hex": "", "cond_words": 4, "alpha": 0.5}
+        self._mint(result, payloads=[], exclude=lambda k: k.startswith("_"))
+        summary = json.loads(self._raw_file(f"{self.DATE}-{self.SLUG}-01", "summary.json").read_text())
+        self.assertEqual(list(summary), ["raw_bits", "cond_words", "alpha"])
+
+    def test_default_str_serialization_covers_non_json_values(self):
+        result = {"path_value": Path("design/x.py"), "ratio": 0.25}
+        self._mint(result)
+        text = self._raw_file(f"{self.DATE}-{self.SLUG}-01", "summary.json").read_text()
+        self.assertEqual(
+            text, json.dumps({"path_value": "design/x.py", "ratio": 0.25}, indent=2) + "\n"
+        )
+
+    def test_minted_record_verifies(self):
+        def render_text(stem, raw_files):
+            rel = (
+                self.records_dir / report.RAW_DIRNAME / stem
+            ).relative_to(self.repo_root).as_posix()
+            return (
+                "---\n"
+                f"record: {stem}\n"
+                "raw:\n"
+                f"  path: {rel}\n"
+                "  files:\n"
+                + "".join(f"    - {name}  sha256:{digest}\n" for name, digest in raw_files)
+                + "---\n\n"
+                f"# {stem}\n"
+            )
+
+        result = {"payload": b"\xaa\x55", "keep": 1, "_drop": 0}
+        path = self._mint(
+            result,
+            payloads=[("payload.bin", b"\xaa\x55")],
+            exclude=lambda k: k.startswith("_"),
+            render_text=render_text,
+        )
+        self.assertEqual(report.verify_record_file(path, self.repo_root), [])
+
+
 class BehavioralFrontmatterTests(unittest.TestCase):
     def _render(self, **overrides) -> str:
         kwargs = dict(

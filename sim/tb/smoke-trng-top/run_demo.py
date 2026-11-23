@@ -28,10 +28,8 @@ Usage (from the repo root)::
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 TB_DIR = Path(__file__).resolve().parent
@@ -256,15 +254,10 @@ via `supersedes` (see `sim/README.md`).
 
 
 def write_record(result: dict, records_dir: Path, git: dict) -> Path:
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    def render(stem: str, raw_dir: Path) -> str:
-        summary = {k: v for k, v in result.items()}
-        (raw_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
-        raw_files = [(name, report.sha256_file(raw_dir / name)) for name in ("summary.json",)]
+    def text(stem: str, raw_files) -> str:
         return _frontmatter(stem, result, git, raw_files) + "\n" + _body(result)
 
-    return report.finalize_record(records_dir, date, SLUG, render)
+    return report.behavioral_record(records_dir, SLUG, result, render_text=text)
 
 
 def main(argv=None) -> int:
