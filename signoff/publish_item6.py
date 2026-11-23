@@ -38,7 +38,6 @@ descriptions) so a stale or hand-edited sample set can be refused.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -50,6 +49,8 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check  # noqa: E402
+
+from sim.harness.report import sha256_file  # noqa: E402
 
 REPO_ROOT = check.REPO_ROOT
 OUT = REPO_ROOT / "signoff" / "evidence" / "mc-yield"
@@ -70,10 +71,6 @@ CONTROL_DESCRIPTIONS = {
     "m_period_r1": "Ring 1 per-stage channel length (ro_lstv) increased from 2 to 3.4 µm.",
     "m_dtrip_v": "A -2.2 V input-referred offset (voff) shifts the sampler threshold above the supply rail.",
 }
-
-
-def sha256(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def report_path(stem: str, request: str) -> Path:
@@ -139,8 +136,8 @@ def build(klt: str) -> tuple[dict, dict[str, str]]:
     for dr_name, (stem, request, value) in CAMPAIGN.items():
         nominal = report_path(stem, request)
         control = report_path(stem, control_request(request))
-        pins[nominal.relative_to(REPO_ROOT).as_posix()] = sha256(nominal)
-        pins[control.relative_to(REPO_ROOT).as_posix()] = sha256(control)
+        pins[nominal.relative_to(REPO_ROOT).as_posix()] = "sha256:" + sha256_file(nominal)
+        pins[control.relative_to(REPO_ROOT).as_posix()] = "sha256:" + sha256_file(control)
         argv = [
             *shlex.split(klt), "yield-samples",
             nominal.relative_to(REPO_ROOT).as_posix(),
@@ -170,7 +167,7 @@ def publication_problems() -> list[str]:
         path = REPO_ROOT / rel
         if not path.exists():
             problems.append(f"{rel}: pinned report is gone")
-        elif sha256(path) != pin:
+        elif "sha256:" + sha256_file(path) != pin:
             problems.append(f"{rel}: pinned report hash differs from the tree")
     sample_set = json.loads((OUT / "sample_set.json").read_text())
     measurements = sample_set.get("measurements", [])
