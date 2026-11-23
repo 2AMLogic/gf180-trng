@@ -22,9 +22,7 @@ Four groups, matching ``sim/tests/test_conditioner.py``'s structure:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
-import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
@@ -36,10 +34,11 @@ TB_DIR = SIM_DIR / "tb" / "health-test-fault-injection"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "health_test"))
-sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate, _rtl_equiv
 
 import rct_apt as ht  # noqa: E402
 import fault_injection as source_model  # noqa: E402
+from _rtl_equiv import run_rtl_equivalence  # noqa: E402
 from _tool_gate import requires_tools  # noqa: E402
 
 RTL = REPO_ROOT / "design" / "health_test" / "rct_apt.v"
@@ -357,30 +356,16 @@ class RtlEquivalenceTests(unittest.TestCase):
     DEFAULT_DUT = dict(c_rct=81, c_apt=824, w=1024, startup_samples=1024)
 
     def _run_rtl(self, vectors):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            stim = tmp / "stim.mem"
-            out = tmp / "out.mem"
-            vvp = tmp / "sim.vvp"
-            stim.write_text(
-                "".join(f"{raw_bit:d}{raw_valid:d}{startup_req:d}\n" for raw_bit, raw_valid, startup_req in vectors)
-            )
-            subprocess.run(
-                ["iverilog", "-g2012", "-o", str(vvp), str(RTL), str(RTL_TB)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            proc = subprocess.run(
-                ["vvp", str(vvp), f"+stim={stim}", f"+out={out}", f"+nvec={len(vectors)}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
-            lines = out.read_text().split()
-            self.assertEqual(len(lines), len(vectors))
-            return [(line[0] == "1", line[1] == "1", line[2] == "1") for line in lines]
+        lines = run_rtl_equivalence(
+            [RTL, RTL_TB],
+            stimulus="".join(
+                f"{raw_bit:d}{raw_valid:d}{startup_req:d}\n"
+                for raw_bit, raw_valid, startup_req in vectors
+            ),
+            nvec=len(vectors),
+        )
+        self.assertEqual(len(lines), len(vectors))
+        return [(line[0] == "1", line[1] == "1", line[2] == "1") for line in lines]
 
     def _model_pulses(self, vectors):
         dut = ht.HealthTest(**self.DEFAULT_DUT)
