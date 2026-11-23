@@ -37,13 +37,22 @@ def rel(path: Path) -> str:
 
 
 def logical_lines(text: str) -> list[str]:
-    """Lines with `+` continuations joined onto the line they continue."""
+    """Lines with `+` continuations joined onto the line they continue.
+
+    A continuation attaches to the last non-comment line; full-line `*`
+    comments (column one) between a card and its `+` line stay separate
+    lines, as in `design/spice_text.py`. A `+` with no earlier non-comment
+    line has nothing to continue and is kept as its own line.
+    """
     out: list[str] = []
+    card: int | None = None  # index in `out` of the last non-comment line
     for raw in text.splitlines():
-        if raw.startswith("+") and out:
-            out[-1] += " " + raw[1:].strip()
-        else:
-            out.append(raw.rstrip())
+        if raw.startswith("+") and card is not None:
+            out[card] += " " + raw[1:].strip()
+            continue
+        out.append(raw.rstrip())
+        if not raw.startswith("*"):
+            card = len(out) - 1
     return out
 
 
