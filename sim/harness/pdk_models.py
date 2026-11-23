@@ -128,14 +128,24 @@ def identity_from_document(doc: dict) -> str:
 
 
 def _logical_lines(text: str) -> list[tuple[int, str]]:
-    """Join ``+`` continuation lines; return ``(first physical line, text)``."""
+    """Join ``+`` continuation lines; return ``(first physical line, text)``.
+
+    The anchor is the last non-comment line, not ``out[-1]``: a ``*`` comment
+    interleaved between a card and its continuation must not swallow the
+    continuation's tokens (#1043). Blank lines keep their pre-fix role as
+    anchors, and an orphan continuation (no card before it, comments aside)
+    stays its own entry.
+    """
     out: list[tuple[int, str]] = []
+    anchor: int | None = None
     for number, raw in enumerate(text.splitlines(), start=1):
         stripped = raw.strip()
-        if stripped.startswith("+") and out:
-            start, prior = out[-1]
-            out[-1] = (start, prior + " " + stripped[1:])
+        if stripped.startswith("+") and anchor is not None:
+            start, prior = out[anchor]
+            out[anchor] = (start, prior + " " + stripped[1:])
             continue
+        if not stripped.startswith("*"):
+            anchor = len(out)
         out.append((number, stripped))
     return out
 

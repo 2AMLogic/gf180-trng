@@ -9,6 +9,7 @@ Synthetic PDK fixtures only -- no ngspice, no installed PDK.
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import io
 import json
 import sys
@@ -66,6 +67,26 @@ def make_fixture_pdk(root: Path, *, sources: str = "open_pdks deadbeef\n",
     (ng / "cards" / "mos_card.ngspice").write_text(card)
     (ng / "mim_ss_only.ngspice").write_text(_section("mim", " .param mim=1\n"))
     return Pdk(path=root, variant=root.name, source="test")
+
+
+class LogicalLinesTests(unittest.TestCase):
+    def test_continuation_folds_onto_last_non_comment_line(self):
+        self.assertEqual(
+            pdk_models._logical_lines("* c\n.model n\n* vendor\n+ vto=1\n"),
+            [(1, "* c"), (2, ".model n  vto=1"), (3, "* vendor")],
+        )
+
+    def test_indented_continuation_still_folds(self):
+        self.assertEqual(
+            pdk_models._logical_lines(".model n\n   + vto=1\n"),
+            [(1, ".model n  vto=1")],
+        )
+
+    def test_orphan_continuation_after_only_comments_stays_separate(self):
+        self.assertEqual(
+            pdk_models._logical_lines("* vendor\n+ vto=1\n"),
+            [(1, "* vendor"), (2, "+ vto=1")],
+        )
 
 
 class ManifestIdentityTests(unittest.TestCase):
@@ -220,6 +241,37 @@ class ManifestIdentityTests(unittest.TestCase):
         self.assertIn("libs.tech/ngspice/loop_a.ngspice", dict(m.files))
         self.assertIn("libs.tech/ngspice/loop_b.ngspice", dict(m.files))
         self.assertNotIn("libs.tech/ngspice/commented_out.ngspice", dict(m.files))
+
+    def test_comment_split_include_yields_complete_manifest(self):
+        pdk = make_fixture_pdk(self.base / "gf180mcuD")
+        ng = pdk.path / "libs.tech" / "ngspice"
+        (ng / "design.ngspice").write_text(
+            "* header\n.include\n* vendor note\n+ child.ngspice\n"
+        )
+        (ng / "child.ngspice").write_text("* child\n")
+        m = self._manifest(pdk)
+        self.assertTrue(m.complete, m.problems)
+        files = dict(m.files)
+        self.assertIn("libs.tech/ngspice/child.ngspice", files)
+        self.assertEqual(
+            files["libs.tech/ngspice/child.ngspice"],
+            hashlib.sha256(b"* child\n").hexdigest(),
+        )
+        entry_hash = files["libs.tech/ngspice/design.ngspice"]
+        (ng / "child.ngspice").unlink()
+        missing = self._manifest(pdk)
+        self.assertFalse(missing.complete)
+        self.assertIn(
+            "missing file libs.tech/ngspice/child.ngspice "
+            "(referenced from libs.tech/ngspice/design.ngspice:2)",
+            missing.problems,
+        )
+        (ng / "child.ngspice").write_text("* child\n")
+        (ng / "design.ngspice").write_text("* header\n.include\n+ child.ngspice\n")
+        without_comment = self._manifest(pdk)
+        self.assertNotEqual(
+            entry_hash, dict(without_comment.files)["libs.tech/ngspice/design.ngspice"]
+        )
 
     def test_document_identity_round_trips(self):
         m = self._manifest(make_fixture_pdk(self.base / "gf180mcuD"))

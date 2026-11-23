@@ -181,7 +181,7 @@
   "gate_scripts": [
     {
       "path": "design/netlist.py",
-      "sha256": "sha256:54bc98c12d4fc397412c15c9b8e96a471298e5b2d561026c9fdb2fee9faeb569"
+      "sha256": "sha256:c8a0607f52e81dcdee40910228d22eebb0f23f7c60e480a0083c15c96be0d72c"
     }
   ]
 }

@@ -106,6 +106,35 @@ class JoinContinuationTests(unittest.TestCase):
     def test_leading_continuation_without_a_predecessor_is_kept(self):
         self.assertEqual(netlist._join_continuations(["+ orphan"]), ["+ orphan"])
 
+    def test_continuation_attaches_to_last_card_across_a_comment(self):
+        joined = netlist._join_continuations(
+            [".model nfet nmos", "* vendor note", "+ vto=0.7"]
+        )
+        self.assertEqual(joined, [".model nfet nmos vto=0.7", "* vendor note"])
+
+    def test_comment_split_successive_continuations_preserve_token_order(self):
+        joined = netlist._join_continuations(
+            [".model nfet nmos", "* note 1", "* note 2", "+ vto=0.7", "+ lambda=0.1"]
+        )
+        self.assertEqual(
+            netlist._tokens(joined[0]),
+            netlist._tokens(".model nfet nmos vto=0.7 lambda=0.1"),
+        )
+        self.assertEqual(joined[1:], ["* note 1", "* note 2"])
+
+    def test_indented_comment_and_continuation_are_recognized(self):
+        joined = netlist._join_continuations(
+            [".model nfet nmos", "  * vendor note", "  + vto=0.7"]
+        )
+        self.assertEqual(joined, [".model nfet nmos vto=0.7", "  * vendor note"])
+
+    def test_orphan_continuation_after_only_comments_stays_separate(self):
+        joined = netlist._join_continuations(["* vendor note", "+ vto=0.7"])
+        self.assertEqual(joined, ["* vendor note", "+ vto=0.7"])
+
+    def test_blank_line_still_receives_a_continuation(self):
+        self.assertEqual(netlist._join_continuations(["* c", "", "+ x"]), ["* c", " x"])
+
 
 class NormalizeTests(unittest.TestCase):
     def test_top_subckt_wrapper_is_restored(self):
@@ -130,6 +159,10 @@ class NormalizeTests(unittest.TestCase):
         comment = "* " + "x" * (netlist.WRAP_COLUMN + 40)
         out = netlist._normalize(comment + "\n")
         self.assertEqual(out.strip(), comment)
+
+    def test_comment_between_card_and_continuation_survives_normalize(self):
+        out = netlist._normalize(".model nfet nmos\n* vendor note\n+ vto=0.7\n")
+        self.assertEqual(out, ".model nfet nmos vto=0.7\n* vendor note\n")
 
 
 class SchematicParamsTests(unittest.TestCase):
