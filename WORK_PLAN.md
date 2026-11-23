@@ -4,7 +4,7 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-20T20:53:30Z (snapshot; compare against live labels)_
+_Generated: 2026-11-21T05:23:42Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -28,7 +28,6 @@ _None._
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
 - **#717**: Digital tapcell pitch: configure in build.py, re-place, and re-measure tap distance (LU.3/LU.4 placement unit of #487)
-- **#1028**: gitignore: .loom/account-ranking.codex (daemon fleet state) is untracked and fails check-main-clean
 
 ## In Progress
 
@@ -39,13 +38,21 @@ Issues currently being built (`loom:building`).
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7
 - **#1025**: T1 item 6 (analog): size the mismatch Monte Carlo campaign to the klt yield target and declare a seeded negative control
 - **#1026**: T1 item 6 (digital): commit the hash-bound not_applicable statement against the pinned 0.8.0 grader, or record the mixed-signal refusal upstream
+- **#1030**: Remove the obsolete no-waypoints claim from the ring layout README
+- **#1032**: Track the klt grader pin: re-grade against a released 0.9.x, and retire the item-6 digital spec projection when the pin moves
+- **#1035**: Remove obsolete empty-region and DRC-clean claims from the floorplan builder docstring
+- **#1036**: Reuse the SPICE continuation helper so floorplan inventory counts split instances
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#992**: ci: build the fleet-pinned xschem 3.4.7 from source in pdk-nightly *(held)*
-- **#1029**: feat(signoff): bind the item 6 digital not_applicable statement and record its refusal
+- **#1029**: feat(signoff): bind the item 6 digital not_applicable statement and record its refusal *(held)*
+- **#1033**: docs: drop the obsolete no-waypoint-router claim from the rings README
+- **#1037**: fix: count comment-split instances in floorplan inventory via shared joiner
+- **#1038**: docs: replace stale empty-region and DRC-clean claims in floorplan docstring
+- **#1040**: spec: record DR-0036 keeping the grader pin at klt 0.8.0 over released 0.9.2
 
 ## Approved (Awaiting Merge)
 
@@ -71,14 +78,14 @@ Issues carrying `loom:curated`.
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
 - **#1025**: T1 item 6 (analog): size the mismatch Monte Carlo campaign to the klt yield target and declare a seeded negative control *(curated)*
 - **#1026**: T1 item 6 (digital): commit the hash-bound not_applicable statement against the pinned 0.8.0 grader, or record the mixed-signal refusal upstream *(curated)*
-- **#1028**: gitignore: .loom/account-ranking.codex (daemon fleet state) is untracked and fails check-main-clean *(curated)*
+- **#1032**: Track the klt grader pin: re-grade against a released 0.9.x, and retire the item-6 digital spec projection when the pin moves *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#880**: Collapse the four copy-pasted recorded-verdict gates in sim/tools into one helper (they have drifted) *(hermit)* *(held)*
 - **#889**: Collapse the six duplicated write_record callbacks in sim/tb behind one sim/harness/report.py helper (reverses #888's scope boundary) *(hermit)* *(held)*
 - **#897**: Consolidate four divergent copies of the committed-PDK-provenance rule into layout/_klt.py *(hermit)* *(held)*
-- **#1030**: Remove the obsolete no-waypoints claim from the ring layout README *(hermit)*
+- **#1039**: Retire the empty floorplan assembly inventory gap table *(hermit)*
 
 ## Epics
 
@@ -91,9 +98,9 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 2 |
-| In Progress (`loom:building`) | 5 |
-| PRs awaiting review | 2 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
+| In Progress (`loom:building`) | 9 |
+| PRs awaiting review | 6 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 15 |
 | Architect / Hermit proposals | 4 |
