@@ -160,13 +160,19 @@ ISOLATION_CHANNEL_UM = 20.0
 GUARD_RING_WIDTH_UM = 1.0
 GUARD_CONTACT_PITCH_UM = 2.0
 
-#: Committed, real, DRC-clean assembled geometry that sizes a region's
+#: Committed, real assembled geometry that sizes a region's
 #: guarded footprint below, instead of the area/utilisation estimate's
 #: sqrt(area) square (issue #119, Option A for `ring1`/`ring2`; issue #135,
 #: Option A for `combiner_sampler`). `ring1` and `ring2` share the same cell
 #: inventory and the same row layout (`layout/rings/ro_ring11/build.py`), so
 #: both bounding boxes happen to be identical, but each is read from its own
 #: committed stream rather than assumed equal.
+#:
+#: Each assembled region carries its own standalone DRC verdict
+#: (`ring_standalone` per region, `reports/ring_fit.json`); this build
+#: enforces only that composition introduces nothing beyond those
+#: baselines (`drc_new_violations_from_composition`,
+#: `reports/floorplan.drc.json`).
 #:
 #: `combiner_sampler` (2x `ro_buf` + `xor2` + 4x `sampler_dff`, `layout/
 #: blocks/combiner_sampler/combiner_sampler.gds`, issues #134 and #151) is
