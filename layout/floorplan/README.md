@@ -814,13 +814,15 @@ pre-synthesis prediction it was.
   in the repository, already guarded by `sim/tests/test_power_rollups.py`.
 - Placement utilisation is reported at both 60 % and 80 %, per [DR-0008]'s
   convention; the floorplan geometry is built at 60 %.
-- **`ring1`/`ring2`/`combiner_sampler`'s guarded footprint is not from this
-  model.** Every other region's guarded footprint is sized from this
-  section's own sqrt(cell_area / utilisation) square, same as always —
-  `ring1`/`ring2` (issue #119) and `combiner_sampler` (issue #135) are the
-  exceptions: once each had committed, DRC-clean, LVS-matching assembled
-  geometry, its real bounding box (read from the committed GDS via
-  `klt stats`) replaced the square estimate for that region only.
+- **No region's guarded footprint is from this model.** Every declared
+  region's guarded footprint is sized from its own committed, DRC-clean,
+  LVS-matching assembled geometry's real bounding box (read from the
+  committed GDS via `klt stats`) — `ring1`/`ring2` since issue #119,
+  `combiner_sampler` since #135, `digital` since #209/#210. A region
+  without a mapping in `ASSEMBLED_RING_GDS` is a build error that names
+  the region (issue #1045 retired the sqrt(cell_area / utilisation)
+  square such a region used to be sized from; the estimate itself is
+  still published per region, under `cell_area_um2`/`placed_area_um2`).
     - `ring1`/`ring2`: `layout/rings/ro_ring11/` (#110/#120) and
       `layout/rings/ro_ring11_ring2/` (#118), real bbox **78.9 × 4.75 µm**
       each — the estimate would have given 19.37 × 19.37 µm each, a
@@ -836,7 +838,7 @@ pre-synthesis prediction it was.
       as #209 anticipated).
 
   (See `region.footprint_source` in [`reports/area.json`](reports/area.json)
-  for the exact numbers and which regions use which method.) Each region's
+  for the exact numbers and each footprint's provenance.) Each region's
   *guarded* (outer) footprint is still sized from that same real bbox
   (**80.9 × 6.75 µm** guarded for each ring, **280.9 × 17.64 µm** guarded for
   `combiner_sampler`, `GUARD_RING_WIDTH_UM` = 1.0 µm in on every side) —
