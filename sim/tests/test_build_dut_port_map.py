@@ -18,6 +18,8 @@ bd = load_module_from_path(
     "build_dut", ROOT / "sim" / "tb" / "ro-ring11-pex" / "build_dut.py"
 )
 
+from sim.tools import pex_dut  # noqa: E402
+
 RING = [f"a|y{'' if i == 0 else '$' + str(i)}" for i in range(11)]
 NAMED = ["en", "vddr", "vss"]
 
@@ -86,6 +88,41 @@ class WellFormed(unittest.TestCase):
         gates = [(RING[k], 100.0 * k) for k in range(11)]
         got = bd.extraction_port_map(netlist(header_text=header, gates=gates))
         self.assertEqual(got, bd.RING_NODES + NAMED)
+
+
+class CommentSplitContinuation(unittest.TestCase):
+    """A full-line `*` comment between a card and its `+` line (#1063)."""
+
+    HDR = ".SUBCKT dut a b\n* note\n+ c d\n"
+
+    def test_logical_lines_keeps_comment_and_folds_onto_card(self):
+        self.assertEqual(
+            pex_dut.logical_lines(self.HDR), [".SUBCKT dut a b c d", "* note"]
+        )
+
+    def test_multiple_comments_and_successive_continuations_keep_order(self):
+        text = ".SUBCKT dut a b\n* x\n+ c\n* y\n* z\n+ d\n"
+        self.assertEqual(
+            pex_dut.logical_lines(text), [".SUBCKT dut a b c d", "* x", "* y", "* z"]
+        )
+
+    def test_continuation_after_only_comments_stays_separate(self):
+        self.assertEqual(
+            pex_dut.logical_lines("* c1\n* c2\n+ orphan\n"), ["* c1", "* c2", "+ orphan"]
+        )
+
+    def test_dut_header_ports_across_comment(self):
+        self.assertEqual(
+            pex_dut.dut_header(self.HDR, "dut", Path("dut.spice")), ["a", "b", "c", "d"]
+        )
+
+    def test_testbench_xdut_split_by_comment(self):
+        with tempfile.TemporaryDirectory() as d:
+            tb = Path(d) / "tb.spice"
+            tb.write_text("xdut a b\n* note\n+ c d dut\n")
+            pex_dut.check_testbench(["a", "b", "c", "d"], "dut", tb)
+            with self.assertRaises(pex_dut.BuildError):
+                pex_dut.check_testbench(["a", "b", "d", "c"], "dut", tb)
 
 
 class Refusals(unittest.TestCase):

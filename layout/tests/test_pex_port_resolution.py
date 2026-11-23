@@ -39,6 +39,8 @@ sys.path.insert(0, str(REPO_ROOT))
 from layout.pex.build import (  # noqa: E402
     FlowError,
     _gate_nodes,
+    _noise_tapped,
+    _subckt_header,
     _match_positional,
     _ntap_port_order,
     _positional_args,
@@ -238,6 +240,42 @@ class PortOrderTests(unittest.TestCase):
             self.assertNotIn(name, order)
             self.assertNotIn(f"{name}__rx", order)
         self.assertEqual(len(order), 2 * TAP_COUNT - 1)
+
+
+class CommentSplitHeaderTests(unittest.TestCase):
+    """A full-line `*` comment inside a `.SUBCKT` header (#1063)."""
+
+    BODY = "X1 dd g ss bb nfet_03v3\nR1 g c 1\nR2 dd c 1\n.ENDS dut\n"
+    PLAIN = ".SUBCKT dut a b\n+ c d\n" + BODY
+    SPLIT = ".SUBCKT dut a b\n* note\n+ c d\n" + BODY
+
+    def test_comment_is_skipped_and_not_indexed(self):
+        self.assertEqual(
+            _subckt_header(self.SPLIT, "dut"), (["a", "b", "c", "d"], [0, 2])
+        )
+
+    def test_several_comments_and_continuations_keep_order(self):
+        text = ".SUBCKT dut a\n* x\n+ b\n* y\n* z\n+ c d\n" + self.BODY
+        self.assertEqual(
+            _subckt_header(text, "dut"), (["a", "b", "c", "d"], [0, 2, 5])
+        )
+
+    def test_blank_line_or_new_card_ends_header(self):
+        self.assertEqual(
+            _subckt_header(".SUBCKT dut a b\n\n+ c\n", "dut"), (["a", "b"], [0])
+        )
+        text = ".SUBCKT dut a b\n* note\nR1 a b 1\n+ c d\n"
+        self.assertEqual(_subckt_header(text, "dut"), (["a", "b"], [0]))
+
+    def test_noise_tap_matches_comment_free_control(self):
+        control = _noise_tapped(self.PLAIN, "dut", [2])
+        got = _noise_tapped(self.SPLIT, "dut", [2])
+        self.assertEqual(got, control.replace("\n", "\n* note\n", 1))
+        self.assertEqual(got.count("* note"), 1)
+        self.assertEqual(got.count("+ c d"), 0)
+        self.assertIn(".SUBCKT dut_ntap a b c d rx0\n", got)
+        self.assertIn("R1 g rx0 1", got)
+        self.assertIn("R2 dd c 1", got)
 
 
 if __name__ == "__main__":

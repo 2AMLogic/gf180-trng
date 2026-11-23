@@ -855,7 +855,8 @@ _RING_TAP_COUNT = 11
 
 def _subckt_header(text: str, name: str) -> tuple[list[str], list[int]]:
     """`(port tokens, source line indexes)` for one raw `.SUBCKT` header,
-    continuation lines folded."""
+    continuation lines folded. Column-one `*` comments between continuation
+    lines are skipped and not indexed; a blank line or card ends the header."""
     lines = text.splitlines()
     for i, line in enumerate(lines):
         match = re.match(rf"^\.SUBCKT\s+{re.escape(name)}\s*(.*)$", line, re.IGNORECASE)
@@ -864,9 +865,12 @@ def _subckt_header(text: str, name: str) -> tuple[list[str], list[int]]:
         tokens = match.group(1).split()
         idx = [i]
         j = i + 1
-        while j < len(lines) and lines[j].startswith("+"):
-            tokens += lines[j][1:].split()
-            idx.append(j)
+        while j < len(lines) and lines[j].startswith(("+", "*")):
+            # A full-line comment between header lines is skipped, not
+            # indexed: the caller must leave it in place.
+            if lines[j].startswith("+"):
+                tokens += lines[j][1:].split()
+                idx.append(j)
             j += 1
         return tokens, idx
     raise FlowError(f"no `.SUBCKT {name}` header in the extracted netlist")
