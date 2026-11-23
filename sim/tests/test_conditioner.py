@@ -16,9 +16,7 @@ Three groups:
 from __future__ import annotations
 
 import hashlib
-import subprocess
 import sys
-import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
@@ -30,11 +28,12 @@ TB_DIR = SIM_DIR / "tb" / "conditioner-crc32"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(REPO_ROOT / "design" / "conditioner"))
-sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate, _rtl_equiv
 
 import crc32_conditioner as cond  # noqa: E402
 import source_model  # noqa: E402
 import sp800_90b  # noqa: E402
+from _rtl_equiv import run_rtl_equivalence  # noqa: E402
 from _tool_gate import requires_tools  # noqa: E402
 
 RTL = REPO_ROOT / "design" / "conditioner" / "crc32_conditioner.v"
@@ -264,34 +263,8 @@ class RtlEquivalenceTests(unittest.TestCase):
     """
 
     def _run_rtl(self, vectors):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            stim = tmp / "stim.mem"
-            out = tmp / "out.hex"
-            vvp = tmp / "sim.vvp"
-            stim.write_text(_stimulus(vectors))
-            subprocess.run(
-                ["iverilog", "-g2012", "-o", str(vvp), str(RTL), str(RTL_TB)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            proc = subprocess.run(
-                [
-                    "vvp",
-                    str(vvp),
-                    f"+stim={stim}",
-                    f"+out={out}",
-                    f"+nvec={len(vectors)}",
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
-            if not out.exists():
-                return []
-            return [int(line, 16) for line in out.read_text().split()]
+        lines = run_rtl_equivalence([RTL, RTL_TB], stimulus=_stimulus(vectors), nvec=len(vectors))
+        return [int(line, 16) for line in lines]
 
     def test_rtl_matches_model_on_a_plain_stream(self):
         bits = _bits("rtl-plain", 256 * 6, seed=31)

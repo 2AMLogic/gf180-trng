@@ -28,9 +28,7 @@ from __future__ import annotations
 
 import random
 import re
-import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -45,11 +43,12 @@ sys.path.insert(0, str(TOP_DIR))
 sys.path.insert(0, str(DESIGN_DIR / "conditioner"))
 sys.path.insert(0, str(DESIGN_DIR / "health_test"))
 sys.path.insert(0, str(IFACE_DIR))
-sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate, _rtl_equiv
 
 import regmap  # noqa: E402
 import rct_apt as ht  # noqa: E402
 import trng_top as top  # noqa: E402
+from _rtl_equiv import compile_and_run_vvp, run_rtl_equivalence  # noqa: E402
 from _tool_gate import requires_tools  # noqa: E402
 
 TRNG_TOP_SPICE = DESIGN_DIR / "trng_top.spice"
@@ -354,21 +353,10 @@ class RtlWiringTests(unittest.TestCase):
     with no unresolved port or width mismatch."""
 
     def test_trng_top_compiles_and_elaborates(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            vvp = Path(tmp) / "trng_top.vvp"
-            subprocess.run(
-                [
-                    "iverilog", "-g2012", "-I", str(IFACE_DIR),
-                    "-o", str(vvp),
-                    str(TOP_V), str(CONDITIONER_V), str(HEALTH_TEST_V),
-                    str(RING_LIVENESS_V), str(INTERFACE_V),
-                ],
-                check=True, capture_output=True, text=True,
-            )
-            proc = subprocess.run(
-                ["vvp", str(vvp)], check=True, capture_output=True, text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
+        compile_and_run_vvp(
+            [TOP_V, CONDITIONER_V, HEALTH_TEST_V, RING_LIVENESS_V, INTERFACE_V],
+            include_dirs=[IFACE_DIR],
+        )
 
 
 def _pack_stim_word(vector) -> int:
@@ -473,30 +461,16 @@ class AssembledCrossCheckTests(unittest.TestCase):
     """
 
     def _run_rtl(self, vectors):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            stim = tmp / "stim.mem"
-            out = tmp / "out.txt"
-            vvp = tmp / "sim.vvp"
-            stim.write_text(_stimulus_hex(vectors))
-            subprocess.run(
-                [
-                    "iverilog", "-g2012", "-I", str(IFACE_DIR), "-o", str(vvp),
-                    str(TOP_V), str(CONDITIONER_V), str(HEALTH_TEST_V),
-                    str(RING_LIVENESS_V), str(INTERFACE_V), str(CROSSCHECK_TB),
-                ],
-                check=True, capture_output=True, text=True,
-            )
-            proc = subprocess.run(
-                ["vvp", str(vvp), f"+stim={stim}", f"+out={out}", f"+nvec={len(vectors)}"],
-                check=True, capture_output=True, text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
-            trace = []
-            for line in out.read_text().splitlines():
-                rdata_hex, sdata_hex, flags = line.split()
-                trace.append((int(rdata_hex, 16), int(sdata_hex, 16), flags[0] == "1", flags[1] == "1"))
-            return trace
+        trace = []
+        for line in run_rtl_equivalence(
+            [TOP_V, CONDITIONER_V, HEALTH_TEST_V, RING_LIVENESS_V, INTERFACE_V, CROSSCHECK_TB],
+            stimulus=_stimulus_hex(vectors),
+            nvec=len(vectors),
+            include_dirs=[IFACE_DIR],
+        ):
+            rdata_hex, sdata_hex, flags = line.split()
+            trace.append((int(rdata_hex, 16), int(sdata_hex, 16), flags[0] == "1", flags[1] == "1"))
+        return trace
 
     def test_rtl_matches_model_cycle_by_cycle_through_startup_and_multiple_conditioner_blocks(self):
         # 1900 cycles clears the 1024-sample start-up window plus several

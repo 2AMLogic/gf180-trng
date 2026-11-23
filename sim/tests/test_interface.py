@@ -22,9 +22,7 @@ Four groups:
 
 from __future__ import annotations
 
-import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -35,10 +33,11 @@ TB_DIR = SIM_DIR / "tb" / "interface-regfile"
 
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(IFACE_DIR))
-sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate, _rtl_equiv
 
 import regmap  # noqa: E402
 import trng_interface as iface  # noqa: E402
+from _rtl_equiv import run_rtl_equivalence  # noqa: E402
 from _tool_gate import requires_tools  # noqa: E402
 
 RTL = IFACE_DIR / "trng_interface.v"
@@ -939,32 +938,20 @@ class RtlEquivalenceTests(unittest.TestCase):
     normative for the RTL') a checkable statement rather than a preference."""
 
     def _run_rtl(self, vectors):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            stim = tmp / "stim.hex"
-            out = tmp / "out.txt"
-            vvp = tmp / "sim.vvp"
-            stim.write_text("".join(f"{encode_vector(v):019x}\n" for v in vectors))
-            subprocess.run(
-                # -I: trng_interface.v `include`s the generated regmap header.
-                ["iverilog", "-g2012", "-I", str(IFACE_DIR),
-                 "-o", str(vvp), str(RTL), str(RTL_TB)],
-                check=True, capture_output=True, text=True,
+        lines = run_rtl_equivalence(
+            [RTL, RTL_TB],
+            stimulus="".join(f"{encode_vector(v):019x}\n" for v in vectors),
+            nvec=len(vectors),
+            # -I: trng_interface.v `include`s the generated regmap header.
+            include_dirs=[IFACE_DIR],
+        )
+        rows = []
+        for line in lines:
+            rdata, sdata, flags = line.split()
+            rows.append(
+                (int(rdata, 16), int(sdata, 16)) + tuple(int(c) for c in flags)
             )
-            proc = subprocess.run(
-                ["vvp", str(vvp), f"+stim={stim}", f"+out={out}", f"+nvec={len(vectors)}"],
-                check=True, capture_output=True, text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
-            rows = []
-            for line in out.read_text().split("\n"):
-                if not line.strip():
-                    continue
-                rdata, sdata, flags = line.split()
-                rows.append(
-                    (int(rdata, 16), int(sdata, 16)) + tuple(int(c) for c in flags)
-                )
-            return rows
+        return rows
 
     def _assert_matches(self, vectors, expect=("str_valid",)):
         rtl = self._run_rtl(vectors)

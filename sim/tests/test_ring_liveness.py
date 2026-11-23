@@ -17,9 +17,7 @@ Three groups, matching ``sim/tests/test_health_test.py``'s structure:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -31,11 +29,12 @@ HT_DIR = REPO_ROOT / "design" / "health_test"
 sys.path.insert(0, str(SIM_DIR))
 sys.path.insert(0, str(TB_DIR))
 sys.path.insert(0, str(HT_DIR))
-sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate
+sys.path.append(str(Path(__file__).resolve().parent))  # sim/tests: _tool_gate, _rtl_equiv
 
 import rct_apt as ht  # noqa: E402
 import ring_liveness as rl  # noqa: E402
 import ring_source_model as source_model  # noqa: E402
+from _rtl_equiv import run_rtl_equivalence  # noqa: E402
 from _tool_gate import requires_tools  # noqa: E402
 
 RTL = HT_DIR / "ring_liveness.v"
@@ -190,36 +189,19 @@ class RtlEquivalenceTests(unittest.TestCase):
         self.assertEqual(int(match.group(1)), ht.c_rct(ht.H0))
 
     def _run_rtl(self, vectors):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            stim = tmp / "stim.mem"
-            out = tmp / "out.mem"
-            vvp = tmp / "sim.vvp"
-            stim.write_text(
-                "".join(f"{r1:d}{r0:d}\n" for r0, r1 in vectors)
-            )
-            subprocess.run(
-                ["iverilog", "-g2012", "-o", str(vvp), str(RTL), str(RTL_TB)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            proc = subprocess.run(
-                ["vvp", str(vvp), f"+stim={stim}", f"+out={out}", f"+nvec={len(vectors)}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotIn("FATAL", proc.stdout, proc.stdout)
-            lines = out.read_text().split()
-            self.assertEqual(len(lines), len(vectors))
-            # line is "SS A": bit0=ring_stuck[1], bit1=ring_stuck[0], bit2=ring_stuck_any
-            # (tb_rtl_equivalence.v's %b%b on {ring_stuck, ring_stuck_any}).
-            # Re-order to (ring0_stuck, ring1_stuck) to match the model's
-            # step()'s (stuck[0], stuck[1]) convention.
-            return [
-                ((line[1] == "1", line[0] == "1"), line[2] == "1") for line in lines
-            ]
+        lines = run_rtl_equivalence(
+            [RTL, RTL_TB],
+            stimulus="".join(f"{r1:d}{r0:d}\n" for r0, r1 in vectors),
+            nvec=len(vectors),
+        )
+        self.assertEqual(len(lines), len(vectors))
+        # line is "SS A": bit0=ring_stuck[1], bit1=ring_stuck[0], bit2=ring_stuck_any
+        # (tb_rtl_equivalence.v's %b%b on {ring_stuck, ring_stuck_any}).
+        # Re-order to (ring0_stuck, ring1_stuck) to match the model's
+        # step()'s (stuck[0], stuck[1]) convention.
+        return [
+            ((line[1] == "1", line[0] == "1"), line[2] == "1") for line in lines
+        ]
 
     def _model_pulses(self, vectors):
         dut = rl.RingLivenessMonitor(n_rings=self.N_RINGS, c_live=self.C_LIVE)
