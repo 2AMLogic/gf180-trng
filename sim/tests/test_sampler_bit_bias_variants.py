@@ -287,6 +287,7 @@ class CheckGateTests(CorpusTestCase):
         code, _, err = self.run_main("--check")
         self.assertEqual(code, 1)
         self.assertIn("bit-effect", err)
+        self.assertIn("PHASE-LOCKED", err)
 
     def test_check_fails_on_an_unsettled_sampled_level(self) -> None:
         self.write_corpus(per_rate={"generic": {"static": {"rail_dev": 0.2}}})
@@ -306,12 +307,22 @@ class CheckGateTests(CorpusTestCase):
         with mock.patch.object(sb, "RECORDED_VERDICT", "bit-effect"):
             self.assertEqual(self.run_main("--check")[0], 1)
 
-    def test_ungated_mode_never_fails_on_the_verdict(self) -> None:
+    def test_unset_recorded_verdict_fails_the_check_even_on_a_conflict(self) -> None:
         self.write_corpus(per_rate={"integer": {"clocked": {"ppc1": 4.0001}}})
         with mock.patch.object(sb, "RECORDED_VERDICT", None):
-            code, out, _ = self.run_main("--check")
-        self.assertEqual(code, 0)
-        self.assertIn("not gated", out)
+            code, out, err = self.run_main("--check")
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR: the recorded verdict for sampler bit bias is unset", err)
+        self.assertNotIn("FAIL:", err)
+        self.assertNotIn("OK", out)
+
+    def test_unset_recorded_verdict_fails_the_check_on_matching_evidence(self) -> None:
+        self.write_corpus()
+        with mock.patch.object(sb, "RECORDED_VERDICT", None):
+            code, out, err = self.run_main("--check")
+        self.assertEqual(code, 2)
+        self.assertIn("sampler bit bias is unset", err)
+        self.assertNotIn("OK", out)
 
     def test_missing_records_are_an_error(self) -> None:
         code, _, err = self.run_main("--check")

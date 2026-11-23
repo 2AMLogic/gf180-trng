@@ -73,6 +73,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _record_parsing import check_recorded_verdicts  # noqa: E402
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
     VariantBase,
@@ -421,26 +422,9 @@ def main(argv: list[str] | None = None) -> int:
     print(rationale)
 
     if args.check:
-        if RECORDED_VERDICT is None:
-            print(
-                "\nERROR: RECORDED_VERDICT is unset, so --check has nothing to gate "
-                "against. Set it to the verdict the committed records support.",
-                file=sys.stderr,
-            )
-            return 2
-        if verdict != RECORDED_VERDICT:
-            print(
-                f"\nFAIL: the committed records now classify as {verdict!r}, but the "
-                f"conclusion recorded in sim/characterization-array-ring-coupling.md "
-                f"is {RECORDED_VERDICT!r}. Either a record changed or a variant was "
-                "re-run; update the recorded conclusion to match the evidence "
-                "(and this constant with it) rather than leaving a stale one.",
-                file=sys.stderr,
-            )
-            return 1
-        print(
-            f"\nOK: the committed records still classify as {verdict!r}, the "
-            "conclusion sim/characterization-array-ring-coupling.md records."
+        return check_recorded_verdicts(
+            ((verdict, RECORDED_VERDICT, "the array-coupling question"),),
+            "sim/characterization-array-ring-coupling.md",
         )
     return 0
 

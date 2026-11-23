@@ -89,7 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _record_parsing import latest_current_record  # noqa: E402
+from _record_parsing import check_recorded_verdicts, latest_current_record  # noqa: E402
 from starved_cell_jitter_energy import (  # noqa: E402
     Record,
     VariantBase,
@@ -555,44 +555,12 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.check:
-        failed = False
-        for got, recorded, what in (
-            (verdict, RECORDED_SHIPPED_VERDICT, "the shipped-array residual"),
-            (xsb_verdict, RECORDED_XSB_VERDICT, "the xsb-on-xo path"),
-        ):
-            if recorded is None:
-                print(
-                    f"\nERROR: the recorded verdict for {what} is unset, so --check has "
-                    "nothing to gate against.",
-                    file=sys.stderr,
-                )
-                return 2
-            if got is None:
-                print(
-                    f"\nFAIL: {what} has a recorded conclusion ({recorded!r}) but the "
-                    "records that support it are no longer on file at this corner. A "
-                    "conclusion whose evidence has gone is not a conclusion; restore the "
-                    "records or withdraw it.",
-                    file=sys.stderr,
-                )
-                failed = True
-                continue
-            if got != recorded:
-                print(
-                    f"\nFAIL: the committed records now classify {what} as {got!r}, but the "
-                    f"conclusion recorded in "
-                    f"sim/characterization-shipped-array-tap-phase.md is {recorded!r}. "
-                    "Either a record changed or a variant was re-run; update the recorded "
-                    "conclusion to match the evidence (and this constant with it) rather "
-                    "than leaving a stale one.",
-                    file=sys.stderr,
-                )
-                failed = True
-        if failed:
-            return 1
-        print(
-            f"\nOK: the committed records still classify as {verdict!r} / {xsb_verdict!r}, "
-            "the conclusions sim/characterization-shipped-array-tap-phase.md records."
+        return check_recorded_verdicts(
+            (
+                (verdict, RECORDED_SHIPPED_VERDICT, "the shipped-array residual"),
+                (xsb_verdict, RECORDED_XSB_VERDICT, "the xsb-on-xo path"),
+            ),
+            "sim/characterization-shipped-array-tap-phase.md",
         )
     return 0
 
