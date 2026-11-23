@@ -214,6 +214,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import (  # noqa: E402
     FlowError,
+    committed_pdk_provenance,
     _run_klt,
     klt_origin,
     klt_version,
@@ -328,9 +329,8 @@ def _committed_view(payload: dict) -> dict:
     `provenance.pdk.source` is `klayout_tools.pdk.find_pdk`'s own record of
     *how* it found the PDK on this machine (a search root, an env var, an
     explicit `--pdk-root`) -- machine-local, not part of what was verified.
-    `layout/verify.py`'s own `_stable()` drops the identical field from its
-    committed reports for the same reason and with the same justification
-    (issue #148); `provenance.pdk.name`/`.version` (which PDK, which
+    `layout/_klt.py`'s `committed_pdk_provenance` is the one shared
+    helper that drops it from every committed report (issues #148, #897); `provenance.pdk.name`/`.version` (which PDK, which
     open_pdks commit) stay, because those *are* what was verified against.
 
     `provenance.pdk.ambiguous_sources` (klt >= 0.9.0) is the same idea for
@@ -339,8 +339,8 @@ def _committed_view(payload: dict) -> dict:
     key is absent entirely on the latter. That is a property of the machine,
     not of the PDK the run was verified against, so a report generated on a
     two-install workstation could never match a fresh run on CI's
-    single-install runner. `layout/verify.py`'s `_stable()` drops this field
-    too, and for the same reason (#866).
+    single-install runner. The same shared helper drops this field too
+    (#866, #897).
 
     `memory_mapping.script_path` (klt >= 0.9.0) names the memory-evidence
     `.ys` script inside the per-invocation `.klt/synthesize/<run_id>/`
@@ -370,14 +370,7 @@ def _committed_view(payload: dict) -> dict:
         memory_mapping = dict(memory_mapping)
         memory_mapping["script_path"] = None
         restated["memory_mapping"] = memory_mapping
-    provenance = dict(restated.get("provenance") or {})
-    pdk = provenance.get("pdk")
-    if isinstance(pdk, dict):
-        pdk = dict(pdk)
-        pdk.pop("source", None)
-        pdk.pop("ambiguous_sources", None)
-        provenance["pdk"] = pdk
-    restated["provenance"] = provenance
+    restated = committed_pdk_provenance(restated)
     restated["rtl_sources"] = _rtl_sources()
     return restated
 

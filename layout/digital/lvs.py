@@ -168,7 +168,12 @@ WORK_DIR = REPO_ROOT / "layout" / ".work" / "digital-lvs"
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design"))
 
-from layout._klt import _run_klt, klt_origin, klt_version  # noqa: E402
+from layout._klt import (  # noqa: E402
+    _run_klt,
+    committed_pdk_provenance,
+    klt_origin,
+    klt_version,
+)
 from spice_text import SUBCKT_HEADER_RE, join_spice_continuations  # noqa: E402
 
 PNR_NETLIST_PATH = DIGITAL_DIR / "trng_top.pnr.v"
@@ -732,12 +737,17 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
     `environment.reference_sha256`, `provenance.input.content_hash`) are
     left exactly as `klt` wrote them.
 
+    **`provenance.pdk.source` / `.ambiguous_sources` are dropped** through
+    `layout/_klt.py`'s `committed_pdk_provenance` (issue #897), the same
+    shared helper every committed-report writer uses; the rest of the
+    envelope stays whole, which is what #170/#273 require of it.
+
     **One more path field is anonymized: `provenance.pin_order_sources`.**
     klt 0.9.x records which library SPICE file it read the gate-level
     reference's pin order from, and writes that path **absolute** --
     `/home/<user>/.ciel/gf180mcuA/libs.ref/.../gf180mcu_fd_sc_mcu9t5v0.spice`
     -- while every neighbouring provenance path field is already anonymized
-    (`provenance.pdk.source` is `"search root: ~/.ciel"`). Committed
+    (`provenance.pdk.source`, now dropped, was `"search root: ~/.ciel"`). Committed
     verbatim it fails this repo's own `npm run check:no-host-paths`, and it
     names the machine rather than what was verified. A path under the
     current user's home is restated `~`-relative, which is the form klt
@@ -759,7 +769,7 @@ def _committed_view(payload: dict, reference_summary: dict) -> dict:
     (`design/floorplan_netlist.py`); that file is no longer what `klt lvs`
     compares against.
     """
-    restated = dict(payload)
+    restated = committed_pdk_provenance(payload)
     restated["layout"] = str(EXTRACTED_PATH.relative_to(REPO_ROOT))
     restated["reference"] = str(PNR_NETLIST_PATH.relative_to(REPO_ROOT))
     restated["provenance"] = _anonymise_pin_order_sources(

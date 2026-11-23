@@ -42,6 +42,7 @@ from layout._klt import (  # noqa: E402
     FlowError,
     _ensure_openroad_reachable,
     _run_klt,
+    committed_pdk_provenance,
 )
 
 
@@ -169,6 +170,57 @@ class EnsureOpenroadReachableTests(unittest.TestCase):
         self.assertEqual(
             shim.readlink(), REPO_ROOT / "layout" / "openroad_docker.sh"
         )
+
+
+class CommittedPdkProvenanceTests(unittest.TestCase):
+    """Issue #897: one path-scoped strip of machine-local PDK discovery."""
+
+    def _payload(self):
+        return {
+            "reference_generation": {"source": "keep-me"},
+            "provenance": {
+                "klt_version": "0.9.2",
+                "pdk": {
+                    "name": "gf180mcuD",
+                    "version": "open_pdks abc",
+                    "source": "search root: ~/.ciel",
+                    "ambiguous_sources": ["search root: ~/.volare"],
+                },
+            },
+        }
+
+    def test_drops_both_keys_and_keeps_the_rest(self):
+        view = committed_pdk_provenance(self._payload())
+        self.assertEqual(
+            view["provenance"]["pdk"],
+            {"name": "gf180mcuD", "version": "open_pdks abc"},
+        )
+        self.assertEqual(view["provenance"]["klt_version"], "0.9.2")
+
+    def test_does_not_mutate_the_input(self):
+        payload = self._payload()
+        committed_pdk_provenance(payload)
+        self.assertEqual(
+            set(payload["provenance"]["pdk"]),
+            {"name", "version", "source", "ambiguous_sources"},
+        )
+
+    def test_is_path_scoped_not_a_key_filter(self):
+        view = committed_pdk_provenance(self._payload())
+        self.assertEqual(view["reference_generation"], {"source": "keep-me"})
+
+    def test_absent_or_non_dict_provenance_is_left_alone(self):
+        self.assertEqual(committed_pdk_provenance({}), {})
+        for provenance in (None, "x", []):
+            payload = {"provenance": provenance}
+            self.assertEqual(committed_pdk_provenance(payload), payload)
+        for pdk in (None, "x"):
+            payload = {"provenance": {"pdk": pdk}}
+            self.assertEqual(committed_pdk_provenance(payload), payload)
+
+    def test_pdk_without_the_keys_is_unchanged(self):
+        payload = {"provenance": {"pdk": {"name": "n"}}}
+        self.assertEqual(committed_pdk_provenance(payload), payload)
 
 
 if __name__ == "__main__":

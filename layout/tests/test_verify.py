@@ -127,18 +127,44 @@ class StableMachineLocalFieldsTests(unittest.TestCase):
         b["pdk"]["root"] = "/home/ubuntu/.volare"
         self.assertEqual(verify._stable(a), verify._stable(b))
 
-    def test_differing_provenance_pdk_source_compares_equal(self):
+    def test_provenance_pdk_discovery_is_not_masked_at_compare_time(self):
+        # Issue #897: `provenance.pdk.source` / `.ambiguous_sources` are
+        # stripped at write time by `_committed_view`, so `_stable()` must
+        # not hide them -- a committed report carrying either is drift.
+        for key, value in (
+            ("source", "--pdk-root flag"),
+            ("ambiguous_sources", ["search root: ~/.ciel"]),
+        ):
+            a = _extract_payload()
+            b = copy.deepcopy(a)
+            b["provenance"]["pdk"][key] = value
+            self.assertNotEqual(verify._stable(a), verify._stable(b), key)
+
+    def test_committed_view_drops_provenance_pdk_discovery(self):
         a = _extract_payload()
+        a["provenance"]["pdk"]["ambiguous_sources"] = ["search root: ~/.ciel"]
         b = copy.deepcopy(a)
         b["provenance"]["pdk"]["source"] = "--pdk-root flag"
-        self.assertEqual(verify._stable(a), verify._stable(b))
+        b["provenance"]["pdk"]["ambiguous_sources"] = []
+        for stage in ("extract", "lvs"):
+            va = verify._committed_view("ro_stage", stage, a)
+            vb = verify._committed_view("ro_stage", stage, b)
+            self.assertEqual(va, vb)
+            self.assertEqual(
+                set(va["provenance"]["pdk"]), {"name", "version"}
+            )
+        # input is not mutated
+        self.assertIn("source", a["provenance"]["pdk"])
 
     def test_both_machine_local_fields_together_compare_equal(self):
         a = _extract_payload()
         b = copy.deepcopy(a)
         b["pdk"]["root"] = "/home/ubuntu/.volare"
         b["provenance"]["pdk"]["source"] = "search_root:~/.ciel"
-        self.assertEqual(verify._stable(a), verify._stable(b))
+        self.assertEqual(
+            verify._stable(verify._committed_view("ro_stage", "extract", a)),
+            verify._stable(verify._committed_view("ro_stage", "extract", b)),
+        )
 
     def test_differing_engine_version_compares_equal(self):
         # Pre-existing behavior (#73) -- still covered directly so a future
@@ -326,7 +352,10 @@ class CompareReportsIntegrationTests(unittest.TestCase):
 
     def test_different_machine_same_content_produces_no_drift(self):
         committed = _extract_payload()
-        self._commit("ro_stage", "extract", committed)
+        self._commit(
+            "ro_stage", "extract",
+            verify._committed_view("ro_stage", "extract", committed),
+        )
         self._write_matching_spice("ro_stage")
 
         live = copy.deepcopy(committed)

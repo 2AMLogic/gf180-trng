@@ -63,6 +63,7 @@ import build as testcells  # noqa: E402  (layout/testcells/build.py)
 from sim.tools.pathload import load_module_from_path  # noqa: E402  (#553)
 from layout._klt import (  # noqa: E402
     FlowError,
+    committed_pdk_provenance,
     _run_klt,
     klt_origin,
     klt_version,
@@ -841,14 +842,19 @@ def _committed_view(stem: str, stage: str, payload: dict) -> dict:
     committed beside it in `layout/reports/`. So the committed copy names the
     committed netlist.
 
+    Every stage also drops `provenance.pdk.source` / `.ambiguous_sources`
+    (klt's record of how it found the PDK on this machine) through
+    `layout/_klt.py`'s `committed_pdk_provenance`, so the committed file
+    and the compared view agree (issue #897).
+
     This restatement cannot hide a difference: `netlist_sha256` sits directly
     beside it, is emitted by the tool, and IS compared, and the netlist itself
     is byte-compared by `compare_reports`. Write mode and check mode apply it
     identically, so every other field is still compared exactly.
     """
+    restated = committed_pdk_provenance(payload)
     if stage != "extract":
-        return payload
-    restated = dict(payload)
+        return restated
     restated["netlist_path"] = f"layout/reports/{stem}.extracted.spice"
     return restated
 
@@ -894,13 +900,6 @@ def _stable(payload: dict) -> dict:
       (which PDK) and `pdk.version` (which open_pdks commit) are what was
       actually verified against, and both stay.
 
-    - `provenance.pdk.source` (`klt extract` reports, nested one level under
-      `provenance.pdk`): the same idea one level down -- klt's own record of
-      *how* it resolved the PDK for this invocation (a search root, an env
-      var, an explicit `--pdk-root` flag), which describes the invocation's
-      environment, not the PDK. `provenance.pdk.name`/`.version` stay, for
-      the same reason `pdk.variant`/`.version` do above.
-
     - `nets[].net_id` (`klt extract` reports), but *only* for a `nets[]`
       entry whose `name` is not shared with any other entry in the same
       report. `net_id` is klt's own per-net cluster id, added by
@@ -936,17 +935,16 @@ def _stable(payload: dict) -> dict:
       break the one thing `layout/pex/build.py`'s routing-level composition
       path actually depends on it for, and this gate must still catch that.
 
-    - `provenance.pdk.ambiguous_sources` (`klt extract` reports from
-      klayout-tools 0.9.0): the other PDK search roots on *this* machine that
-      also held a copy of the PDK (a host with both `~/.ciel` and `~/.volare`
-      lists the one it did not use). Like `provenance.pdk.source`, it
-      describes the machine, not the PDK that was verified against.
-
     - `timing` (`klt extract` reports from klayout-tools 0.9.0): per-stage
       and total wall-clock seconds of this run. They differ between two runs
       of the same command on the same machine, so a committed copy could
       never match a fresh run; they record how long the run took, not what
       it verified.
+
+    `provenance.pdk.source` / `.ambiguous_sources` (machine-local PDK
+    discovery) are NOT stripped here: `_committed_view` removes them at write
+    time via `layout/_klt.py`'s `committed_pdk_provenance` (issue #897), so a
+    report carrying either on disk is a real difference this gate reports.
 
     Verified empirically (issue #148): running `klt extract` twice over the
     same `.gds`, identical in every argument except `--pdk-root` pointed at
@@ -983,17 +981,6 @@ def _stable(payload: dict) -> dict:
         pdk = dict(pdk)
         pdk.pop("root", None)
         trimmed["pdk"] = pdk
-
-    provenance = trimmed.get("provenance")
-    if isinstance(provenance, dict):
-        provenance = dict(provenance)
-        provenance_pdk = provenance.get("pdk")
-        if isinstance(provenance_pdk, dict):
-            provenance_pdk = dict(provenance_pdk)
-            provenance_pdk.pop("source", None)
-            provenance_pdk.pop("ambiguous_sources", None)
-            provenance["pdk"] = provenance_pdk
-        trimmed["provenance"] = provenance
 
     nets = trimmed.get("nets")
     if isinstance(nets, list):

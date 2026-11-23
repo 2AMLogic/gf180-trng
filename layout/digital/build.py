@@ -132,6 +132,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from layout._klt import (  # noqa: E402
     FlowError,
+    committed_pdk_provenance,
     KLT_MISSING_REASON,
     _ensure_openroad_reachable,
     _run_klt,
@@ -766,9 +767,9 @@ def _committed_view(payload: dict) -> dict:
     copies them to, the same "restate the one field that names a scratch
     location" discipline `design/synth.py`/`layout/verify.py` apply to
     `netlist_path`/`extract`'s own scratch paths. Also drops
-    `provenance.pdk.source` (machine-local, not part of what was verified --
-    `design/synth.py`'s own `_committed_view` does the same for the
-    identical field) and `layer_map.path` (an absolute host path into the
+    `provenance.pdk.source` and `.ambiguous_sources` (machine-local, not part
+    of what was verified -- `layout/_klt.py`'s `committed_pdk_provenance` is
+    the one shared helper every committed-report writer applies) and `layer_map.path` (an absolute host path into the
     local PDK install, not a repository-relative one). Likewise restates the
     nested `power.placed.def_path` -- the same scratch DEF, which otherwise
     names the producing host and worktree -- to the committed DEF, when that
@@ -788,13 +789,7 @@ def _committed_view(payload: dict) -> dict:
     layer_map = restated.get("layer_map")
     if isinstance(layer_map, dict):
         restated["layer_map"] = {"resolution": layer_map.get("resolution")}
-    provenance = dict(restated.get("provenance") or {})
-    pdk = provenance.get("pdk")
-    if isinstance(pdk, dict):
-        pdk = dict(pdk)
-        pdk.pop("source", None)
-        provenance["pdk"] = pdk
-    restated["provenance"] = provenance
+    restated = committed_pdk_provenance(restated)
     restated["request"] = {
         "pdk": {"cell_library": CELL_LIBRARY, "corner": CORNER},
         "floorplan": FLOORPLAN,

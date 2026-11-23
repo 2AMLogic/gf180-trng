@@ -152,6 +152,22 @@ class CommittedViewTests(unittest.TestCase):
         for key in payload:
             self.assertIn(key, view, f"{key} was dropped from the committed view")
 
+    def test_pnr_and_lvs_committed_views_drop_pdk_discovery(self):
+        # Issue #897: both writers share `committed_pdk_provenance`.
+        provenance = {
+            "pdk": {
+                "name": "gf180mcuD",
+                "source": "search root: ~/.ciel",
+                "ambiguous_sources": ["search root: ~/.volare"],
+            }
+        }
+        for view in (
+            build._committed_view({"provenance": provenance}),
+            lvs._committed_view({"provenance": provenance}, {}),
+        ):
+            self.assertEqual(view["provenance"]["pdk"], {"name": "gf180mcuD"})
+        self.assertIn("source", provenance["pdk"])
+
     def test_lvs_committed_view_restates_paths_repo_root_relative(self):
         """`klt lvs` echoes the request's own directory-relative paths. The
         report lands a directory deeper, so an unrestated path resolves from
@@ -356,6 +372,38 @@ class KnownDigitalDrcViolationTests(unittest.TestCase):
     def test_digital_tap_distance_report_still_fails_and_is_tracked(self):
         tap = json.loads((REPORTS_DIR / "tap-distance.json").read_text())
         self.assertEqual(tap["verdict"], "fail")
+
+
+class CommittedTreeCarriesNoPdkDiscoveryTests(unittest.TestCase):
+    """Tool-free: no tracked report records how this machine found the PDK."""
+
+    def test_no_committed_report_carries_pdk_discovery_provenance(self):
+        offenders = []
+
+        def walk(node, where):
+            if isinstance(node, dict):
+                provenance = node.get("provenance")
+                pdk = provenance.get("pdk") if isinstance(provenance, dict) else None
+                if isinstance(pdk, dict):
+                    for key in ("source", "ambiguous_sources"):
+                        if key in pdk:
+                            offenders.append(f"{where}: provenance.pdk.{key}")
+                for value in node.values():
+                    walk(value, where)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value, where)
+
+        for top in ("design", "layout"):
+            for path in sorted((REPO_ROOT / top).rglob("*.json")):
+                if ".work" in path.parts:
+                    continue
+                try:
+                    data = json.loads(path.read_text())
+                except ValueError:
+                    continue
+                walk(data, str(path.relative_to(REPO_ROOT)))
+        self.assertEqual(offenders, [])
 
 
 if __name__ == "__main__":

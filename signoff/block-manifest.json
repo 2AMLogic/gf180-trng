@@ -12,7 +12,7 @@
     },
     "1.digital": {
       "file": "signoff/evidence/t1-item-1-digital.json",
-      "content_hash": "sha256:0122777048368450a4f09435166902b9e22277a59ac8b7cd4780c8a701d2ffc8"
+      "content_hash": "sha256:49884ee328b36b35f9ebd9058cbc173aa7d25f89c94821f4c3d8948fc1d69ed3"
     },
     "10.analog": {
       "file": "signoff/evidence/t1-item-10-analog.json",
@@ -59,7 +59,7 @@
     },
     "2.digital": {
       "file": "signoff/evidence/t1-item-2-digital.json",
-      "content_hash": "sha256:942048e8438f3bd4ad05f20e272c5230cf2b35bf174d870c290cf4c0fd819af8"
+      "content_hash": "sha256:c9b0c6fdb9bcd1688786ee85402df886ec20e56af1ca9b2423e48179097e337b"
     },
     "3.analog": {
       "file": "layout/reports/combiner_sampler.drc.json",

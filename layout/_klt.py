@@ -344,6 +344,41 @@ def _build_identity_origin(executable: str) -> dict | None:
     }
 
 
+#: `provenance.pdk` keys that describe the machine a report was generated on
+#: (klt's record of *how* it found the PDK, and the search roots it did not
+#: use), not the PDK that was verified against. `provenance.pdk.name` /
+#: `.version` are what was verified, and stay.
+_PDK_DISCOVERY_KEYS = ("source", "ambiguous_sources")
+
+
+def committed_pdk_provenance(payload: dict) -> dict:
+    """`payload` without machine-local PDK-discovery provenance.
+
+    The one copy of the rule "PDK-discovery provenance does not belong in a
+    committed report" (issue #897): every writer of a committed `klt` report
+    (`design/synth.py`, `layout/digital/build.py`, `layout/digital/lvs.py`,
+    `layout/verify.py`, `layout/floorplan/floorplan.py`) applies it at write
+    time, so what is on disk is what the freshness gate compares.
+
+    Path-scoped, not a key filter: only `source` and `ambiguous_sources`
+    directly under `provenance.pdk` are removed; a `source` key anywhere
+    else in a report (e.g. `reference_generation.source`) is untouched. A
+    payload whose `provenance` or `provenance.pdk` is absent, `None`, or not
+    a dict is returned as a shallow copy with no key added. Modified dicts are
+    copied, never mutated in place.
+    """
+    restated = dict(payload)
+    provenance = restated.get("provenance")
+    if not isinstance(provenance, dict):
+        return restated
+    pdk = provenance.get("pdk")
+    if not isinstance(pdk, dict):
+        return restated
+    pdk = {k: v for k, v in pdk.items() if k not in _PDK_DISCOVERY_KEYS}
+    restated["provenance"] = {**provenance, "pdk": pdk}
+    return restated
+
+
 def _rect(layer: list[int], x0: float, y0: float, x1: float, y1: float) -> dict:
     """Return one `klt draw` wiring-shape dict for a rectangle on `layer`."""
     return {"layer": layer, "rect_um": [x0, y0, x1, y1]}
