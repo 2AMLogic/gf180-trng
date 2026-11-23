@@ -10,11 +10,13 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-23
 
+- **PR #1060**: refactor(sim): one strict recorded-verdict gate for four tools
 - **PR #1058**: refactor(sim): share the behavioral record scaffolding across four runners
 - **PR #1057**: refactor: one iverilog/vvp runner for the RTL equivalence tests
 - **PR #1056**: refactor(floorplan): require an assembled GDS per region, not a square estimate
 - **PR #1053**: docs(floorplan): stop calling ASSEMBLED_RING_GDS geometry DRC-clean
 - **PR #1038**: docs: replace stale empty-region and DRC-clean claims in floorplan docstring
+- **Issue #880** (closed): Collapse the four copy-pasted recorded-verdict gates in sim/tools into one helper (they have drifted)
 - **Issue #889** (closed): Share record-writing code across four unconditional behavioral testbench runners
 - **Issue #1055** (closed): Collapse the five copy-pasted Icarus Verilog _run_rtl helpers in sim/tests into one shared helper
 - **Issue #1054** (closed): Remove the two hand-maintained copies of the check:spec tool list
