@@ -1932,12 +1932,12 @@ def compose_and_check(
     # values live in `layout/floorplan/reports/ring_fit.json` and
     # `layout/floorplan/reports/floorplan.drc.json`, not in this comment.
     #
-    # `drc_new_violations_from_composition.note` in the committed report
+    # `new_violations_from_composition.note` in the committed report
     # says "the comment above where this is computed in build()" -- this
     # comment, which moved out of `build()` into this stage function with
     # the code it explains. That sentence is a committed report *value*,
-    # compared field-for-field against `reports/area.json`, so it is left
-    # exactly as it was rather than reworded here.
+    # compared field-for-field against `reports/floorplan.drc.json`, so it
+    # is left exactly as it was rather than reworded here.
     baseline_rules: Counter = Counter()
     for rid in ASSEMBLED_RING_GDS:
         baseline_rules.update(Counter(ring_fit[rid]["ring_standalone"]["rule_counts"] or {}))
