@@ -1,12 +1,44 @@
 # Work Log
 
-Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-21.
+Merged PRs and closed issues recorded from recent 30-day query windows, through 2026-11-23.
 Earlier history remains available in GitHub. Entries record repository activity,
 not independent verification of the claims in issue or PR titles.
 
 ## Archives
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-23
+
+- **PR #1058**: refactor(sim): share the behavioral record scaffolding across four runners
+- **PR #1057**: refactor: one iverilog/vvp runner for the RTL equivalence tests
+- **PR #1056**: refactor(floorplan): require an assembled GDS per region, not a square estimate
+- **PR #1053**: docs(floorplan): stop calling ASSEMBLED_RING_GDS geometry DRC-clean
+- **PR #1038**: docs: replace stale empty-region and DRC-clean claims in floorplan docstring
+- **Issue #889** (closed): Share record-writing code across four unconditional behavioral testbench runners
+- **Issue #1055** (closed): Collapse the five copy-pasted Icarus Verilog _run_rtl helpers in sim/tests into one shared helper
+- **Issue #1054** (closed): Remove the two hand-maintained copies of the check:spec tool list
+- **Issue #1052** (closed): Floorplan: ASSEMBLED_RING_GDS comment still calls the assembled geometry DRC-clean
+- **Issue #1045** (closed): Retire the square-footprint fallback for unassembled floorplan regions
+- **Issue #1039** (closed): Retire the empty floorplan assembly inventory gap table
+- **Issue #1035** (closed): Remove obsolete empty-region and DRC-clean claims from the floorplan builder docstring
+
+### 2026-11-22
+
+- **PR #1051**: refactor: one helper for the klt pex publication freshness checks
+- **PR #1050**: Collapse parse_raw_section and parse_stored_section onto one shared scanner
+- **PR #1049**: fix: guard item 6 published metadata against the pinned reports
+- **PR #1042**: signoff: size the mismatch MC campaign and grade item 6 analog met
+- **PR #1040**: spec: record DR-0036 keeping the grader pin at klt 0.8.0 over released 0.9.2
+- **PR #1037**: fix: count comment-split instances in floorplan inventory via shared joiner
+- **PR #1033**: docs: drop the obsolete no-waypoint-router claim from the rings README
+- **Issue #1048** (closed): Collapse duplicated PEX publication freshness checks in signoff/check.py into one helper
+- **Issue #1047** (closed): Collapse parse_raw_section and parse_stored_section in sim/harness/report.py into one shared scanner
+- **Issue #1046** (closed): signoff: publication_problems() compares only some sample-set fields against the pinned reports
+- **Issue #1036** (closed): Reuse the SPICE continuation helper so floorplan inventory counts split instances
+- **Issue #1032** (closed): Track the klt grader pin: re-grade against a released 0.9.x, and retire the item-6 digital spec projection when the pin moves
+- **Issue #1030** (closed): Remove the obsolete no-waypoints claim from the ring layout README
+- **Issue #1025** (closed): T1 item 6 (analog): size the mismatch Monte Carlo campaign to the klt yield target and declare a seeded negative control
 
 ### 2026-11-21
 
