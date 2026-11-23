@@ -1921,24 +1921,16 @@ def compose_and_check(
 
     drc = run_drc("layout/.work/trng_floorplan.gds")
 
-    # The composed abstract was DRC-clean by construction before issue #110
-    # (empty guard rings only). Now that `ring1`/`ring2` (and, since issue
-    # #135, `combiner_sampler`) carry their own real assembled content, the
-    # composed abstract's own DRC surfaces whatever that content's
-    # *standalone* DRC already reports -- and, per `layout/floorplan/
-    # README.md`'s own "Tool friction" note, both committed rings currently
-    # report 49 pre-existing violations against whatever `klt` build
-    # resolves on `PATH` here (a deck-drift gap tracked upstream,
-    # klayout-tools#623 -- unrelated to this placement); `combiner_sampler`'s
-    # own standalone DRC is clean (`layout/verify.py`'s own fixture), so it
-    # contributes nothing to this baseline. Composing them into the
-    # floorplan does not introduce anything beyond that: the baseline below
-    # is each assembled region's own `ring_standalone` DRC (`check_ring_fit`,
-    # above), and this run's own pass/fail signal is whether the *composed*
-    # abstract's rule counts exceed that baseline -- the same "new
-    # violations only" principle issue #119's own `check_ring_fit` already
-    # established for the pairwise fit, applied here to the full
-    # multi-region composition.
+    # Composition baseline: the composed abstract's DRC also reports whatever
+    # each assembled region's own standalone DRC already reports. The
+    # baseline sums those standalone per-rule counts
+    # (`ring_fit[rid]["ring_standalone"]["rule_counts"]`, from
+    # `check_ring_fit`) across every assembled region; the composed layout
+    # is then held to "new violations only" -- the positive per-rule
+    # increase of its own counts over that baseline (the same principle
+    # issue #119's `check_ring_fit` established for the pairwise fit). The
+    # values live in `layout/floorplan/reports/ring_fit.json` and
+    # `layout/floorplan/reports/floorplan.drc.json`, not in this comment.
     #
     # `drc_new_violations_from_composition.note` in the committed report
     # says "the comment above where this is computed in build()" -- this
