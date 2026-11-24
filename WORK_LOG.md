@@ -10,6 +10,21 @@ not independent verification of the claims in issue or PR titles.
 
 ### 2026-11-23
 
+- **PR #1074**: docs(floorplan): point the composition note to its DRC report
+- **PR #1072**: docs(floorplan): replace stale per-ring violation count with description of composition baseline
+- **PR #1071**: test: add shared SPICE continuation conformance corpus
+- **PR #1068**: refactor(layout): strip PDK-discovery provenance at write via one shared helper
+- **PR #1067**: refactor(signoff): use shared sha256_file in publish_item6
+- **PR #1066**: fix(pex): keep comment-split + continuations in DUT and header readers
+- **PR #1064**: docs(sim): correct stale None-skips-the-gate comments in verdict tools
+- **PR #1044**: fix: anchor SPICE continuations to the last non-comment card in export and PDK scan
+- **Issue #1073** (closed): Retained composition-note comment points at reports/area.json, but the note lives in reports/floorplan.drc.json
+- **Issue #1070** (closed): Drop the obsolete 49-violations-per-ring claim from compose_and_check
+- **Issue #1069** (closed): Add a shared SPICE continuation regression test across readers
+- **Issue #1063** (closed): Two PEX continuation folders still absorb or truncate a comment-split `+` line
+- **Issue #1061** (closed): Three sim/tools RECORDED_*_VERDICT comments still say None runs the classification without gating
+- **Issue #1043** (closed): Two more SPICE readers attach a continuation to a comment line (netlist.py, pdk_models.py)
+- **Issue #897** (closed): Consolidate four divergent copies of the committed-PDK-provenance rule into layout/_klt.py
 - **PR #1060**: refactor(sim): one strict recorded-verdict gate for four tools
 - **PR #1058**: refactor(sim): share the behavioral record scaffolding across four runners
 - **PR #1057**: refactor: one iverilog/vvp runner for the RTL equivalence tests
