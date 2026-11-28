@@ -2,6 +2,53 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-27
+
+- **PR #303**: chore(sim/harness): remove unused EXIT_SIM_ERROR exit code
+- **PR #302**: refactor(sim/tb): deduplicate uniform_words/biased_bits into harness.bits
+- **Issue #301** (closed): Remove unused EXIT_SIM_ERROR exit code from sim/harness/cli.py
+- **PR #300**: docs(signoff): correct three stale T1 claims in README's claimant reading
+- **PR #299**: chore(loom): mitigate #124 noop-cooldown re-dispatch storm with 6h cooldownSecs
+- **Issue #298** (closed): Deduplicate uniform_words / biased_bits across sim/tb fault-injection source models
+- **PR #297**: fix(layout): tolerate architecture-dependent net_id swap in freshness gate
+- **Issue #296** (closed): Loom daemon repeatedly re-dispatches #124 despite noop-cooldown (61 sweeps over 36 days, some <2 min apart)
+- **Issue #295** (closed): signoff/README.md's T1 reading is stale: item 5/6 evidence is unproducible upstream, and the grader pin's yardstick moved 9 commits
+- **Issue #124** (closed): Track the gap to T1 sim-validated / bronze (klayout-tools design-evidence tiers)
+
+### 2026-09-24
+
+- **PR #267**: chore: resync installed Loom surfaces
+
+### 2026-09-23
+
+- **PR #292**: design: re-baseline trng_top.synth.{v,json} on pdk-nightly's pinned toolchain
+- **PR #291**: fix(design): accept both klt netlist_path schemas in synth.py
+- **Issue #290** (closed): Digital synthesis artefacts are stale: trng_top.synth.{v,json} do not match a fresh run
+- **PR #289**: Remove dead --record CLI flag from six testbench entry points
+- **Issue #288** (closed): ci: pdk-nightly's synthesis staleness guard aborts — design/synth.py rejects the pinned klt's string netlist_path (#283 regression)
+- **Issue #287** (closed): Remove dead --record CLI flag from 6 run_demo.py/run_battery.py scripts
+- **PR #286**: docs: carry #277's re-tuned depth-2 digital power figures into README
+- **PR #285**: feat(digital): declare ties[] in the ERC supply spec (T1 item 11)
+- **Issue #284** (closed): merge-pr.sh: _check_champion_hold_state_staleness aborts every normal merge (set -e + pipefail + grep no-match)
+- **PR #283**: fix(design): read klt synthesize's netlist_path {path, scope} envelope
+- **PR #282**: feat(signoff): re-emit the digital DRC/LVS as gradeable klt envelopes (3/22 -> 5/22)
+- **PR #280**: feat(digital): add klt erc supply spec and report for T1 item 11
+- **Issue #279** (closed): Propagate #277's re-tuned depth-2 digital power figures into README's Power row
+- **Issue #278** (closed): design/synth.py --check crashes: klt synthesize's netlist_path is now an object, not a path string
+- **PR #277**: fix(digital): re-tune max_transition_ns for the FIFO_DEPTH = 2 topology
+- **Issue #276** (closed): T1 item 11: declare ties[] in the digital supply spec so erc.missing_tie is computed (klayout-tools#2169 is fixed in 0.6.0)
+- **Issue #275** (closed): README: embed the fleet burndown chart (one line)
+- **Issue #273** (closed): Re-emit the digital partition's DRC/LVS and the analog LVS as gradeable klt envelopes, so T1 items 3 and 4 grade on both partitions
+- **Issue #268** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
+- **Issue #264** (closed): Re-tune digital place-and-route's max_transition/max_capacitance constraints for FIFO_DEPTH = 2
+
+### 2026-09-22
+
+- **PR #274**: feat(signoff): commit a klt signoff block manifest so T1 state is graded, not hand-read
+- **PR #272**: docs: propagate #255/#266's depth-2 digital power figures into the Power row
+- **Issue #269** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
+- **Issue #265** (closed): Propagate the depth-2 gate-level digital power figures into README's Power row
+
 ### 2026-09-19
 
 - **PR #266**: feat(digital): re-synthesize and re-place-and-route at DR-0020's FIFO_DEPTH = 2
