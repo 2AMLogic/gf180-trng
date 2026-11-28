@@ -1,15 +1,16 @@
 """Adapter helpers shared by the power tools (``power_switch``, ``power_switch_decay``,
-``power_retention``, ``liveness_sampler_power``; ``fs_sf_capture``, ``supply_ripple`` and
-``starved_hot_corner`` use only ``render``/``vals``): the "emit request / run / record /
-analyze" layer that was identical in each, plus the ``plan | emit | run | record [| summarize] |
-analyze`` CLI front end (``build_parser``/``main``) that was copy-pasted with it, the record
-front-matter skeleton (``render_header`` and friends) that was re-typed in each tool's
-``render_measured`` / ``render_unmeasured``, and the request skeleton
-(``build_full_request``/``restrict_to_point``) each tool's ``build_request`` had its own copy
-of. Per-script pieces (``derive``, ``checks``, ``parse_only``, each tool's measurements and
-the Result / Caveats / reproduce prose) stay in the tools; they differ for real.
-Everything here either is pure or takes the per-script pieces as arguments, so each tool's
-emitted requests and minted records are unchanged.
+``power_retention``, ``liveness_sampler_power``; ``fs_sf_capture`` uses only
+``render``/``vals``): the "emit request / run / record / analyze" layer that was identical in
+each, plus the ``plan | emit | run | record [| summarize] | analyze`` CLI front end
+(``build_parser``/``main``) that was copy-pasted with it, the record front-matter skeleton
+(``render_header`` and friends) that was re-typed in each tool's ``render_measured`` /
+``render_unmeasured``, and the request skeleton (``build_full_request``/``restrict_to_point``)
+each tool's ``build_request`` had its own copy of. The fleet-ingestion tools
+(``supply_ripple``, ``starved_hot_corner``) share ``render`` and the record front matter too,
+and stage their raw evidence through ``stage_raw``. Per-script pieces (``derive``, ``checks``,
+``parse_only``, each tool's measurements and the Result / Caveats / reproduce prose) stay in
+the tools; they differ for real. Everything here either is pure or takes the per-script
+pieces as arguments, so each tool's emitted requests and minted records are unchanged.
 """
 
 from __future__ import annotations
@@ -121,7 +122,9 @@ def render_header(*, stem: str, now, repo_root: Path, testbench: Path, netlist: 
                   netlist_also: Path | None = None, pdk: str | None = None,
                   pdk_models: Sequence[str] = (), tool: Sequence[str] = (),
                   corner: Sequence[str] = (), analysis: Sequence[str] = (),
-                  seeds: str = SEEDS_NA, wall_time: str | None = None) -> list[str]:
+                  seeds: str = SEEDS_NA, wall_time: str | None = None,
+                  reproduction: dict | None = None, testbench_sha: str | None = None,
+                  netlist_sha: str | None = None) -> list[str]:
     """The record front matter every power tool emits, as a list of lines.
 
     sim/README.md fixes the field order and the blank lines between blocks; this is the one
@@ -131,13 +134,25 @@ def render_header(*, stem: str, now, repo_root: Path, testbench: Path, netlist: 
     worker's ngspice, a local probe the host's) and are omitted entirely when empty, which is
     how the attempt records drop them. The closing ``---`` and the blank line after it are
     included, so a caller continues straight into ``## Result``.
+
+    ``reproduction`` is the transient-noise replay scope (``report.reproduction_scope``),
+    emitted as a ``reproduction:`` block directly after ``seeds``. Only ``tran-noise``
+    records carry one (DR-0031), so every other caller leaves it ``None`` and the block is
+    omitted.
+
+    ``testbench_sha`` / ``netlist_sha`` are precomputed git blob SHAs. A caller that hashes
+    the file bytes itself (``git_blob_sha1(path.read_bytes())``) fails loudly on a missing
+    input and needs no ``git`` binary; left ``None``, the SHA comes from ``git hash-object``
+    and degrades to ``unknown`` when that fails.
     """
+    tb_sha = testbench_sha or _report.blob_sha(repo_root, testbench)
+    nl_sha = netlist_sha or _report.blob_sha(repo_root, netlist)
     lines = ["---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}",
              f"status: {status}", "",
              "testbench:", f"  path: {testbench.relative_to(repo_root)}",
-             f"  sha: {_report.blob_sha(repo_root, testbench)}",
+             f"  sha: {tb_sha}",
              "netlist:", f"  path: {netlist.relative_to(repo_root)}",
-             f"  sha: {_report.blob_sha(repo_root, netlist)}"]
+             f"  sha: {nl_sha}"]
     if netlist_also is not None:
         lines.append(f"  also: {netlist_also.relative_to(repo_root)} "
                      f"sha {_report.blob_sha(repo_root, netlist_also)}")
@@ -151,7 +166,14 @@ def render_header(*, stem: str, now, repo_root: Path, testbench: Path, netlist: 
     if corner:
         lines += ["corner:", *corner, ""]
     if analysis:
-        lines += ["analysis:", *analysis, seeds, ""]
+        lines += ["analysis:", *analysis, seeds]
+        if reproduction:
+            lines += ["reproduction:", f"  scope: {reproduction['scope']}",
+                      "  trnoise_waveform_replay: "
+                      f"{'true' if reproduction['trnoise_waveform_replay'] else 'false'}",
+                      f"  basis: {reproduction['basis']}",
+                      f"  decision: {reproduction['decision']}"]
+        lines.append("")
     lines += ["raw:", f"  path: sim/records/raw/{stem}/", "  files:",
               *[f"    - {n}  sha256:{h}" for n, h in raw_files]]
     if wall_time is not None:
@@ -204,6 +226,25 @@ def fleet_header(*, stem: str, row: dict, unit: dict, rep: dict,
               f'  platform: "{platform.platform()} (submitting host)"'],
         corner=corner_lines(row), analysis=analysis,
         wall_time=f"{unit.get('runtime_s', 'n/a')}s")
+
+
+def stage_raw(raw_dir: Path, report: dict, request_text: str,
+              stderr_path: Path | None = None) -> list[tuple[str, str]]:
+    """Write a fleet-ingestion record's raw evidence into its reserved ``raw_dir`` and hash
+    it into the ``raw.files`` manifest.
+
+    ``supply_ripple`` and ``starved_hot_corner`` ingest a ``klt sim`` report rather than a
+    local run, so their raw evidence is the same three files: the report (``report.json``),
+    the request that produced it (``request.json``) and, when the caller has one, the run's
+    stderr (``stderr.txt`` -- a path that does not exist stages nothing, like no path at
+    all). Returns ``(name, sha256)`` in sorted name order, the order the manifest lists.
+    ``raw_dir`` is the one ``reserve_record_stems`` created, so it is this call's alone.
+    """
+    (raw_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
+    (raw_dir / "request.json").write_text(request_text)
+    if stderr_path and stderr_path.exists():
+        (raw_dir / "stderr.txt").write_text(stderr_path.read_text())
+    return [(p.name, _report.sha256_file(p)) for p in sorted(raw_dir.iterdir())]
 
 
 def render_attempt(*, stem: str, corners: Sequence[dict], rep: dict,
