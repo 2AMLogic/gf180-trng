@@ -10,6 +10,7 @@ synthetic report round-trips through the record reader that
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import random
@@ -22,6 +23,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import starved_hot_corner as hc  # noqa: E402
+import _record_golden as rg  # noqa: E402
 
 TB = json.loads((SIM_DIR / "tb" / "ro-ring5-starved-jitter-long" / "tb.json").read_text())
 
@@ -162,6 +164,178 @@ class IngestTests(unittest.TestCase):
         self.assertIn("seeds: [1, 2, 3, 4, 5, 6, 7, 8]", text)
         for name in TB["measure"]:
             self.assertRegex(text, rf"(?m)^- `{name}`: mean \S+ over 8 seeds \(sd \S+")
+
+    def test_raw_evidence_is_report_request_and_optional_stderr_in_name_order(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            (td / "r.json").write_text(json.dumps(self.report([synth_unit(s) for s in range(1, 9)])))
+            (td / "stderr.txt").write_text("ngspice: a warning\n")
+            recs = td / "records"
+            recs.mkdir()
+            self.assertEqual(hc.cmd_ingest(td / "r.json", td / "stderr.txt", None, recs), 0)
+            raw = next((recs / "raw").iterdir())
+            names = sorted(p.name for p in raw.iterdir())
+            self.assertEqual(names, ["report.json", "request.json", "stderr.txt"])
+            self.assertEqual((raw / "request.json").read_text(), hc.request_path().read_text())
+            text = next(recs.glob("*.md")).read_text()
+            manifest = [line.strip("- ").split("  sha256:") for line in text.splitlines()
+                        if "sha256:" in line]
+            self.assertEqual([name for name, _ in manifest], names)
+            for name, digest in manifest:
+                self.assertEqual(digest, hashlib.sha256((raw / name).read_bytes()).hexdigest())
+
+
+class RecordFrontMatter(unittest.TestCase):
+    """The record front matter ``render_record`` emits, pinned line for line (issue #1080).
+
+    The goldens were captured from the hand-assembled front matter that
+    ``_power_cli.render_header`` (issue #834) replaced, so the consolidation is held to
+    byte-for-byte output. Only the git blob SHAs, the ``repo_commit`` and
+    ``platform.platform()`` are masked (``_record_golden.front_matter``); they are facts
+    about the host and the checkout, not the renderer. Everything else -- field order,
+    field names, indentation, the blank lines between blocks, and the ``reproduction:`` block
+    only a ``tran-noise`` record carries -- is the format `sim/README.md` defines and the
+    family's records under `sim/records/` are written in.
+    """
+
+    RAW = [("report.json", "a" * 64), ("request.json", "b" * 64), ("stderr.txt", "c" * 64)]
+
+    HOT = """\
+---
+record: 2026-01-02-ro-ring5-starved-jitter-long-01
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/ro-ring5-starved-jitter-long-batch/tb_ro_ring5_starved_jitter_long_batch.sp
+  sha: <BLOB>
+netlist:
+  path: design/ro_array_sanity.spice
+  sha: <BLOB>
+repo_commit: <COMMIT>
+
+pdk: gf180mcuD @ 1.0.test
+pdk.models:
+  - libs.tech/ngspice/sm141064.ngspice (sections: ss bjt_ss diode_ss res_ss moscap_ss mimcap_ss)
+
+tool:
+  klt: 9.9.9 (client; batch backend)
+  ngspice: "ngspice-99 test build (batch fleet)"
+  platform: <PLATFORM>
+
+corner:
+  process: ss
+  voltage: 3.630 V (nominal 3.3 V, +10%)
+  temperature: 125
+
+analysis:
+  type: tran-noise
+  tstop: 3.1u
+  tstep: 1p (print step; ngspice's own LTE and the trnoise breakpoints at vn_dt set the actual solver step)
+  tmax: n/a
+  noise_params: "per-stage trnoise( NA=2.2361e-3 NT=1e-11 NALPHA=0 NAMP=0 ) -> injected white PSD 1e-16 V^2/Hz (1e-08 V/sqrt(Hz)), 5 sources, one in series with every stage input"
+  runs: 8
+seeds: [1, 2, 3, 4, 5, 6, 7, 8]
+reproduction:
+  scope: deck-and-configuration
+  trnoise_waveform_replay: false
+  basis: sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/
+  decision: DR-0031-transient-noise-reproducibility
+
+raw:
+  path: sim/records/raw/2026-01-02-ro-ring5-starved-jitter-long-01/
+  files:
+    - report.json  sha256:<SHA256>
+    - request.json  sha256:<SHA256>
+    - stderr.txt  sha256:<SHA256>
+wall_time: 10.0m
+---
+"""
+
+    REDSUP_TT27 = """\
+---
+record: 2026-01-02-ro-ring5-starved-jitter-redsup-01
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/ro-ring5-starved-jitter-long-batch/tb_ro_ring5_starved_jitter_long_batch.sp
+  sha: <BLOB>
+netlist:
+  path: design/ro_array_sanity.spice
+  sha: <BLOB>
+repo_commit: <COMMIT>
+
+pdk: gf180mcuD @ 1.0.test
+pdk.models:
+  - libs.tech/ngspice/sm141064.ngspice (sections: typical bjt_typical diode_typical res_typical moscap_typical mimcap_typical)
+
+tool:
+  klt: 9.9.9 (client; batch backend)
+  ngspice: "ngspice-99 test build (batch fleet)"
+  platform: <PLATFORM>
+
+corner:
+  process: tt
+  voltage: 2.970 V (nominal 3.3 V, -10%)
+  temperature: 27
+
+analysis:
+  type: tran-noise
+  tstop: 2.8u
+  tstep: 1p (print step; ngspice's own LTE and the trnoise breakpoints at vn_dt set the actual solver step)
+  tmax: n/a
+  noise_params: "per-stage trnoise( NA=2.2361e-3 NT=1e-11 NALPHA=0 NAMP=0 ) -> injected white PSD 1e-16 V^2/Hz (1e-08 V/sqrt(Hz)), 5 sources, one in series with every stage input"
+  runs: 8
+seeds: [1, 2, 3, 4, 5, 6, 7, 8]
+reproduction:
+  scope: deck-and-configuration
+  trnoise_waveform_replay: false
+  basis: sim/tool-experiments/2026-10-11-ngspice-trnoise-seed-replay/
+  decision: DR-0031-transient-noise-reproducibility
+
+raw:
+  path: sim/records/raw/2026-01-02-ro-ring5-starved-jitter-redsup-01/
+  files:
+    - report.json  sha256:<SHA256>
+    - request.json  sha256:<SHA256>
+    - stderr.txt  sha256:<SHA256>
+wall_time: 10.0m
+---
+"""
+
+    def _rendered(self, grid: hc.Grid = hc.HOT_GRID, vdd: float = hc.VDD_V) -> str:
+        units = [synth_unit(s) for s in range(1, 9)]
+        rep = {"corners": [corner(u) for u in units], "environment": rg.ENVIRONMENT,
+               "provenance": rg.PROVENANCE}
+        return hc.render_record(f"2026-01-02-{grid.slug}-01", rep, [hc.derive(u) for u in units],
+                                self.RAW, 600.0, rg.NOW, rg.GIT, grid=grid, vdd=vdd)
+
+    def test_front_matter_is_unchanged_at_the_hot_corner(self):
+        self.assertEqual(rg.front_matter(self._rendered()), self.HOT)
+
+    def test_front_matter_is_unchanged_on_a_reduced_supply_grid(self):
+        self.assertEqual(rg.front_matter(self._rendered(hc.GRIDS["ring5-redsup-tt27"], 2.97)),
+                         self.REDSUP_TT27)
+
+    def test_voltage_line_states_the_offset_from_the_nominal(self):
+        ss125, ff40, tt27 = (hc.GRIDS[n] for n in
+                             ("ring5-redsup-ss125", "ring5-redsup-ff-40", "ring5-redsup-tt27"))
+        for grid, vdd, line in ((hc.HOT_GRID, 3.63, "  voltage: 3.630 V (nominal 3.3 V, +10%)"),
+                                (ss125, 3.30, "  voltage: 3.300 V (nominal 3.3 V)"),
+                                (ss125, 2.97, "  voltage: 2.970 V (nominal 3.3 V, -10%)"),
+                                (ff40, 3.30, "  voltage: 3.300 V (nominal 3.3 V)"),
+                                (ff40, 2.97, "  voltage: 2.970 V (nominal 3.3 V, -10%)"),
+                                (tt27, 2.97, "  voltage: 2.970 V (nominal 3.3 V, -10%)")):
+            with self.subTest(grid=grid.name, vdd=vdd):
+                self.assertIn(f"\n{line}\n", self._rendered(grid, vdd))
+
+    def test_the_per_tool_prose_outlives_the_shared_header(self):
+        for grid, vdd in ((hc.HOT_GRID, 3.63), (hc.GRIDS["ring5-redsup-tt27"], 2.97)):
+            text = self._rendered(grid, vdd)
+            for section in ("## Result", "## How to reproduce", "## Caveats"):
+                self.assertIn(section, text)
+            self.assertIn("python3 sim/tools/starved_hot_corner.py ingest --report DIR/", text)
 
 
 if __name__ == "__main__":

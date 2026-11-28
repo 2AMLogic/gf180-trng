@@ -329,47 +329,30 @@ def result_lines(per_unit: list[dict[str, float]]) -> list[str]:
     return lines
 
 
-def voltage_text(vdd: float) -> str:
-    """The record's ``voltage:`` value, with the offset from the 3.3 V nominal."""
-    pct = round((vdd / 3.3 - 1.0) * 100)
-    note = "nominal 3.3 V" + (f", {pct:+d}%" if pct else "")
-    return f"{vdd:.3f} V ({note})"
-
-
 def render_record(stem: str, report: dict, per_unit: list[dict[str, float]],
-                  raw_files: list[tuple[str, str]], wall_s: float, date: str,
-                  commit: str, tb_sha: str, dut_sha: str, grid: Grid = HOT_GRID,
-                  vdd: float = VDD_V) -> str:
-    PROCESS, SECTIONS, TEMP_C, TSTOP = grid.process, grid.sections, grid.temp_c, grid.tstop
+                  raw_files: list[tuple[str, str]], wall_s: float, now: _dt.datetime,
+                  git: dict, grid: Grid = HOT_GRID, vdd: float = VDD_V) -> str:
+    PROCESS, TEMP_C, TSTOP = grid.process, grid.temp_c, grid.tstop
     fp = _rep.fleet_provenance(report)
     pdk_ver, klt_ver, ngspice = fp["pdk_ver"], fp["klt_ver"], fp["ngspice"]
     repro = _rep.reproduction_scope("tran-noise")
     seeds = ", ".join(str(s) for s in SEEDS[:len(per_unit)])
     job = ", ".join(fp["jobs"]) if fp["jobs"] else "not reported"
-    fm = [
-        "---", f"record: {stem}", f"date: {date}", "status: valid", "",
-        "testbench:", f"  path: sim/tb/ro-ring5-starved-jitter-long-batch/{DECK}", f"  sha: {tb_sha}",
-        "netlist:", f"  path: {DUT_PATH}", f"  sha: {dut_sha}",
-        f"repo_commit: {commit}", "",
-        f"pdk: gf180mcuD @ {pdk_ver}", "pdk.models:",
-        f"  - libs.tech/ngspice/sm141064.ngspice (sections: {' '.join(SECTIONS)})", "",
-        "tool:", f"  klt: {klt_ver} (client; batch backend)",
-        f"  ngspice: \"{ngspice} (batch fleet)\"",
-        f"  platform: \"{platform.platform()} (submitting host)\"", "",
-        "corner:", f"  process: {PROCESS}", f"  voltage: {voltage_text(vdd)}",
-        f"  temperature: {TEMP_C}", "",
-        "analysis:", "  type: tran-noise", f"  tstop: {TSTOP}",
-        f"  tstep: {TSTEP} (print step; ngspice's own LTE and the trnoise breakpoints at vn_dt set the actual solver step)",
-        "  tmax: n/a", f"  noise_params: \"{DESCRIPTION_NOISE}\"", f"  runs: {len(per_unit)}",
-        f"seeds: [{seeds}]",
-    ]
-    if repro:
-        fm += ["reproduction:", f"  scope: {repro['scope']}",
-               f"  trnoise_waveform_replay: {'true' if repro['trnoise_waveform_replay'] else 'false'}",
-               f"  basis: {repro['basis']}", f"  decision: {repro['decision']}"]
-    fm += ["", "raw:", f"  path: sim/records/raw/{stem}/", "  files:"]
-    fm += [f"    - {n}  sha256:{d}" for n, d in raw_files]
-    fm += [f"wall_time: {_rep._fmt_wall(wall_s)}", "---", ""]
+    fm = _pc.render_header(
+        stem=stem, now=now, repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
+        netlist=REPO_ROOT / DUT_PATH, git=git, raw_files=raw_files,
+        pdk=f"gf180mcuD @ {pdk_ver}",
+        pdk_models=[f"  - libs.tech/ngspice/sm141064.ngspice "
+                    f"(sections: {' '.join(grid.sections)})"],
+        tool=[f"  klt: {klt_ver} (client; batch backend)",
+              f'  ngspice: "{ngspice} (batch fleet)"',
+              f'  platform: "{platform.platform()} (submitting host)"'],
+        corner=_pc.corner_lines({"process": PROCESS, "vdd": vdd, "temperature_c": TEMP_C}),
+        analysis=["  type: tran-noise", f"  tstop: {TSTOP}",
+                  f"  tstep: {TSTEP} (print step; ngspice's own LTE and the trnoise breakpoints at vn_dt set the actual solver step)",
+                  "  tmax: n/a", f"  noise_params: \"{DESCRIPTION_NOISE}\"", f"  runs: {len(per_unit)}"],
+        seeds=f"seeds: [{seeds}]", reproduction=repro,
+        wall_time=_rep._fmt_wall(wall_s))
     body = ["## Result", "",
             f"Executed on the batch fleet through `klt sim` (fleet jobs: {job}). Each unit returned the "
             "769 rising mid-supply edge times of the ring output and the charge readings; the "
@@ -456,27 +439,18 @@ def cmd_ingest(report_path: Path, stderr_path: Path | None, request: Path | None
         return 2
     now = now or _dt.datetime.now(_dt.timezone.utc)
     day = now.strftime("%Y-%m-%d")
-    stems = _rep.allocate_record_stems(records_dir, day, grid.slug, len(grid.supplies))
-    commit = _rep.repo_commit_field(_rep.git_provenance(REPO_ROOT))
-    tb_sha = _rep.git_blob_sha1((TB_DIR / DECK).read_bytes())
-    dut_sha = _rep.git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes())
+    stems = _rep.reserve_record_stems(records_dir, day, grid.slug, len(grid.supplies))
+    git = _rep.git_provenance(REPO_ROOT)
     for stem, vdd in zip(stems, grid.supplies):
         units = groups[vdd]
         per_unit = [derive(unit_values(c)) for c in units]
         raw_dir = records_dir / "raw" / stem
-        raw_dir.mkdir(parents=True, exist_ok=False)
         # a multi-supply report is split: each record keeps only its own units
         part = dict(report, corners=units) if len(grid.supplies) > 1 else report
-        (raw_dir / "report.json").write_text(json.dumps(part, indent=1) + "\n")
-        (raw_dir / "request.json").write_text((request or request_path(grid)).read_text())
-        if stderr_path and stderr_path.exists():
-            (raw_dir / "stderr.txt").write_text(stderr_path.read_text())
-        names = sorted(p.name for p in raw_dir.iterdir())
-        raw_files = [(n, _rep.sha256_file(raw_dir / n)) for n in names]
+        raw_files = _pc.stage_raw(raw_dir, part, (request or request_path(grid)).read_text(),
+                                  stderr_path)
         wall = sum(float(c.get("runtime_s") or 0.0) for c in units)
-        text = render_record(stem, part, per_unit, raw_files, wall,
-                             now.strftime("%Y-%m-%dT%H:%M:%SZ"), commit, tb_sha, dut_sha,
-                             grid=grid, vdd=vdd)
+        text = render_record(stem, part, per_unit, raw_files, wall, now, git, grid=grid, vdd=vdd)
         if len(grid.supplies) > 1:
             text = text.replace(
                 "\n## How to reproduce",

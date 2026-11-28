@@ -30,6 +30,7 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
 
 import supply_ripple as sr  # noqa: E402
+import _record_golden as rg  # noqa: E402
 
 
 def tone_above_sigma_floor(fit: dict, k_sigma: float = 5.0) -> bool:
@@ -396,6 +397,170 @@ class IngestTests(unittest.TestCase):
             c["runtime_s"] = 600.0
         _, _, mds = self._ingest(rep)
         self.assertIn("wall_time: 10.0m", mds[0])
+
+    def test_raw_evidence_is_report_request_and_optional_stderr_in_name_order(self):
+        """The staged files and their manifest order, with a --stderr file and with a path
+        to one that does not exist (which stages nothing, like no --stderr at all)."""
+        import contextlib
+        import hashlib
+        import io
+        import tempfile
+
+        rep = fake_report(f=10.5e6, amps=self.AMPS7)
+        for stderr, names in ((None, ["report.json", "request.json"]),
+                              ("ngspice: a warning\n", ["report.json", "request.json", "stderr.txt"])):
+            with self.subTest(stderr=stderr), tempfile.TemporaryDirectory() as d:
+                rp = Path(d) / "r.json"
+                rp.write_text(json.dumps(rep))
+                rec = Path(d) / "records"
+                rec.mkdir()
+                sp = Path(d) / "stderr.txt"
+                if stderr is not None:
+                    sp.write_text(stderr)
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    rc = sr.cmd_ingest("nominal-beat", rp, sp, rec)
+                self.assertEqual(rc, 0)
+                raw = next((rec / "raw").iterdir())
+                self.assertEqual(sorted(p.name for p in raw.iterdir()), names)
+                self.assertEqual((raw / "request.json").read_text(),
+                                 sr.request_path("nominal-beat").read_text())
+                self.assertEqual(json.loads((raw / "report.json").read_text()), rep)
+                text = next(rec.glob("*.md")).read_text()
+                manifest = [line.strip("- ").split("  sha256:") for line in text.splitlines()
+                            if "sha256:" in line]
+                self.assertEqual([name for name, _ in manifest], names)
+                for name, digest in manifest:
+                    self.assertEqual(digest, hashlib.sha256((raw / name).read_bytes()).hexdigest())
+
+
+class RecordFrontMatter(unittest.TestCase):
+    """The record front matter ``render_record`` emits, pinned line for line (issue #1080).
+
+    The goldens were captured from the hand-assembled front matter that
+    ``_power_cli.render_header`` (issue #834) replaced, so the consolidation is held to
+    byte-for-byte output. Only the git blob SHAs, the ``repo_commit`` and
+    ``platform.platform()`` are masked (``_record_golden.front_matter``); they are facts
+    about the host and the checkout, not the renderer. Everything else -- field order,
+    field names, indentation, the blank lines between blocks -- is the format `sim/README.md`
+    defines and the records committed under `sim/records/` are written in.
+    """
+
+    RAW = [("report.json", "a" * 64), ("request.json", "b" * 64), ("stderr.txt", "c" * 64)]
+
+    NOMINAL = """\
+---
+record: 2026-01-02-ro-array-supply-ripple-nominal-beat-01
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/ro-array-supply-ripple/tb_ro_array_supply_ripple.sp
+  sha: <BLOB>
+netlist:
+  path: design/ro_array_core.spice
+  sha: <BLOB>
+repo_commit: <COMMIT>
+
+pdk: gf180mcuD @ 1.0.test
+pdk.models:
+  - libs.tech/ngspice/sm141064.ngspice (sections: typical bjt_typical diode_typical res_typical moscap_typical mimcap_typical)
+
+tool:
+  klt: 9.9.9 (client; batch backend)
+  ngspice: "ngspice-99 test build (batch fleet)"
+  platform: <PLATFORM>
+
+corner:
+  process: tt
+  voltage: 3.300 V (nominal 3.3 V)
+  temperature: 27
+
+analysis:
+  type: tran
+  tstop: 700n
+  tstep: 10p
+  tmax: n/a
+  noise_params: n/a (deterministic: no noise, no mismatch)
+  runs: 7
+seeds: n/a (deterministic analysis)
+
+raw:
+  path: sim/records/raw/2026-01-02-ro-array-supply-ripple-nominal-beat-01/
+  files:
+    - report.json  sha256:<SHA256>
+    - request.json  sha256:<SHA256>
+    - stderr.txt  sha256:<SHA256>
+wall_time: 10.0m
+---
+"""
+
+    BINDING = """\
+---
+record: 2026-01-02-ro-array-supply-ripple-binding-beat-01
+date: 2026-01-02T03:04:05Z
+status: valid
+
+testbench:
+  path: sim/tb/ro-array-supply-ripple/tb_ro_array_supply_ripple.sp
+  sha: <BLOB>
+netlist:
+  path: design/ro_array_core.spice
+  sha: <BLOB>
+repo_commit: <COMMIT>
+
+pdk: gf180mcuD @ 1.0.test
+pdk.models:
+  - libs.tech/ngspice/sm141064.ngspice (sections: ss bjt_ss diode_ss res_ss moscap_ss mimcap_ss)
+
+tool:
+  klt: 9.9.9 (client; batch backend)
+  ngspice: "ngspice-99 test build (batch fleet)"
+  platform: <PLATFORM>
+
+corner:
+  process: ss
+  voltage: 3.630 V (nominal 3.3 V)
+  temperature: 125
+
+analysis:
+  type: tran
+  tstop: 700n
+  tstep: 10p
+  tmax: n/a
+  noise_params: n/a (deterministic: no noise, no mismatch)
+  runs: 7
+seeds: n/a (deterministic analysis)
+
+raw:
+  path: sim/records/raw/2026-01-02-ro-array-supply-ripple-binding-beat-01/
+  files:
+    - report.json  sha256:<SHA256>
+    - request.json  sha256:<SHA256>
+    - stderr.txt  sha256:<SHA256>
+wall_time: 10.0m
+---
+"""
+
+    def _rendered(self, name: str) -> str:
+        rep = dict(fake_report(f=10.5e6, amps=IngestTests.AMPS7), environment=rg.ENVIRONMENT,
+                   provenance=rg.PROVENANCE)
+        return sr.render_record(f"2026-01-02-ro-array-supply-ripple-{name}-01", name, rep,
+                                sr.analyse_report(rep), self.RAW, 600.0, rg.NOW, rg.GIT)
+
+    def test_front_matter_is_unchanged_at_the_nominal_corner(self):
+        self.assertEqual(rg.front_matter(self._rendered("nominal-beat")), self.NOMINAL)
+
+    def test_front_matter_is_unchanged_at_the_binding_corner(self):
+        """3.63 V is stated against the nominal with no offset percentage, which is why the
+        corner block is handed to the shared header explicitly rather than via corner_lines."""
+        self.assertEqual(rg.front_matter(self._rendered("binding-beat")), self.BINDING)
+
+    def test_the_per_tool_prose_outlives_the_shared_header(self):
+        for name in ("nominal-beat", "binding-beat"):
+            text = self._rendered(name)
+            for section in ("## Result", "## How to reproduce", "## Caveats"):
+                self.assertIn(section, text)
+            self.assertIn(f"python3 sim/tools/supply_ripple.py run {name} --outdir DIR", text)
 
 
 class CliTests(unittest.TestCase):

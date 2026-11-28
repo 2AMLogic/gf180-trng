@@ -641,7 +641,7 @@ def cmd_analyze(paths: list[str], as_json: bool) -> int:
 
 
 def render_record(stem: str, name: str, report: dict, an: dict, raw_files: list[tuple[str, str]],
-                  wall_s: float, date: str, commit: str, tb_sha: str, dut_sha: str) -> str:
+                  wall_s: float, now: _dt.datetime, git: dict) -> str:
     cname, freq_key, tstep = next((c, f, t) for n, c, f, t in REQUESTS if n == name)
     cfg = CORNERS[cname]
     fp = _rep.fleet_provenance(report)
@@ -649,24 +649,22 @@ def render_record(stem: str, name: str, report: dict, an: dict, raw_files: list[
     tstop = TSTOP_S[freq_key]
     f_hz = an["f_hz"]
     n = len(report["corners"])
-    fm = [
-        "---", f"record: {stem}", f"date: {date}", "status: valid", "",
-        "testbench:", f"  path: sim/tb/ro-array-supply-ripple/{DECK}", f"  sha: {tb_sha}",
-        "netlist:", f"  path: {DUT_PATH}", f"  sha: {dut_sha}",
-        f"repo_commit: {commit}", "",
-        f"pdk: gf180mcuD @ {pdk_ver}", "pdk.models:",
-        f"  - libs.tech/ngspice/sm141064.ngspice (sections: {' '.join(PROCESS_SECTIONS[cfg['process']])})", "",
-        "tool:", f"  klt: {klt_ver} (client; batch backend)", f"  ngspice: \"{ngspice} (batch fleet)\"",
-        f"  platform: \"{platform.platform()} (submitting host)\"", "",
-        "corner:", f"  process: {cfg['process']}",
-        f"  voltage: {cfg['vdd']:.3f} V (nominal 3.3 V)", f"  temperature: {cfg['temp_c']}", "",
-        "analysis:", "  type: tran", f"  tstop: {tstop * 1e9:g}n", f"  tstep: {tstep * 1e12:g}p",
-        "  tmax: n/a", "  noise_params: n/a (deterministic: no noise, no mismatch)", f"  runs: {n}",
-        "seeds: n/a (deterministic analysis)", "",
-        "raw:", f"  path: sim/records/raw/{stem}/", "  files:",
-    ]
-    fm += [f"    - {fn}  sha256:{d}" for fn, d in raw_files]
-    fm += [f"wall_time: {_rep._fmt_wall(wall_s)}", "---", ""]
+    fm = _pc.render_header(
+        stem=stem, now=now, repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
+        netlist=REPO_ROOT / DUT_PATH, git=git, raw_files=raw_files,
+        pdk=f"gf180mcuD @ {pdk_ver}",
+        pdk_models=[f"  - libs.tech/ngspice/sm141064.ngspice "
+                    f"(sections: {' '.join(PROCESS_SECTIONS[cfg['process']])})"],
+        tool=[f"  klt: {klt_ver} (client; batch backend)",
+              f'  ngspice: "{ngspice} (batch fleet)"',
+              f'  platform: "{platform.platform()} (submitting host)"'],
+        corner=[f"  process: {cfg['process']}",
+                f"  voltage: {cfg['vdd']:.3f} V (nominal 3.3 V)",
+                f"  temperature: {cfg['temp_c']}"],
+        analysis=["  type: tran", f"  tstop: {tstop * 1e9:g}n", f"  tstep: {tstep * 1e12:g}p",
+                  "  tmax: n/a", "  noise_params: n/a (deterministic: no noise, no mismatch)",
+                  f"  runs: {n}"],
+        seeds="seeds: n/a (deterministic analysis)", wall_time=_rep._fmt_wall(wall_s))
     body = ["## Result", "",
             f"Request `{name}` ({n} units, one per control or perturbed case), executed on the batch fleet "
             f"through `klt sim` (fleet jobs: {', '.join(jobs) or 'not reported'}). Ripple frequency "
@@ -715,22 +713,15 @@ def cmd_ingest(name: str, report_path: Path, stderr_path: Path | None, records_d
         print("refused: analysis error in a unit", file=sys.stderr)
         return 2
     now = _dt.datetime.now(_dt.timezone.utc)
-    stem = _rep.allocate_record_stems(records_dir, now.strftime("%Y-%m-%d"),
-                                      f"ro-array-supply-ripple-{name}", 1)[0]
+    stem = _rep.reserve_record_stems(records_dir, now.strftime("%Y-%m-%d"),
+                                     f"ro-array-supply-ripple-{name}", 1)[0]
     raw_dir = records_dir / "raw" / stem
-    raw_dir.mkdir(parents=True, exist_ok=False)
-    (raw_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
-    (raw_dir / "request.json").write_text(request_path(name).read_text())
-    if stderr_path and stderr_path.exists():
-        (raw_dir / "stderr.txt").write_text(stderr_path.read_text())
-    raw_files = [(p.name, _rep.sha256_file(p)) for p in sorted(raw_dir.iterdir())]
+    raw_files = _pc.stage_raw(raw_dir, report, request_path(name).read_text(), stderr_path)
     # units of one batch job run concurrently and each reports a job-scale runtime: take the
     # longest unit as the request wall time, never the sum
     wall = max(float(c.get("runtime_s") or 0.0) for c in corners)
-    commit = _rep.repo_commit_field(_rep.git_provenance(REPO_ROOT))
-    tb_sha = git_blob_sha1((TB_DIR / DECK).read_bytes())
-    text = render_record(stem, name, report, an, raw_files, wall, now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                         commit, tb_sha, dut_blob_sha())
+    text = render_record(stem, name, report, an, raw_files, wall, now,
+                         _rep.git_provenance(REPO_ROOT))
     _rep.publish_record_text(records_dir / f"{stem}.md", text)
     print(f"wrote sim/records/{stem}.md")
     return 0
