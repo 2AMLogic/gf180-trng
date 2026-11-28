@@ -14,6 +14,7 @@ from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR / "tools"))
+sys.path.insert(0, str(SIM_DIR / "tests"))  # `_record_golden`, when run from the repo root
 
 import power_switch_decay as pd  # noqa: E402
 import _record_golden as rg  # noqa: E402
