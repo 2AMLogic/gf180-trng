@@ -4,7 +4,7 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-28T07:23:37Z (snapshot; compare against live labels)_
+_Generated: 2026-11-28T11:50:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -37,6 +37,8 @@ Issues currently being built (`loom:building`).
 
 - **#520**: Replace ad-hoc sys.path.insert bootstraps with one import convention and a lint guard
 - **#1026**: T1 item 6 (digital): commit the hash-bound not_applicable statement against the pinned 0.8.0 grader, or record the mixed-signal refusal upstream
+- **#1080**: Consolidate supply_ripple.py and starved_hot_corner.py record ingestion onto reserve_record_stems and _power_cli.render_header
+- **#1082**: sim/tests: four power-tool test modules still fail the root-level `python3 -m unittest sim/tests/<file>.py` invocation
 
 ## PRs Awaiting Review
 
@@ -50,6 +52,7 @@ PRs waiting on Judge (`loom:review-requested`).
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#1078**: chore: resync installed Loom surfaces *(held)*
+- **#1081**: refactor: mint supply_ripple and starved_hot_corner records through the shared header and stem allocator
 
 ## Proposed
 
@@ -68,6 +71,7 @@ Issues carrying `loom:curated`.
 - **#942**: Item-7 source inventory: extra_files are not import-expanded, so run_demo.py's own imports are unpinned *(curated)*
 - **#991**: xschem pin migration: migrate gf180-trng to the fleet 3.4.7 *(curated)*
 - **#1026**: T1 item 6 (digital): commit the hash-bound not_applicable statement against the pinned 0.8.0 grader, or record the mixed-signal refusal upstream *(curated)*
+- **#1082**: sim/tests: four power-tool test modules still fail the root-level `python3 -m unittest sim/tests/<file>.py` invocation *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -85,10 +89,10 @@ _None._
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 3 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 2 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 13 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 14 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
