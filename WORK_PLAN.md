@@ -4,12 +4,12 @@ Snapshot of the GitHub label state. Operator priority does not override a
 dependency block or an operator-only decision.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-24T03:43:23Z (snapshot; compare against live labels)_
+_Generated: 2026-11-28T07:23:37Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#1078**: chore: resync installed Loom surfaces *(held)*
 
 ## Very Important
 
@@ -49,7 +49,7 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#1078**: chore: resync installed Loom surfaces *(held)*
 
 ## Proposed
 
@@ -81,13 +81,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 0 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 3 |
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 2 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 13 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
