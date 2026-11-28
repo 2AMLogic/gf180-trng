@@ -123,7 +123,8 @@ def render_header(*, stem: str, now, repo_root: Path, testbench: Path, netlist: 
                   pdk_models: Sequence[str] = (), tool: Sequence[str] = (),
                   corner: Sequence[str] = (), analysis: Sequence[str] = (),
                   seeds: str = SEEDS_NA, wall_time: str | None = None,
-                  reproduction: dict | None = None) -> list[str]:
+                  reproduction: dict | None = None, testbench_sha: str | None = None,
+                  netlist_sha: str | None = None) -> list[str]:
     """The record front matter every power tool emits, as a list of lines.
 
     sim/README.md fixes the field order and the blank lines between blocks; this is the one
@@ -138,13 +139,20 @@ def render_header(*, stem: str, now, repo_root: Path, testbench: Path, netlist: 
     emitted as a ``reproduction:`` block directly after ``seeds``. Only ``tran-noise``
     records carry one (DR-0031), so every other caller leaves it ``None`` and the block is
     omitted.
+
+    ``testbench_sha`` / ``netlist_sha`` are precomputed git blob SHAs. A caller that hashes
+    the file bytes itself (``git_blob_sha1(path.read_bytes())``) fails loudly on a missing
+    input and needs no ``git`` binary; left ``None``, the SHA comes from ``git hash-object``
+    and degrades to ``unknown`` when that fails.
     """
+    tb_sha = testbench_sha or _report.blob_sha(repo_root, testbench)
+    nl_sha = netlist_sha or _report.blob_sha(repo_root, netlist)
     lines = ["---", f"record: {stem}", f"date: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}",
              f"status: {status}", "",
              "testbench:", f"  path: {testbench.relative_to(repo_root)}",
-             f"  sha: {_report.blob_sha(repo_root, testbench)}",
+             f"  sha: {tb_sha}",
              "netlist:", f"  path: {netlist.relative_to(repo_root)}",
-             f"  sha: {_report.blob_sha(repo_root, netlist)}"]
+             f"  sha: {nl_sha}"]
     if netlist_also is not None:
         lines.append(f"  also: {netlist_also.relative_to(repo_root)} "
                      f"sha {_report.blob_sha(repo_root, netlist_also)}")

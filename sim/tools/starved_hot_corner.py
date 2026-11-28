@@ -341,6 +341,8 @@ def render_record(stem: str, report: dict, per_unit: list[dict[str, float]],
     fm = _pc.render_header(
         stem=stem, now=now, repo_root=REPO_ROOT, testbench=TB_DIR / DECK,
         netlist=REPO_ROOT / DUT_PATH, git=git, raw_files=raw_files,
+        testbench_sha=_rep.git_blob_sha1((TB_DIR / DECK).read_bytes()),
+        netlist_sha=_rep.git_blob_sha1((REPO_ROOT / DUT_PATH).read_bytes()),
         pdk=f"gf180mcuD @ {pdk_ver}",
         pdk_models=[f"  - libs.tech/ngspice/sm141064.ngspice "
                     f"(sections: {' '.join(grid.sections)})"],

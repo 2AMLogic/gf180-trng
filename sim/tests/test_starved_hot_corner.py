@@ -21,6 +21,7 @@ from pathlib import Path
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR / "tools"))
+sys.path.insert(0, str(SIM_DIR / "tests"))  # `_record_golden`, when run from the repo root
 
 import starved_hot_corner as hc  # noqa: E402
 import _record_golden as rg  # noqa: E402
@@ -164,6 +165,32 @@ class IngestTests(unittest.TestCase):
         self.assertIn("seeds: [1, 2, 3, 4, 5, 6, 7, 8]", text)
         for name in TB["measure"]:
             self.assertRegex(text, rf"(?m)^- `{name}`: mean \S+ over 8 seeds \(sd \S+")
+
+    def test_blob_shas_are_hashed_from_file_bytes_without_git(self):
+        import os
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            (td / "r.json").write_text(json.dumps(self.report([synth_unit(s) for s in range(1, 9)])))
+            recs = td / "records"
+            recs.mkdir()
+            with mock.patch.dict(os.environ, {"PATH": os.devnull}):
+                self.assertEqual(hc.cmd_ingest(td / "r.json", None, None, recs), 0)
+            text = next(recs.glob("*.md")).read_text()
+        self.assertIn(f"  sha: {hc._rep.git_blob_sha1((hc.TB_DIR / hc.DECK).read_bytes())}", text)
+        self.assertIn(f"  sha: {hc._rep.git_blob_sha1((hc.REPO_ROOT / hc.DUT_PATH).read_bytes())}", text)
+
+    def test_a_missing_deck_publishes_nothing(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            (td / "r.json").write_text(json.dumps(self.report([synth_unit(s) for s in range(1, 9)])))
+            recs = td / "records"
+            recs.mkdir()
+            with mock.patch.object(hc, "DECK", "no_such_deck.sp"):
+                with self.assertRaises(FileNotFoundError):
+                    hc.cmd_ingest(td / "r.json", None, None, recs)
+            self.assertEqual(list(recs.glob("*.md")), [])
 
     def test_raw_evidence_is_report_request_and_optional_stderr_in_name_order(self):
         with tempfile.TemporaryDirectory() as td:

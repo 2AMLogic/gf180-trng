@@ -28,6 +28,7 @@ from unittest import mock
 SIM_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR / "tools"))
+sys.path.insert(0, str(SIM_DIR / "tests"))  # `_record_golden`, when run from the repo root
 
 import supply_ripple as sr  # noqa: E402
 import _record_golden as rg  # noqa: E402
@@ -397,6 +398,25 @@ class IngestTests(unittest.TestCase):
             c["runtime_s"] = 600.0
         _, _, mds = self._ingest(rep)
         self.assertIn("wall_time: 10.0m", mds[0])
+
+    def test_blob_shas_are_hashed_from_file_bytes_without_git(self):
+        """With git unavailable the record still carries the real blob SHAs, not `unknown`."""
+        import os
+        from unittest import mock
+        rep = fake_report(f=10.5e6, amps=self.AMPS7)
+        with mock.patch.dict(os.environ, {"PATH": os.devnull}):
+            rc, _, mds = self._ingest(rep)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("unknown", mds[0].split("raw:")[0].split("repo_commit")[0])
+        self.assertIn(f"  sha: {sr.git_blob_sha1((sr.TB_DIR / sr.DECK).read_bytes())}", mds[0])
+        self.assertIn(f"  sha: {sr.dut_blob_sha()}", mds[0])
+
+    def test_a_missing_deck_publishes_nothing(self):
+        from unittest import mock
+        rep = fake_report(f=10.5e6, amps=self.AMPS7)
+        with mock.patch.object(sr, "DECK", "no_such_deck.sp"):
+            with self.assertRaises(FileNotFoundError):
+                self._ingest(rep)
 
     def test_raw_evidence_is_report_request_and_optional_stderr_in_name_order(self):
         """The staged files and their manifest order, with a --stderr file and with a path
