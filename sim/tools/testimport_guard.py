@@ -25,8 +25,10 @@ missing insert. One shared process would be order-dependent: the first
 module to insert ``sim/tests`` into ``sys.path`` makes every later sibling
 import succeed. Measured on ``main`` before #1084 landed (``a1a30e27``): one
 process reported 96 of 96 modules importable where the per-module form
-failed 4. Inside the child the module's stdout is sent to stderr, so a
-module that prints at import cannot be mistaken for the child's verdict.
+failed 4. The child reports its verdict in a result file whose path the
+parent chooses, not on stdout: a module that prints at import, starts a
+subprocess that prints, or registers an ``atexit`` callback that prints
+writes to a stream the parent never reads for the verdict.
 
   python3 -m sim.tools.testimport_guard --check
 """
@@ -36,6 +38,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from sim.tools._git_files import GitError, tracked_files
@@ -49,22 +52,21 @@ PACKAGE = "sim.tests"
 #: about 0.1 s.
 TIMEOUT_S = 30.0
 
-#: First field of the child's verdict line, which is the last line of the
-#: child's stdout: tag, ``ok`` or ``fail``, exception type, line number in
-#: the module (empty if none), message.
+#: First field of the child's verdict line, the only line of the result
+#: file: tag, ``ok`` or ``fail``, exception type, line number in the
+#: module (empty if none), message.
 TAG = "TESTIMPORT_GUARD"
 FIELDS = 5
 
-#: Run as ``python3 -I -c PROBE <tag> <root> <module>``.
+#: Run as ``python3 -I -c PROBE <tag> <root> <module> <result file>``.
 PROBE = """\
-import contextlib, importlib, sys, traceback
+import importlib, sys, traceback
 
-tag, root, name = sys.argv[1:4]
+tag, root, name, result = sys.argv[1:5]
 sys.path.insert(0, root)
 status, kind, line, message = "ok", "", "", ""
 try:
-    with contextlib.redirect_stdout(sys.stderr):
-        importlib.import_module(name)
+    importlib.import_module(name)
 except BaseException as exc:
     status = "fail"
     kind = type(exc).__name__
@@ -78,7 +80,8 @@ except BaseException as exc:
             break
     if not line and isinstance(exc, SyntaxError):
         line = str(exc.lineno or "")
-print("\\t".join((tag, status, kind, line, message)))
+with open(result, "w", encoding="utf-8") as out:
+    out.write("\\t".join((tag, status, kind, line, message)) + "\\n")
 sys.exit(0 if status == "ok" else 1)
 """
 
@@ -91,16 +94,23 @@ def probe(root: Path, module: str, timeout: float = TIMEOUT_S) -> str | None:
     raised while importing, or ``: <why>`` when no verdict was obtained.
     """
     root = Path(root).resolve()
-    cmd = [sys.executable, "-I", "-c", PROBE, TAG, str(root), module]
-    try:
-        proc = subprocess.run(cmd, cwd=root, capture_output=True, text=True,
-                              errors="replace", timeout=timeout)
-    except subprocess.TimeoutExpired:
-        return f": import did not finish within {timeout:g} s"
-    except OSError as exc:
-        return f": cannot start {sys.executable}: {exc}"
-    stdout = proc.stdout.rstrip("\n")
-    verdict = stdout.rsplit("\n", 1)[-1] if stdout.strip() else ""
+    with tempfile.TemporaryDirectory(prefix="testimport_guard_") as tmp:
+        result = Path(tmp) / "verdict"
+        cmd = [sys.executable, "-I", "-c", PROBE, TAG, str(root), module,
+               str(result)]
+        try:
+            proc = subprocess.run(cmd, cwd=root, capture_output=True,
+                                  text=True, errors="replace",
+                                  timeout=timeout)
+        except subprocess.TimeoutExpired:
+            return f": import did not finish within {timeout:g} s"
+        except OSError as exc:
+            return f": cannot start {sys.executable}: {exc}"
+        try:
+            verdict = result.read_text(encoding="utf-8",
+                                       errors="replace").rstrip("\n")
+        except OSError:
+            verdict = ""
     fields = verdict.split("\t")
     if len(fields) != FIELDS or fields[0] != TAG:
         return (f": import process exited with status {proc.returncode} "

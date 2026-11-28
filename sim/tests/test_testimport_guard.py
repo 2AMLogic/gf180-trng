@@ -164,6 +164,28 @@ class Check(unittest.TestCase):
         self.tree.test("test_terse", "print('partial', end='')\n" + REACHABLE)
         self.assertEqual(self.findings(), [])
 
+    def test_output_from_a_subprocess_or_atexit_does_not_hide_a_pass(self):
+        # A child process writes a partial line to the inherited stdout during
+        # import, and a callback prints after the import ends.
+        self.tree.test("test_progress",
+                       "import subprocess, sys\n"
+                       "subprocess.run([sys.executable, '-c', \"print('loading', end='')\"], check=True)\n"
+                       + REACHABLE)
+        self.tree.test("test_cleanup",
+                       "import atexit\natexit.register(print, 'cleanup complete')\n"
+                       + REACHABLE)
+        self.assertEqual(self.findings(), [])
+
+    def test_genuine_failure_is_reported_despite_subprocess_and_atexit_output(self):
+        body = ("import atexit, subprocess, sys\n"
+                "subprocess.run([sys.executable, '-c', \"print('loading', end='')\"], check=True)\n"
+                "atexit.register(print, 'cleanup complete')\n"
+                "import _helper\n")
+        self.tree.test("test_noisy_broken", body)
+        self.assertEqual(self.findings(), [
+            "sim/tests/test_noisy_broken.py:4: ModuleNotFoundError: "
+            "No module named '_helper'"])
+
     def test_import_that_does_not_return_is_a_failure(self):
         self.tree.test("test_hang", "import time\ntime.sleep(30)\n")
         found = self.findings(timeout=1.0)
